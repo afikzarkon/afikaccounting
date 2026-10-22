@@ -265,6 +265,8 @@ function DatedValuesInput({
   };
   const set = (i: number, patch: Partial<Row>) => commit(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   const note = showNote ? field.note : undefined;
+  // The solver takes the first row left without an amount as X; the other rows are known values.
+  const xIndex = xRow ? rows.findIndex((r) => r.value.trim() === "") : -1;
   const grid = note
     ? "grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.9fr)_2.75rem] gap-2"
     : "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.75rem] gap-2";
@@ -297,12 +299,12 @@ function DatedValuesInput({
             value={r.value}
             onChange={(e) => {
               const raw = e.target.value.replace(/,/g, "");
-              if (/^d*.?d*$/.test(raw)) set(i, { value: raw });
+              if (/^\d*\.?\d*$/.test(raw)) set(i, { value: raw });
             }}
             aria-label={`${field.valueLabel} — שורה ${i + 1}`}
             aria-invalid={error ? true : undefined}
-            placeholder={xRow ? "X" : undefined}
-            className={cn(inputClass, "num font-mono", xRow && r.value === "" && "border-accent/60 bg-accent-soft placeholder:text-accent")}
+            placeholder={i === xIndex ? "X" : undefined}
+            className={cn(inputClass, "num font-mono", i === xIndex && "border-accent/60 bg-accent-soft placeholder:text-accent")}
           />
           {note && (
             <input
