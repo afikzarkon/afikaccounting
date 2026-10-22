@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ArticleTracker } from "@/components/content/article-tracker";
+import { RichParagraph } from "@/components/content/rich-text";
 import { ContentCard, readingMinutes } from "@/components/content/content-card";
 import { CalculatorIcon } from "@/components/engine/calculator-visuals";
 import { Badge, Container, Skeleton } from "@/components/ui/primitives";
@@ -139,7 +140,7 @@ function Article({ item }: { item: ContentItem }) {
           <p className="text-xs font-semibold text-muted">בדף זה</p>
           <ol className="mt-3 space-y-1.5 text-sm">
             {item.body.map((s, i) => (
-              <li key={s.heading}>
+              <li key={i}>
                 <a href={`#s-${i}`} className="text-muted hover:text-accent">
                   {i + 1}. {s.heading}
                 </a>
@@ -150,12 +151,10 @@ function Article({ item }: { item: ContentItem }) {
       )}
       <div className="space-y-10">
         {item.body.map((s, i) => (
-          <section key={s.heading} id={`s-${i}`} className="scroll-mt-24">
+          <section key={i} id={`s-${i}`} className="scroll-mt-24">
             <h2 className="text-xl font-semibold tracking-tight text-fg">{s.heading}</h2>
             {s.paragraphs.map((p, j) => (
-              <p key={j} className="mt-4 text-[15.5px] leading-8 text-fg/85">
-                {p}
-              </p>
+              <RichParagraph key={j} text={p} className="mt-4 text-[15.5px] leading-8 text-fg/85" />
             ))}
           </section>
         ))}

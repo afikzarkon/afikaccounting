@@ -5,6 +5,7 @@ import { Wizard, type WizardStart } from "@/components/engine/wizard";
 import { Container, Skeleton } from "@/components/ui/primitives";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { getContent } from "@/lib/data/content";
+import { listPublishedPresets } from "@/lib/data/presets";
 import { getSavedSolution } from "@/lib/data/user";
 import { CALCULATORS, getCalculator } from "@/lib/engine/registry";
 import { defaults, sanitize, validateValues } from "@/lib/engine/validate";
@@ -40,8 +41,8 @@ const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v
 
 async function EngineLoader({ searchParams }: { searchParams: PageProps<"/engine">["searchParams"] }) {
   const sp = await searchParams;
-  const [user, explainers] = await Promise.all([getCurrentUser(), loadExplainers()]);
-  return <Wizard key={JSON.stringify(sp)} start={await resolveStart(sp)} explainers={explainers} signedIn={!!user} />;
+  const [user, explainers, presets] = await Promise.all([getCurrentUser(), loadExplainers(), listPublishedPresets()]);
+  return <Wizard key={JSON.stringify(sp)} start={await resolveStart(sp)} explainers={explainers} presets={presets} signedIn={!!user} />;
 }
 
 /**

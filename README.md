@@ -55,6 +55,24 @@ If the Supabase variables are missing, the site still runs in full: the engine w
 
 To attach real recordings, upload them to Supabase Storage (or any CDN) and set `video_url` on the `content` row. Until then, lessons play a simulated timeline so chapters and progress tracking still work. You can also set `NEXT_PUBLIC_DEMO_VIDEO_URL` to one MP4 that every lesson without a recording will play.
 
+## Admin portal (`/admin`)
+
+Analytics dashboard, media library (uploads to Supabase Storage, or YouTube / Vimeo embeds), content editor and scenario presets.
+
+1. Apply `supabase/migrations/20261023000000_admin.sql` the same way as the initial schema. It adds the `role` column on profiles, the `media_assets`, `scenario_presets` and `analytics_events` tables, the public `media` storage bucket, and the `admin_analytics` / `admin_storage` functions.
+2. Sign up on the site, then make yourself an admin in the SQL editor:
+
+   ```sql
+   update public.profiles set role = 'admin'
+   where id = (select id from auth.users where email = 'you@example.com');
+   ```
+
+3. Open **מערכת ניהול** from the user menu, or go to `/admin`.
+
+Access is enforced in three places: the proxy (signed-in only), every admin page and Server Action (`requireAdmin` / `assertAdmin`), and the database itself (`public.is_admin()` in every admin policy; users cannot change their own role).
+
+Usage analytics are anonymous: a random id per browser tab, never linked to an account unless the visitor is signed in. Events are sent with `navigator.sendBeacon` to `/api/track`, validated there, and aggregated in the database (`admin_analytics`). Admin pages are not tracked.
+
 ## Scripts
 
 | Command             | What it does                                      |
@@ -76,9 +94,11 @@ src/
     engine/                Smart Accounting Solution Engine (4-step wizard)
     content/               Content library + /content/[slug] lesson page
     dashboard/  profile/   Protected user area
+    admin/                 Admin portal: analytics, media, content, presets, settings
     (auth)/                login, register, forgot-password, reset-password
     auth/confirm/          Email-link handler (route handler)
     api/calculators/       JSON API: schemas (GET) and solve (POST)
+    api/track/             Usage events (POST, anonymous)
   components/
     engine/                Wizard, field controls, solution dashboard, exports
     video/                 Player with chapters, contextual drawer, resource cards

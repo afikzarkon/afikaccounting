@@ -1,4 +1,7 @@
+"use client";
+
 import { Download, ExternalLink, FileSpreadsheet, FileText, Link2 } from "lucide-react";
+import { track } from "@/lib/analytics/track";
 import type { Resource } from "@/lib/content/types";
 
 const KIND = {
@@ -17,6 +20,7 @@ export function ResourceCard({ resource }: { resource: Resource }) {
     <a
       href={resource.url}
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : { download: "" })}
+      onClick={() => track({ kind: "download", target: resource.url, label: resource.title, meta: { fileKind: resource.kind } })}
       className="group card flex items-center gap-3.5 p-4 transition-all hover:-translate-y-0.5 hover:border-accent/40"
     >
       <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${kind.tone}`}>

@@ -10,8 +10,16 @@ import { cn } from "@/lib/utils";
 
 const isActive = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
+/**
+ * The hook-reading wrappers sit inside Suspense in the navbar, because a
+ * dynamic route's URL is only known at request time; the views also render
+ * as the fallback (pathname "": no active item).
+ */
 export function NavLinks() {
-  const pathname = usePathname();
+  return <NavLinksView pathname={usePathname()} />;
+}
+
+export function NavLinksView({ pathname = "" }: { pathname?: string }) {
   return (
     <nav aria-label="ניווט ראשי" className="hidden items-center gap-1 md:flex">
       {site.nav.map((item) => {
@@ -42,7 +50,10 @@ export function NavLinks() {
 }
 
 export function MobileNav() {
-  const pathname = usePathname();
+  return <MobileNavView pathname={usePathname()} />;
+}
+
+export function MobileNavView({ pathname = "" }: { pathname?: string }) {
   const [open, setOpen] = useState(false);
   const [lastPath, setLastPath] = useState(pathname);
   // Close the menu after navigating.

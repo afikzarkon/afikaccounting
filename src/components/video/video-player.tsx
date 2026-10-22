@@ -3,9 +3,11 @@
 import { Gauge, Maximize, Pause, Play, PlayCircle, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { recordProgress } from "@/lib/actions/history";
+import { track } from "@/lib/analytics/track";
 import type { ContentItem } from "@/lib/content/types";
 import { DEMO_VIDEO_URL } from "@/lib/env";
 import { duration } from "@/lib/engine/format";
+import { type Embed, embedUrl, parseEmbed, thumbnailUrl } from "@/lib/media/embed";
 import { cn } from "@/lib/utils";
 
 export type PlayableItem = Pick<ContentItem, "slug" | "title" | "videoUrl" | "durationSeconds" | "chapters">;
@@ -14,25 +16,44 @@ const SPEEDS = [1, 1.25, 1.5, 2];
 /** Seconds of playback between progress saves. */
 const SAVE_EVERY = 20;
 
-/**
- * Player with chapter navigation. Lessons without a recording play a simulated
- * timeline, so chapters, seeking and progress tracking behave the same way.
- */
-export function VideoPlayer({
-  item,
-  startAt = 0,
-  track = true,
-  layout = "side",
-  className,
-}: {
+type PlayerProps = {
   item: PlayableItem;
   startAt?: number;
   /** Save progress to the user's watch history (ignored for guests). */
   track?: boolean;
   layout?: "side" | "stacked";
   className?: string;
-}) {
+};
+
+/** A YouTube or Vimeo link plays in that service's embed; anything else in the built-in player. */
+export function VideoPlayer(props: PlayerProps) {
+  const embed = parseEmbed(props.item.videoUrl);
+  return embed ? <EmbedPlayer {...props} embed={embed} /> : <FilePlayer {...props} />;
+}
+
+/** Counts the first play of a mounted player in the usage analytics. */
+function usePlayTracker(item: PlayableItem, source: "upload" | "youtube" | "vimeo" | "demo") {
+  const counted = useRef(false);
+  return useCallback(() => {
+    if (counted.current) return;
+    counted.current = true;
+    track({ kind: "video_play", target: item.slug, label: item.title, source });
+  }, [item.slug, item.title, source]);
+}
+
+/**
+ * Player with chapter navigation. Lessons without a recording play a simulated
+ * timeline, so chapters, seeking and progress tracking behave the same way.
+ */
+function FilePlayer({
+  item,
+  startAt = 0,
+  track = true,
+  layout = "side",
+  className,
+}: PlayerProps) {
   const src = item.videoUrl || DEMO_VIDEO_URL || null;
+  const countPlay = usePlayTracker(item, item.videoUrl ? "upload" : "demo");
   const videoRef = useRef<HTMLVideoElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const [time, setTime] = useState(startAt);
@@ -108,7 +129,10 @@ export function VideoPlayer({
       return;
     }
     if (playing) save(time);
-    else if (timeRef.current >= total) seek(0, false);
+    else {
+      countPlay();
+      if (timeRef.current >= total) seek(0, false);
+    }
     setPlaying((p) => !p);
   };
 
@@ -139,7 +163,10 @@ export function VideoPlayer({
                 if (Number.isFinite(v.duration)) setTotal(Math.round(v.duration));
                 if (startAt) v.currentTime = startAt;
               }}
-              onPlay={() => setPlaying(true)}
+              onPlay={() => {
+                setPlaying(true);
+                countPlay();
+              }}
               onPause={(e) => {
                 setPlaying(false);
                 save(e.currentTarget.currentTime);
@@ -335,6 +362,58 @@ function ChapterList({
           );
         })}
       </ol>
+    </div>
+  );
+}
+
+/**
+ * A YouTube or Vimeo video. The iframe loads only when the viewer presses play
+ * (no third-party requests before that), and a chapter restarts it at its time.
+ */
+function EmbedPlayer({ item, startAt = 0, layout = "side", className, embed }: PlayerProps & { embed: Embed }) {
+  const [start, setStart] = useState<number | null>(null);
+  const countPlay = usePlayTracker(item, embed.source);
+  const chapters = [...item.chapters].sort((a, b) => a.at - b.at);
+  const play = (t: number) => {
+    countPlay();
+    setStart(t);
+  };
+  const thumb = thumbnailUrl(embed);
+  const activeAt = start === null ? undefined : chapters.findLast((c) => c.at <= start)?.at;
+
+  return (
+    <div className={cn(layout === "side" ? "grid gap-5 lg:grid-cols-[1fr_320px]" : "space-y-4", className)}>
+      <div className="relative aspect-video overflow-hidden rounded-2xl border border-line bg-[#030712] shadow-card">
+        {start === null ? (
+          <button
+            type="button"
+            onClick={() => play(startAt)}
+            className="group/embed absolute inset-0 grid place-items-center text-white"
+            aria-label={`ניגון: ${item.title}`}
+          >
+            {thumb && (
+              // eslint-disable-next-line @next/next/no-img-element -- a remote thumbnail shown once; no optimisation needed.
+              <img src={thumb} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />
+            )}
+            <span className="relative grid place-items-center gap-3 text-center">
+              <PlayCircle className="h-16 w-16 drop-shadow transition group-hover/embed:scale-105" />
+              <span className="rounded-full bg-black/55 px-3 py-1 text-xs">{embed.source === "youtube" ? "YouTube" : "Vimeo"}</span>
+            </span>
+          </button>
+        ) : (
+          <iframe
+            key={start}
+            src={embedUrl(embed, start)}
+            title={item.title}
+            allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+            allowFullScreen
+            className="absolute inset-0 h-full w-full"
+          />
+        )}
+      </div>
+      {chapters.length > 0 && (
+        <ChapterList chapters={chapters} activeAt={activeAt} total={item.durationSeconds} onSelect={play} compact={layout === "stacked"} />
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   Bookmark,
   Check,
+  Layers,
   Link2,
   Loader2,
   PlayCircle,
@@ -14,16 +15,18 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { FormAlert, inputClass } from "@/components/ui/form";
 import { Badge } from "@/components/ui/primitives";
 import { VideoDrawer } from "@/components/video/video-drawer";
 import type { PlayableItem } from "@/components/video/video-player";
 import { saveSolution } from "@/lib/actions/solutions";
+import { track } from "@/lib/analytics/track";
+import type { Preset } from "@/lib/data/presets";
 import { CALCULATORS, getCalculator } from "@/lib/engine/registry";
 import type { Calculator, FieldValue, Solution, Values } from "@/lib/engine/types";
-import { conditionsHold, defaults, isDisabled, isUnknown, isVisible, SOLVE_MODE, UNKNOWN, validateValues } from "@/lib/engine/validate";
+import { conditionsHold, defaults, isDisabled, isUnknown, isVisible, sanitize, SOLVE_MODE, UNKNOWN, validateValues } from "@/lib/engine/validate";
 import { cn } from "@/lib/utils";
 import { ACCENTS, CalculatorIcon, SectionIcon } from "./calculator-visuals";
 import { FieldControl } from "./field-control";
@@ -43,6 +46,23 @@ export type WizardStart = {
   saved?: { id: string; title: string };
 };
 
+type RunResult = { solution?: Solution; error?: string; ms?: number };
+
+/**
+ * Solve, and time it for the usage analytics. The clock reading is metadata
+ * only: the solution itself depends on nothing but the inputs.
+ */
+function solveTimed(calc: Calculator, values: Values): RunResult {
+  const t0 = performance.now();
+  try {
+    return { solution: calc.solve(values), ms: performance.now() - t0 };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "לא ניתן היה לחשב את הפתרון.", ms: performance.now() - t0 };
+  }
+}
+
+const modeOf = (v: Values) => (v[SOLVE_MODE] === "solve" ? "solve" : "regular");
+
 /** Keep the address bar shareable without a navigation (Next syncs useSearchParams with it). */
 function setQuery(params: Record<string, string>) {
   const qs = new URLSearchParams(params).toString();
@@ -52,10 +72,13 @@ function setQuery(params: Record<string, string>) {
 export function Wizard({
   start,
   explainers,
+  presets = [],
   signedIn,
 }: {
   start: WizardStart | null;
   explainers: Record<string, PlayableItem>;
+  /** Ready-made scenarios from the admin's preset library, for every calculator. */
+  presets?: Preset[];
   signedIn: boolean;
 }) {
   const [step, setStep] = useState(start?.step ?? 0);
@@ -67,18 +90,21 @@ export function Wizard({
   const [formKey, setFormKey] = useState(0);
   const [saved, setSaved] = useState(start?.saved);
   const [video, setVideo] = useState<{ open: boolean; at: number }>({ open: false, at: 0 });
+  /** The preset the current values came from, so its runs are attributed to it. */
+  const [presetId, setPresetId] = useState<string>();
 
   const explainer = calc?.explainerSlug ? explainers[calc.explainerSlug] : undefined;
   const currency = typeof values.currency === "string" ? values.currency : "ILS";
 
-  const result = useMemo<{ solution?: Solution; error?: string }>(() => {
-    if (step !== 3 || !calc) return {};
-    try {
-      return { solution: calc.solve(values) };
-    } catch (e) {
-      return { error: e instanceof Error ? e.message : "לא ניתן היה לחשב את הפתרון." };
-    }
-  }, [step, calc, values]);
+  const result = useMemo<RunResult>(() => (step === 3 && calc ? solveTimed(calc, values) : {}), [step, calc, values]);
+
+  // One usage event per computed solution (success or failure), with the engine's run time.
+  useEffect(() => {
+    if (!calc || result.ms === undefined) return;
+    track({ kind: "calc_run", calculator: calc.slug, mode: modeOf(values), ok: !result.error, durationMs: result.ms, presetId });
+    // Only a new result is a new run; values and preset are read as they were for it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
 
   const go = (next: number) => {
     setDirection(next > step ? 1 : -1);
@@ -92,6 +118,7 @@ export function Wizard({
       setValues(defaults(c));
       setErrors({});
       setSaved(undefined);
+      setPresetId(undefined);
       setFormKey((k) => k + 1);
     }
     setQuery({ calc: c.slug });
@@ -115,6 +142,7 @@ export function Wizard({
     const found = validateValues(calc, values, scope);
     setErrors(found);
     if (Object.keys(found).length) {
+      track({ kind: "calc_invalid", calculator: calc.slug, mode: modeOf(values), meta: { step, fields: Object.keys(found).slice(0, 6).join(",") } });
       requestAnimationFrame(() => document.querySelector<HTMLElement>("[aria-invalid=true]")?.focus());
       return;
     }
@@ -126,8 +154,19 @@ export function Wizard({
     if (!calc) return;
     setValues(defaults(calc));
     setErrors({});
+    setPresetId(undefined);
     setFormKey((k) => k + 1);
   };
+
+  const loadPreset = (p: Preset) => {
+    if (!calc) return;
+    setValues(sanitize(calc, p.inputs));
+    setErrors({});
+    setPresetId(p.id);
+    setFormKey((k) => k + 1);
+    track({ kind: "preset_load", calculator: calc.slug, presetId: p.id, label: p.title });
+  };
+  const calcPresets = calc ? presets.filter((p) => p.calculatorSlug === calc.slug) : [];
 
   const canVisit = (i: number) => (i === 0 ? true : !!calc && (i <= step || (i === step + 1 && step > 0)));
 
@@ -168,6 +207,8 @@ export function Wizard({
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
           >
             {step === 0 && <StandardStep selected={calc?.slug} onChoose={choose} />}
+
+            {step === 1 && calcPresets.length > 0 && <PresetBar presets={calcPresets} activeId={presetId} onLoad={loadPreset} />}
 
             {(step === 1 || step === 2) && calc && (
               <FieldsStep
@@ -562,6 +603,36 @@ function SaveBar({
           <TriangleAlert className="h-3.5 w-3.5" /> {error}
         </p>
       )}
+    </div>
+  );
+}
+
+/** Ready-made scenarios: one click fills every field, ready to check and solve. */
+function PresetBar({ presets, activeId, onLoad }: { presets: Preset[]; activeId?: string; onLoad: (p: Preset) => void }) {
+  return (
+    <div className="mb-5 rounded-2xl border border-dashed border-accent/40 bg-accent-soft/40 p-4">
+      <p className="flex items-center gap-2 text-sm font-semibold text-fg">
+        <Layers className="h-4 w-4 text-accent" /> תרחישים מוכנים
+        <span className="font-normal text-muted">— טעינה בלחיצה, ואפשר לשנות כל נתון אחר כך</span>
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {presets.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => onLoad(p)}
+            title={p.description || undefined}
+            aria-pressed={p.id === activeId}
+            className={cn(
+              "rounded-xl border px-3 py-2 text-start text-sm transition-colors",
+              p.id === activeId ? "border-accent bg-surface text-fg ring-1 ring-accent/40" : "border-line-strong bg-surface/70 text-muted hover:border-accent/50 hover:text-fg",
+            )}
+          >
+            {p.id === activeId && <Check className="me-1.5 inline h-3.5 w-3.5 text-accent" />}
+            {p.title}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

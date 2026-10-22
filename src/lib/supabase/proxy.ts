@@ -2,7 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { SUPABASE_KEY, SUPABASE_URL, isSupabaseConfigured } from "@/lib/env";
 
-const PROTECTED = ["/dashboard", "/profile"];
+// Signed-in only. /admin additionally checks the admin role in its pages and actions.
+const PROTECTED = ["/dashboard", "/profile", "/admin"];
 const GUEST_ONLY = ["/login", "/register", "/forgot-password"];
 
 /**

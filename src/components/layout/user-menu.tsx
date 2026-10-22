@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, LayoutDashboard, LogOut, UserRound } from "lucide-react";
+import { ChevronDown, LayoutDashboard, LogOut, ShieldCheck, UserRound } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -20,7 +20,7 @@ export function GuestActions() {
   );
 }
 
-export function UserMenu({ name, email }: { name: string; email: string }) {
+export function UserMenu({ name, email, admin = false }: { name: string; email: string; admin?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const initials = name
@@ -79,6 +79,11 @@ export function UserMenu({ name, email }: { name: string; email: string }) {
             <MenuLink href="/profile" icon={<UserRound className="h-4 w-4" />} onClick={() => setOpen(false)}>
               פרופיל
             </MenuLink>
+            {admin && (
+              <MenuLink href="/admin" icon={<ShieldCheck className="h-4 w-4" />} onClick={() => setOpen(false)}>
+                מערכת ניהול
+              </MenuLink>
+            )}
             <div className="my-1 h-px bg-line" />
             <form action={signOut}>
               <button
