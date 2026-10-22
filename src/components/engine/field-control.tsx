@@ -79,6 +79,21 @@ export function FieldControl(props: Props) {
           className={cn(inputClass, "num font-mono")}
         />
       )}
+      {field.kind === "series" && (
+        <input
+          id={id}
+          type="text"
+          dir="ltr"
+          inputMode="decimal"
+          autoComplete="off"
+          value={String(props.value ?? "")}
+          onChange={(e) => props.onChange(e.target.value)}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+          placeholder={field.placeholder}
+          className={cn(inputClass, "num font-mono")}
+        />
+      )}
 
       {error ? (
         <p id={`${id}-error`} className="mt-1.5 text-xs text-danger" role="alert">

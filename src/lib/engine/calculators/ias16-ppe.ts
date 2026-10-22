@@ -1,42 +1,24 @@
 import { CURRENCIES, money } from "../format";
 import { depreciationSeries, entry, round2, sum } from "../math";
-import type { Calculator, Guidance, JournalEntry, ScheduleRow, Solution, Values } from "../types";
+import type { Calculator, Guidance, JournalEntry, ScheduleRow, Values } from "../types";
 import { bool, num, str } from "../validate";
+import { METHOD_LABEL, timelineErrors, solveTimeline, type PpeMethod } from "./ias16-timeline";
 
-type Method = "straight-line" | "double-declining" | "sum-of-years";
-
-const METHOD_LABEL: Record<Method, string> = {
-  "straight-line": "הקו הישר",
-  "double-declining": "היתרה הפוחתת הכפולה",
-  "sum-of-years": "סכום ספרות השנים",
-};
+/** Methods the yearly component solver supports. */
+type Method = Exclude<PpeMethod, "units">;
 
 const cost = (v: Values) => num(v, "purchasePrice") + num(v, "attributableCosts") - num(v, "discounts");
 
-/** The revision path only applies when its toggle is visible: straight-line, no components. */
-const revises = (v: Values) => bool(v, "revision") && str(v, "method") === "straight-line" && !bool(v, "component");
-
-/**
- * Dates are reduced to whole months, counted from year 0: depreciation runs for
- * a month when the asset is in use for most of it, so a date after the 15th
- * starts the following month (31/03 → April, 01/07 → July).
- */
-const monthIndex = (iso: string) => {
-  const [y, m, d] = iso.split("-").map(Number);
-  return y * 12 + (m - 1) + (d > 15 ? 1 : 0);
-};
-const fmtDate = (iso: string) => iso.split("-").reverse().join("/");
-/** Last day of the month before month index `i`, as dd/mm/yyyy. */
-const dayBefore = (i: number) => fmtDate(new Date(Date.UTC(Math.floor(i / 12), i % 12, 0)).toISOString().slice(0, 10));
-const overlap = (from: number, to: number, start: number, end: number) => Math.max(0, Math.min(to, end) - Math.max(from, start));
+const timeline = [{ field: "component", in: [false] }];
+const whenTimeline = (...more: { field: string; in: (string | boolean)[] }[]) => [...timeline, ...more];
 
 export const ias16Ppe: Calculator = {
   slug: "ias-16-property-plant-equipment",
   standard: "IAS 16",
   title: "רכוש קבוע",
-  tagline: "עלות, פחת לפי רכיבים וטיפול בהחלפת רכיב.",
+  tagline: "עלות, פחת בארבע שיטות, שיפוץ, הערכה מחדש והחלפת נכסים — לפי תאריכים.",
   description:
-    "בניית לוח פחת לנכס ולרכיביו המשמעותיים, וטיפול בהחלפת רכיב — גריעת החלק הישן והכרה בעלות החלק החדש.",
+    "לוח פחת חודשי לפי שנות כספים בטווח תאריכים לבחירה: מודל העלות או ההערכה מחדש, קו ישר, סכום ספרות, יתרה פוחתת או יחידות תפוקה, שיפוץ ושינוי אומדן, ירידת ערך והחלפת נכסים — עם פקודות יומן, מאזן ודוח רווח והפסד.",
   category: "נכסים לא שוטפים",
   icon: "Factory",
   accent: "amber",
@@ -45,22 +27,88 @@ export const ias16Ppe: Calculator = {
     { kind: "select", id: "currency", label: "מטבע הדיווח", options: CURRENCIES, default: "ILS" },
     {
       kind: "radio",
+      id: "model",
+      label: "מודל המדידה לאחר ההכרה",
+      options: [
+        { value: "cost", label: "מודל העלות", description: "עלות בניכוי פחת שנצבר וירידת ערך." },
+        { value: "revaluation", label: "מודל ההערכה מחדש", description: "שווי הוגן בתאריך ההערכה בניכוי פחת שנצבר מאז." },
+      ],
+      default: "cost",
+      showIf: timeline,
+    },
+    {
+      kind: "radio",
       id: "method",
       label: "שיטת הפחת",
       options: [
-        { value: "straight-line", label: "קו ישר", description: "הוצאה שווה בכל שנה." },
-        { value: "double-declining", label: "יתרה פוחתת כפולה", description: "מואצת, עם מעבר לקו ישר." },
+        { value: "straight-line", label: "קו ישר", description: "הוצאה שווה בכל חודש." },
         { value: "sum-of-years", label: "סכום ספרות השנים", description: "מואצת, פוחתת באופן ליניארי." },
+        { value: "double-declining", label: "יתרה פוחתת כפולה", description: "שיעור קבוע על היתרה, עם מעבר לקו ישר." },
+        { value: "units", label: "יחידות תפוקה", description: "לפי השימוש בפועל בכל שנה." },
       ],
       default: "straight-line",
       videoAt: 402,
     },
     {
       kind: "toggle",
-      id: "component",
-      label: "לנכס יש רכיב משמעותי בעל אורך חיים שימושיים שונה",
-      help: "לדוגמה מנוע מטוס, גג של בניין או ציפוי של כבשן.",
+      id: "transferSurplus",
+      label: "העברה שוטפת של קרן ההערכה מחדש לעודפים",
+      help: "בגובה החלק שמומש בשימוש בנכס. אם לא — הקרן מועברת רק בגריעה.",
       default: true,
+      showIf: whenTimeline({ field: "model", in: ["revaluation"] }),
+    },
+    {
+      kind: "toggle",
+      id: "revision",
+      label: "שיפוץ או שיפור מהותי במהלך חיי הנכס",
+      help: "עלות נוספת שמהוונת לנכס, עם שינוי אפשרי באורך החיים ובערך השייר — הפחת מחושב מחדש ממועד השיפוץ.",
+      default: false,
+      showIf: timeline,
+    },
+    {
+      kind: "toggle",
+      id: "exchange",
+      label: "החלפת הנכס בנכס אחר (Trade-in)",
+      default: false,
+      showIf: timeline,
+    },
+    {
+      kind: "toggle",
+      id: "commercialSubstance",
+      label: "לעסקת ההחלפה יש מהות מסחרית",
+      help: "תזרימי המזומנים הצפויים מהנכס שהתקבל שונים באופן משמעותי מאלה של הנכס שנמסר, והשווי ההוגן ניתן למדידה מהימנה.",
+      default: true,
+      showIf: whenTimeline({ field: "exchange", in: [true] }),
+    },
+    {
+      kind: "radio",
+      id: "exchangeBasis",
+      label: "לפי איזה שווי הוגן נמדד הנכס שהתקבל",
+      options: [
+        { value: "given", label: "הנכס שנמסר", description: "ברירת המחדל לפי התקן, בתוספת או בניכוי מזומן." },
+        { value: "received", label: "הנכס שהתקבל", description: "כשהשווי ההוגן שלו מהימן יותר." },
+      ],
+      default: "given",
+      showIf: whenTimeline({ field: "exchange", in: [true] }, { field: "commercialSubstance", in: [true] }),
+    },
+    {
+      kind: "radio",
+      id: "cashDirection",
+      label: "מזומן בעסקת ההחלפה",
+      options: [
+        { value: "none", label: "ללא מזומן" },
+        { value: "paid", label: "שילמנו מזומן" },
+        { value: "received", label: "קיבלנו מזומן" },
+      ],
+      default: "paid",
+      showIf: whenTimeline({ field: "exchange", in: [true] }),
+    },
+    {
+      kind: "toggle",
+      id: "component",
+      label: "גישת הרכיבים (מתקדם): לנכס רכיב משמעותי בעל אורך חיים שונה",
+      help: "לוח שנתי בשנים שלמות, במודל העלות. לדוגמה מנוע מטוס או גג של בניין.",
+      default: false,
       videoAt: 186,
     },
     {
@@ -71,38 +119,170 @@ export const ias16Ppe: Calculator = {
       showIf: [{ field: "component", in: [true] }],
       videoAt: 655,
     },
-    {
-      kind: "toggle",
-      id: "revision",
-      label: "שיפוץ או שינוי אומדן לאחר ההכרה לראשונה",
-      help: "עלות נוספת שמהוונת לנכס והארכת אורך החיים השימושיים — הפחת מחושב מחדש ממועד השיפוץ והלאה, לפי שנות כספים.",
-      default: false,
-      showIf: [
-        { field: "method", in: ["straight-line"] },
-        { field: "component", in: [false] },
-      ],
-    },
   ],
   metrics: [
-    { kind: "number", id: "purchasePrice", label: "מחיר הרכישה", unit: "currency", default: 2400000, min: 0.01, required: true },
+    {
+      kind: "date",
+      id: "acquisitionDate",
+      label: "מועד זמינות לשימוש (הפעלה)",
+      help: "הפחת מתחיל כשהנכס זמין לשימוש. שנת הכספים מסתיימת ב-31/12.",
+      default: "2023-03-31",
+      showIf: timeline,
+    },
+    { kind: "date", id: "calcStart", label: "תחילת טווח החישוב", default: "2023-03-31", showIf: timeline },
+    {
+      kind: "date",
+      id: "calcEnd",
+      label: "סיום טווח החישוב",
+      help: "עד איזה תאריך להציג את הלוח, הדוחות והפקודות.",
+      default: "2031-12-31",
+      showIf: timeline,
+    },
+    { kind: "number", id: "purchasePrice", label: "עלות ראשונית (מחיר הרכישה)", unit: "currency", default: 100000, min: 0.01, required: true },
     {
       kind: "number",
       id: "attributableCosts",
-      label: "עלויות הניתנות לייחוס ישיר",
-      help: "הובלה, התקנה, הכנת האתר, שכר טרחה מקצועי.",
+      label: "עלויות המיוחסות במישרין",
+      help: "הובלה, התקנה, הרצה, הכנת האתר, שכר טרחה מקצועי.",
       unit: "currency",
-      default: 100000,
+      default: 20000,
       min: 0,
     },
     { kind: "number", id: "discounts", label: "הנחות מסחריות והחזרים", unit: "currency", default: 0, min: 0 },
-    { kind: "number", id: "residual", label: "ערך שייר", unit: "currency", default: 250000, min: 0 },
-    { kind: "number", id: "usefulLife", label: "אורך החיים השימושיים של הנכס", unit: "years", default: 15, min: 1, max: 100, integer: true, required: true },
+    { kind: "number", id: "residual", label: "ערך שייר (גרט)", unit: "currency", default: 10000, min: 0 },
+    { kind: "number", id: "usefulLife", label: "אורך החיים השימושיים — שנים", unit: "years", default: 6, min: 0, max: 100, integer: true, required: true },
+    {
+      kind: "number",
+      id: "lifeMonths",
+      label: "אורך החיים השימושיים — חודשים נוספים",
+      unit: "count",
+      default: 0,
+      min: 0,
+      max: 11,
+      integer: true,
+      showIf: timeline,
+    },
+    {
+      kind: "number",
+      id: "totalUnits",
+      label: "סך יחידות התפוקה הצפויות",
+      unit: "count",
+      default: 60000,
+      min: 1,
+      showIf: whenTimeline({ field: "method", in: ["units"] }),
+    },
+    {
+      kind: "series",
+      id: "unitsByYear",
+      label: "יחידות שהופקו בכל שנת כספים",
+      help: "מספר לכל שנה, מהשנה הראשונה, מופרדים בפסיקים. לשנים שלא הוזנו מחולקות היחידות שנותרו באופן שווה.",
+      default: "6000, 11000, 10000, 9000, 9000, 8000, 7000",
+      showIf: whenTimeline({ field: "method", in: ["units"] }),
+    },
+    {
+      kind: "series",
+      id: "fairValues",
+      label: "שווי הוגן לסוף כל שנת כספים",
+      help: "ערך לכל 31/12, מהשנה הראשונה, מופרדים בפסיקים. השאירו ריק (\"100000, , 80000\") לשנה ללא הערכה.",
+      default: "100000, , 70000",
+      placeholder: "100000, , 70000",
+      showIf: whenTimeline({ field: "model", in: ["revaluation"] }),
+    },
+    {
+      kind: "series",
+      id: "recoverableAmounts",
+      label: "סכום בר-השבה לסוף שנה (בדיקת ירידת ערך, רשות)",
+      help: "ערך לכל 31/12 שבו נבחנה ירידת ערך, מופרדים בפסיקים. ריק — ללא בדיקה.",
+      default: "",
+      placeholder: "90000, , 60000",
+      showIf: whenTimeline({ field: "model", in: ["cost"] }),
+    },
+    {
+      kind: "date",
+      id: "revisionDate",
+      label: "מועד השיפוץ",
+      default: "2025-07-01",
+      showIf: whenTimeline({ field: "revision", in: [true] }),
+    },
+    {
+      kind: "number",
+      id: "revisionCost",
+      label: "עלות השיפוץ המהוונת",
+      help: "0 אם יש רק שינוי באומדן.",
+      unit: "currency",
+      default: 10000,
+      min: 0,
+      showIf: whenTimeline({ field: "revision", in: [true] }),
+    },
+    {
+      kind: "number",
+      id: "lifeExtension",
+      label: "תוספת לאורך החיים השימושיים",
+      help: "מעבר ליתרת אורך החיים המקורית, ממועד השיפוץ. אפשר שבר (1.5) או מספר שלילי לקיצור.",
+      unit: "years",
+      default: 2,
+      min: -100,
+      max: 100,
+      showIf: whenTimeline({ field: "revision", in: [true] }),
+    },
+    {
+      kind: "number",
+      id: "revisedResidual",
+      label: "ערך שייר לאחר השיפוץ",
+      unit: "currency",
+      default: 10000,
+      min: 0,
+      showIf: whenTimeline({ field: "revision", in: [true] }),
+    },
+    {
+      kind: "number",
+      id: "extraUnits",
+      label: "תוספת ליחידות התפוקה הצפויות בעקבות השיפוץ",
+      unit: "count",
+      default: 20000,
+      min: 0,
+      showIf: whenTimeline({ field: "revision", in: [true] }, { field: "method", in: ["units"] }),
+    },
+    {
+      kind: "date",
+      id: "exchangeDate",
+      label: "מועד עסקת ההחלפה",
+      default: "2027-12-31",
+      showIf: whenTimeline({ field: "exchange", in: [true] }),
+    },
+    {
+      kind: "number",
+      id: "fvGiven",
+      label: "שווי הוגן של הנכס שנמסר",
+      unit: "currency",
+      default: 50000,
+      min: 0,
+      showIf: whenTimeline({ field: "exchange", in: [true] }, { field: "commercialSubstance", in: [true] }),
+    },
+    {
+      kind: "number",
+      id: "fvReceived",
+      label: "שווי הוגן של הנכס שהתקבל",
+      unit: "currency",
+      default: 55000,
+      min: 0,
+      showIf: whenTimeline({ field: "exchange", in: [true] }, { field: "commercialSubstance", in: [true] }),
+    },
+    {
+      kind: "number",
+      id: "cashAmount",
+      label: "סכום המזומן",
+      unit: "currency",
+      default: 5000,
+      min: 0,
+      showIf: whenTimeline({ field: "exchange", in: [true] }, { field: "cashDirection", in: ["paid", "received"] }),
+    },
     {
       kind: "number",
       id: "componentCost",
       label: "העלות שהוקצתה לרכיב",
       unit: "currency",
-      default: 400000,
+      default: 30000,
       min: 0.01,
       showIf: [{ field: "component", in: [true] }],
     },
@@ -111,7 +291,7 @@ export const ias16Ppe: Calculator = {
       id: "componentLife",
       label: "אורך החיים השימושיים של הרכיב",
       unit: "years",
-      default: 6,
+      default: 3,
       min: 1,
       max: 100,
       integer: true,
@@ -122,7 +302,7 @@ export const ias16Ppe: Calculator = {
       id: "replacementYear",
       label: "הוחלף בתום שנה",
       unit: "years",
-      default: 5,
+      default: 3,
       min: 1,
       max: 99,
       integer: true,
@@ -136,48 +316,12 @@ export const ias16Ppe: Calculator = {
       id: "replacementCost",
       label: "עלות הרכיב המחליף",
       unit: "currency",
-      default: 520000,
+      default: 36000,
       min: 0.01,
       showIf: [
         { field: "component", in: [true] },
         { field: "replacement", in: [true] },
       ],
-    },
-    {
-      kind: "date",
-      id: "acquisitionDate",
-      label: "מועד הרכישה וההפעלה",
-      help: "הפחת מתחיל כשהנכס זמין לשימוש. שנת הכספים מסתיימת ב-31/12.",
-      default: "2023-03-31",
-      showIf: [{ field: "revision", in: [true] }],
-    },
-    {
-      kind: "date",
-      id: "revisionDate",
-      label: "מועד השיפוץ",
-      default: "2025-07-01",
-      showIf: [{ field: "revision", in: [true] }],
-    },
-    {
-      kind: "number",
-      id: "revisionCost",
-      label: "עלות השיפוץ שהוונה",
-      help: "0 אם יש רק שינוי באומדן אורך החיים.",
-      unit: "currency",
-      default: 10000,
-      min: 0,
-      showIf: [{ field: "revision", in: [true] }],
-    },
-    {
-      kind: "number",
-      id: "lifeExtension",
-      label: "תוספת לאורך החיים השימושיים",
-      help: "מעבר ליתרת אורך החיים המקורית, החל ממועד השיפוץ.",
-      unit: "years",
-      default: 2,
-      min: 0,
-      max: 100,
-      showIf: [{ field: "revision", in: [true] }],
     },
   ],
 
@@ -187,6 +331,8 @@ export const ias16Ppe: Calculator = {
     if (total <= 0) errors.discounts = "ההנחות אינן יכולות לעלות על מחיר הרכישה והעלויות.";
     if (num(v, "residual") >= total) errors.residual = "ערך השייר חייב להיות נמוך מהעלות.";
     if (bool(v, "component")) {
+      if (str(v, "method") === "units") errors.method = "גישת הרכיבים זמינה בקו ישר ובשיטות המואצות בלבד.";
+      if (num(v, "usefulLife") < 1) errors.usefulLife = "אורך החיים חייב להיות לפחות שנה אחת.";
       if (num(v, "componentCost") > total - num(v, "residual")) {
         errors.componentCost = "עלות הרכיב אינה יכולה לעלות על הסכום בר-הפחת של הנכס.";
       }
@@ -196,18 +342,14 @@ export const ias16Ppe: Calculator = {
       if (bool(v, "replacement") && num(v, "replacementYear") >= num(v, "usefulLife")) {
         errors.replacementYear = "ההחלפה חייבת להתבצע לפני תום חיי הנכס.";
       }
-    }
-    if (revises(v)) {
-      const start = monthIndex(str(v, "acquisitionDate"));
-      const at = monthIndex(str(v, "revisionDate"));
-      if (at <= start) errors.revisionDate = "מועד השיפוץ חייב להיות אחרי מועד תחילת הפחת.";
-      else if (at >= start + num(v, "usefulLife") * 12) errors.revisionDate = "מועד השיפוץ חייב להיות לפני תום אורך החיים המקורי.";
+    } else if (Object.keys(errors).length === 0) {
+      Object.assign(errors, timelineErrors(v));
     }
     return errors;
   },
 
   solve(v) {
-    if (revises(v)) return solveRevision(v);
+    if (!bool(v, "component")) return solveTimeline(v);
     const currency = str(v, "currency");
     const fmt = (n: number) => money(n, currency);
     const method = str(v, "method") as Method;
@@ -416,237 +558,3 @@ export const ias16Ppe: Calculator = {
     };
   },
 };
-
-/**
- * Straight-line asset with a later capitalised renovation and a revised useful
- * life (IAS 16.51 / IAS 8.36): the carrying amount at the renovation date plus
- * the renovation cost is depreciated over the revised remaining life. Periods
- * are calendar fiscal years, prorated by month.
- */
-function solveRevision(v: Values): Solution {
-  const currency = str(v, "currency");
-  const fmt = (n: number) => money(n, currency);
-  const residual = num(v, "residual");
-  const totalCost = round2(cost(v));
-  const life = num(v, "usefulLife");
-  const revisionCost = num(v, "revisionCost");
-  const acquired = str(v, "acquisitionDate");
-  const revised = str(v, "revisionDate");
-
-  const start = monthIndex(acquired);
-  const at = monthIndex(revised);
-  const end = start + life * 12 + Math.round(num(v, "lifeExtension") * 12);
-  const monthsBefore = at - start;
-  const monthsAfter = end - at;
-  const remainingYears = round2(monthsAfter / 12);
-
-  // Cumulative amounts are rounded, not monthly ones, so each phase totals exactly.
-  const depreciable = round2(totalCost - residual);
-  const before = (m: number) => round2((depreciable * m) / (life * 12));
-  const accumulatedAtRevision = before(monthsBefore);
-  const carryingAtRevision = round2(totalCost - accumulatedAtRevision);
-  const newBase = round2(carryingAtRevision + revisionCost);
-  const newDepreciable = round2(newBase - residual);
-  const after = (m: number) => round2((newDepreciable * m) / monthsAfter);
-  const annualBefore = round2(depreciable / life);
-  const annualAfter = round2(newDepreciable / (monthsAfter / 12));
-
-  const firstYear = Math.floor(start / 12);
-  const lastYear = Math.floor((end - 1) / 12);
-  const revisionYear = Math.floor(at / 12);
-  const endDate = dayBefore(end);
-
-  const rows: ScheduleRow[] = [];
-  const journal: JournalEntry[] = [
-    entry("acquisition", fmtDate(acquired), "הכרה לראשונה לפי עלות (מחיר רכישה ועלויות ישירות)", [
-      ["רכוש קבוע", totalCost],
-      ["מזומנים / ספקים", -totalCost],
-    ]),
-  ];
-  let doneBefore = 0;
-  let doneAfter = 0;
-  let gross = totalCost;
-  let accumulated = 0;
-  let revisionOpening = 0;
-
-  for (let year = firstYear; year <= lastYear; year++) {
-    const from = year * 12;
-    const mBefore = overlap(start, at, from, from + 12);
-    const mAfter = overlap(at, end, from, from + 12);
-    const dBefore = round2(before(doneBefore + mBefore) - before(doneBefore));
-    const dAfter = round2(after(doneAfter + mAfter) - after(doneAfter));
-    doneBefore += mBefore;
-    doneAfter += mAfter;
-    const yearEnd = `31/12/${year}`;
-
-    let event: string | null = null;
-    if (year === revisionYear) {
-      revisionOpening = round2(gross - accumulated);
-      gross = round2(gross + revisionCost);
-      event = `שיפוץ ${fmtDate(revised)} · יתרת חיים ${remainingYears} שנים`;
-      if (dBefore > 0) {
-        journal.push(
-          entry(`dep-${year}-before`, dayBefore(at), `פחת עד מועד השיפוץ (${mBefore} חודשים, אומדן מקורי)`, [
-            ["הוצאות פחת", dBefore],
-            ["פחת שנצבר", -dBefore],
-          ]),
-        );
-      }
-      if (revisionCost > 0) {
-        journal.push(
-          entry("revision", fmtDate(revised), "היוון עלות השיפוץ לנכס", [
-            ["רכוש קבוע", revisionCost],
-            ["מזומנים / ספקים", -revisionCost],
-          ]),
-        );
-      }
-      if (dAfter > 0) {
-        journal.push(
-          entry(`dep-${year}-after`, yearEnd, `פחת ממועד השיפוץ (${mAfter} חודשים, אומדן מעודכן)`, [
-            ["הוצאות פחת", dAfter],
-            ["פחת שנצבר", -dAfter],
-          ]),
-        );
-      }
-    } else {
-      if (year === lastYear) event = `תום אורך החיים ${endDate}`;
-      journal.push(
-        entry(`dep-${year}`, yearEnd, `פחת לשנה (${mBefore + mAfter} חודשים)`, [
-          ["הוצאות פחת", dBefore + dAfter],
-          ["פחת שנצבר", -(dBefore + dAfter)],
-        ]),
-      );
-    }
-    accumulated = round2(accumulated + dBefore + dAfter);
-
-    rows.push({
-      period: String(year),
-      months: mBefore + mAfter,
-      before: dBefore,
-      after: dAfter,
-      total: round2(dBefore + dAfter),
-      gross,
-      accumulated,
-      carrying: round2(gross - accumulated),
-      event,
-      _emphasis: year === revisionYear ? "event" : null,
-    });
-  }
-
-  const totalDep = round2(sum(rows.map((r) => Number(r.total))));
-  const revisionRow = rows.find((r) => r.period === String(revisionYear))!;
-  const byYear = (key: string, sign = 1) =>
-    Object.fromEntries(rows.map((r) => [`y${r.period}`, round2(sign * Number(r[key]))]));
-  const yearColumns = rows.map((r) => ({ key: `y${r.period}`, label: `31/12/${r.period}` }));
-
-  return {
-    headline: `ערך בספרים במועד השיפוץ ${fmt(carryingAtRevision)} · בסיס פחת חדש ${fmt(newDepreciable)} על פני ${remainingYears} שנים (${fmt(annualAfter)} לשנה)`,
-    outcome: "recognised",
-    metrics: [
-      { label: "עלות במועד ההכרה", value: totalCost, format: "currency" },
-      { label: "פחת שנצבר עד השיפוץ", value: accumulatedAtRevision, format: "currency", hint: `${monthsBefore} חודשים × ${fmt(annualBefore)} לשנה` },
-      { label: "ערך בספרים במועד השיפוץ", value: carryingAtRevision, format: "currency" },
-      { label: "ערך בספרים לאחר היוון השיפוץ", value: newBase, format: "currency" },
-      { label: "יתרת אורך חיים מעודכנת (שנים)", value: remainingYears, format: "number" },
-      { label: "פחת שנתי מעודכן", value: annualAfter, format: "currency" },
-    ],
-    journal,
-    tables: [
-      {
-        id: "depreciation",
-        title: "לוח פחת לפי שנות כספים",
-        caption: `קו ישר · ${fmtDate(acquired)} עד ${endDate} · ערך שייר ${fmt(residual)}`,
-        columns: [
-          { key: "period", label: "שנה", format: "text" },
-          { key: "months", label: "חודשי פחת", format: "number" },
-          { key: "before", label: "פחת — אומדן מקורי" },
-          { key: "after", label: "פחת — אומדן מעודכן" },
-          { key: "total", label: "סך הפחת" },
-          { key: "gross", label: "עלות" },
-          { key: "accumulated", label: "פחת שנצבר" },
-          { key: "carrying", label: "ערך בספרים" },
-          { key: "event", label: "אירוע", format: "text" },
-        ],
-        rows,
-        totals: {
-          period: "סה\"כ",
-          months: doneBefore + doneAfter,
-          before: accumulatedAtRevision,
-          after: newDepreciable,
-          total: totalDep,
-          gross: null,
-          accumulated: null,
-          carrying: null,
-          event: null,
-        },
-      },
-      {
-        id: "balance-sheet",
-        title: "מאזן — רכוש קבוע",
-        caption: "יתרות לסוף כל שנת כספים",
-        columns: [{ key: "item", label: "סעיף", format: "text" }, ...yearColumns],
-        rows: [
-          { item: "עלות", ...byYear("gross") },
-          { item: "בניכוי פחת שנצבר", ...byYear("accumulated", -1) },
-          { item: "רכוש קבוע, נטו", ...byYear("carrying"), _emphasis: "total" },
-        ],
-      },
-      {
-        id: "profit-or-loss",
-        title: "דוח רווח והפסד — השפעת הנכס",
-        caption: "הוצאות הפחת לכל שנת כספים",
-        columns: [{ key: "item", label: "סעיף", format: "text" }, ...yearColumns],
-        rows: [
-          { item: "פחת לפי האומדן המקורי", ...byYear("before", -1) },
-          { item: "פחת לפי האומדן המעודכן", ...byYear("after", -1) },
-          { item: "סך הוצאות הפחת", ...byYear("total", -1), _emphasis: "total" },
-        ],
-      },
-    ],
-    disclosure: [
-      "באור X — רכוש קבוע",
-      "",
-      "מדיניות חשבונאית",
-      "רכוש קבוע נמדד לפי עלות בניכוי פחת שנצבר והפסדים מירידת ערך. הפחת מחושב לפי שיטת הקו הישר מהמועד שבו הנכס זמין לשימוש. ערכי השייר ואורך החיים השימושיים נבחנים בכל תאריך דיווח.",
-      "",
-      "שינוי באומדן",
-      `ביום ${fmtDate(revised)} שופץ הנכס בעלות של ${fmt(revisionCost)}, ואורך חייו השימושיים עודכן כך שיתרתו ${remainingYears} שנים (עד ${endDate}). השינוי טופל בדרך של מכאן ולהבא: הפחת השנתי השתנה מ-${fmt(annualBefore)} ל-${fmt(annualAfter)}.`,
-      "",
-      `התאמת הערך בספרים — ${revisionYear}`,
-      `ערך בספרים לתחילת השנה: ${fmt(revisionOpening)}`,
-      `תוספות (שיפוץ): ${fmt(revisionCost)}`,
-      `פחת: (${fmt(Number(revisionRow.total))})`,
-      `ערך בספרים לסוף השנה: ${fmt(Number(revisionRow.carrying))}`,
-      `  עלות: ${fmt(Number(revisionRow.gross))}`,
-      `  פחת שנצבר: (${fmt(Number(revisionRow.accumulated))})`,
-    ].join("\n"),
-    guidance: [
-      {
-        title: "מדידה לפי עלות",
-        body: `העלות כוללת את מחיר הרכישה ועלויות הניתנות לייחוס ישיר, כגון הובלה: ${fmt(num(v, "purchasePrice"))} + ${fmt(num(v, "attributableCosts"))} − ${fmt(num(v, "discounts"))} = ${fmt(totalCost)}.`,
-        reference: "IAS 16.16–17",
-      },
-      {
-        title: "תחילת הפחת",
-        body: `הפחת מתחיל כשהנכס זמין לשימוש (${fmtDate(acquired)}). עד השיפוץ מופחת הסכום בר-הפחת (${fmt(depreciable)}) על פני ${life} שנים — ${fmt(annualBefore)} לשנה, ובסך הכול ${fmt(accumulatedAtRevision)} ל-${monthsBefore} חודשים.`,
-        reference: "IAS 16.50, 55",
-      },
-      {
-        title: "היוון עלות השיפוץ",
-        body: `עלות שיפוץ שמאריך את חיי הנכס או משפר אותו עומדת בקריטריונים להכרה ומתווספת לערך בספרים: ${fmt(carryingAtRevision)} + ${fmt(revisionCost)} = ${fmt(newBase)}. תחזוקה שוטפת, לעומת זאת, נזקפת לרווח או הפסד.`,
-        reference: "IAS 16.7, 10–12",
-      },
-      {
-        title: "שינוי אומדן — מכאן ולהבא",
-        body: `שינוי באורך החיים השימושיים הוא שינוי באומדן חשבונאי, ולכן אין הצגה מחדש של תקופות קודמות. הערך בספרים החדש בניכוי ערך השייר (${fmt(newDepreciable)}) מופחת על פני יתרת החיים המעודכנת — ${remainingYears} שנים.`,
-        reference: "IAS 16.51; IAS 8.36–38",
-      },
-    ],
-    assumptions: [
-      "שנת הכספים מסתיימת ב-31/12; פקודות הפחת נרשמות בסוף כל שנה ובמועד השיפוץ.",
-      "הפחת מחושב לפי חודשים שלמים; מועד שחל אחרי ה-15 בחודש מעוגל לתחילת החודש הבא.",
-      "ערך השייר אינו משתנה בעקבות השיפוץ.",
-      "עלות השיפוץ עומדת בקריטריונים להכרה כנכס ואינה תחזוקה שוטפת.",
-    ],
-  };
-}

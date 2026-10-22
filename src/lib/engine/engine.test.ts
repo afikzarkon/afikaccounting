@@ -88,58 +88,44 @@ describe("IFRS 16", () => {
 });
 
 describe("IAS 16", () => {
-  it("straight-line without components depreciates cost less residual", () => {
-    const s = solve("ias-16-property-plant-equipment", {
-      component: false,
-      purchasePrice: 1000,
-      attributableCosts: 0,
-      residual: 100,
-      usefulLife: 9,
-    });
-    assert.equal(metric(s, "פחת בשנה 1"), 100);
-    assert.equal(s.tables[0].rows.at(-1)!.carrying, 100);
+  const PPE = "ias-16-property-plant-equipment";
+  // 100,000 + 20,000 transport, residual 10,000, six years, available 31/03/2023.
+  const base: Values = {
+    purchasePrice: 100000,
+    attributableCosts: 20000,
+    residual: 10000,
+    usefulLife: 6,
+    acquisitionDate: "2023-03-31",
+    calcStart: "2023-03-31",
+    calcEnd: "2031-12-31",
+  };
+  const renovation: Values = { revision: true, revisionDate: "2025-07-01", revisionCost: 10000, lifeExtension: 2, revisedResidual: 10000 };
+  const table = (s: ReturnType<typeof solve>, id: string) => s.tables.find((t) => t.id === id)!;
+  const year = (s: ReturnType<typeof solve>, y: number) => table(s, "depreciation").rows.find((r) => r.year === y)!;
+  const line = (s: ReturnType<typeof solve>, id: string, item: string) => table(s, id).rows.find((r) => r.item === item)!;
+
+  it("cost includes directly attributable costs; depreciable amount deducts residual", () => {
+    const s = solve(PPE, base);
+    assert.equal(metric(s, "עלות במועד ההכרה"), 120000);
+    assert.equal(metric(s, "סכום בר-פחת"), 110000);
+    assert.equal(line(s, "cost", "סכום בר-פחת").amount, 110000);
   });
 
-  it("early replacement derecognises the remaining carrying amount as a loss", () => {
-    const s = solve("ias-16-property-plant-equipment", {
-      purchasePrice: 1000,
-      attributableCosts: 0,
-      residual: 0,
-      usefulLife: 10,
-      component: true,
-      componentCost: 200,
-      componentLife: 5,
-      replacement: true,
-      replacementYear: 4,
-      replacementCost: 300,
-    });
-    // 4 of 5 years depreciated → 40 left
-    assert.equal(metric(s, "הפסד מהחלפה"), 40);
-    assert.equal(s.tables[0].rows.at(-1)!.carrying, 0);
+  it("straight-line starts when available for use and prorates the first fiscal year", () => {
+    const s = solve(PPE, base);
+    assert.equal(year(s, 2023).total, 13750); // 9 months
+    assert.equal(year(s, 2024).total, 18333.33);
+    assert.equal(year(s, 2029).months, 3);
+    assert.equal(table(s, "depreciation").rows.at(-1)!.carrying, 10000);
   });
 
-  it("double-declining never goes below residual and ends on it", () => {
-    const s = solve("ias-16-property-plant-equipment", { component: false, method: "double-declining" });
-    const rows = s.tables[0].rows;
-    assert.equal(rows.at(-1)!.carrying, 250000);
-    assert.ok(rows.every((r) => Number(r.carrying) >= 250000));
+  it("accepts a useful life in years and months", () => {
+    const s = solve(PPE, { ...base, usefulLife: 5, lifeMonths: 6 });
+    assert.equal(year(s, 2024).total, 20000); // 110,000 / 5.5
   });
 
-  describe("renovation with a revised useful life", () => {
-    const s = solve("ias-16-property-plant-equipment", {
-      component: false,
-      revision: true,
-      purchasePrice: 100000,
-      attributableCosts: 20000,
-      residual: 10000,
-      usefulLife: 6,
-      acquisitionDate: "2023-03-31",
-      revisionDate: "2025-07-01",
-      revisionCost: 10000,
-      lifeExtension: 2,
-    });
-    const rows = s.tables[0].rows;
-    const year = (y: number) => rows.find((r) => r.period === String(y))!;
+  describe("renovation with a revised useful life — straight-line", () => {
+    const s = solve(PPE, { ...base, ...renovation });
 
     it("depreciates cost less residual until the renovation (27 months)", () => {
       assert.equal(metric(s, "פחת שנצבר עד השיפוץ"), 41250);
@@ -150,38 +136,168 @@ describe("IAS 16", () => {
     it("spreads the new base over the 5.75 years left", () => {
       assert.equal(metric(s, "יתרת אורך חיים"), 5.75);
       assert.equal(metric(s, "פחת שנתי מעודכן"), 13695.65);
+      assert.equal(year(s, 2025).before, 9166.67);
+      assert.equal(year(s, 2025).after, 6847.83);
+      assert.equal(year(s, 2031).months, 3);
+      assert.equal(table(s, "depreciation").rows.at(-1)!.carrying, 10000);
+      assert.equal(table(s, "depreciation").totals!.total, 120000);
     });
 
-    it("prorates fiscal years by month and ends on the residual value", () => {
-      assert.deepEqual(rows.map((r) => r.period), ["2023", "2024", "2025", "2026", "2027", "2028", "2029", "2030", "2031"]);
-      assert.equal(year(2023).total, 13750);
-      assert.equal(year(2024).total, 18333.33);
-      assert.equal(year(2025).before, 9166.67);
-      assert.equal(year(2025).after, 6847.83);
-      assert.equal(year(2026).total, 13695.65);
-      assert.equal(year(2031).months, 3);
-      assert.equal(rows.at(-1)!.carrying, 10000);
-      assert.equal(s.tables[0].totals!.total, 120000);
-    });
-
-    it("journal records the renovation and every year's depreciation", () => {
-      assert.ok(s.journal.some((e) => e.id === "revision" && e.lines[0].debit === 10000));
+    it("journal splits the renovation year around the capitalisation", () => {
+      const ids = s.journal.map((e) => e.when);
+      assert.ok(ids.includes("30/06/2025") && ids.includes("01/07/2025"));
       const expense = round2(sum(s.journal.flatMap((e) => e.lines).filter((l) => l.account === "הוצאות פחת").map((l) => l.debit)));
       assert.equal(expense, 120000);
     });
 
-    it("balance sheet and profit or loss tie to the schedule", () => {
-      const bs = s.tables.find((t) => t.id === "balance-sheet")!;
-      assert.equal(bs.rows.at(-1)!.y2025, 81902.17);
-      const pl = s.tables.find((t) => t.id === "profit-or-loss")!;
-      assert.equal(pl.rows.at(-1)!.y2025, -16014.5);
+    it("statements tie to the schedule", () => {
+      assert.equal(line(s, "balance-sheet", "רכוש קבוע, נטו (ערך בספרים)").y2025, 81902.17);
+      assert.equal(line(s, "profit-or-loss", "הוצאות פחת").y2025, -16014.5);
+    });
+
+    it("a revised residual value changes the new depreciable base", () => {
+      const r = solve(PPE, { ...base, ...renovation, revisedResidual: 20000 });
+      assert.equal(metric(r, "פחת שנתי מעודכן"), round2((88750 - 20000) / 5.75));
+      assert.equal(table(r, "depreciation").rows.at(-1)!.carrying, 20000);
     });
   });
 
+  describe("renovation — sum-of-years-digits", () => {
+    const s = solve(PPE, { ...base, ...renovation, method: "sum-of-years" });
+
+    it("asset years straddle fiscal years: 6/21 and 5/21 prorated by month", () => {
+      assert.equal(year(s, 2023).total, 23571.43); // 9/12 × 6/21 × 110,000
+      assert.equal(year(s, 2024).total, 27500); // 3/12 × 6/21 + 9/12 × 5/21
+      assert.equal(year(s, 2025).before, 11785.71); // 3/12 × 5/21 + 3/12 × 4/21
+      assert.equal(metric(s, "פחת שנצבר עד השיפוץ"), 62857.14);
+    });
+
+    it("restarts the digits over 5.75 years (5.75 + 4.75 + … + 0.75)", () => {
+      assert.equal(metric(s, "סכום הספרות המעודכן"), 19.5);
+      assert.equal(metric(s, "פחת ב-12 החודשים"), 16849.82);
+      assert.equal(year(s, 2031).total, 732.6);
+      assert.equal(table(s, "depreciation").rows.at(-1)!.carrying, 10000);
+    });
+
+    it("compares every method over the same periods", () => {
+      const cmp = table(s, "method-comparison");
+      assert.equal(cmp.rows[0].slDep, 13750);
+      assert.equal(cmp.rows[0].sydDep, 23571.43);
+      for (const key of ["slDep", "sydDep", "ddbDep", "unitsDep"]) assert.equal(cmp.totals![key], 120000, key);
+    });
+  });
+
+  it("double-declining applies 2/life to the opening balance of each asset year", () => {
+    const s = solve(PPE, { ...base, method: "double-declining" });
+    assert.equal(year(s, 2023).total, 30000); // 9/12 × 120,000 / 3
+    assert.equal(year(s, 2024).total, 30000); // 3/12 × 40,000 + 9/12 × 26,666.67
+    const rows = table(s, "depreciation").rows;
+    assert.ok(rows.every((r) => Number(r.carrying) >= 10000));
+    assert.equal(rows.at(-1)!.carrying, 10000);
+  });
+
+  it("units of production follows actual output and fills missing years evenly", () => {
+    const s = solve(PPE, { ...base, method: "units", totalUnits: 60000, unitsByYear: "6000, 11000" });
+    assert.equal(year(s, 2023).total, 11000); // 6,000 × 110,000 / 60,000
+    assert.equal(year(s, 2024).total, 20166.67);
+    assert.equal(table(s, "depreciation").rows.at(-1)!.carrying, 10000);
+  });
+
+  it("revaluation model: decrease to P&L, later increase reverses it before the surplus", () => {
+    const s = solve(PPE, { ...base, model: "revaluation", fairValues: "100000, , 70000, 80000" });
+    const pl = (y: number) => line(s, "profit-or-loss", "הפסד מהערכה מחדש / ביטולו")[`y${y}`];
+    assert.equal(pl(2023), -6250); // 106,250 → 100,000
+    assert.equal(pl(2025), 4285.71); // reverses part of the earlier loss
+    assert.equal(pl(2026), 1964.29); // the rest of the loss …
+    assert.equal(line(s, "profit-or-loss", "רווח כולל אחר — שינוי בקרן הערכה מחדש").y2026, 26497.25); // … then OCI
+    assert.equal(year(s, 2024).total, round2((90000 / 63) * 12)); // revalued amount over the remaining life
+    assert.equal(table(s, "depreciation").rows.at(-1)!.surplus, 0); // fully transferred to retained earnings
+  });
+
+  it("cost model impairment and a reversal capped at the unimpaired carrying amount", () => {
+    const s = solve(PPE, { ...base, recoverableAmounts: ", 80000, , 60000" });
+    const imp = (y: number) => line(s, "profit-or-loss", "הפסד מירידת ערך / ביטולו")[`y${y}`];
+    assert.equal(imp(2024), -7916.67);
+    assert.equal(imp(2026), 4191.18); // up to 51,250, not 60,000
+    assert.equal(line(s, "balance-sheet", "רכוש קבוע, נטו (ערך בספרים)").y2026, 51250);
+  });
+
+  describe("asset exchange", () => {
+    const exchange: Values = { exchange: true, exchangeDate: "2027-12-31", fvGiven: 50000, fvReceived: 55000, cashDirection: "paid", cashAmount: 5000 };
+
+    it("with commercial substance: fair value of the asset given plus cash, gain on derecognition", () => {
+      const s = solve(PPE, { ...base, ...exchange });
+      assert.equal(metric(s, "עלות הנכס שהתקבל"), 55000);
+      assert.equal(metric(s, "רווח (הפסד) מההחלפה"), round2(50000 - 32916.67));
+      assert.equal(line(s, "balance-sheet", "רכוש קבוע, נטו (ערך בספרים)").y2027, 0);
+    });
+
+    it("measured at the fair value received when that is more evident", () => {
+      const s = solve(PPE, { ...base, ...exchange, exchangeBasis: "received" });
+      assert.equal(metric(s, "עלות הנכס שהתקבל"), 55000);
+      assert.equal(metric(s, "רווח (הפסד) מההחלפה"), round2(55000 - 5000 - 32916.67));
+    });
+
+    it("without commercial substance: carrying amount less cash received, no gain", () => {
+      const s = solve(PPE, { ...base, ...exchange, commercialSubstance: false, cashDirection: "received" });
+      assert.equal(metric(s, "עלות הנכס שהתקבל"), round2(32916.67 - 5000));
+      assert.equal(metric(s, "רווח (הפסד) מההחלפה"), 0);
+    });
+  });
+
+  it("calculation range clips the schedule and opens with carried-forward balances", () => {
+    const s = solve(PPE, { ...base, ...renovation, calcStart: "2025-01-01", calcEnd: "2026-06-30" });
+    const rows = table(s, "depreciation").rows;
+    assert.deepEqual(rows.map((r) => r.year), [2025, 2026]);
+    assert.equal(rows[0].opening, 87916.67);
+    assert.equal(rows[1].months, 6);
+    assert.ok(!s.journal.some((e) => e.id === "acquisition"));
+  });
+
   it("rejects a renovation after the original useful life", () => {
-    const calc = getCalculator("ias-16-property-plant-equipment")!;
-    const errors = validateValues(calc, { ...defaults(calc), component: false, revision: true, usefulLife: 2, acquisitionDate: "2023-03-31", revisionDate: "2025-07-01" });
+    const calc = getCalculator(PPE)!;
+    const errors = validateValues(calc, { ...defaults(calc), ...base, ...renovation, usefulLife: 2 });
     assert.ok(errors.revisionDate);
+  });
+
+  it("rejects a range that ends before it starts", () => {
+    const calc = getCalculator(PPE)!;
+    const errors = validateValues(calc, { ...defaults(calc), calcStart: "2026-01-01", calcEnd: "2025-01-01" });
+    assert.ok(errors.calcEnd);
+  });
+
+  describe("component approach", () => {
+    it("straight-line without replacement depreciates cost less residual", () => {
+      const s = solve(PPE, {
+        component: true,
+        replacement: false,
+        purchasePrice: 1000,
+        attributableCosts: 0,
+        residual: 100,
+        usefulLife: 9,
+        componentCost: 90,
+        componentLife: 3,
+      });
+      assert.equal(s.tables[0].rows.at(-1)!.carrying, 100);
+    });
+
+    it("early replacement derecognises the remaining carrying amount as a loss", () => {
+      const s = solve(PPE, {
+        purchasePrice: 1000,
+        attributableCosts: 0,
+        residual: 0,
+        usefulLife: 10,
+        component: true,
+        componentCost: 200,
+        componentLife: 5,
+        replacement: true,
+        replacementYear: 4,
+        replacementCost: 300,
+      });
+      // 4 of 5 years depreciated → 40 left
+      assert.equal(metric(s, "הפסד מהחלפה"), 40);
+      assert.equal(s.tables[0].rows.at(-1)!.carrying, 0);
+    });
   });
 });
 

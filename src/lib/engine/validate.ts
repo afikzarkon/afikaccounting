@@ -35,8 +35,29 @@ export function checkField(field: Field, value: FieldValue | undefined): string 
     }
     case "date":
       return typeof value === "string" && isIsoDate(value) ? null : "יש להזין תאריך תקין.";
+    case "series":
+      return parseSeries(String(value ?? "")) ? null : "יש להזין מספרים חיוביים מופרדים בפסיקים.";
   }
 }
+
+/** "100, , 80" → [100, null, 80]; null when an item is not a non-negative number. */
+export function parseSeries(s: string): (number | null)[] | null {
+  if (s.trim() === "") return [];
+  const out: (number | null)[] = [];
+  for (const item of s.split(",")) {
+    const t = item.trim().replace(/_/g, "");
+    if (t === "") {
+      out.push(null);
+      continue;
+    }
+    const n = Number(t);
+    if (!Number.isFinite(n) || n < 0) return null;
+    out.push(n);
+  }
+  return out;
+}
+
+export const series = (v: Values, id: string) => parseSeries(str(v, id)) ?? [];
 
 /** True for a real calendar date written as YYYY-MM-DD. */
 export function isIsoDate(s: string) {

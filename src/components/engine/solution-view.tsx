@@ -191,6 +191,7 @@ function JournalTable({ journal }: { journal: JournalEntry[] }) {
                   <span className="text-xs font-medium text-muted">{e.when}</span>
                   <span className="mx-2 text-subtle">·</span>
                   <span className="text-[13px] text-fg">{e.narrative}</span>
+                  {e.reference && <Reference className="ms-2">{e.reference}</Reference>}
                 </td>
               </tr>
               {e.lines.map((l, i) => (
@@ -251,6 +252,12 @@ function ScheduleCard({ table, fileBase }: { table: ScheduleTable; fileBase: str
           </>
         }
       />
+      {(table.note || table.reference) && (
+        <div className="border-b border-line bg-surface-2/40 px-5 py-3 text-[13px] leading-relaxed text-muted">
+          {table.note}
+          {table.reference && <Reference className={table.note ? "ms-2" : undefined}>{table.reference}</Reference>}
+        </div>
+      )}
       <div className={cn("print-expand overflow-x-auto", !expanded && long && "max-h-[520px]")}>
         <table className="w-full text-[13px]">
           <thead className="sticky top-0 z-10 bg-surface">
@@ -378,5 +385,18 @@ function GuidanceBox({ guidance }: { guidance: Solution["guidance"] }) {
         ))}
       </div>
     </div>
+  );
+}
+
+function Reference({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-md bg-surface-2 px-1.5 py-0.5 align-middle font-mono text-[11px] whitespace-nowrap text-accent",
+        className,
+      )}
+    >
+      <BookOpenText className="h-3 w-3" /> {children}
+    </span>
   );
 }

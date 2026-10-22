@@ -36,9 +36,11 @@ export type NumberField = FieldBase & {
 
 /** A calendar date, held as an ISO "YYYY-MM-DD" string. */
 export type DateField = FieldBase & { kind: "date"; default: string };
+/** One optional number per period, typed as "100, , 80"; an empty item means no value. */
+export type SeriesField = FieldBase & { kind: "series"; default: string; placeholder?: string };
 
 export type ScenarioField = ToggleField | RadioField | SelectField;
-export type MetricField = NumberField | DateField;
+export type MetricField = NumberField | DateField | SeriesField;
 export type Field = ScenarioField | MetricField;
 
 export type CalculatorSchema = {
@@ -57,7 +59,7 @@ export type CalculatorSchema = {
 };
 
 export type JournalLine = { account: string; debit: number; credit: number };
-export type JournalEntry = { id: string; when: string; narrative: string; lines: JournalLine[] };
+export type JournalEntry = { id: string; when: string; narrative: string; lines: JournalLine[]; reference?: string };
 
 export type Column = {
   key: string;
@@ -69,6 +71,9 @@ export type ScheduleTable = {
   id: string;
   title: string;
   caption?: string;
+  /** A short explanation of this step, shown above the table, and the paragraphs it rests on. */
+  note?: string;
+  reference?: string;
   columns: Column[];
   rows: ScheduleRow[];
   totals?: ScheduleRow;
