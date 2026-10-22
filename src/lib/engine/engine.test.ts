@@ -246,8 +246,28 @@ describe("IAS 16", () => {
           { date: "2026-12-31", value: 80000 },
         ]),
       });
-      const pl = (y: number) => line(s, "profit-or-loss", "הפסד מהערכה מחדש / ביטולו")[`y${y}`];
+      const pl = (y: number) => line(s, "profit-or-loss", "הפסד מירידת ערך / ביטולו")[`y${y}`];
       assert.equal(pl(2023), -6250); // 106,250 → 100,000
+      // No surplus yet: the whole fall is a loss, credited to an impairment allowance in its own entry.
+      const fall = section(s, 2023).journal.filter((e) => e.id.startsWith("revaluation"));
+      assert.deepEqual(
+        fall.map((e) => e.lines.map((l) => [l.account, l.debit, l.credit])),
+        [
+          [
+            ["פחת שנצבר", 13750, 0],
+            ["רכוש קבוע", 0, 13750],
+          ],
+          [
+            ["הפסד מירידת ערך (רווח או הפסד)", 6250, 0],
+            ["הפרשה לירידת ערך", 0, 6250],
+          ],
+        ],
+      );
+      assert.equal(line(s, "balance-sheet", "עלות / סכום משוערך").y2023, 106250); // the asset account
+      assert.equal(line(s, "balance-sheet", "בניכוי הפרשה לירידת ערך").y2023, -6250);
+      assert.equal(line(s, "balance-sheet", "רכוש קבוע, נטו (יתרה בספרים)").y2023, 100000);
+      assert.equal(line(s, "balance-sheet", "בניכוי הפרשה לירידת ערך").y2025, -1964.29); // part reversed in 2025
+      assert.equal(line(s, "balance-sheet", "בניכוי הפרשה לירידת ערך").y2026, 0);
       assert.equal(pl(2025), 4285.71); // reverses part of the earlier loss
       assert.equal(pl(2026), 1964.29); // the rest of the loss …
       assert.equal(line(s, "profit-or-loss", "רווח כולל אחר — שינוי בקרן הערכה מחדש").y2026, 26497.25); // … then OCI
