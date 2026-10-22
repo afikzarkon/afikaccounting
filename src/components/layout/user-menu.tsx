@@ -1,0 +1,111 @@
+"use client";
+
+import { ChevronDown, LayoutDashboard, LogOut, UserRound } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { ButtonLink } from "@/components/ui/button";
+import { signOut } from "@/lib/actions/auth";
+
+export function GuestActions() {
+  return (
+    <div className="flex items-center gap-1.5">
+      <ButtonLink href="/login" variant="ghost" size="sm" className="hidden sm:inline-flex">
+        התחברות
+      </ButtonLink>
+      <ButtonLink href="/register" size="sm">
+        הרשמה
+      </ButtonLink>
+    </div>
+  );
+}
+
+export function UserMenu({ name, email }: { name: string; email: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const initials = name
+    .split(/\s+/)
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent ? e.key === "Escape" : !ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", close);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", close);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label="תפריט משתמש"
+        className="flex items-center gap-2 rounded-full border border-line py-1 pe-2.5 ps-1 transition-colors hover:border-line-strong"
+      >
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-accent to-cyan-400 text-[11px] font-semibold text-accent-fg">
+          {initials || "U"}
+        </span>
+        <ChevronDown className={`h-3.5 w-3.5 text-muted transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            role="menu"
+            initial={{ opacity: 0, scale: 0.96, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: -4 }}
+            transition={{ duration: 0.14 }}
+            className="glass absolute end-0 mt-2 w-60 origin-top-left rounded-2xl p-1.5 shadow-card"
+          >
+            <div className="px-3 py-2.5">
+              <p className="truncate text-sm font-medium text-fg">{name}</p>
+              <p className="truncate text-xs text-muted">{email}</p>
+            </div>
+            <div className="my-1 h-px bg-line" />
+            <MenuLink href="/dashboard" icon={<LayoutDashboard className="h-4 w-4" />} onClick={() => setOpen(false)}>
+              לוח אישי
+            </MenuLink>
+            <MenuLink href="/profile" icon={<UserRound className="h-4 w-4" />} onClick={() => setOpen(false)}>
+              פרופיל
+            </MenuLink>
+            <div className="my-1 h-px bg-line" />
+            <form action={signOut}>
+              <button
+                type="submit"
+                role="menuitem"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-muted hover:bg-surface-2 hover:text-danger"
+              >
+                <LogOut className="h-4 w-4" /> התנתקות
+              </button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function MenuLink({ href, icon, children, onClick }: { href: string; icon: React.ReactNode; children: React.ReactNode; onClick: () => void }) {
+  return (
+    <Link
+      href={href}
+      role="menuitem"
+      onClick={onClick}
+      className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-muted hover:bg-surface-2 hover:text-fg"
+    >
+      {icon}
+      {children}
+    </Link>
+  );
+}

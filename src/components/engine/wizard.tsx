@@ -1,0 +1,523 @@
+"use client";
+
+import {
+  ArrowRight,
+  ArrowLeft,
+  Bookmark,
+  Check,
+  Link2,
+  Loader2,
+  PlayCircle,
+  RotateCcw,
+  Sparkles,
+  TriangleAlert,
+} from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { FormAlert, inputClass } from "@/components/ui/form";
+import { Badge } from "@/components/ui/primitives";
+import { VideoDrawer } from "@/components/video/video-drawer";
+import type { PlayableItem } from "@/components/video/video-player";
+import { saveSolution } from "@/lib/actions/solutions";
+import { CALCULATORS, getCalculator } from "@/lib/engine/registry";
+import type { Calculator, FieldValue, Solution, Values } from "@/lib/engine/types";
+import { defaults, isVisible, validateValues } from "@/lib/engine/validate";
+import { cn } from "@/lib/utils";
+import { ACCENTS, CalculatorIcon } from "./calculator-visuals";
+import { FieldControl } from "./field-control";
+import { SolutionView } from "./solution-view";
+
+const STEPS = [
+  { title: "תקן ונושא", short: "תקן" },
+  { title: "תרחיש", short: "תרחיש" },
+  { title: "נתונים כספיים", short: "נתונים" },
+  { title: "פתרון", short: "פתרון" },
+] as const;
+
+export type WizardStart = {
+  slug: string;
+  values: Values;
+  step: number;
+  saved?: { id: string; title: string };
+};
+
+/** Keep the address bar shareable without a navigation (Next syncs useSearchParams with it). */
+function setQuery(params: Record<string, string>) {
+  const qs = new URLSearchParams(params).toString();
+  window.history.replaceState(null, "", qs ? `/engine?${qs}` : "/engine");
+}
+
+export function Wizard({
+  start,
+  explainers,
+  signedIn,
+}: {
+  start: WizardStart | null;
+  explainers: Record<string, PlayableItem>;
+  signedIn: boolean;
+}) {
+  const [step, setStep] = useState(start?.step ?? 0);
+  const [direction, setDirection] = useState(1);
+  const [calc, setCalc] = useState<Calculator | undefined>(() => getCalculator(start?.slug));
+  const [values, setValues] = useState<Values>(() => start?.values ?? {});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  /** Bumped to remount inputs after a reset, so their local text state resets too. */
+  const [formKey, setFormKey] = useState(0);
+  const [saved, setSaved] = useState(start?.saved);
+  const [video, setVideo] = useState<{ open: boolean; at: number }>({ open: false, at: 0 });
+
+  const explainer = calc?.explainerSlug ? explainers[calc.explainerSlug] : undefined;
+  const currency = typeof values.currency === "string" ? values.currency : "ILS";
+
+  const result = useMemo<{ solution?: Solution; error?: string }>(() => {
+    if (step !== 3 || !calc) return {};
+    try {
+      return { solution: calc.solve(values) };
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : "לא ניתן היה לחשב את הפתרון." };
+    }
+  }, [step, calc, values]);
+
+  const go = (next: number) => {
+    setDirection(next > step ? 1 : -1);
+    setStep(next);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const choose = (c: Calculator) => {
+    if (c.slug !== calc?.slug) {
+      setCalc(c);
+      setValues(defaults(c));
+      setErrors({});
+      setSaved(undefined);
+      setFormKey((k) => k + 1);
+    }
+    setQuery({ calc: c.slug });
+    go(1);
+  };
+
+  const update = (id: string, v: FieldValue) => {
+    setValues((prev) => ({ ...prev, [id]: v }));
+    if (errors[id]) {
+      setErrors((prev) => {
+        const rest = { ...prev };
+        delete rest[id];
+        return rest;
+      });
+    }
+  };
+
+  const next = () => {
+    if (!calc) return;
+    const scope = step === 1 ? "scenario" : "metrics";
+    const found = validateValues(calc, values, scope);
+    setErrors(found);
+    if (Object.keys(found).length) {
+      requestAnimationFrame(() => document.querySelector<HTMLElement>("[aria-invalid=true]")?.focus());
+      return;
+    }
+    if (step === 2) setQuery({ calc: calc.slug, v: JSON.stringify(values) });
+    go(step + 1);
+  };
+
+  const reset = () => {
+    if (!calc) return;
+    setValues(defaults(calc));
+    setErrors({});
+    setFormKey((k) => k + 1);
+  };
+
+  const canVisit = (i: number) => (i === 0 ? true : !!calc && (i <= step || (i === step + 1 && step > 0)));
+
+  return (
+    <div>
+      <Stepper step={step} canVisit={canVisit} onSelect={(i) => (i > step ? next() : go(i))} />
+
+      {calc && step > 0 && (
+        <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface/60 p-3 pe-4">
+          <CalculatorIcon calc={calc} className="h-10 w-10" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-fg">
+              {calc.standard} <span className="font-normal text-muted">— {calc.title}</span>
+            </p>
+            <p className="truncate text-xs text-muted">{calc.tagline}</p>
+          </div>
+          {explainer && (
+            <Button variant="outline" size="sm" onClick={() => setVideo({ open: true, at: 0 })} className="no-print">
+              <PlayCircle className="h-3.5 w-3.5" /> סרטון הסבר
+            </Button>
+          )}
+        </div>
+      )}
+
+      <div className="relative mt-6">
+        <AnimatePresence mode="wait" custom={direction} initial={false}>
+          <motion.div
+            key={step}
+            custom={direction}
+            initial={{ opacity: 0, x: direction * -28 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: direction * 28 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {step === 0 && <StandardStep selected={calc?.slug} onChoose={choose} />}
+
+            {(step === 1 || step === 2) && calc && (
+              <FieldsStep
+                key={formKey}
+                calc={calc}
+                scope={step === 1 ? "scenario" : "metrics"}
+                values={values}
+                errors={errors}
+                currency={currency}
+                onChange={update}
+                onExplain={explainer ? (at) => setVideo({ open: true, at }) : undefined}
+                onReset={reset}
+              />
+            )}
+
+            {step === 3 && calc && (
+              <>
+                {result.error ? (
+                  <FormAlert error={`${result.error} יש לבדוק את הנתונים ולנסות שוב.`} />
+                ) : result.solution ? (
+                  <>
+                    <SaveBar
+                      calc={calc}
+                      values={values}
+                      signedIn={signedIn}
+                      saved={saved}
+                      onSaved={(s) => {
+                        setSaved(s);
+                        setQuery({ solution: s.id });
+                      }}
+                    />
+                    <SolutionView
+                      solution={result.solution}
+                      currency={currency}
+                      standard={calc.standard}
+                      title={saved?.title ?? calc.title}
+                    />
+                  </>
+                ) : null}
+              </>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {step > 0 && (
+        <div className="no-print mt-8 flex items-center justify-between gap-3 border-t border-line pt-6">
+          <Button variant="ghost" onClick={() => go(step - 1)}>
+            <ArrowRight className="h-4 w-4" /> חזרה
+          </Button>
+          {step < 3 ? (
+            <Button onClick={next} size="lg">
+              {step === 2 ? (
+                <>
+                  <Sparkles className="h-4 w-4" /> הפקת פתרון
+                </>
+              ) : (
+                <>
+                  המשך <ArrowLeft className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+          ) : (
+            <Button variant="secondary" onClick={() => go(1)}>
+              <RotateCcw className="h-4 w-4" /> שינוי התרחיש
+            </Button>
+          )}
+        </div>
+      )}
+
+      <VideoDrawer
+        item={explainer ?? null}
+        startAt={video.at}
+        open={video.open}
+        onClose={() => setVideo((v) => ({ ...v, open: false }))}
+      />
+    </div>
+  );
+}
+
+function Stepper({
+  step,
+  canVisit,
+  onSelect,
+}: {
+  step: number;
+  canVisit: (i: number) => boolean;
+  onSelect: (i: number) => void;
+}) {
+  return (
+    <nav aria-label="התקדמות באשף" className="no-print">
+      <ol className="grid grid-cols-4 gap-2">
+        {STEPS.map((s, i) => {
+          const done = i < step;
+          const active = i === step;
+          return (
+            <li key={s.title}>
+              <button
+                type="button"
+                disabled={!canVisit(i) || active}
+                onClick={() => onSelect(i)}
+                aria-current={active ? "step" : undefined}
+                className="group w-full text-start disabled:cursor-default"
+              >
+                <div className="relative h-1 overflow-hidden rounded-full bg-line">
+                  <motion.div
+                    className="absolute inset-y-0 start-0 rounded-full bg-gradient-to-l from-accent to-cyan-400"
+                    initial={false}
+                    animate={{ width: done || active ? "100%" : "0%" }}
+                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                  />
+                </div>
+                <div className="mt-2.5 flex items-center gap-2">
+                  <span
+                    className={cn(
+                      "grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-semibold transition-colors",
+                      done && "bg-accent text-accent-fg",
+                      active && "bg-accent-soft text-accent ring-1 ring-accent",
+                      !done && !active && "bg-surface-2 text-subtle",
+                    )}
+                  >
+                    {done ? <Check className="h-3 w-3" strokeWidth={3} /> : i + 1}
+                  </span>
+                  <span
+                    className={cn(
+                      "truncate text-xs font-medium sm:text-[13px]",
+                      active ? "text-fg" : "text-muted",
+                      canVisit(i) && !active && "group-hover:text-fg",
+                    )}
+                  >
+                    <span className="sm:hidden">{s.short}</span>
+                    <span className="hidden sm:inline">{s.title}</span>
+                  </span>
+                </div>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
+function StandardStep({ selected, onChoose }: { selected?: string; onChoose: (c: Calculator) => void }) {
+  return (
+    <div>
+      <h2 className="text-xl font-semibold tracking-tight text-fg">באיזה תקן עוסקת הסוגיה שלכם?</h2>
+      <p className="mt-1 text-sm text-muted">בחרו נושא כדי להגדיר את התרחיש שלב אחר שלב.</p>
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        {CALCULATORS.map((c, i) => {
+          const active = c.slug === selected;
+          return (
+            <motion.button
+              key={c.slug}
+              type="button"
+              onClick={() => onChoose(c)}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              whileHover={{ y: -3 }}
+              whileTap={{ scale: 0.99 }}
+              className={cn(
+                "group card relative flex flex-col p-5 text-start transition-shadow",
+                ACCENTS[c.accent].glow,
+                active && "border-accent ring-2 ring-accent/30",
+              )}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <CalculatorIcon calc={c} />
+                {active ? <Badge tone="accent">נבחר</Badge> : <Badge>{c.category}</Badge>}
+              </div>
+              <p className={cn("mt-4 text-xs font-semibold", ACCENTS[c.accent].text)}>{c.standard}</p>
+              <p className="mt-1 font-semibold text-fg">{c.title}</p>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-muted">{c.description}</p>
+              <span className="mt-4 inline-flex items-center gap-1 text-[13px] font-medium text-accent">
+                להגדרה <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+              </span>
+            </motion.button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function FieldsStep({
+  calc,
+  scope,
+  values,
+  errors,
+  currency,
+  onChange,
+  onExplain,
+  onReset,
+}: {
+  calc: Calculator;
+  scope: "scenario" | "metrics";
+  values: Values;
+  errors: Record<string, string>;
+  currency: string;
+  onChange: (id: string, v: FieldValue) => void;
+  onExplain?: (at: number) => void;
+  onReset: () => void;
+}) {
+  const fields = (scope === "scenario" ? calc.scenario : calc.metrics).filter((f) => isVisible(f, values));
+  // Cross-field errors (from calc.validate) can name fields on either step.
+  const stray = Object.entries(errors).filter(([id]) => !fields.some((f) => f.id === id));
+
+  return (
+    <div className="card p-5 sm:p-7">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight text-fg">
+            {scope === "scenario" ? "הגדרת התרחיש" : "הזנת הנתונים הכספיים"}
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            {scope === "scenario"
+              ? "הבחירות האלה קובעות איזה טיפול חשבונאי חל."
+              : "הסכומים נבדקים תוך כדי הקלדה; הפתרון מחושב מחדש מיד."}
+          </p>
+        </div>
+        <Button variant="ghost" size="sm" onClick={onReset}>
+          <RotateCcw className="h-3.5 w-3.5" /> איפוס לברירות המחדל
+        </Button>
+      </div>
+
+      {stray.length > 0 && (
+        <div className="mt-5 space-y-2">
+          {stray.map(([id, msg]) => (
+            <FormAlert key={id} error={msg} />
+          ))}
+        </div>
+      )}
+
+      <motion.div layout className="mt-6 grid gap-x-5 gap-y-6 sm:grid-cols-2">
+        <AnimatePresence initial={false}>
+          {fields.map((f) => (
+            <motion.div
+              key={f.id}
+              layout
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.18 }}
+              className={cn(f.kind === "radio" && "sm:col-span-2")}
+            >
+              <FieldControl
+                field={f}
+                value={values[f.id]}
+                error={errors[f.id]}
+                currency={currency}
+                onChange={(v) => onChange(f.id, v)}
+                onExplain={onExplain}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </motion.div>
+    </div>
+  );
+}
+
+function SaveBar({
+  calc,
+  values,
+  signedIn,
+  saved,
+  onSaved,
+}: {
+  calc: Calculator;
+  values: Values;
+  signedIn: boolean;
+  saved?: { id: string; title: string };
+  onSaved: (s: { id: string; title: string }) => void;
+}) {
+  const [title, setTitle] = useState(saved?.title ?? `${calc.standard} — ${calc.title}`);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [justSaved, setJustSaved] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const shareUrl = () => `${window.location.origin}/engine?${new URLSearchParams({ calc: calc.slug, v: JSON.stringify(values) })}`;
+  const returnTo = `/engine?${new URLSearchParams({ calc: calc.slug, v: JSON.stringify(values) })}`;
+
+  const save = async (asNew: boolean) => {
+    setPending(true);
+    setError(null);
+    const res = await saveSolution({ slug: calc.slug, title, values, id: asNew ? undefined : saved?.id });
+    setPending(false);
+    if (!res.ok) return setError(res.error);
+    onSaved({ id: res.id, title: title.trim() });
+    setJustSaved(true);
+    setTimeout(() => setJustSaved(false), 2500);
+  };
+
+  return (
+    <div className="no-print glass mb-6 flex flex-col gap-3 rounded-2xl p-3 shadow-card sm:flex-row sm:items-center">
+      {signedIn ? (
+        <>
+          <label className="sr-only" htmlFor="solution-title">
+            שם הפתרון
+          </label>
+          <input
+            id="solution-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={120}
+            className={cn(inputClass, "h-10 sm:max-w-sm")}
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={() => save(false)} disabled={pending || !title.trim()}>
+              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : justSaved ? <Check className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+              {justSaved ? "נשמר" : saved ? "עדכון" : "שמירת הפתרון"}
+            </Button>
+            {saved && (
+              <Button variant="secondary" onClick={() => save(true)} disabled={pending}>
+                שמירה כחדש
+              </Button>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-1 flex-wrap items-center gap-3 px-1">
+          <p className="text-sm text-muted">התחברו כדי לשמור את התרחיש בלוח האישי.</p>
+          <ButtonLink href={`/login?next=${encodeURIComponent(returnTo)}`} size="sm">
+            <Bookmark className="h-3.5 w-3.5" /> התחברות לשמירה
+          </ButtonLink>
+        </div>
+      )}
+      <div className="flex items-center gap-2 sm:ms-auto">
+        {saved && (
+          <Link href="/dashboard" className="text-xs font-medium text-muted hover:text-fg">
+            לצפייה בלוח האישי
+          </Link>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(shareUrl());
+              setLinkCopied(true);
+              setTimeout(() => setLinkCopied(false), 2000);
+            } catch {}
+          }}
+        >
+          {linkCopied ? <Check className="h-3.5 w-3.5 text-success" /> : <Link2 className="h-3.5 w-3.5" />}
+          {linkCopied ? "הקישור הועתק" : "העתקת קישור"}
+        </Button>
+      </div>
+      {error && (
+        <p className="flex items-center gap-1.5 text-xs text-danger sm:basis-full" role="alert">
+          <TriangleAlert className="h-3.5 w-3.5" /> {error}
+        </p>
+      )}
+    </div>
+  );
+}
