@@ -1,27 +1,8 @@
-import katex from "katex";
 import "katex/dist/katex.min.css";
 import type { ReactNode } from "react";
+import { renderTex as render } from "@/lib/tex";
 
-const cache = new Map<string, string>();
-
-/** Rendered on the server, so the page ships HTML and CSS only, no math runtime. */
-function render(tex: string, displayMode: boolean) {
-  const key = `${displayMode ? "D" : "I"}${tex}`;
-  let html = cache.get(key);
-  if (html === undefined) {
-    // KaTeX has no glyph metrics for Hebrew and warns once per character; the
-    // browser lays the text out fine, so mute the warning for this synchronous call.
-    const warn = console.warn;
-    console.warn = () => {};
-    try {
-      html = katex.renderToString(tex, { displayMode, throwOnError: true, strict: "ignore" });
-    } finally {
-      console.warn = warn;
-    }
-    cache.set(key, html);
-  }
-  return html;
-}
+// Server components: the guide ships the rendered HTML and CSS only, no math runtime.
 
 /** Inline formula. Math always reads left to right, even inside Hebrew prose. */
 export function Tex({ children }: { children: string }) {

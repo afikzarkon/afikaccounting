@@ -1,4 +1,4 @@
-import { Callout, Dt, Givens, JournalEntry, Num, Steps, SubHeading, Topic } from "../blocks";
+import { Callout, DataTable, Dt, Givens, JournalEntry, Num, Steps, SubHeading, Topic } from "../blocks";
 import { Formula, Tex } from "../math";
 
 const LEVELS = [
@@ -98,6 +98,35 @@ export function ExchangeSection() {
             בספרים לא מעודכנת מוטה בדיוק בסכום הפחת החסר.
           </p>
         </Callout>
+      </Topic>
+
+      <Topic title="דוגמה מופשטת — שלב אחר שלב" refs="IAS 16.24">
+        <p>לפני המספרים, אותה עסקה בסימנים. כך רואים למה הפקודה תמיד מתאזנת, לא משנה מה הנתונים:</p>
+        <Formula
+          tex={String.raw`CA = C - AD \qquad C_{\text{new}} = FV + P \qquad G = FV - CA`}
+          legend={[
+            ["C", "עלות מקורית של הנכס שנמסר"],
+            ["AD", "פחת שנצבר עד יום העסקה"],
+            ["FV", "שווי הוגן של הנכס שנמסר"],
+            ["P", "מזומן ששולם"],
+            ["G", "רווח ממימוש (שלילי = הפסד)"],
+          ]}
+        />
+        <DataTable
+          caption="פקודת היומן בסימנים"
+          head={["חשבון", "חובה", "זכות"]}
+          rows={[
+            ["נכס חדש", <Tex key="1">{String.raw`FV + P`}</Tex>, ""],
+            ["פחת שנצבר — נכס ישן", <Tex key="2">AD</Tex>, ""],
+            ["נכס ישן (עלות)", "", <Tex key="3">C</Tex>],
+            ["מזומן", "", <Tex key="4">P</Tex>],
+            ["רווח ממימוש", "", <Tex key="5">{String.raw`FV - (C - AD)`}</Tex>],
+          ]}
+        />
+        <Formula
+          caption="הוכחת האיזון: סך הזכות מצטמצם בדיוק לסך החובה"
+          tex={String.raw`C + P + FV - C + AD = FV + P + AD \;\checkmark`}
+        />
       </Topic>
 
       <Topic title="דוגמה מספרית מלאה" refs="IAS 16.24">

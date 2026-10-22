@@ -1,7 +1,8 @@
 "use client";
 
 import { Check, PlayCircle, Plus, Trash2 } from "lucide-react";
-import { useId, useState } from "react";
+import { motion } from "motion/react";
+import { type KeyboardEvent, useId, useState } from "react";
 import { inputClass } from "@/components/ui/form";
 import { duration } from "@/lib/engine/format";
 import type { DatedValuesField, Field, FieldValue, NumberField } from "@/lib/engine/types";
@@ -197,6 +198,7 @@ function Radio({
   onChange,
   labelledBy,
 }: Props<Extract<Field, { kind: "radio" }>> & { labelledBy: string }) {
+  if (field.display === "segmented") return <Segmented field={field} value={value} onChange={onChange} labelledBy={labelledBy} />;
   return (
     <div
       role="radiogroup"
@@ -234,6 +236,66 @@ function Radio({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/** A mode switch: the options sit side by side and a highlight slides to the chosen one. */
+function Segmented({
+  field,
+  value,
+  onChange,
+  labelledBy,
+}: Pick<Props<Extract<Field, { kind: "radio" }>>, "field" | "value" | "onChange"> & { labelledBy: string }) {
+  const chosen = field.options.find((o) => o.value === value);
+  const onKeyDown = (e: KeyboardEvent) => {
+    const i = field.options.findIndex((o) => o.value === value);
+    // Right-to-left: the left arrow moves forward.
+    const step = { ArrowLeft: 1, ArrowRight: -1 }[e.key];
+    if (step === undefined) return;
+    e.preventDefault();
+    const next = field.options[(Math.max(i, 0) + step + field.options.length) % field.options.length];
+    onChange(next.value);
+    document.getElementById(`${field.id}-${next.value}`)?.focus();
+  };
+  return (
+    <div>
+      <div
+        role="radiogroup"
+        aria-labelledby={labelledBy}
+        onKeyDown={onKeyDown}
+        className="relative grid rounded-2xl border border-line bg-surface-2/70 p-1"
+        style={{ gridTemplateColumns: `repeat(${field.options.length}, minmax(0, 1fr))` }}
+      >
+        {field.options.map((o) => {
+          const checked = value === o.value;
+          return (
+            <button
+              key={o.value}
+              id={`${field.id}-${o.value}`}
+              type="button"
+              role="radio"
+              aria-checked={checked}
+              tabIndex={checked || (!chosen && o === field.options[0]) ? 0 : -1}
+              onClick={() => onChange(o.value)}
+              className={cn(
+                "relative z-10 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                checked ? "text-fg" : "text-muted hover:text-fg",
+              )}
+            >
+              {checked && (
+                <motion.span
+                  layoutId={`segmented-${field.id}`}
+                  className="absolute inset-0 -z-10 rounded-xl bg-surface shadow-card ring-1 ring-accent/40"
+                  transition={{ type: "spring", stiffness: 480, damping: 36 }}
+                />
+              )}
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+      {chosen?.description && <p className="mt-2 text-xs leading-relaxed text-muted">{chosen.description}</p>}
     </div>
   );
 }

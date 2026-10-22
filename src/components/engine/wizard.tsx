@@ -25,7 +25,7 @@ import { CALCULATORS, getCalculator } from "@/lib/engine/registry";
 import type { Calculator, FieldValue, Solution, Values } from "@/lib/engine/types";
 import { conditionsHold, defaults, isDisabled, isUnknown, isVisible, SOLVE_MODE, UNKNOWN, validateValues } from "@/lib/engine/validate";
 import { cn } from "@/lib/utils";
-import { ACCENTS, CalculatorIcon } from "./calculator-visuals";
+import { ACCENTS, CalculatorIcon, SectionIcon } from "./calculator-visuals";
 import { FieldControl } from "./field-control";
 import { SolutionView } from "./solution-view";
 
@@ -453,7 +453,11 @@ function FieldsStep({
                   i > 0 && "mt-2 border-t border-line pt-6",
                 )}
               >
-                <span className="h-4 w-1 rounded-full bg-accent" />
+                {calc.sectionIcons?.[f.section!] ? (
+                  <SectionIcon name={calc.sectionIcons[f.section!]} />
+                ) : (
+                  <span className="h-4 w-1 rounded-full bg-accent" />
+                )}
                 {f.section}
               </motion.h3>,
               control,

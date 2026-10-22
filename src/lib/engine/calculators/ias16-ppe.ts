@@ -7,8 +7,10 @@ import { solveTimeline, timelineErrors } from "./ias16-timeline";
 
 const events = (...more: Condition[]) => [{ field: "hasEvents", in: [true] }, ...more];
 const solving: Condition[] = [{ field: SOLVE_MODE, in: ["solve"] }];
-const TARGET = "🔍 נתוני עזר לשחזור X";
+const TARGET = "נתוני עזר לשחזור X";
 
+const MODE = "סוג השאלה";
+const EVENTS = "זיהוי אירועים";
 const RANGE = "תאריכים וטווח החישוב";
 const COST = "עלות הנכס";
 const LAND = "מרכיב הקרקע";
@@ -29,6 +31,18 @@ export const ias16Ppe: Calculator = {
   icon: "Factory",
   accent: "amber",
   explainerSlug: "ias-16-components-and-replacements",
+  sectionIcons: {
+    [MODE]: "CircleHelp",
+    [RANGE]: "CalendarRange",
+    [COST]: "Coins",
+    [LAND]: "LandPlot",
+    [DEPRECIATION]: "TrendingDown",
+    [EVENTS]: "Search",
+    [RENOVATION]: "Hammer",
+    [REVALUATION]: "TrendingUp",
+    [EXCHANGE]: "ArrowLeftRight",
+    [TARGET]: "Search",
+  },
   steps: {
     scenario: {
       title: "שלב 1 — הנחות בסיס",
@@ -45,13 +59,14 @@ export const ias16Ppe: Calculator = {
     {
       kind: "radio",
       id: SOLVE_MODE,
-      label: "סוג השאלה",
+      label: "בחרו את סוג החישוב",
       options: [
         { value: "regular", label: "חישוב רגיל", description: "כל הנתונים ידועים." },
         { value: "solve", label: "חישוב עם נעלם (Solve for X)", description: "שחזור נתון חסר מתוך תוצאה ידועה: סמנו X ליד השדה החסר." },
       ],
       default: "regular",
-      section: "סוג השאלה",
+      display: "segmented",
+      section: MODE,
     },
     {
       kind: "date",
@@ -189,18 +204,18 @@ export const ias16Ppe: Calculator = {
       label: "האם במהלך טווח השנים שנבחרו התרחש אירוע חשבונאי הדורש עדכון?",
       help: "שיפוץ, הערכה מחדש, החלפת נכס וכדומה.",
       default: false,
-      section: "זיהוי אירועים",
+      section: EVENTS,
     },
-    { kind: "toggle", id: "revision", label: "שיפוץ / שיפור מהותי", default: false, showIf: events(), section: "זיהוי אירועים" },
+    { kind: "toggle", id: "revision", label: "שיפוץ / שיפור מהותי", default: false, showIf: events(), section: EVENTS },
     {
       kind: "toggle",
       id: "revalue",
       label: "הערכה מחדש לשווי הוגן",
       default: false,
       showIf: events({ field: "model", in: ["revaluation"] }),
-      section: "זיהוי אירועים",
+      section: EVENTS,
     },
-    { kind: "toggle", id: "exchange", label: "החלפת נכס (Trade-in)", default: false, showIf: events(), section: "זיהוי אירועים" },
+    { kind: "toggle", id: "exchange", label: "החלפת נכס (Trade-in)", default: false, showIf: events(), section: EVENTS },
 
     { kind: "date", id: "revisionDate", label: "תאריך השיפוץ", default: "", showIf: events({ field: "revision", in: [true] }), section: RENOVATION },
     {

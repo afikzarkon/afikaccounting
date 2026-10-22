@@ -17,13 +17,15 @@ import {
   ScrollText,
   Table2,
 } from "lucide-react";
+import "katex/dist/katex.min.css";
 import { motion, type Variants } from "motion/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/primitives";
 import { amount, formatCell, money, percent, plain } from "@/lib/engine/format";
 import { round2, sum } from "@/lib/engine/math";
-import type { Equation, JournalEntry, MathExpr, Metric, ScheduleTable, Solution, StatementLine, Working, YearSection } from "@/lib/engine/types";
+import type { Equation, JournalEntry, Metric, ScheduleTable, Solution, StatementLine, Working, YearSection } from "@/lib/engine/types";
+import { exprToTex, renderTex } from "@/lib/tex";
 import { cn } from "@/lib/utils";
 import { downloadCsv, fileSlug, journalToCsv, tableToCsv } from "./export";
 
@@ -191,11 +193,11 @@ function JournalTable({ journal }: { journal: JournalEntry[] }) {
         <thead>
           <tr className="border-b border-line text-start text-[11px] text-subtle">
             <th className="px-5 py-2.5 font-medium">חשבון</th>
-            <th className="w-36 px-5 py-2.5 text-end font-medium">
-              <span className="text-debit">חובה</span>
+            <th className="w-36 bg-debit/[0.06] px-5 py-2.5 text-end font-medium">
+              <span className="text-debit">חובה (Dr)</span>
             </th>
-            <th className="w-36 px-5 py-2.5 text-end font-medium">
-              <span className="text-credit">זכות</span>
+            <th className="w-36 bg-credit/[0.06] px-5 py-2.5 text-end font-medium">
+              <span className="text-credit">זכות (Cr)</span>
             </th>
           </tr>
         </thead>
@@ -217,11 +219,13 @@ function JournalTable({ journal }: { journal: JournalEntry[] }) {
               {e.lines.map((l, i) => (
                 <tr key={i} className="transition-colors hover:bg-surface-2/40">
                   <td className={cn("px-5 py-2", l.credit > 0 && "ps-12 text-muted")}>
-                    {l.credit > 0 ? "ז׳ " : "ח׳ "}
+                    <span className={cn("me-1.5 text-xs font-semibold", l.credit > 0 ? "text-credit" : "text-debit")}>
+                      {l.credit > 0 ? "ז׳" : "ח׳"}
+                    </span>
                     <span className={l.credit > 0 ? "" : "text-fg"}>{l.account}</span>
                   </td>
-                  <td className="num px-5 py-2 text-end font-mono text-[13px] text-debit">{l.debit ? amount(l.debit) : ""}</td>
-                  <td className="num px-5 py-2 text-end font-mono text-[13px] text-credit">{l.credit ? amount(l.credit) : ""}</td>
+                  <td className="num bg-debit/[0.06] px-5 py-2 text-end font-mono text-[13px] text-debit">{l.debit ? amount(l.debit) : ""}</td>
+                  <td className="num bg-credit/[0.06] px-5 py-2 text-end font-mono text-[13px] text-credit">{l.credit ? amount(l.credit) : ""}</td>
                 </tr>
               ))}
               <tr>
@@ -552,51 +556,28 @@ function ProofCard({ proof }: { proof: NonNullable<Solution["proof"]> }) {
 }
 
 /**
- * "lhs = formula in words", then "lhs = formula with figures = result".
- * Laid out left to right like written math, so "a − b" keeps its order; the
- * Hebrew words are isolated so they still read correctly.
+ * "lhs = formula in words", then "lhs = formula with figures = result", typeset
+ * with KaTeX. Math reads left to right, so "a − b" keeps its order; each Hebrew
+ * term is a \text{} run isolated from the operators around it (see globals.css).
  */
 function EquationView({ eq }: { eq: Equation }) {
   const result = eq.unit === "number" ? plain(eq.result) : `${amount(eq.result)} ש״ח`;
+  const lhs = exprToTex(eq.lhs);
   return (
-    <div dir="ltr" className="mt-2 space-y-2.5 overflow-x-auto rounded-lg bg-surface-2/50 px-3 py-3 text-[13px]">
-      <div className="flex w-max items-center gap-2 text-muted">
-        <bdi className="font-medium text-fg">{eq.lhs}</bdi>
-        <span>=</span>
-        <MathView expr={eq.abstract} />
+    <div dir="ltr" className="mt-2 space-y-2 overflow-x-auto rounded-lg bg-surface-2/50 px-3 py-3 text-[14px]">
+      <div className="w-max text-muted">
+        <Tex tex={`${lhs} = ${exprToTex(eq.abstract)}`} />
       </div>
-      <div className="flex w-max items-center gap-2 font-mono text-fg">
-        <bdi className="font-sans font-medium">{eq.lhs}</bdi>
-        <span>=</span>
-        <MathView expr={eq.numeric} />
-        <span>=</span>
-        <span className="num rounded-md bg-accent-soft px-1.5 py-0.5 font-semibold text-accent">{result}</span>
+      <div className="flex w-max items-center gap-2 text-fg">
+        <Tex tex={`${lhs} = ${exprToTex(eq.numeric)} =`} />
+        <span className="num rounded-md bg-accent-soft px-1.5 py-0.5 font-mono text-[13px] font-semibold text-accent">{result}</span>
       </div>
     </div>
   );
 }
 
-function MathView({ expr }: { expr: MathExpr }) {
-  if (typeof expr === "string") return <bdi className="whitespace-nowrap">{expr}</bdi>;
-  if (Array.isArray(expr)) {
-    return (
-      <span className="inline-flex items-center gap-1.5">
-        {expr.map((e, i) => (
-          <MathView key={i} expr={e} />
-        ))}
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex flex-col items-center text-center leading-tight">
-      <span className="px-1.5 pb-1">
-        <MathView expr={expr.over[0]} />
-      </span>
-      <span className="w-full border-t border-current px-1.5 pt-1">
-        <MathView expr={expr.over[1]} />
-      </span>
-    </span>
-  );
+function Tex({ tex }: { tex: string }) {
+  return <span dangerouslySetInnerHTML={{ __html: renderTex(tex) }} />;
 }
 
 function YearPart({ icon, title, children }: { icon: string; title: string; children: React.ReactNode }) {

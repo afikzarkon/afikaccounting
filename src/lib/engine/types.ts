@@ -32,7 +32,13 @@ type FieldBase = {
 };
 
 export type ToggleField = FieldBase & { kind: "toggle"; default: boolean };
-export type RadioField = FieldBase & { kind: "radio"; options: Option[]; default: string };
+export type RadioField = FieldBase & {
+  kind: "radio";
+  options: Option[];
+  default: string;
+  /** "segmented": a compact switch with a sliding highlight, for a mode choice between two or three options. */
+  display?: "segmented";
+};
 export type SelectField = FieldBase & { kind: "select"; options: Option[]; default: string };
 export type NumberField = FieldBase & {
   kind: "number";
@@ -85,6 +91,8 @@ export type CalculatorSchema = {
   metrics: Field[];
   /** Titles for the two input steps, when the defaults ("תרחיש", "נתונים כספיים") do not fit. */
   steps?: { scenario: StepText; metrics: StepText };
+  /** Lucide icon name per field `section`, shown beside the section heading in the wizard. */
+  sectionIcons?: Record<string, string>;
 };
 
 export type StepText = { title: string; short: string; intro: string };

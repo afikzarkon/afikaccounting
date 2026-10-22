@@ -1,9 +1,48 @@
-import { Building2, Calculator, Factory, Landmark, type LucideIcon, Scale } from "lucide-react";
+import {
+  ArrowLeftRight,
+  Building2,
+  Calculator,
+  CalendarRange,
+  CircleHelp,
+  Coins,
+  Factory,
+  Hammer,
+  Landmark,
+  LandPlot,
+  type LucideIcon,
+  Scale,
+  Search,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import type { CalculatorSchema } from "@/lib/engine/types";
 import { cn } from "@/lib/utils";
 
 /** Calculator schemas name their icon as a string so they stay JSON; resolve it here. */
 const ICONS: Record<string, LucideIcon> = { Building2, Factory, Scale, Landmark };
+
+const SECTION_ICONS: Record<string, LucideIcon> = {
+  ArrowLeftRight,
+  CalendarRange,
+  CircleHelp,
+  Coins,
+  Hammer,
+  LandPlot,
+  Search,
+  TrendingDown,
+  TrendingUp,
+};
+
+/** The icon a calculator assigns to a wizard section, or nothing. */
+export function SectionIcon({ name, className }: { name?: string; className?: string }) {
+  const Icon = name ? SECTION_ICONS[name] : undefined;
+  if (!Icon) return null;
+  return (
+    <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent", className)}>
+      <Icon className="h-3.5 w-3.5" />
+    </span>
+  );
+}
 
 export const ACCENTS: Record<CalculatorSchema["accent"], { tile: string; glow: string; text: string }> = {
   sky: {
