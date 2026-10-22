@@ -124,6 +124,65 @@ describe("IAS 16", () => {
     assert.equal(rows.at(-1)!.carrying, 250000);
     assert.ok(rows.every((r) => Number(r.carrying) >= 250000));
   });
+
+  describe("renovation with a revised useful life", () => {
+    const s = solve("ias-16-property-plant-equipment", {
+      component: false,
+      revision: true,
+      purchasePrice: 100000,
+      attributableCosts: 20000,
+      residual: 10000,
+      usefulLife: 6,
+      acquisitionDate: "2023-03-31",
+      revisionDate: "2025-07-01",
+      revisionCost: 10000,
+      lifeExtension: 2,
+    });
+    const rows = s.tables[0].rows;
+    const year = (y: number) => rows.find((r) => r.period === String(y))!;
+
+    it("depreciates cost less residual until the renovation (27 months)", () => {
+      assert.equal(metric(s, "פחת שנצבר עד השיפוץ"), 41250);
+      assert.equal(metric(s, "ערך בספרים במועד השיפוץ"), 78750);
+      assert.equal(metric(s, "ערך בספרים לאחר היוון השיפוץ"), 88750);
+    });
+
+    it("spreads the new base over the 5.75 years left", () => {
+      assert.equal(metric(s, "יתרת אורך חיים"), 5.75);
+      assert.equal(metric(s, "פחת שנתי מעודכן"), 13695.65);
+    });
+
+    it("prorates fiscal years by month and ends on the residual value", () => {
+      assert.deepEqual(rows.map((r) => r.period), ["2023", "2024", "2025", "2026", "2027", "2028", "2029", "2030", "2031"]);
+      assert.equal(year(2023).total, 13750);
+      assert.equal(year(2024).total, 18333.33);
+      assert.equal(year(2025).before, 9166.67);
+      assert.equal(year(2025).after, 6847.83);
+      assert.equal(year(2026).total, 13695.65);
+      assert.equal(year(2031).months, 3);
+      assert.equal(rows.at(-1)!.carrying, 10000);
+      assert.equal(s.tables[0].totals!.total, 120000);
+    });
+
+    it("journal records the renovation and every year's depreciation", () => {
+      assert.ok(s.journal.some((e) => e.id === "revision" && e.lines[0].debit === 10000));
+      const expense = round2(sum(s.journal.flatMap((e) => e.lines).filter((l) => l.account === "הוצאות פחת").map((l) => l.debit)));
+      assert.equal(expense, 120000);
+    });
+
+    it("balance sheet and profit or loss tie to the schedule", () => {
+      const bs = s.tables.find((t) => t.id === "balance-sheet")!;
+      assert.equal(bs.rows.at(-1)!.y2025, 81902.17);
+      const pl = s.tables.find((t) => t.id === "profit-or-loss")!;
+      assert.equal(pl.rows.at(-1)!.y2025, -16014.5);
+    });
+  });
+
+  it("rejects a renovation after the original useful life", () => {
+    const calc = getCalculator("ias-16-property-plant-equipment")!;
+    const errors = validateValues(calc, { ...defaults(calc), component: false, revision: true, usefulLife: 2, acquisitionDate: "2023-03-31", revisionDate: "2025-07-01" });
+    assert.ok(errors.revisionDate);
+  });
 });
 
 describe("IAS 37", () => {

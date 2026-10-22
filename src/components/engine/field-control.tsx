@@ -67,6 +67,18 @@ export function FieldControl(props: Props) {
         </select>
       )}
       {field.kind === "number" && <NumberInput {...props} field={field} id={id} describedBy={describedBy} />}
+      {field.kind === "date" && (
+        <input
+          id={id}
+          type="date"
+          dir="ltr"
+          value={String(props.value ?? "")}
+          onChange={(e) => props.onChange(e.target.value)}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+          className={cn(inputClass, "num font-mono")}
+        />
+      )}
 
       {error ? (
         <p id={`${id}-error`} className="mt-1.5 text-xs text-danger" role="alert">

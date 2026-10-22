@@ -34,8 +34,12 @@ export type NumberField = FieldBase & {
   required?: boolean;
 };
 
+/** A calendar date, held as an ISO "YYYY-MM-DD" string. */
+export type DateField = FieldBase & { kind: "date"; default: string };
+
 export type ScenarioField = ToggleField | RadioField | SelectField;
-export type Field = ScenarioField | NumberField;
+export type MetricField = NumberField | DateField;
+export type Field = ScenarioField | MetricField;
 
 export type CalculatorSchema = {
   slug: string;
@@ -49,7 +53,7 @@ export type CalculatorSchema = {
   /** Content item whose video explains this calculator. */
   explainerSlug?: string;
   scenario: ScenarioField[];
-  metrics: NumberField[];
+  metrics: MetricField[];
 };
 
 export type JournalLine = { account: string; debit: number; credit: number };

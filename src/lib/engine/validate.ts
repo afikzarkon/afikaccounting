@@ -33,7 +33,16 @@ export function checkField(field: Field, value: FieldValue | undefined): string 
       if (field.max !== undefined && n > field.max) return `הערך חייב להיות לכל היותר ${field.max}.`;
       return null;
     }
+    case "date":
+      return typeof value === "string" && isIsoDate(value) ? null : "יש להזין תאריך תקין.";
   }
+}
+
+/** True for a real calendar date written as YYYY-MM-DD. */
+export function isIsoDate(s: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
 }
 
 /** Errors for the visible fields of one wizard step (or of every step). */
