@@ -17,6 +17,11 @@ type FieldBase = {
   label: string;
   help?: string;
   showIf?: Condition[];
+  /** Shown but locked when every condition holds; `disabledHint` says why. Locked fields are not validated. */
+  disabledIf?: Condition[];
+  disabledHint?: string;
+  /** Heading of the group this field opens or belongs to within its wizard step. */
+  section?: string;
   /** Seconds into the calculator's explainer video that cover this field. */
   videoAt?: number;
 };
@@ -54,9 +59,15 @@ export type CalculatorSchema = {
   accent: "sky" | "violet" | "amber" | "emerald";
   /** Content item whose video explains this calculator. */
   explainerSlug?: string;
-  scenario: ScenarioField[];
-  metrics: MetricField[];
+  /** Wizard step 1. Any field kind; most calculators use toggles and choices here. */
+  scenario: Field[];
+  /** Wizard step 2. */
+  metrics: Field[];
+  /** Titles for the two input steps, when the defaults ("תרחיש", "נתונים כספיים") do not fit. */
+  steps?: { scenario: StepText; metrics: StepText };
 };
+
+export type StepText = { title: string; short: string; intro: string };
 
 export type JournalLine = { account: string; debit: number; credit: number };
 export type JournalEntry = { id: string; when: string; narrative: string; lines: JournalLine[]; reference?: string };
@@ -91,6 +102,25 @@ export type Solution = {
   disclosure: string;
   guidance: Guidance[];
   assumptions: string[];
+  /** A worked solution per reporting period; when present the journal is shown inside each year. */
+  years?: YearSection[];
+};
+
+/** One line of a worked calculation: what is computed, how, and the result. */
+export type Working = { label: string; formula?: string; amount?: number };
+export type StatementLine = { label: string; value: number; emphasis?: "subtotal" | "total" };
+
+export type YearSection = {
+  id: string;
+  title: string;
+  subtitle: string;
+  journal: JournalEntry[];
+  workings: Working[];
+  balanceDate: string;
+  balance: StatementLine[];
+  profitOrLoss: StatementLine[];
+  /** How to carry the calculation into the next period. */
+  next: Guidance[];
 };
 
 export type Calculator = CalculatorSchema & {

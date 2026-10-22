@@ -11,6 +11,10 @@ export function isVisible(field: Field, values: Values) {
   return (field.showIf ?? []).every((cond) => cond.in.includes(values[cond.field]));
 }
 
+export function isDisabled(field: Field, values: Values) {
+  return !!field.disabledIf && field.disabledIf.every((cond) => cond.in.includes(values[cond.field]));
+}
+
 export function defaults(c: CalculatorSchema): Values {
   return Object.fromEntries(allFields(c).map((f) => [f.id, f.default]));
 }
@@ -75,7 +79,7 @@ export function validateValues(
   const fields = scope === "scenario" ? calc.scenario : scope === "metrics" ? calc.metrics : allFields(calc);
   const errors: Record<string, string> = {};
   for (const field of fields) {
-    if (!isVisible(field, values)) continue;
+    if (!isVisible(field, values) || isDisabled(field, values)) continue;
     const message = checkField(field, values[field.id]);
     if (message) errors[field.id] = message;
   }

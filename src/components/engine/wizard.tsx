@@ -23,7 +23,7 @@ import type { PlayableItem } from "@/components/video/video-player";
 import { saveSolution } from "@/lib/actions/solutions";
 import { CALCULATORS, getCalculator } from "@/lib/engine/registry";
 import type { Calculator, FieldValue, Solution, Values } from "@/lib/engine/types";
-import { defaults, isVisible, validateValues } from "@/lib/engine/validate";
+import { defaults, isDisabled, isVisible, validateValues } from "@/lib/engine/validate";
 import { cn } from "@/lib/utils";
 import { ACCENTS, CalculatorIcon } from "./calculator-visuals";
 import { FieldControl } from "./field-control";
@@ -133,7 +133,12 @@ export function Wizard({
 
   return (
     <div>
-      <Stepper step={step} canVisit={canVisit} onSelect={(i) => (i > step ? next() : go(i))} />
+      <Stepper
+        steps={[STEPS[0], calc?.steps?.scenario ?? STEPS[1], calc?.steps?.metrics ?? STEPS[2], STEPS[3]]}
+        step={step}
+        canVisit={canVisit}
+        onSelect={(i) => (i > step ? next() : go(i))}
+      />
 
       {calc && step > 0 && (
         <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface/60 p-3 pe-4">
@@ -244,10 +249,12 @@ export function Wizard({
 }
 
 function Stepper({
+  steps,
   step,
   canVisit,
   onSelect,
 }: {
+  steps: { title: string; short: string }[];
   step: number;
   canVisit: (i: number) => boolean;
   onSelect: (i: number) => void;
@@ -255,7 +262,7 @@ function Stepper({
   return (
     <nav aria-label="התקדמות באשף" className="no-print">
       <ol className="grid grid-cols-4 gap-2">
-        {STEPS.map((s, i) => {
+        {steps.map((s, i) => {
           const done = i < step;
           const active = i === step;
           return (
@@ -370,18 +377,20 @@ function FieldsStep({
   const fields = (scope === "scenario" ? calc.scenario : calc.metrics).filter((f) => isVisible(f, values));
   // Cross-field errors (from calc.validate) can name fields on either step.
   const stray = Object.entries(errors).filter(([id]) => !fields.some((f) => f.id === id));
+  const text = calc.steps?.[scope];
 
   return (
     <div className="card p-5 sm:p-7">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold tracking-tight text-fg">
-            {scope === "scenario" ? "הגדרת התרחיש" : "הזנת הנתונים הכספיים"}
+            {text?.title ?? (scope === "scenario" ? "הגדרת התרחיש" : "הזנת הנתונים הכספיים")}
           </h2>
           <p className="mt-1 text-sm text-muted">
-            {scope === "scenario"
-              ? "הבחירות האלה קובעות איזה טיפול חשבונאי חל."
-              : "הסכומים נבדקים תוך כדי הקלדה; הפתרון מחושב מחדש מיד."}
+            {text?.intro ??
+              (scope === "scenario"
+                ? "הבחירות האלה קובעות איזה טיפול חשבונאי חל."
+                : "הסכומים נבדקים תוך כדי הקלדה; הפתרון מחושב מחדש מיד.")}
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={onReset}>
@@ -397,28 +406,52 @@ function FieldsStep({
         </div>
       )}
 
+      {fields.length === 0 && <p className="mt-6 text-sm text-muted">אין נתונים נוספים להזנה בשלב זה.</p>}
+
       <motion.div layout className="mt-6 grid gap-x-5 gap-y-6 sm:grid-cols-2">
         <AnimatePresence initial={false}>
-          {fields.map((f) => (
-            <motion.div
-              key={f.id}
-              layout
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.18 }}
-              className={cn(f.kind === "radio" && "sm:col-span-2")}
-            >
-              <FieldControl
-                field={f}
-                value={values[f.id]}
-                error={errors[f.id]}
-                currency={currency}
-                onChange={(v) => onChange(f.id, v)}
-                onExplain={onExplain}
-              />
-            </motion.div>
-          ))}
+          {fields.flatMap((f, i) => {
+            const opensSection = f.section && f.section !== fields[i - 1]?.section;
+            const control = (
+              <motion.div
+                key={f.id}
+                layout
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.18 }}
+                className={cn((f.kind === "radio" || f.kind === "series") && "sm:col-span-2")}
+              >
+                <FieldControl
+                  field={f}
+                  value={values[f.id]}
+                  error={errors[f.id]}
+                  disabled={isDisabled(f, values)}
+                  currency={currency}
+                  onChange={(v) => onChange(f.id, v)}
+                  onExplain={onExplain}
+                />
+              </motion.div>
+            );
+            if (!opensSection) return [control];
+            return [
+              <motion.h3
+                key={`section-${f.section}`}
+                layout
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className={cn(
+                  "flex items-center gap-2 text-sm font-semibold text-fg sm:col-span-2",
+                  i > 0 && "mt-2 border-t border-line pt-6",
+                )}
+              >
+                <span className="h-4 w-1 rounded-full bg-accent" />
+                {f.section}
+              </motion.h3>,
+              control,
+            ];
+          })}
         </AnimatePresence>
       </motion.div>
     </div>

@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import { round2, sum } from "./math";
 import { CALCULATORS, getCalculator } from "./registry";
 import type { Values } from "./types";
-import { defaults, validateValues } from "./validate";
+import { defaults, isDisabled, validateValues } from "./validate";
 
 const solve = (slug: string, overrides: Values = {}) => {
   const calc = getCalculator(slug)!;
@@ -99,7 +99,7 @@ describe("IAS 16", () => {
     calcStart: "2023-03-31",
     calcEnd: "2031-12-31",
   };
-  const renovation: Values = { revision: true, revisionDate: "2025-07-01", revisionCost: 10000, lifeExtension: 2, revisedResidual: 10000 };
+  const renovation: Values = { hasEvents: true, revision: true, revisionDate: "2025-07-01", revisionCost: 10000, lifeExtension: 2, revisedResidual: 10000 };
   const table = (s: ReturnType<typeof solve>, id: string) => s.tables.find((t) => t.id === id)!;
   const year = (s: ReturnType<typeof solve>, y: number) => table(s, "depreciation").rows.find((r) => r.year === y)!;
   const line = (s: ReturnType<typeof solve>, id: string, item: string) => table(s, id).rows.find((r) => r.item === item)!;
@@ -204,7 +204,7 @@ describe("IAS 16", () => {
   });
 
   it("revaluation model: decrease to P&L, later increase reverses it before the surplus", () => {
-    const s = solve(PPE, { ...base, model: "revaluation", fairValues: "100000, , 70000, 80000" });
+    const s = solve(PPE, { ...base, model: "revaluation", hasEvents: true, revalue: true, fairValues: "100000, , 70000, 80000" });
     const pl = (y: number) => line(s, "profit-or-loss", "הפסד מהערכה מחדש / ביטולו")[`y${y}`];
     assert.equal(pl(2023), -6250); // 106,250 → 100,000
     assert.equal(pl(2025), 4285.71); // reverses part of the earlier loss
@@ -215,7 +215,7 @@ describe("IAS 16", () => {
   });
 
   it("cost model impairment and a reversal capped at the unimpaired carrying amount", () => {
-    const s = solve(PPE, { ...base, recoverableAmounts: ", 80000, , 60000" });
+    const s = solve(PPE, { ...base, hasEvents: true, impairment: true, recoverableAmounts: ", 80000, , 60000" });
     const imp = (y: number) => line(s, "profit-or-loss", "הפסד מירידת ערך / ביטולו")[`y${y}`];
     assert.equal(imp(2024), -7916.67);
     assert.equal(imp(2026), 4191.18); // up to 51,250, not 60,000
@@ -223,7 +223,7 @@ describe("IAS 16", () => {
   });
 
   describe("asset exchange", () => {
-    const exchange: Values = { exchange: true, exchangeDate: "2027-12-31", fvGiven: 50000, fvReceived: 55000, cashDirection: "paid", cashAmount: 5000 };
+    const exchange: Values = { hasEvents: true, exchange: true, exchangeDate: "2027-12-31", fvGiven: 50000, fvReceived: 55000, cashDirection: "paid", cashAmount: 5000 };
 
     it("with commercial substance: fair value of the asset given plus cash, gain on derecognition", () => {
       const s = solve(PPE, { ...base, ...exchange });
@@ -233,7 +233,7 @@ describe("IAS 16", () => {
     });
 
     it("measured at the fair value received when that is more evident", () => {
-      const s = solve(PPE, { ...base, ...exchange, exchangeBasis: "received" });
+      const s = solve(PPE, { ...base, ...exchange, fvGivenKnown: false });
       assert.equal(metric(s, "עלות הנכס שהתקבל"), 55000);
       assert.equal(metric(s, "רווח (הפסד) מההחלפה"), round2(55000 - 5000 - 32916.67));
     });
@@ -252,6 +252,80 @@ describe("IAS 16", () => {
     assert.equal(rows[0].opening, 87916.67);
     assert.equal(rows[1].months, 6);
     assert.ok(!s.journal.some((e) => e.id === "acquisition"));
+  });
+
+  describe("year-by-year breakdown", () => {
+    const s = solve(PPE, { ...base, ...renovation });
+    const y = (n: number) => s.years!.find((x) => x.id === `y${n}`)!;
+
+    it("has one section per reporting year with its own journal", () => {
+      assert.deepEqual(s.years!.map((x) => x.id), ["y2023", "y2024", "y2025", "y2026", "y2027", "y2028", "y2029", "y2030", "y2031"]);
+      assert.ok(y(2023).journal.some((e) => e.id === "acquisition"));
+      assert.ok(y(2025).journal.some((e) => e.id.startsWith("renovation")));
+      assert.equal(sum(s.years!.map((x) => x.journal.length)), s.journal.length);
+    });
+
+    it("shows the working, the balance sheet and profit or loss for the year", () => {
+      assert.ok(y(2025).workings.some((w) => w.label.startsWith("ערך בספרים ערב השיפוץ") && w.amount === 78750));
+      assert.equal(y(2025).workings.find((w) => w.label === "סך הפחת לשנת 2025")!.amount, 16014.5);
+      assert.equal(y(2025).balance.find((l) => l.emphasis === "total")!.value, 81902.17);
+      assert.equal(y(2025).balanceDate, "31/12/2025");
+      assert.equal(y(2025).profitOrLoss[0].value, -16014.5);
+    });
+
+    it("explains how to carry on: original formula before, revised formula after the renovation", () => {
+      assert.match(y(2024).next[0].body, /עלות מקורית/);
+      assert.match(y(2024).next.map((g) => g.body).join(), /01\/07\/2025/); // the coming renovation is flagged
+      assert.match(y(2025).next[0].body, /יתרה בספרים ערב השיפוץ/);
+      assert.match(y(2025).next[0].body, /13,695\.65/);
+      assert.equal(y(2031).next[0].title, "הנכס הופחת במלואו");
+    });
+
+    it("revaluation: next-year guidance gives the excess-depreciation transfer", () => {
+      const r = solve(PPE, { ...base, model: "revaluation", hasEvents: true, revalue: true, fairValues: ", , , 80000" });
+      const next = r.years!.find((x) => x.id === "y2026")!.next;
+      assert.match(next[0].body, /השווי ההוגן החדש/);
+      assert.match(next.find((g) => g.title.includes("לעודפים"))!.body, /הפרש הפחת/);
+    });
+
+    it("revaluation with transfer on disposal only keeps the surplus", () => {
+      const r = solve(PPE, { ...base, model: "revaluation", hasEvents: true, revalue: true, fairValues: ", , , 80000", surplusTransfer: "disposal" });
+      const rows = table(r, "depreciation").rows;
+      assert.equal(rows.at(-1)!.surplus, rows.find((x) => x.year === 2026)!.surplus);
+      assert.ok(!r.journal.some((e) => e.id.startsWith("transfer")));
+    });
+
+    it("exchange: sets the new asset's cost and its depreciation for the next year", () => {
+      const r = solve(PPE, {
+        ...base,
+        hasEvents: true,
+        exchange: true,
+        exchangeDate: "2027-12-31",
+        fvGiven: 50000,
+        cashDirection: "paid",
+        cashAmount: 5000,
+        newAssetLife: 5,
+        newAssetResidual: 5000,
+      });
+      const next = r.years!.at(-1)!.next;
+      assert.match(next[0].body, /55,000\.00/);
+      assert.match(next[1].body, /פחת לשנת 2028: ₪10,000\.00/); // (55,000 − 5,000) / 5
+    });
+  });
+
+  it("events count only when an event is declared", () => {
+    const s = solve(PPE, { ...base, ...renovation, hasEvents: false });
+    assert.ok(!s.journal.some((e) => e.id.startsWith("renovation")));
+    assert.equal(table(s, "depreciation").rows.at(-1)!.year, 2029);
+  });
+
+  it("the fair value of the asset received is locked, and not validated, while the given one is known", () => {
+    const calc = getCalculator(PPE)!;
+    const field = calc.metrics.find((f) => f.id === "fvReceived")!;
+    const values = { ...defaults(calc), hasEvents: true, exchange: true, fvGivenKnown: true, fvReceived: -1 };
+    assert.ok(isDisabled(field, values));
+    assert.deepEqual(validateValues(calc, values), {});
+    assert.ok(validateValues(calc, { ...values, fvGivenKnown: false }).fvReceived);
   });
 
   it("rejects a renovation after the original useful life", () => {

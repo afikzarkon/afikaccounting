@@ -11,6 +11,8 @@ type Props<F extends Field = Field> = {
   field: F;
   value: FieldValue | undefined;
   error?: string;
+  /** Locked by the field's `disabledIf`; the hint replaces the help text. */
+  disabled?: boolean;
   currency: string;
   onChange: (value: FieldValue) => void;
   /** Opens the explainer video at the field's timestamp, when it has one. */
@@ -18,12 +20,14 @@ type Props<F extends Field = Field> = {
 };
 
 export function FieldControl(props: Props) {
-  const { field, error, onExplain } = props;
+  const { field, error, disabled, onExplain } = props;
   const id = useId();
-  const describedBy = error ? `${id}-error` : field.help ? `${id}-help` : undefined;
+  const help = disabled && field.disabledHint ? field.disabledHint : field.help;
+  const describedBy = error ? `${id}-error` : help ? `${id}-help` : undefined;
 
   return (
-    <div>
+    // A disabled fieldset disables every control inside it, whatever its kind.
+    <fieldset disabled={disabled} className={cn("min-w-0", disabled && "opacity-55")}>
       <div className="mb-2 flex items-start justify-between gap-3">
         <label
           htmlFor={field.kind === "radio" || field.kind === "toggle" ? undefined : id}
@@ -99,12 +103,12 @@ export function FieldControl(props: Props) {
         <p id={`${id}-error`} className="mt-1.5 text-xs text-danger" role="alert">
           {error}
         </p>
-      ) : field.help ? (
-        <p id={`${id}-help`} className="mt-1.5 text-xs leading-relaxed text-muted">
-          {field.help}
+      ) : help ? (
+        <p id={`${id}-help`} className={cn("mt-1.5 text-xs leading-relaxed", disabled ? "text-amber-600 dark:text-amber-400" : "text-muted")}>
+          {help}
         </p>
       ) : null}
-    </div>
+    </fieldset>
   );
 }
 

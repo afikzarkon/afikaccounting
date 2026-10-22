@@ -2,12 +2,16 @@
 
 import {
   BookOpenText,
+  CalendarDays,
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ClipboardCopy,
   FileDown,
   FileSpreadsheet,
   Info,
+  Lightbulb,
   ListChecks,
   Printer,
   ScrollText,
@@ -19,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/primitives";
 import { amount, formatCell, money, percent, plain } from "@/lib/engine/format";
 import { round2, sum } from "@/lib/engine/math";
-import type { JournalEntry, Metric, ScheduleTable, Solution } from "@/lib/engine/types";
+import type { JournalEntry, Metric, ScheduleTable, Solution, StatementLine, YearSection } from "@/lib/engine/types";
 import { cn } from "@/lib/utils";
 import { downloadCsv, fileSlug, journalToCsv, tableToCsv } from "./export";
 
@@ -69,7 +73,16 @@ export function SolutionView({
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-6">
-          {solution.journal.length > 0 && (
+          {solution.years && solution.years.length > 0 && (
+            <motion.div variants={fadeUp} initial="hidden" animate="show" custom={1}>
+              <YearBreakdown
+                years={solution.years}
+                onExport={() => downloadCsv(`${base}-journal`, journalToCsv(solution.journal))}
+              />
+            </motion.div>
+          )}
+
+          {!solution.years && solution.journal.length > 0 && (
             <motion.section variants={fadeUp} initial="hidden" animate="show" custom={1} className="card overflow-hidden">
               <PanelHeader
                 icon={<ScrollText className="h-4 w-4" />}
@@ -385,6 +398,154 @@ function GuidanceBox({ guidance }: { guidance: Solution["guidance"] }) {
         ))}
       </div>
     </div>
+  );
+}
+
+function YearBreakdown({ years, onExport }: { years: YearSection[]; onExport: () => void }) {
+  const [index, setIndex] = useState(0);
+
+  return (
+    <section className="card overflow-hidden">
+      <PanelHeader
+        icon={<CalendarDays className="h-4 w-4" />}
+        title="פתרון שנה אחר שנה"
+        subtitle={`${years.length} שנות דיווח · פקודות יומן, דרך החישוב, מאזן ורווח והפסד`}
+        actions={
+          <Button variant="secondary" size="sm" onClick={onExport} title="כל פקודות היומן">
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+          </Button>
+        }
+      />
+      <div className="no-print flex items-center gap-2 border-b border-line px-3 py-2.5">
+        <Button variant="ghost" size="sm" onClick={() => setIndex((i) => i - 1)} disabled={index === 0} aria-label="השנה הקודמת">
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+        <div role="tablist" aria-label="שנות דיווח" className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto py-0.5">
+          {years.map((y, i) => (
+            <button
+              key={y.id}
+              type="button"
+              role="tab"
+              aria-selected={i === index}
+              onClick={() => setIndex(i)}
+              className={cn(
+                "shrink-0 rounded-lg px-3 py-1.5 font-mono text-[13px] transition-colors",
+                i === index ? "bg-accent text-accent-fg" : "text-muted hover:bg-surface-2 hover:text-fg",
+              )}
+            >
+              {y.title.replace(/\D+/g, "")}
+            </button>
+          ))}
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIndex((i) => i + 1)}
+          disabled={index === years.length - 1}
+          aria-label="השנה הבאה"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+      </div>
+      {years.map((y, i) => (
+        // Every year is rendered so printing shows them all; only the chosen one is on screen.
+        <div key={y.id} role="tabpanel" className={cn("p-5", i !== index && "hidden print:block")}>
+          <YearDetail year={y} />
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function YearDetail({ year }: { year: YearSection }) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold tracking-tight text-fg">📅 {year.title}</h3>
+        <p className="mt-0.5 text-xs text-muted">{year.subtitle}</p>
+      </div>
+
+      <YearPart icon="📝" title={`פקודות יומן ל${year.title}`}>
+        {year.journal.length > 0 ? (
+          <div className="overflow-hidden rounded-xl border border-line">
+            <JournalTable journal={year.journal} />
+          </div>
+        ) : (
+          <p className="text-sm text-muted">אין פקודות יומן בשנה זו.</p>
+        )}
+      </YearPart>
+
+      <YearPart icon="🧮" title={`דרך החישוב של ${year.title}`}>
+        <ol className="divide-y divide-line overflow-hidden rounded-xl border border-line">
+          {year.workings.map((w, i) => (
+            <li key={i} className={cn("flex flex-wrap items-baseline gap-x-4 gap-y-1 px-4 py-2.5", w.formula === undefined && "bg-surface-2/40")}>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] text-fg">{w.label}</p>
+                {w.formula && <p className="mt-0.5 text-xs leading-relaxed text-muted">{w.formula}</p>}
+              </div>
+              {w.amount !== undefined && <span className="num font-mono text-[13px] font-medium text-fg">{amount(w.amount)}</span>}
+            </li>
+          ))}
+        </ol>
+      </YearPart>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <YearPart icon="📊" title={`הצגה מאזנית ליום ${year.balanceDate}`}>
+          <Statement lines={year.balance} />
+        </YearPart>
+        <YearPart icon="📉" title={`דוח רווח והפסד ל${year.title}`}>
+          <Statement lines={year.profitOrLoss} />
+        </YearPart>
+      </div>
+
+      {year.next.length > 0 && (
+        <div className="rounded-xl border border-accent/30 bg-accent-soft/40 p-4">
+          <p className="flex items-center gap-2 text-sm font-semibold text-fg">
+            <Lightbulb className="h-4 w-4 text-accent" /> איך נוכל להמשיך לחשב את השנה הבאה?
+          </p>
+          <div className="mt-3 space-y-3">
+            {year.next.map((g) => (
+              <div key={g.title}>
+                <p className="text-[13px] font-medium text-fg">{g.title}</p>
+                <p className="mt-1 text-[13px] leading-relaxed text-muted">{g.body}</p>
+                <Reference className="mt-1.5">{g.reference}</Reference>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function YearPart({ icon, title, children }: { icon: string; title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-2.5 flex items-center gap-2 text-sm font-semibold text-fg">
+        <span aria-hidden>{icon}</span> {title}
+      </p>
+      {children}
+    </div>
+  );
+}
+
+const STATEMENT_EMPHASIS: Record<NonNullable<StatementLine["emphasis"]>, string> = {
+  subtotal: "bg-surface-2/50 font-medium text-fg",
+  total: "bg-accent-soft font-semibold text-fg",
+};
+
+function Statement({ lines }: { lines: StatementLine[] }) {
+  return (
+    <table className="w-full overflow-hidden rounded-xl border border-line text-[13px]">
+      <tbody>
+        {lines.map((l) => (
+          <tr key={l.label} className={cn("border-b border-line/60 last:border-b-0", l.emphasis ? STATEMENT_EMPHASIS[l.emphasis] : "text-muted")}>
+            <td className="px-4 py-2">{l.label}</td>
+            <td className="num px-4 py-2 text-end font-mono">{amount(l.value)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
