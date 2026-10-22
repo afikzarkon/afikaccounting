@@ -1,4 +1,4 @@
-# LedgerLab — Accounting & Financial Engine
+# AfikAccounting — Accounting & Financial Engine
 
 A full-stack accounting portal that pairs a **Smart Accounting Solution Engine** (IFRS 16, IAS 16, IAS 37, Israeli corporate tax / IAS 12) with a **video and article Content Hub**.
 

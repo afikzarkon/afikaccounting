@@ -1,4 +1,4 @@
--- LedgerLab — initial schema
+-- AfikAccounting — initial schema
 -- Users live in auth.users (managed by Supabase Auth); public.profiles extends them.
 
 create extension if not exists "pgcrypto";
