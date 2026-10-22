@@ -6,6 +6,7 @@ export const site = {
   nav: [
     { href: "/", label: "ראשי" },
     { href: "/engine", label: "מחשבונים חכמים" },
+    { href: "/ias16-guide", label: "מדריך IAS 16" },
     { href: "/content", label: "מרכז התוכן" },
     { href: "/about", label: "אודות" },
   ],

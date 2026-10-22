@@ -126,6 +126,16 @@
   .num {
     font-variant-numeric: tabular-nums;
   }
+  /*
+   * KaTeX has no Hebrew glyphs; set \text{} in the site font instead of a fallback.
+   * Isolating each run stops the bidi algorithm from merging Hebrew terms across
+   * the operators between them and flipping the equation right to left.
+   */
+  .katex .text {
+    unicode-bidi: isolate;
+    font-family: var(--font-sans);
+    font-size: 0.86em;
+  }
 }
 
 @media print {
