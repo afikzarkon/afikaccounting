@@ -40,43 +40,6 @@ export function entry(id: string, when: string, narrative: string, signed: [stri
   return { id, when, narrative, lines };
 }
 
-/** Annual depreciation charges whose total equals cost − residual exactly. */
-export function depreciationSeries(
-  cost: number,
-  residual: number,
-  life: number,
-  method: "straight-line" | "double-declining" | "sum-of-years",
-): number[] {
-  const depreciable = Math.max(cost - residual, 0);
-  const out: number[] = [];
-  if (life <= 0 || depreciable === 0) return Array.from({ length: Math.max(life, 0) }, () => 0);
-
-  if (method === "straight-line") {
-    for (let y = 0; y < life; y++) out.push(depreciable / life);
-  } else if (method === "sum-of-years") {
-    const denominator = (life * (life + 1)) / 2;
-    for (let y = 0; y < life; y++) out.push((depreciable * (life - y)) / denominator);
-  } else {
-    // Double-declining balance, switching to straight-line once that gives the
-    // larger charge, and never depreciating below the residual value.
-    const rate = 2 / life;
-    let carrying = cost;
-    for (let y = 0; y < life; y++) {
-      const remaining = life - y;
-      const ddb = carrying * rate;
-      const sl = (carrying - residual) / remaining;
-      const charge = Math.min(Math.max(ddb, sl), carrying - residual);
-      out.push(charge);
-      carrying -= charge;
-    }
-  }
-
-  const rounded = out.map(round2);
-  const drift = round2(depreciable - sum(rounded));
-  rounded[rounded.length - 1] = round2(rounded[rounded.length - 1] + drift);
-  return rounded;
-}
-
 /** Undiscounted maturity bands as required by IFRS 7.39 / IFRS 16.58. */
 export function maturityBands(flowsByYear: number[]) {
   return {

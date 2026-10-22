@@ -1,4 +1,4 @@
-import type { Calculator, CalculatorSchema, Field, FieldValue, Values } from "./types";
+import type { Calculator, CalculatorSchema, DatedValue, Field, FieldValue, Values } from "./types";
 
 export const num = (v: Values, id: string) => Number(v[id] ?? 0);
 export const rate = (v: Values, id: string) => num(v, id) / 100;
@@ -13,6 +13,15 @@ export function isVisible(field: Field, values: Values) {
 
 export function isDisabled(field: Field, values: Values) {
   return !!field.disabledIf && field.disabledIf.every((cond) => cond.in.includes(values[cond.field]));
+}
+
+/** Conventions for solving for an unknown: the mode field and the field that names the unknown. */
+export const SOLVE_MODE = "mode";
+export const UNKNOWN = "unknown";
+
+/** The field is the unknown X: it is computed, so it is neither entered nor validated. */
+export function isUnknown(field: Field, values: Values) {
+  return !!field.solvable && values[SOLVE_MODE] === "solve" && values[UNKNOWN] === field.id;
 }
 
 export function defaults(c: CalculatorSchema): Values {
@@ -41,8 +50,36 @@ export function checkField(field: Field, value: FieldValue | undefined): string 
       return typeof value === "string" && isIsoDate(value) ? null : "יש להזין תאריך תקין.";
     case "series":
       return parseSeries(String(value ?? "")) ? null : "יש להזין מספרים חיוביים מופרדים בפסיקים.";
+    case "dated-values": {
+      const rows = parseDatedValues(String(value ?? ""));
+      if (rows.length === 0) return "יש להוסיף לפחות שורה אחת.";
+      if (rows.some((r) => !isIsoDate(r.date))) return "בכל שורה יש לבחור תאריך.";
+      if (rows.some((r) => r.value === "" || !Number.isFinite(r.value) || r.value < 0)) return "בכל שורה יש להזין סכום חיובי.";
+      if (new Set(rows.map((r) => r.date)).size < rows.length) return "כל תאריך יכול להופיע פעם אחת בלבד.";
+      return null;
+    }
   }
 }
+
+/** The rows of a dated-values field; malformed input reads as no rows. */
+export function parseDatedValues(s: string): DatedValue[] {
+  try {
+    const rows: unknown = JSON.parse(s || "[]");
+    if (!Array.isArray(rows)) return [];
+    return rows.map((r) => ({
+      date: typeof r?.date === "string" ? r.date : "",
+      value: r?.value === "" || r?.value === undefined || r?.value === null ? "" : Number(r.value),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/** Complete rows only, sorted by date. */
+export const datedValues = (v: Values, id: string) =>
+  parseDatedValues(str(v, id))
+    .filter((r): r is { date: string; value: number } => isIsoDate(r.date) && typeof r.value === "number" && Number.isFinite(r.value))
+    .sort((a, b) => a.date.localeCompare(b.date));
 
 /** "100, , 80" → [100, null, 80]; null when an item is not a non-negative number. */
 export function parseSeries(s: string): (number | null)[] | null {
@@ -79,7 +116,7 @@ export function validateValues(
   const fields = scope === "scenario" ? calc.scenario : scope === "metrics" ? calc.metrics : allFields(calc);
   const errors: Record<string, string> = {};
   for (const field of fields) {
-    if (!isVisible(field, values) || isDisabled(field, values)) continue;
+    if (!isVisible(field, values) || isDisabled(field, values) || isUnknown(field, values)) continue;
     const message = checkField(field, values[field.id]);
     if (message) errors[field.id] = message;
   }

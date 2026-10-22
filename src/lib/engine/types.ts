@@ -22,6 +22,11 @@ type FieldBase = {
   disabledHint?: string;
   /** Heading of the group this field opens or belongs to within its wizard step. */
   section?: string;
+  /**
+   * Can be marked as the unknown X when the calculator's `mode` field is
+   * "solve"; the marked field's id is held in the `unknown` field.
+   */
+  solvable?: boolean;
   /** Seconds into the calculator's explainer video that cover this field. */
   videoAt?: number;
 };
@@ -32,7 +37,8 @@ export type SelectField = FieldBase & { kind: "select"; options: Option[]; defau
 export type NumberField = FieldBase & {
   kind: "number";
   unit: "currency" | "percent" | "years" | "count";
-  default: number;
+  /** "" leaves the field empty for the user to fill in. */
+  default: number | "";
   min?: number;
   max?: number;
   integer?: boolean;
@@ -44,8 +50,15 @@ export type DateField = FieldBase & { kind: "date"; default: string };
 /** One optional number per period, typed as "100, , 80"; an empty item means no value. */
 export type SeriesField = FieldBase & { kind: "series"; default: string; placeholder?: string };
 
+/**
+ * Rows of (date, amount) the user adds as needed, held as a JSON string of
+ * `DatedValue[]` so it fits the flat values record.
+ */
+export type DatedValuesField = FieldBase & { kind: "dated-values"; default: string; valueLabel: string; addLabel: string };
+export type DatedValue = { date: string; value: number | "" };
+
 export type ScenarioField = ToggleField | RadioField | SelectField;
-export type MetricField = NumberField | DateField | SeriesField;
+export type MetricField = NumberField | DateField | SeriesField | DatedValuesField;
 export type Field = ScenarioField | MetricField;
 
 export type CalculatorSchema = {
@@ -104,10 +117,21 @@ export type Solution = {
   assumptions: string[];
   /** A worked solution per reporting period; when present the journal is shown inside each year. */
   years?: YearSection[];
+  /** How an unknown input was recovered from a known result, shown before everything else. */
+  proof?: { title: string; steps: Working[] };
 };
 
+/**
+ * A formula as a tree, so the UI can typeset fractions: text, a sequence, or
+ * a fraction.
+ */
+export type MathExpr = string | MathExpr[] | { over: [MathExpr, MathExpr] };
+
+/** "lhs = abstract" in words, then "lhs = numeric = result" with the figures. */
+export type Equation = { lhs: string; abstract: MathExpr; numeric: MathExpr; result: number; unit?: "currency" | "number" };
+
 /** One line of a worked calculation: what is computed, how, and the result. */
-export type Working = { label: string; formula?: string; amount?: number };
+export type Working = { label: string; formula?: string; amount?: number; equation?: Equation };
 export type StatementLine = { label: string; value: number; emphasis?: "subtotal" | "total" };
 
 export type YearSection = {

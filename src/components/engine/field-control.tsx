@@ -1,10 +1,11 @@
 "use client";
 
-import { Check, PlayCircle } from "lucide-react";
+import { Check, PlayCircle, Plus, Trash2 } from "lucide-react";
 import { useId, useState } from "react";
 import { inputClass } from "@/components/ui/form";
 import { duration } from "@/lib/engine/format";
-import type { Field, FieldValue, NumberField } from "@/lib/engine/types";
+import type { DatedValuesField, Field, FieldValue, NumberField } from "@/lib/engine/types";
+import { parseDatedValues } from "@/lib/engine/validate";
 import { cn } from "@/lib/utils";
 
 type Props<F extends Field = Field> = {
@@ -17,36 +18,63 @@ type Props<F extends Field = Field> = {
   onChange: (value: FieldValue) => void;
   /** Opens the explainer video at the field's timestamp, when it has one. */
   onExplain?: (at: number) => void;
+  /** Offered when solving for an unknown: marks or clears this field as X. */
+  unknown?: { active: boolean; onToggle: () => void };
 };
 
 export function FieldControl(props: Props) {
-  const { field, error, disabled, onExplain } = props;
+  const { field, error, disabled, onExplain, unknown } = props;
   const id = useId();
-  const help = disabled && field.disabledHint ? field.disabledHint : field.help;
+  const isX = !!unknown?.active;
+  const help = isX
+    ? field.kind === "dated-values"
+      ? "נעלם (X): השאירו בלי סכום את השורה שהשווי בה הוא X — הוא יחושב מנתוני העזר."
+      : "נעלם (X): יחושב מנתוני העזר בשלב האירועים."
+    : disabled && field.disabledHint
+      ? field.disabledHint
+      : field.help;
   const describedBy = error ? `${id}-error` : help ? `${id}-help` : undefined;
 
   return (
-    // A disabled fieldset disables every control inside it, whatever its kind.
-    <fieldset disabled={disabled} className={cn("min-w-0", disabled && "opacity-55")}>
+    <div className="min-w-0">
       <div className="mb-2 flex items-start justify-between gap-3">
         <label
-          htmlFor={field.kind === "radio" || field.kind === "toggle" ? undefined : id}
+          htmlFor={field.kind === "radio" || field.kind === "toggle" || field.kind === "dated-values" ? undefined : id}
           id={`${id}-label`}
           className="text-[13px] leading-snug font-medium text-fg"
         >
           {field.label}
         </label>
-        {field.videoAt !== undefined && onExplain && (
-          <button
-            type="button"
-            onClick={() => onExplain(field.videoAt!)}
-            className="no-print inline-flex shrink-0 items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent transition hover:brightness-110"
-            title="צפייה בחלק של סרטון ההסבר שעוסק בזה"
-          >
-            <PlayCircle className="h-3.5 w-3.5" /> {duration(field.videoAt)}
-          </button>
-        )}
+        <div className="no-print flex shrink-0 items-center gap-1.5">
+          {unknown && (
+            <button
+              type="button"
+              onClick={unknown.onToggle}
+              aria-pressed={isX}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold transition-colors",
+                isX ? "bg-accent text-accent-fg" : "border border-dashed border-line-strong text-muted hover:border-accent hover:text-accent",
+              )}
+              title={isX ? "ביטול הסימון כנעלם" : "סימון השדה כנעלם (X)"}
+            >
+              {isX ? "✓ " : ""}נעלם (X)
+            </button>
+          )}
+          {field.videoAt !== undefined && onExplain && (
+            <button
+              type="button"
+              onClick={() => onExplain(field.videoAt!)}
+              className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent transition hover:brightness-110"
+              title="צפייה בחלק של סרטון ההסבר שעוסק בזה"
+            >
+              <PlayCircle className="h-3.5 w-3.5" /> {duration(field.videoAt)}
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* A disabled fieldset disables every control inside it, whatever its kind. */}
+      <fieldset disabled={disabled} className={cn("min-w-0", disabled && "opacity-55")}>
 
       {field.kind === "toggle" && <Toggle {...props} field={field} labelledBy={`${id}-label`} describedBy={describedBy} />}
       {field.kind === "radio" && <Radio {...props} field={field} labelledBy={`${id}-label`} />}
@@ -70,7 +98,7 @@ export function FieldControl(props: Props) {
           ))}
         </select>
       )}
-      {field.kind === "number" && <NumberInput {...props} field={field} id={id} describedBy={describedBy} />}
+      {field.kind === "number" && (isX ? <XPlaceholder /> : <NumberInput {...props} field={field} id={id} describedBy={describedBy} />)}
       {field.kind === "date" && (
         <input
           id={id}
@@ -83,6 +111,7 @@ export function FieldControl(props: Props) {
           className={cn(inputClass, "num font-mono")}
         />
       )}
+      {field.kind === "dated-values" && <DatedValuesInput {...props} field={field} labelledBy={`${id}-label`} xRow={isX} />}
       {field.kind === "series" && (
         <input
           id={id}
@@ -104,11 +133,24 @@ export function FieldControl(props: Props) {
           {error}
         </p>
       ) : help ? (
-        <p id={`${id}-help`} className={cn("mt-1.5 text-xs leading-relaxed", disabled ? "text-amber-600 dark:text-amber-400" : "text-muted")}>
+        <p
+          id={`${id}-help`}
+          className={cn("mt-1.5 text-xs leading-relaxed", isX ? "text-accent" : disabled ? "text-amber-600 dark:text-amber-400" : "text-muted")}
+        >
           {help}
         </p>
       ) : null}
-    </fieldset>
+      </fieldset>
+    </div>
+  );
+}
+
+/** Stands in for a number input while the field is the unknown. */
+function XPlaceholder() {
+  return (
+    <div className="grid h-11 place-items-center rounded-xl border border-dashed border-accent/60 bg-accent-soft font-mono text-lg font-semibold text-accent">
+      X
+    </div>
   );
 }
 
@@ -190,6 +232,82 @@ function Radio({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * Rows of date + amount, added and removed by the user. The rows live here as
+ * typed (so a half-entered amount survives) and are reported upward as JSON.
+ */
+function DatedValuesInput({
+  field,
+  value,
+  error,
+  onChange,
+  labelledBy,
+  xRow,
+}: Props<DatedValuesField> & { labelledBy: string; xRow: boolean }) {
+  const [rows, setRows] = useState<{ date: string; value: string }[]>(() =>
+    parseDatedValues(String(value ?? "")).map((r) => ({ date: r.date, value: r.value === "" ? "" : String(r.value) })),
+  );
+  const commit = (next: { date: string; value: string }[]) => {
+    setRows(next);
+    onChange(JSON.stringify(next.map((r) => ({ date: r.date, value: r.value.trim() === "" ? "" : Number(r.value) }))));
+  };
+  const set = (i: number, patch: Partial<{ date: string; value: string }>) => commit(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+
+  return (
+    <div role="group" aria-labelledby={labelledBy} className="space-y-2">
+      {rows.length > 0 && (
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.75rem] gap-2 px-1 text-[11px] text-subtle">
+          <span>תאריך</span>
+          <span>{field.valueLabel} (₪)</span>
+        </div>
+      )}
+      {rows.map((r, i) => (
+        <div key={i} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.75rem] gap-2">
+          <input
+            type="date"
+            dir="ltr"
+            value={r.date}
+            onChange={(e) => set(i, { date: e.target.value })}
+            aria-label={`תאריך — שורה ${i + 1}`}
+            aria-invalid={error ? true : undefined}
+            className={cn(inputClass, "num font-mono")}
+          />
+          <input
+            type="text"
+            dir="ltr"
+            inputMode="decimal"
+            autoComplete="off"
+            value={r.value}
+            onChange={(e) => {
+              const raw = e.target.value.replace(/,/g, "");
+              if (/^\d*\.?\d*$/.test(raw)) set(i, { value: raw });
+            }}
+            aria-label={`${field.valueLabel} — שורה ${i + 1}`}
+            aria-invalid={error ? true : undefined}
+            placeholder={xRow ? "X" : undefined}
+            className={cn(inputClass, "num font-mono", xRow && r.value === "" && "border-accent/60 bg-accent-soft placeholder:text-accent")}
+          />
+          <button
+            type="button"
+            onClick={() => commit(rows.filter((_, j) => j !== i))}
+            aria-label={`מחיקת שורה ${i + 1}`}
+            className="grid h-11 place-items-center rounded-xl border border-line-strong text-muted transition-colors hover:border-danger/50 hover:text-danger"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => commit([...rows, { date: "", value: "" }])}
+        className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-dashed border-line-strong px-3.5 text-sm text-muted transition-colors hover:border-accent/60 hover:text-accent"
+      >
+        <Plus className="h-4 w-4" /> {field.addLabel}
+      </button>
     </div>
   );
 }

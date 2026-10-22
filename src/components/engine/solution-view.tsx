@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/primitives";
 import { amount, formatCell, money, percent, plain } from "@/lib/engine/format";
 import { round2, sum } from "@/lib/engine/math";
-import type { JournalEntry, Metric, ScheduleTable, Solution, StatementLine, YearSection } from "@/lib/engine/types";
+import type { Equation, JournalEntry, MathExpr, Metric, ScheduleTable, Solution, StatementLine, Working, YearSection } from "@/lib/engine/types";
 import { cn } from "@/lib/utils";
 import { downloadCsv, fileSlug, journalToCsv, tableToCsv } from "./export";
 
@@ -73,9 +73,16 @@ export function SolutionView({
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-6">
+          {solution.proof && (
+            <motion.div variants={fadeUp} initial="hidden" animate="show" custom={1}>
+              <ProofCard proof={solution.proof} />
+            </motion.div>
+          )}
+
           {solution.years && solution.years.length > 0 && (
             <motion.div variants={fadeUp} initial="hidden" animate="show" custom={1}>
               <YearBreakdown
+                title={solution.proof ? "שלב ב׳: פתרון שנה אחר שנה, עם X במקומו" : "פתרון שנה אחר שנה"}
                 years={solution.years}
                 onExport={() => downloadCsv(`${base}-journal`, journalToCsv(solution.journal))}
               />
@@ -401,14 +408,14 @@ function GuidanceBox({ guidance }: { guidance: Solution["guidance"] }) {
   );
 }
 
-function YearBreakdown({ years, onExport }: { years: YearSection[]; onExport: () => void }) {
+function YearBreakdown({ title, years, onExport }: { title: string; years: YearSection[]; onExport: () => void }) {
   const [index, setIndex] = useState(0);
 
   return (
     <section className="card overflow-hidden">
       <PanelHeader
         icon={<CalendarDays className="h-4 w-4" />}
-        title="פתרון שנה אחר שנה"
+        title={title}
         subtitle={`${years.length} שנות דיווח · פקודות יומן, דרך החישוב, מאזן ורווח והפסד`}
         actions={
           <Button variant="secondary" size="sm" onClick={onExport} title="כל פקודות היומן">
@@ -476,17 +483,7 @@ function YearDetail({ year }: { year: YearSection }) {
       </YearPart>
 
       <YearPart icon="🧮" title={`דרך החישוב של ${year.title}`}>
-        <ol className="divide-y divide-line overflow-hidden rounded-xl border border-line">
-          {year.workings.map((w, i) => (
-            <li key={i} className={cn("flex flex-wrap items-baseline gap-x-4 gap-y-1 px-4 py-2.5", w.formula === undefined && "bg-surface-2/40")}>
-              <div className="min-w-0 flex-1">
-                <p className="text-[13px] text-fg">{w.label}</p>
-                {w.formula && <p className="mt-0.5 text-xs leading-relaxed text-muted">{w.formula}</p>}
-              </div>
-              {w.amount !== undefined && <span className="num font-mono text-[13px] font-medium text-fg">{amount(w.amount)}</span>}
-            </li>
-          ))}
-        </ol>
+        <WorkingsList workings={year.workings} />
       </YearPart>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -515,6 +512,90 @@ function YearDetail({ year }: { year: YearSection }) {
         </div>
       )}
     </div>
+  );
+}
+
+function WorkingsList({ workings, numbered }: { workings: Working[]; numbered?: boolean }) {
+  return (
+    <ol className="divide-y divide-line overflow-hidden rounded-xl border border-line">
+      {workings.map((w, i) => (
+        <li key={i} className={cn("px-4 py-2.5", w.equation === undefined && w.formula === undefined && "bg-surface-2/40")}>
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] text-fg">
+                {numbered && <span className="me-2 font-mono text-xs text-accent">{i + 1}.</span>}
+                {w.label}
+              </p>
+              {w.formula && <p className="mt-0.5 text-xs leading-relaxed text-muted">{w.formula}</p>}
+            </div>
+            {w.amount !== undefined && <span className="num font-mono text-[13px] font-medium text-fg">{amount(w.amount)}</span>}
+          </div>
+          {w.equation && <EquationView eq={w.equation} />}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function ProofCard({ proof }: { proof: NonNullable<Solution["proof"]> }) {
+  return (
+    <section className="card overflow-hidden border-accent/40">
+      <div className="border-b border-line bg-gradient-to-l from-accent-soft to-transparent px-5 py-4">
+        <p className="text-base font-semibold text-fg">{proof.title}</p>
+        <p className="mt-0.5 text-xs text-muted">המשוואה בונה את הנתון הידוע מהנעלם, ומבודדת את X צעד אחר צעד. אחר כך הפתרון כולו מחושב עם X במקומו.</p>
+      </div>
+      <div className="p-5">
+        <WorkingsList workings={proof.steps} numbered />
+      </div>
+    </section>
+  );
+}
+
+/**
+ * "lhs = formula in words", then "lhs = formula with figures = result".
+ * Laid out left to right like written math, so "a − b" keeps its order; the
+ * Hebrew words are isolated so they still read correctly.
+ */
+function EquationView({ eq }: { eq: Equation }) {
+  const result = eq.unit === "number" ? plain(eq.result) : `${amount(eq.result)} ש״ח`;
+  return (
+    <div dir="ltr" className="mt-2 space-y-2.5 overflow-x-auto rounded-lg bg-surface-2/50 px-3 py-3 text-[13px]">
+      <div className="flex w-max items-center gap-2 text-muted">
+        <bdi className="font-medium text-fg">{eq.lhs}</bdi>
+        <span>=</span>
+        <MathView expr={eq.abstract} />
+      </div>
+      <div className="flex w-max items-center gap-2 font-mono text-fg">
+        <bdi className="font-sans font-medium">{eq.lhs}</bdi>
+        <span>=</span>
+        <MathView expr={eq.numeric} />
+        <span>=</span>
+        <span className="num rounded-md bg-accent-soft px-1.5 py-0.5 font-semibold text-accent">{result}</span>
+      </div>
+    </div>
+  );
+}
+
+function MathView({ expr }: { expr: MathExpr }) {
+  if (typeof expr === "string") return <bdi className="whitespace-nowrap">{expr}</bdi>;
+  if (Array.isArray(expr)) {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        {expr.map((e, i) => (
+          <MathView key={i} expr={e} />
+        ))}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex flex-col items-center text-center leading-tight">
+      <span className="px-1.5 pb-1">
+        <MathView expr={expr.over[0]} />
+      </span>
+      <span className="w-full border-t border-current px-1.5 pt-1">
+        <MathView expr={expr.over[1]} />
+      </span>
+    </span>
   );
 }
 
