@@ -405,6 +405,40 @@ describe("IAS 16", () => {
       assert.equal(line(s, "balance-sheet", "קרן הערכה מחדש — קרקע (הון)").y2026, 30000);
     });
 
+    it("a fall in the land beyond its surplus: the surplus against the land, the rest a loss against an impairment allowance", () => {
+      // Land 300,000 → 330,000 (surplus 30,000) → 210,000 (30% of 700,000) → 270,000 (30% of 900,000).
+      const s = solve(
+        PPE,
+        revalued([
+          { date: "2023-12-31", value: 1100000 },
+          { date: "2024-12-31", value: 700000 },
+          { date: "2025-12-31", value: 900000 },
+        ]),
+      );
+      const lines = (id: string) => s.journal.find((e) => e.id === id)!.lines.map((l) => [l.account, l.debit, l.credit]);
+      const fall = s.journal.find((e) => e.id.startsWith("landRevaluation") && e.when === "31/12/2024")!.id;
+      assert.deepEqual(lines(fall), [
+        ["קרן הערכה מחדש — קרקע (רווח כולל אחר)", 30000, 0],
+        ["קרקע", 0, 30000],
+      ]);
+      assert.deepEqual(lines(`${fall}-pl`), [
+        ["הפסד מירידת ערך — קרקע (רווח או הפסד)", 90000, 0],
+        ["הפרשה לירידת ערך — קרקע", 0, 90000],
+      ]);
+      assert.equal(line(s, "balance-sheet", "קרקע — עלות / שווי משוערך").y2024, 300000);
+      assert.equal(line(s, "balance-sheet", "בניכוי הפרשה לירידת ערך — קרקע").y2024, -90000);
+      assert.equal(line(s, "balance-sheet", "קרקע, נטו (אינה מופחתת)").y2024, 210000);
+      // The recovery reverses the allowance first, through profit or loss; no surplus is left to restore.
+      const rise = s.journal.filter((e) => e.id.startsWith("landRevaluation") && e.when === "31/12/2025").map((e) => e.id);
+      assert.deepEqual(rise, [`${fall.replace(/\d+$/, "")}${Number(fall.split("-")[1]) + 12}-pl`]);
+      assert.deepEqual(lines(rise[0]), [
+        ["הפרשה לירידת ערך — קרקע", 60000, 0],
+        ["ביטול הפסד מירידת ערך — קרקע (רווח או הפסד)", 0, 60000],
+      ]);
+      assert.equal(line(s, "balance-sheet", "בניכוי הפרשה לירידת ערך — קרקע").y2025, -30000);
+      assert.equal(line(s, "balance-sheet", "קרקע, נטו (אינה מופחתת)").y2025, 270000);
+    });
+
     it("solves the total fair value from the building's surplus alone", () => {
       const s = solve(PPE, {
         ...revalued([{ date: "2023-12-31", value: "" }]),
