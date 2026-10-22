@@ -1,8 +1,8 @@
-import { money, plain } from "../format";
+import { money, percent, plain } from "../format";
 import { round2 } from "../math";
 import type { Equation, MathExpr, Values, Working } from "../types";
 import { num, parseDatedValues, str, UNKNOWN } from "../validate";
-import { fmtDate, frac, monthIndex, overlap, parseInputs, run, sumRange, type Run } from "./ias16-timeline";
+import { fmtDate, frac, monthIndex, overlap, parseInputs, parseLandPart, run, sumRange, type Run } from "./ias16-timeline";
 
 /**
  * Solving for an unknown input (X) from one known result. The engine is a
@@ -28,9 +28,10 @@ export const SOLVABLE_LABEL: Record<string, string> = {
 /** Unknowns measured in years but searched month by month. */
 const IN_MONTHS = new Set(["usefulLife", "lifeExtension"]);
 
-export type TargetKind = "carrying" | "depreciation" | "accumulated" | "exchangeGain" | "transfer" | "surplus";
-export const DATED_TARGETS: TargetKind[] = ["carrying", "accumulated", "surplus"];
+export type TargetKind = "carrying" | "depreciation" | "accumulated" | "exchangeGain" | "transfer" | "surplus" | "buildingSurplus" | "landSurplus";
+export const DATED_TARGETS: TargetKind[] = ["carrying", "accumulated", "surplus", "buildingSurplus", "landSurplus"];
 export const YEAR_TARGETS: TargetKind[] = ["depreciation", "transfer"];
+const SURPLUS_TARGETS: TargetKind[] = ["transfer", "surplus", "buildingSurplus", "landSurplus"];
 
 const TARGET_NAME: Record<TargetKind, string> = {
   carrying: "יתרה בספרים",
@@ -39,6 +40,8 @@ const TARGET_NAME: Record<TargetKind, string> = {
   exchangeGain: "רווח (הפסד) מההחלפה",
   transfer: "העברה לעודפים",
   surplus: "קרן הערכה מחדש",
+  buildingSurplus: "קרן הערכה מחדש — מבנה",
+  landSurplus: "קרן הערכה מחדש — קרקע",
 };
 
 type Target = { kind: TargetKind; t: number; year: number; label: string; amount: number };
@@ -75,7 +78,11 @@ function measure(r: Run, target: Target): number {
     case "accumulated":
       return at(target.t).acc;
     case "surplus":
+      return round2(at(target.t).surplus + at(target.t).landSurplus);
+    case "buildingSurplus":
       return at(target.t).surplus;
+    case "landSurplus":
+      return at(target.t).landSurplus;
     case "depreciation":
       return year(r.depBy);
     case "transfer":
@@ -146,8 +153,11 @@ export function solveForX(v: Values): Solved {
     return { ok: false, field: "targetDate", error: "תאריך נתון העזר חייב להיות אחרי מועד הזמינות לשימוש." };
   }
   if (target.kind === "exchangeGain" && !base.exchange) return { ok: false, field: "targetKind", error: "רווח מהחלפה דורש לסמן אירוע החלפת נכס." };
-  if ((target.kind === "transfer" || target.kind === "surplus") && base.revaluations.length === 0 && unknown !== "fairValues") {
+  if (SURPLUS_TARGETS.includes(target.kind) && base.revaluations.length === 0 && unknown !== "fairValues") {
     return { ok: false, field: "targetKind", error: "נתון על קרן ההערכה מחדש דורש הערכה מחדש בשלב האירועים." };
+  }
+  if ((target.kind === "buildingSurplus" || target.kind === "landSurplus") && !base.land) {
+    return { ok: false, field: "targetKind", error: "נתון על קרן בגין המבנה או הקרקע דורש להגדיר מרכיב קרקע בהנחות הבסיס." };
   }
 
   const f = (x: number) => evaluate(v, unknown, x, target) - target.amount;
@@ -201,8 +211,9 @@ function algebra(v: Values, values: Values, unknown: string, x: number, target: 
   const name = TARGET_NAME[target.kind];
   const sl = inp.method === "straight-line";
 
-  // Cost, residual or useful life, from a result before any event.
-  if (sl && ["purchasePrice", "attributableCosts", "residual", "usefulLife"].includes(unknown) && ["carrying", "accumulated", "depreciation"].includes(target.kind)) {
+  // Cost, residual or useful life, from a result before any event. (With land the
+  // depreciable base is only the building, so the general line below is used.)
+  if (sl && !inp.land && ["purchasePrice", "attributableCosts", "residual", "usefulLife"].includes(unknown) && ["carrying", "accumulated", "depreciation"].includes(target.kind)) {
     const { cost: C, residual: R, lifeMonths: L, start, purchasePrice: P, attributableCosts: A } = inp;
     const isDep = target.kind === "depreciation";
     const n = isDep ? overlap(start, start + L, target.year * 12, target.year * 12 + 12) : Math.min(target.t, start + L) - start;
@@ -312,6 +323,43 @@ function algebra(v: Values, values: Values, unknown: string, x: number, target: 
     const { rows, i } = unknownRow(v);
     const bk = r.bookings.find((b) => b.kind === "revaluation" && b.when === fmtDate(rows[i].date));
     if (!bk) return null;
+
+    // With land: the building's fair value from its own surplus, then the whole from the building's share.
+    if (inp.land && target.kind === "buildingSurplus") {
+      const given = parseLandPart(rows[i].note);
+      const share = given?.share ?? inp.land.share;
+      const landAmount = given?.amount;
+      const buildingValue = landAmount !== undefined ? round2(x - landAmount) : round2(x * (1 - share));
+      const before = round2(buildingValue - bk.revaluation);
+      const fvBuilding = round2(before + T);
+      const intro: Working = {
+        label: "יתרה בספרים של המבנה בלבד ערב השערוך (עלות המבנה בניכוי הפחת שנצבר עד מועד ההערכה)",
+        formula: `${fmt(before)}`,
+      };
+      const building: Working = {
+        label: "שווי הוגן של המבנה",
+        equation: eq("שווי הוגן מבנה", ["יתרה בספרים מבנה", "+", "קרן הערכה מחדש מבנה"], [p(before), "+", p(T)], fvBuilding),
+      };
+      if (landAmount !== undefined) {
+        if (!close(fvBuilding + landAmount, x)) return null;
+        return [
+          intro,
+          building,
+          { label: "בידוד X — השווי ההוגן הכולל של הנכס", equation: eq("X", ["שווי הוגן מבנה", "+", "שווי הוגן קרקע"], [p(fvBuilding), "+", p(landAmount)], x) },
+        ];
+      }
+      if (!close(fvBuilding / (1 - share), x, 0.05 / (1 - share))) return null;
+      return [
+        intro,
+        building,
+        {
+          label: "בידוד X — השווי ההוגן הכולל של הנכס",
+          equation: eq("X", frac("שווי הוגן מבנה", "1 − אחוז הקרקע"), frac(p(fvBuilding), `1 − ${percent(share)}`), x),
+        },
+      ];
+    }
+    if (inp.land) return null;
+
     const before = round2(x - bk.revaluation);
     if (target.kind === "surplus" && close(T + before, x)) {
       return [

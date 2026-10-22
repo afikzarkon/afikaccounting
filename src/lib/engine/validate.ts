@@ -1,4 +1,4 @@
-import type { Calculator, CalculatorSchema, DatedValue, Field, FieldValue, Values } from "./types";
+import type { Calculator, CalculatorSchema, Condition, DatedValue, Field, FieldValue, Values } from "./types";
 
 export const num = (v: Values, id: string) => Number(v[id] ?? 0);
 export const rate = (v: Values, id: string) => num(v, id) / 100;
@@ -7,8 +7,11 @@ export const bool = (v: Values, id: string) => v[id] === true;
 
 export const allFields = (c: CalculatorSchema): Field[] => [...c.scenario, ...c.metrics];
 
+export const conditionsHold = (conditions: Condition[] | undefined, values: Values) =>
+  (conditions ?? []).every((cond) => cond.in.includes(values[cond.field]));
+
 export function isVisible(field: Field, values: Values) {
-  return (field.showIf ?? []).every((cond) => cond.in.includes(values[cond.field]));
+  return conditionsHold(field.showIf, values);
 }
 
 export function isDisabled(field: Field, values: Values) {
@@ -69,6 +72,7 @@ export function parseDatedValues(s: string): DatedValue[] {
     return rows.map((r) => ({
       date: typeof r?.date === "string" ? r.date : "",
       value: r?.value === "" || r?.value === undefined || r?.value === null ? "" : Number(r.value),
+      ...(typeof r?.note === "string" && r.note.trim() !== "" ? { note: r.note.trim() } : {}),
     }));
   } catch {
     return [];
@@ -78,7 +82,7 @@ export function parseDatedValues(s: string): DatedValue[] {
 /** Complete rows only, sorted by date. */
 export const datedValues = (v: Values, id: string) =>
   parseDatedValues(str(v, id))
-    .filter((r): r is { date: string; value: number } => isIsoDate(r.date) && typeof r.value === "number" && Number.isFinite(r.value))
+    .filter((r): r is { date: string; value: number; note?: string } => isIsoDate(r.date) && typeof r.value === "number" && Number.isFinite(r.value))
     .sort((a, b) => a.date.localeCompare(b.date));
 
 /** "100, , 80" → [100, null, 80]; null when an item is not a non-negative number. */

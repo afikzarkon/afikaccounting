@@ -23,7 +23,7 @@ import type { PlayableItem } from "@/components/video/video-player";
 import { saveSolution } from "@/lib/actions/solutions";
 import { CALCULATORS, getCalculator } from "@/lib/engine/registry";
 import type { Calculator, FieldValue, Solution, Values } from "@/lib/engine/types";
-import { defaults, isDisabled, isUnknown, isVisible, SOLVE_MODE, UNKNOWN, validateValues } from "@/lib/engine/validate";
+import { conditionsHold, defaults, isDisabled, isUnknown, isVisible, SOLVE_MODE, UNKNOWN, validateValues } from "@/lib/engine/validate";
 import { cn } from "@/lib/utils";
 import { ACCENTS, CalculatorIcon } from "./calculator-visuals";
 import { FieldControl } from "./field-control";
@@ -428,6 +428,7 @@ function FieldsStep({
                   error={errors[f.id]}
                   // A fair-value list stays editable as X: only its blank row is the unknown.
                   disabled={isDisabled(f, values) || (isUnknown(f, values) && f.kind !== "dated-values")}
+                  showNote={f.kind === "dated-values" && !!f.note && conditionsHold(f.note.showIf, values)}
                   unknown={
                     f.solvable && values[SOLVE_MODE] === "solve"
                       ? { active: isUnknown(f, values), onToggle: () => onChange(UNKNOWN, isUnknown(f, values) ? "" : f.id) }

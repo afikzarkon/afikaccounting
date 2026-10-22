@@ -350,6 +350,128 @@ describe("IAS 16", () => {
     assert.ok(validateValues(calc, { ...defaults(calc), ...base, hasEvents: true }).hasEvents);
   });
 
+  describe("land component (IAS 16.58)", () => {
+    // A warehouse: 1,000,000, 30% land, 20 years, no residual, available 01/01/2023.
+    const warehouse: Values = {
+      acquisitionDate: "2023-01-01",
+      calcStart: "2023-01-01",
+      calcEnd: "2026-12-31",
+      purchasePrice: 1000000,
+      attributableCosts: 0,
+      residual: 0,
+      usefulLife: 20,
+      method: "straight-line",
+      model: "cost",
+      hasLand: true,
+      landBasis: "percent",
+      landPercent: 30,
+    };
+    const revalued = (fairValues: { date: string; value: number | "" }[]): Values => ({
+      ...warehouse,
+      model: "revaluation",
+      hasEvents: true,
+      revalue: true,
+      fairValues: JSON.stringify(fairValues),
+      surplusTransfer: "depreciation",
+    });
+
+    it("depreciates only the building; the land stays at cost", () => {
+      const s = solve(PPE, warehouse);
+      assert.equal(metric(s, "מרכיב הקרקע"), 300000);
+      assert.equal(metric(s, "סכום בר-פחת"), 700000);
+      assert.equal(year(s, 2023).total, 35000);
+      assert.equal(line(s, "balance-sheet", "קרקע (אינה מופחתת)").y2026, 300000);
+      assert.equal(line(s, "balance-sheet", "רכוש קבוע, נטו (יתרה בספרים)").y2026, 300000 + 700000 - 4 * 35000);
+      const acquisition = s.journal.find((e) => e.id === "acquisition")!;
+      assert.deepEqual(acquisition.lines.map((l) => [l.account, l.debit]).slice(0, 2), [["רכוש קבוע — מבנה", 700000], ["קרקע", 300000]]);
+    });
+
+    it("land can be given as an amount instead", () => {
+      const s = solve(PPE, { ...warehouse, landBasis: "amount", landAmount: 250000 });
+      assert.equal(year(s, 2023).total, 37500); // 750,000 / 20
+    });
+
+    it("revaluation splits the fair value and keeps a surplus for each part", () => {
+      const s = solve(PPE, revalued([{ date: "2023-12-31", value: 1100000 }]));
+      const y2023 = section(s, 2023);
+      assert.ok(y2023.journal.some((e) => e.id.startsWith("revaluation")));
+      assert.ok(y2023.journal.some((e) => e.id.startsWith("landRevaluation")));
+      assert.equal(line(s, "balance-sheet", "קרן הערכה מחדש — מבנה (הון)").y2023, 105000); // 770,000 − 665,000
+      assert.equal(line(s, "balance-sheet", "קרן הערכה מחדש — קרקע (הון)").y2023, 30000); // 330,000 − 300,000
+      assert.equal(line(s, "balance-sheet", "קרקע (אינה מופחתת)").y2023, 330000);
+      // The building depreciates its fair value over the 19 years left; only its surplus moves to retained earnings.
+      assert.equal(year(s, 2024).total, round2(770000 / 19));
+      assert.equal(year(s, 2024).transfer, round2(105000 / 19));
+      assert.equal(line(s, "balance-sheet", "קרן הערכה מחדש — קרקע (הון)").y2026, 30000);
+    });
+
+    it("solves the total fair value from the building's surplus alone", () => {
+      const s = solve(PPE, {
+        ...revalued([{ date: "2023-12-31", value: "" }]),
+        mode: "solve",
+        unknown: "fairValues",
+        targetKind: "buildingSurplus",
+        targetDate: "2023-12-31",
+        targetAmount: 105000,
+      });
+      assert.equal(s.metrics[0].value, 1100000);
+      const steps = s.proof!.steps;
+      assert.equal(steps.find((w) => w.equation?.lhs === "שווי הוגן מבנה")!.equation!.result, 770000); // 665,000 + 105,000
+      assert.equal(steps.find((w) => w.equation?.lhs === "X")!.equation!.result, 1100000); // ÷ (1 − 30%)
+    });
+
+    describe("land's part of a fair value, per date", () => {
+      const at2026 = (note?: string) => revalued([{ date: "2026-12-31", value: 1200000, ...(note ? { note } : {}) } as never]);
+      const surpluses = (s: ReturnType<typeof solve>) => [
+        line(s, "balance-sheet", "קרן הערכה מחדש — מבנה (הון)").y2026,
+        line(s, "balance-sheet", "קרן הערכה מחדש — קרקע (הון)").y2026,
+      ];
+
+      it("without one, the share at acquisition splits it (30%)", () => {
+        const s = solve(PPE, { ...at2026(), calcEnd: "2027-12-31" });
+        assert.deepEqual(surpluses(s), [280000, 60000]); // 840,000 − 560,000; 360,000 − 300,000
+        assert.equal(year(s, 2027).total, 52500); // 840,000 / 16
+      });
+
+      it("an amount for the land overrides the share", () => {
+        const s = solve(PPE, { ...at2026("500000"), calcEnd: "2027-12-31" });
+        assert.deepEqual(surpluses(s), [140000, 200000]); // 700,000 − 560,000; 500,000 − 300,000
+        assert.equal(year(s, 2027).total, 700000 / 16);
+        assert.match(section(s, 2026).workings.find((w) => w.label.startsWith("פיצול"))!.label, /שווי הקרקע שנקבע/);
+      });
+
+      it("a share for the date overrides it too", () => {
+        const s = solve(PPE, at2026("25%"));
+        assert.deepEqual(surpluses(s), [340000, 0]); // land 300,000 = cost; building 900,000
+      });
+
+      it("solves the total fair value from the building's surplus and the land's value", () => {
+        const s = solve(PPE, {
+          ...revalued([{ date: "2026-12-31", value: "", note: "500000" } as never]),
+          mode: "solve",
+          unknown: "fairValues",
+          targetKind: "buildingSurplus",
+          targetDate: "2026-12-31",
+          targetAmount: 140000,
+        });
+        assert.equal(s.metrics[0].value, 1200000);
+        assert.deepEqual(s.proof!.steps.find((w) => w.equation?.lhs === "X")!.equation!.numeric, ["700,000", "+", "500,000"]);
+      });
+
+      it("rejects an unreadable land part, or one not below the total", () => {
+        const calc = getCalculator(PPE)!;
+        assert.ok(validateValues(calc, { ...defaults(calc), ...at2026("abc") }).fairValues);
+        assert.ok(validateValues(calc, { ...defaults(calc), ...at2026("1200000") }).fairValues);
+      });
+    });
+
+    it("rejects land of the whole cost, and a residual above the building's cost", () => {
+      const calc = getCalculator(PPE)!;
+      assert.ok(validateValues(calc, { ...defaults(calc), ...warehouse, landPercent: 99.99, residual: 50000 }).residual);
+      assert.ok(validateValues(calc, { ...defaults(calc), ...warehouse, landBasis: "amount", landAmount: 1000000 }).landAmount);
+    });
+  });
+
   describe("solving for an unknown (X)", () => {
     const solveX = (unknown: string, target: Values, extra: Values = {}) => {
       const values: Values = { ...base, mode: "solve", unknown, [unknown]: "", ...extra, ...target };

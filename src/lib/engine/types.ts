@@ -54,8 +54,15 @@ export type SeriesField = FieldBase & { kind: "series"; default: string; placeho
  * Rows of (date, amount) the user adds as needed, held as a JSON string of
  * `DatedValue[]` so it fits the flat values record.
  */
-export type DatedValuesField = FieldBase & { kind: "dated-values"; default: string; valueLabel: string; addLabel: string };
-export type DatedValue = { date: string; value: number | "" };
+export type DatedValuesField = FieldBase & {
+  kind: "dated-values";
+  default: string;
+  valueLabel: string;
+  addLabel: string;
+  /** An optional third column of free text, shown while its conditions hold. */
+  note?: { label: string; placeholder: string; showIf?: Condition[] };
+};
+export type DatedValue = { date: string; value: number | ""; note?: string };
 
 export type ScenarioField = ToggleField | RadioField | SelectField;
 export type MetricField = NumberField | DateField | SeriesField | DatedValuesField;

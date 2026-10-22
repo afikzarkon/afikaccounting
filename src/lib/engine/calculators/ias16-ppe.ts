@@ -1,7 +1,7 @@
 import { money, plain } from "../format";
 import { round2 } from "../math";
 import type { Calculator, Condition, Values } from "../types";
-import { isIsoDate, isVisible, num, parseDatedValues, SOLVE_MODE, UNKNOWN } from "../validate";
+import { isIsoDate, isVisible, parseDatedValues, SOLVE_MODE, UNKNOWN } from "../validate";
 import { DATED_TARGETS, SOLVABLE_LABEL, solveForX, YEAR_TARGETS } from "./ias16-solver";
 import { solveTimeline, timelineErrors } from "./ias16-timeline";
 
@@ -11,6 +11,7 @@ const TARGET = "🔍 נתוני עזר לשחזור X";
 
 const RANGE = "תאריכים וטווח החישוב";
 const COST = "עלות הנכס";
+const LAND = "מרכיב הקרקע";
 const DEPRECIATION = "פחת ומודל המדידה";
 const RENOVATION = "שיפוץ / שיפור מהותי";
 const REVALUATION = "הערכה מחדש";
@@ -74,7 +75,66 @@ export const ias16Ppe: Calculator = {
       min: 0,
       section: COST,
     },
-    { kind: "number", id: "residual", label: "ערך שייר (גרט)", help: "0 אם אין.", unit: "currency", default: "", min: 0, section: COST, solvable: true },
+    {
+      kind: "number",
+      id: "residual",
+      label: "ערך שייר (גרט)",
+      help: "0 אם אין. כשיש קרקע — ערך השייר של המבנה.",
+      unit: "currency",
+      default: "",
+      min: 0,
+      section: COST,
+      solvable: true,
+    },
+    {
+      kind: "toggle",
+      id: "hasLand",
+      label: "הנכס כולל מרכיב קרקע (למשל מבנה או מחסן)",
+      help: "הקרקע נפרדת מהמבנה ואינה מופחתת (IAS 16.58).",
+      default: false,
+      section: LAND,
+    },
+    {
+      kind: "radio",
+      id: "landBasis",
+      label: "איך נתון מרכיב הקרקע",
+      options: [
+        { value: "percent", label: "אחוז מהנכס הכולל" },
+        { value: "amount", label: "סכום בש״ח" },
+      ],
+      default: "",
+      showIf: [{ field: "hasLand", in: [true] }],
+      section: LAND,
+    },
+    {
+      kind: "number",
+      id: "landPercent",
+      label: "אחוז מרכיב הקרקע מהנכס הכולל",
+      help: "מפצל את העלות, וגם כל שווי הוגן בהערכה מחדש.",
+      unit: "percent",
+      default: "",
+      min: 0.01,
+      max: 99.99,
+      showIf: [
+        { field: "hasLand", in: [true] },
+        { field: "landBasis", in: ["percent"] },
+      ],
+      section: LAND,
+    },
+    {
+      kind: "number",
+      id: "landAmount",
+      label: "עלות הקרקע",
+      help: "היחס בין הקרקע לעלות הכוללת מפצל גם כל שווי הוגן בהערכה מחדש.",
+      unit: "currency",
+      default: "",
+      min: 0.01,
+      showIf: [
+        { field: "hasLand", in: [true] },
+        { field: "landBasis", in: ["amount"] },
+      ],
+      section: LAND,
+    },
     { kind: "number", id: "usefulLife", label: "אורך חיים שימושיים מקורי", unit: "years", default: "", min: 0.1, max: 100, section: DEPRECIATION, solvable: true },
     {
       kind: "radio",
@@ -196,9 +256,14 @@ export const ias16Ppe: Calculator = {
       id: "fairValues",
       solvable: true,
       label: "שווי הוגן לפי תאריך הערכה",
-      help: "הוסיפו שורה לכל מועד הערכה: התאריך (למשל 31/12) והשווי ההוגן באותו יום.",
+      help: "הוסיפו שורה לכל מועד הערכה: התאריך (למשל 31/12) והשווי ההוגן באותו יום. כשיש קרקע — אפשר לציין בכל שורה את חלקה (למשל 35% או 500000); ריק = לפי חלק הקרקע ברכישה.",
       valueLabel: "שווי הוגן",
       addLabel: "הוספת מועד הערכה",
+      note: {
+        label: "קרקע (רשות): % או ₪",
+        placeholder: "לפי הרכישה",
+        showIf: [{ field: "hasLand", in: [true] }],
+      },
       default: "",
       showIf: events({ field: "model", in: ["revaluation"] }, { field: "revalue", in: [true] }),
       section: REVALUATION,
@@ -328,6 +393,8 @@ export const ias16Ppe: Calculator = {
         { value: "exchangeGain", label: "רווח / הפסד מהחלפה" },
         { value: "transfer", label: "העברה לעודפים בשנה" },
         { value: "surplus", label: "קרן הערכה מחדש בתאריך" },
+        { value: "buildingSurplus", label: "קרן הערכה מחדש בגין המבנה בתאריך" },
+        { value: "landSurplus", label: "קרן הערכה מחדש בגין הקרקע בתאריך" },
       ],
       default: "",
       showIf: solving,
@@ -376,8 +443,6 @@ export const ias16Ppe: Calculator = {
       if (!solved.ok) return { [solved.field]: solved.error };
       v = solved.values;
     }
-    const cost = num(v, "purchasePrice") + num(v, "attributableCosts");
-    if (num(v, "residual") >= cost) return { residual: "ערך השייר חייב להיות נמוך מעלות הנכס." };
     return timelineErrors(v);
   },
 

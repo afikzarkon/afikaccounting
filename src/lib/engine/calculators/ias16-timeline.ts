@@ -56,7 +56,22 @@ export const overlap = (from: number, to: number, start: number, end: number) =>
 export const sydWeights = (months: number) => Array.from({ length: Math.ceil(months / 12) }, (_, i) => (months - 12 * i) / 12);
 
 type Renovation = { at: number; date: string; cost: number; extension: number; residual: number; extraUnits: number };
-type Revaluation = { at: number; date: string; value: number };
+/** `land`: the land's part of this fair value, when given for the date (as a share or an amount). */
+type Revaluation = { at: number; date: string; value: number; land?: LandPart };
+type LandPart = { share?: number; amount?: number };
+
+/**
+ * The land column of a fair-value row: "35%" is a share, "500000" an amount.
+ * Empty means the share at acquisition; null means it could not be read.
+ */
+export function parseLandPart(note: string | undefined): LandPart | undefined | null {
+  if (!note) return undefined;
+  const text = note.replace(/[,\s₪]/g, "");
+  const isShare = text.endsWith("%");
+  const n = Number(isShare ? text.slice(0, -1) : text);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return isShare ? { share: n / 100 } : { amount: n };
+}
 type Exchange = {
   at: number;
   date: string;
@@ -77,7 +92,16 @@ export type Inputs = {
   transferSurplus: boolean;
   purchasePrice: number;
   attributableCosts: number;
+  /** The whole asset's cost: land plus building. */
   cost: number;
+  /** The depreciable building component: the cost less any land. */
+  buildingCost: number;
+  /**
+   * Land within the asset (IAS 16.58): not depreciated. `share` splits every
+   * fair value between land and building.
+   */
+  land: { cost: number; share: number } | null;
+  /** Applies to the building; land has no residual value to speak of. */
   residual: number;
   start: number;
   startDate: string;
@@ -98,20 +122,27 @@ export function parseInputs(v: Values): Inputs {
   const cash = str(v, "cashDirection");
   const purchasePrice = num(v, "purchasePrice");
   const attributableCosts = num(v, "attributableCosts");
+  const cost = round2(purchasePrice + attributableCosts);
+  const byPercent = str(v, "landBasis") === "percent";
+  const landCost = !bool(v, "hasLand") ? 0 : byPercent ? round2((cost * num(v, "landPercent")) / 100) : num(v, "landAmount");
   return {
     method: str(v, "method") as PpeMethod,
     revaluation,
     transferSurplus: revalues && str(v, "surplusTransfer") === "depreciation",
     purchasePrice,
     attributableCosts,
-    cost: round2(purchasePrice + attributableCosts),
+    cost,
+    buildingCost: round2(cost - landCost),
+    land: landCost > 0 ? { cost: landCost, share: byPercent ? num(v, "landPercent") / 100 : cost > 0 ? landCost / cost : 0 } : null,
     residual: num(v, "residual"),
     start: monthIndex(str(v, "acquisitionDate")),
     startDate: str(v, "acquisitionDate"),
     lifeMonths: Math.round(num(v, "usefulLife") * 12),
     totalUnits: num(v, "totalUnits"),
     units: series(v, "unitsByYear"),
-    revaluations: revalues ? datedValues(v, "fairValues").map((r) => ({ at: monthIndex(r.date), date: r.date, value: r.value })) : [],
+    revaluations: revalues
+      ? datedValues(v, "fairValues").map((r) => ({ at: monthIndex(r.date), date: r.date, value: r.value, land: bool(v, "hasLand") ? (parseLandPart(r.note) ?? undefined) : undefined }))
+      : [],
     renovation: event("revision")
       ? {
           at: monthIndex(str(v, "revisionDate")),
@@ -140,14 +171,18 @@ export function parseInputs(v: Values): Inputs {
   };
 }
 
-type Snapshot = { gross: number; acc: number; surplus: number; carrying: number };
+/**
+ * Balances at a month boundary. gross, acc, building and surplus are the
+ * building's; land and landSurplus the land's; carrying is the whole asset.
+ */
+type Snapshot = { gross: number; acc: number; building: number; surplus: number; land: number; landSurplus: number; carrying: number };
 
 /** A non-depreciation event, already shaped as a journal entry. */
 type Booking = {
   t: number;
   /** "open" events belong to the period containing month t, "close" ones to the period ending at t. */
   side: "open" | "close";
-  kind: "renovation" | "revaluation" | "exchange" | "surplus";
+  kind: "renovation" | "revaluation" | "landRevaluation" | "exchange" | "surplus";
   when: string;
   narrative: string;
   reference: string;
@@ -159,6 +194,8 @@ type Booking = {
   addition: number;
   revaluation: number;
   disposal: number;
+  /** Change in the land's carrying amount from revaluation. */
+  landRevaluation?: number;
   /** How the event's amounts were computed, for the year-by-year solution. */
   working: Working[];
 };
@@ -258,7 +295,10 @@ export function run(inp: Inputs) {
   // The asset leaves the schedule at the exchange, or at the end of its (possibly revised) life.
   const stopAt = () => (exchange ? exchange.at : end);
 
-  let gross = inp.cost;
+  let gross = inp.buildingCost;
+  let land = inp.land?.cost ?? 0;
+  let landSurplus = 0;
+  let landLosses = 0;
   let acc = 0;
   let surplus = 0;
   let revaluationLosses = 0;
@@ -318,55 +358,127 @@ export function run(inp: Inputs) {
   };
 
   /** IAS 16.39–40 with the elimination method: accumulated depreciation is closed against the gross amount. */
-  const revalue = (rv: Revaluation, t: number) => {
-    const before = carrying();
-    const diff = round2(rv.value - before);
+  /**
+   * IAS 16.39–40: an increase first reverses a decrease recognised earlier in
+   * profit or loss, the rest goes to the surplus; a decrease first reduces
+   * the surplus, the rest goes to profit or loss.
+   */
+  const splitRevaluation = (diff: number, reserve: number, losses: number) => {
     let pl = 0;
     let oci = 0;
     if (diff > 0) {
-      // An increase first reverses a decrease recognised earlier in profit or loss.
-      pl = Math.min(diff, revaluationLosses);
+      pl = Math.min(diff, losses);
       oci = round2(diff - pl);
-      revaluationLosses = round2(revaluationLosses - pl);
     } else if (diff < 0) {
-      // A decrease first reduces the surplus; only the rest goes to profit or loss.
-      oci = -Math.min(-diff, surplus);
+      oci = -Math.min(-diff, reserve);
       pl = round2(diff - oci);
-      revaluationLosses = round2(revaluationLosses - pl);
     }
+    return { pl, oci, losses: round2(losses - pl) };
+  };
+
+  /**
+   * The fair value is split between land and building — by the land's value
+   * or share given for that date, else by its share at acquisition — and
+   * each part is revalued on its own.
+   */
+  const revalue = (rv: Revaluation, t: number) => {
+    const given = rv.land;
+    const share = given?.share ?? inp.land?.share ?? 0;
+    const landValue = given?.amount !== undefined ? given.amount : round2(rv.value * share);
+    const value = round2(rv.value - landValue);
+    const part = inp.land ? " — מבנה" : "";
+    const source = given?.amount !== undefined ? "שווי הקרקע שנקבע לתאריך זה" : given?.share !== undefined ? "חלק הקרקע שנקבע לתאריך זה" : "חלק הקרקע ברכישה";
+    const splitWorking: Working[] = inp.land
+      ? [
+          {
+            label: `פיצול השווי ההוגן ליום ${fmtDate(rv.date)} — לפי ${source}`,
+            equation:
+              given?.amount !== undefined
+                ? { lhs: "שווי הוגן — מבנה", abstract: ["שווי הוגן כולל", "−", "שווי הוגן של הקרקע"], numeric: [plain(rv.value), "−", plain(landValue)], result: value }
+                : { lhs: "שווי הוגן — מבנה", abstract: ["שווי הוגן כולל", "×", "(1 − חלק הקרקע)"], numeric: [plain(rv.value), "×", `(1 − ${percent(share)})`], result: value },
+          },
+        ]
+      : [];
+
+    const before = carrying();
+    const diff = round2(value - before);
+    const building = splitRevaluation(diff, surplus, revaluationLosses);
+    revaluationLosses = building.losses;
     const eliminated = acc;
     const lines: [string, number][] = [
       ["פחת שנצבר", acc],
-      ["רכוש קבוע", round2(rv.value - gross)],
-      ["קרן הערכה מחדש (רווח כולל אחר)", -oci],
-      [pl >= 0 ? "ביטול הפסד מהערכה מחדש (רווח או הפסד)" : "הפסד מהערכה מחדש (רווח או הפסד)", -pl],
+      [`רכוש קבוע${part}`, round2(value - gross)],
+      [`קרן הערכה מחדש${part} (רווח כולל אחר)`, -building.oci],
+      [building.pl >= 0 ? `ביטול הפסד מהערכה מחדש${part} (רווח או הפסד)` : `הפסד מהערכה מחדש${part} (רווח או הפסד)`, -building.pl],
     ];
-    surplus = round2(surplus + oci);
-    gross = rv.value;
+    surplus = round2(surplus + building.oci);
+    gross = value;
     acc = 0;
     bookings.push({
       t,
       side: t % 12 === 0 ? "close" : "open",
       kind: "revaluation",
       when: fmtDate(rv.date),
-      narrative: `הערכה מחדש לשווי הוגן ${fmt(rv.value)} (יתרה בספרים לפני: ${fmt(before)})`,
+      narrative: `הערכה מחדש${part} לשווי הוגן ${fmt(value)} (יתרה בספרים לפני: ${fmt(before)})`,
       reference: "IAS 16.31, 35(ב), 39–40",
       lines,
-      pl,
-      oci,
+      pl: building.pl,
+      oci: building.oci,
       addition: 0,
       revaluation: diff,
       disposal: 0,
       working: [
+        ...splitWorking,
         {
-          label: `הערכה מחדש ליום ${fmtDate(rv.date)}`,
-          equation: { lhs: "הפרש שערוך", abstract: ["שווי הוגן", "−", "יתרה בספרים"], numeric: [plain(rv.value), "−", plain(before)], result: diff },
+          label: `הערכה מחדש${part} ליום ${fmtDate(rv.date)}`,
+          equation: { lhs: `הפרש שערוך${part}`, abstract: ["שווי הוגן", "−", "יתרה בספרים"], numeric: [plain(value), "−", plain(before)], result: diff },
         },
-        ...(pl !== 0 ? [{ label: pl > 0 ? "ביטול ירידה שהוכרה קודם ברווח או הפסד" : "ירידה מעבר ליתרת הקרן — לרווח או הפסד", amount: pl }] : []),
-        ...(oci !== 0 ? [{ label: oci > 0 ? "עלייה — לקרן הערכה מחדש (רווח כולל אחר)" : "ירידה — מקטינה את קרן ההערכה מחדש", amount: oci }] : []),
+        ...(building.pl !== 0 ? [{ label: building.pl > 0 ? "ביטול ירידה שהוכרה קודם ברווח או הפסד" : "ירידה מעבר ליתרת הקרן — לרווח או הפסד", amount: building.pl }] : []),
+        ...(building.oci !== 0 ? [{ label: building.oci > 0 ? "עלייה — לקרן הערכה מחדש (רווח כולל אחר)" : "ירידה — מקטינה את קרן ההערכה מחדש", amount: building.oci }] : []),
         { label: "שיטת הביטול: הפחת שנצבר מבוטל כנגד העלות, והנכס מוצג בשווי ההוגן", formula: `פחת שנצבר מבוטל: ${fmt(eliminated)}` },
       ],
     });
+
+    if (inp.land) {
+      const landBefore = land;
+      const landDiff = round2(landValue - landBefore);
+      const landSplit = splitRevaluation(landDiff, landSurplus, landLosses);
+      landLosses = landSplit.losses;
+      landSurplus = round2(landSurplus + landSplit.oci);
+      land = landValue;
+      bookings.push({
+        t,
+        side: t % 12 === 0 ? "close" : "open",
+        kind: "landRevaluation",
+        when: fmtDate(rv.date),
+        narrative: `הערכה מחדש — קרקע לשווי הוגן ${fmt(landValue)} (יתרה בספרים לפני: ${fmt(landBefore)})`,
+        reference: "IAS 16.39–40, 58",
+        lines: [
+          ["קרקע", landDiff],
+          ["קרן הערכה מחדש — קרקע (רווח כולל אחר)", -landSplit.oci],
+          [landSplit.pl >= 0 ? "ביטול הפסד מהערכה מחדש — קרקע (רווח או הפסד)" : "הפסד מהערכה מחדש — קרקע (רווח או הפסד)", -landSplit.pl],
+        ],
+        pl: landSplit.pl,
+        oci: landSplit.oci,
+        addition: 0,
+        revaluation: 0,
+        disposal: 0,
+        landRevaluation: landDiff,
+        working: [
+          {
+            label: `הערכה מחדש — קרקע ליום ${fmtDate(rv.date)} (הקרקע אינה מופחתת, ולכן אין פחת שנצבר לבטל)`,
+            equation: {
+              lhs: "הפרש שערוך — קרקע",
+              abstract: [given?.amount !== undefined ? "שווי הוגן של הקרקע" : "שווי הוגן כולל × חלק הקרקע", "−", "יתרה בספרים של הקרקע"],
+              numeric: [given?.amount !== undefined ? plain(landValue) : `${plain(rv.value)} × ${percent(share)}`, "−", plain(landBefore)],
+              result: landDiff,
+            },
+          },
+          ...(landSplit.pl !== 0 ? [{ label: landSplit.pl > 0 ? "קרקע: ביטול ירידה קודמת — לרווח או הפסד" : "קרקע: ירידה מעבר לקרן — לרווח או הפסד", amount: landSplit.pl }] : []),
+          ...(landSplit.oci !== 0 ? [{ label: landSplit.oci > 0 ? "קרקע: עלייה — לקרן הערכה מחדש בגין הקרקע (ללא העברה שוטפת לעודפים)" : "קרקע: ירידה — מקטינה את הקרן", amount: landSplit.oci }] : []),
+        ],
+      });
+    }
     cause = "revaluation";
     phaseDirty = true;
   };
@@ -430,7 +542,8 @@ export function run(inp: Inputs) {
   };
 
   const exchangeAt = (e: Exchange, t: number) => {
-    const before = carrying();
+    // The whole asset leaves the books: building and land.
+    const before = round2(carrying() + land);
     let newCost: number;
     let gain: number;
     let costEquation: Pick<Equation, "abstract" | "numeric">;
@@ -463,7 +576,8 @@ export function run(inp: Inputs) {
         ["רכוש קבוע — הנכס שהתקבל", newCost],
         ["פחת שנצבר", acc],
         ["מזומנים", round2(e.received - e.paid)],
-        ["רכוש קבוע — הנכס שנמסר", -gross],
+        [inp.land ? "רכוש קבוע — מבנה שנמסר" : "רכוש קבוע — הנכס שנמסר", -gross],
+        ["קרקע שנמסרה", -land],
         [gain >= 0 ? "רווח מהחלפת רכוש קבוע" : "הפסד מהחלפת רכוש קבוע", -gain],
       ],
       pl: gain,
@@ -474,7 +588,9 @@ export function run(inp: Inputs) {
       working: [
         {
           label: `החלפה ביום ${fmtDate(e.date)}`,
-          equation: { lhs: "יתרה בספרים של הנכס שנמסר", abstract: ["עלות", "−", "פחת שנצבר"], numeric: [plain(gross), "−", plain(acc)], result: before },
+          equation: inp.land
+            ? { lhs: "יתרה בספרים של הנכס שנמסר", abstract: ["עלות מבנה", "−", "פחת שנצבר", "+", "קרקע"], numeric: [plain(gross), "−", plain(acc), "+", plain(land)], result: before }
+            : { lhs: "יתרה בספרים של הנכס שנמסר", abstract: ["עלות", "−", "פחת שנצבר"], numeric: [plain(gross), "−", plain(acc)], result: before },
         },
         { label: "עלות הנכס שהתקבל", equation: { lhs: "עלות הנכס החדש", ...costEquation, result: newCost } },
         e.commercial
@@ -490,7 +606,7 @@ export function run(inp: Inputs) {
           : { label: "ללא מהות מסחרית — לא מוכר רווח או הפסד", amount: 0 },
       ],
     });
-    if (surplus > 0) {
+    if (surplus > 0 || landSurplus > 0) {
       bookings.push({
         t,
         side: "close",
@@ -499,21 +615,24 @@ export function run(inp: Inputs) {
         narrative: "העברת יתרת קרן ההערכה מחדש לעודפים בעת הגריעה",
         reference: "IAS 16.41",
         lines: [
-          ["קרן הערכה מחדש", surplus],
-          ["עודפים", -surplus],
+          [inp.land ? "קרן הערכה מחדש — מבנה" : "קרן הערכה מחדש", surplus],
+          ["קרן הערכה מחדש — קרקע", landSurplus],
+          ["עודפים", -round2(surplus + landSurplus)],
         ],
         pl: 0,
         oci: 0,
         addition: 0,
         revaluation: 0,
         disposal: 0,
-        working: [{ label: "יתרת קרן ההערכה מחדש מועברת לעודפים בגריעה", amount: surplus }],
+        working: [{ label: "יתרת קרן ההערכה מחדש מועברת לעודפים בגריעה", amount: round2(surplus + landSurplus) }],
       });
     }
     exchangeInfo = { t, carrying: before, newCost, gain };
     gross = 0;
     acc = 0;
     surplus = 0;
+    land = 0;
+    landSurplus = 0;
   };
 
   const revaluationsAt = (t: number) => inp.revaluations.filter((rv) => rv.at === t && t > start && t < end);
@@ -523,7 +642,7 @@ export function run(inp: Inputs) {
     // Year-end revaluations close the year that ends at t, before its balances are taken.
     if (t % 12 === 0 && t <= stopAt()) revaluationsAt(t).forEach((rv) => revalue(rv, t));
     if (exchange && t === stopAt()) exchangeAt(exchange, t);
-    closing.set(t, { gross, acc, surplus, carrying: carrying() });
+    closing.set(t, { gross, acc, building: carrying(), surplus, land, landSurplus, carrying: round2(carrying() + land) });
     if (t >= stopAt()) break;
     if (t % 12 !== 0) revaluationsAt(t).forEach((rv) => revalue(rv, t));
     if (renovation && t === renovation.at) renovate(renovation, t);
@@ -573,6 +692,11 @@ export function timelineErrors(v: Values): Record<string, string> {
   const inp = parseInputs(v);
   const originalEnd = inp.start + inp.lifeMonths;
   if (inp.lifeMonths < 1) errors.usefulLife = "אורך החיים חייב להיות לפחות חודש אחד.";
+  if (inp.land && inp.land.cost >= inp.cost) {
+    errors[str(v, "landBasis") === "percent" ? "landPercent" : "landAmount"] = "מרכיב הקרקע חייב להיות קטן מעלות הנכס הכוללת.";
+  } else if (inp.residual >= inp.buildingCost) {
+    errors.residual = inp.land ? `ערך השייר חייב להיות נמוך מעלות המבנה (${fmt(inp.buildingCost)}).` : "ערך השייר חייב להיות נמוך מעלות הנכס.";
+  }
   if (monthIndex(str(v, "calcEnd")) <= monthIndex(str(v, "calcStart"))) {
     errors.calcEnd = "תאריך סיום החישוב חייב להיות אחרי תאריך ההתחלה.";
   }
@@ -591,6 +715,13 @@ export function timelineErrors(v: Values): Record<string, string> {
     else if (inp.renovation && inp.exchange.at <= inp.renovation.at) errors.exchangeDate = "ההחלפה חייבת להתבצע אחרי השיפוץ.";
   }
   if (inp.revaluations.some((rv) => rv.at <= inp.start)) errors.fairValues = "כל מועדי ההערכה חייבים להיות אחרי מועד הזמינות לשימוש.";
+  if (inp.land && inp.revaluations.length > 0) {
+    const notes = datedValues(v, "fairValues").map((r) => ({ value: r.value, land: parseLandPart(r.note) }));
+    if (notes.some((n) => n.land === null)) errors.fairValues = "בעמודת הקרקע יש להזין אחוז (למשל 35%) או סכום (למשל 500000).";
+    else if (notes.some((n) => (n.land?.share ?? 0) >= 1 || (n.land?.amount ?? 0) >= n.value)) {
+      errors.fairValues = "חלק הקרקע חייב להיות קטן מהשווי ההוגן הכולל באותו תאריך.";
+    }
+  }
   if (Object.keys(errors).length > 0) return errors;
 
   const r = run(inp);
@@ -644,9 +775,12 @@ export function solveTimeline(v: Values): Solution {
   const ren = r.renovationInfo;
   const ex = r.exchangeInfo;
   const lifeText = `${plain(round2(inp.lifeMonths / 12))} שנים`;
-  const depreciable = round2(inp.cost - inp.residual);
+  const depreciable = round2(inp.buildingCost - inp.residual);
   const hasRevaluation = r.bookings.some((b) => b.kind === "revaluation");
   const exchangeBooking = r.bookings.find((b) => b.kind === "exchange");
+  const hasLand = !!inp.land;
+  const landShare = percent(inp.land?.share ?? 0);
+  const part = hasLand ? " — מבנה" : "";
 
   // ---- schedule ------------------------------------------------------------
   const rows: ScheduleRow[] = periods.map((p) => {
@@ -666,11 +800,15 @@ export function solveTimeline(v: Values): Solution {
       after: ren ? sumRange(r.depBy, Math.max(p.a, ren.t), p.b) : null,
       total: sumRange(r.depBy, p.a, p.b),
       revaluation: total("revaluation"),
+      landRevaluation: round2(sum(books.map((bk) => bk.landRevaluation ?? 0))),
       disposal: total("disposal"),
       gross: close.gross,
       accumulated: close.acc,
+      building: close.building,
+      land: close.land,
       carrying: close.carrying,
       surplus: close.surplus,
+      landSurplus: close.landSurplus,
       transfer: sumRange(r.transferBy, p.a, p.b),
       event: events.length > 0 ? events.join(" · ") : null,
       _emphasis: books.length > 0 ? "event" : null,
@@ -705,7 +843,7 @@ export function solveTimeline(v: Values): Solution {
     if (transfer <= 0) return;
     post({
       ...entry(`transfer-${from}-${to}`, when, "העברה מקרן ההערכה מחדש לעודפים (החלק שמומש בשימוש)", [
-        ["קרן הערכה מחדש", transfer],
+        [`קרן הערכה מחדש${part}`, transfer],
         ["עודפים", -transfer],
       ]),
       reference: "IAS 16.41",
@@ -713,11 +851,12 @@ export function solveTimeline(v: Values): Solution {
   };
   if (viewStart === r.start) {
     post({
-      ...entry("acquisition", fmtDate(inp.startDate), "הכרה לראשונה לפי עלות (מחיר רכישה ועלויות המיוחסות במישרין)", [
-        ["רכוש קבוע", inp.cost],
+      ...entry("acquisition", fmtDate(inp.startDate), `הכרה לראשונה לפי עלות (מחיר רכישה ועלויות המיוחסות במישרין)${hasLand ? " — קרקע ומבנה בנפרד" : ""}`, [
+        [hasLand ? "רכוש קבוע — מבנה" : "רכוש קבוע", inp.buildingCost],
+        ["קרקע", inp.land?.cost ?? 0],
         ["מזומנים / ספקים", -inp.cost],
       ]),
-      reference: "IAS 16.7, 15–17",
+      reference: hasLand ? "IAS 16.7, 15–17, 58" : "IAS 16.7, 15–17",
     });
   }
   for (const [i, p] of periods.entries()) {
@@ -747,25 +886,38 @@ export function solveTimeline(v: Values): Solution {
   const plBy = (kind: Booking["kind"], field: "pl" | "oci") => Object.fromEntries(periods.map((p) => [`y${p.year}`, bookedIn(p, kind, field)]));
   const depRow = byYear("total", -1);
   const revaluationPlRow = plBy("revaluation", "pl");
+  const landPlRow = plBy("landRevaluation", "pl");
   const exchangeRow = plBy("exchange", "pl");
   const ociRow = plBy("revaluation", "oci");
-  const plTotal = Object.fromEntries(periods.map((p) => [`y${p.year}`, round2(depRow[`y${p.year}`] + revaluationPlRow[`y${p.year}`] + exchangeRow[`y${p.year}`])]));
+  const landOciRow = plBy("landRevaluation", "oci");
+  const plTotal = Object.fromEntries(
+    periods.map((p) => {
+      const k = `y${p.year}`;
+      return [k, round2(depRow[k] + revaluationPlRow[k] + landPlRow[k] + exchangeRow[k])];
+    }),
+  );
+  const landLosses = hasLand && periods.some((p) => landPlRow[`y${p.year}`] !== 0);
 
   const balanceRows: ScheduleRow[] = [
-    { item: revaluation ? "עלות / סכום משוערך" : "עלות", ...byYear("gross") },
+    ...(hasLand ? [{ item: "קרקע (אינה מופחתת)", ...byYear("land") }] : []),
+    { item: `${hasLand ? "מבנה — " : ""}${revaluation ? "עלות / סכום משוערך" : "עלות"}`, ...byYear("gross") },
     { item: "בניכוי פחת שנצבר", ...byYear("accumulated", -1) },
+    ...(hasLand ? [{ item: "מבנה, נטו", ...byYear("building"), _emphasis: "subtotal" }] : []),
     { item: "רכוש קבוע, נטו (יתרה בספרים)", ...byYear("carrying"), _emphasis: "total" },
     ...(ex
       ? [{ item: "רכוש קבוע — הנכס שהתקבל בהחלפה (עלות)", ...Object.fromEntries(periods.map((p) => [`y${p.year}`, p.b >= ex.t ? ex.newCost : 0])) }]
       : []),
-    ...(revaluation ? [{ item: "קרן הערכה מחדש (הון)", ...byYear("surplus"), _emphasis: "subtotal" }] : []),
+    ...(revaluation ? [{ item: `קרן הערכה מחדש${part} (הון)`, ...byYear("surplus"), _emphasis: "subtotal" }] : []),
+    ...(revaluation && hasLand ? [{ item: "קרן הערכה מחדש — קרקע (הון)", ...byYear("landSurplus"), _emphasis: "subtotal" }] : []),
   ];
   const plRows: ScheduleRow[] = [
     { item: "הוצאות פחת", ...depRow },
-    ...(hasRevaluation ? [{ item: "הפסד מהערכה מחדש / ביטולו", ...revaluationPlRow }] : []),
+    ...(hasRevaluation ? [{ item: `הפסד מהערכה מחדש${part} / ביטולו`, ...revaluationPlRow }] : []),
+    ...(landLosses ? [{ item: "הפסד מהערכה מחדש — קרקע / ביטולו", ...landPlRow }] : []),
     ...(ex ? [{ item: "רווח (הפסד) מהחלפת רכוש קבוע", ...exchangeRow }] : []),
     { item: "סך ההשפעה על הרווח או ההפסד", ...plTotal, _emphasis: "total" },
-    ...(revaluation ? [{ item: "רווח כולל אחר — שינוי בקרן הערכה מחדש", ...ociRow, _emphasis: "subtotal" }] : []),
+    ...(revaluation ? [{ item: `רווח כולל אחר — שינוי בקרן הערכה מחדש${part}`, ...ociRow, _emphasis: "subtotal" }] : []),
+    ...(revaluation && hasLand ? [{ item: "רווח כולל אחר — קרן הערכה מחדש — קרקע", ...landOciRow, _emphasis: "subtotal" }] : []),
   ];
 
   // ---- year by year --------------------------------------------------------
@@ -773,7 +925,7 @@ export function solveTimeline(v: Values): Solution {
   const phaseAt = (t: number) => r.phases.findLast((ph) => ph.t0 <= t)!;
   const years = (n: number) => plain(round2(n / 12));
   /** Balances at month t, after any event that starts a phase there. */
-  const stateAt = (ph: Phase, t: number) => (t === ph.t0 ? { carrying: ph.carrying, surplus: ph.surplus } : r.closing.get(t)!);
+  const stateAt = (ph: Phase, t: number) => (t === ph.t0 ? { carrying: ph.carrying, surplus: ph.surplus } : { carrying: r.closing.get(t)!.building, surplus: r.closing.get(t)!.surplus });
 
   /** The depreciation of months [a, b), as equations: phase by phase and asset-year by asset-year. */
   const depreciationWorkings = (a: number, b: number): Working[] => {
@@ -917,10 +1069,10 @@ export function solveTimeline(v: Values): Solution {
       const annual = fmt(round2((ph.depreciable / ph.months) * 12));
       formula =
         ph.cause === "start"
-          ? `ללא שינוי אומדן שתי הדרכים שקולות: (עלות מקורית ${fmt(inp.cost)} − גרט ${fmt(inp.residual)}) ÷ ${years(inp.lifeMonths)} שנות חיים = ${annual} לשנה; או (עלות מופחתת בתחילת השנה ${fmt(open.carrying)} − גרט ${fmt(ph.residual)}) ÷ יתרת אורך חיים ${years(remaining)} שנים = ${annual}.`
+          ? `ללא שינוי אומדן שתי הדרכים שקולות: (עלות מקורית${part} ${fmt(inp.buildingCost)} − גרט ${fmt(inp.residual)}) ÷ ${years(inp.lifeMonths)} שנות חיים = ${annual} לשנה; או (עלות מופחתת${part} בתחילת השנה ${fmt(open.building)} − גרט ${fmt(ph.residual)}) ÷ יתרת אורך חיים ${years(remaining)} שנים = ${annual}.`
           : ph.cause === "renovation"
             ? `(יתרה בספרים ערב השיפוץ ${fmt(ren!.carryingBefore)} + עלות השיפוץ ${fmt(inp.renovation!.cost)} − גרט מתוקן ${fmt(ph.residual)}) ÷ יתרת אורך החיים המעודכנת ממועד השיפוץ ${years(ph.months)} שנים = ${annual} לשנה.`
-            : `(השווי ההוגן החדש ${fmt(ph.carrying)} − גרט ${fmt(ph.residual)}) ÷ יתרת אורך החיים ממועד ההערכה ${years(ph.months)} שנים = ${annual} לשנה.`;
+            : `(השווי ההוגן החדש${part} ${fmt(ph.carrying)} − גרט ${fmt(ph.residual)}) ÷ יתרת אורך החיים ממועד ההערכה ${years(ph.months)} שנים = ${annual} לשנה.`;
     } else {
       const lead =
         ph.cause === "renovation"
@@ -943,6 +1095,13 @@ export function solveTimeline(v: Values): Solution {
       });
     }
 
+    if (open.landSurplus > 0) {
+      out.push({
+        title: "קרן הערכה מחדש — קרקע",
+        body: `הקרקע אינה מופחתת, ולכן הקרן בגינה (${fmt(open.landSurplus)}) אינה מועברת לעודפים במהלך השימוש — רק בעת גריעת הנכס.`,
+        reference: "IAS 16.41, 58",
+      });
+    }
     if (revaluation && open.surplus > 0) {
       if (inp.transferSurplus && historical) {
         const transfer = sumRange(r.transferBy, t, nextEnd);
@@ -992,28 +1151,36 @@ export function solveTimeline(v: Values): Solution {
     const transfer = Number(row.transfer);
     const workings: Working[] = [
       ...books.filter((bk) => bk.side === "open").flatMap((bk) => bk.working),
+      ...(hasLand && Number(row.land) > 0 ? [{ label: `קרקע (${fmt(Number(r.closing.get(p.a)!.land))}) — אינה מופחתת; הפחת להלן הוא של המבנה בלבד (IAS 16.58)` }] : []),
       ...depreciationWorkings(p.a, p.b),
-      { label: `סך הפחת לשנת ${p.year}`, amount: dep },
+      { label: `סך הפחת${part} לשנת ${p.year}`, amount: dep },
       ...transferWorkings(p.a, p.b),
-      ...(transfer > 0 ? [{ label: `סך ההעברה לעודפים בשנת ${p.year}`, amount: transfer }] : []),
+      ...(transfer > 0 ? [{ label: `סך ההעברה לעודפים בשנת ${p.year}${hasLand ? " (מקרן המבנה בלבד)" : ""}`, amount: transfer }] : []),
       ...books.filter((bk) => bk.side === "close").flatMap((bk) => bk.working),
     ];
     const balance: StatementLine[] = [
-      { label: revaluation ? "עלות / שווי הוגן משוערך" : "עלות", value: Number(row.gross) },
+      ...(hasLand ? [{ label: "קרקע (אינה מופחתת)", value: Number(row.land) }] : []),
+      { label: `${hasLand ? "מבנה — " : ""}${revaluation ? "עלות / שווי הוגן משוערך" : "עלות"}`, value: Number(row.gross) },
       { label: "בניכוי פחת שנצבר", value: -Number(row.accumulated) },
+      ...(hasLand ? [{ label: "מבנה, נטו", value: Number(row.building), emphasis: "subtotal" as const }] : []),
       { label: "יתרה בספרים (Carrying Amount)", value: Number(row.carrying), emphasis: "total" },
       ...(ex && p.b >= ex.t ? [{ label: "רכוש קבוע — הנכס שהתקבל בהחלפה", value: ex.newCost }] : []),
-      ...(revaluation ? [{ label: "קרן הערכה מחדש (בהון העצמי)", value: Number(row.surplus), emphasis: "subtotal" as const }] : []),
+      ...(revaluation ? [{ label: `קרן הערכה מחדש${part} (בהון העצמי)`, value: Number(row.surplus), emphasis: "subtotal" as const }] : []),
+      ...(revaluation && hasLand ? [{ label: "קרן הערכה מחדש — קרקע (בהון העצמי)", value: Number(row.landSurplus), emphasis: "subtotal" as const }] : []),
     ];
     const revaluationPl = bookedIn(p, "revaluation", "pl");
+    const landPl = bookedIn(p, "landRevaluation", "pl");
     const exchangePl = bookedIn(p, "exchange", "pl");
     const oci = bookedIn(p, "revaluation", "oci");
+    const landOci = bookedIn(p, "landRevaluation", "oci");
     const profitOrLoss: StatementLine[] = [
       { label: "הוצאות פחת", value: -dep },
-      ...(revaluationPl ? [{ label: revaluationPl < 0 ? "הפסד מהערכה מחדש" : "ביטול הפסד מהערכה מחדש", value: revaluationPl }] : []),
+      ...(revaluationPl ? [{ label: `${revaluationPl < 0 ? "הפסד מהערכה מחדש" : "ביטול הפסד מהערכה מחדש"}${part}`, value: revaluationPl }] : []),
+      ...(landPl ? [{ label: `${landPl < 0 ? "הפסד מהערכה מחדש" : "ביטול הפסד מהערכה מחדש"} — קרקע`, value: landPl }] : []),
       ...(exchangeBooking && inPeriod(exchangeBooking, p) ? [{ label: "רווח (הפסד) ממימוש / החלפה", value: exchangePl }] : []),
-      { label: "סך ההשפעה על הרווח או ההפסד", value: round2(-dep + revaluationPl + exchangePl), emphasis: "total" },
-      ...(oci ? [{ label: "רווח כולל אחר — קרן הערכה מחדש", value: oci, emphasis: "subtotal" as const }] : []),
+      { label: "סך ההשפעה על הרווח או ההפסד", value: round2(-dep + revaluationPl + landPl + exchangePl), emphasis: "total" },
+      ...(oci ? [{ label: `רווח כולל אחר — קרן הערכה מחדש${part}`, value: oci, emphasis: "subtotal" as const }] : []),
+      ...(landOci ? [{ label: "רווח כולל אחר — קרן הערכה מחדש — קרקע", value: landOci, emphasis: "subtotal" as const }] : []),
     ];
     const eventNames = books.filter((bk) => bk.kind !== "surplus").map((bk) => EVENT_LABEL[bk.kind]);
     return {
@@ -1041,7 +1208,13 @@ export function solveTimeline(v: Values): Solution {
   // ---- metrics -------------------------------------------------------------
   const metrics: Metric[] = [
     { label: "עלות במועד ההכרה", value: inp.cost, format: "currency" },
-    { label: "סכום בר-פחת", value: depreciable, format: "currency", hint: `${fmt(inp.cost)} − ערך שייר ${fmt(inp.residual)}` },
+    ...(inp.land
+      ? [
+          { label: "מרכיב הקרקע (אינו מופחת)", value: inp.land.cost, format: "currency" as const, hint: `${landShare} מהעלות` },
+          { label: "מרכיב המבנה", value: inp.buildingCost, format: "currency" as const },
+        ]
+      : []),
+    { label: "סכום בר-פחת", value: depreciable, format: "currency", hint: `${fmt(inp.buildingCost)} − ערך שייר ${fmt(inp.residual)}` },
     { label: "פחת בטווח החישוב", value: totalDep, format: "currency", hint: `${monthLabel(viewStart)} עד ${monthLabel(viewEnd - 1)}` },
     { label: "יתרה בספרים בסוף הטווח", value: closeView.carrying, format: "currency", hint: dayBefore(viewEnd) },
   ];
@@ -1064,7 +1237,8 @@ export function solveTimeline(v: Values): Solution {
       metrics.push({ label: method === "straight-line" ? "פחת שנתי מעודכן" : "פחת ב-12 החודשים שלאחר השיפוץ", value: firstYearAfter, format: "currency" });
     }
   }
-  if (revaluation) metrics.push({ label: "קרן הערכה מחדש בסוף הטווח", value: closeView.surplus, format: "currency" });
+  if (revaluation) metrics.push({ label: `קרן הערכה מחדש${part} בסוף הטווח`, value: closeView.surplus, format: "currency" });
+  if (revaluation && hasLand) metrics.push({ label: "קרן הערכה מחדש — קרקע בסוף הטווח", value: closeView.landSurplus, format: "currency" });
   if (ex) {
     metrics.push(
       { label: "עלות הנכס שהתקבל בהחלפה", value: ex.newCost, format: "currency" },
@@ -1087,13 +1261,17 @@ export function solveTimeline(v: Values): Solution {
     { key: "opening", label: "יתרה בספרים לפתיחה" },
     ...(ren ? [{ key: "additions", label: "תוספות (שיפוץ)" }] : []),
     ...(ren ? [{ key: "before", label: "פחת — אומדן מקורי" }, { key: "after", label: "פחת — אומדן מעודכן" }] : []),
-    { key: "total", label: "סך הפחת" },
-    ...(revaluation ? [{ key: "revaluation", label: "הערכה מחדש" }] : []),
+    { key: "total", label: `סך הפחת${part}` },
+    ...(revaluation ? [{ key: "revaluation", label: `הערכה מחדש${part}` }] : []),
+    ...(revaluation && hasLand ? [{ key: "landRevaluation", label: "הערכה מחדש — קרקע" }] : []),
     ...(ex ? [{ key: "disposal", label: "גריעה בהחלפה" }] : []),
-    { key: "gross", label: revaluation ? "עלות / סכום משוערך" : "עלות" },
+    ...(hasLand ? [{ key: "land", label: "קרקע" }] : []),
+    { key: "gross", label: `${hasLand ? "מבנה — " : ""}${revaluation ? "עלות / סכום משוערך" : "עלות"}` },
     { key: "accumulated", label: "פחת שנצבר" },
+    ...(hasLand ? [{ key: "building", label: "מבנה, נטו" }] : []),
     { key: "carrying", label: "יתרה בספרים" },
-    ...(revaluation ? [{ key: "surplus", label: "קרן הערכה מחדש" }] : []),
+    ...(revaluation ? [{ key: "surplus", label: `קרן הערכה מחדש${part}` }] : []),
+    ...(revaluation && hasLand ? [{ key: "landSurplus", label: "קרן הערכה מחדש — קרקע" }] : []),
     { key: "event", label: "אירועים", format: "text" as const },
   ];
   const scheduleTotals = (keys: string[]) => Object.fromEntries(keys.map((k) => [k, round2(sum(rows.map((row) => Number(row[k] ?? 0))))]));
@@ -1103,7 +1281,7 @@ export function solveTimeline(v: Values): Solution {
       id: "cost",
       title: "עלות הנכס ובסיס הפחת",
       note: "העלות כוללת את מחיר הרכישה ועלויות המיוחסות במישרין להבאת הנכס למיקום ולמצב הדרושים להפעלתו (הובלה, התקנה, הרצה). הסכום בר-הפחת הוא העלות בניכוי ערך השייר.",
-      reference: "IAS 16.15–17, 6, 53",
+      reference: hasLand ? "IAS 16.15–17, 6, 53, 58" : "IAS 16.15–17, 6, 53",
       columns: [
         { key: "item", label: "רכיב", format: "text" },
         { key: "amount", label: "סכום" },
@@ -1112,7 +1290,13 @@ export function solveTimeline(v: Values): Solution {
         { item: "מחיר רכישה", amount: inp.purchasePrice },
         { item: "עלויות המיוחסות במישרין", amount: inp.attributableCosts },
         { item: "עלות הנכס", amount: inp.cost, _emphasis: "subtotal" },
-        { item: "ערך שייר", amount: -inp.residual },
+        ...(inp.land
+          ? [
+              { item: `בניכוי מרכיב הקרקע (${landShare}) — אינו מופחת`, amount: -inp.land.cost },
+              { item: "מרכיב המבנה", amount: inp.buildingCost, _emphasis: "subtotal" },
+            ]
+          : []),
+        { item: `ערך שייר${part}`, amount: -inp.residual },
         { item: "סכום בר-פחת", amount: depreciable, _emphasis: "total" },
         { item: "מועד זמינות לשימוש", amount: fmtDate(inp.startDate) },
         { item: "אורך חיים שימושיים", amount: lifeText },
@@ -1132,12 +1316,15 @@ export function solveTimeline(v: Values): Solution {
       rows,
       totals: {
         period: "סה\"כ",
-        ...scheduleTotals(["months", "additions", "before", "after", "total", "revaluation", "disposal"]),
+        ...scheduleTotals(["months", "additions", "before", "after", "total", "revaluation", "landRevaluation", "disposal"]),
         opening: null,
         gross: null,
         accumulated: null,
         carrying: null,
         surplus: null,
+        land: null,
+        building: null,
+        landSurplus: null,
         event: null,
       },
     },
@@ -1185,6 +1372,15 @@ export function solveTimeline(v: Values): Solution {
       body: `הסכום בר-הפחת (${fmt(depreciable)}) מוקצה על פני ${lifeText}. הפחת מתחיל כשהנכס זמין לשימוש — ${fmtDate(inp.startDate)} — גם אם טרם החל להפיק תפוקה מלאה.`,
       reference: "IAS 16.6, 50, 55",
     },
+    ...(inp.land
+      ? [
+          {
+            title: "קרקע ומבנה — נכסים נפרדים",
+            body: `קרקע ומבנה מטופלים כנכסים נפרדים גם כשנרכשו יחד. לקרקע אורך חיים בלתי מוגבל ולכן היא אינה מופחתת; הפחת, ערך השייר והשיפוץ חלים על המבנה בלבד. כאן: קרקע ${fmt(inp.land.cost)} (${landShare}), מבנה ${fmt(inp.buildingCost)}.${revaluation ? " בהערכה מחדש השווי ההוגן הכולל מפוצל לפי אותו יחס; לכל מרכיב קרן נפרדת, ורק קרן המבנה מועברת לעודפים בקצב הפחת." : ""}`,
+            reference: "IAS 16.58–59",
+          },
+        ]
+      : []),
     { title: `3. שיטת ${label}`, body: METHOD_TEXT[method], reference: "IAS 16.60–62" },
   ];
   if (ren) {
@@ -1224,7 +1420,7 @@ export function solveTimeline(v: Values): Solution {
     "באור X — רכוש קבוע",
     "",
     "מדיניות חשבונאית",
-    `${revaluation ? "רכוש קבוע מוצג לפי סכום משוערך — שווי הוגן במועד ההערכה מחדש בניכוי פחת שנצבר לאחר מכן." : "רכוש קבוע מוצג לפי עלות בניכוי פחת שנצבר."} הפחת מחושב לפי שיטת ${label} מהמועד שבו הנכס זמין לשימוש, על פני ${lifeText}. ערכי השייר, אורך החיים השימושיים ושיטת הפחת נבחנים בכל תאריך דיווח.`,
+    `${revaluation ? "רכוש קבוע מוצג לפי סכום משוערך — שווי הוגן במועד ההערכה מחדש בניכוי פחת שנצבר לאחר מכן." : "רכוש קבוע מוצג לפי עלות בניכוי פחת שנצבר."} הפחת מחושב לפי שיטת ${label} מהמועד שבו הנכס זמין לשימוש, על פני ${lifeText}.${hasLand ? " קרקע אינה מופחתת; הפחת חל על המבנה בלבד." : ""} ערכי השייר, אורך החיים השימושיים ושיטת הפחת נבחנים בכל תאריך דיווח.`,
     ...(ren
       ? [
           "",
@@ -1276,6 +1472,7 @@ export function solveTimeline(v: Values): Solution {
 
 const EVENT_LABEL: Record<Booking["kind"], string> = {
   renovation: "שיפוץ",
+  landRevaluation: "הערכה מחדש — קרקע",
   revaluation: "הערכה מחדש",
   exchange: "החלפה",
   surplus: "העברה לעודפים",

@@ -20,6 +20,8 @@ type Props<F extends Field = Field> = {
   onExplain?: (at: number) => void;
   /** Offered when solving for an unknown: marks or clears this field as X. */
   unknown?: { active: boolean; onToggle: () => void };
+  /** For a dated-values field: show its optional note column. */
+  showNote?: boolean;
 };
 
 export function FieldControl(props: Props) {
@@ -247,26 +249,37 @@ function DatedValuesInput({
   onChange,
   labelledBy,
   xRow,
+  showNote,
 }: Props<DatedValuesField> & { labelledBy: string; xRow: boolean }) {
-  const [rows, setRows] = useState<{ date: string; value: string }[]>(() =>
-    parseDatedValues(String(value ?? "")).map((r) => ({ date: r.date, value: r.value === "" ? "" : String(r.value) })),
+  type Row = { date: string; value: string; note: string };
+  const [rows, setRows] = useState<Row[]>(() =>
+    parseDatedValues(String(value ?? "")).map((r) => ({ date: r.date, value: r.value === "" ? "" : String(r.value), note: r.note ?? "" })),
   );
-  const commit = (next: { date: string; value: string }[]) => {
+  const commit = (next: Row[]) => {
     setRows(next);
-    onChange(JSON.stringify(next.map((r) => ({ date: r.date, value: r.value.trim() === "" ? "" : Number(r.value) }))));
+    onChange(
+      JSON.stringify(
+        next.map((r) => ({ date: r.date, value: r.value.trim() === "" ? "" : Number(r.value), ...(r.note.trim() ? { note: r.note.trim() } : {}) })),
+      ),
+    );
   };
-  const set = (i: number, patch: Partial<{ date: string; value: string }>) => commit(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  const set = (i: number, patch: Partial<Row>) => commit(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  const note = showNote ? field.note : undefined;
+  const grid = note
+    ? "grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.9fr)_2.75rem] gap-2"
+    : "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.75rem] gap-2";
 
   return (
     <div role="group" aria-labelledby={labelledBy} className="space-y-2">
       {rows.length > 0 && (
-        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.75rem] gap-2 px-1 text-[11px] text-subtle">
+        <div className={cn(grid, "px-1 text-[11px] text-subtle")}>
           <span>תאריך</span>
           <span>{field.valueLabel} (₪)</span>
+          {note && <span>{note.label}</span>}
         </div>
       )}
       {rows.map((r, i) => (
-        <div key={i} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.75rem] gap-2">
+        <div key={i} className={grid}>
           <input
             type="date"
             dir="ltr"
@@ -284,13 +297,26 @@ function DatedValuesInput({
             value={r.value}
             onChange={(e) => {
               const raw = e.target.value.replace(/,/g, "");
-              if (/^\d*\.?\d*$/.test(raw)) set(i, { value: raw });
+              if (/^d*.?d*$/.test(raw)) set(i, { value: raw });
             }}
             aria-label={`${field.valueLabel} — שורה ${i + 1}`}
             aria-invalid={error ? true : undefined}
             placeholder={xRow ? "X" : undefined}
             className={cn(inputClass, "num font-mono", xRow && r.value === "" && "border-accent/60 bg-accent-soft placeholder:text-accent")}
           />
+          {note && (
+            <input
+              type="text"
+              dir="ltr"
+              autoComplete="off"
+              value={r.note}
+              onChange={(e) => set(i, { note: e.target.value })}
+              aria-label={`${note.label} — שורה ${i + 1}`}
+              aria-invalid={error ? true : undefined}
+              placeholder={note.placeholder}
+              className={cn(inputClass, "num font-mono placeholder:text-subtle/70")}
+            />
+          )}
           <button
             type="button"
             onClick={() => commit(rows.filter((_, j) => j !== i))}
@@ -303,7 +329,7 @@ function DatedValuesInput({
       ))}
       <button
         type="button"
-        onClick={() => commit([...rows, { date: "", value: "" }])}
+        onClick={() => commit([...rows, { date: "", value: "", note: "" }])}
         className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-dashed border-line-strong px-3.5 text-sm text-muted transition-colors hover:border-accent/60 hover:text-accent"
       >
         <Plus className="h-4 w-4" /> {field.addLabel}
