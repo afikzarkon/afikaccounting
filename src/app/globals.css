@@ -1,26 +1,159 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Design tokens. Slate / deep-navy base with an electric-blue accent.
+ * Components use the semantic names (bg-canvas, bg-surface, text-fg, text-muted,
+ * border-line), so light and dark themes are switched here only.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --canvas: #f5f7fb;
+  --surface: #ffffff;
+  --surface-2: #f0f3f9;
+  --glass: rgb(255 255 255 / 0.72);
+  --line: rgb(15 23 42 / 0.09);
+  --line-strong: rgb(15 23 42 / 0.16);
+  --fg: #0a1328;
+  --muted: #55657f;
+  --subtle: #8391a7;
+  --brand: #0b1d4a;
+  --accent: #2563eb;
+  --accent-fg: #ffffff;
+  --accent-soft: rgb(37 99 235 / 0.1);
+  --debit: #0f766e;
+  --credit: #9333ea;
+  --danger: #dc2626;
+  --success: #059669;
+  --ring: rgb(37 99 235 / 0.45);
+  --grid: rgb(15 23 42 / 0.05);
+  --shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.12);
+}
+
+.dark {
+  --canvas: #050a17;
+  --surface: #0b1426;
+  --surface-2: #0f1a30;
+  --glass: rgb(11 20 38 / 0.62);
+  --line: rgb(148 163 184 / 0.12);
+  --line-strong: rgb(148 163 184 / 0.22);
+  --fg: #e8eef8;
+  --muted: #94a3bd;
+  --subtle: #64748b;
+  --brand: #c7d6f5;
+  --accent: #4f8bff;
+  --accent-fg: #04112b;
+  --accent-soft: rgb(79 139 255 / 0.14);
+  --debit: #2dd4bf;
+  --credit: #c084fc;
+  --danger: #f87171;
+  --success: #34d399;
+  --ring: rgb(79 139 255 / 0.55);
+  --grid: rgb(148 163 184 / 0.06);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px -16px rgb(0 0 0 / 0.6);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-glass: var(--glass);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-brand: var(--brand);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-debit: var(--debit);
+  --color-credit: var(--credit);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --font-sans: var(--font-heebo), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --shadow-card: var(--shadow);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    background: var(--canvas);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: var(--accent-soft);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    border: 1px solid var(--line);
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    box-shadow: var(--shadow);
+  }
+  .bg-grid {
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+  .text-gradient {
+    background: linear-gradient(110deg, var(--fg) 20%, var(--accent) 60%, #22d3ee 95%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+    color: black;
+  }
+  .card,
+  .glass {
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    border-color: #ddd !important;
+    background: white !important;
+  }
+  .print-expand {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
