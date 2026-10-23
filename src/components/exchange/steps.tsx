@@ -3,10 +3,12 @@ import { Callout, DataTable, Dt, JournalEntry, Num } from "@/components/study/bl
 import { Formula } from "@/components/study/math";
 import { StepCard, texNum } from "@/components/study/ui";
 import { solveExchange } from "@/lib/learn/exchange";
-import { catchUpLines, EXAMPLE } from "./entries";
+import { catchUpLines, EXAMPLE, exchangeLines } from "./entries";
 
 const WITH = solveExchange(EXAMPLE);
 const WITHOUT = solveExchange({ ...EXAMPLE, commercial: false });
+const RECEIVED_X = { ...EXAMPLE, basis: "received" as const };
+const RECEIVED = solveExchange(RECEIVED_X);
 const YEARS_BEFORE = EXAMPLE.accumulatedOpening / WITH.oldAnnual;
 
 const STEPS = ["זיהוי תאריך ההחלפה", "עדכון פחת עד לתאריך ההחלפה", "סיווג העסקה וקביעת עלות הנכס החדש"];
@@ -131,9 +133,29 @@ export function ExchangeStepsSection() {
             </p>
           </div>
         </div>
+        <div className="my-4 rounded-xl border border-accent/30 bg-accent-soft/60 p-4">
+          <p className="text-sm font-semibold text-accent">דוגמה: ידוע רק השווי ההוגן של הנכס שהתקבל</p>
+          <p className="mt-1 text-[14.5px] text-fg/90">
+            נניח שאת השווי ההוגן של המכונה הישנה אי אפשר למדוד באופן מהימן, אבל ידוע שהמכונה החדשה שווה{" "}
+            <Num v={EXAMPLE.fairValueReceived} /> ₪. במקרה כזה השווי של הנכס שהתקבל הוא עלות הנכס החדש, ואת השווי של הנכס שנמסר גוזרים ממנו
+            (סעיף 26):
+          </p>
+          <Formula tex={String.raw`\text{עלות נכס חדש} = \text{שווי הוגן מתקבל} = ${texNum(RECEIVED.newCost)}`} />
+          <Formula
+            tex={String.raw`\text{שווי הוגן נמסר} = \text{שווי הוגן מתקבל} - \text{מזומן ששולם} + \text{מזומן שהתקבל} = ${texNum(EXAMPLE.fairValueReceived)} - ${texNum(EXAMPLE.cashPaid)} = ${texNum(RECEIVED.fairValueGiven!)}`}
+          />
+          <Formula
+            tex={String.raw`\text{רווח (הפסד) מהחלפה} = \text{שווי הוגן נמסר} - \text{ערך בספרים נמסר} = ${texNum(RECEIVED.fairValueGiven!)} - ${texNum(RECEIVED.bookValue)} = ${texNum(RECEIVED.gain)}`}
+          />
+          <JournalEntry title="החלפה לפי השווי ההוגן של הנכס שהתקבל — פקודה מלאה" date="1.4.X4" lines={exchangeLines(RECEIVED_X, RECEIVED, "full")} />
+          <p className="text-[13.5px] text-fg/85">
+            שימו לב: המזומן ששולם כבר &quot;בתוך&quot; השווי של הנכס שהתקבל, ולכן לא מוסיפים אותו לעלות — מנכים אותו כדי להגיע לשווי של מה
+            שנמסר.
+          </p>
+        </div>
         <Callout kind="check" title="בדיקה מהירה">
           <p>
-            ההפרש בין עלות הנכס החדש בשני המקרים שווה בדיוק לרווח: <Num v={WITH.newCost} /> − <Num v={WITHOUT.newCost} /> ={" "}
+            ההפרש בין עלות הנכס החדש בשני המקרים הראשונים שווה בדיוק לרווח: <Num v={WITH.newCost} /> − <Num v={WITHOUT.newCost} /> ={" "}
             <Num v={WITH.newCost - WITHOUT.newCost} />.
           </p>
         </Callout>

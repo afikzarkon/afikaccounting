@@ -328,8 +328,34 @@ describe("IAS 16", () => {
       const s = solve(PPE, { ...base, ...exchange });
       assert.equal(metric(s, "עלות הנכס שהתקבל"), 55000);
       assert.equal(metric(s, "רווח (הפסד) מההחלפה"), round2(50000 - 32916.67));
-      assert.equal(line(s, "balance-sheet", "רכוש קבוע, נטו (יתרה בספרים)").y2027, 0);
-      assert.match(s.years!.at(-1)!.next[1].body, /פחת לשנת 2028: ₪10,000\.00/); // (55,000 − 5,000) / 5
+      // The asset received replaces the old one in the schedule and keeps depreciating: (55,000 − 5,000) / 5.
+      assert.equal(line(s, "balance-sheet", "רכוש קבוע, נטו (יתרה בספרים)").y2027, 55000);
+      const rows = table(s, "depreciation").rows;
+      assert.deepEqual(rows.map((r) => r.year), [2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031]);
+      assert.deepEqual(rows.slice(-4).map((r) => r.total), [10000, 10000, 10000, 10000]);
+      assert.equal(line(s, "balance-sheet", "רכוש קבוע, נטו (יתרה בספרים)").y2031, 15000);
+      assert.match(s.years!.find((y) => y.id === "y2027")!.next[0].body, /הנכס שהתקבל בהחלפה/);
+    });
+
+    it("mid-year: the old asset up to the exchange, the new one for the rest of the year and after", () => {
+      const s = solve(PPE, { ...base, ...exchange, exchangeDate: "2026-06-30" });
+      // Old asset: April 2023 to June 2026 is 39 months of 110,000 / 72.
+      assert.equal(metric(s, "רווח (הפסד) מההחלפה"), round2(50000 - (120000 - (110000 * 39) / 72)));
+      const rows = table(s, "depreciation").rows;
+      const y2026 = rows.find((r) => r.year === 2026)!;
+      // January–June old, July–December new; monthly charges are rounded on the running total, so allow an agora.
+      assert.ok(Math.abs(Number(y2026.total) - ((110000 * 6) / 72 + 5000)) < 0.02);
+      assert.equal(y2026.carrying, 50000);
+      assert.equal(rows.find((r) => r.year === 2027)!.total, 10000);
+      for (const r of rows) {
+        // Opening + additions − depreciation + disposal = closing, every year.
+        assert.equal(round2(Number(r.opening) + Number(r.additions) - Number(r.total) + Number(r.disposal)), r.carrying);
+      }
+      const journal = s.years!.find((y) => y.id === "y2026")!.journal.map((e) => e.narrative);
+      assert.equal(journal.length, 3);
+      assert.match(journal[0], /פחת עד מועד ההחלפה/);
+      assert.match(journal[1], /החלפת נכס/);
+      assert.match(journal[2], /הנכס שהתקבל בהחלפה/);
     });
 
     it("measured at the fair value received when the given one is unknown", () => {

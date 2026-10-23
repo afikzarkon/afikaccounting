@@ -368,7 +368,7 @@ export const ias16Ppe: Calculator = {
       kind: "number",
       id: "newAssetLife",
       label: "אורך החיים של הנכס שהתקבל",
-      help: "לחישוב הפחת של הנכס החדש בשנה שאחרי ההחלפה, באותה שיטת פחת.",
+      help: "הלוח ממשיך עם הנכס החדש מיום ההחלפה ועד תום אורך חייו, באותה שיטת פחת.",
       unit: "years",
       default: "",
       min: 0.1,

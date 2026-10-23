@@ -5,6 +5,8 @@ import { EXAMPLE, exchangeLines } from "./entries";
 const WITH = solveExchange(EXAMPLE);
 const WITHOUT_X = { ...EXAMPLE, commercial: false };
 const WITHOUT = solveExchange(WITHOUT_X);
+const RECEIVED_X = { ...EXAMPLE, basis: "received" as const };
+const RECEIVED = solveExchange(RECEIVED_X);
 
 const side = (s: "dr" | "cr" | "both") => (
   <span className={s === "dr" ? "font-semibold text-debit" : s === "cr" ? "font-semibold text-credit" : "font-semibold text-fg"}>
@@ -78,6 +80,19 @@ export function ExchangeJournalSection() {
           <Num v={EXAMPLE.cashPaid} /> = <Num v={WITHOUT.newCost} />.
         </p>
         <JournalEntry title="החלפה ללא מהות מסחרית — פקודה מלאה" date="1.4.X4" lines={exchangeLines(WITHOUT_X, WITHOUT, "full")} />
+      </div>
+
+      <div className="card p-5">
+        <p className="text-[17px] font-semibold text-fg">ואם ידוע רק השווי ההוגן של הנכס שהתקבל?</p>
+        <p className="mt-1 text-[15px] text-fg/90">
+          הנכס החדש נרשם לפי השווי שלו — <Num v={EXAMPLE.fairValueReceived} />. השווי של הנכס שנמסר נגזר ממנו: <Num v={EXAMPLE.fairValueReceived} /> −{" "}
+          <Num v={EXAMPLE.cashPaid} /> = <Num v={RECEIVED.fairValueGiven!} />, והרווח: <Num v={RECEIVED.fairValueGiven!} /> − <Num v={RECEIVED.bookValue} /> ={" "}
+          <Num v={RECEIVED.gain} />.
+        </p>
+        <div className="grid gap-4 xl:grid-cols-2">
+          <JournalEntry title="לפי השווי של הנכס שהתקבל — פקודה מלאה" date="1.4.X4" lines={exchangeLines(RECEIVED_X, RECEIVED, "full")} />
+          <JournalEntry title="לפי השווי של הנכס שהתקבל — פקודה מקוצרת" date="1.4.X4" lines={exchangeLines(RECEIVED_X, RECEIVED, "net")} />
+        </div>
       </div>
 
       <Callout kind="check" title="איך יודעים שהפקודה נכונה">

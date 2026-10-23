@@ -7,6 +7,7 @@ import { EXAMPLE, yearEndLines } from "./entries";
 
 const WITH = solveExchange(EXAMPLE);
 const WITHOUT = solveExchange({ ...EXAMPLE, commercial: false });
+const RECEIVED = solveExchange({ ...EXAMPLE, basis: "received" });
 
 export function NewAssetSection() {
   return (
@@ -33,13 +34,13 @@ export function NewAssetSection() {
         />
         <JournalEntry title="פחת הנכס החדש לשנת X4" date="31.12.X4" lines={yearEndLines(WITH)} />
         <DataTable
-          caption="הנכס החדש בשני המקרים"
-          head={["", "יש מהות מסחרית", "אין מהות מסחרית"]}
+          caption="הנכס החדש בשלושת המקרים"
+          head={["", "לפי השווי של הנכס שנמסר", "לפי השווי של הנכס שהתקבל", "אין מהות מסחרית"]}
           rows={[
-            ["עלות הנכס החדש", WITH.newCost, WITHOUT.newCost],
-            ["פחת שנתי", WITH.newAnnual, WITHOUT.newAnnual],
-            [`פחת אפריל עד דצמבר (${WITH.monthsAfter} חודשים)`, WITH.newDep, WITHOUT.newDep],
-            ["יתרה בספרים ליום 31.12.X4", WITH.newBookValue, WITHOUT.newBookValue],
+            ["עלות הנכס החדש", WITH.newCost, RECEIVED.newCost, WITHOUT.newCost],
+            ["פחת שנתי", WITH.newAnnual, RECEIVED.newAnnual, WITHOUT.newAnnual],
+            [`פחת אפריל עד דצמבר (${WITH.monthsAfter} חודשים)`, WITH.newDep, RECEIVED.newDep, WITHOUT.newDep],
+            ["יתרה בספרים ליום 31.12.X4", WITH.newBookValue, RECEIVED.newBookValue, WITHOUT.newBookValue],
           ]}
         />
         <Callout title="למה הפחת נמוך יותר כשאין מהות מסחרית?">

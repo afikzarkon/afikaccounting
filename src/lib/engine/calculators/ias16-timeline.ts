@@ -21,7 +21,8 @@ import { bool, datedValues, num, series, str } from "../validate";
  * month from the date it is available for use; events (renovation,
  * revaluation, exchange) start a new depreciation phase, and the results are
  * then grouped into calendar fiscal years and clipped to the calculation
- * range the user chose.
+ * range the user chose. After an exchange the timeline carries on with the
+ * asset received, from its new cost, useful life and residual value.
  */
 
 export type PpeMethod = "straight-line" | "double-declining" | "sum-of-years" | "units";
@@ -81,7 +82,7 @@ type Exchange = {
   received: number;
   fvGiven: number;
   fvReceived: number;
-  /** The asset received: its useful life in months and residual value, for next year's depreciation. */
+  /** The asset received: its useful life in months and residual value, depreciated from the exchange on. */
   newLife: number;
   newResidual: number;
 };
@@ -226,11 +227,13 @@ type ExchangeInfo = { t: number; carrying: number; newCost: number; gain: number
 type Block = { from: number; length: number; amount: number; weight?: number; opening?: number; switched?: boolean; left?: number };
 
 /** Why a new depreciation phase started. */
-type Cause = "start" | "renovation" | "revaluation";
+type Cause = "start" | "renovation" | "revaluation" | "exchange";
 
 type Phase = {
   t0: number;
   cause: Cause;
+  /** The asset received in an exchange keeps the method, except units of production (it has no output figures): straight-line. */
+  method: PpeMethod;
   months: number;
   carrying: number;
   residual: number;
@@ -307,8 +310,11 @@ export function run(inp: Inputs) {
   const { start, exchange, renovation } = inp;
   const firstYear = Math.floor(start / 12);
   let end = start + inp.lifeMonths;
-  // The asset leaves the schedule at the exchange, or at the end of its (possibly revised) life.
-  const stopAt = () => (exchange ? exchange.at : end);
+  // The asset given up runs to the exchange (even past the end of its life); the one received, to the end of its own life.
+  let exchanged = false;
+  let oldEnd: number | null = null;
+  const stopAt = () => (exchange && !exchanged ? exchange.at : end);
+  let method = inp.method;
 
   let gross = inp.buildingCost;
   let land = inp.land?.cost ?? 0;
@@ -344,7 +350,7 @@ export function run(inp: Inputs) {
     const months = Math.max(0, end - t0);
     const depreciable = Math.max(0, round2(carrying() - residual));
     const unitsLeft = Math.max(0, unitsTotal - unitsUsed);
-    const { charges, units, blocks } = monthlyCharges(inp.method, carrying(), residual, months, { t0, ddbRate, unitsLeft, unitsAt });
+    const { charges, units, blocks } = monthlyCharges(method, carrying(), residual, months, { t0, ddbRate, unitsLeft, unitsAt });
     // Round the running total, not each month, and land exactly on the depreciable amount.
     const cum = [0];
     let running = 0;
@@ -356,6 +362,7 @@ export function run(inp: Inputs) {
     const phase: Phase = {
       t0,
       cause,
+      method,
       months,
       carrying: carrying(),
       residual,
@@ -607,9 +614,11 @@ export function run(inp: Inputs) {
       gain = round2(e.fvReceived - e.paid + e.received - before);
       costEquation = { abstract: ["שווי הוגן של הנכס שהתקבל"], numeric: [plain(e.fvReceived)] };
     }
+    // At a year end the exchange closes that year; mid-year it opens the rest of the year for the asset received.
+    const side = t % 12 === 0 ? "close" : "open";
     bookings.push({
       t,
-      side: "close",
+      side,
       kind: "exchange",
       when: fmtDate(e.date),
       narrative: e.commercial ? "החלפת נכס — עסקה בעלת מהות מסחרית" : "החלפת נכס — ללא מהות מסחרית (לפי היתרה בספרים)",
@@ -626,7 +635,7 @@ export function run(inp: Inputs) {
       ],
       pl: gain,
       oci: 0,
-      addition: 0,
+      addition: newCost,
       revaluation: 0,
       disposal: -before,
       working: [
@@ -653,7 +662,7 @@ export function run(inp: Inputs) {
     if (surplus > 0 || landSurplus > 0) {
       bookings.push({
         t,
-        side: "close",
+        side,
         kind: "surplus",
         when: fmtDate(e.date),
         narrative: "העברת יתרת קרן ההערכה מחדש לעודפים בעת הגריעה",
@@ -672,22 +681,36 @@ export function run(inp: Inputs) {
       });
     }
     exchangeInfo = { t, carrying: before, newCost, gain };
-    gross = 0;
+    // The asset received takes the old one's place in the schedule.
+    gross = newCost;
     acc = 0;
     surplus = 0;
     land = 0;
     landSurplus = 0;
     landLosses = 0;
     revaluationLosses = 0;
+    residual = e.newResidual;
+    oldEnd = end;
+    end = t + e.newLife;
+    ddbRate = 24 / e.newLife;
+    if (method === "units") method = "straight-line";
+    exchanged = true;
+    cause = "exchange";
+    phaseDirty = true;
   };
 
-  const revaluationsAt = (t: number) => inp.revaluations.filter((rv) => rv.at === t && t > start && t < end);
+  // Fair values are the old asset's: none apply after the exchange.
+  const revaluationsAt = (t: number) => (exchanged ? [] : inp.revaluations.filter((rv) => rv.at === t && t > start && t < end));
 
   let phase = newPhase(start);
   for (let t = start; ; t++) {
     // Year-end revaluations close the year that ends at t, before its balances are taken.
     if (t % 12 === 0 && t <= stopAt()) revaluationsAt(t).forEach((rv) => revalue(rv, t));
-    if (exchange && t === stopAt()) exchangeAt(exchange, t);
+    if (exchange && !exchanged && t === exchange.at) {
+      // A mid-year revaluation on the exchange date still applies to the asset given up.
+      if (t % 12 !== 0) revaluationsAt(t).forEach((rv) => revalue(rv, t));
+      exchangeAt(exchange, t);
+    }
     closing.set(t, { gross, acc, building: carrying(), surplus, land, landSurplus, landAllowance: landLosses, buildingAllowance: revaluationLosses, carrying: round2(carrying() + land) });
     if (t >= stopAt()) break;
     if (t % 12 !== 0) revaluationsAt(t).forEach((rv) => revalue(rv, t));
@@ -716,7 +739,8 @@ export function run(inp: Inputs) {
   return {
     start,
     stop: stopAt(),
-    end,
+    /** End of the original asset's (possibly revised) life; `stop` is where the schedule ends. */
+    end: oldEnd ?? end,
     firstYear,
     closing,
     depBy,
@@ -771,7 +795,7 @@ export function timelineErrors(v: Values): Record<string, string> {
   if (Object.keys(errors).length > 0) return errors;
 
   const r = run(inp);
-  if (inp.revaluations.some((rv) => rv.at >= r.end || rv.at > r.stop)) {
+  if (inp.revaluations.some((rv) => rv.at >= r.end || (inp.exchange && rv.at > inp.exchange.at))) {
     errors.fairValues = `מועד הערכה אחרי תום אורך החיים (${dayBefore(r.end)})${inp.exchange ? " או אחרי ההחלפה" : ""}.`;
   }
   if (r.renovationInfo && inp.renovation!.residual >= r.renovationInfo.newBase) {
@@ -835,7 +859,7 @@ export function solveTimeline(v: Values): Solution {
     const books = r.bookings.filter((bk) => inPeriod(bk, p));
     const total = (key: "addition" | "revaluation" | "disposal") => round2(sum(books.map((bk) => bk[key])));
     const events = books.filter((bk) => bk.kind !== "surplus").map((bk) => `${bk.when} ${EVENT_LABEL[bk.kind]}`);
-    if (p.b === r.end && !ex) events.push(`תום אורך החיים ${dayBefore(r.end)}`);
+    if (p.b === r.stop) events.push(`תום אורך החיים${ex ? " של הנכס שהתקבל" : ""} ${dayBefore(r.stop)}`);
     return {
       year: p.year,
       period: p.label,
@@ -843,7 +867,7 @@ export function solveTimeline(v: Values): Solution {
       opening: open.carrying,
       additions: total("addition"),
       before: ren ? sumRange(r.depBy, p.a, Math.min(p.b, ren.t)) : null,
-      after: ren ? sumRange(r.depBy, Math.max(p.a, ren.t), p.b) : null,
+      after: ren ? sumRange(r.depBy, Math.max(p.a, ren.t), Math.min(p.b, ex?.t ?? p.b)) : null,
       total: sumRange(r.depBy, p.a, p.b),
       revaluation: total("revaluation"),
       landRevaluation: round2(sum(books.map((bk) => bk.landRevaluation ?? 0))),
@@ -885,7 +909,7 @@ export function solveTimeline(v: Values): Solution {
     const amount = sumRange(r.depBy, from, to);
     if (amount <= 0) return;
     post({
-      ...entry(`dep-${from}-${to}`, when, `${narrative} (${to - from} חודשים, ${label})`, [
+      ...entry(`dep-${from}-${to}`, when, `${narrative} (${to - from} חודשים, ${METHOD_LABEL[r.phases.findLast((ph) => ph.t0 <= from)!.method]})`, [
         ["הוצאות פחת", amount],
         ["פחת שנצבר", -amount],
       ]),
@@ -926,8 +950,8 @@ export function solveTimeline(v: Values): Solution {
       book(bk);
       cursor = bk.t;
     }
-    const exchangeHere = books.some((b) => b.kind === "exchange");
-    depreciation(cursor, p.b, dayBefore(p.b), exchangeHere ? "פחת עד מועד ההחלפה" : "פחת לתקופה");
+    const exchangeAtEnd = books.some((b) => b.kind === "exchange" && b.side === "close");
+    depreciation(cursor, p.b, dayBefore(p.b), exchangeAtEnd ? "פחת עד מועד ההחלפה" : ex && cursor >= ex.t ? "פחת לתקופה — הנכס שהתקבל בהחלפה" : "פחת לתקופה");
     transferEntry(cursor, p.b, dayBefore(p.b));
     books.filter((b) => b.side === "close").forEach(book);
   }
@@ -972,9 +996,6 @@ export function solveTimeline(v: Values): Solution {
     ...(buildingAllowanceEver ? [{ item: `בניכוי הפרשה לירידת ערך${part}`, ...byYear("buildingAllowance", -1) }] : []),
     ...(hasLand ? [{ item: "מבנה, נטו", ...byYear("building"), _emphasis: "subtotal" }] : []),
     { item: "רכוש קבוע, נטו (יתרה בספרים)", ...byYear("carrying"), _emphasis: "total" },
-    ...(ex
-      ? [{ item: "רכוש קבוע — הנכס שהתקבל בהחלפה (עלות)", ...Object.fromEntries(periods.map((p) => [`y${p.year}`, p.b >= ex.t ? ex.newCost : 0])) }]
-      : []),
     ...(revaluation ? [{ item: `קרן הערכה מחדש${part} (הון)`, ...byYear("surplus"), _emphasis: "subtotal" }] : []),
     ...(revaluation && hasLand ? [{ item: "קרן הערכה מחדש — קרקע (הון)", ...byYear("landSurplus"), _emphasis: "subtotal" }] : []),
   ];
@@ -1004,7 +1025,7 @@ export function solveTimeline(v: Values): Solution {
       if (e <= s) return;
       const span = `${monthLabel(s)}–${monthLabel(e - 1)}`;
       const R = plain(ph.residual);
-      if (method === "straight-line") {
+      if (ph.method === "straight-line") {
         const remaining = ph.t0 + ph.months - s;
         out.push({
           label: `פחת ${span} (${e - s} חודשים)`,
@@ -1015,7 +1036,7 @@ export function solveTimeline(v: Values): Solution {
             result: sumRange(r.depBy, s, e),
           },
         });
-      } else if (method === "units") {
+      } else if (ph.method === "units") {
         const used = round2(sum(ph.units.slice(s - ph.t0, e - ph.t0)));
         out.push({
           label: `פחת ${span} (${plain(used)} יחידות)`,
@@ -1033,7 +1054,7 @@ export function solveTimeline(v: Values): Solution {
           const share = overlap(bs, be, s, e);
           if (!share) continue;
           const equation: Equation =
-            method === "sum-of-years"
+            ph.method === "sum-of-years"
               ? {
                   lhs: "פחת תקופתי",
                   abstract: ["(עלות בספרים − ערך גרט)", "×", frac("משקל שנת הנכס", "סכום הספרות"), "×", frac("חודשי שימוש", "חודשי שנת הנכס")],
@@ -1070,7 +1091,7 @@ export function solveTimeline(v: Values): Solution {
       if (transfer <= 0) return;
       const { carrying, surplus } = stateAt(ph, s);
       const remaining = ph.t0 + ph.months - s;
-      if (method === "straight-line") {
+      if (ph.method === "straight-line") {
         const monthly = round2(surplus / remaining);
         out.push(
           {
@@ -1113,12 +1134,14 @@ export function solveTimeline(v: Values): Solution {
   /** What carries the calculation into the period after p. */
   const nextSteps = (p: Period): Guidance[] => {
     const t = p.b;
-    if (ex && t >= ex.t) return exchangeNext(ex);
-    if (t >= r.end) {
+    const ph = phaseAt(t);
+    const phaseOver = t >= ph.t0 + ph.months;
+    if (t >= r.stop || phaseOver) {
+      const lifeEnd = r.stop > ph.t0 + ph.months ? ph.t0 + ph.months : r.stop;
       return [
         {
-          title: "הנכס הופחת במלואו",
-          body: `אורך החיים הסתיים ב-${dayBefore(r.end)}. הנכס מופחת עד ערך השייר (${fmt(r.residual)}) ואין פחת נוסף; הוא נשאר בספרים עד לגריעתו.`,
+          title: ph.cause === "exchange" ? "הנכס שהתקבל הופחת במלואו" : "הנכס הופחת במלואו",
+          body: `אורך החיים הסתיים ב-${dayBefore(lifeEnd)}. הנכס מופחת עד ערך השייר (${fmt(ph.residual)}) ואין פחת נוסף; הוא נשאר בספרים עד ${ex && t < ex.t ? `ההחלפה ב-${fmtDate(inp.exchange!.date)}` : "לגריעתו"}.`,
           reference: "IAS 16.55, 67",
         },
       ];
@@ -1126,24 +1149,27 @@ export function solveTimeline(v: Values): Solution {
     const nextYear = Math.floor(t / 12);
     const nextEnd = Math.min((nextYear + 1) * 12, r.stop);
     const nextDep = sumRange(r.depBy, t, nextEnd);
-    const ph = phaseAt(t);
     const open = r.closing.get(t)!;
-    const remaining = r.end - t;
+    const remaining = ph.t0 + ph.months - t;
     const out: Guidance[] = [];
     const amountLine = `פחת לשנת ${nextYear}${nextEnd - t < 12 ? ` (${nextEnd - t} חודשים)` : ""}: ${fmt(nextDep)}.`;
 
     let formula: string;
-    if (method === "straight-line") {
+    if (ph.method === "straight-line") {
       const annual = fmt(round2((ph.depreciable / ph.months) * 12));
       formula =
-        ph.cause === "start"
+        ph.cause === "exchange"
+          ? `הנכס שהתקבל בהחלפה: (עלות ${fmt(ph.carrying)} − גרט ${fmt(ph.residual)}) ÷ אורך החיים שלו ${years(ph.months)} שנים = ${annual} לשנה${method === "units" ? " (בקו ישר — אין נתוני תפוקה לנכס החדש)" : ""}.`
+          : ph.cause === "start"
           ? `ללא שינוי אומדן שתי הדרכים שקולות: (עלות מקורית${part} ${fmt(inp.buildingCost)} − גרט ${fmt(inp.residual)}) ÷ ${years(inp.lifeMonths)} שנות חיים = ${annual} לשנה; או (עלות מופחתת${part} בתחילת השנה ${fmt(open.building)} − גרט ${fmt(ph.residual)}) ÷ יתרת אורך חיים ${years(remaining)} שנים = ${annual}.`
           : ph.cause === "renovation"
             ? `(יתרה בספרים ערב השיפוץ ${fmt(ren!.carryingBefore)} + עלות השיפוץ ${fmt(inp.renovation!.cost)} − גרט מתוקן ${fmt(ph.residual)}) ÷ יתרת אורך החיים המעודכנת ממועד השיפוץ ${years(ph.months)} שנים = ${annual} לשנה.`
             : `(השווי ההוגן החדש${part} ${fmt(ph.carrying)} − גרט ${fmt(ph.residual)}) ÷ יתרת אורך החיים ממועד ההערכה ${years(ph.months)} שנים = ${annual} לשנה.`;
     } else {
       const lead =
-        ph.cause === "renovation"
+        ph.cause === "exchange"
+          ? `הנכס שהתקבל בהחלפה: הבסיס הוא (עלות − גרט) = ${fmt(ph.depreciable)}, על פני ${years(ph.months)} שנים מיום ההחלפה.`
+          : ph.cause === "renovation"
           ? `מאז השיפוץ הבסיס הוא (יתרה בספרים ערב השיפוץ + עלות השיפוץ − גרט מתוקן) = ${fmt(ph.depreciable)}, על פני ${years(ph.months)} שנים.`
           : ph.cause === "revaluation"
             ? `מאז ההערכה מחדש הבסיס הוא (שווי הוגן − גרט) = ${fmt(ph.depreciable)}, על פני ${years(ph.months)} שנים.`
@@ -1190,28 +1216,6 @@ export function solveTimeline(v: Values): Solution {
     return out;
   };
 
-  /** The asset received in an exchange: how its cost was set and what it depreciates next. */
-  function exchangeNext(x: ExchangeInfo): Guidance[] {
-    const e = inp.exchange!;
-    const m = method === "units" ? "straight-line" : method;
-    const { charges } = monthlyCharges(m, x.newCost, e.newResidual, e.newLife, { t0: x.t, ddbRate: 24 / e.newLife, unitsLeft: 0, unitsAt: () => null });
-    const restOfYear = x.t % 12 === 0 ? 0 : 12 - (x.t % 12);
-    const nextYear = round2(sum(charges.slice(restOfYear, restOfYear + 12)));
-    const yearNo = Math.floor((x.t + restOfYear) / 12);
-    return [
-      {
-        title: "קביעת העלות של הנכס החדש",
-        body: `${e.commercial ? (e.basis === "given" ? "לפי השווי ההוגן של הנכס שנמסר, בהתאמה למזומן" : "לפי השווי ההוגן של הנכס שהתקבל (השווי של הנכס שנמסר אינו ידוע)") : "ללא מהות מסחרית — לפי היתרה בספרים של הנכס שנמסר, בהתאמה למזומן"}: ${fmt(x.newCost)}. הנכס הישן נגרע, ו${x.gain === 0 ? "לא מוכר רווח או הפסד" : `מוכר ${x.gain > 0 ? "רווח" : "הפסד"} של ${fmt(Math.abs(x.gain))}`}.`,
-        reference: "IAS 16.24–26",
-      },
-      {
-        title: `איך ממשיכים לשנת ${yearNo}? — פחת הנכס החדש`,
-        body: `${METHOD_LABEL[m]}${method === "units" ? " (ללא נתוני תפוקה לנכס החדש)" : ""}: (עלות ${fmt(x.newCost)} − גרט ${fmt(e.newResidual)}) על פני ${years(e.newLife)} שנים${restOfYear ? `; ביתרת שנת ההחלפה (${restOfYear} חודשים): ${fmt(round2(sum(charges.slice(0, restOfYear))))}` : ""}. פחת לשנת ${yearNo}: ${fmt(nextYear)}.`,
-        reference: "IAS 16.50, 55",
-      },
-    ];
-  }
-
   const yearSections: YearSection[] = periods.map((p, i) => {
     const row = rows[i];
     const books = r.bookings.filter((bk) => inPeriod(bk, p));
@@ -1243,7 +1247,6 @@ export function solveTimeline(v: Values): Solution {
       ...(buildingAllowance > 0 ? [{ label: `בניכוי הפרשה לירידת ערך${part}`, value: -buildingAllowance }] : []),
       ...(hasLand ? [{ label: "מבנה, נטו", value: Number(row.building), emphasis: "subtotal" as const }] : []),
       { label: "יתרה בספרים (Carrying Amount)", value: Number(row.carrying), emphasis: "total" },
-      ...(ex && p.b >= ex.t ? [{ label: "רכוש קבוע — הנכס שהתקבל בהחלפה", value: ex.newCost }] : []),
       ...(revaluation ? [{ label: `קרן הערכה מחדש${part} (בהון העצמי)`, value: Number(row.surplus), emphasis: "subtotal" as const }] : []),
       ...(revaluation && hasLand ? [{ label: "קרן הערכה מחדש — קרקע (בהון העצמי)", value: Number(row.landSurplus), emphasis: "subtotal" as const }] : []),
     ];
@@ -1338,7 +1341,7 @@ export function solveTimeline(v: Values): Solution {
     { key: "period", label: "תקופה", format: "text" as const },
     { key: "months", label: "חודשים", format: "number" as const },
     { key: "opening", label: "יתרה בספרים לפתיחה" },
-    ...(ren ? [{ key: "additions", label: "תוספות (שיפוץ)" }] : []),
+    ...(ren || ex ? [{ key: "additions", label: ren && ex ? "תוספות (שיפוץ / נכס שהתקבל)" : ren ? "תוספות (שיפוץ)" : "תוספות (נכס שהתקבל)" }] : []),
     ...(ren ? [{ key: "before", label: "פחת — אומדן מקורי" }, { key: "after", label: "פחת — אומדן מעודכן" }] : []),
     { key: "total", label: `סך הפחת${part}` },
     ...(revaluation ? [{ key: "revaluation", label: `הערכה מחדש${part}` }] : []),
@@ -1484,11 +1487,13 @@ export function solveTimeline(v: Values): Solution {
     });
   }
   if (ex) {
+    const e = inp.exchange!;
+    const exchangeAfter = `מיום ההחלפה הלוח ממשיך עם הנכס שהתקבל: (${fmt(ex.newCost)} − גרט ${fmt(e.newResidual)}) מופחת על פני ${years(e.newLife)} שנים, בשיטת ${METHOD_LABEL[method === "units" ? "straight-line" : method]}.`;
     guidance.push({
       title: "החלפת נכס",
       body: inp.exchange!.commercial
-        ? `לעסקה מהות מסחרית, ולכן הנכס שהתקבל נמדד בשווי הוגן (${inp.exchange!.basis === "given" ? "של הנכס שנמסר, בהתאמה למזומן" : "של הנכס שהתקבל"}): ${fmt(ex.newCost)}. הנכס שנמסר נגרע, וההפרש בין התמורה ליתרתו בספרים (${fmt(ex.carrying)}) מוכר ברווח או הפסד: ${fmt(ex.gain)}.`
-        : `לעסקה אין מהות מסחרית, ולכן הנכס שהתקבל נמדד לפי היתרה בספרים של הנכס שנמסר, בתוספת מזומן ששולם או בניכוי מזומן שהתקבל: ${fmt(ex.newCost)}. לא מוכר רווח או הפסד.`,
+        ? `לעסקה מהות מסחרית, ולכן הנכס שהתקבל נמדד בשווי הוגן (${inp.exchange!.basis === "given" ? "של הנכס שנמסר, בהתאמה למזומן" : "של הנכס שהתקבל"}): ${fmt(ex.newCost)}. הנכס שנמסר נגרע, וההפרש בין התמורה ליתרתו בספרים (${fmt(ex.carrying)}) מוכר ברווח או הפסד: ${fmt(ex.gain)}. ${exchangeAfter}`
+        : `לעסקה אין מהות מסחרית, ולכן הנכס שהתקבל נמדד לפי היתרה בספרים של הנכס שנמסר, בתוספת מזומן ששולם או בניכוי מזומן שהתקבל: ${fmt(ex.newCost)}. לא מוכר רווח או הפסד. ${exchangeAfter}`,
       reference: "IAS 16.24–26, 67–68, 71–72",
     });
   }
@@ -1543,8 +1548,12 @@ export function solveTimeline(v: Values): Solution {
       ...(method === "double-declining" ? ["שיעור היתרה הפוחתת הכפולה הוא 2 חלקי אורך החיים בשנים; לאחר שיפוץ הוא מחושב מחדש לפי יתרת החיים."] : []),
       ...(method === "units" ? ["יחידות התפוקה של כל שנת כספים מתפזרות באופן שווה על חודשי השימוש בה; לשנים ללא נתון מחולקות היחידות שנותרו באופן שווה."] : []),
       ...(hasRevaluation ? ["השפעות מס נדחה על קרן ההערכה מחדש אינן מחושבות."] : []),
-      ...(ex ? ["הלוח מסתיים במועד ההחלפה; לנכס שהתקבל מוצגים קביעת העלות והפחת לשנה שאחרי, באותה שיטת פחת."] : []),
-      "הלוח מוצג רק לתקופה שבין מועד הזמינות לשימוש לתום אורך החיים או למועד הגריעה, בתוך טווח החישוב שנבחר.",
+      ...(ex
+        ? [
+            `מיום ההחלפה הלוח ממשיך עם הנכס שהתקבל — לפי העלות שנקבעה, אורך החיים וערך השייר שלו, באותה שיטת פחת${method === "units" ? " (ביחידות תפוקה: בקו ישר, כי אין נתוני תפוקה לנכס החדש)" : ""}. הערכות מחדש חלות רק על הנכס שנמסר.`,
+          ]
+        : []),
+      `הלוח מוצג רק לתקופה שבין מועד הזמינות לשימוש לתום אורך החיים${ex ? " של הנכס שהתקבל" : " או למועד הגריעה"}, בתוך טווח החישוב שנבחר.`,
     ],
   };
 }
@@ -1559,6 +1568,7 @@ const EVENT_LABEL: Record<Booking["kind"], string> = {
 
 const CAUSE_REFERENCE: Record<Cause, string> = {
   start: "IAS 16.50, 60–62",
+  exchange: "IAS 16.24, 50, 55",
   renovation: "IAS 16.51, 61; IAS 8.36–38",
   revaluation: "IAS 16.31, 35, 50",
 };
