@@ -10,9 +10,10 @@ export const site = {
       label: "לימוד תקנים",
       title: "IAS 16 · רכוש קבוע",
       items: [
-        { href: "/ias16-lab", label: "רכוש קבוע מהקל לקשה", description: "דרכים לפתור שאלה, יסודות, סימולטור פחת וטיפים" },
+        { href: "/ias16-lab", label: "יסודות ועקרונות", description: "כולל סימולטור פחת, דרכים לפתור שאלה וטיפים למבחן" },
         { href: "/ias16-lab/exchange", label: "החלפת נכסים", description: "שלושה שלבים, פקודות יומן ומחשבון החלפה" },
         { href: "/ias16-lab/renovation", label: "שיפוצים ואירועים עוקבים", description: "נכנס לנכס או הוצאה, דוגמאות בכל השיטות ומחשבון" },
+        { href: "/ias16-lab/revaluation", label: "מודל הערכה מחדש", description: "קרן הערכה מחדש, קרקע מול מבנה, טיפ בדיקה ומחשבון" },
       ],
     },
     { href: "/content", label: "מרכז התוכן" },

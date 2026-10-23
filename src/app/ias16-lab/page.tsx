@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowLeftRight, Calculator, Hammer, GraduationCap, ListOrdered, Plane } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, Calculator, Hammer, GraduationCap, ListOrdered, Plane, TrendingUp } from "lucide-react";
 import type { Metadata } from "next";
 import { ExamTipsSection } from "@/components/learn/exam-tips";
 import { FundamentalsSection } from "@/components/learn/fundamentals";
@@ -34,6 +34,9 @@ export default function Ias16LabPage() {
             </ButtonLink>
             <ButtonLink href="/ias16-lab/renovation" variant="ghost">
               <Hammer className="h-4 w-4" /> שיפוצים ואירועים עוקבים
+            </ButtonLink>
+            <ButtonLink href="/ias16-lab/revaluation" variant="ghost">
+              <TrendingUp className="h-4 w-4" /> מודל הערכה מחדש
             </ButtonLink>
             <ButtonLink href="/engine?calc=ias-16-property-plant-equipment" variant="secondary">
               פתרון תרחיש במחשבון <ArrowLeft className="h-4 w-4" />
