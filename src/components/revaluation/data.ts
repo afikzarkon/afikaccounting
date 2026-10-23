@@ -5,25 +5,25 @@ import type { RevaluationInputs, RevEvent } from "@/lib/learn/revaluation";
 const yearly = (firstYear: number, values: number[]) => values.map((fairValue, i) => ({ year: firstYear + i, timing: "end" as const, fairValue }));
 
 // The worked examples on the page, revalued every year; the first is also the calculator's default.
-// The fair values are picked so each year's new charge comes out round, and so that between them
-// they show a first increase, a later one, a decrease within the surplus and one beyond it. No
-// example has an increase after a loss went to profit or loss.
+// Every useful life is four years at most. The fair values are picked so each year's new charge
+// comes out round, and so that between them they show a first increase, a later one, a decrease
+// within the surplus and one beyond it. No example has an increase after a loss went to profit or loss.
 export const SL_EX: RevaluationInputs = {
   cost: 100_000,
   salvage: 0,
-  life: 10,
+  life: 4,
   method: "sl",
   firstYear: 2020,
-  revaluations: yearly(2020, [99_000, 96_000, 77_000, 54_000, 45_000, 32_000, 24_000, 16_000, 8_000]),
+  revaluations: yearly(2020, [90_000, 54_000, 20_000]),
   transfer: "depreciation",
 };
 export const SYD_EX: RevaluationInputs = {
-  cost: 150_000,
+  cost: 100_000,
   salvage: 0,
-  life: 5,
+  life: 4,
   method: "syd-desc",
   firstYear: 2020,
-  revaluations: yearly(2020, [104_000, 66_000, 30_000, 12_000]),
+  revaluations: yearly(2020, [66_000, 36_000, 12_000]),
   transfer: "depreciation",
 };
 // The rates come out round: 2/3, then 75%, then 80%.
@@ -54,7 +54,7 @@ export const LAND = {
 export const PROPERTY = {
   firstYear: 2020,
   land: { cost: 400_000, values: [432_000, 380_000, 370_000] },
-  building: { cost: 600_000, life: 20, values: [608_000, 540_000, 527_000] },
+  building: { cost: 600_000, life: 4, values: [480_000, 300_000, 170_000] },
 };
 export const PROPERTY_BUILDING: RevaluationInputs = {
   cost: PROPERTY.building.cost,

@@ -12,12 +12,12 @@ const pct = (v: number) => `${Math.round(v * 100)}%`;
 const BY_DEP = solveRevaluation(SL_EX);
 const AT_DISPOSAL = solveRevaluation({ ...SL_EX, transfer: "disposal" });
 const EV = BY_DEP.events[0];
-const CHECK_YEARS = [2020, 2021, 2022, 2023, 2024, 2025];
+const CHECK_YEARS = BY_DEP.rows.map((row) => row.year);
 const FIRST_LOSS = BY_DEP.events.find((e) => e.pl < 0)!;
 
-// The same fair value in 2022, at each of the three dates (the building of example 1, revalued that once).
-const TIMING_YEAR = 2022;
-const TIMING_FV = 120_000;
+// The same fair value in 2021, at each of the three dates (the building of example 1, revalued that once).
+const TIMING_YEAR = 2021;
+const TIMING_FV = 90_000;
 const TIMINGS = (["start", "mid", "end"] as Timing[]).map((timing) => {
   const r = solveRevaluation({ ...SL_EX, revaluations: [{ year: TIMING_YEAR, timing, fairValue: TIMING_FV }] });
   return { timing, ev: r.events[0], dep: r.rows.find((row) => row.year === TIMING_YEAR)!.dep };
@@ -26,9 +26,9 @@ const TIMINGS = (["start", "mid", "end"] as Timing[]).map((timing) => {
 const TAX = r2(EV.oci * TAX_RATE);
 const NET = r2(EV.oci - TAX);
 
-// Disposal: the building of example 1 sold on 31.12.2022, right after that day's revaluation.
-const SALE_YEAR = 2022;
-const SALE_PRICE = 80_000;
+// Disposal: the building of example 1 sold on 31.12.2021, right after that day's revaluation, while it still has a surplus.
+const SALE_YEAR = 2021;
+const SALE_PRICE = 60_000;
 const saleRow = (r: typeof BY_DEP) => r.rows.find((row) => row.year === SALE_YEAR)!;
 
 export function CheckTipsSection() {
@@ -78,7 +78,7 @@ export function CheckTipsSection() {
             <p className="text-[14.5px]">
               <strong>סייג חשוב למבחן:</strong> הבדיקה נכונה <strong>רק כשמעבירים לעודפים בקצב הפחת!</strong> כשאין העברה שוטפת — העברה רק בגריעה,
               או בקרקע — הקרן שומרת על כל העליות שנזקפו אליה (העמודה האחרונה), ולכן הנוסחה לא מתאימה לה. ועוד סייג: מהרגע שירידה נזקפה לרווח והפסד
-              (כאן ב-{FIRST_LOSS.year}), ההפרש כולל גם את ההפסד הזה — והבדיקה כבר לא מדויקת. בשנים 2020 עד {FIRST_LOSS.year - 1} היא מתקיימת בדיוק.
+              (כאן ב-{FIRST_LOSS.year}), ההפרש כולל גם את ההפסד הזה — והבדיקה כבר לא מדויקת. בשנים {CHECK_YEARS[0]} עד {FIRST_LOSS.year - 1} היא מתקיימת בדיוק.
             </p>
           </div>
         </div>
@@ -137,8 +137,8 @@ export function CheckTipsSection() {
           ].sort((x, y) => Number(x.cr !== undefined) - Number(y.cr !== undefined))}
           note={
             <>
-              גם ההעברה השנתית לעודפים היא אז נטו ממס: <Num v={r2(BY_DEP.rows[2].transfer)} /> × (1 − {TAX_RATE}) ={" "}
-              <Num v={r2(BY_DEP.rows[2].transfer * (1 - TAX_RATE))} />.
+              גם ההעברה השנתית לעודפים היא אז נטו ממס: <Num v={r2(BY_DEP.rows[1].transfer)} /> × (1 − {TAX_RATE}) ={" "}
+              <Num v={r2(BY_DEP.rows[1].transfer * (1 - TAX_RATE))} />.
             </>
           }
         />

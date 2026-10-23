@@ -44,6 +44,7 @@ export function RevaluationExamplesSection() {
   const first = sl.events[0];
   const y2021 = row(sl, 2021);
   const ev2021 = sl.events.find((e) => e.year === 2021)!;
+  const sydFirst = syd.events[0];
   const loss = sl.events.find((e) => e.pl < 0)!;
   const lossRow = row(sl, loss.year);
   const pb = solveRevaluation(PROPERTY_BUILDING);
@@ -63,7 +64,7 @@ export function RevaluationExamplesSection() {
         <Formula
           tex={String.raw`\text{העברה לעודפים} = \text{פחת לפי שווי הוגן} - \text{פחת לפי מודל העלות} \qquad \text{לשנת 2021:} \ ${texNum(y2021.dep)} - ${texNum(y2021.costDep)} = ${texNum(y2021.transfer)}`}
         />
-        <p className="!mb-1 font-semibold text-fg">הפקודות של שנת 2021 — שנה רגילה</p>
+        <p className="!mb-1 font-semibold text-fg">הפקודות של שנת 2021 — ירידה בתוך הקרן</p>
         <div className="grid gap-3 xl:grid-cols-3">
           <JournalEntry title="1. פחת השנה" date="31.12.2021" lines={depLines(y2021.dep)} />
           <JournalEntry title="2. העברה לעודפים" date="31.12.2021" lines={transferLines(y2021.transfer)} note="פקודה בהון העצמי — לא דרך רווח והפסד." />
@@ -106,7 +107,8 @@ export function RevaluationExamplesSection() {
           })}
         />
         <p>
-          לוח הצל של מודל העלות ממשיך כאילו לא הייתה אף הערכה: 5/15, 4/15, 3/15... מהעלות המקורית. ההעברה לעודפים בכל שנה — ההפרש:
+          לוח הצל של מודל העלות ממשיך כאילו לא הייתה אף הערכה: 4/10, 3/10, 2/10, 1/10 מהעלות המקורית. ההעברה לעודפים בכל שנה — ההפרש. שימו לב
+          ל-{syd.events[1].year}: עלייה נוספת, שמצטרפת לקרן שכבר נוצרה ב-{sydFirst.year}:
         </p>
         <RevSchedule r={syd} caption="לוח מלא — סכום ספרות השנים" />
 
