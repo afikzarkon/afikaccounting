@@ -1,8 +1,10 @@
 "use client";
 
 import { CircleCheck, Gauge, Minus, Plus, RotateCcw, Ruler, Sigma, TrendingDown, TriangleAlert } from "lucide-react";
-import { type ReactNode, useId, useState } from "react";
-import { DataTable, JournalEntry, n, Num } from "./blocks";
+import { type ReactNode, useState } from "react";
+import { DataTable, JournalEntry, n, Num } from "@/components/study/blocks";
+import { NumberInput, parseNumber, Segmented } from "@/components/study/inputs";
+import { MONTHS, MonthPicker } from "@/components/study/month-picker";
 import { inputClass } from "@/components/ui/form";
 import {
   type Basics,
@@ -22,8 +24,8 @@ import {
   unitsSchedule,
 } from "@/lib/learn/depreciation";
 import { cn } from "@/lib/utils";
-import { FormulaCard, type FormulaRow, InlineTex, Stat, texNum } from "./ui";
-import { MONTHS, MonthPicker, monthSpan } from "./widgets";
+import { FormulaCard, type FormulaRow, InlineTex, Stat, texNum } from "@/components/study/ui";
+import { monthSpan } from "./widgets";
 
 type Method = "sl" | "db" | "syd" | "uop";
 
@@ -46,10 +48,7 @@ const DEFAULTS = {
 
 type Inputs = typeof DEFAULTS;
 
-const parse = (s: string) => {
-  const t = s.replace(/,/g, "").trim();
-  return t === "" ? NaN : Number(t);
-};
+const parse = parseNumber;
 const r2 = (v: number) => Math.round(v * 100) / 100;
 const pctTex = (r: number) => `${(r * 100).toFixed(2)}\\%`;
 /** More decimals than texNum, for a per-unit rate. */
@@ -592,67 +591,6 @@ function BarChart({ rows }: { rows: FiscalRow[] }) {
         </div>
       </div>
     </div>
-  );
-}
-
-/** A money or count field: thousands separators while idle, the raw number while typing. */
-function NumberInput({ label, value, onChange, error, suffix }: { label: string; value: string; onChange: (v: string) => void; error?: string; suffix?: string }) {
-  const id = useId();
-  const [focused, setFocused] = useState(false);
-  const v = parse(value);
-  const shown = focused || !Number.isFinite(v) ? value : n(v);
-  return (
-    <div className="min-w-0">
-      <label htmlFor={id} className="mb-1.5 block text-[13px] font-medium text-fg">
-        {label}
-      </label>
-      {/* Left-to-right wrapper, so the unit sits at the far end of the number, not over its first digits. */}
-      <div className="relative" dir="ltr">
-        <input
-          id={id}
-          dir="ltr"
-          inputMode="decimal"
-          value={shown}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          onChange={(e) => onChange(e.target.value.replace(/,/g, ""))}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? `${id}-error` : undefined}
-          className={cn(inputClass, "num text-start font-mono", suffix && "pe-14")}
-        />
-        {suffix && <span className="pointer-events-none absolute inset-y-0 end-3 grid place-items-center text-xs text-subtle">{suffix}</span>}
-      </div>
-      {error && (
-        <p id={`${id}-error`} className="mt-1.5 text-xs text-danger">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function Segmented({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: [string, string, string][] }) {
-  return (
-    <fieldset className="mt-4">
-      <legend className="mb-2 text-[13px] font-medium text-fg">{label}</legend>
-      <div className="grid grid-cols-2 gap-2">
-        {options.map(([v, title, hint]) => (
-          <button
-            key={v}
-            type="button"
-            aria-pressed={v === value}
-            onClick={() => onChange(v)}
-            className={cn(
-              "rounded-xl border px-3 py-2.5 text-start transition-colors",
-              v === value ? "border-accent/50 bg-accent-soft" : "border-line bg-surface hover:border-line-strong",
-            )}
-          >
-            <span className="block text-sm font-semibold text-fg">{title}</span>
-            <span className="block text-xs text-muted">{hint}</span>
-          </button>
-        ))}
-      </div>
-    </fieldset>
   );
 }
 

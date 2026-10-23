@@ -8,7 +8,11 @@ export const site = {
     { href: "/engine", label: "מחשבונים חכמים" },
     {
       label: "לימוד תקנים",
-      items: [{ href: "/ias16-lab", label: "IAS 16", description: "רכוש קבוע — מהקל לקשה" }],
+      title: "IAS 16 · רכוש קבוע",
+      items: [
+        { href: "/ias16-lab", label: "רכוש קבוע מהקל לקשה", description: "דרכים לפתור שאלה, יסודות, סימולטור פחת וטיפים" },
+        { href: "/ias16-lab/exchange", label: "החלפת נכסים", description: "שלושה שלבים, פקודות יומן ומחשבון החלפה" },
+      ],
     },
     { href: "/content", label: "מרכז התוכן" },
     { href: "/about", label: "אודות" },

@@ -12,9 +12,9 @@ import {
   Percent,
   Receipt,
 } from "lucide-react";
-import { Callout, DataTable, Dt, JournalEntry, Num } from "./blocks";
-import { Formula, Tex } from "./math";
-import { StepCard, texNum } from "./ui";
+import { Callout, DataTable, Dt, JournalEntry, Num } from "@/components/study/blocks";
+import { Formula, Tex } from "@/components/study/math";
+import { StepCard, texNum } from "@/components/study/ui";
 import { ProrationWidget } from "./widgets";
 
 // The worked example every step follows; it lands on the simulator's defaults.

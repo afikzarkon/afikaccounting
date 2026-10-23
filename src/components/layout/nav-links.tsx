@@ -12,6 +12,8 @@ type NavItem = (typeof site.nav)[number];
 type NavGroup = Extract<NavItem, { items: unknown }>;
 
 const isActive = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+// Pages inside a category can nest (/ias16-lab and /ias16-lab/exchange), so each one is active only on its own path.
+const isItemActive = (pathname: string, href: string) => pathname === href;
 const groupActive = (pathname: string, group: NavGroup) => group.items.some((i) => isActive(pathname, i.href));
 
 /**
@@ -106,10 +108,11 @@ function NavDropdown({ group, pathname }: { group: NavGroup; pathname: string })
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.14 }}
-            className="absolute start-0 top-full z-50 mt-2 w-72 rounded-2xl border border-line-strong bg-surface p-1.5 shadow-xl"
+            className="absolute start-0 top-full z-50 mt-2 w-80 rounded-2xl border border-line-strong bg-surface p-1.5 shadow-xl"
           >
+            <p className="px-3 pt-2 pb-1 text-xs font-semibold text-accent">{group.title}</p>
             {group.items.map((i) => {
-              const on = isActive(pathname, i.href);
+              const on = isItemActive(pathname, i.href);
               return (
                 <Link
                   key={i.href}
@@ -142,19 +145,22 @@ export function MobileNavView({ pathname = "" }: { pathname?: string }) {
     setOpen(false);
   }
 
-  const link = (href: string, label: string, nested = false) => (
+  const link = (href: string, label: string, nested = false) => {
+    const on = nested ? isItemActive(pathname, href) : isActive(pathname, href);
+    return (
     <Link
       key={href}
       href={href}
       className={cn(
         "block rounded-xl px-4 py-3 text-[15px] font-medium",
         nested && "ms-3 border-s-2 border-line-strong ps-4",
-        isActive(pathname, href) ? "bg-surface-2 text-fg" : "text-muted hover:bg-surface-2 hover:text-fg",
+        on ? "bg-surface-2 text-fg" : "text-muted hover:bg-surface-2 hover:text-fg",
       )}
     >
       {label}
     </Link>
-  );
+    );
+  };
 
   return (
     <div className="md:hidden">
@@ -182,7 +188,8 @@ export function MobileNavView({ pathname = "" }: { pathname?: string }) {
             {site.nav.map((item) =>
               "items" in item ? (
                 <div key={item.label} className="py-1">
-                  <p className="px-4 pt-2 pb-1 text-xs font-semibold text-subtle">{item.label}</p>
+                  <p className="px-4 pt-2 text-xs font-semibold text-subtle">{item.label}</p>
+                  <p className="px-4 pb-1 text-xs font-semibold text-accent">{item.title}</p>
                   {item.items.map((i) => link(i.href, i.label, true))}
                 </div>
               ) : (

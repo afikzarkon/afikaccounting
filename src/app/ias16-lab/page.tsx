@@ -1,10 +1,10 @@
-import { ArrowLeft, Calculator, GraduationCap, ListOrdered, Plane } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, Calculator, GraduationCap, ListOrdered, Plane } from "lucide-react";
 import type { Metadata } from "next";
 import { ExamTipsSection } from "@/components/learn/exam-tips";
 import { FundamentalsSection } from "@/components/learn/fundamentals";
-import { LabTabs } from "@/components/learn/lab-tabs";
 import { MethodologySection } from "@/components/learn/methodology";
 import { DepreciationSimulator } from "@/components/learn/simulator";
+import { LabTabs } from "@/components/study/lab-tabs";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/primitives";
 
@@ -29,6 +29,9 @@ export default function Ias16LabPage() {
             וצ׳ק-ליסט שמוודא שלא פספסתם כלום.
           </p>
           <div className="no-print flex flex-wrap gap-2">
+            <ButtonLink href="/ias16-lab/exchange" variant="ghost">
+              <ArrowLeftRight className="h-4 w-4" /> החלפת נכסים
+            </ButtonLink>
             <ButtonLink href="/engine?calc=ias-16-property-plant-equipment" variant="secondary">
               פתרון תרחיש במחשבון <ArrowLeft className="h-4 w-4" />
             </ButtonLink>

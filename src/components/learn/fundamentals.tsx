@@ -1,6 +1,6 @@
 import { Factory, Plane } from "lucide-react";
-import { Callout, DataTable, Num, Topic } from "./blocks";
-import { Formula, Tex } from "./math";
+import { Callout, DataTable, Num, Topic } from "@/components/study/blocks";
+import { Formula, Tex } from "@/components/study/math";
 import { BookValueSlider } from "./widgets";
 
 const CONCEPTS: { term: string; plain: string; example: string }[] = [

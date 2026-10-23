@@ -1,6 +1,6 @@
 import { Lightbulb } from "lucide-react";
 import type { ReactNode } from "react";
-import { Tex } from "./math";
+import { Tex } from "@/components/study/math";
 import { type CheckItem, ExamChecklist } from "./widgets";
 
 const TIPS: { title: string; wrong: ReactNode; right: ReactNode }[] = [
