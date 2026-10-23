@@ -26,9 +26,9 @@ const TIMINGS = (["start", "mid", "end"] as Timing[]).map((timing) => {
 const TAX = r2(EV.oci * TAX_RATE);
 const NET = r2(EV.oci - TAX);
 
-// Disposal: the building of example 1 sold on 31.12.2025, right after that day's revaluation.
-const SALE_YEAR = 2025;
-const SALE_PRICE = 46_000;
+// Disposal: the building of example 1 sold on 31.12.2022, right after that day's revaluation.
+const SALE_YEAR = 2022;
+const SALE_PRICE = 80_000;
 const saleRow = (r: typeof BY_DEP) => r.rows.find((row) => row.year === SALE_YEAR)!;
 
 export function CheckTipsSection() {

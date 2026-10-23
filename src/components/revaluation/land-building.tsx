@@ -9,15 +9,7 @@ const LAST = ROWS.at(-1)!;
 const GAIN = LAND.proceeds - LAST.fairValue;
 
 const whatHappened = (r: (typeof ROWS)[number]) =>
-  r.diff > 0
-    ? r.pl > 0
-      ? "עלייה — קודם מבטלת את ההפסד, והיתרה לקרן"
-      : r.opening === LAND.cost
-        ? "הערכה ראשונה — עלייה לקרן"
-        : "עלייה — לקרן"
-    : r.pl < 0
-      ? "ירידה — הקרן מתאפסת, והיתרה הפסד"
-      : "ירידה — מקטינה את הקרן";
+  r.diff > 0 ? (r.opening === LAND.cost ? "הערכה ראשונה — עלייה לקרן" : "עלייה — לקרן") : r.pl < 0 ? "ירידה — הקרן מתאפסת, והיתרה הפסד" : "ירידה — מקטינה את הקרן";
 
 export function LandBuildingSection() {
   return (
@@ -60,7 +52,7 @@ export function LandBuildingSection() {
               lines={[
                 ...side("קרקע", r.diff),
                 ...side("קרן הערכה מחדש — קרקע (רווח כולל אחר)", -r.oci),
-                ...side(r.pl > 0 ? "ביטול הפסד מירידת ערך (רווח והפסד)" : "הפסד מירידת ערך (רווח והפסד)", -r.pl),
+                ...side("הפסד מירידת ערך (רווח והפסד)", -r.pl),
               ].sort((x, y) => Number(x.cr !== undefined) - Number(y.cr !== undefined))}
             />
           ))}
@@ -82,8 +74,7 @@ export function LandBuildingSection() {
         </div>
         <Callout kind="warn" title="הקרן לא עוברת דרך רווח והפסד">
           <p>
-            העברת הקרן לעודפים היא פקודה בתוך ההון העצמי (סעיף 41). מי שרושם את <Num v={LAST.surplus} /> כרווח ממכירה — מנפח את הרווח והפסד. וגם: בשנים
-            שבהן הקרקע ירדה מתחת לעלות, ההפסד נרשם ברווח והפסד — ולכן העלייה שאחריו מבטלת אותו קודם, לפני שמשהו מגיע לקרן.
+            העברת הקרן לעודפים היא פקודה בתוך ההון העצמי (סעיף 41). מי שרושם את <Num v={LAST.surplus} /> כרווח ממכירה — מנפח את הרווח והפסד.
           </p>
         </Callout>
       </Topic>

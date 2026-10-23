@@ -32,7 +32,7 @@ function EventsTable({ r, caption }: { r: RevaluationResult; caption: string }) 
 
 function whatHappened(ev: RevEvent) {
   if (Math.abs(ev.diff) < 0.005) return "אין שינוי";
-  if (ev.diff > 0) return ev.pl > 0 ? (ev.oci > 0 ? "ביטול הפסד קודם, והיתרה לקרן" : "ביטול הפסד קודם") : ev.surplusBefore > 0 ? "עלייה נוספת — לקרן" : "עלייה — לקרן";
+  if (ev.diff > 0) return ev.surplusBefore > 0 ? "עלייה נוספת — לקרן" : "עלייה — לקרן";
   return ev.pl < 0 ? (ev.oci < 0 ? "הקרן מתאפסת, והיתרה הפסד" : "ירידה — הפסד ברווח והפסד") : "ירידה — מקטינה את הקרן";
 }
 
@@ -161,8 +161,8 @@ export function RevaluationExamplesSection() {
         <Callout kind="warn" title="שני מרכיבים, שתי קרנות — לא מקזזים ביניהם">
           <p>
             ב-{pl[1].year} הקרקע ירדה ב-<Num v={-pl[1].diff} />: הקרן שלה (<Num v={pl[0].surplus} />) התאפסה, והיתרה — <Num v={-pl[1].pl} /> — נזקפה להפסד.
-            לא משתמשים לשם כך בקרן של המבנה: כל מרכיב והקרן שלו. ב-{pl[2].year} העלייה בקרקע מבטלת קודם את ההפסד הזה (<Num v={pl[2].pl} /> לרווח והפסד),
-            ורק היתרה לקרן.
+            לא משתמשים לשם כך בקרן של המבנה: כל מרכיב והקרן שלו. ב-{pl[2].year} הקרקע ירדה שוב ב-<Num v={-pl[2].diff} />, ואין לה עוד קרן — ולכן כל הירידה
+            הפסד, אף שלמבנה יש באותה שנה קרן של <Num v={r2(pb.events[2].surplusAfter)} />.
           </p>
         </Callout>
         <div className="grid gap-3 xl:grid-cols-2">

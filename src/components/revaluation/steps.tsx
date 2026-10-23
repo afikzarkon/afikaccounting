@@ -12,13 +12,12 @@ const OLD_ANNUAL = SL_EX.cost / SL_EX.life;
 const NEW_ANNUAL = EV.firstYearCharge;
 const SECOND_DOWN = R.events.find((e) => e.diff < 0 && e.pl === 0)!;
 const LOSS = R.events.find((e) => e.pl < 0)!;
-const REVERSAL = R.events.find((e) => e.pl > 0)!;
 
-// The four ways a gap can land, on small round figures.
+// How a gap can land, on small round figures.
 const CASES = [
   { title: "הערכה ראשונה — עלייה", before: 80_000, fv: 120_000, surplus: 0, losses: 0 },
   { title: "הערכה ראשונה — ירידה", before: 80_000, fv: 70_000, surplus: 0, losses: 0 },
-  { title: "עלייה אחרי הפסד בעבר (הפסד קודם 10,000)", before: 60_000, fv: 85_000, surplus: 0, losses: 10_000 },
+  { title: "עלייה נוספת (קרן 30,000)", before: 90_000, fv: 100_000, surplus: 30_000, losses: 0 },
   { title: "ירידה אחרי עלייה בעבר (קרן 30,000)", before: 90_000, fv: 50_000, surplus: 30_000, losses: 0 },
 ].map((c) => ({ ...c, ...splitRevaluation(c.fv - c.before, c.surplus, c.losses) }));
 
@@ -76,10 +75,10 @@ export function RevaluationStepsSection() {
             </ul>
           </div>
           <div className="rounded-xl border border-line bg-surface-2/40 p-4 text-[14.5px]">
-            <p className="font-semibold text-fg">הערכות עוקבות — מבטלים קודם את מה שהיה</p>
+            <p className="font-semibold text-fg">הערכות עוקבות</p>
             <ul className="mt-2 list-inside list-disc space-y-1 text-fg/90">
               <li>
-                <strong>עלייה אחרי הפסד בעבר:</strong> קודם הכנסה ברווח והפסד עד גובה ההפסד שהוכר, והיתרה לקרן.
+                <strong>עלייה נוספת:</strong> מצטרפת לקרן הערכה מחדש.
               </li>
               <li>
                 <strong>ירידה אחרי עלייה בעבר:</strong> קודם מקטינים את הקרן עד לאיפוסה, והיתרה — הפסד ברווח והפסד.
@@ -88,13 +87,13 @@ export function RevaluationStepsSection() {
           </div>
         </div>
         <DataTable
-          caption="ארבעת המקרים במספרים"
+          caption="המקרים במספרים"
           head={["מקרה", "ערך בספרים", "שווי הוגן", "פער", "לקרן הערכה מחדש", "לרווח והפסד"]}
           rows={CASES.map((c) => [c.title, c.before, c.fv, c.fv - c.before, c.oci, c.pl])}
         />
         <p>
           בדוגמה שלנו זו הערכה ראשונה והפער חיובי — כל <Num v={EV.oci} /> נזקפים לקרן הערכה מחדש. בשנים הבאות של אותה דוגמה מופיעים גם שאר
-          המקרים: ירידה שמקטינה את הקרן ({SECOND_DOWN.year}), ירידה שעוברת אותה ונזקפת לרווח והפסד ({LOSS.year}), ועלייה שמבטלת את ההפסד ({REVERSAL.year}).
+          המקרים: עלייה נוספת ({R.events[1].year}), ירידה שמקטינה את הקרן ({SECOND_DOWN.year}), וירידה שעוברת אותה ונזקפת לרווח והפסד ({LOSS.year}).
         </p>
       </StepCard>
 

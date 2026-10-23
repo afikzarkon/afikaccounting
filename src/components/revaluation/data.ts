@@ -6,15 +6,15 @@ const yearly = (firstYear: number, values: number[]) => values.map((fairValue, i
 
 // The worked examples on the page, revalued every year; the first is also the calculator's default.
 // The fair values are picked so each year's new charge comes out round, and so that between them
-// they show every case: a first increase, a later one, a decrease within the surplus, one beyond it,
-// and an increase that reverses a loss.
+// they show a first increase, a later one, a decrease within the surplus and one beyond it. No
+// example has an increase after a loss went to profit or loss.
 export const SL_EX: RevaluationInputs = {
   cost: 100_000,
   salvage: 0,
   life: 10,
   method: "sl",
   firstYear: 2020,
-  revaluations: yearly(2020, [99_000, 96_000, 77_000, 54_000, 55_000, 44_000, 36_000, 24_000, 12_000]),
+  revaluations: yearly(2020, [99_000, 96_000, 77_000, 54_000, 45_000, 32_000, 24_000, 16_000, 8_000]),
   transfer: "depreciation",
 };
 export const SYD_EX: RevaluationInputs = {
@@ -42,18 +42,18 @@ export const LAND = {
   cost: 500_000,
   values: [
     { year: 2020, fairValue: 540_000 },
-    { year: 2021, fairValue: 520_000 },
-    { year: 2022, fairValue: 490_000 },
-    { year: 2023, fairValue: 530_000 },
+    { year: 2021, fairValue: 560_000 },
+    { year: 2022, fairValue: 530_000 },
+    { year: 2023, fairValue: 545_000 },
   ],
   saleYear: 2024,
-  proceeds: 545_000,
+  proceeds: 560_000,
 };
 
 // A property with land: one price and one fair value a year, split between the two.
 export const PROPERTY = {
   firstYear: 2020,
-  land: { cost: 400_000, values: [432_000, 380_000, 410_000] },
+  land: { cost: 400_000, values: [432_000, 380_000, 370_000] },
   building: { cost: 600_000, life: 20, values: [608_000, 540_000, 527_000] },
 };
 export const PROPERTY_BUILDING: RevaluationInputs = {
