@@ -2,7 +2,7 @@
 
 import { CircleCheck, Minus, Plus, RotateCcw, TriangleAlert } from "lucide-react";
 import { useId, useState } from "react";
-import { JournalEntry, Num } from "@/components/study/blocks";
+import { DataTable, JournalEntry, Num } from "@/components/study/blocks";
 import { NumberInput, parseNumber as parse, Segmented } from "@/components/study/inputs";
 import { Stat } from "@/components/study/ui";
 import { inputClass } from "@/components/ui/form";
@@ -31,6 +31,8 @@ const METHOD_OPTIONS: [RevMethod, string, string][] = [
   ["syd-asc", "ספרות השנים — עולה", "הגבוה בשנה האחרונה"],
 ];
 
+const r2 = (v: number) => Math.round(v * 100) / 100;
+
 const toInputs = (f: Form): RevaluationInputs => ({
   cost: parse(f.cost),
   salvage: parse(f.salvage),
@@ -43,12 +45,14 @@ const toInputs = (f: Form): RevaluationInputs => ({
 
 export function RevaluationCalculator() {
   const [f, setF] = useState<Form>(DEFAULTS);
+  const [pick, setPick] = useState(0);
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((p) => ({ ...p, [k]: v }));
   const setRow = (i: number, patch: Partial<Row>) => set("revaluations", f.revaluations.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   const x = toInputs(f);
   const errors = revaluationErrors(x);
   const r = Object.keys(errors).length ? null : solveRevaluation(x);
   const anyLoss = r?.events.some((e) => e.pl < -0.005) ?? false;
+  const event = r ? Math.min(pick, r.events.length - 1) : 0;
   const checkHolds = r && x.transfer === "depreciation" && !anyLoss && r.rows.every((row) => Math.abs(row.surplus - (row.closing - row.costCarrying)) < 0.02);
 
   return (
@@ -91,10 +95,10 @@ export function RevaluationCalculator() {
           <div className="mt-2 flex gap-2">
             <button
               type="button"
-              disabled={f.revaluations.length >= 4}
+              disabled={f.revaluations.length >= 15}
               onClick={() => {
                 const last = f.revaluations.at(-1);
-                set("revaluations", [...f.revaluations, { year: String((parse(last?.year ?? f.firstYear) || 0) + 2), timing: "end", fairValue: last?.fairValue ?? f.cost }]);
+                set("revaluations", [...f.revaluations, { year: String((parse(last?.year ?? f.firstYear) || 0) + 1), timing: "end", fairValue: last?.fairValue ?? f.cost }]);
               }}
               className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-accent hover:bg-accent-soft disabled:opacity-40"
             >
@@ -168,21 +172,43 @@ export function RevaluationCalculator() {
               </span>
             </div>
 
-            {r.events.map((ev, i) => (
-              <div key={i} className="card p-5">
-                <p className="text-[17px] font-semibold text-fg">
-                  הערכה {i + 1}: {TIMING_LABEL[ev.timing]} {ev.year}
-                </p>
-                <p className="mt-1 text-sm text-muted">
-                  ערך בספרים <Num v={ev.before} /> · שווי הוגן <Num v={ev.fairValue} /> · פער <Num v={ev.diff} /> — לקרן <Num v={ev.oci} />, לרווח והפסד{" "}
-                  <Num v={ev.pl} />. פחת שנתי חדש: <Num v={ev.firstYearCharge} />.
-                </p>
-                <JournalEntry
-                  title={f.presentation === "netting" ? "שיטת הביטול" : "התאמה יחסית"}
-                  lines={f.presentation === "netting" ? nettingLines(ev) : proportionalLines(ev)}
-                />
+            <DataTable
+              caption="ההערכות מחדש"
+              head={["מועד", "ערך בספרים לפני", "שווי הוגן", "פער", "לקרן", "לרווח והפסד", "פחת שנתי חדש"]}
+              rows={r.events.map((ev) => [
+                `${TIMING_LABEL[ev.timing]} ${ev.year}`,
+                r2(ev.before),
+                ev.fairValue,
+                r2(ev.diff) + 0,
+                r2(ev.oci) + 0,
+                r2(ev.pl) + 0,
+                r2(ev.firstYearCharge),
+              ])}
+              highlight={r.events.map((ev, i) => (Math.abs(ev.pl) > 0.005 ? i : -1)).filter((i) => i >= 0)}
+            />
+
+            <div className="card p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-[17px] font-semibold text-fg">פקודת היומן להערכה</p>
+                <div className="flex flex-wrap gap-1" role="group" aria-label="איזו הערכה">
+                  {r.events.map((ev, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      aria-pressed={i === event}
+                      onClick={() => setPick(i)}
+                      className={cn("num h-8 rounded-lg px-2.5 text-xs font-semibold transition-colors", i === event ? "bg-accent text-accent-fg" : "bg-surface-2 text-muted hover:text-fg")}
+                    >
+                      {ev.year}
+                    </button>
+                  ))}
+                </div>
               </div>
-            ))}
+              <JournalEntry
+                title={`${TIMING_LABEL[r.events[event].timing]} ${r.events[event].year} — ${f.presentation === "netting" ? "שיטת הביטול" : "התאמה יחסית"}`}
+                lines={f.presentation === "netting" ? nettingLines(r.events[event]) : proportionalLines(r.events[event])}
+              />
+            </div>
 
             <RevSchedule r={r} caption="לוח שנה אחרי שנה" />
           </>

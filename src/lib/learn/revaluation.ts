@@ -109,6 +109,24 @@ export function splitRevaluation(diff: number, surplus: number, losses: number) 
   return { pl, oci, losses: losses - pl };
 }
 
+export type LandRow = { year: number; opening: number; fairValue: number; diff: number; pl: number; oci: number; surplus: number };
+
+/** Land is not depreciated: each year-end fair value is only a gap, split by the same rule; the surplus stays until disposal. */
+export function solveLand(cost: number, values: { year: number; fairValue: number }[]): LandRow[] {
+  let carrying = cost;
+  let surplus = 0;
+  let losses = 0;
+  return values.map(({ year, fairValue }) => {
+    const diff = fairValue - carrying;
+    const split = splitRevaluation(diff, surplus, losses);
+    const row = { year, opening: carrying, fairValue, diff, pl: split.pl, oci: split.oci, surplus: surplus + split.oci };
+    carrying = fairValue;
+    surplus = row.surplus;
+    losses = split.losses;
+    return row;
+  });
+}
+
 /** 1 − (salvage / value)^(1 / years). */
 export const dbRate = (value: number, salvage: number, years: number) => 1 - Math.pow(salvage / value, 1 / years);
 

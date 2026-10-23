@@ -4,7 +4,7 @@ import { DataTable, JournalEntry, Num } from "@/components/study/blocks";
 import { Formula } from "@/components/study/math";
 import { texNum } from "@/components/study/ui";
 import { solveRevaluation, type Timing } from "@/lib/learn/revaluation";
-import { SL_EX, TAX_RATE, transferLines } from "./data";
+import { side, SL_EX, TAX_RATE, transferLines } from "./data";
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
 const pct = (v: number) => `${Math.round(v * 100)}%`;
@@ -12,21 +12,23 @@ const pct = (v: number) => `${Math.round(v * 100)}%`;
 const BY_DEP = solveRevaluation(SL_EX);
 const AT_DISPOSAL = solveRevaluation({ ...SL_EX, transfer: "disposal" });
 const EV = BY_DEP.events[0];
-const CHECK_YEARS = [2021, 2022, 2023, 2024];
+const CHECK_YEARS = [2020, 2021, 2022, 2023, 2024, 2025];
+const FIRST_LOSS = BY_DEP.events.find((e) => e.pl < 0)!;
 
-// The same fair value in 2022, at each of the three dates.
+// The same fair value in 2022, at each of the three dates (the building of example 1, revalued that once).
 const TIMING_YEAR = 2022;
+const TIMING_FV = 120_000;
 const TIMINGS = (["start", "mid", "end"] as Timing[]).map((timing) => {
-  const r = solveRevaluation({ ...SL_EX, revaluations: [{ year: TIMING_YEAR, timing, fairValue: EV.fairValue }] });
+  const r = solveRevaluation({ ...SL_EX, revaluations: [{ year: TIMING_YEAR, timing, fairValue: TIMING_FV }] });
   return { timing, ev: r.events[0], dep: r.rows.find((row) => row.year === TIMING_YEAR)!.dep };
 });
 
 const TAX = r2(EV.oci * TAX_RATE);
 const NET = r2(EV.oci - TAX);
 
-// Disposal: the building of example 1 sold on 31.12.2023.
-const SALE_YEAR = 2023;
-const SALE_PRICE = 110_000;
+// Disposal: the building of example 1 sold on 31.12.2025, right after that day's revaluation.
+const SALE_YEAR = 2025;
+const SALE_PRICE = 46_000;
 const saleRow = (r: typeof BY_DEP) => r.rows.find((row) => row.year === SALE_YEAR)!;
 
 export function CheckTipsSection() {
@@ -51,20 +53,32 @@ export function CheckTipsSection() {
           </p>
           <Formula tex={String.raw`\text{יתרת קרן הערכה מחדש} = \text{ערך בספרים (מודל הערכה מחדש)} - \text{ערך בספרים (מודל עלות מקורי)}`} />
           <DataTable
-            caption="הבדיקה על דוגמה 1"
-            head={["סוף שנה", "ערך בספרים — הערכה מחדש", "ערך בספרים — מודל העלות", "הפרש", "יתרת הקרן — בקצב הפחת", "יתרת הקרן — בגריעה בלבד"]}
+            caption="הבדיקה על דוגמה 1 — הערכה בכל שנה"
+            head={["סוף שנה", "ערך בספרים — הערכה מחדש", "ערך בספרים — מודל העלות", "הפרש", "יתרת הקרן — בקצב הפחת", "מתקיים?", "יתרת הקרן — בגריעה בלבד"]}
             rows={CHECK_YEARS.map((y) => {
               const a = BY_DEP.rows.find((row) => row.year === y)!;
               const b = AT_DISPOSAL.rows.find((row) => row.year === y)!;
-              return [String(y), r2(a.closing), r2(a.costCarrying), r2(a.closing - a.costCarrying), r2(a.surplus), r2(b.surplus)];
+              const holds = Math.abs(a.surplus - (a.closing - a.costCarrying)) < 0.01;
+              return [
+                String(y),
+                r2(a.closing),
+                r2(a.costCarrying),
+                r2(a.closing - a.costCarrying) + 0,
+                r2(a.surplus) + 0,
+                <span key="h" className={holds ? "font-semibold text-success" : "font-semibold text-danger"}>
+                  {holds ? "✓ כן" : "✗ לא"}
+                </span>,
+                r2(b.surplus) + 0,
+              ];
             })}
+            highlight={CHECK_YEARS.map((y, i) => (y >= FIRST_LOSS.year ? i : -1)).filter((i) => i >= 0)}
           />
           <div className="flex items-start gap-3 rounded-xl border border-danger/30 bg-danger/[0.05] px-4 py-3">
             <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-danger" />
             <p className="text-[14.5px]">
               <strong>סייג חשוב למבחן:</strong> הבדיקה נכונה <strong>רק כשמעבירים לעודפים בקצב הפחת!</strong> כשאין העברה שוטפת — העברה רק בגריעה,
-              או בקרקע — הקרן נשארת בגובה העלייה המקורית המלאה (<Num v={EV.oci} /> בעמודה האחרונה), ולכן הנוסחה לא מתאימה לה. גם אם בעבר נזקף הפסד
-              לרווח והפסד, הבדיקה כבר לא מדויקת.
+              או בקרקע — הקרן שומרת על כל העליות שנזקפו אליה (העמודה האחרונה), ולכן הנוסחה לא מתאימה לה. ועוד סייג: מהרגע שירידה נזקפה לרווח והפסד
+              (כאן ב-{FIRST_LOSS.year}), ההפרש כולל גם את ההפסד הזה — והבדיקה כבר לא מדויקת. בשנים 2020 עד {FIRST_LOSS.year - 1} היא מתקיימת בדיוק.
             </p>
           </div>
         </div>
@@ -87,7 +101,7 @@ export function CheckTipsSection() {
 
       <TipCard icon={<CalendarClock className="h-5 w-5" />} title="מועד ההערכה במהלך השנה משנה את הפחת של אותה שנה">
         <p>
-          אותו מבנה מדוגמה 1, עם שווי הוגן של <Num v={EV.fairValue} /> בשנת {TIMING_YEAR} — בשלושה מועדים שונים:
+          אותו מבנה מדוגמה 1 — הפעם עם הערכה אחת, לשווי הוגן של <Num v={TIMING_FV} /> בשנת {TIMING_YEAR} — בשלושה מועדים שונים:
         </p>
         <DataTable
           head={["מועד ההערכה", "סדר הפעולות", "לקרן", `פחת שנת ${TIMING_YEAR}`]}
@@ -116,11 +130,11 @@ export function CheckTipsSection() {
           title="הערכה מחדש עם מסים נדחים (שיטת הביטול)"
           date={`31.12.${EV.year}`}
           lines={[
-            { account: "פחת נצבר", dr: EV.accEliminated },
-            { account: "מבנה", dr: EV.fairValue - EV.grossBefore },
-            { account: "קרן הערכה מחדש (רווח כולל אחר)", cr: NET },
-            { account: "התחייבות למסים נדחים", cr: TAX },
-          ]}
+            ...side("פחת נצבר", EV.accEliminated),
+            ...side("מבנה", EV.fairValue - EV.grossBefore),
+            ...side("קרן הערכה מחדש (רווח כולל אחר)", -NET),
+            ...side("התחייבות למסים נדחים", -TAX),
+          ].sort((x, y) => Number(x.cr !== undefined) - Number(y.cr !== undefined))}
           note={
             <>
               גם ההעברה השנתית לעודפים היא אז נטו ממס: <Num v={r2(BY_DEP.rows[2].transfer)} /> × (1 − {TAX_RATE}) ={" "}
@@ -133,18 +147,19 @@ export function CheckTipsSection() {
       <TipCard icon={<Store className="h-5 w-5" />} title="גריעת נכס שיש לו קרן">
         <p>
           כשהנכס נמכר, הרווח או ההפסד נמדדים מול הערך בספרים <strong>המשוערך</strong>, ויתרת הקרן שנותרה עוברת בבת אחת לעודפים — בלי לעבור ברווח
-          והפסד (סעיף 41). נניח שהמבנה מדוגמה 1 נמכר ב-31.12.{SALE_YEAR} ב-<Num v={SALE_PRICE} />:
+          והפסד (סעיף 41). נניח שהמבנה מדוגמה 1 נמכר ב-31.12.{SALE_YEAR}, מיד אחרי ההערכה של אותו יום (ערך בספרים <Num v={r2(sold.closing)} />), ב-
+          <Num v={SALE_PRICE} />:
         </p>
         <div className="grid gap-3 lg:grid-cols-2">
           <JournalEntry
             title="המכירה"
             date={`31.12.${SALE_YEAR}`}
             lines={[
-              { account: "מזומן", dr: SALE_PRICE },
-              { account: "פחת נצבר", dr: r2(sold.acc) },
-              { account: "מבנה", cr: r2(sold.gross) },
-              { account: SALE_PRICE >= sold.closing ? "רווח ממכירת מבנה (רווח והפסד)" : "הפסד ממכירת מבנה", cr: r2(SALE_PRICE - sold.closing) },
-            ]}
+              ...side("מזומן", SALE_PRICE),
+              ...side("פחת נצבר", sold.acc),
+              ...side("מבנה", -sold.gross),
+              ...side(SALE_PRICE >= sold.closing ? "רווח ממכירת מבנה (רווח והפסד)" : "הפסד ממכירת מבנה (רווח והפסד)", -(SALE_PRICE - sold.closing)),
+            ].sort((x, y) => Number(x.cr !== undefined) - Number(y.cr !== undefined))}
           />
           <JournalEntry
             title="העברת יתרת הקרן לעודפים"

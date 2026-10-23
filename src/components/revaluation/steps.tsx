@@ -10,6 +10,9 @@ const EV = R.events[0];
 const YEARS_BEFORE = EV.t / 12;
 const OLD_ANNUAL = SL_EX.cost / SL_EX.life;
 const NEW_ANNUAL = EV.firstYearCharge;
+const SECOND_DOWN = R.events.find((e) => e.diff < 0 && e.pl === 0)!;
+const LOSS = R.events.find((e) => e.pl < 0)!;
+const REVERSAL = R.events.find((e) => e.pl > 0)!;
 
 // The four ways a gap can land, on small round figures.
 const CASES = [
@@ -28,8 +31,9 @@ export function RevaluationStepsSection() {
         <p className="text-xs font-semibold text-accent">דרכים לפתור שאלת הערכה מחדש — במבט אחד</p>
         <p className="mt-1 text-[15px] text-fg/90">
           במודל הערכה מחדש הנכס מוצג בשווי ההוגן שלו ביום ההערכה, בניכוי פחת שנצבר מאז (סעיף 31). כל שאלה נפתרת באותם שלבים. לאורך הדרך נפתור
-          דוגמה אחת: מבנה שנרכש ב-1.1.{SL_EX.firstYear} בעלות <Num v={SL_EX.cost} /> ₪, לאורך חיים של {SL_EX.life} שנים, בקו ישר. ב-31.12.
-          {SL_EX.revaluations[0].year} (כעבור שנתיים) השווי ההוגן שלו: <Num v={EV.fairValue} /> ₪.
+          דוגמה אחת: מבנה שנרכש ב-1.1.{SL_EX.firstYear} בעלות <Num v={SL_EX.cost} /> ₪, לאורך חיים של {SL_EX.life} שנים, בקו ישר. החברה מעריכה
+          אותו מחדש <strong>בכל 31.12</strong>, ובכל שנה יש לו שווי הוגן חדש. כאן נפתור את ההערכה הראשונה — ב-31.12.{EV.year} השווי ההוגן{" "}
+          <Num v={EV.fairValue} /> ₪ — ובכל שנה שאחריה חוזרים על אותם שלבים בדיוק (הלוח המלא בלשונית &quot;דוגמאות לפי שיטות&quot;).
         </p>
         <ol className="mt-4 grid gap-2 sm:grid-cols-4">
           {STEPS.map((s, i) => (
@@ -88,7 +92,10 @@ export function RevaluationStepsSection() {
           head={["מקרה", "ערך בספרים", "שווי הוגן", "פער", "לקרן הערכה מחדש", "לרווח והפסד"]}
           rows={CASES.map((c) => [c.title, c.before, c.fv, c.fv - c.before, c.oci, c.pl])}
         />
-        <p>בדוגמה שלנו זו הערכה ראשונה והפער חיובי — כל <Num v={EV.oci} /> נזקפים לקרן הערכה מחדש.</p>
+        <p>
+          בדוגמה שלנו זו הערכה ראשונה והפער חיובי — כל <Num v={EV.oci} /> נזקפים לקרן הערכה מחדש. בשנים הבאות של אותה דוגמה מופיעים גם שאר
+          המקרים: ירידה שמקטינה את הקרן ({SECOND_DOWN.year}), ירידה שעוברת אותה ונזקפת לרווח והפסד ({LOSS.year}), ועלייה שמבטלת את ההפסד ({REVERSAL.year}).
+        </p>
       </StepCard>
 
       <div className="card p-5">

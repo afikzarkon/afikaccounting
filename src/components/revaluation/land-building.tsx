@@ -1,13 +1,23 @@
 import { Building2, Trees } from "lucide-react";
 import { Callout, DataTable, JournalEntry, Num, Topic } from "@/components/study/blocks";
 import { Formula } from "@/components/study/math";
-import { splitRevaluation } from "@/lib/learn/revaluation";
-import { LAND, transferLines } from "./data";
+import { solveLand } from "@/lib/learn/revaluation";
+import { LAND, side, transferLines } from "./data";
 
-const UP = splitRevaluation(LAND.firstUp - LAND.cost, 0, 0);
-const DOWN = splitRevaluation(LAND.thenDown - LAND.firstUp, UP.oci, UP.losses);
-const SURPLUS = UP.oci + DOWN.oci;
-const GAIN = LAND.proceeds - LAND.thenDown;
+const ROWS = solveLand(LAND.cost, LAND.values);
+const LAST = ROWS.at(-1)!;
+const GAIN = LAND.proceeds - LAST.fairValue;
+
+const whatHappened = (r: (typeof ROWS)[number]) =>
+  r.diff > 0
+    ? r.pl > 0
+      ? "עלייה — קודם מבטלת את ההפסד, והיתרה לקרן"
+      : r.opening === LAND.cost
+        ? "הערכה ראשונה — עלייה לקרן"
+        : "עלייה — לקרן"
+    : r.pl < 0
+      ? "ירידה — הקרן מתאפסת, והיתרה הפסד"
+      : "ירידה — מקטינה את הקרן";
 
 export function LandBuildingSection() {
   return (
@@ -23,60 +33,57 @@ export function LandBuildingSection() {
         ]}
       />
 
-      <Topic title="דוגמה 3: קרקע — הערכה מחדש, ירידה, ומכירה" open>
+      <Topic title="קרקע — הערכה מחדש בכל שנה, ואז מכירה" open>
         <div className="flex items-start gap-3">
           <span className="mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent">
             <Trees className="h-5 w-5" />
           </span>
           <p className="!mt-0">
-            קרקע נרכשה ב-{LAND.buyYear} ב-<Num v={LAND.cost} /> ₪. ב-31.12.{LAND.upYear} שוויה ההוגן <Num v={LAND.firstUp} /> ₪, וב-31.12.{LAND.downYear}{" "}
-            ירד ל-<Num v={LAND.thenDown} /> ₪. ב-{LAND.saleYear} נמכרה ב-<Num v={LAND.proceeds} /> ₪. אין פחת בשום שלב.
+            קרקע נרכשה ב-1.1.{ROWS[0].year} ב-<Num v={LAND.cost} /> ₪ ומוערכת מחדש בכל 31.12. ב-{LAND.saleYear} נמכרה ב-<Num v={LAND.proceeds} /> ₪. אין פחת
+            בשום שלב — בכל שנה רק פער בין השווי הקודם לחדש.
           </p>
         </div>
         <DataTable
-          head={["מועד", "אירוע", "פער", "לקרן", "לרווח והפסד", "יתרת הקרן"]}
+          head={["31.12", "שווי קודם", "שווי הוגן", "פער", "לקרן", "לרווח והפסד", "יתרת הקרן", "מה קרה"]}
           rows={[
-            [`31.12.${LAND.upYear}`, "הערכה ראשונה — עלייה", LAND.firstUp - LAND.cost, UP.oci, UP.pl, UP.oci],
-            [`31.12.${LAND.downYear}`, "ירידה — מקטינה קודם את הקרן", LAND.thenDown - LAND.firstUp, DOWN.oci, DOWN.pl, SURPLUS],
-            [`${LAND.saleYear}`, "מכירה — הקרן עוברת לעודפים", "—", -SURPLUS, GAIN, 0],
+            ...ROWS.map((r) => [String(r.year), r.opening, r.fairValue, r.diff, r.oci + 0, r.pl + 0, r.surplus + 0, whatHappened(r)]),
+            [String(LAND.saleYear), LAST.fairValue, "—", "—", -LAST.surplus, GAIN, 0, "מכירה — הקרן עוברת לעודפים"],
           ]}
+          highlight={ROWS.map((r, i) => (r.pl !== 0 ? i : -1)).filter((i) => i >= 0)}
         />
         <div className="grid gap-3 lg:grid-cols-2">
+          {ROWS.map((r) => (
+            <JournalEntry
+              key={r.year}
+              title={`הערכה מחדש ${r.year}`}
+              date={`31.12.${r.year}`}
+              lines={[
+                ...side("קרקע", r.diff),
+                ...side("קרן הערכה מחדש — קרקע (רווח כולל אחר)", -r.oci),
+                ...side(r.pl > 0 ? "ביטול הפסד מירידת ערך (רווח והפסד)" : "הפסד מירידת ערך (רווח והפסד)", -r.pl),
+              ].sort((x, y) => Number(x.cr !== undefined) - Number(y.cr !== undefined))}
+            />
+          ))}
           <JournalEntry
-            title="1. הערכה ראשונה"
-            date={`31.12.${LAND.upYear}`}
-            lines={[
-              { account: "קרקע", dr: UP.oci },
-              { account: "קרן הערכה מחדש (רווח כולל אחר)", cr: UP.oci },
-            ]}
-          />
-          <JournalEntry
-            title="2. ירידה — כנגד הקרן, לא ברווח והפסד"
-            date={`31.12.${LAND.downYear}`}
-            lines={[
-              { account: "קרן הערכה מחדש (רווח כולל אחר)", dr: -DOWN.oci },
-              { account: "קרקע", cr: -DOWN.oci },
-            ]}
-          />
-          <JournalEntry
-            title="3. המכירה"
+            title="המכירה"
             date={`${LAND.saleYear}`}
             lines={[
               { account: "מזומן", dr: LAND.proceeds },
-              { account: "קרקע", cr: LAND.thenDown },
+              { account: "קרקע", cr: LAST.fairValue },
               { account: "רווח ממכירת קרקע (רווח והפסד)", cr: GAIN },
             ]}
             note={
               <>
-                הרווח נמדד מול השווי ההוגן האחרון (<Num v={LAND.thenDown} />), לא מול העלות המקורית.
+                הרווח נמדד מול השווי ההוגן האחרון (<Num v={LAST.fairValue} />), לא מול העלות המקורית.
               </>
             }
           />
-          <JournalEntry title="4. העברת הקרן לעודפים" date={`${LAND.saleYear}`} lines={transferLines(SURPLUS)} />
+          <JournalEntry title="העברת הקרן לעודפים" date={`${LAND.saleYear}`} lines={transferLines(LAST.surplus)} />
         </div>
         <Callout kind="warn" title="הקרן לא עוברת דרך רווח והפסד">
           <p>
-            העברת הקרן לעודפים היא פקודה בתוך ההון העצמי (סעיף 41). מי שרושם את <Num v={SURPLUS} /> כרווח ממכירה — מנפח את הרווח והפסד.
+            העברת הקרן לעודפים היא פקודה בתוך ההון העצמי (סעיף 41). מי שרושם את <Num v={LAST.surplus} /> כרווח ממכירה — מנפח את הרווח והפסד. וגם: בשנים
+            שבהן הקרקע ירדה מתחת לעלות, ההפסד נרשם ברווח והפסד — ולכן העלייה שאחריו מבטלת אותו קודם, לפני שמשהו מגיע לקרן.
           </p>
         </Callout>
       </Topic>

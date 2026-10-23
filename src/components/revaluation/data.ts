@@ -1,14 +1,20 @@
 import type { EntryLine } from "@/components/study/blocks";
 import type { RevaluationInputs, RevEvent } from "@/lib/learn/revaluation";
 
-// The worked examples on the page; the first is also the calculator's default.
+/** A fair value on every 31 December, from `firstYear` on. */
+const yearly = (firstYear: number, values: number[]) => values.map((fairValue, i) => ({ year: firstYear + i, timing: "end" as const, fairValue }));
+
+// The worked examples on the page, revalued every year; the first is also the calculator's default.
+// The fair values are picked so each year's new charge comes out round, and so that between them
+// they show every case: a first increase, a later one, a decrease within the surplus, one beyond it,
+// and an increase that reverses a loss.
 export const SL_EX: RevaluationInputs = {
   cost: 100_000,
   salvage: 0,
   life: 10,
   method: "sl",
   firstYear: 2020,
-  revaluations: [{ year: 2021, timing: "end", fairValue: 120_000 }],
+  revaluations: yearly(2020, [99_000, 96_000, 77_000, 54_000, 55_000, 44_000, 36_000, 24_000, 12_000]),
   transfer: "depreciation",
 };
 export const SYD_EX: RevaluationInputs = {
@@ -17,28 +23,56 @@ export const SYD_EX: RevaluationInputs = {
   life: 5,
   method: "syd-desc",
   firstYear: 2020,
-  revaluations: [{ year: 2021, timing: "end", fairValue: 90_000 }],
+  revaluations: yearly(2020, [104_000, 66_000, 30_000, 12_000]),
   transfer: "depreciation",
 };
+// The rates come out round: 2/3, then 75%, then 80%.
 export const DB_EX: RevaluationInputs = {
-  cost: 160_000,
-  salvage: 10_000,
-  life: 4,
+  cost: 135_000,
+  salvage: 5_000,
+  life: 3,
   method: "db",
   firstYear: 2020,
-  revaluations: [{ year: 2021, timing: "end", fairValue: 90_000 }],
+  revaluations: yearly(2020, [80_000, 25_000]),
   transfer: "depreciation",
 };
 
-// Land: bought, revalued up, revalued down, then sold.
-export const LAND = { cost: 500_000, firstUp: 650_000, thenDown: 600_000, proceeds: 640_000, buyYear: 2020, upYear: 2021, downYear: 2023, saleYear: 2025 };
+// Land on its own: revalued every year, then sold.
+export const LAND = {
+  cost: 500_000,
+  values: [
+    { year: 2020, fairValue: 540_000 },
+    { year: 2021, fairValue: 520_000 },
+    { year: 2022, fairValue: 490_000 },
+    { year: 2023, fairValue: 530_000 },
+  ],
+  saleYear: 2024,
+  proceeds: 545_000,
+};
+
+// A property with land: one price and one fair value a year, split between the two.
+export const PROPERTY = {
+  firstYear: 2020,
+  land: { cost: 400_000, values: [432_000, 380_000, 410_000] },
+  building: { cost: 600_000, life: 20, values: [608_000, 540_000, 527_000] },
+};
+export const PROPERTY_BUILDING: RevaluationInputs = {
+  cost: PROPERTY.building.cost,
+  salvage: 0,
+  life: PROPERTY.building.life,
+  method: "sl",
+  firstYear: PROPERTY.firstYear,
+  revaluations: yearly(PROPERTY.firstYear, PROPERTY.building.values),
+  transfer: "depreciation",
+};
+export const PROPERTY_LAND = PROPERTY.land.values.map((fairValue, i) => ({ year: PROPERTY.firstYear + i, fairValue }));
 
 export const TAX_RATE = 0.23;
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
 /** A positive amount debits the account, a negative one credits it; zero leaves it out. */
-const side = (account: string, amount: number): EntryLine[] =>
+export const side = (account: string, amount: number): EntryLine[] =>
   Math.abs(amount) < 0.005 ? [] : amount > 0 ? [{ account, dr: r2(amount) }] : [{ account, cr: r2(-amount) }];
 
 /** The gap's other side: the surplus, and profit or loss. */

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { revaluationErrors, type RevaluationInputs, solveRevaluation, splitRevaluation } from "./revaluation";
+import { revaluationErrors, type RevaluationInputs, solveLand, solveRevaluation, splitRevaluation } from "./revaluation";
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
@@ -99,6 +99,38 @@ describe("learning lab revaluation", () => {
     assert.equal(r2(second.before), 90_000);
     assert.equal(r2(second.oci), -30_000); // the surplus left after two transfers of 5,000
     assert.equal(r2(second.pl), -10_000);
+  });
+
+  it("revalued every year: every case in turn, and the surplus runs out with the life", () => {
+    const values = [99_000, 96_000, 77_000, 54_000, 55_000, 44_000, 36_000, 24_000, 12_000];
+    const r = solveRevaluation({ ...SL, revaluations: values.map((fairValue, i) => ({ year: 2020 + i, timing: "end" as const, fairValue })) });
+    assert.deepEqual(r.rows.map((y) => r2(y.dep)), [10_000, 11_000, 12_000, 11_000, 9_000, 11_000, 11_000, 12_000, 12_000, 12_000]);
+    const ev = (year: number) => r.events.find((e) => e.year === year)!;
+    assert.deepEqual([r2(ev(2022).oci), r2(ev(2022).pl) + 0], [-7_000, 0]); // within the surplus
+    assert.deepEqual([r2(ev(2023).oci), r2(ev(2023).pl) + 0], [-6_000, -6_000]); // beyond it
+    assert.deepEqual([r2(ev(2024).oci), r2(ev(2024).pl) + 0], [4_000, 6_000]); // reverses the loss first
+    assert.equal(r2(r.rows.at(-1)!.surplus) + 0, 0);
+    // The check holds until a loss goes to profit or loss.
+    for (const y of r.rows.filter((x) => x.year < 2023)) assert.equal(r2(y.surplus), r2(y.closing - y.costCarrying));
+    assert.notEqual(r2(row(r, 2024).surplus), r2(row(r, 2024).closing - row(r, 2024).costCarrying));
+  });
+
+  it("land: no depreciation, the same split rule each year, the surplus kept", () => {
+    const rows = solveLand(500_000, [
+      { year: 2020, fairValue: 540_000 },
+      { year: 2021, fairValue: 520_000 },
+      { year: 2022, fairValue: 490_000 },
+      { year: 2023, fairValue: 530_000 },
+    ]);
+    assert.deepEqual(
+      rows.map((x) => [x.oci, x.pl, x.surplus]),
+      [
+        [40_000, 0, 40_000],
+        [-20_000, 0, 20_000],
+        [-20_000, -10_000, 0],
+        [30_000, 10_000, 30_000],
+      ],
+    );
   });
 
   it("rejects inputs it cannot solve", () => {
