@@ -23,6 +23,6 @@ async function Media() {
   await requireAdmin("/admin/media");
   const items = await unlessSetupRequired(listMedia());
   if (!items) return <SetupRequired />;
-  const modules = [{ value: "content", label: "מרכז התוכן" }, { value: "ias16-guide", label: "מדריך IAS 16" }, ...CALCULATORS.map((c) => ({ value: c.slug, label: `${c.standard} — ${c.title}` }))];
+  const modules = [{ value: "content", label: "מרכז התוכן" }, { value: "ias16-lab", label: "לימוד תקנים — IAS 16" }, ...CALCULATORS.map((c) => ({ value: c.slug, label: `${c.standard} — ${c.title}` }))];
   return <MediaManager items={items} modules={modules} />;
 }

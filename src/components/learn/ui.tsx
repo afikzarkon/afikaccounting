@@ -1,6 +1,6 @@
 import "katex/dist/katex.min.css";
 import type { ReactNode } from "react";
-import { n } from "@/components/guide/blocks";
+import { n } from "./blocks";
 import { renderTex } from "@/lib/tex";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +33,7 @@ export function FormulaCard({ title, icon, rows, children, className }: { title:
   );
 }
 
-/** Inline formula that can be rendered on the client too (the guide's Tex is the same, kept server-only by convention). */
+/** Inline formula that can be rendered on the client too (math.tsx's Tex is the same, kept server-only by convention). */
 export function InlineTex({ tex, className }: { tex: string; className?: string }) {
   return <span dir="ltr" className={cn("inline-block align-middle", className)} dangerouslySetInnerHTML={{ __html: renderTex(tex, false) }} />;
 }

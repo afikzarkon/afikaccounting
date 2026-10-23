@@ -66,7 +66,7 @@ export function UserMenu({ name, email, admin = false }: { name: string; email: 
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: -4 }}
             transition={{ duration: 0.14 }}
-            className="glass absolute end-0 mt-2 w-60 origin-top-left rounded-2xl p-1.5 shadow-card"
+            className="absolute end-0 z-50 mt-2 w-60 origin-top-left rounded-2xl border border-line-strong bg-surface p-1.5 shadow-xl"
           >
             <div className="px-3 py-2.5">
               <p className="truncate text-sm font-medium text-fg">{name}</p>

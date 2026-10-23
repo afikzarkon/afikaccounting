@@ -2,12 +2,11 @@
 
 import { CircleCheck, Gauge, Minus, Plus, RotateCcw, Ruler, Sigma, TrendingDown, TriangleAlert } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
-import { DataTable, JournalEntry, n, Num } from "@/components/guide/blocks";
+import { DataTable, JournalEntry, n, Num } from "./blocks";
 import { inputClass } from "@/components/ui/form";
 import {
   type Basics,
   basicsErrors,
-  type DbRateMode,
   decliningYears,
   depreciableAmount,
   exactDbRate,
@@ -24,15 +23,15 @@ import {
 } from "@/lib/learn/depreciation";
 import { cn } from "@/lib/utils";
 import { FormulaCard, type FormulaRow, InlineTex, Stat, texNum } from "./ui";
-import { MONTHS, MonthPicker } from "./widgets";
+import { MONTHS, MonthPicker, monthSpan } from "./widgets";
 
 type Method = "sl" | "db" | "syd" | "uop";
 
-const METHODS: { id: Method; label: string; en: string; icon: ReactNode }[] = [
-  { id: "sl", label: "קו ישר", en: "Straight Line", icon: <Ruler className="h-4 w-4" /> },
-  { id: "db", label: "יתרה פוחתת", en: "Declining Balance", icon: <TrendingDown className="h-4 w-4" /> },
-  { id: "syd", label: "סכום ספרות השנים", en: "Sum-of-Years' Digits", icon: <Sigma className="h-4 w-4" /> },
-  { id: "uop", label: "יחידות תפוקה", en: "Units of Production", icon: <Gauge className="h-4 w-4" /> },
+const METHODS: { id: Method; label: string; hint: string; icon: ReactNode }[] = [
+  { id: "sl", label: "קו ישר", hint: "אותו פחת בכל שנה", icon: <Ruler className="h-4 w-4" /> },
+  { id: "db", label: "יתרה פוחתת", hint: "שיעור קבוע על היתרה", icon: <TrendingDown className="h-4 w-4" /> },
+  { id: "syd", label: "סכום ספרות השנים", hint: "פחת מואץ במשקלות", icon: <Sigma className="h-4 w-4" /> },
+  { id: "uop", label: "יחידות תפוקה", hint: "לפי השימוש בפועל", icon: <Gauge className="h-4 w-4" /> },
 ];
 
 const DEFAULTS = {
@@ -41,9 +40,6 @@ const DEFAULTS = {
   life: "5",
   month: 4,
   sydDir: "desc" as SydDirection,
-  dbMode: "exact" as DbRateMode,
-  dbCustom: "35",
-  dbMultiplier: "2",
   totalUnits: "100000",
   units: ["15000", "25000", "22000", "18000", "12000", "8000"],
 };
@@ -71,20 +67,9 @@ function compute(inp: Inputs, method: Method): Result {
   const exact = Object.keys(errors).length ? null : exactDbRate(b);
 
   let rate: number | undefined;
-  if (method === "db") {
-    if (inp.dbMode === "exact") {
-      if (exact === null) errors.dbMode = "בלי ערך גרט השורש מתאפס והשיעור המדויק הוא 100% — בחרו שיעור ידני או מכפיל.";
-      else rate = exact;
-    } else if (inp.dbMode === "custom") {
-      const p = parse(inp.dbCustom);
-      if (!(p > 0 && p <= 100)) errors.dbCustom = "שיעור בין 0 ל-100";
-      else rate = p / 100;
-    } else {
-      const k = parse(inp.dbMultiplier);
-      if (!(k > 0)) errors.dbMultiplier = "מכפיל חיובי";
-      else if (!errors.life && k / b.life > 1) errors.dbMultiplier = "המכפיל נותן שיעור מעל 100%";
-      else rate = k / b.life;
-    }
+  if (method === "db" && !Object.keys(errors).length) {
+    if (exact === null) errors.salvage = "ביתרה פוחתת צריך ערך גרט חיובי — בלי גרט הנוסחה נותנת שיעור פחת של 100%";
+    else rate = exact;
   }
 
   let totalUnits: number | undefined;
@@ -119,7 +104,7 @@ function rowTex(row: FiscalRow, method: Method, r: Extract<Result, { ok: true }>
   if (method === "uop") {
     const rate = depreciableAmount(b) / r.totalUnits!;
     const plain = `${texRate(rate)} \\times ${texNum(row.units!)}`;
-    return row.capped ? `\\min\\left(${plain},\\ ${texNum(row.opening)} - ${texNum(b.salvage)}\\right)` : plain;
+    return row.capped ? `\\text{הנמוך מבין }\\left(${plain},\\ ${texNum(row.opening)} - ${texNum(b.salvage)}\\right)` : plain;
   }
   if (method === "sl") {
     const months = row.parts.reduce((s, p) => s + p.months, 0);
@@ -134,11 +119,23 @@ function rowTex(row: FiscalRow, method: Method, r: Extract<Result, { ok: true }>
   // Declining balance: each life year's charge, labelled, times its share of this fiscal year.
   return row.parts
     .map((p) => {
-      const d = `\\underbrace{${texNum(r.schedule.lifeYears[p.k - 1].charge)}}_{D_{${p.k}}}`;
+      const d = `\\underbrace{${texNum(r.schedule.lifeYears[p.k - 1].charge)}}_{\\text{שנת חיים ${p.k}}}`;
       return p.months === 12 ? d : `${d} \\cdot \\tfrac{${p.months}}{12}`;
     })
     .join(" + ");
 }
+
+// Every formula reads in accounting terms, never in letters.
+const T = {
+  cost: String.raw`\text{עלות}`,
+  salvage: String.raw`\text{גרט}`,
+  life: String.raw`\text{אורך חיים}`,
+  base: String.raw`\text{סכום בר-פחת}`,
+  annual: String.raw`\text{פחת לשנה מלאה}`,
+  months: String.raw`\text{חודשי שימוש}`,
+  rate: String.raw`\text{שיעור הפחת}`,
+  syd: String.raw`\text{סכום ספרות השנים}`,
+};
 
 function formulaRows(method: Method, r: Extract<Result, { ok: true }>, inp: Inputs): FormulaRow[] {
   const { b } = r;
@@ -147,34 +144,35 @@ function formulaRows(method: Method, r: Extract<Result, { ok: true }>, inp: Inpu
   const base = depreciableAmount(b);
   const m = firstYearMonths(b.startMonth);
   const rows = r.schedule.rows;
+  const entry = `כניסה ב${MONTHS[b.startMonth - 1]}`;
 
   if (method === "sl") {
     const annual = base / b.life;
     return [
-      { label: "פחת שנתי", tex: `D = \\frac{C - S}{n} = \\frac{${C} - ${S}}{${b.life}} = ${texNum(annual)}` },
-      { label: `פחת חלקי בשנה א׳ — כניסה ב${MONTHS[b.startMonth - 1]}`, tex: `D_1 = D \\times \\frac{m}{12} = ${texNum(annual)} \\times \\frac{${m}}{12} = ${texNum(rows[0].charge)}` },
+      { label: "פחת לשנה מלאה", tex: `${T.annual} = \\frac{${T.cost} - ${T.salvage}}{${T.life}} = \\frac{${C} - ${S}}{${b.life}} = ${texNum(annual)}` },
+      { label: `פחת בשנה הראשונה — ${entry}`, tex: `${T.annual} \\times \\frac{${T.months}}{12} = ${texNum(annual)} \\times \\frac{${m}}{12} = ${texNum(rows[0].charge)}` },
       ...(m < 12
-        ? [{ label: `השלמה בשנת הכספים ה-${b.life + 1}`, tex: `D_{${b.life + 1}} = D \\times \\frac{12 - m}{12} = ${texNum(annual)} \\times \\frac{${12 - m}}{12} = ${texNum(rows.at(-1)!.charge)}` }]
+        ? [
+            {
+              label: `השלמה בשנת הכספים ה-${b.life + 1} — החודשים שנותרו`,
+              tex: `${T.annual} \\times \\frac{12 - ${T.months}}{12} = ${texNum(annual)} \\times \\frac{${12 - m}}{12} = ${texNum(rows.at(-1)!.charge)}`,
+            },
+          ]
         : []),
     ];
   }
 
   if (method === "db") {
-    const k = parse(inp.dbMultiplier);
     return [
       {
-        label: "השיעור המדויק — מביא בדיוק לגרט בסוף אורך החיים",
-        tex:
-          r.exact === null
-            ? `R = 1 - \\sqrt[n]{\\frac{S}{C}} = 1 - \\sqrt[${b.life}]{0} = 100\\%`
-            : `R = 1 - \\sqrt[n]{\\frac{S}{C}} = 1 - \\sqrt[${b.life}]{\\frac{${S}}{${C}}} = ${pctTex(r.exact)}`,
+        label: "שיעור הפחת — מביא את העלות בדיוק לגרט בסוף אורך החיים",
+        tex: `${T.rate} = 1 - \\sqrt[${T.life}]{\\frac{${T.salvage}}{${T.cost}}} = 1 - \\sqrt[${b.life}]{\\frac{${S}}{${C}}} = ${pctTex(r.rate!)}`,
       },
+      { label: "פחת לכל שנת חיים — על היתרה בספרים בתחילתה", tex: `\\text{פחת השנה} = \\text{יתרה בספרים בתחילת השנה} \\times ${T.rate}` },
       {
-        label: "שיטת המכפיל (Double Declining = מכפיל 2)",
-        tex: `R = \\text{Multiplier} \\times \\frac{100\\%}{n} = ${Number.isFinite(k) ? k : 2} \\times \\frac{100\\%}{${b.life}} = ${pctTex((Number.isFinite(k) ? k : 2) / b.life)}`,
+        label: `פחת בשנה הראשונה — ${entry}`,
+        tex: `${T.cost} \\times ${T.rate} \\times \\frac{${T.months}}{12} = ${C} \\times ${pctTex(r.rate!)} \\times \\frac{${m}}{12} = ${texNum(rows[0].charge)}`,
       },
-      { label: "פחת שנת חיים k — על היתרה בספרים, עם רצפת הגרט", tex: `D_k = R \\times CA_{k-1}, \\qquad CA_k \\ge S` },
-      { label: `השיעור בסימולציה: ${pctTex(r.rate!).replace("\\%", "%")}`, tex: `D_1 = ${C} \\times ${pctTex(r.rate!)} \\times \\frac{${m}}{12} = ${texNum(rows[0].charge)}` },
     ];
   }
 
@@ -185,14 +183,20 @@ function formulaRows(method: Method, r: Extract<Result, { ok: true }>, inp: Inpu
     const w2 = desc ? b.life - 1 : 2;
     const B = texNum(base);
     return [
-      { label: "מכנה — סכום ספרות השנים", tex: `\\text{SYD} = \\frac{N(N+1)}{2} = \\frac{${b.life} \\times ${b.life + 1}}{2} = ${s}` },
-      { label: desc ? "שבר שנת חיים k — יורד (מואץ)" : "שבר שנת חיים k — עולה (מואט)", tex: desc ? `F_k = \\frac{N - k + 1}{\\text{SYD}}` : `F_k = \\frac{k}{\\text{SYD}}` },
-      { label: `שנה 1 (m = ${m})`, tex: `\\text{Base} \\times F_1 \\times \\frac{m}{12} = ${B} \\times \\frac{${w1}}{${s}} \\times \\frac{${m}}{12} = ${texNum(rows[0].charge)}` },
-      ...(b.life > 1
+      { label: "המכנה — סכום ספרות השנים", tex: `${T.syd} = \\frac{${T.life} \\times (${T.life} + 1)}{2} = \\frac{${b.life} \\times ${b.life + 1}}{2} = ${s}` },
+      {
+        label: desc ? "משקל כל שנת חיים — יורד (מואץ)" : "משקל כל שנת חיים — עולה (מואט)",
+        tex: desc ? `\\text{משקל} = \\frac{\\text{שנות החיים שנותרו, כולל השנה}}{${T.syd}}` : `\\text{משקל} = \\frac{\\text{מספר שנת החיים}}{${T.syd}}`,
+      },
+      {
+        label: `השנה הראשונה — ${m} חודשי שימוש`,
+        tex: `${T.base} \\times \\frac{${w1}}{${s}} \\times \\frac{${m}}{12} = ${B} \\times \\frac{${w1}}{${s}} \\times \\frac{${m}}{12} = ${texNum(rows[0].charge)}`,
+      },
+      ...(b.life > 1 && m < 12
         ? [
             {
-              label: "שנה 2 — אפקט פיצול השברים",
-              tex: `\\text{Base} \\times \\left(F_1 \\times \\frac{12 - m}{12} + F_2 \\times \\frac{m}{12}\\right) = ${B} \\times \\left(\\frac{${w1}}{${s}} \\times \\frac{${12 - m}}{12} + \\frac{${w2}}{${s}} \\times \\frac{${m}}{12}\\right) = ${texNum(rows[1].charge)}`,
+              label: "השנה השנייה — סוף שנת החיים הראשונה ותחילת השנייה",
+              tex: `${B} \\times \\left(\\frac{${w1}}{${s}} \\times \\frac{${12 - m}}{12} + \\frac{${w2}}{${s}} \\times \\frac{${m}}{12}\\right) = ${texNum(rows[1].charge)}`,
             },
           ]
         : []),
@@ -201,8 +205,14 @@ function formulaRows(method: Method, r: Extract<Result, { ok: true }>, inp: Inpu
 
   const rate = base / r.totalUnits!;
   return [
-    { label: "תעריף פחת ליחידה (או לשעת עבודה)", tex: `\\text{Rate} = \\frac{C - S}{\\text{Total Units}} = \\frac{${texNum(base)}}{${texNum(r.totalUnits!)}} = ${texRate(rate)}` },
-    { label: "פחת השנה", tex: `\\text{Year Dep} = \\text{Rate} \\times \\text{Actual Units} = ${texRate(rate)} \\times ${texNum(r.units![0])} = ${texNum(rows[0].charge)}` },
+    {
+      label: "פחת ליחידה (או לשעת עבודה)",
+      tex: `\\text{פחת ליחידה} = \\frac{${T.cost} - ${T.salvage}}{\\text{סך יחידות צפויות}} = \\frac{${texNum(base)}}{${texNum(r.totalUnits!)}} = ${texRate(rate)}`,
+    },
+    {
+      label: "פחת השנה",
+      tex: `\\text{פחת ליחידה} \\times \\text{יחידות בפועל} = ${texRate(rate)} \\times ${texNum(r.units![0])} = ${texNum(rows[0].charge)}`,
+    },
   ];
 }
 
@@ -237,9 +247,7 @@ export function DepreciationSimulator() {
               <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-lg", on ? "bg-accent text-accent-fg" : "bg-accent-soft text-accent")}>{m.icon}</span>
               <span className="min-w-0">
                 <span className="block text-sm font-semibold">{m.label}</span>
-                <span className="block truncate text-[11px] text-subtle" dir="ltr">
-                  {m.en}
-                </span>
+                <span className="block truncate text-[11px] text-subtle">{m.hint}</span>
               </span>
             </button>
           );
@@ -260,9 +268,9 @@ export function DepreciationSimulator() {
               </button>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <NumberInput label="עלות (C)" suffix="₪" value={inp.cost} onChange={(v) => set("cost", v)} error={r.errors.cost} />
-              <NumberInput label="ערך גרט (S)" suffix="₪" value={inp.salvage} onChange={(v) => set("salvage", v)} error={r.errors.salvage} />
-              {method !== "uop" && <NumberInput label="אורך חיים (n)" suffix="שנים" value={inp.life} onChange={(v) => set("life", v)} error={r.errors.life} />}
+              <NumberInput label="עלות" suffix="₪" value={inp.cost} onChange={(v) => set("cost", v)} error={r.errors.cost} />
+              <NumberInput label="ערך גרט" suffix="₪" value={inp.salvage} onChange={(v) => set("salvage", v)} error={r.errors.salvage} />
+              {method !== "uop" && <NumberInput label="אורך חיים" suffix="שנים" value={inp.life} onChange={(v) => set("life", v)} error={r.errors.life} />}
               {method === "uop" && (
                 <NumberInput label="סך יחידות / שעות צפויות" suffix="יח׳" value={inp.totalUnits} onChange={(v) => set("totalUnits", v)} error={r.errors.totalUnits} />
               )}
@@ -271,7 +279,7 @@ export function DepreciationSimulator() {
               <div className="mt-4">
                 <MonthPicker value={inp.month} onChange={(m) => set("month", m)} />
                 <p className="mt-2 text-xs text-muted">
-                  כניסה ב{MONTHS[inp.month - 1]}: <InlineTex tex={`m = 13 - ${inp.month} = ${firstYearMonths(inp.month)}`} /> חודשי פחת בשנה א׳.
+                  כניסה ב{MONTHS[inp.month - 1]}: {monthSpan(inp.month)} בשנה הראשונה.
                 </p>
               </div>
             ) : (
@@ -291,29 +299,14 @@ export function DepreciationSimulator() {
             )}
 
             {method === "db" && (
-              <fieldset className="mt-4">
-                <legend className="mb-2 text-[13px] font-medium text-fg">השיעור הקבוע (R)</legend>
-                <div className="space-y-2">
-                  <RateOption on={inp.dbMode === "exact"} onSelect={() => set("dbMode", "exact")} title="שיעור מדויק">
-                    {r.ok && r.exact !== null ? <InlineTex tex={pctTex(r.exact)} /> : <span className="text-xs text-muted">דורש ערך גרט</span>}
-                  </RateOption>
-                  <RateOption on={inp.dbMode === "custom"} onSelect={() => set("dbMode", "custom")} title="שיעור מותאם אישית">
-                    <MiniInput value={inp.dbCustom} onChange={(v) => set("dbCustom", v)} onFocus={() => set("dbMode", "custom")} suffix="%" label="שיעור באחוזים" />
-                  </RateOption>
-                  <RateOption on={inp.dbMode === "multiplier"} onSelect={() => set("dbMode", "multiplier")} title="מכפיל של קו ישר">
-                    <MiniInput
-                      value={inp.dbMultiplier}
-                      onChange={(v) => set("dbMultiplier", v)}
-                      onFocus={() => set("dbMode", "multiplier")}
-                      suffix="×"
-                      label="מכפיל"
-                    />
-                  </RateOption>
+              <div className="mt-4 rounded-xl border border-accent/40 bg-accent-soft px-3.5 py-3">
+                <p className="text-[13px] font-medium text-fg">שיעור הפחת</p>
+                <p className="mt-0.5 text-xs text-muted">אחד פחות שורש (בדרגת אורך החיים) של הגרט חלקי העלות</p>
+                <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px]">
+                  <InlineTex tex={String.raw`\text{שיעור הפחת} = 1 - \sqrt[\text{אורך חיים}]{\frac{\text{גרט}}{\text{עלות}}}`} />
+                  {r.ok && r.rate !== undefined && <InlineTex tex={`= ${pctTex(r.rate)}`} className="font-semibold" />}
                 </div>
-                {(r.errors.dbMode || r.errors.dbCustom || r.errors.dbMultiplier) && (
-                  <p className="mt-2 text-xs text-danger">{r.errors.dbMode || r.errors.dbCustom || r.errors.dbMultiplier}</p>
-                )}
-              </fieldset>
+              </div>
             )}
           </div>
 
@@ -321,9 +314,9 @@ export function DepreciationSimulator() {
             <FormulaCard title={`לוח נוסחאות — ${meta.label}`} icon={meta.icon} rows={formulaRows(method, r, inp)}>
               {method === "db" ? (
                 <p>
-                  <strong>למה לא מנכים גרט בהתחלה?</strong> השיעור מוחל על היתרה בספרים, והגרט כבר &quot;מובנה&quot; בשיעור המדויק:{" "}
-                  <InlineTex tex={String.raw`C(1-R)^n = S`} />. בשיעור אחר הגרט הוא <strong>רצפה</strong>: בשנה שבה החישוב היה חוצה אותו
-                  — הפחת נקטע להפרש, ובשנה האחרונה היתרה מושלמת בדיוק לגרט.
+                  <strong>למה לא מנכים גרט בהתחלה?</strong> השיעור מוחל על היתרה בספרים, והגרט כבר &quot;מובנה&quot; בו — אחרי כל שנות החיים:{" "}
+                  <InlineTex tex={String.raw`\text{עלות} \times (1 - \text{שיעור הפחת})^{\text{אורך חיים}} = \text{גרט}`} />. בשנה האחרונה
+                  היתרה מושלמת בדיוק לגרט, כדי לסגור הפרשי עיגול.
                 </p>
               ) : method === "uop" ? (
                 <p>
@@ -331,8 +324,8 @@ export function DepreciationSimulator() {
                 </p>
               ) : (
                 <p>
-                  C = עלות · S = גרט · n / N = שנים · m = חודשי שימוש בשנה א׳. כל שנת חיים מתפצלת בין שתי שנות כספים: <strong>m</strong> חודשים
-                  בשנה אחת ו-<strong>12 − m</strong> בבאה.
+                  כל שנת חיים היא 12 חודשים מלאים שמתחילים בחודש הכניסה לשימוש, ולכן היא מתפצלת בין שתי שנות כספים: <strong>חודשי השימוש</strong>{" "}
+                  בשנה אחת, ו<strong>שאר החודשים</strong> בשנה שאחריה.
                 </p>
               )}
             </FormulaCard>
@@ -384,17 +377,17 @@ function Results({ r, method, inp, year, onYear }: { r: Extract<Result, { ok: tr
     ) : (
       <Num v={base / r.totalUnits!} />
     );
-  const keyLabel = method === "sl" ? "פחת לשנה מלאה" : method === "db" ? "שיעור R" : method === "syd" ? "סכום ספרות השנים" : "פחת ליחידה";
+  const keyLabel = method === "sl" ? "פחת לשנה מלאה" : method === "db" ? "שיעור הפחת" : method === "syd" ? "סכום ספרות השנים" : "פחת ליחידה";
 
   return (
     <>
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <Stat label="סכום בר-פחת (C − S)" value={<Num v={base} />} tone="accent" />
+        <Stat label="סכום בר-פחת (עלות פחות גרט)" value={<Num v={base} />} tone="accent" />
         <Stat label={keyLabel} value={key} />
         {method === "uop" ? (
           <Stat label="יחידות בלוח / צפויות" value={`${n(unitsSum)} / ${n(r.totalUnits!)}`} />
         ) : (
-          <Stat label="חודשים בשנה א׳" value={`${m} / 12`} hint={m < 12 ? `${rows.length} שנות כספים` : "שנה מלאה"} />
+          <Stat label="חודשים בשנה הראשונה" value={`${m} / 12`} hint={m < 12 ? `${rows.length} שנות כספים` : "שנה מלאה"} />
         )}
         <Stat label="יתרה בסוף הלוח" value={<Num v={last.closing} />} tone={Math.abs(last.closing - b.salvage) < 0.01 ? "success" : "warn"} hint={`גרט: ${n(b.salvage)}`} />
       </div>
@@ -471,7 +464,7 @@ function Results({ r, method, inp, year, onYear }: { r: Extract<Result, { ok: tr
       </div>
 
       <div className="card p-5">
-        <p className="text-[17px] font-semibold text-fg">בדיקות שפיות אוטומטיות</p>
+        <p className="text-[17px] font-semibold text-fg">וידוא תקינות הלוח</p>
         <ul className="mt-3 space-y-2 text-sm">
           <Check ok={fullyDepreciated} warnOnly={method === "uop"}>
             סך הפחת = <Num v={r2(total)} /> {fullyDepreciated ? "שווה ל" : "שונה מ"}סכום בר-הפחת <Num v={base} />
@@ -480,12 +473,12 @@ function Results({ r, method, inp, year, onYear }: { r: Extract<Result, { ok: tr
           <Check ok={neverBelow}>היתרה בספרים לא יורדת מתחת לגרט בשום שנה</Check>
           {method !== "uop" && (
             <Check ok>
-              שנה א׳ חושבה על {m} חודשים (מ{MONTHS[b.startMonth - 1]}), {m < 12 ? `והיתרה של ${12 - m} חודשים נרשמה ב-${fy(rows.length)}` : "ללא פיצול"}
+              השנה הראשונה חושבה על {m} חודשים (מ{MONTHS[b.startMonth - 1]}), {m < 12 ? `והיתרה של ${12 - m} חודשים נרשמה ב-${fy(rows.length)}` : "ללא פיצול"}
             </Check>
           )}
           {method === "uop" && unitsSum > r.totalUnits! && (
             <Check ok={false} warnOnly>
-              סך היחידות בלוח ({n(unitsSum)}) עולה על הצפי ({n(r.totalUnits!)}) — הפחת נעצר בגרט. במציאות זה סימן לאמוד מחדש את התפוקה (IAS 16.51).
+              סך היחידות בלוח ({n(unitsSum)}) עולה על הצפי ({n(r.totalUnits!)}) — הפחת נעצר בגרט. במציאות זה סימן לאמוד מחדש את התפוקה (סעיף 51).
             </Check>
           )}
         </ul>
@@ -634,40 +627,6 @@ function NumberInput({ label, value, onChange, error, suffix }: { label: string;
           {error}
         </p>
       )}
-    </div>
-  );
-}
-
-function MiniInput({ value, onChange, onFocus, suffix, label }: { value: string; onChange: (v: string) => void; onFocus: () => void; suffix: string; label: string }) {
-  return (
-    <span className="relative inline-block w-28">
-      <input
-        dir="ltr"
-        inputMode="decimal"
-        aria-label={label}
-        value={value}
-        onFocus={onFocus}
-        onChange={(e) => onChange(e.target.value)}
-        className={cn(inputClass, "num h-9 pe-7 font-mono")}
-      />
-      <span className="pointer-events-none absolute inset-y-0 end-2.5 grid place-items-center text-xs text-subtle">{suffix}</span>
-    </span>
-  );
-}
-
-function RateOption({ on, onSelect, title, children }: { on: boolean; onSelect: () => void; title: string; children: ReactNode }) {
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-3 rounded-xl border px-3 py-2 transition-colors",
-        on ? "border-accent/50 bg-accent-soft" : "border-line bg-surface hover:border-line-strong",
-      )}
-    >
-      <label className="flex flex-1 cursor-pointer items-center gap-2.5 text-sm font-medium text-fg">
-        <input type="radio" checked={on} onChange={onSelect} className="h-4 w-4 accent-[var(--accent)]" />
-        {title}
-      </label>
-      {children}
     </div>
   );
 }

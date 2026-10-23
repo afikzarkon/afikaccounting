@@ -1,59 +1,56 @@
 import { Factory, Plane } from "lucide-react";
-import { Callout, DataTable, Num, Topic } from "@/components/guide/blocks";
-import { Formula, Tex } from "@/components/guide/math";
+import { Callout, DataTable, Num, Topic } from "./blocks";
+import { Formula, Tex } from "./math";
 import { BookValueSlider } from "./widgets";
 
-const CONCEPTS: { term: string; en: string; plain: string; example: string }[] = [
+const CONCEPTS: { term: string; plain: string; example: string }[] = [
   {
     term: "עלות",
-    en: "Cost",
-    plain: "כל מה שהוצאתם כדי שהנכס יעמוד במקום ויהיה מסוגל לעבוד — לא רק המחיר על התווית.",
-    example: "מכונת קפה למשרד: המחיר, המשלוח והחיבור לצנרת. לא ההדרכה לצוות ולא פולי הקפה.",
+    plain: "כל מה שהוצאתם כדי שהנכס יגיע למקום ויהיה מוכן לעבוד — לא רק המחיר על התווית.",
+    example: "קניתם מכונת קפה למשרד: המחיר, המשלוח והחיבור לצנרת הם חלק מהעלות. ההדרכה לצוות ופולי הקפה — לא, הם הוצאה רגילה.",
   },
   {
     term: "פחת",
-    en: "Depreciation",
-    plain: "החלק מהעלות ש\"נצרך\" בתקופה. הקצאה שיטתית של העלות לשנים שבהן הנכס מייצר הטבות — לא הערכת שווי.",
-    example: "רכב שמשרת אתכם 5 שנים — כל שנה נושאת חלק מהמחיר ששילמתם עליו.",
+    plain: "החלק מהעלות שנחשב כ\"נוצל\" בכל תקופה. זו חלוקה מסודרת של העלות על פני השנים שבהן הנכס משרת את החברה — לא הערכה של כמה הנכס שווה היום.",
+    example: "קניתם רכב שישרת אתכם חמש שנים? כל שנה נושאת חלק מהמחיר כהוצאה, במקום שכל ההוצאה תיפול בשנת הקנייה.",
   },
   {
     term: "פחת נצבר",
-    en: "Accumulated Depreciation",
-    plain: "הסכום המצטבר של כל הפחת שנרשם מאז הכניסה לשימוש. חשבון מנוגד נכס — מקטין את הנכס בלי לגעת בעלות.",
-    example: "\"מד הקילומטרים\" של הנכס בשקלים: כמה ממנו כבר נוצל עד היום.",
+    plain: "סך כל הפחת שנרשם מאז שהנכס נכנס לשימוש. הוא נרשם בחשבון נפרד שמקטין את הנכס, כך שהעלות המקורית נשארת גלויה בספרים.",
+    example: "כמו מד הקילומטרים של הרכב, רק בשקלים: הוא מראה כמה מהעלות כבר נוצל עד היום.",
   },
   {
     term: "יתרה בספרים",
-    en: "Book Value",
     plain: "עלות פחות פחת נצבר (ופחות ירידת ערך, אם יש). זה הסכום שמוצג בדוח על המצב הכספי.",
-    example: "לא בהכרח מה שתקבלו אם תמכרו היום — זה רק מה שעוד לא הוקצה להוצאות.",
+    example: "זה לא בהכרח המחיר שתקבלו אם תמכרו את הנכס היום — זה רק החלק מהעלות שעוד לא נרשם כהוצאה.",
   },
   {
     term: "ערך גרט (שייר)",
-    en: "Salvage / Residual Value",
     plain: "מה שהחברה מצפה לקבל על הנכס בסוף השימוש בו, נטו מעלויות המימוש — כאילו הנכס כבר בגיל ובמצב של סוף חייו.",
-    example: "משאית שתימכר בסוף 8 שנים כגרוטאה ב-20,000 ₪ — את החלק הזה לא מפחיתים.",
+    example: "משאית שאחרי 8 שנים תימכר כגרוטאה ב-20,000 ₪ — את 20,000 השקלים האלה לא מפחיתים.",
   },
   {
     term: "אורך חיים שימושיים",
-    en: "Useful Life",
-    plain: "התקופה שהחברה מצפה להשתמש בנכס — לא אורך החיים הפיזי. יכול להימדד בשנים או ביחידות תפוקה.",
-    example: "מחשב נייד שמחזיק 8 שנים, אבל החברה מחליפה אותו כל 3 — אורך החיים הוא 3 שנים.",
+    plain: "התקופה שהחברה מצפה להשתמש בנכס — לא כמה זמן הוא מחזיק פיזית. אפשר למדוד אותה בשנים או ביחידות תפוקה.",
+    example: "מחשב נייד יכול להחזיק 8 שנים, אבל אם החברה מחליפה מחשבים כל 3 שנים — אורך החיים שלו הוא 3 שנים.",
   },
 ];
 
 // A wide-body passenger aircraft, split into its significant parts (IAS 16.43–44). Figures in ₪ millions.
-const PARTS: [string, number, number, number][] = [
-  ["גוף המטוס (Airframe)", 240, 40, 25],
-  ["מנועים (Engines)", 100, 10, 10],
-  ["פנים התא ומושבים (Cabin interior)", 36, 0, 8],
-  ["בדיקה תקופתית מקיפה (D-Check)", 24, 0, 6],
+const PARTS: [string, number, number, number, string][] = [
+  ["גוף המטוס", 240, 40, 25, "קו ישר"],
+  ["מנועים", 100, 10, 10, "יחידות תפוקה — שעות טיסה"],
+  ["פנים התא ומושבים", 36, 0, 8, "קו ישר"],
+  ["בדיקה תקופתית מקיפה", 24, 0, 6, "קו ישר עד הבדיקה הבאה"],
 ];
-const PART_ROWS = PARTS.map(([name, cost, salvage, life]) => [name, cost, salvage, `${life} שנים`, (cost - salvage) / life]);
+const PART_ROWS = PARTS.map(([name, cost, salvage, life, method]) => [name, method, cost, salvage, `${life} שנים`, (cost - salvage) / life]);
 const TOTAL_COST = PARTS.reduce((s, p) => s + p[1], 0);
 const TOTAL_SALVAGE = PARTS.reduce((s, p) => s + p[2], 0);
 const COMPONENT_DEP = PARTS.reduce((s, [, c, r, n]) => s + (c - r) / n, 0);
 const WHOLE_DEP = (TOTAL_COST - TOTAL_SALVAGE) / 25;
+// The engines' units-of-production rate: 30,000 flight hours over their life, 3,000 in a normal year.
+const ENGINE_HOURS = 30_000;
+const HOURS_PER_YEAR = 3_000;
 
 export function FundamentalsSection() {
   return (
@@ -61,16 +58,11 @@ export function FundamentalsSection() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {CONCEPTS.map((c) => (
           <article key={c.term} className="card flex flex-col p-5">
-            <div className="flex items-baseline justify-between gap-2">
-              <h3 className="text-[17px] font-semibold text-fg">{c.term}</h3>
-              <span dir="ltr" className="text-xs text-subtle">
-                {c.en}
-              </span>
-            </div>
+            <h3 className="text-[17px] font-semibold text-fg">{c.term}</h3>
             <p className="mt-2 text-[14.5px] leading-relaxed text-fg/90">{c.plain}</p>
             <div className="mt-auto pt-3">
               <p className="rounded-lg bg-accent-soft px-3 py-2 text-[13px] leading-relaxed text-fg/85">
-                <span className="font-semibold text-accent">בחיים: </span>
+                <span className="font-semibold text-accent">דוגמה מהחיים: </span>
                 {c.example}
               </p>
             </div>
@@ -78,32 +70,42 @@ export function FundamentalsSection() {
         ))}
       </div>
 
-      <Topic title="איך כל המושגים מתחברים — על ציר אחד" refs="IAS 16.6, 50" open>
+      <Topic title="איך כל המושגים מתחברים — על ציר אחד" refs="סעיפים 6, 50" open>
         <p>
           העלות היא כל הפס. הפחת הנצבר &quot;אוכל&quot; אותו מצד אחד, שנה אחרי שנה; הגרט בקצה השני לעולם לא מופחת. מה שנשאר באמצע ועוד לא
           נאכל, ועוד הגרט — זו היתרה בספרים. בדוגמה: עלות <Num v={300_000} />, גרט <Num v={30_000} />, 5 שנים בקו ישר.
         </p>
-        <Formula tex={String.raw`\text{Book Value}_t = \text{Cost} - \text{Accumulated Depreciation}_t \;\ge\; \text{Salvage}`} />
+        <Formula tex={String.raw`\text{יתרה בספרים} = \text{עלות} - \text{פחת נצבר} \;\ge\; \text{ערך גרט}`} />
         <BookValueSlider cost={300_000} salvage={30_000} life={5} />
       </Topic>
 
-      <Topic title="דוגמה פיזית: מטוס נוסעים מפורק לרכיבים (Component Approach)" refs="IAS 16.43–49" open>
+      <Topic title="דוגמה פיזית: מטוס נוסעים מפורק לרכיבים — גישת הרכיבים" refs="סעיפים 43–49" open>
         <div className="flex items-start gap-3">
           <span className="mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent">
             <Plane className="h-5 w-5" />
           </span>
           <p className="!mt-0">
             מטוס הוא לא נכס אחד אלא כמה נכסים שבמקרה מחוברים זה לזה. גוף המטוס יטוס 25 שנה, אבל המנועים יוחלפו אחרי 10, הריפוד אחרי 8,
-            ובדיקת D-Check חוזרת כל 6 שנים. IAS 16.43 מחייב להפחית <strong>בנפרד</strong> כל חלק שעלותו משמעותית ביחס לסך העלות — כל רכיב לפי
-            אורך החיים שלו.
+            והבדיקה התקופתית המקיפה חוזרת כל 6 שנים. סעיף 43 מחייב להפחית <strong>בנפרד</strong> כל חלק שעלותו משמעותית ביחס לסך העלות —
+            כל רכיב לפי אורך החיים שלו, <strong>ובשיטת הפחת שמתאימה לו</strong>.
           </p>
         </div>
         <DataTable
           caption="מטוס בעלות 400 מיליון ₪ (סכומים במיליוני ₪)"
-          head={["רכיב", "עלות", "גרט", "אורך חיים", "פחת שנתי"]}
+          head={["רכיב", "שיטת פחת", "עלות", "גרט", "אורך חיים", "פחת שנתי"]}
           rows={PART_ROWS}
-          foot={["סה״כ — גישת הרכיבים", TOTAL_COST, TOTAL_SALVAGE, "", COMPONENT_DEP]}
+          foot={["סה״כ — גישת הרכיבים", "", TOTAL_COST, TOTAL_SALVAGE, "", COMPONENT_DEP]}
         />
+        <p className="text-sm text-muted">
+          המנועים: <Num v={90} /> מיליון ₪ ÷ <Num v={ENGINE_HOURS} /> שעות טיסה = <Num v={3_000} /> ₪ לשעת טיסה. בשנה רגילה של{" "}
+          <Num v={HOURS_PER_YEAR} /> שעות — <Num v={9} /> מיליון ₪. בשנה שבה המטוס טס פחות, גם פחת המנועים קטן.
+        </p>
+        <Callout title="גם שיטת הפחת יכולה להיות שונה בין רכיב לרכיב">
+          <p>
+            גישת הרכיבים לא מסתפקת באורך חיים נפרד לכל רכיב. כל רכיב מופחת בשיטה שמשקפת את הדרך שבה <strong>הוא</strong> נצרך (סעיף 60): גוף
+            המטוס נשחק עם הזמן — קו ישר; המנועים נשחקים לפי השימוש — יחידות תפוקה לפי שעות טיסה. אותו נכס פיזי, שתי שיטות פחת שונות במקביל.
+          </p>
+        </Callout>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-xl border border-success/30 bg-success/[0.06] p-4">
             <p className="text-xs font-semibold text-success">גישת הרכיבים (נכון)</p>
@@ -120,8 +122,8 @@ export function FundamentalsSection() {
         </div>
         <Callout title="הבדיקה התקופתית היא רכיב בפני עצמו">
           <p>
-            עלות D-Check מהוונת כרכיב נפרד ומופחתת עד הבדיקה הבאה (IAS 16.14). כשמבצעים את הבדיקה הבאה, יתרת הבדיקה הקודמת (אם נותרה) נגרעת,
-            והבדיקה החדשה מהוונת במקומה.
+            עלות הבדיקה התקופתית המקיפה נרשמת כרכיב נפרד ומופחתת עד הבדיקה הבאה (סעיף 14). כשמבצעים את הבדיקה הבאה, יתרת הבדיקה הקודמת (אם
+            נותרה) נגרעת, והבדיקה החדשה נרשמת במקומה.
           </p>
         </Callout>
         <div className="mt-4 flex items-start gap-3">
@@ -130,7 +132,7 @@ export function FundamentalsSection() {
           </span>
           <p className="!mt-0">
             <strong>אותו היגיון במפעל:</strong> מבנה (40 שנה), קו ייצור (10 שנים), מערכת מיזוג (15 שנה) — והקרקע שמתחתיו{" "}
-            <strong>לא מופחתת בכלל</strong>, כי אורך החיים שלה בלתי מוגבל (IAS 16.58). כשרוכשים &quot;מבנה עם קרקע&quot; בסכום אחד, קודם מפצלים
+            <strong>לא מופחתת בכלל</strong>, כי אורך החיים שלה בלתי מוגבל (סעיף 58). כשרוכשים &quot;מבנה עם קרקע&quot; בסכום אחד, קודם מפצלים
             את העלות.
           </p>
         </div>
@@ -138,7 +140,7 @@ export function FundamentalsSection() {
 
       <Callout kind="check" title="אומדנים נבחנים כל שנה">
         <p>
-          ערך הגרט, אורך החיים ושיטת הפחת נבחנים לפחות בסוף כל שנה (IAS 16.51, 61). שינוי בהם הוא <strong>שינוי אומדן</strong>: לא מתקנים
+          ערך הגרט, אורך החיים ושיטת הפחת נבחנים לפחות בסוף כל שנה (סעיפים 51, 61). שינוי בהם הוא <strong>שינוי אומדן</strong>: לא מתקנים
           אחורה — מחלקים מחדש את היתרה בספרים בניכוי הגרט החדש על פני יתרת החיים, מכאן ולהבא.
         </p>
       </Callout>

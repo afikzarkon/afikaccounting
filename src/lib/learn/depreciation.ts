@@ -7,8 +7,8 @@
  *
  *   FY_1 = D_1 · m/12,   FY_t = D_{t-1} · (12 − m)/12 + D_t · m/12
  *
- * where m = 13 − (month available for use) is the number of months in the first
- * fiscal year. This is the same block model the engine uses, so the lab and the
+ * where m is the number of whole months in the first fiscal year: from the month
+ * the asset became available for use (counted in full) through December. This is the same block model the engine uses, so the lab and the
  * calculator agree to the shekel.
  */
 
@@ -22,7 +22,6 @@ export type Basics = {
 };
 
 export type SydDirection = "desc" | "asc";
-export type DbRateMode = "exact" | "custom" | "multiplier";
 
 /** One life year: its charge and, for declining balance, the balance it was computed on. */
 export type LifeYear = {
@@ -56,8 +55,8 @@ export type Schedule = { lifeYears: LifeYear[]; rows: FiscalRow[] };
 
 const EPS = 0.005;
 
-/** Months of use in the first fiscal year: 13 − the month available for use. */
-export const firstYearMonths = (startMonth: number) => 13 - startMonth;
+/** Whole months of use in the first fiscal year: a full year less the months that passed before the asset was available. */
+export const firstYearMonths = (startMonth: number) => 12 - (startMonth - 1);
 
 export const depreciableAmount = ({ cost, salvage }: Basics) => cost - salvage;
 

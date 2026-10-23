@@ -3,7 +3,7 @@
 import { type KeyboardEvent, type ReactNode, useSyncExternalStore } from "react";
 import { cn } from "@/lib/utils";
 
-export type GuideTab = { id: string; label: string; blurb: string; icon: ReactNode; panel: ReactNode };
+export type LabTab = { id: string; label: string; blurb: string; icon: ReactNode; panel: ReactNode };
 
 // The open tab lives in the URL hash, so a link can point straight at a topic.
 const subscribe = (cb: () => void) => {
@@ -12,7 +12,7 @@ const subscribe = (cb: () => void) => {
 };
 const readHash = () => decodeURIComponent(window.location.hash.slice(1));
 
-export function GuideTabs({ tabs }: { tabs: GuideTab[] }) {
+export function LabTabs({ tabs }: { tabs: LabTab[] }) {
   const hash = useSyncExternalStore(subscribe, readHash, () => "");
   const active = tabs.some((t) => t.id === hash) ? hash : tabs[0].id;
 
@@ -35,7 +35,7 @@ export function GuideTabs({ tabs }: { tabs: GuideTab[] }) {
   return (
     <div>
       <div className="no-print sticky top-16 z-30 -mx-4 bg-canvas/85 px-4 py-3 backdrop-blur-md sm:mx-0 sm:px-0">
-        <div role="tablist" aria-label="נושאי המדריך" onKeyDown={onKeyDown} className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <div role="tablist" aria-label="נושאי הלימוד" onKeyDown={onKeyDown} className="grid grid-cols-2 gap-2 lg:grid-cols-4">
           {tabs.map((t) => {
             const on = t.id === active;
             return (

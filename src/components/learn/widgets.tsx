@@ -1,8 +1,8 @@
 "use client";
 
-import { CircleCheck, CircleX, RotateCcw } from "lucide-react";
+import { CircleCheck, RotateCcw } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
-import { Num } from "@/components/guide/blocks";
+import { Num } from "./blocks";
 import { firstYearMonths } from "@/lib/learn/depreciation";
 import { cn } from "@/lib/utils";
 import { InlineTex, texNum } from "./ui";
@@ -40,61 +40,12 @@ export function MonthPicker({ value, onChange, label = "חודש הכניסה ל
   );
 }
 
-const EVENTS = [
-  { date: "01.02.X1", text: "חתימה על ההזמנה ותשלום מקדמה של 30%", why: "תשלום הוא אירוע מימוני. הוא לא אומר דבר על כך שהנכס מסוגל לפעול." },
-  { date: "15.03.X1", text: "המכונה מגיעה לחצר המפעל, עדיין באריזות", why: "הנכס קיים פיזית, אבל עוד לא במיקום ובמצב הדרושים כדי לפעול." },
-  { date: "01.04.X1", text: "ההתקנה וההרצה הסתיימו — המכונה מוכנה לייצור כפי שתכננה ההנהלה", why: "זה המועד: הנכס זמין לשימוש (IAS 16.55). מכאן מתחילים להפחית, גם אם עוד לא ייצרו בו." },
-  { date: "01.06.X1", text: "תחילת ייצור בפועל, אחרי שנמצאו הזמנות מלקוחות", why: "מועד השימוש בפועל לא רלוונטי. פחת לא נעצר וגם לא מתחיל רק כי הנכס לא בשימוש." },
-  { date: "31.08.X1", text: "תשלום יתרת התמורה לספק", why: "שוב תשלום. אם יש אשראי מעבר לתנאים רגילים, ההפרש הוא הוצאות מימון (IAS 16.23) — לא דוחה את הפחת." },
-];
-const ANSWER = 2;
-
-/** Pick the date depreciation starts from a realistic timeline. */
-export function StartDateQuiz() {
-  const [picked, setPicked] = useState<number | null>(null);
-  return (
-    <div className="my-4 rounded-xl border border-line bg-surface-2/40 p-4">
-      <p className="text-sm font-semibold text-fg">תרגול מהיר: מאיזה תאריך מתחילים להפחית?</p>
-      <p className="mt-1 text-xs text-muted">בחרו אירוע אחד מציר הזמן.</p>
-      <ol className="mt-3 space-y-2">
-        {EVENTS.map((e, i) => {
-          const chosen = picked === i;
-          const right = i === ANSWER;
-          const reveal = picked !== null && (chosen || right);
-          return (
-            <li key={e.date}>
-              <button
-                type="button"
-                onClick={() => setPicked(i)}
-                aria-pressed={chosen}
-                className={cn(
-                  "flex w-full items-start gap-3 rounded-lg border px-3 py-2.5 text-start transition-colors",
-                  !reveal && "border-line bg-surface hover:border-accent/50",
-                  reveal && right && "border-success/40 bg-success/[0.08]",
-                  reveal && !right && "border-danger/40 bg-danger/[0.06]",
-                )}
-              >
-                <bdi dir="ltr" className="num mt-0.5 shrink-0 rounded-md bg-surface-2 px-1.5 py-0.5 font-mono text-xs text-muted">
-                  {e.date}
-                </bdi>
-                <span className="min-w-0 flex-1 text-sm">
-                  <span className="text-fg">{e.text}</span>
-                  {reveal && <span className="mt-1 block text-[13px] text-muted">{e.why}</span>}
-                </span>
-                {reveal &&
-                  (right ? <CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-success" /> : <CircleX className="mt-0.5 h-4 w-4 shrink-0 text-danger" />)}
-              </button>
-            </li>
-          );
-        })}
-      </ol>
-      {picked !== null && (
-        <button type="button" onClick={() => setPicked(null)} className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline">
-          <RotateCcw className="h-3.5 w-3.5" /> לנסות שוב
-        </button>
-      )}
-    </div>
-  );
+/** "אפריל עד דצמבר = 9 חודשי פחת": the months of use in the first fiscal year, in words. */
+export function monthSpan(month: number) {
+  const m = firstYearMonths(month);
+  if (m === 12) return "ינואר עד דצמבר = שנה מלאה, 12 חודשי פחת";
+  if (m === 1) return "דצמבר בלבד = חודש פחת אחד";
+  return `${MONTHS[month - 1]} עד דצמבר = ${m} חודשי פחת`;
 }
 
 /** Month → months in year one, the fraction, and the first-year straight-line charge on the lab's example. */
@@ -106,12 +57,12 @@ export function ProrationWidget({ annual }: { annual: number }) {
       <MonthPicker value={month} onChange={setMonth} />
       <div className="flex flex-col justify-center gap-2 rounded-lg bg-surface p-4 ring-1 ring-line">
         <p className="text-sm text-muted">
-          כניסה לשימוש ב{MONTHS[month - 1]} → <strong className="text-fg">{m} חודשי פחת</strong> בשנה הראשונה
+          כניסה לשימוש ב{MONTHS[month - 1]} → <strong className="text-fg">{monthSpan(month)}</strong>
         </p>
-        <InlineTex tex={String.raw`m = 13 - ${month} = ${m} \qquad ${texNum(annual)} \times \tfrac{${m}}{12} = ${texNum((annual * m) / 12)}`} className="text-[15px]" />
+        <InlineTex tex={String.raw`${texNum(annual)} \times \tfrac{${m}}{12} = ${texNum((annual * m) / 12)}`} className="text-[15px]" />
         {m < 12 && (
           <p className="text-xs text-muted">
-            ו-{12 - m} החודשים שנותרו משנת החיים הראשונה עוברים לשנת הכספים הבאה — לכן נכס ל-5 שנים שנכנס באמצע שנה מופיע ב-6 שנות
+            {12 - m === 1 ? "והחודש שנותר משנת החיים הראשונה עובר" : `ו-${12 - m} החודשים שנותרו משנת החיים הראשונה עוברים`} לשנת הכספים הבאה — לכן נכס ל-5 שנים שנכנס באמצע שנה מופיע ב-6 שנות
             כספים.
           </p>
         )}

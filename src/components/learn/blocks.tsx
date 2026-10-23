@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 const nf = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
 
-/** Guide numbers: thousands separators, up to two decimals, negatives in parentheses. */
+/** Lab numbers: thousands separators, up to two decimals, negatives in parentheses. */
 export const n = (v: number) => (v < 0 ? `(${nf.format(-v)})` : nf.format(v));
 
 /** A number set in tabular figures that stays left-to-right inside Hebrew text. */
@@ -43,7 +43,7 @@ export function Topic({
       <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-4 select-none hover:bg-surface-2/50 [&::-webkit-details-marker]:hidden">
         <span className="flex-1 text-[17px] font-semibold text-fg">{title}</span>
         {refs && (
-          <Badge tone="accent" className="num" dir="ltr">
+          <Badge tone="accent" className="num">
             {refs}
           </Badge>
         )}
@@ -52,10 +52,6 @@ export function Topic({
       <div className="border-t border-line px-5 pt-4 pb-6 text-[15px] leading-relaxed text-fg/90 [&_p]:my-3">{children}</div>
     </details>
   );
-}
-
-export function SubHeading({ children }: { children: ReactNode }) {
-  return <h4 className="mt-7 mb-2 text-[15px] font-semibold text-fg first:mt-0">{children}</h4>;
 }
 
 const CALLOUTS = {
@@ -78,39 +74,6 @@ export function Callout({ kind = "tip", title, children }: { kind?: keyof typeof
       </p>
       <div className="mt-1.5 text-[14.5px] leading-relaxed text-fg/85 [&_p]:my-2">{children}</div>
     </aside>
-  );
-}
-
-/** Key facts of an example, as a compact definition grid. */
-export function Givens({ title = "נתוני הדוגמה", items }: { title?: string; items: [ReactNode, ReactNode][] }) {
-  return (
-    <div className="my-4 rounded-xl border border-dashed border-line-strong p-4">
-      <p className="mb-2 text-xs font-semibold text-muted">{title}</p>
-      <dl className="grid gap-x-8 gap-y-1.5 text-sm sm:grid-cols-2">
-        {items.map(([k, v], i) => (
-          <div key={i} className="flex items-baseline justify-between gap-3 border-b border-line/70 pb-1">
-            <dt className="text-muted">{k}</dt>
-            <dd className="font-medium text-fg">{v}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  );
-}
-
-/** Numbered calculation steps. */
-export function Steps({ items }: { items: ReactNode[] }) {
-  return (
-    <ol className="my-4 space-y-2.5">
-      {items.map((step, i) => (
-        <li key={i} className="flex gap-3">
-          <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent-soft text-xs font-semibold text-accent">
-            {i + 1}
-          </span>
-          <div className="min-w-0 flex-1 pt-0.5">{step}</div>
-        </li>
-      ))}
-    </ol>
   );
 }
 

@@ -2,7 +2,7 @@ import "katex/dist/katex.min.css";
 import type { ReactNode } from "react";
 import { renderTex as render } from "@/lib/tex";
 
-// Server components: the guide ships the rendered HTML and CSS only, no math runtime.
+// Server components: the lab ships the rendered HTML and CSS only, no math runtime.
 
 /** Inline formula. Math always reads left to right, even inside Hebrew prose. */
 export function Tex({ children }: { children: string }) {
