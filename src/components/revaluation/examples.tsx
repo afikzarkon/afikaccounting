@@ -32,7 +32,7 @@ function EventsTable({ r, caption }: { r: RevaluationResult; caption: string }) 
 
 function whatHappened(ev: RevEvent) {
   if (Math.abs(ev.diff) < 0.005) return "אין שינוי";
-  if (ev.diff > 0) return ev.pl > 0 ? (ev.oci > 0 ? "ביטול הפסד שערוך קודם, והיתרה לקרן" : "ביטול הפסד שערוך קודם") : ev.surplusBefore > 0 ? "עלייה נוספת — לקרן" : "עלייה — לקרן";
+  if (ev.diff > 0) return ev.pl > 0 ? (ev.oci > 0 ? "ביטול הפסד קודם, והיתרה לקרן" : "ביטול הפסד קודם") : ev.surplusBefore > 0 ? "עלייה נוספת — לקרן" : "עלייה — לקרן";
   return ev.pl < 0 ? (ev.oci < 0 ? "הקרן מתאפסת, והיתרה הפסד" : "ירידה — הפסד ברווח והפסד") : "ירידה — מקטינה את הקרן";
 }
 
@@ -171,7 +171,7 @@ export function RevaluationExamplesSection() {
             date={`31.12.${pl[1].year}`}
             lines={[
               { account: "קרן הערכה מחדש — קרקע", dr: -pl[1].oci },
-              { account: "הפסד מהערכה מחדש — קרקע (רווח והפסד)", dr: -pl[1].pl },
+              { account: "הפסד מירידת ערך קרקע (רווח והפסד)", dr: -pl[1].pl },
               { account: "קרקע", cr: -pl[1].diff },
             ]}
           />

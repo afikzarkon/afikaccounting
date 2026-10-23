@@ -78,7 +78,7 @@ export const side = (account: string, amount: number): EntryLine[] =>
 /** The gap's other side: the surplus, and profit or loss. */
 const gapLines = (ev: RevEvent): EntryLine[] => [
   ...side("קרן הערכה מחדש (רווח כולל אחר)", -ev.oci),
-  ...side(ev.pl > 0 ? "הכנסה מהערכה מחדש — ביטול הפסד קודם (רווח והפסד)" : "הפסד מהערכה מחדש (רווח והפסד)", -ev.pl),
+  ...side(ev.pl > 0 ? "הכנסה מביטול ירידת ערך (רווח והפסד)" : "הפסד מירידת ערך (רווח והפסד)", -ev.pl),
 ];
 
 /** Elimination: accumulated depreciation is closed, and the asset moves to fair value. */
