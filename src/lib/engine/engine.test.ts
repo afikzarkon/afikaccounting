@@ -246,7 +246,7 @@ describe("IAS 16", () => {
           { date: "2026-12-31", value: 80000 },
         ]),
       });
-      const pl = (y: number) => line(s, "profit-or-loss", "הפסד מירידת ערך / ביטולו")[`y${y}`];
+      const pl = (y: number) => line(s, "profit-or-loss", "הפסד מהערכה מחדש / ביטולו")[`y${y}`];
       assert.equal(pl(2023), -6250); // 106,250 → 100,000
       // No surplus yet: the whole fall is a loss, credited to an impairment allowance in its own entry.
       const fall = section(s, 2023).journal.filter((e) => e.id.startsWith("revaluation"));
@@ -258,16 +258,16 @@ describe("IAS 16", () => {
             ["רכוש קבוע", 0, 13750],
           ],
           [
-            ["הפסד מירידת ערך (רווח או הפסד)", 6250, 0],
-            ["הפרשה לירידת ערך", 0, 6250],
+            ["הפסד מהערכה מחדש (רווח או הפסד)", 6250, 0],
+            ["הפרשה בגין הפסדי הערכה מחדש", 0, 6250],
           ],
         ],
       );
       assert.equal(line(s, "balance-sheet", "עלות / סכום משוערך").y2023, 106250); // the asset account
-      assert.equal(line(s, "balance-sheet", "בניכוי הפרשה לירידת ערך").y2023, -6250);
+      assert.equal(line(s, "balance-sheet", "בניכוי הפרשה בגין הפסדי הערכה מחדש").y2023, -6250);
       assert.equal(line(s, "balance-sheet", "רכוש קבוע, נטו (יתרה בספרים)").y2023, 100000);
-      assert.equal(line(s, "balance-sheet", "בניכוי הפרשה לירידת ערך").y2025, -1964.29); // part reversed in 2025
-      assert.equal(line(s, "balance-sheet", "בניכוי הפרשה לירידת ערך").y2026, 0);
+      assert.equal(line(s, "balance-sheet", "בניכוי הפרשה בגין הפסדי הערכה מחדש").y2025, -1964.29); // part reversed in 2025
+      assert.equal(line(s, "balance-sheet", "בניכוי הפרשה בגין הפסדי הערכה מחדש").y2026, 0);
       assert.equal(pl(2025), 4285.71); // reverses part of the earlier loss
       assert.equal(pl(2026), 1964.29); // the rest of the loss …
       assert.equal(line(s, "profit-or-loss", "רווח כולל אחר — שינוי בקרן הערכה מחדש").y2026, 26497.25); // … then OCI
@@ -468,20 +468,20 @@ describe("IAS 16", () => {
         ["קרקע", 0, 30000],
       ]);
       assert.deepEqual(lines(`${fall}-pl`), [
-        ["הפסד מירידת ערך — קרקע (רווח או הפסד)", 90000, 0],
-        ["הפרשה לירידת ערך — קרקע", 0, 90000],
+        ["הפסד מהערכה מחדש — קרקע (רווח או הפסד)", 90000, 0],
+        ["הפרשה בגין הפסדי הערכה מחדש — קרקע", 0, 90000],
       ]);
       assert.equal(line(s, "balance-sheet", "קרקע — עלות / שווי משוערך").y2024, 300000);
-      assert.equal(line(s, "balance-sheet", "בניכוי הפרשה לירידת ערך — קרקע").y2024, -90000);
+      assert.equal(line(s, "balance-sheet", "בניכוי הפרשה בגין הפסדי הערכה מחדש — קרקע").y2024, -90000);
       assert.equal(line(s, "balance-sheet", "קרקע, נטו (אינה מופחתת)").y2024, 210000);
       // The recovery reverses the allowance first, through profit or loss; no surplus is left to restore.
       const rise = s.journal.filter((e) => e.id.startsWith("landRevaluation") && e.when === "31/12/2025").map((e) => e.id);
       assert.deepEqual(rise, [`${fall.replace(/\d+$/, "")}${Number(fall.split("-")[1]) + 12}-pl`]);
       assert.deepEqual(lines(rise[0]), [
-        ["הפרשה לירידת ערך — קרקע", 60000, 0],
-        ["ביטול הפסד מירידת ערך — קרקע (רווח או הפסד)", 0, 60000],
+        ["הפרשה בגין הפסדי הערכה מחדש — קרקע", 60000, 0],
+        ["ביטול הפסד מהערכה מחדש — קרקע (רווח או הפסד)", 0, 60000],
       ]);
-      assert.equal(line(s, "balance-sheet", "בניכוי הפרשה לירידת ערך — קרקע").y2025, -30000);
+      assert.equal(line(s, "balance-sheet", "בניכוי הפרשה בגין הפסדי הערכה מחדש — קרקע").y2025, -30000);
       assert.equal(line(s, "balance-sheet", "קרקע, נטו (אינה מופחתת)").y2025, 270000);
     });
 

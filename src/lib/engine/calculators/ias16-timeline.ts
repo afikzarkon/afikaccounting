@@ -407,17 +407,17 @@ export function run(inp: Inputs) {
       ? undefined
       : pl < 0
         ? {
-            narrative: `ירידת ערך${part} מעבר ליתרת הקרן — הפסד והפרשה לירידת ערך`,
+            narrative: `ירידה בשווי${part} מעבר ליתרת הקרן — הפסד מהערכה מחדש והפרשה בגינו`,
             lines: [
-              [`הפסד מירידת ערך${part} (רווח או הפסד)`, -pl],
-              [`הפרשה לירידת ערך${part}`, pl],
+              [`הפסד מהערכה מחדש${part} (רווח או הפסד)`, -pl],
+              [`הפרשה בגין הפסדי הערכה מחדש${part}`, pl],
             ],
           }
         : {
-            narrative: `ביטול ירידת ערך${part} שהוכרה קודם ברווח או הפסד`,
+            narrative: `עלייה בשווי${part} שמבטלת הפסד מהערכה מחדש שהוכר קודם ברווח או הפסד`,
             lines: [
-              [`הפרשה לירידת ערך${part}`, pl],
-              [`ביטול הפסד מירידת ערך${part} (רווח או הפסד)`, -pl],
+              [`הפרשה בגין הפסדי הערכה מחדש${part}`, pl],
+              [`ביטול הפסד מהערכה מחדש${part} (רווח או הפסד)`, -pl],
             ],
           };
 
@@ -628,9 +628,9 @@ export function run(inp: Inputs) {
         ["פחת שנצבר", acc],
         ["מזומנים", round2(e.received - e.paid)],
         [inp.land ? "רכוש קבוע — מבנה שנמסר" : "רכוש קבוע — הנכס שנמסר", -round2(gross + revaluationLosses)],
-        [`הפרשה לירידת ערך${inp.land ? " — מבנה" : ""}`, revaluationLosses],
+        [`הפרשה בגין הפסדי הערכה מחדש${inp.land ? " — מבנה" : ""}`, revaluationLosses],
         ["קרקע שנמסרה", -round2(land + landLosses)],
-        ["הפרשה לירידת ערך — קרקע", landLosses],
+        ["הפרשה בגין הפסדי הערכה מחדש — קרקע", landLosses],
         [gain >= 0 ? "רווח מהחלפת רכוש קבוע" : "הפסד מהחלפת רכוש קבוע", -gain],
       ],
       pl: gain,
@@ -982,7 +982,7 @@ export function solveTimeline(v: Values): Solution {
     ...(landAllowanceEver
       ? [
           { item: "קרקע — עלות / שווי משוערך", ...Object.fromEntries(rows.map((row) => [`y${row.year}`, round2(Number(row.land) + Number(row.landAllowance))])) },
-          { item: "בניכוי הפרשה לירידת ערך — קרקע", ...byYear("landAllowance", -1) },
+          { item: "בניכוי הפרשה בגין הפסדי הערכה מחדש — קרקע", ...byYear("landAllowance", -1) },
           { item: "קרקע, נטו (אינה מופחתת)", ...byYear("land"), _emphasis: "subtotal" },
         ]
       : hasLand
@@ -993,7 +993,7 @@ export function solveTimeline(v: Values): Solution {
       ...Object.fromEntries(rows.map((row) => [`y${row.year}`, round2(Number(row.gross) + Number(row.buildingAllowance))])),
     },
     { item: "בניכוי פחת שנצבר", ...byYear("accumulated", -1) },
-    ...(buildingAllowanceEver ? [{ item: `בניכוי הפרשה לירידת ערך${part}`, ...byYear("buildingAllowance", -1) }] : []),
+    ...(buildingAllowanceEver ? [{ item: `בניכוי הפרשה בגין הפסדי הערכה מחדש${part}`, ...byYear("buildingAllowance", -1) }] : []),
     ...(hasLand ? [{ item: "מבנה, נטו", ...byYear("building"), _emphasis: "subtotal" }] : []),
     { item: "רכוש קבוע, נטו (יתרה בספרים)", ...byYear("carrying"), _emphasis: "total" },
     ...(revaluation ? [{ item: `קרן הערכה מחדש${part} (הון)`, ...byYear("surplus"), _emphasis: "subtotal" }] : []),
@@ -1001,8 +1001,8 @@ export function solveTimeline(v: Values): Solution {
   ];
   const plRows: ScheduleRow[] = [
     { item: "הוצאות פחת", ...depRow },
-    ...(hasRevaluation ? [{ item: `הפסד מירידת ערך${part} / ביטולו`, ...revaluationPlRow }] : []),
-    ...(landLosses ? [{ item: "הפסד מירידת ערך — קרקע / ביטולו", ...landPlRow }] : []),
+    ...(hasRevaluation ? [{ item: `הפסד מהערכה מחדש${part} / ביטולו`, ...revaluationPlRow }] : []),
+    ...(landLosses ? [{ item: "הפסד מהערכה מחדש — קרקע / ביטולו", ...landPlRow }] : []),
     ...(ex ? [{ item: "רווח (הפסד) מהחלפת רכוש קבוע", ...exchangeRow }] : []),
     { item: "סך ההשפעה על הרווח או ההפסד", ...plTotal, _emphasis: "total" },
     ...(revaluation ? [{ item: `רווח כולל אחר — שינוי בקרן הערכה מחדש${part}`, ...ociRow, _emphasis: "subtotal" }] : []),
@@ -1236,7 +1236,7 @@ export function solveTimeline(v: Values): Solution {
       ...(hasLand && landAllowance > 0
         ? [
             { label: "קרקע — עלות / שווי משוערך", value: round2(Number(row.land) + landAllowance) },
-            { label: "בניכוי הפרשה לירידת ערך — קרקע", value: -landAllowance },
+            { label: "בניכוי הפרשה בגין הפסדי הערכה מחדש — קרקע", value: -landAllowance },
             { label: "קרקע, נטו (אינה מופחתת)", value: Number(row.land), emphasis: "subtotal" as const },
           ]
         : hasLand
@@ -1244,7 +1244,7 @@ export function solveTimeline(v: Values): Solution {
           : []),
       { label: `${hasLand ? "מבנה — " : ""}${revaluation ? "עלות / שווי הוגן משוערך" : "עלות"}`, value: round2(Number(row.gross) + buildingAllowance) },
       { label: "בניכוי פחת שנצבר", value: -Number(row.accumulated) },
-      ...(buildingAllowance > 0 ? [{ label: `בניכוי הפרשה לירידת ערך${part}`, value: -buildingAllowance }] : []),
+      ...(buildingAllowance > 0 ? [{ label: `בניכוי הפרשה בגין הפסדי הערכה מחדש${part}`, value: -buildingAllowance }] : []),
       ...(hasLand ? [{ label: "מבנה, נטו", value: Number(row.building), emphasis: "subtotal" as const }] : []),
       { label: "יתרה בספרים (Carrying Amount)", value: Number(row.carrying), emphasis: "total" },
       ...(revaluation ? [{ label: `קרן הערכה מחדש${part} (בהון העצמי)`, value: Number(row.surplus), emphasis: "subtotal" as const }] : []),
@@ -1257,8 +1257,8 @@ export function solveTimeline(v: Values): Solution {
     const landOci = bookedIn(p, "landRevaluation", "oci");
     const profitOrLoss: StatementLine[] = [
       { label: "הוצאות פחת", value: -dep },
-      ...(revaluationPl ? [{ label: `${revaluationPl < 0 ? "הפסד מירידת ערך" : "ביטול הפסד מירידת ערך"}${part}`, value: revaluationPl }] : []),
-      ...(landPl ? [{ label: `${landPl < 0 ? "הפסד מירידת ערך" : "ביטול הפסד מירידת ערך"} — קרקע`, value: landPl }] : []),
+      ...(revaluationPl ? [{ label: `${revaluationPl < 0 ? "הפסד מהערכה מחדש" : "ביטול הפסד מהערכה מחדש"}${part}`, value: revaluationPl }] : []),
+      ...(landPl ? [{ label: `${landPl < 0 ? "הפסד מהערכה מחדש" : "ביטול הפסד מהערכה מחדש"} — קרקע`, value: landPl }] : []),
       ...(exchangeBooking && inPeriod(exchangeBooking, p) ? [{ label: "רווח (הפסד) ממימוש / החלפה", value: exchangePl }] : []),
       { label: "סך ההשפעה על הרווח או ההפסד", value: round2(-dep + revaluationPl + landPl + exchangePl), emphasis: "total" },
       ...(oci ? [{ label: `רווח כולל אחר — קרן הערכה מחדש${part}`, value: oci, emphasis: "subtotal" as const }] : []),

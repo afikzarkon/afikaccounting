@@ -18,8 +18,8 @@ const REVERSAL = R.events.find((e) => e.pl > 0)!;
 const CASES = [
   { title: "הערכה ראשונה — עלייה", before: 80_000, fv: 120_000, surplus: 0, losses: 0 },
   { title: "הערכה ראשונה — ירידה", before: 80_000, fv: 70_000, surplus: 0, losses: 0 },
-  { title: "עלייה אחרי הפסד בעבר (הפסד קודם 10,000)", before: 60_000, fv: 85_000, surplus: 0, losses: 10_000 },
-  { title: "ירידה אחרי עלייה בעבר (קרן 30,000)", before: 90_000, fv: 50_000, surplus: 30_000, losses: 0 },
+  { title: "עלייה אחרי הפסד שערוך קודם של אותו נכס (10,000)", before: 60_000, fv: 85_000, surplus: 0, losses: 10_000 },
+  { title: "ירידה כשיש קרן לאותו נכס (30,000)", before: 90_000, fv: 50_000, surplus: 30_000, losses: 0 },
 ].map((c) => ({ ...c, ...splitRevaluation(c.fv - c.before, c.surplus, c.losses) }));
 
 const STEPS = ["פחת עד יום ההערכה", "חישוב פער ההערכה", "סיווג הפער: קרן או רווח והפסד", "פחת חדש מיום ההערכה"];
@@ -30,7 +30,8 @@ export function RevaluationStepsSection() {
       <div className="card p-5">
         <p className="text-xs font-semibold text-accent">דרכים לפתור שאלת הערכה מחדש — במבט אחד</p>
         <p className="mt-1 text-[15px] text-fg/90">
-          במודל הערכה מחדש הנכס מוצג בשווי ההוגן שלו ביום ההערכה, בניכוי פחת שנצבר מאז (סעיף 31). כל שאלה נפתרת באותם שלבים. לאורך הדרך נפתור
+          במודל הערכה מחדש הנכס מוצג בשווי ההוגן שלו ביום ההערכה, בניכוי פחת שנצבר מאז (סעיפים 31–42 לתקן). כל רווח והפסד בדף נובע מהשערוך עצמו
+          ומהכללים של סעיפים 39–40 — ותו לא. כל שאלה נפתרת באותם שלבים. לאורך הדרך נפתור
           דוגמה אחת: מבנה שנרכש ב-1.1.{SL_EX.firstYear} בעלות <Num v={SL_EX.cost} /> ₪, לאורך חיים של {SL_EX.life} שנים, בקו ישר. החברה מעריכה
           אותו מחדש <strong>בכל 31.12</strong>, ובכל שנה יש לו שווי הוגן חדש. כאן נפתור את ההערכה הראשונה — ב-31.12.{EV.year} השווי ההוגן{" "}
           <Num v={EV.fairValue} /> ₪ — ובכל שנה שאחריה חוזרים על אותם שלבים בדיוק (הלוח המלא בלשונית &quot;דוגמאות לפי שיטות&quot;).
@@ -64,27 +65,25 @@ export function RevaluationStepsSection() {
 
       <StepCard step={3} title="סיווג הפער וטיפול חשבונאי" lead="קרן הערכה מחדש (רווח כולל אחר) או רווח והפסד — תלוי במה שקרה קודם" icon={<TrendingUp className="h-5 w-5" />}>
         <div className="grid gap-3 md:grid-cols-2">
-          <div className="rounded-xl border border-line bg-surface-2/40 p-4 text-[14.5px]">
-            <p className="font-semibold text-fg">הערכה מחדש ראשונה</p>
-            <ul className="mt-2 list-inside list-disc space-y-1 text-fg/90">
-              <li>
-                <strong>עלייה:</strong> נזקפת לרווח כולל אחר ומצטברת ב<strong>קרן הערכה מחדש</strong> בהון העצמי (סעיף 39).
-              </li>
-              <li>
-                <strong>ירידה:</strong> מוכרת מיד כהוצאה ב<strong>רווח והפסד</strong> (סעיף 40).
-              </li>
-            </ul>
+          <div className="rounded-xl border border-success/30 bg-success/[0.05] p-4 text-[14.5px]">
+            <p className="font-semibold text-success">עלייה בשווי — שערוך חיובי (סעיף 39)</p>
+            <p className="mt-2 text-fg/90">
+              <strong>הכלל:</strong> נזקפת לרווח כולל אחר ומצטברת ב<strong>קרן הערכה מחדש</strong> בהון העצמי.
+            </p>
+            <p className="mt-2 text-fg/90">
+              <strong>החריג:</strong> אם בשערוך קודם של <strong>אותו נכס</strong> נרשם הפסד ברווח והפסד — העלייה מוכרת קודם כ<strong>הכנסה ברווח והפסד</strong>{" "}
+              עד גובה אותו הפסד, והיתרה לקרן.
+            </p>
           </div>
-          <div className="rounded-xl border border-line bg-surface-2/40 p-4 text-[14.5px]">
-            <p className="font-semibold text-fg">הערכות עוקבות — מבטלים קודם את מה שהיה</p>
-            <ul className="mt-2 list-inside list-disc space-y-1 text-fg/90">
-              <li>
-                <strong>עלייה אחרי הפסד בעבר:</strong> קודם הכנסה ברווח והפסד עד גובה ההפסד שהוכר, והיתרה לקרן.
-              </li>
-              <li>
-                <strong>ירידה אחרי עלייה בעבר:</strong> קודם מקטינים את הקרן עד לאיפוסה, והיתרה — הפסד ברווח והפסד.
-              </li>
-            </ul>
+          <div className="rounded-xl border border-danger/30 bg-danger/[0.04] p-4 text-[14.5px]">
+            <p className="font-semibold text-danger">ירידה בשווי — שערוך שלילי (סעיף 40)</p>
+            <p className="mt-2 text-fg/90">
+              <strong>הכלל:</strong> מוכרת מיד כ<strong>הפסד בדוח רווח והפסד</strong>.
+            </p>
+            <p className="mt-2 text-fg/90">
+              <strong>החריג:</strong> אם יש יתרת זכות ב<strong>קרן הערכה מחדש</strong> בגין <strong>אותו נכס</strong> — הירידה מקטינה קודם את הקרן עד
+              לאיפוסה, ורק היתרה מוכרת כהפסד ברווח והפסד.
+            </p>
           </div>
         </div>
         <DataTable
