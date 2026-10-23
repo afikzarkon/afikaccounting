@@ -24,6 +24,7 @@ const MODULES: Record<string, string> = {
   engine: "מחשבונים",
   content: "מרכז התוכן",
   "ias16-guide": "מדריך IAS 16",
+  "ias16-lab": "מעבדת IAS 16",
   dashboard: "לוח אישי",
   about: "אודות",
   profile: "פרופיל",

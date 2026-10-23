@@ -28,9 +28,14 @@ export default function Ias16GuidePage() {
             ההיגיון שמאחורי מחשבון IAS 16: נוסחאות, דוגמאות מספריות מלאות עם פקודות יומן מאוזנות, ובכל נושא — טריקים ובדיקות נאותות
             שעוזרים לוודא שהפתרון נכון. כל הדוגמאות ללא השפעות מס.
           </p>
-          <ButtonLink href={ENGINE_HREF} variant="secondary" className="no-print">
-            לפתרון תרחיש במחשבון <ArrowLeft className="h-4 w-4" />
-          </ButtonLink>
+          <div className="no-print flex flex-wrap gap-2">
+            <ButtonLink href="/ias16-lab#simulator" variant="ghost">
+              סימולטור פחת אינטראקטיבי
+            </ButtonLink>
+            <ButtonLink href={ENGINE_HREF} variant="secondary">
+              לפתרון תרחיש במחשבון <ArrowLeft className="h-4 w-4" />
+            </ButtonLink>
+          </div>
         </div>
 
         <div className="mt-8">
