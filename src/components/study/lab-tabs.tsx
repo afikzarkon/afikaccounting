@@ -35,7 +35,7 @@ export function LabTabs({ tabs }: { tabs: LabTab[] }) {
   return (
     <div>
       <div className="no-print sticky top-16 z-30 -mx-4 bg-canvas/85 px-4 py-3 backdrop-blur-md sm:mx-0 sm:px-0">
-        <div role="tablist" aria-label="נושאי הלימוד" onKeyDown={onKeyDown} className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <div role="tablist" aria-label="נושאי הלימוד" onKeyDown={onKeyDown} className={cn("grid grid-cols-2 gap-2", tabs.length === 5 ? "lg:grid-cols-5" : "lg:grid-cols-4")}>
           {tabs.map((t) => {
             const on = t.id === active;
             return (

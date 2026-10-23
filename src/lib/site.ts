@@ -12,6 +12,7 @@ export const site = {
       items: [
         { href: "/ias16-lab", label: "רכוש קבוע מהקל לקשה", description: "דרכים לפתור שאלה, יסודות, סימולטור פחת וטיפים" },
         { href: "/ias16-lab/exchange", label: "החלפת נכסים", description: "שלושה שלבים, פקודות יומן ומחשבון החלפה" },
+        { href: "/ias16-lab/renovation", label: "שיפוצים ואירועים עוקבים", description: "נכנס לנכס או הוצאה, דוגמאות בכל השיטות ומחשבון" },
       ],
     },
     { href: "/content", label: "מרכז התוכן" },
