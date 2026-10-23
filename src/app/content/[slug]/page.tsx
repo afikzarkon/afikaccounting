@@ -19,7 +19,9 @@ import { shortDate } from "@/lib/utils";
 
 export async function generateStaticParams() {
   const items = await listContent();
-  return items.map((i) => ({ slug: i.slug }));
+  // Cache Components fails the build on an empty list, so with nothing published yet
+  // prerender one placeholder: no item has that slug, so the page renders notFound().
+  return items.length ? items.map((i) => ({ slug: i.slug })) : [{ slug: "__placeholder__" }];
 }
 
 export async function generateMetadata({ params }: PageProps<"/content/[slug]">): Promise<Metadata> {
