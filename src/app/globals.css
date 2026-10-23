@@ -170,6 +170,18 @@
     max-height: none !important;
     overflow: visible !important;
   }
+  /* The basics page's cheat sheet prints on its own. */
+  .printing-sheet body * {
+    visibility: hidden;
+  }
+  .printing-sheet .print-sheet,
+  .printing-sheet .print-sheet * {
+    visibility: visible;
+  }
+  .printing-sheet .print-sheet {
+    position: absolute;
+    inset: 0 0 auto 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

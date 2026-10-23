@@ -6,6 +6,7 @@ export const site = {
   nav: [
     { href: "/", label: "ראשי" },
     { href: "/engine", label: "מחשבונים חכמים" },
+    { href: "/basics", label: "חשבונאות מאפס" },
     {
       label: "לימוד תקנים",
       title: "IAS 16 · רכוש קבוע",
