@@ -1,7 +1,6 @@
 import {
   BookOpenCheck,
   CalendarCheck,
-  CalendarRange,
   CircleCheck,
   CircleX,
   ClipboardList,
@@ -9,6 +8,7 @@ import {
   Hourglass,
   Landmark,
   LineChart,
+  ListChecks,
   Percent,
   Receipt,
 } from "lucide-react";
@@ -66,7 +66,7 @@ const STEPS = [
   "מודל חשבונאי",
   "שינויים במהלך חיי הנכס",
   "תחילת הפחתה",
-  "לאילו שנים נדרש הפתרון",
+  "נדרשי השאלה",
 ];
 
 const METHODS: [string, string, string][] = [
@@ -121,7 +121,7 @@ export function MethodologySection() {
             ["שיטת פחת", "קו ישר"],
             ["מודל", "מודל העלות"],
             ["שינויים במהלך החיים", "אין"],
-            ["מה נשאל", "הוצאות הפחת לשנת X1 והיתרה בספרים ליום 31.12.X1"],
+            ["נדרשי השאלה", "פקודת יומן, הצגה מאזנית ליום 31.12.X1 והצגה תוצאתית לשנת X1"],
           ]}
         />
       </StepCard>
@@ -249,11 +249,21 @@ export function MethodologySection() {
         </Callout>
       </StepCard>
 
-      <StepCard step={9} title="לאילו שנים נדרש הפתרון" lead="קוראים שוב את הדרישה — ורק אז רושמים את פקודות היומן" icon={<CalendarRange className="h-5 w-5" />}>
+      <StepCard step={9} title="נדרשי השאלה" lead="קוראים שוב מה בדיוק מבקשים — ועונים על כל סעיף בנפרד" icon={<ListChecks className="h-5 w-5" />}>
         <p>
-          לפני שכותבים תשובה, חוזרים לשורת הדרישה: הוצאות פחת לשנה מסוימת? יתרה בספרים לתאריך מסוים? פקודות יומן לכל השנים? מציגים בדיוק
-          את מה שנשאל — אבל מחשבים תמיד דרך הלוח, שנה אחרי שנה, עד השנה המבוקשת. בדוגמה נשאלו על שנת X1:
+          לפני שכותבים תשובה, חוזרים לנדרשי השאלה ומסמנים כל סעיף. מציגים בדיוק את מה שנדרש — אבל מחשבים תמיד דרך הלוח, שנה אחרי שנה,
+          עד השנה המבוקשת. הנדרשים הנפוצים:
         </p>
+        <DataTable
+          head={["הנדרש", "מה מציגים"]}
+          rows={[
+            ["פקודות יומן", "פקודה מאוזנת לכל אירוע ולכל שנה שנדרשה: רכישה, פחת, שיפור, הערכה מחדש, ירידת ערך, מכירה"],
+            ["הצגה מאזנית לשנת 20XX", "עלות, פחת נצבר ויתרה בספרים ליום 31.12.20XX — ובמודל הערכה מחדש גם קרן הערכה מחדש"],
+            ["הצגה תוצאתית לשנת 20XX", "הוצאות פחת, הפסד מירידת ערך, רווח או הפסד ממימוש — ובמודל הערכה מחדש גם רווח כולל אחר"],
+            ["לוח פחת", "שורה לכל שנת כספים: יתרת פתיחה, פחת, פחת נצבר ויתרה בספרים"],
+          ]}
+        />
+        <p>בדוגמה שלנו נדרשו שלושה סעיפים, כולם לשנת X1:</p>
         <div className="my-4 rounded-2xl bg-linear-to-br from-[#0b1d4a] to-[#060d22] p-1 shadow-card ring-1 ring-white/10">
           <div className="rounded-xl bg-surface">
             <JournalEntry
@@ -271,6 +281,18 @@ export function MethodologySection() {
               }
             />
           </div>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          <DataTable
+            caption="הצגה מאזנית ליום 31.12.X1"
+            head={["רכוש קבוע", "סכום"]}
+            rows={[
+              ["עלות", COST],
+              ["בניכוי פחת נצבר", -FIRST],
+            ]}
+            foot={["יתרה בספרים", COST - FIRST]}
+          />
+          <DataTable caption="הצגה תוצאתית לשנת X1" head={["סעיף", "סכום"]} rows={[["הוצאות פחת", FIRST]]} />
         </div>
         <Callout kind="check" title="שלוש בדיקות מהירות לפני שממשיכים">
           <ul className="list-inside list-disc space-y-1">

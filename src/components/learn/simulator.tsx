@@ -166,7 +166,7 @@ function formulaRows(method: Method, r: Extract<Result, { ok: true }>, inp: Inpu
     return [
       {
         label: "שיעור הפחת — מביא את העלות בדיוק לגרט בסוף אורך החיים",
-        tex: `${T.rate} = 1 - \\sqrt[${T.life}]{\\frac{${T.salvage}}{${T.cost}}} = 1 - \\sqrt[${b.life}]{\\frac{${S}}{${C}}} = ${pctTex(r.rate!)}`,
+        tex: `${T.rate} = 1 - \\left(\\frac{\\text{ערך גרט}}{${T.cost}}\\right)^{\\frac{1}{${T.life}}} = 1 - \\left(\\frac{${S}}{${C}}\\right)^{\\frac{1}{${b.life}}} = ${pctTex(r.rate!)}`,
       },
       { label: "פחת לכל שנת חיים — על היתרה בספרים בתחילתה", tex: `\\text{פחת השנה} = \\text{יתרה בספרים בתחילת השנה} \\times ${T.rate}` },
       {
@@ -301,9 +301,9 @@ export function DepreciationSimulator() {
             {method === "db" && (
               <div className="mt-4 rounded-xl border border-accent/40 bg-accent-soft px-3.5 py-3">
                 <p className="text-[13px] font-medium text-fg">שיעור הפחת</p>
-                <p className="mt-0.5 text-xs text-muted">אחד פחות שורש (בדרגת אורך החיים) של הגרט חלקי העלות</p>
+                <p className="mt-0.5 text-xs text-muted">אחד פחות (ערך גרט חלקי עלות) בחזקת 1 חלקי אורך החיים</p>
                 <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px]">
-                  <InlineTex tex={String.raw`\text{שיעור הפחת} = 1 - \sqrt[\text{אורך חיים}]{\frac{\text{גרט}}{\text{עלות}}}`} />
+                  <InlineTex tex={String.raw`\text{שיעור הפחת} = 1 - \left(\frac{\text{ערך גרט}}{\text{עלות}}\right)^{\frac{1}{\text{אורך חיים}}}`} />
                   {r.ok && r.rate !== undefined && <InlineTex tex={`= ${pctTex(r.rate)}`} className="font-semibold" />}
                 </div>
               </div>

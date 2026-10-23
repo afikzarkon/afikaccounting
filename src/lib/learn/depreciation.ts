@@ -63,7 +63,7 @@ export const depreciableAmount = ({ cost, salvage }: Basics) => cost - salvage;
 /** S = n(n + 1) / 2 */
 export const sydDenominator = (n: number) => (n * (n + 1)) / 2;
 
-/** The rate that brings cost down to salvage in exactly n years: r = 1 − ⁿ√(S / C). Undefined when salvage is 0. */
+/** The rate that brings cost down to salvage in exactly n years: r = 1 − (S / C)^(1/n). Undefined when salvage is 0. */
 export const exactDbRate = ({ cost, salvage, life }: Basics) => (salvage > 0 ? 1 - Math.pow(salvage / cost, 1 / life) : null);
 
 export function straightLineYears(b: Basics): LifeYear[] {
