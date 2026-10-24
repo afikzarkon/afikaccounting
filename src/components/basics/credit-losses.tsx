@@ -144,6 +144,9 @@ function TwoT({ accounts, entries, unknown = [], mode = "solved", caption }: { a
 // ---------------------------------------------------------------------------
 // The method, and the frames it is applied in.
 
+/** The three numbers every rule-3 example uses — scenario A's opening balances — so nothing new distracts. */
+const BASE = { gross: SCENARIO_A.openingAR, rate: SCENARIO_A.rate, allowance: SCENARIO_A.openingAllowance, net: SCENARIO_A.openingNet };
+
 const RULES: { title: string; body: ReactNode }[] = [
   {
     title: "פותחים שני כרטיסי T סמוכים",
@@ -165,7 +168,11 @@ const RULES: { title: string; body: ReactNode }[] = [
   {
     title: "מחלצים את הנעלמים — אחורה או קדימה",
     body: (
-      <div className="mt-2 grid gap-3 lg:grid-cols-2">
+      <>
+        <p className="mt-1 rounded-lg bg-surface-2/70 px-3 py-2 text-sm text-fg">
+          בכל ארבע הדוגמאות — אותם שלושה מספרים: לקוחות ברוטו <N v={BASE.gross} />, אחוז הפרשה <P r={BASE.rate} />, הפרשה <N v={BASE.allowance} />.
+        </p>
+        <div className="mt-2 grid gap-3 lg:grid-cols-2">
         <Formula
           title="א. אחוז ההפרשה"
           when="נתונות ההפרשה והלקוחות ברוטו באותו יום — למשל ב-31.12 אשתקד."
@@ -176,7 +183,7 @@ const RULES: { title: string; body: ReactNode }[] = [
           }
           example={
             <>
-              <Frac top={<N v={SCENARIO_B.openingAllowance} />} bottom={<N v={SCENARIO_B.openingAR} />} /> = <P r={SCENARIO_B.rate} />
+              <Frac top={<N v={BASE.allowance} />} bottom={<N v={BASE.gross} />} /> = <P r={BASE.rate} />
             </>
           }
         />
@@ -186,7 +193,7 @@ const RULES: { title: string; body: ReactNode }[] = [
           formula={<>הפרשה = לקוחות ברוטו × אחוז</>}
           example={
             <>
-              <N v={SCENARIO_A.openingAR} /> × <P r={SCENARIO_A.rate} /> = <N v={SCENARIO_A.openingAllowance} />
+              <N v={BASE.gross} /> × <P r={BASE.rate} /> = <N v={BASE.allowance} />
             </>
           }
         />
@@ -204,10 +211,10 @@ const RULES: { title: string; body: ReactNode }[] = [
           example={
             <span className="flex flex-col items-center gap-2">
               <span>
-                <N v={SCENARIO_A.openingAR} /> − <N v={SCENARIO_A.openingAllowance} /> = <N v={SCENARIO_A.openingNet} />
+                <N v={BASE.gross} /> − <N v={BASE.allowance} /> = <N v={BASE.net} />
               </span>
               <span>
-                <Frac top={<N v={SCENARIO_A.openingNet} />} bottom={<P r={1 - SCENARIO_A.rate} />} /> = <N v={SCENARIO_A.openingAR} />
+                <Frac top={<N v={BASE.net} />} bottom={<P r={1 - BASE.rate} />} /> = <N v={BASE.gross} />
               </span>
             </span>
           }
@@ -220,18 +227,19 @@ const RULES: { title: string; body: ReactNode }[] = [
           example={
             <span className="flex flex-col items-center gap-2">
               <span className="text-[13px] text-muted">
-                הפרשה: פתיחה {f(ALON.openingAllowance)}, מחיקה {f(ALON.writeOffs!)}, סגירה נדרשת {f(ALON.required)}
+                עסק חדש — ההפרשה נפתחת ב-0, ונדרשת בסגירה <N v={BASE.gross} /> × <P r={BASE.rate} /> = <N v={BASE.allowance} />
               </span>
               <span>
-                <N v={ALON.required} /> = <N v={ALON.openingAllowance} /> + X − <N v={ALON.writeOffs!} />
+                <N v={BASE.allowance} /> = 0 + X
               </span>
               <span className="font-bold">
-                X = <N v={ALON.required} /> − <N v={ALON.openingAllowance} /> + <N v={ALON.writeOffs!} /> = <N v={ALON.result.expense} />
+                X = <N v={BASE.allowance} /> − 0 = <N v={BASE.allowance} /> (הוצאות הפסדי אשראי)
               </span>
             </span>
           }
         />
-      </div>
+        </div>
+      </>
     ),
   },
 ];
