@@ -26,6 +26,7 @@ const EXPLICIT: Record<string, AccountType> = {
   חייבים: "asset",
   "מקדמות לספקים": "asset",
   "מלאי סגירה מאזני": "asset",
+  מלאי: "asset",
   "ריהוט משרדי": "asset",
   לפטופ: "asset",
   ציוד: "asset",
@@ -49,6 +50,7 @@ const EXPLICIT: Record<string, AccountType> = {
   "מלאי סגירה רווח או הפסד": "income",
   קניות: "expense",
   "מלאי פתיחה": "expense",
+  "עלות המכר": "expense",
 };
 
 /** The type of an account, from the list above or from the course's naming pattern. */
