@@ -30,91 +30,104 @@ function labelOf(account: string, side: "dr" | "cr", entry?: Entry) {
   return other === AR ? "החזרת חוב שנמחק" : "הוצאות הפסדי אשראי (גידול)";
 }
 
-/** A T-account balanced the way it is done on paper: the closing balance on the smaller side, then equal totals. */
+/** Letters for the unknowns, in the order a question names them. */
+const LETTERS = ["X", "Y", "Z", "W", "V", "U"];
+
+/**
+ * A T-account as it is drawn in the course: the opening balance (zero too),
+ * the movements, and under a line the closing balance — both balances always
+ * in debit for customers and in credit for the allowance.
+ */
 function rowsOf(t: TAccount, entries: Entry[]) {
   const byId = new Map(entries.map((x) => [x.id, x]));
+  // Customers' balances always sit in debit, the allowance's always in credit; a balance the other way shows in parentheses.
+  const natural = t.account === AR ? "dr" : "cr";
+  const sign = natural === "dr" ? 1 : -1;
   const dr: Row[] = [];
   const cr: Row[] = [];
-  const open: Row = { key: k(t.account, "פתיחה"), label: "יתרת פתיחה", amount: Math.abs(t.opening) };
-  if (t.opening > 0) dr.push(open);
-  if (t.opening < 0) cr.push(open);
+  const open: Row = { key: k(t.account, "פתיחה"), label: "יתרת פתיחה", amount: sign * t.opening };
+  (natural === "dr" ? dr : cr).push(open);
   for (const p of t.dr) dr.push({ key: k(t.account, p.ref), label: labelOf(t.account, "dr", byId.get(p.ref)), ref: p.ref, amount: p.amount });
   for (const p of t.cr) cr.push({ key: k(t.account, p.ref), label: labelOf(t.account, "cr", byId.get(p.ref)), ref: p.ref, amount: p.amount });
-  const closing: Row = { key: k(t.account, "סגירה"), label: t.account === AR ? "יתרת סגירה (ברוטו)" : "יתרת סגירה", amount: Math.abs(t.balance), close: true };
-  if (t.balance > 0) cr.push(closing);
-  if (t.balance < 0) dr.push(closing);
-  return { dr, cr, total: round2(dr.reduce((s, r) => s + r.amount, 0)) };
+  const closing: Row = { key: k(t.account, "סגירה"), label: "יתרת סגירה", amount: sign * t.balance, close: true };
+  return { dr, cr, closing, closingSide: natural };
 }
 
-function TBox({ t, entries, unknown, mode }: { t: TAccount; entries: Entry[]; unknown: Set<string>; mode: "question" | "solved" }) {
-  const { dr, cr, total } = rowsOf(t, entries);
-  const hidden = (r: Row) => unknown.has(r.key);
+function TBox({ t, entries, letters, mode }: { t: TAccount; entries: Entry[]; letters: Map<string, string>; mode: "question" | "solved" }) {
+  const { dr, cr, closing, closingSide } = rowsOf(t, entries);
   const n = Math.max(dr.length, cr.length);
-  const showTotal = mode === "solved" || !(dr.some(hidden) && cr.some(hidden));
-  const side = (rows: Row[], first: boolean) => (
-    <div className={cn("flex min-w-0 flex-col", first && "border-e-2 border-fg/70")}>
-      <p className={cn("px-2 pt-1 text-[11px] font-bold", first ? "text-debit" : "text-credit")}>{first ? "חובה" : "זכות"}</p>
-      <ul className="flex-1 space-y-0.5 px-1 pb-1">
-        {rows.map((r) => (
-          <li
-            key={r.key}
-            className={cn(
-              "flex items-center justify-between gap-2 rounded px-1.5 py-1 text-[12.5px]",
-              r.close && "mt-1 border-t border-dashed border-line font-semibold",
-              hidden(r) && (mode === "question" ? "bg-amber-500/15 ring-1 ring-amber-500/50" : "bg-success/10 ring-1 ring-success/40"),
-            )}
-          >
-            <span className="min-w-0 text-fg">
-              {r.label}
-              {r.ref && <span className="ms-1 text-[10px] text-subtle">({r.ref})</span>}
-            </span>
-            {hidden(r) && mode === "question" ? <span className="shrink-0 font-bold text-amber-600 dark:text-amber-400">?</span> : <Money v={r.amount} plain className="shrink-0" />}
-          </li>
-        ))}
+  const line = (r: Row) => {
+    const letter = letters.get(r.key);
+    return (
+      <li
+        key={r.key}
+        className={cn(
+          "flex items-center justify-between gap-2 rounded px-1.5 py-1 text-[12.5px]",
+          r.close && "font-bold",
+          letter && (mode === "question" ? "bg-amber-500/15 ring-1 ring-amber-500/50" : "bg-success/10 ring-1 ring-success/40"),
+        )}
+      >
+        <span className="min-w-0 text-fg">
+          {r.label}
+          {r.ref && <span className="ms-1 text-[10px] text-subtle">({r.ref})</span>}
+        </span>
+        {letter && mode === "question" ? (
+          <span className="shrink-0 font-bold text-amber-600 dark:text-amber-400">{letter}</span>
+        ) : (
+          <span className="flex shrink-0 items-center gap-1">
+            {letter && <span className="text-[11px] font-bold text-success">{letter} =</span>}
+            <Money v={r.amount} plain />
+          </span>
+        )}
+      </li>
+    );
+  };
+  const side = (rows: Row[], s: "dr" | "cr") => (
+    <div className={cn("flex min-w-0 flex-col", s === "dr" && "border-e-2 border-fg/70")}>
+      <p className={cn("px-2 pt-1 text-[11px] font-bold", s === "dr" ? "text-debit" : "text-credit")}>{s === "dr" ? "חובה" : "זכות"}</p>
+      <ul className="space-y-0.5 px-1 pb-1">
+        {rows.map(line)}
         {Array.from({ length: n - rows.length }, (_, i) => (
           <li key={`e${i}`} className="py-1 text-[12.5px]">
             &nbsp;
           </li>
         ))}
       </ul>
-      <p className="flex justify-between gap-2 border-t-2 border-fg/70 px-2.5 py-1.5 text-[12.5px] font-bold text-fg">
-        <span>סה״כ</span>
-        {showTotal ? <Money v={total} plain /> : <span className="text-amber-600 dark:text-amber-400">?</span>}
-      </p>
+      <ul className="border-t-2 border-fg/70 px-1 py-1">{closingSide === s ? line(closing) : <li className="py-1 text-[12.5px]">&nbsp;</li>}</ul>
     </div>
   );
   return (
     <figure className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface">
       <figcaption className="flex items-center justify-between gap-2 border-b-2 border-fg/70 bg-surface-2/60 px-3 py-2 text-sm font-bold text-fg">
         <span>{t.account === AR ? "לקוחות (ברוטו)" : t.account}</span>
-        <span className="text-[11px] font-normal text-subtle">{t.account === AR ? "נכס" : "מקטין את הלקוחות"}</span>
+        <span className="text-[11px] font-normal text-subtle">{t.account === AR ? "נכס · יתרה בחובה" : "מקטין את הלקוחות · יתרה בזכות"}</span>
       </figcaption>
       <div className="grid grid-cols-2">
-        {side(dr, true)}
-        {side(cr, false)}
+        {side(dr, "dr")}
+        {side(cr, "cr")}
       </div>
     </figure>
   );
 }
 
-/** Customers and the allowance, side by side — the two cards every question is solved in. */
+/** Customers and the allowance, side by side — the two cards every question is solved in. Unknowns get letters: X, Y, Z… */
 function TwoT({ accounts, entries, unknown = [], mode = "solved", caption }: { accounts: TAccount[]; entries: Entry[]; unknown?: string[]; mode?: "question" | "solved"; caption?: string }) {
-  const set = new Set(unknown);
+  const letters = new Map(unknown.map((key, i) => [key, LETTERS[i]]));
   const pair = [AR, ALLOW].map((a) => accounts.find((t) => t.account === a)).filter((t): t is TAccount => !!t);
   return (
     <div className="my-3">
       {caption && <p className="mb-1.5 text-sm font-semibold text-fg">{caption}</p>}
       <div className="grid gap-3 md:grid-cols-2">
         {pair.map((t) => (
-          <TBox key={t.account} t={t} entries={entries} unknown={set} mode={mode} />
+          <TBox key={t.account} t={t} entries={entries} letters={letters} mode={mode} />
         ))}
       </div>
       {unknown.length > 0 && (
         <p className="mt-1.5 text-xs text-muted">
           {mode === "question" ? (
             <>
-              <span className="rounded bg-amber-500/15 px-1.5 font-bold text-amber-600 dark:text-amber-400">?</span> — נעלם שנחלץ בכלל 3. סה״כ מופיע בצד
-              שכולו ידוע — ושני הצדדים תמיד שווים.
+              <span className="rounded bg-amber-500/15 px-1.5 font-bold text-amber-600 dark:text-amber-400">{LETTERS.slice(0, unknown.length).join(", ")}</span> —
+              נעלמים. בכל כרטיס: יתרת פתיחה + תנועות בצד היתרה − תנועות בצד השני = יתרת סגירה; הנעלם הוא ההפרש.
             </>
           ) : (
             <>
@@ -126,6 +139,7 @@ function TwoT({ accounts, entries, unknown = [], mode = "solved", caption }: { a
     </div>
   );
 }
+
 
 // ---------------------------------------------------------------------------
 // The method, and the frames it is applied in.
@@ -143,31 +157,124 @@ const RULES: { title: string; body: ReactNode }[] = [
     title: "מציבים את כל הנתונים הידועים — בצד הנכון",
     body: (
       <>
-        כל נתון מהשאלה נכנס לכרטיס שלו, בחובה או בזכות. מה שלא ידוע מסמנים <span className="font-bold text-amber-600 dark:text-amber-400">?</span>.
+        כל נתון מהשאלה נכנס לכרטיס שלו, בחובה או בזכות. יתרות הפתיחה והסגירה — בצד שבו היתרה יושבת (לקוחות בחובה, הפרשה בזכות), גם כשהן 0. מה שלא ידוע
+        מסמנים באות: <span className="font-bold text-amber-600 dark:text-amber-400">X, Y, Z</span>.
       </>
     ),
   },
   {
     title: "מחלצים את הנעלמים — אחורה או קדימה",
     body: (
-      <ul className="mt-1 space-y-1.5">
-        <li>
-          <strong>אחוז ההפרשה:</strong> נתונות ההפרשה והלקוחות ברוטו באותו יום (למשל ב-31.12 אשתקד)? אחוז = הפרשה ÷ לקוחות ברוטו.
-        </li>
-        <li>
-          <strong>יתרת הפתיחה של ההפרשה:</strong> נתונים האחוז והלקוחות ברוטו לתחילת השנה? הפרשה = לקוחות ברוטו × אחוז. (זו יתרת הסגירה של אשתקד — כשאין
-          הפרשה ספציפית.)
-        </li>
-        <li>
-          <strong>לקוחות נטו:</strong> נטו = ברוטו − הפרשה. ולהפך: אם נתונים הנטו והאחוז, ברוטו = נטו ÷ (100% − אחוז), והפרשה = ברוטו − נטו.
-        </li>
-        <li>
-          <strong>ומה שנשאר:</strong> מאזנים כל כרטיס — סך החובה = סך הזכות — והנעלם הוא ההפרש.
-        </li>
-      </ul>
+      <div className="mt-2 grid gap-3 lg:grid-cols-2">
+        <Formula
+          title="א. אחוז ההפרשה"
+          when="נתונות ההפרשה והלקוחות ברוטו באותו יום — למשל ב-31.12 אשתקד."
+          formula={
+            <>
+              אחוז ההפרשה = <Frac top="הפרשה" bottom="לקוחות ברוטו" />
+            </>
+          }
+          example={
+            <>
+              <Frac top={<N v={SCENARIO_B.openingAllowance} />} bottom={<N v={SCENARIO_B.openingAR} />} /> = <P r={SCENARIO_B.rate} />
+            </>
+          }
+        />
+        <Formula
+          title="ב. יתרת הפתיחה של ההפרשה"
+          when="נתונים האחוז והלקוחות ברוטו לתחילת השנה. (זו יתרת הסגירה של אשתקד, כשאין הפרשה ספציפית.)"
+          formula={<>הפרשה = לקוחות ברוטו × אחוז</>}
+          example={
+            <>
+              <N v={SCENARIO_A.openingAR} /> × <P r={SCENARIO_A.rate} /> = <N v={SCENARIO_A.openingAllowance} />
+            </>
+          }
+        />
+        <Formula
+          title="ג. לקוחות נטו — ובחזרה לברוטו"
+          when="במאזן מופיע רק הנטו? מפרקים אותו לברוטו ולהפרשה לפני שמציבים בכרטיסים."
+          formula={
+            <span className="flex flex-col items-center gap-2">
+              <span>נטו = ברוטו − הפרשה</span>
+              <span>
+                ברוטו = <Frac top="נטו" bottom="100% − אחוז" />
+              </span>
+            </span>
+          }
+          example={
+            <span className="flex flex-col items-center gap-2">
+              <span>
+                <N v={SCENARIO_A.openingAR} /> − <N v={SCENARIO_A.openingAllowance} /> = <N v={SCENARIO_A.openingNet} />
+              </span>
+              <span>
+                <Frac top={<N v={SCENARIO_A.openingNet} />} bottom={<P r={1 - SCENARIO_A.rate} />} /> = <N v={SCENARIO_A.openingAR} />
+              </span>
+            </span>
+          }
+          note="נטו של 95% פירושו שההפרשה היא 5% — לכן מחלקים ב-95%, לא מכפילים ב-5%."
+        />
+        <Formula
+          title="ד. הנעלם בתוך כרטיס"
+          when="כל כרטיס: מה שהיה, ועוד מה שהגדיל, פחות מה שהקטין — שווה למה שנשאר. הנעלם הוא ההפרש."
+          formula={<>יתרת סגירה = פתיחה + מה שמגדיל − מה שמקטין</>}
+          example={
+            <span className="flex flex-col items-center gap-2">
+              <span className="text-[13px] text-muted">
+                הפרשה: פתיחה {f(ALON.openingAllowance)}, מחיקה {f(ALON.writeOffs!)}, סגירה נדרשת {f(ALON.required)}
+              </span>
+              <span>
+                <N v={ALON.required} /> = <N v={ALON.openingAllowance} /> + X − <N v={ALON.writeOffs!} />
+              </span>
+              <span className="font-bold">
+                X = <N v={ALON.required} /> − <N v={ALON.openingAllowance} /> + <N v={ALON.writeOffs!} /> = <N v={ALON.result.expense} />
+              </span>
+            </span>
+          }
+        />
+      </div>
     ),
   },
 ];
+
+// Declared as functions so the rules above, built when the module loads, can use them.
+/** An amount inside a formula. */
+function N({ v }: { v: number }) {
+  return <Money v={v} plain />;
+}
+/** A rate inside a formula. */
+function P({ r }: { r: number }) {
+  return (
+    <bdi dir="ltr" className="num">
+      {pct(r)}
+    </bdi>
+  );
+}
+
+/** A fraction drawn as one: numerator over a bar over denominator. */
+function Frac({ top, bottom }: { top: ReactNode; bottom: ReactNode }) {
+  return (
+    <span className="mx-1 inline-flex flex-col items-center text-center align-middle leading-tight">
+      <span className="px-1.5 pb-1">{top}</span>
+      <span className="w-full border-t-2 border-fg/80 px-1.5 pt-1">{bottom}</span>
+    </span>
+  );
+}
+
+/** One extraction rule: when to use it, the formula, and the formula with numbers. */
+function Formula({ title, when, formula, example, note }: { title: string; when: string; formula: ReactNode; example: ReactNode; note?: string }) {
+  return (
+    <div className="flex min-w-0 flex-col rounded-xl border border-line bg-surface-2/40 p-3">
+      <p className="font-bold text-fg">{title}</p>
+      <p className="text-[13px] text-muted">{when}</p>
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-x-1 rounded-lg bg-surface px-3 py-3 text-[16px] font-semibold text-fg ring-1 ring-accent/40">{formula}</div>
+      <div className="mt-2 flex items-center gap-2 rounded-lg bg-accent-soft px-3 py-2.5 text-[15px] text-fg">
+        <span className="shrink-0 rounded bg-accent px-1.5 py-0.5 text-[11px] font-bold text-accent-fg">בדוגמה</span>
+        <span className="flex flex-1 flex-wrap items-center justify-center gap-x-1">{example}</span>
+      </div>
+      {note && <p className="mt-1.5 text-xs text-muted">{note}</p>}
+    </div>
+  );
+}
 
 /** The three rules, framed so they can't be missed. */
 function MethodBox() {
@@ -328,18 +435,18 @@ const MISTAKES: [string, string][] = [
 const SELF_TEXT: { q: string; unknown: string[]; a: string }[] = [
   {
     q: "לקוחות ב-1.1: 500,000, הפרשה 25,000. במהלך השנה: מכירות באשראי 1,200,000, גבייה 869,000, מחיקת חובות אבודים 31,000. ההפרשה הנדרשת בסוף השנה: 5% מהלקוחות. מה הוצאות הפסדי האשראי?",
-    unknown: [k(AR, "סגירה"), k(ALLOW, SELF[0].ids.adj), k(ALLOW, "סגירה")],
+    unknown: [k(ALLOW, SELF[0].ids.adj), k(AR, "סגירה"), k(ALLOW, "סגירה")],
     a: "לקוחות בסוף השנה: 500,000 + 1,200,000 − 869,000 − 31,000 = 800,000, ולכן נדרשת 40,000. בכרטיס ההפרשה המחיקה (31,000) גדולה מהפתיחה (25,000) — לפני ההתאמה יש 6,000 בחובה. כדי להגיע ל-40,000 בזכות: 46,000. פקודה: ח' הוצאות הפסדי אשראי / ז' הפרשה 46,000.",
   },
   {
     q: "לקוחות ב-1.1: 860,000. במהלך השנה: מכירות באשראי 2,000,000, גבייה 1,951,000, מחיקות 9,000, ונגבה חוב שנמחק בעבר בסך 2,000. ב-31.12 ההפרשה היא 6% מהלקוחות, והוצאות הפסדי האשראי השנה 18,000. מה הייתה יתרת הפתיחה של ההפרשה?",
-    unknown: [k(AR, "סגירה"), k(ALLOW, "פתיחה"), k(ALLOW, "סגירה")],
-    a: "לקוחות בסוף השנה: 860,000 + 2,000,000 − 1,951,000 − 9,000 + 2,000 − 2,000 = 900,000, ולכן ההפרשה בסגירה 54,000. מאזנים את כרטיס ההפרשה אחורה: פתיחה = 54,000 + 9,000 − 2,000 − 18,000 = 43,000.",
+    unknown: [k(ALLOW, "פתיחה"), k(AR, "סגירה"), k(ALLOW, "סגירה")],
+    a: "לקוחות בסוף השנה: 860,000 + 2,000,000 − 1,951,000 − 9,000 + 2,000 − 2,000 = 900,000, ולכן ההפרשה בסגירה 54,000. בכרטיס ההפרשה: סגירה = X − מחיקה + חוב שחזר + הוצאה, כלומר 54,000 = X − 9,000 + 2,000 + 18,000, ולכן X = 43,000.",
   },
   {
     q: "לקוחות ב-1.1: 380,000, הפרשה 60,000. במהלך השנה: מכירות באשראי 1,000,000, גבייה 980,000. בסוף השנה לקוח בקשיים חייב 50,000 (הפרשה ספציפית 80%), ועל השאר 3%. מה הפקודה?",
     unknown: [k(ALLOW, SELF[2].ids.adj), k(ALLOW, "סגירה")],
-    a: "לקוחות בסוף השנה: 400,000. ספציפית 40,000 + כללית 3% × 350,000 = 10,500 → נדרשת 50,500. בכרטיס 60,000 — עודף של 9,500: ח' הפרשה / ז' הוצאות הפסדי אשראי 9,500.",
+    a: "לקוחות בסוף השנה: 400,000. ספציפית 40,000 + כללית 3% × 350,000 = 10,500 → נדרשת 50,500. בכרטיס 60,000, ולכן X = 50,500 − 60,000 = (9,500) — ביטול של 9,500: ח' הפרשה / ז' הוצאות הפסדי אשראי 9,500.",
   },
 ];
 
@@ -397,9 +504,32 @@ export function CreditLossChapters() {
         <p className="rounded-xl bg-surface-2/70 py-4 text-center text-xl font-semibold text-fg">לקוחות ברוטו − הפרשה להפסדי אשראי = לקוחות נטו</p>
         <p>
           את ההפרשה רושמים כהוצאה — <Term he="הוצאות הפסדי אשראי" /> — בשנה שבה נעשו המכירות, כי ההפסד הצפוי שייך לשנה שבה נרשמה ההכנסה. כך זה נראה בשני
-          הכרטיסים של רונית:
+          הכרטיסים של רונית. העסק חדש, ולכן שני הכרטיסים נפתחים ביתרה 0:
         </p>
-        <TwoT accounts={RONIT_YEAR.result.accounts} entries={RONIT_YEAR.entries} />
+        <TwoT
+          accounts={RONIT_YEAR.result.accounts}
+          entries={RONIT_YEAR.entries}
+          unknown={[k(ALLOW, RONIT_YEAR.ids.adj)]}
+          mode="question"
+          caption="שלב א: מה ידוע"
+        />
+        <ul className="list-inside list-disc space-y-1">
+          <li>
+            לקוחות: פתיחה 0, מכירה באשראי <Money v={RONIT_YEAR.creditSales!} /> בחובה — יתרת סגירה <Money v={RONIT_YEAR.result.gross} /> בחובה.
+          </li>
+          <li>
+            הפרשה: פתיחה 0. בסוף השנה נדרשת הפרשה כללית של {RONIT.unpaid} מכל {RONIT.customers} ({pct(RONIT.unpaid / RONIT.customers)}) מהלקוחות — יתרת הסגירה{" "}
+            <Money v={RONIT_YEAR.required} /> בזכות.
+          </li>
+          <li>
+            הנעלם X — הוצאות הפסדי האשראי — הוא ההפרש: X = סגירה − פתיחה = {f(RONIT_YEAR.required)} − 0 ={" "}
+            <strong>
+              <Money v={RONIT_YEAR.result.expense} />
+            </strong>
+            .
+          </li>
+        </ul>
+        <TwoT accounts={RONIT_YEAR.result.accounts} entries={RONIT_YEAR.entries} unknown={[k(ALLOW, RONIT_YEAR.ids.adj)]} caption="שלב ב: אחרי החילוץ" />
         <Entries entries={RONIT_YEAR.entries} />
         <NetView gross={RONIT_YEAR.result.gross} allowance={RONIT_YEAR.result.allowance} caption="המאזן של רונית — סעיף הלקוחות" />
       </Chapter>
@@ -408,15 +538,16 @@ export function CreditLossChapters() {
         <MethodBox />
         <p>וזה מה שנכנס לכל צד בשני הכרטיסים. כל נתון בשאלה הוא אחת מהשורות האלה:</p>
         <div className="grid gap-3 md:grid-cols-2">
-          <TemplateT title="לקוחות (ברוטו)" dr={["יתרת פתיחה", "מכירות באשראי", "החזרת חוב שנמחק"]} cr={["גבייה מלקוחות", "מחיקת חוב אבוד", "יתרת סגירה (ברוטו)"]} />
+          <TemplateT title="לקוחות (ברוטו)" dr={["יתרת פתיחה", "מכירות באשראי", "החזרת חוב שנמחק", "יתרת סגירה"]} cr={["גבייה מלקוחות", "מחיקת חוב אבוד"]} />
           <TemplateT
             title="הפרשה להפסדי אשראי חזויים"
-            dr={["מחיקת חוב אבוד", "ביטול הפרשה (קיטון)", "יתרת סגירה"]}
-            cr={["יתרת פתיחה", "החזרת חוב שנמחק", "הוצאות הפסדי אשראי (גידול)"]}
+            dr={["מחיקת חוב אבוד", "ביטול הפרשה (קיטון)"]}
+            cr={["יתרת פתיחה", "החזרת חוב שנמחק", "הוצאות הפסדי אשראי (גידול)", "יתרת סגירה"]}
           />
         </div>
         <p className="text-sm text-muted">
-          יתרת הסגירה נרשמת בצד ההפוך ליתרה, כדי ששני הצדדים יהיו שווים — כך &quot;מאזנים&quot; כרטיס, וכך מוצאים נעלם: מה שחסר כדי שהצדדים יהיו שווים.
+          יתרת הפתיחה ויתרת הסגירה נרשמות בצד שבו היתרה יושבת: לקוחות בחובה, הפרשה בזכות. הסגירה — מתחת לקו. כל נעלם מחושב כהפרש: יתרת פתיחה + מה שמגדיל
+          − מה שמקטין = יתרת סגירה.
         </p>
       </Chapter>
 
@@ -473,25 +604,27 @@ export function CreditLossChapters() {
           </p>
           <Walkthrough
             x={ALON}
-            unknown={[k(AR, "סגירה"), k(ALLOW, ALON.ids.adj), k(ALLOW, "סגירה")]}
+            unknown={[k(ALLOW, ALON.ids.adj), k(AR, "סגירה"), k(ALLOW, "סגירה")]}
             solve={
               <ol className="list-inside list-decimal space-y-1">
                 <li>
-                  מאזנים את כרטיס הלקוחות: {f(ALON.openingAR)} + {f(ALON.creditSales!)} − {f(ALON.collections!)} − {f(ALON.writeOffs!)} ={" "}
+                  <strong>Y</strong> — יתרת הסגירה של הלקוחות (בחובה): פתיחה + מכירות − גבייה − מחיקה = {f(ALON.openingAR)} + {f(ALON.creditSales!)} −{" "}
+                  {f(ALON.collections!)} − {f(ALON.writeOffs!)} ={" "}
                   <strong>
                     <Money v={ALON.result.gross} />
                   </strong>
                   .
                 </li>
                 <li>
-                  ההפרשה הנדרשת (יתרת הסגירה): {f(ALON.result.gross)} × {pct(ALON.rate)} ={" "}
+                  <strong>Z</strong> — יתרת הסגירה של ההפרשה (בזכות) היא ההפרשה הנדרשת: {f(ALON.result.gross)} × {pct(ALON.rate)} ={" "}
                   <strong>
                     <Money v={ALON.required} />
                   </strong>
                   .
                 </li>
                 <li>
-                  בכרטיס ההפרשה כבר יש {f(ALON.openingAllowance)} − {f(ALON.writeOffs!)} = <Money v={ALON.mid.allowance} />. מה שחסר עד הנדרשת הוא ההוצאה:{" "}
+                  <strong>X</strong> — ההוצאה, כהפרש בכרטיס ההפרשה: סגירה = פתיחה − מחיקה + X, כלומר {f(ALON.required)} = {f(ALON.openingAllowance)} −{" "}
+                  {f(ALON.writeOffs!)} + X, ולכן X ={" "}
                   <strong>
                     <Money v={ALON.result.expense} />
                   </strong>
@@ -512,7 +645,7 @@ export function CreditLossChapters() {
       </Chapter>
 
       <Chapter n={6} id="cl-scenarios" title="חילוץ נעלמים: ארבעה תרחישים" lead="אותם שני כרטיסים — והנעלם בכל פעם במקום אחר">
-        <p>בכל תרחיש: קודם מציבים בשני הכרטיסים את מה שידוע (כלל 2), ורק אז מחלצים (כלל 3). שימו לב איפה מופיע סימן השאלה.</p>
+        <p>בכל תרחיש: קודם מציבים בשני הכרטיסים את מה שידוע (כלל 2), ורק אז מחלצים (כלל 3). שימו לב איפה מופיעים הנעלמים — X, Y, Z.</p>
 
         <Card title="תרחיש א: נעלם בלקוחות ברוטו לתחילת השנה">
           <p>
@@ -521,7 +654,7 @@ export function CreditLossChapters() {
           </p>
           <Walkthrough
             x={SCENARIO_A}
-            unknown={[k(AR, "פתיחה"), k(ALLOW, "פתיחה"), k(AR, "סגירה"), k(ALLOW, SCENARIO_A.ids.adj), k(ALLOW, "סגירה")]}
+            unknown={[k(ALLOW, SCENARIO_A.ids.adj), k(AR, "פתיחה"), k(ALLOW, "פתיחה"), k(AR, "סגירה"), k(ALLOW, "סגירה")]}
             given={<p className="text-sm text-muted">את הנטו לא מציבים בכרטיס — בכרטיס הלקוחות יש רק ברוטו. לכן שתי יתרות הפתיחה הן נעלם.</p>}
             solve={
               <ol className="list-inside list-decimal space-y-1">
@@ -537,7 +670,7 @@ export function CreditLossChapters() {
                   .
                 </li>
                 <li>
-                  עכשיו מאזנים את הלקוחות: יתרת סגירה <Money v={SCENARIO_A.result.gross} />, ולכן נדרשת {pct(SCENARIO_A.rate)} ={" "}
+                  עכשיו כרטיס הלקוחות: פתיחה + מכירות − גבייה − מחיקה = יתרת סגירה <Money v={SCENARIO_A.result.gross} />, ולכן נדרשת {pct(SCENARIO_A.rate)} ={" "}
                   <Money v={SCENARIO_A.required} />.
                 </li>
                 <li>
@@ -556,7 +689,7 @@ export function CreditLossChapters() {
           </p>
           <Walkthrough
             x={SCENARIO_B}
-            unknown={[k(AR, "סגירה"), k(ALLOW, SCENARIO_B.ids.adj), k(ALLOW, "סגירה")]}
+            unknown={[k(ALLOW, SCENARIO_B.ids.adj), k(AR, "סגירה"), k(ALLOW, "סגירה")]}
             solve={
               <ol className="list-inside list-decimal space-y-1">
                 <li>
@@ -564,11 +697,12 @@ export function CreditLossChapters() {
                   <strong>{pct(SCENARIO_B.rate)}</strong>.
                 </li>
                 <li>
-                  מאזנים את הלקוחות: יתרת סגירה <Money v={SCENARIO_B.result.gross} />; הפרשה נדרשת: × {pct(SCENARIO_B.rate)} = <Money v={SCENARIO_B.required} />.
+                  <strong>Y</strong> — לקוחות בסגירה: {f(SCENARIO_B.openingAR)} + {f(SCENARIO_B.creditSales!)} − {f(SCENARIO_B.collections!)} − {f(SCENARIO_B.writeOffs!)} ={" "}
+                  <Money v={SCENARIO_B.result.gross} />. <strong>Z</strong> — הפרשה נדרשת: × {pct(SCENARIO_B.rate)} = <Money v={SCENARIO_B.required} />.
                 </li>
                 <li>
-                  מאזנים את ההפרשה: בזכות יש פתיחה {f(SCENARIO_B.openingAllowance)}, בחובה מחיקה {f(SCENARIO_B.writeOffs!)} וסגירה {f(SCENARIO_B.required)}. כדי שהצדדים
-                  יהיו שווים חסרים בזכות{" "}
+                  <strong>X</strong> — בכרטיס ההפרשה: סגירה = פתיחה − מחיקה + X, כלומר {f(SCENARIO_B.required)} = {f(SCENARIO_B.openingAllowance)} −{" "}
+                  {f(SCENARIO_B.writeOffs!)} + X, ולכן X ={" "}
                   <strong>
                     <Money v={SCENARIO_B.result.expense} />
                   </strong>{" "}
@@ -591,8 +725,8 @@ export function CreditLossChapters() {
             solve={
               <ol className="list-inside list-decimal space-y-1">
                 <li>
-                  בכרטיס הלקוחות צד החובה ידוע כולו: {f(SCENARIO_C.openingAR)} + {f(SCENARIO_C.creditSales!)} = <Money v={SCENARIO_C.openingAR + SCENARIO_C.creditSales!} />.
-                  בזכות: מחיקה {f(SCENARIO_C.writeOffs!)} וסגירה {f(SCENARIO_C.closingAR)}. מה שחסר הוא הגבייה:{" "}
+                  <strong>X</strong> — בכרטיס הלקוחות: סגירה = פתיחה + מכירות − X − מחיקה, כלומר {f(SCENARIO_C.closingAR)} = {f(SCENARIO_C.openingAR)} +{" "}
+                  {f(SCENARIO_C.creditSales!)} − X − {f(SCENARIO_C.writeOffs!)}, ולכן הגבייה X ={" "}
                   <strong>
                     <Money v={SCENARIO_C.collections!} />
                   </strong>
@@ -620,11 +754,11 @@ export function CreditLossChapters() {
           </p>
           <Walkthrough
             x={DOR}
-            unknown={[k(AR, "סגירה"), k(ALLOW, DOR.ids.adj), k(ALLOW, "סגירה")]}
+            unknown={[k(ALLOW, DOR.ids.adj), k(AR, "סגירה"), k(ALLOW, "סגירה")]}
             solve={
               <>
                 <p>
-                  מאזנים את הלקוחות: <Money v={DOR.result.gross} />. הלקוח הספציפי עדיין חייב — הוא נשאר בכרטיס הלקוחות, ורק ההפרשה עליו מחושבת לחוד:
+                  יתרת הסגירה של הלקוחות: <Money v={DOR.result.gross} />. הלקוח הספציפי עדיין חייב — הוא נשאר בכרטיס הלקוחות, ורק ההפרשה עליו מחושבת לחוד:
                 </p>
                 <DataTable
                   head={["", "חישוב", "סכום"]}
@@ -662,7 +796,7 @@ export function CreditLossChapters() {
           </p>
           <Walkthrough
             x={ERAN}
-            unknown={[k(AR, "סגירה"), k(ALLOW, ERAN.adj.id), k(ALLOW, "סגירה")]}
+            unknown={[k(ALLOW, ERAN.adj.id), k(AR, "סגירה"), k(ALLOW, "סגירה")]}
             given={
               <p className="text-sm text-muted">
                 הקניות באשראי לא נכנסות לאף אחד מהכרטיסים: הן מגדילות ספקים — התחייבות. החוב שחזר נכנס פעמיים לכרטיס הלקוחות (החזרה בחובה, גבייה בזכות) ופעם אחת
@@ -725,7 +859,7 @@ export function CreditLossChapters() {
             <TwoT
               accounts={g.result.accounts}
               entries={g.entries}
-              unknown={[k(AR, "פתיחה"), k(ALLOW, "פתיחה"), k(AR, "סגירה"), k(ALLOW, g.adj.id), k(ALLOW, "סגירה")]}
+              unknown={[k(ALLOW, g.adj.id), k(AR, "פתיחה"), k(ALLOW, "פתיחה"), k(AR, "סגירה"), k(ALLOW, "סגירה")]}
               mode="question"
             />
           </RuleStep>
@@ -742,7 +876,7 @@ export function CreditLossChapters() {
               .
             </p>
           </RuleStep>
-          <RuleStep rules={[3]} title="מאזנים את כרטיס הלקוחות">
+          <RuleStep rules={[3]} title="יתרת הסגירה של הלקוחות">
             <p>
               {f(g.openingGross)} + {f(g.creditSales)} + {f(g.recovered)} − {f(g.collections)} − {f(g.bankruptDebt)} − {f(g.recovered)} ={" "}
               <strong>
@@ -761,9 +895,9 @@ export function CreditLossChapters() {
               foot={["הפרשה נדרשת", "", g.required]}
             />
           </RuleStep>
-          <RuleStep rules={[3]} title="מאזנים את כרטיס ההפרשה — ההוצאה">
+          <RuleStep rules={[3]} title="ההוצאה — כהפרש בכרטיס ההפרשה">
             <p>
-              בזכות: פתיחה {f(g.openingAllowance)} + החוב שחזר {f(g.recovered)}. בחובה: מחיקה {f(g.bankruptDebt)} וסגירה {f(g.required)}. חסר בזכות:{" "}
+              סגירה = פתיחה − מחיקה + חוב שחזר + X, כלומר {f(g.required)} = {f(g.openingAllowance)} − {f(g.bankruptDebt)} + {f(g.recovered)} + X, ולכן X ={" "}
               <strong>
                 <Money v={g.result.expense} />
               </strong>{" "}
@@ -772,7 +906,7 @@ export function CreditLossChapters() {
             <TwoT
               accounts={g.result.accounts}
               entries={g.entries}
-              unknown={[k(AR, "פתיחה"), k(ALLOW, "פתיחה"), k(AR, "סגירה"), k(ALLOW, g.adj.id), k(ALLOW, "סגירה")]}
+              unknown={[k(ALLOW, g.adj.id), k(AR, "פתיחה"), k(ALLOW, "פתיחה"), k(AR, "סגירה"), k(ALLOW, "סגירה")]}
             />
           </RuleStep>
           <RuleStep rules={[]} title="פקודות היומן">
