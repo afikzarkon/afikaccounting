@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { JournalEntry } from "@/components/study/blocks";
-import { type Entry, isBalanced, type Statements, type TAccount, type TrialBalance, typeOf, TYPE_LABEL } from "@/lib/learn/basics";
+import { type Entry, isBalanced, isBalanceSheet, normalSide, round2, type Statements, type TAccount, type TrialBalance, typeOf, TYPE_LABEL } from "@/lib/learn/basics";
 import { cn } from "@/lib/utils";
 
 const nf = new Intl.NumberFormat("he-IL", { maximumFractionDigits: 2 });
@@ -18,16 +18,9 @@ export function Money({ v, plain, className }: { v: number; plain?: boolean; cla
   );
 }
 
-/** A term on its first appearance: bold, with its English counterpart. */
-export function Term({ he, en }: { he: string; en: string }) {
-  return (
-    <>
-      <strong className="font-semibold text-fg">{he}</strong>{" "}
-      <span className="text-[0.92em] text-muted">
-        (<bdi dir="ltr">{en}</bdi>)
-      </span>
-    </>
-  );
+/** A term on its first appearance, in bold. */
+export function Term({ he }: { he: string }) {
+  return <strong className="font-semibold text-fg">{he}</strong>;
 }
 
 /** One chapter of the page. */
@@ -60,16 +53,69 @@ export function Card({ title, children, className }: { title?: ReactNode; childr
   );
 }
 
-/** A journal entry from the model, through the shared journal-entry view. */
-export function EntryView({ entry, title, note }: { entry: Entry; title?: string; note?: ReactNode }) {
+/** A journal entry from the model, through the shared journal-entry view, with what it does to each report. */
+export function EntryView({ entry, title, note, effect = true }: { entry: Entry; title?: string; note?: ReactNode; effect?: boolean }) {
   if (!isBalanced(entry)) throw new Error(`Unbalanced entry ${entry.id}`);
+  const text = note === null ? null : (note ?? entry.why);
   return (
     <JournalEntry
       title={title ?? entry.text}
       date={entry.date || undefined}
       lines={entry.lines.map((l) => ({ account: l.account, dr: l.dr, cr: l.cr }))}
-      note={note ?? entry.why}
+      note={
+        effect || text ? (
+          <div className="space-y-2.5">
+            {effect && <EntryEffect entry={entry} />}
+            {text && <div>{text}</div>}
+          </div>
+        ) : undefined
+      }
     />
+  );
+}
+
+type Effect = { account: string; amount: number; up: boolean };
+
+/** Each account's net movement in an entry, as a rise or fall of its own balance. */
+function effectsOf(entry: Entry): Effect[] {
+  const net = new Map<string, number>();
+  for (const l of entry.lines) net.set(l.account, round2((net.get(l.account) ?? 0) + (l.dr ?? 0) - (l.cr ?? 0)));
+  return [...net]
+    .filter(([, v]) => Math.abs(v) > 0.005)
+    .map(([account, v]) => ({ account, amount: Math.abs(v), up: normalSide(account) === "dr" ? v > 0 : v < 0 }));
+}
+
+/** The entry split by report: what moved in the balance sheet, and what moved in profit or loss. */
+export function EntryEffect({ entry }: { entry: Entry }) {
+  const all = effectsOf(entry);
+  const sheet = all.filter((x) => isBalanceSheet(x.account));
+  const pl = all.filter((x) => !isBalanceSheet(x.account));
+  const group = (label: string, items: Effect[], empty: string, tone: string) => (
+    <div className="min-w-0 rounded-lg border border-line bg-surface p-2">
+      <p className={cn("mb-1.5 inline-block rounded-md px-2 py-0.5 text-[11px] font-bold", tone)}>{label}</p>
+      {items.length === 0 ? (
+        <p className="text-xs text-subtle">{empty}</p>
+      ) : (
+        <ul className="space-y-1">
+          {items.map((x) => (
+            <li key={x.account} className="flex items-center justify-between gap-2 text-[13px] text-fg">
+              <span className="min-w-0">
+                {x.account} <span className="text-[11px] text-subtle">· {TYPE_LABEL[typeOf(x.account)]}</span>
+              </span>
+              <span className={cn("shrink-0 font-semibold", x.up ? "text-success" : "text-danger")}>
+                {x.up ? "▲" : "▼"} <Money v={x.amount} plain />
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+  return (
+    <div className="grid gap-2 sm:grid-cols-2" aria-label="השפעת הפקודה על הדוחות">
+      {group("השפעה על המאזן", sheet, "אין שינוי במאזן", "bg-accent text-accent-fg")}
+      {group("השפעה על רווח והפסד", pl, "אין שינוי ברווח והפסד", "bg-fg text-surface")}
+    </div>
   );
 }
 
@@ -122,7 +168,8 @@ function Cell({ label, v, on }: { label: string; v: number; on?: boolean }) {
 const Empty = () => <p className="px-2 py-0.5">&nbsp;</p>;
 
 /** A trial balance: every balance on its side, and the two totals. */
-export function TBTable({ tb, caption, kind }: { tb: TrialBalance; caption?: string; kind?: boolean }) {
+export function TBTable({ tb, caption, kind, changed }: { tb: TrialBalance; caption?: ReactNode; kind?: boolean; changed?: Set<string> }) {
+  const balanced = Math.abs(tb.dr - tb.cr) < 0.005;
   return (
     <Scroller caption={caption}>
       <table className="w-full min-w-[26rem] text-sm">
@@ -136,7 +183,7 @@ export function TBTable({ tb, caption, kind }: { tb: TrialBalance; caption?: str
         </thead>
         <tbody>
           {tb.rows.map((r) => (
-            <tr key={r.account} className="border-t border-line/70">
+            <tr key={r.account} className={cn("border-t border-line/70", changed?.has(r.account) && "bg-accent-soft/70 font-semibold")}>
               <td className="px-4 py-2 text-fg">{r.account}</td>
               {kind && <td className="px-4 py-2 text-xs text-muted">{TYPE_LABEL[typeOf(r.account)]}</td>}
               <td className="px-4 py-2 text-end">{r.dr ? <Money v={r.dr} plain /> : ""}</td>
@@ -146,7 +193,9 @@ export function TBTable({ tb, caption, kind }: { tb: TrialBalance; caption?: str
         </tbody>
         <tfoot>
           <tr className="border-t-2 border-line-strong font-semibold">
-            <td className="px-4 py-2 text-fg">סה״כ</td>
+            <td className="px-4 py-2 text-fg">
+              סה״כ <span className={cn("ms-1 text-xs font-medium", balanced ? "text-success" : "text-danger")}>{balanced ? "✓ חובה = זכות" : "✗ לא מאוזן"}</span>
+            </td>
             {kind && <td />}
             <td className="px-4 py-2 text-end text-debit">
               <Money v={tb.dr} plain />
@@ -228,6 +277,66 @@ export function StatementsView({ s, year }: { s: Statements; year: string }) {
         </table>
       </Scroller>
     </div>
+  );
+}
+
+/**
+ * A balance sheet as accountants draw it: assets on the right, liabilities and
+ * equity on the left, a total under each side. With `prev`, the rows that moved
+ * are marked with their change.
+ */
+export function BalanceSheetT({ s, prev, title, retainedLabel }: { s: Statements; prev?: Statements; title: ReactNode; retainedLabel?: string }) {
+  const before = prev ? new Map([...prev.assets, ...prev.liabilities, ...prev.equity]) : null;
+  const ok = Math.abs(s.totalAssets - (s.totalLiabilities + s.totalEquity)) < 0.005;
+  const rows = (items: [string, number][]) =>
+    items.map(([a, v]) => {
+      const delta = before ? round2(v - (before.get(a) ?? 0)) : 0;
+      return (
+        <li key={a} className={cn("flex items-center justify-between gap-2 px-3 py-1.5 text-[13.5px]", delta !== 0 && "bg-accent-soft/70 font-semibold")}>
+          <span className="min-w-0 text-fg">{a === "עודפים" && retainedLabel ? retainedLabel : a}</span>
+          <span className="flex shrink-0 items-center gap-2">
+            {delta !== 0 && (
+              <span className={cn("text-[11px]", delta > 0 ? "text-success" : "text-danger")}>
+                {delta > 0 ? "▲" : "▼"} <Money v={Math.abs(delta)} plain />
+              </span>
+            )}
+            <Money v={v} plain className="text-fg" />
+          </span>
+        </li>
+      );
+    });
+  const section = (label: string, items: [string, number][]) => (
+    <>
+      <li className="bg-surface-2/60 px-3 py-1 text-[11px] font-bold text-muted">{label}</li>
+      {items.length ? rows(items) : <li className="px-3 py-1.5 text-[13px] text-subtle">—</li>}
+    </>
+  );
+  const total = (label: string, v: number) => (
+    <p className="mt-auto flex items-center justify-between gap-2 border-t-2 border-fg/70 px-3 py-2 text-sm font-bold text-fg">
+      <span>{label}</span>
+      <Money v={v} plain />
+    </p>
+  );
+  return (
+    <figure className="my-3 overflow-hidden rounded-xl border-2 border-accent/40 bg-surface">
+      <figcaption className="flex flex-wrap items-center gap-2 bg-accent px-4 py-2 text-accent-fg">
+        <span className="me-auto text-[15px] font-bold">{title}</span>
+        <span className="rounded-md bg-accent-fg/15 px-2 py-0.5 text-xs font-semibold">{ok ? "✓ מאוזן" : "✗ לא מאוזן"}</span>
+      </figcaption>
+      <div className="grid sm:grid-cols-2">
+        <div className="flex min-w-0 flex-col sm:border-e-2 sm:border-fg/70">
+          <ul className="divide-y divide-line/60">{section("נכסים", s.assets)}</ul>
+          {total("סך הנכסים", s.totalAssets)}
+        </div>
+        <div className="flex min-w-0 flex-col max-sm:mt-2 max-sm:border-t-2 max-sm:border-fg/70">
+          <ul className="divide-y divide-line/60">
+            {section("התחייבויות", s.liabilities)}
+            {section("הון", s.equity)}
+          </ul>
+          {total("סך ההתחייבויות וההון", s.totalLiabilities + s.totalEquity)}
+        </div>
+      </div>
+    </figure>
   );
 }
 

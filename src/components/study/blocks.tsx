@@ -154,7 +154,9 @@ export function DataTable({
   caption?: ReactNode;
 }) {
   const cell = (c: Cell) => (typeof c === "number" ? <Num v={c} /> : c);
-  const align = (c: Cell, i: number) => (i > 0 && (typeof c === "number" || c === "—") ? "text-end" : "text-start");
+  // One alignment per column, shared by its header: numeric columns to the end, everything else to the start.
+  const numeric = head.map((_, i) => i > 0 && [...rows, ...(foot ? [foot] : [])].some((r) => typeof r[i] === "number"));
+  const align = (_: Cell, i: number) => (numeric[i] ? "text-end" : "text-start");
   return (
     <div className="my-4 overflow-hidden rounded-xl border border-line">
       {caption && <p className="border-b border-line bg-surface-2/70 px-4 py-2.5 text-sm font-semibold text-fg">{caption}</p>}
@@ -163,7 +165,7 @@ export function DataTable({
           <thead>
             <tr className="text-xs text-muted">
               {head.map((h, i) => (
-                <th key={i} className={cn("px-4 py-2 font-medium whitespace-nowrap", i === 0 ? "text-start" : "text-end")}>
+                <th key={i} className={cn("px-4 py-2 font-medium whitespace-nowrap", numeric[i] ? "text-end" : "text-start")}>
                   {h}
                 </th>
               ))}

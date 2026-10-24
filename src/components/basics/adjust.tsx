@@ -1,4 +1,5 @@
-import { Banknote } from "lucide-react";
+import { ArrowLeft, Banknote } from "lucide-react";
+import Link from "next/link";
 import { DataTable } from "@/components/study/blocks";
 import { balancesOf, costOfSales, creditLoss, CUTOFF, type Entry, KESEM, ledger, MIA, RONEN, statements, trialBalance } from "@/lib/learn/basics";
 import { cn } from "@/lib/utils";
@@ -41,12 +42,12 @@ const MATRIX: [string, string, string][] = [
   ["צד ההכנסות", "הכנסות לקבל — נכס", "הכנסות מראש — התחייבות"],
 ];
 
-function CutoffCard({ title, en, kind, plain, timeline, entry, why }: { title: string; en: string; kind: string; plain: string; timeline: React.ReactNode; entry: Entry; why: string }) {
+function CutoffCard({ title, kind, plain, timeline, entry, why }: { title: string; kind: string; plain: string; timeline: React.ReactNode; entry: Entry; why: string }) {
   return (
     <Card
       title={
         <span className="flex flex-wrap items-baseline gap-x-2">
-          <Term he={title} en={en} />
+          <Term he={title} />
           <span className="text-xs font-normal text-muted">{kind}</span>
         </span>
       }
@@ -63,19 +64,19 @@ export function AdjustChapters() {
     <>
       <Chapter n={12} id="accrual" title="בסיס מצטבר והתאמות סוף שנה" lead="כל הכנסה והוצאה — לשנה שבה באמת נהנו ממנה">
         <p>
-          הדוחות מוכנים ל<Term he="תקופה חשבונאית" en="Accounting Period" /> — בדרך כלל שנה. לפי <Term he="עיקרון ההקבלה" en="Matching Principle" />, בכל
+          הדוחות מוכנים ל<Term he="תקופה חשבונאית" /> — בדרך כלל שנה. לפי <Term he="עיקרון ההקבלה" />, בכל
           שנה רושמים רק את ההכנסות וההוצאות ששייכות לה, וההוצאות נרשמות יחד עם ההכנסות שבגללן הוצאו. אבל הכסף לא תמיד זז באותה שנה: לפעמים משלמים
-          מראש, לפעמים באיחור. בסוף השנה מתקנים את זה בעזרת ארבעה <Term he="חשבונות חתך" en="Accruals and Deferrals" /> — כולם מאזניים:
+          מראש, לפעמים באיחור. בסוף השנה מתקנים את זה בעזרת ארבעה <Term he="חשבונות חתך" /> — כולם מאזניים:
         </p>
         <DataTable head={["", "שילמנו / קיבלנו מראש", "עוד לא שילמנו / קיבלנו"]} rows={MATRIX} />
         <p>
-          הפקודה שמוסיפה את מה שחסר נקראת <Term he="פקודת התאמה" en="Adjusting Entry" />. אם נרשמה פקודה שגויה, רושמים{" "}
-          <Term he="פקודת תיקון" en="Correcting Entry" /> שמגשרת בין מה שנרשם למה שהיה צריך להירשם.
+          הפקודה שמוסיפה את מה שחסר נקראת <Term he="פקודת התאמה" />. אם נרשמה פקודה שגויה, רושמים{" "}
+          <Term he="פקודת תיקון" /> שמגשרת בין מה שנרשם למה שהיה צריך להירשם.
         </p>
         <div className="grid gap-4 xl:grid-cols-2">
           <CutoffCard
             title="הוצאות מראש"
-            en="Prepaid Expenses"
+           
             kind="נכס"
             plain="שילמנו עכשיו על משהו שנקבל גם בשנים הבאות. החלק של השנים הבאות הוא נכס."
             timeline={<Timeline cash="תשלום 120,000 ב-1.1.2020" cashAt="start" segments={[{ months: 12, label: "2020 — הוצאה", year: "this" }, { months: 12, label: "2021 — מראש", year: "next" }]} />}
@@ -84,7 +85,7 @@ export function AdjustChapters() {
           />
           <CutoffCard
             title="הוצאות לשלם"
-            en="Accrued Expenses"
+           
             kind="התחייבות"
             plain="קיבלנו משהו השנה ועוד לא שילמנו עליו — למשל שכר דצמבר שישולם בינואר, או חשמל שהחשבונית שלו עוד לא הגיעה."
             timeline={<Timeline cash="תשלום ב-5.1.2021" cashAt="end" segments={[{ months: 11, label: "ינואר–נובמבר — נרשם", year: "this" }, { months: 1, label: "דצמבר", year: "this" }]} />}
@@ -93,7 +94,7 @@ export function AdjustChapters() {
           />
           <CutoffCard
             title="הכנסות מראש"
-            en="Unearned Revenue"
+           
             kind="התחייבות"
             plain="קיבלנו כסף עכשיו על משהו שניתן גם בשנים הבאות. עד שניתן אותו — אנחנו חייבים אותו."
             timeline={<Timeline cash="תקבול 120,000 ב-1.1.2019" cashAt="start" segments={[{ months: 12, label: "2019 — הכנסה", year: "this" }, { months: 24, label: "2020–2021 — מראש", year: "next" }]} />}
@@ -102,7 +103,7 @@ export function AdjustChapters() {
           />
           <CutoffCard
             title="הכנסות לקבל"
-            en="Accrued Revenue"
+           
             kind="נכס"
             plain="נתנו משהו השנה ועוד לא קיבלנו עליו כסף — למשל ריבית על הלוואה שנתנו, שתשולם רק בשנה הבאה."
             timeline={<Timeline cash="ריבית תתקבל ב-1.1.2021" cashAt="end" segments={[{ months: 12, label: "2020 — הריבית הורווחה", year: "this" }]} />}
@@ -153,7 +154,7 @@ export function AdjustChapters() {
       <Chapter n={13} id="inventory" title="מלאי סגירה" lead="מה שלא נמכר — לא הוצאה של השנה">
         <p>
           בשיטה של הקורס, כל קנייה של סחורה נרשמת בחשבון קניות. אבל לא כל מה שנקנה נמכר. בסוף השנה סופרים את מה שנשאר במחסן — זה{" "}
-          <Term he="מלאי הסגירה" en="Closing Inventory" /> — ומוציאים אותו מההוצאות. מה שנשאר בהוצאות הוא <Term he="עלות המכר" en="Cost of Sales" />: העלות של
+          <Term he="מלאי הסגירה" /> — ומוציאים אותו מההוצאות. מה שנשאר בהוצאות הוא <Term he="עלות המכר" />: העלות של
           מה שבאמת נמכר.
         </p>
         <Rule>עלות המכר = מלאי פתיחה + קניות − מלאי סגירה</Rule>
@@ -185,7 +186,7 @@ export function AdjustChapters() {
       <Chapter n={14} id="creditloss" title="הפסדי אשראי" lead="לא כל לקוח ישלם — וצריך לומר זאת מראש">
         <p>
           כשמוכרים באשראי, חלק מהלקוחות לא ישלמו. כדי שהלקוחות לא יוצגו ביותר ממה שבאמת ייגבה, מעריכים את ההפסד מראש ורושמים{" "}
-          <Term he="הפרשה להפסדי אשראי חזויים" en="Allowance for Expected Credit Losses" /> — חשבון שמקטין את הלקוחות במאזן. שלושה מצבים:
+          <Term he="הפרשה להפסדי אשראי חזויים" /> — חשבון שמקטין את הלקוחות במאזן. שלושה מצבים:
         </p>
         <ul className="list-inside list-disc space-y-1">
           <li>
@@ -195,9 +196,21 @@ export function AdjustChapters() {
             <strong>הפרשה כללית</strong> — אחוז קבוע מכל שאר הלקוחות.
           </li>
           <li>
-            <Term he="חוב אבוד" en="Bad Debt Write-Off" /> — כשברור שהלקוח לא ישלם (למשל פשט רגל): מוחקים את החוב מהלקוחות כנגד ההפרשה.
+            <Term he="חוב אבוד" /> — כשברור שהלקוח לא ישלם (למשל פשט רגל): מוחקים את החוב מהלקוחות כנגד ההפרשה.
           </li>
         </ul>
+        <Link
+          href="/basics/credit-losses"
+          className="group flex items-center gap-4 rounded-xl border-2 border-accent/50 bg-accent-soft px-5 py-4 transition-colors hover:border-accent"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block text-[16px] font-bold text-fg">מדריך מלא: הפסדי אשראי</span>
+            <span className="block text-sm text-muted">
+              כרטיס ההפרשה, ביטול הפרשה, נעלם ביתרת פתיחה, ניתוח גיל חובות, ספציפית מול כללית, חוב שנמחק ונגבה — ושאלה פתורה ברמת בחינה.
+            </span>
+          </span>
+          <ArrowLeft className="h-5 w-5 shrink-0 text-accent transition-transform group-hover:-translate-x-1" aria-hidden />
+        </Link>
         <Card title='חברת קסם הרוגע בע"מ, 31.12.2020'>
           <p>
             יתרת הלקוחות <Money v={KESEM.customers} />, ההפרשה הקיימת <Money v={KESEM.allowance} />. נודע שחוב של <Money v={KESEM.badDebt} /> אבוד; על לקוח

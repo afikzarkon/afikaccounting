@@ -1,5 +1,5 @@
 import { ArrowLeft, Building2, FileText, Ruler, Search } from "lucide-react";
-import { DataTable } from "@/components/study/blocks";
+import { cn } from "@/lib/utils";
 import { Card, Chapter, Money, Rule, Term } from "./ui";
 
 // Shula, the neighbour: a household described the way a business is. Illustrative figures.
@@ -25,12 +25,13 @@ const STAGES = [
   ["דוחות כספיים", "מסדרים את היתרות לרווח והפסד ולמאזן"],
 ];
 
-const TYPES: { name: string; en: string; plain: string; example: string; side: "חובה" | "זכות"; up: string; down: string }[] = [
-  { name: "נכסים", en: "Assets", plain: "מה שהעסק מחזיק ויפיק ממנו תועלת בעתיד", example: "מזומן, לקוחות שחייבים כסף, מחשב, רכב", side: "חובה", up: "חובה", down: "זכות" },
-  { name: "התחייבויות", en: "Liabilities", plain: "מה שהעסק חייב לאחרים ויצטרך לשלם", example: "ספקים, הלוואה מהבנק, מקדמה שקיבל מלקוח", side: "זכות", up: "זכות", down: "חובה" },
-  { name: "הון", en: "Equity", plain: "מה ששייך לבעלים: מה שהשקיעו, ועוד הרווחים שנצברו", example: "הון בעלים, הון מניות, עודפים", side: "זכות", up: "זכות", down: "חובה" },
-  { name: "הכנסות", en: "Income / Revenue", plain: "מה שהעסק הרוויח מהפעילות שלו בתקופה", example: "מכירות, הכנסות מייעוץ, הכנסות משכירות", side: "זכות", up: "זכות", down: "חובה" },
-  { name: "הוצאות", en: "Expenses", plain: "מה שהעסק צרך כדי לפעול בתקופה, ולא יחזור", example: "שכירות, שכר, חשמל, פרסום, קניות", side: "חובה", up: "חובה", down: "זכות" },
+type Side = "חובה" | "זכות";
+const TYPES: { name: string; plain: string; example: string; side: Side; up: Side; down: Side }[] = [
+  { name: "נכסים", plain: "מה שהעסק מחזיק ויפיק ממנו תועלת בעתיד", example: "מזומן, לקוחות שחייבים כסף, מחשב, רכב", side: "חובה", up: "חובה", down: "זכות" },
+  { name: "התחייבויות", plain: "מה שהעסק חייב לאחרים ויצטרך לשלם", example: "ספקים, הלוואה מהבנק, מקדמה שקיבל מלקוח", side: "זכות", up: "זכות", down: "חובה" },
+  { name: "הון", plain: "מה ששייך לבעלים: מה שהשקיעו, ועוד הרווחים שנצברו", example: "הון בעלים, הון מניות, עודפים", side: "זכות", up: "זכות", down: "חובה" },
+  { name: "הכנסות", plain: "מה שהעסק הרוויח מהפעילות שלו בתקופה", example: "מכירות, הכנסות מייעוץ, הכנסות משכירות", side: "זכות", up: "זכות", down: "חובה" },
+  { name: "הוצאות", plain: "מה שהעסק צרך כדי לפעול בתקופה, ולא יחזור", example: "שכירות, שכר, חשמל, פרסום, קניות", side: "חובה", up: "חובה", down: "זכות" },
 ];
 
 export function IntroChapters() {
@@ -38,36 +39,46 @@ export function IntroChapters() {
     <>
       <Chapter n={1} id="what" title="מהי חשבונאות" lead="שפה שמתרגמת את מה שקורה בעסק למספרים שכולם מבינים">
         <p>
-          <Term he="חשבונאות" en="Accounting" /> מכונה בקיצור &quot;שפת העסקים&quot;. היא לוקחת כל מה שקורה בעסק — קנייה, מכירה, תשלום שכר — ומתרגמת אותו
+          <Term he="חשבונאות" /> מכונה בקיצור &quot;שפת העסקים&quot;. היא לוקחת כל מה שקורה בעסק — קנייה, מכירה, תשלום שכר — ומתרגמת אותו
           למספרים לפי כללים קבועים, כך שכל אחד יוכל לקרוא אותם ולהבין: האם העסק מרוויח? מה יש לו? כמה הוא חייב?
         </p>
         <Card title="דוגמה: שולה השכנה">
           <p>שולה מבקשת שתעזרו לה להבין את מצבה הכספי. אתם מבקשים ממנה לרשום על דף שתי שאלות פשוטות:</p>
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             <Mini
-              title="כל חודש: כמה נכנס וכמה יצא?"
-              left={["הכנסות", SHULA.income]}
-              right={["הוצאות", SHULA.expenses]}
+              report="רווח והפסד"
+              when="מה קרה בתקופה — כל חודש"
+              title="כמה נכנס וכמה יצא?"
+              cols={[
+                { name: "הכנסות", rows: SHULA.income },
+                { name: "הוצאות", rows: SHULA.expenses },
+              ]}
               verdict={
                 <>
-                  נשאר לה בכל חודש: <Money v={total(SHULA.income) - total(SHULA.expenses)} />
+                  רווח החודש (הכנסות פחות הוצאות): <Money v={total(SHULA.income) - total(SHULA.expenses)} />
                 </>
               }
             />
             <Mini
-              title="ברגע זה: מה יש לה ומה היא חייבת?"
-              left={["רכוש", SHULA.assets]}
-              right={["התחייבויות", SHULA.liabilities]}
+              report="מאזן"
+              when="מה המצב ביום מסוים — ברגע זה"
+              title="מה יש לה, וממי זה הגיע?"
+              cols={[
+                { name: "נכסים", rows: SHULA.assets, total: "סך הנכסים" },
+                {
+                  name: "התחייבויות והון",
+                  rows: [...SHULA.liabilities, ["הון — מה ששלה באמת", total(SHULA.assets) - total(SHULA.liabilities)]],
+                  total: "סך ההתחייבויות וההון",
+                },
+              ]}
               verdict={
                 <>
-                  שלה באמת, אחרי החובות: <Money v={total(SHULA.assets) - total(SHULA.liabilities)} />
+                  שני הצדדים שווים: <Money v={total(SHULA.assets)} /> = <Money v={total(SHULA.liabilities)} /> + <Money v={total(SHULA.assets) - total(SHULA.liabilities)} />
                 </>
               }
             />
           </div>
-          <p className="text-sm text-muted">
-            שתי השאלות האלה הן בדיוק שני הדוחות החשובים של כל עסק: הראשונה היא דוח רווח והפסד (מה קרה בתקופה), והשנייה היא המאזן (מה המצב ביום מסוים).
-          </p>
+          <Rule>שתי השאלות האלה הן בדיוק שני הדוחות החשובים של כל עסק: רווח והפסד — מה קרה בתקופה; מאזן — מה המצב ביום מסוים.</Rule>
         </Card>
         <p>למה עסק צריך את זה? עסק קיים כדי להרוויח לבעליו. כדי לדעת אם הרוויח, וכמה — צריך שיטת רישום אחידה. זו החשבונאות.</p>
         <div className="grid gap-3 sm:grid-cols-3">
@@ -98,12 +109,12 @@ export function IntroChapters() {
             <Building2 className="h-5 w-5" />
           </span>
           <p className="!mt-0">
-            <Term he="ישות נפרדת" en="Separate Entity" /> פירושה שאת העסק מודדים בנפרד מבעליו. הקפה ששילמה הבעלים בבית הוא לא הוצאה של העסק, והמכונית
+            <Term he="ישות נפרדת" /> פירושה שאת העסק מודדים בנפרד מבעליו. הקפה ששילמה הבעלים בבית הוא לא הוצאה של העסק, והמכונית
             הפרטית שלה היא לא נכס של העסק. רק מה שקורה <strong>לעסק עצמו</strong> נרשם בספרים שלו.
           </p>
         </div>
         <p>
-          צורה נפוצה של עסק בישראל היא <Term he='חברה בע"מ' en="Limited Company, Ltd" /> — חברה בערבון מוגבל. מבחינה משפטית יש &quot;מסך&quot; בין החברה
+          צורה נפוצה של עסק בישראל היא <Term he='חברה בע"מ' /> — חברה בערבון מוגבל. מבחינה משפטית יש &quot;מסך&quot; בין החברה
           לבעליה: אם החברה נכשלת, החובות שלה משולמים מהנכסים שלה, והבעלים מפסידים לכל היותר את מה שהשקיעו. מבחינה חשבונאית, אותו מסך קובע מה נכנס
           לדוחות: רק העסקאות של החברה.
         </p>
@@ -114,18 +125,13 @@ export function IntroChapters() {
 
       <Chapter n={3} id="types" title="חמשת סוגי החשבונות" lead="כל מה שעסק רושם נכנס לאחד מחמישה סלים">
         <p>
-          <Term he="חשבון" en="Account" /> הוא &quot;דף&quot; בספרי העסק שבו רושמים כל מה שקשור לנושא אחד — למשל מזומן, או הוצאות שכר. לכל חשבון שני צדדים:{" "}
-          <Term he="חובה" en="Debit" /> (הצד הימני) ו<Term he="זכות" en="Credit" /> (הצד השמאלי). מה נכנס לאיזה צד — נלמד בפרק 6; כאן רק נכיר את הסלים.
+          <Term he="חשבון" /> הוא &quot;דף&quot; בספרי העסק שבו רושמים כל מה שקשור לנושא אחד — למשל מזומן, או הוצאות שכר. לכל חשבון שני צדדים:{" "}
+          <Term he="חובה" /> (הצד הימני) ו<Term he="זכות" /> (הצד השמאלי). מה נכנס לאיזה צד — נלמד בפרק 6; כאן רק נכיר את הסלים.
         </p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {TYPES.map((t) => (
             <article key={t.name} className="card flex flex-col p-4">
-              <h3 className="text-[17px] font-semibold text-fg">
-                {t.name}{" "}
-                <span className="text-xs font-normal text-muted">
-                  (<bdi dir="ltr">{t.en}</bdi>)
-                </span>
-              </h3>
+              <h3 className="text-[17px] font-semibold text-fg">{t.name}</h3>
               <p className="mt-1 text-[14.5px] text-fg/90">{t.plain}</p>
               <p className="mt-auto pt-3 text-[13px] text-muted">
                 <span className="font-semibold text-accent">מהחיים: </span>
@@ -134,31 +140,77 @@ export function IntroChapters() {
             </article>
           ))}
         </div>
-        <DataTable
-          caption="איפה כל סוג גדל ואיפה הוא קטן"
-          head={["סוג", "יתרה רגילה", "מה מגדיל אותו", "מה מקטין אותו", "באיזה דוח"]}
-          rows={TYPES.map((t) => [
-            t.name,
-            <SideTag key="s" side={t.side} />,
-            <SideTag key="u" side={t.up as "חובה" | "זכות"} />,
-            <SideTag key="d" side={t.down as "חובה" | "זכות"} />,
-            ["הכנסות", "הוצאות"].includes(t.name) ? "רווח והפסד" : "מאזן",
-          ])}
-        />
+        <div className="my-4 overflow-hidden rounded-xl border border-line">
+          <p className="border-b border-line bg-surface-2/70 px-4 py-2.5 text-sm font-semibold text-fg">איפה כל סוג גדל ואיפה הוא קטן</p>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[34rem] table-fixed text-sm">
+              <colgroup>
+                <col className="w-[24%]" />
+                <col className="w-[19%]" />
+                <col className="w-[19%]" />
+                <col className="w-[19%]" />
+                <col className="w-[19%]" />
+              </colgroup>
+              <thead>
+                <tr className="bg-surface-2/40 text-xs text-muted">
+                  {["סוג", "יתרה רגילה", "מה מגדיל אותו", "מה מקטין אותו", "באיזה דוח"].map((h, i) => (
+                    <th key={h} className={cn("px-3 py-2.5 font-semibold", i === 0 ? "text-start" : "text-center")}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {TYPES.map((t) => (
+                  <tr key={t.name} className="border-t border-line/70">
+                    <td className="px-3 py-2.5 font-semibold text-fg">{t.name}</td>
+                    <td className="px-3 py-2.5 text-center">
+                      <SideTag side={t.side} pill />
+                    </td>
+                    <td className="px-3 py-2.5 text-center">
+                      <SideTag side={t.up} pill />
+                    </td>
+                    <td className="px-3 py-2.5 text-center">
+                      <SideTag side={t.down} pill />
+                    </td>
+                    <td className="px-3 py-2.5 text-center">
+                      <span className="inline-block min-w-[6.5rem] rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-semibold text-fg">
+                        {["הכנסות", "הוצאות"].includes(t.name) ? "רווח והפסד" : "מאזן"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
         <Rule>זכרו את הזוגות: נכסים והוצאות גדלים בחובה. התחייבויות, הון והכנסות גדלים בזכות.</Rule>
       </Chapter>
     </>
   );
 }
 
-export function SideTag({ side }: { side: "חובה" | "זכות" }) {
-  return <span className={side === "חובה" ? "font-semibold text-debit" : "font-semibold text-credit"}>{side}</span>;
+export function SideTag({ side, pill }: { side: "חובה" | "זכות"; pill?: boolean }) {
+  return (
+    <span
+      className={cn(
+        "font-semibold",
+        side === "חובה" ? "text-debit" : "text-credit",
+        pill && cn("inline-block min-w-[4.5rem] rounded-full px-2.5 py-0.5 text-xs ring-1", side === "חובה" ? "bg-debit/10 ring-debit/30" : "bg-credit/10 ring-credit/30"),
+      )}
+    >
+      {side}
+    </span>
+  );
 }
 
-function Mini({ title, left, right, verdict }: { title: string; left: [string, [string, number][]]; right: [string, [string, number][]]; verdict: React.ReactNode }) {
-  const col = ([name, rows]: [string, [string, number][]]) => (
-    <div className="min-w-0">
-      <p className="text-xs font-semibold text-muted">{name}</p>
+type MiniCol = { name: string; rows: [string, number][]; total?: string };
+
+/** One of Shula's two pages, under a banner naming the report it really is. */
+function Mini({ report, when, title, cols, verdict }: { report: string; when: string; title: string; cols: MiniCol[]; verdict: React.ReactNode }) {
+  const col = ({ name, rows, total: label }: MiniCol, i: number) => (
+    <div className={cn("flex min-w-0 flex-col", i === 0 && "border-e-2 border-fg/70 pe-3")}>
+      <p className="border-b border-line pb-1 text-xs font-bold text-muted">{name}</p>
       <ul className="mt-1 space-y-0.5 text-sm">
         {rows.map(([a, v]) => (
           <li key={a} className="flex justify-between gap-2">
@@ -167,17 +219,26 @@ function Mini({ title, left, right, verdict }: { title: string; left: [string, [
           </li>
         ))}
       </ul>
+      {label && (
+        <p className="mt-auto flex justify-between gap-2 border-t border-line pt-1 text-sm font-semibold text-fg">
+          <span>{label}</span>
+          <Money v={total(rows)} plain />
+        </p>
+      )}
     </div>
   );
   return (
-    <div className="rounded-xl border border-line bg-surface-2/40 p-3">
-      <p className="text-sm font-semibold text-fg">{title}</p>
-      <div className="mt-2 grid grid-cols-2 gap-4">
-        {col(left)}
-        {col(right)}
+    <section className="overflow-hidden rounded-xl border-2 border-accent/50 bg-surface" aria-label={report}>
+      <header className="bg-accent px-4 py-2.5 text-accent-fg">
+        <h3 className="text-xl font-extrabold tracking-tight">{report}</h3>
+        <p className="text-xs font-medium opacity-90">{when}</p>
+      </header>
+      <div className="p-3">
+        <p className="text-sm font-semibold text-fg">{title}</p>
+        <div className="mt-2 grid grid-cols-2 gap-3">{cols.map(col)}</div>
+        <p className="mt-2 border-t border-line pt-2 text-sm font-semibold text-fg">{verdict}</p>
       </div>
-      <p className="mt-2 border-t border-line pt-2 text-sm font-semibold text-fg">{verdict}</p>
-    </div>
+    </section>
   );
 }
 

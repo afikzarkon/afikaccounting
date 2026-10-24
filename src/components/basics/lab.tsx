@@ -2,9 +2,9 @@
 
 import { ChevronLeft, ChevronRight, CircleCheck, TriangleAlert } from "lucide-react";
 import { useState } from "react";
-import { balancesOf, identityHolds, KITS, ledger, statements, typeOf, TYPE_LABEL } from "@/lib/learn/basics";
+import { balancesOf, identityHolds, KITS, ledger, statements, trialBalance } from "@/lib/learn/basics";
 import { cn } from "@/lib/utils";
-import { EntryView, Money } from "./ui";
+import { BalanceSheetT, EntryView, Money, TBTable } from "./ui";
 
 const STEPS = [...KITS.entries, KITS.closing];
 const FINAL_BEFORE = statements(balancesOf(ledger(KITS.entries)));
@@ -18,7 +18,10 @@ export function TransactionLab() {
   const entry = STEPS[step - 1];
   const accounts = ledger(STEPS.slice(0, step));
   const prev = balancesOf(ledger(STEPS.slice(0, step - 1)));
-  const s = statements(balancesOf(accounts));
+  const balances = balancesOf(accounts);
+  const s = statements(balances);
+  const prevS = statements(prev);
+  const changed = new Set(accounts.filter((t) => (prev[t.account] ?? 0) !== t.balance).map((t) => t.account));
   const isClosing = step === STEPS.length;
   const cash = accounts.find((t) => t.account === "מזומן")?.balance ?? 0;
 
@@ -57,41 +60,19 @@ export function TransactionLab() {
         </div>
 
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-fg">יתרות אחרי הפעולה</p>
-          <div className="mt-2 overflow-x-auto rounded-xl border border-line">
-            <table className="w-full min-w-[20rem] text-sm">
-              <thead>
-                <tr className="text-xs text-muted">
-                  <th className="px-3 py-1.5 text-start font-medium">חשבון</th>
-                  <th className="px-3 py-1.5 text-start font-medium">סוג</th>
-                  <th className="px-3 py-1.5 text-end font-medium">יתרה</th>
-                </tr>
-              </thead>
-              <tbody>
-                {accounts.map((t) => {
-                  const changed = (prev[t.account] ?? 0) !== t.balance;
-                  return (
-                    <tr key={t.account} className={cn("border-t border-line/70", changed && "bg-accent-soft/70")}>
-                      <td className="px-3 py-1.5 text-fg">{t.account}</td>
-                      <td className="px-3 py-1.5 text-xs text-muted">{TYPE_LABEL[typeOf(t.account)]}</td>
-                      <td className="px-3 py-1.5 text-end">
-                        <Money v={Math.abs(t.balance)} plain />{" "}
-                        <span className={cn("text-[11px]", t.balance >= 0 ? "text-debit" : "text-credit")}>{t.balance >= 0 ? "ח'" : "ז'"}</span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <p className={cn("mt-2 flex flex-wrap items-center gap-1.5 text-sm font-medium", identityHolds(s) ? "text-success" : "text-danger")}>
-            <CircleCheck className="h-4 w-4 shrink-0" /> נכסים <Money v={s.totalAssets} /> = התחייבויות <Money v={s.totalLiabilities} /> + הון{" "}
-            <Money v={s.totalEquity} />
-          </p>
+          <TBTable tb={trialBalance(balances)} caption="יתרות אחרי הפעולה — מאזן בוחן" kind changed={changed} />
           <p className="mt-1 text-sm text-muted">
-            מזומן בקופה: <Money v={cash} className="font-semibold text-fg" />
+            השורות המודגשות השתנו בפעולה הזו. מזומן בקופה: <Money v={cash} className="font-semibold text-fg" />
           </p>
         </div>
+      </div>
+
+      <div className="border-t border-line px-4 pb-4">
+        <BalanceSheetT s={s} prev={prevS} title={isClosing ? "המאזן בסוף השנה" : `המאזן אחרי פעולה ${entry.id}`} retainedLabel={s.profit >= 0 ? "רווח עד כה" : "הפסד עד כה"} />
+        <p className={cn("flex flex-wrap items-center gap-1.5 text-sm font-medium", identityHolds(s) ? "text-success" : "text-danger")}>
+          <CircleCheck className="h-4 w-4 shrink-0" /> נכסים <Money v={s.totalAssets} /> = התחייבויות <Money v={s.totalLiabilities} /> + הון{" "}
+          <Money v={s.totalEquity} />
+        </p>
       </div>
 
       {step >= KITS.entries.length && (
