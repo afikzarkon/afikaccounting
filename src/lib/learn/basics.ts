@@ -361,17 +361,27 @@ export const RONEN = {
 export const MIA = { opening: 280_000, purchases: 500_000 - 150_000, closing: 315_000 };
 export const costOfSales = (m: { opening: number; purchases: number; closing: number }) => m.opening + m.purchases - m.closing;
 
-/** Chapter 14: Kesem Harogaa's expected credit losses at 31.12.2020. */
-export const KESEM = { customers: 1_200_000, allowance: 60_000, badDebt: 40_000, specificDebt: 122_500, specificRate: 0.8, generalRate: 0.05 };
+/** Chapter 14: Tzaad, a shoe shop, in 2025 — the simple case (a general allowance only); the full guide has the rest. */
+export const TZAAD = { openingCustomers: 200_000, openingAllowance: 10_000, creditSales: 500_000, collections: 456_000, badDebt: 4_000, rate: 0.05 };
 
-export function creditLoss(k: typeof KESEM) {
-  const customersAfter = k.customers - k.badDebt;
-  const specific = round2(k.specificDebt * k.specificRate);
-  const general = round2((customersAfter - k.specificDebt) * k.generalRate);
-  const required = round2(specific + general);
-  const existingAfter = k.allowance - k.badDebt;
-  const expense = round2(required - existingAfter);
-  return { customersAfter, specific, general, required, existingAfter, expense, net: round2(customersAfter - required) };
+export function creditLoss(k: typeof TZAAD) {
+  const customers = k.openingCustomers + k.creditSales - k.collections - k.badDebt;
+  const required = round2(customers * k.rate);
+  // What the allowance already holds before the year-end entry: the opening, less the debts written off against it.
+  const before = k.openingAllowance - k.badDebt;
+  const expense = round2(required - before);
+  return { customers, required, before, expense, net: round2(customers - required) };
+}
+
+/** Tzaad's year as journal entries: the sale, the collection, the write-off, and the year-end top-up. */
+export function creditLossEntries(k: typeof TZAAD): Entry[] {
+  const c = creditLoss(k);
+  return [
+    e("1", "2025", "מכירות באשראי", [{ account: "לקוחות", dr: k.creditSales }, { account: "מכירות", cr: k.creditSales }]),
+    e("2", "2025", "גבייה מלקוחות", [{ account: "מזומן", dr: k.collections }, { account: "לקוחות", cr: k.collections }]),
+    e("3", "2025", "מחיקת חוב אבוד", [{ account: "הפרשה להפסדי אשראי חזויים", dr: k.badDebt }, { account: "לקוחות", cr: k.badDebt }]),
+    e("4", "31.12.2025", "השלמת ההפרשה לגובה הנדרש", [{ account: "הוצאות הפסדי אשראי", dr: c.expense }, { account: "הפרשה להפסדי אשראי חזויים", cr: c.expense }]),
+  ];
 }
 
 // ---------------------------------------------------------------------------
@@ -593,5 +603,6 @@ export function allEntries(): Entry[] {
     ...YUVAL.entries2021,
     ...Object.values(CUTOFF),
     ...RONEN.adjustments,
+    ...creditLossEntries(TZAAD),
   ];
 }

@@ -1,13 +1,44 @@
 import { ArrowLeft, Banknote } from "lucide-react";
 import Link from "next/link";
 import { DataTable } from "@/components/study/blocks";
-import { balancesOf, costOfSales, creditLoss, CUTOFF, type Entry, KESEM, ledger, MIA, RONEN, statements, trialBalance } from "@/lib/learn/basics";
+import {
+  balancesOf,
+  costOfSales,
+  creditLoss,
+  creditLossEntries,
+  CUTOFF,
+  type Entry,
+  ledger,
+  MIA,
+  RONEN,
+  round2,
+  statements,
+  trialBalance,
+  TZAAD,
+} from "@/lib/learn/basics";
 import { cn } from "@/lib/utils";
 import { Card, Chapter, EntryView, Money, Rule, StatementsView, TBTable, TCard, Term } from "./ui";
 
 const RONEN_FINAL = balancesOf(ledger(RONEN.adjustments, RONEN.preliminary));
 const RONEN_S = statements(RONEN_FINAL);
-const KESEM_C = creditLoss(KESEM);
+const TZAAD_C = creditLoss(TZAAD);
+const TZAAD_ENTRIES = creditLossEntries(TZAAD);
+const TZAAD_LEDGER = ledger(TZAAD_ENTRIES, { לקוחות: TZAAD.openingCustomers, "הפרשה להפסדי אשראי חזויים": -TZAAD.openingAllowance });
+const f = (v: number) => v.toLocaleString("he-IL");
+const pct = (r: number) => `${round2(r * 100)}%`;
+
+/** One numbered step of the worked example. */
+function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-line bg-surface p-4">
+      <p className="flex items-center gap-2 font-semibold text-fg">
+        <span className="num grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent text-xs text-accent-fg">{n}</span>
+        {title}
+      </p>
+      <div className="mt-2 space-y-3 text-[15px] leading-relaxed text-fg/90">{children}</div>
+    </div>
+  );
+}
 
 type Segment = { months: number; label: string; year: "this" | "next" };
 
@@ -201,72 +232,89 @@ export function AdjustChapters() {
         </ul>
         <Link
           href="/basics/credit-losses"
-          className="group flex items-center gap-4 rounded-xl border-2 border-accent/50 bg-accent-soft px-5 py-4 transition-colors hover:border-accent"
+          className="group flex items-center gap-4 rounded-xl border-2 border-accent bg-accent-soft px-5 py-4 transition-colors hover:bg-accent-soft/70"
         >
           <span className="min-w-0 flex-1">
-            <span className="block text-[16px] font-bold text-fg">מדריך מלא: הפסדי אשראי</span>
-            <span className="block text-sm text-muted">
-              מהרעיון הפשוט, דרך מתווה 3 הכללים ושני כרטיסי T, ועד חילוץ נעלמים, הפרשה ספציפית ושאלה פתורה ברמת בחינה.
+            <span className="block text-[17px] font-bold text-fg">המדריך המלא להפסדי אשראי נמצא בעמוד נפרד</span>
+            <span className="mt-0.5 block text-sm text-fg/85">
+              שם הנושא נלמד מההתחלה, צעד אחר צעד: הרעיון, מתווה 3 הכללים, שני כרטיסי T, חילוץ נעלמים, הפרשה ספציפית ושאלה ברמת בחינה.
             </span>
+            <span className="mt-1.5 block text-sm font-semibold text-accent">למדריך המלא ←</span>
           </span>
           <ArrowLeft className="h-5 w-5 shrink-0 text-accent transition-transform group-hover:-translate-x-1" aria-hidden />
         </Link>
-        <Card title='חברת קסם הרוגע בע"מ, 31.12.2020'>
+        <p className="rounded-xl border border-amber-500/40 bg-amber-500/[0.08] px-4 py-3 text-[15px] text-fg">
+          <strong>שימו לב:</strong> הדוגמה כאן היא דוגמה קצרה לחזרה — למי שכבר עבר על המדריך. אם זו הפעם הראשונה שאתם פוגשים הפסדי אשראי, התחילו במדריך וחזרו
+          לכאן אחר כך.
+        </p>
+
+        <Card title='דוגמה לחזרה: חנות הנעליים "צעד", 2025'>
           <p>
-            יתרת הלקוחות <Money v={KESEM.customers} />, ההפרשה הקיימת <Money v={KESEM.allowance} />. נודע שחוב של <Money v={KESEM.badDebt} /> אבוד; על לקוח
-            שחייב <Money v={KESEM.specificDebt} /> מפרישים {KESEM.specificRate * 100}%, ועל השאר {KESEM.generalRate * 100}%.
+            ב-1.1.2025 הלקוחות של החנות חייבים לה <Money v={TZAAD.openingCustomers} />, ובהפרשה יש <Money v={TZAAD.openingAllowance} />. במהלך השנה החנות מכרה
+            בהקפה ב-<Money v={TZAAD.creditSales} />, גבתה מהלקוחות <Money v={TZAAD.collections} />, ולקוח אחד שחייב <Money v={TZAAD.badDebt} /> נעלם — החוב
+            אבוד. בסוף השנה החנות מעריכה ש-{pct(TZAAD.rate)} מהלקוחות לא ישלמו. כמה הוצאות הפסדי אשראי תרשום?
           </p>
-          <EntryView
-            entry={{
-              id: "1",
-              date: "31.12.2020",
-              text: "חוב אבוד — מוחקים את הלקוח כנגד ההפרשה",
-              lines: [
-                { account: "הפרשה להפסדי אשראי חזויים", dr: KESEM.badDebt },
-                { account: "לקוחות", cr: KESEM.badDebt },
-              ],
-            }}
-            note={<>אין הוצאה חדשה: ההפסד הזה כבר נחזה בהפרשה. אחרי המחיקה נשארו בהפרשה <Money v={KESEM_C.existingAfter} />.</>}
-          />
-          <DataTable
-            caption="כמה הפרשה צריך בסוף השנה"
-            head={["", "חישוב", "סכום"]}
-            rows={[
-              ["לקוחות אחרי המחיקה", `${KESEM.customers.toLocaleString("he-IL")} − ${KESEM.badDebt.toLocaleString("he-IL")}`, KESEM_C.customersAfter],
-              ["הפרשה ספציפית", `${KESEM.specificDebt.toLocaleString("he-IL")} × ${KESEM.specificRate * 100}%`, KESEM_C.specific],
-              ["הפרשה כללית", `(${KESEM_C.customersAfter.toLocaleString("he-IL")} − ${KESEM.specificDebt.toLocaleString("he-IL")}) × ${KESEM.generalRate * 100}%`, KESEM_C.general],
-              ["הפרשה נדרשת", "ספציפית + כללית", KESEM_C.required],
-              ["פחות הפרשה קיימת אחרי המחיקה", `${KESEM.allowance.toLocaleString("he-IL")} − ${KESEM.badDebt.toLocaleString("he-IL")}`, -KESEM_C.existingAfter],
-            ]}
-            foot={["הוצאות הפסדי אשראי השנה", "", KESEM_C.expense]}
-          />
-          <EntryView
-            entry={{
-              id: "2",
-              date: "31.12.2020",
-              text: "השלמת ההפרשה לגובה הנדרש",
-              lines: [
-                { account: "הוצאות הפסדי אשראי", dr: KESEM_C.expense },
-                { account: "הפרשה להפסדי אשראי חזויים", cr: KESEM_C.expense },
-              ],
-            }}
-          />
-          <div className="grid gap-3 sm:grid-cols-2">
-            {ledger(
-              [
-                { id: "1", text: "", lines: [{ account: "הפרשה להפסדי אשראי חזויים", dr: KESEM.badDebt }, { account: "לקוחות", cr: KESEM.badDebt }] },
-                { id: "2", text: "", lines: [{ account: "הוצאות הפסדי אשראי", dr: KESEM_C.expense }, { account: "הפרשה להפסדי אשראי חזויים", cr: KESEM_C.expense }] },
-              ],
-              { לקוחות: KESEM.customers, "הפרשה להפסדי אשראי חזויים": -KESEM.allowance },
-            )
-              .filter((t) => t.account !== "הוצאות הפסדי אשראי")
-              .map((t) => (
-                <TCard key={t.account} t={t} />
+
+          <Step n={1} title="רושמים את מה שקרה במהלך השנה">
+            <p>שלוש פקודות רגילות. שימו לב לשלישית: מחיקת החוב האבוד לא יוצרת הוצאה — ההפסד הזה כבר נחזה בהפרשה, ולכן מורידים אותו מהלקוחות ומההפרשה יחד.</p>
+            <div className="grid gap-3 xl:grid-cols-3">
+              {TZAAD_ENTRIES.slice(0, 3).map((x) => (
+                <EntryView key={x.id} entry={x} title={`${x.id}. ${x.text}`} />
               ))}
+            </div>
+          </Step>
+
+          <Step n={2} title="כמה הלקוחות חייבים בסוף השנה?">
+            <p>
+              מה שהיה, ועוד מה שנמכר בהקפה, פחות מה שנגבה ופחות מה שנמחק: {f(TZAAD.openingCustomers)} + {f(TZAAD.creditSales)} − {f(TZAAD.collections)} −{" "}
+              {f(TZAAD.badDebt)} ={" "}
+              <strong>
+                <Money v={TZAAD_C.customers} />
+              </strong>
+              .
+            </p>
+          </Step>
+
+          <Step n={3} title="כמה הפרשה צריכה להיות בסוף השנה?">
+            <p>
+              {pct(TZAAD.rate)} מהלקוחות לא צפויים לשלם: {f(TZAAD_C.customers)} × {pct(TZAAD.rate)} ={" "}
+              <strong>
+                <Money v={TZAAD_C.required} />
+              </strong>
+              . זו יתרת הסגירה של ההפרשה — הסכום שחייב להיות בה ב-31.12.
+            </p>
+          </Step>
+
+          <Step n={4} title="כמה כבר יש בהפרשה — ומה חסר?">
+            <p>
+              ההפרשה נפתחה ב-{f(TZAAD.openingAllowance)}, ומחיקת החוב השתמשה ב-{f(TZAAD.badDebt)} ממנה: נשארו <Money v={TZAAD_C.before} />. צריך{" "}
+              {f(TZAAD_C.required)}, ולכן משלימים רק את מה שחסר: {f(TZAAD_C.required)} − {f(TZAAD_C.before)} ={" "}
+              <strong>
+                <Money v={TZAAD_C.expense} />
+              </strong>{" "}
+              — אלה הוצאות הפסדי האשראי של השנה.
+            </p>
+            <EntryView entry={TZAAD_ENTRIES[3]} title={`${TZAAD_ENTRIES[3].id}. ${TZAAD_ENTRIES[3].text}`} />
+          </Step>
+
+          <p className="text-sm font-semibold text-fg">כך נראים שני הכרטיסים בסוף השנה (י.פ = יתרת פתיחה):</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {TZAAD_LEDGER.filter((t) => t.account === "לקוחות" || t.account === "הפרשה להפסדי אשראי חזויים").map((t) => (
+              <TCard key={t.account} t={t} />
+            ))}
           </div>
-          <p className="text-sm text-muted">
-            במאזן: לקוחות <Money v={KESEM_C.customersAfter} /> בניכוי הפרשה <Money v={KESEM_C.required} /> = לקוחות נטו <Money v={KESEM_C.net} />.
-          </p>
+          <DataTable
+            caption="במאזן ליום 31.12.2025 — סעיף הלקוחות"
+            head={["", "סכום"]}
+            rows={[
+              ["לקוחות", TZAAD_C.customers],
+              ["בניכוי: הפרשה להפסדי אשראי חזויים", -TZAAD_C.required],
+            ]}
+            foot={["לקוחות, נטו — מה שהחנות באמת מצפה לגבות", TZAAD_C.net]}
+          />
+          <Rule>
+            בקיצור: הוצאה = ההפרשה הנדרשת בסוף השנה פחות מה שכבר יש בה. כאן: {f(TZAAD_C.required)} − {f(TZAAD_C.before)} = {f(TZAAD_C.expense)}.
+          </Rule>
         </Card>
       </Chapter>
     </>

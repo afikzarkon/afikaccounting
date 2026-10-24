@@ -1,5 +1,5 @@
 import { Printer } from "lucide-react";
-import { creditLoss, KESEM } from "@/lib/learn/basics";
+import { creditLoss, TZAAD } from "@/lib/learn/basics";
 import { Glossary } from "./glossary";
 import { PrintButton } from "./print-button";
 import { Practice } from "./practice";
@@ -28,7 +28,7 @@ const FAQ: [string, string][] = [
 ];
 
 export function FinalChapters() {
-  const kesem = creditLoss(KESEM);
+  const tzaad = creditLoss(TZAAD);
   return (
     <>
       <Chapter n={15} id="worksheet" title="גיליון רב-טורי" lead="כל ההתאמות של סוף השנה — בטבלה אחת, צעד אחר צעד">
@@ -65,8 +65,8 @@ export function FinalChapters() {
             <Sheet title="חשבונות חתך">הוצאות מראש והכנסות לקבל — נכסים. הוצאות לשלם והכנסות מראש — התחייבויות.</Sheet>
             <Sheet title="עלות המכר">מלאי פתיחה + קניות − מלאי סגירה. פקודה: ח&apos; מלאי סגירה מאזני / ז&apos; מלאי סגירה רווח או הפסד.</Sheet>
             <Sheet title="הפסדי אשראי">
-              נדרשת = ספציפית + כללית (על השאר). הוצאה = נדרשת − קיימת אחרי מחיקות. בדוגמה: {kesem.required.toLocaleString("he-IL")} −{" "}
-              {kesem.existingAfter.toLocaleString("he-IL")} = {kesem.expense.toLocaleString("he-IL")}.
+              נדרשת = ספציפית + כללית (על השאר). הוצאה = נדרשת − קיימת אחרי מחיקות. בדוגמה: {tzaad.required.toLocaleString("he-IL")} −{" "}
+              {tzaad.before.toLocaleString("he-IL")} = {tzaad.expense.toLocaleString("he-IL")}.
             </Sheet>
             <Sheet title="גיליון רב-טורי">ראשוני ← התאמות ← סופי ← סיווג ← תוצאתי ומאזני ← רווח ← עודפי סגירה.</Sheet>
             <Sheet title="עודפים">פתיחה + רווח (− הפסד) = סגירה. יתרה בחובה = הפסדים צבורים.</Sheet>

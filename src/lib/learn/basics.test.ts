@@ -6,10 +6,11 @@ import {
   carryForward,
   costOfSales,
   creditLoss,
+  creditLossEntries,
   CUTOFF,
   identityHolds,
   isBalanced,
-  KESEM,
+  TZAAD,
   KITS,
   ledger,
   MIA,
@@ -129,13 +130,19 @@ describe("inventory and credit losses", () => {
     assert.equal(costOfSales(MIA), 315_000);
   });
 
-  it("Kesem: 98,000 specific + 51,875 general = 149,875 required; expense 129,875", () => {
-    const c = creditLoss(KESEM);
-    assert.equal(c.specific, 98_000);
-    assert.equal(c.general, 51_875);
-    assert.equal(c.required, 149_875);
-    assert.equal(c.existingAfter, 20_000);
-    assert.equal(c.expense, 129_875);
+  it("Tzaad: customers 240,000, required 12,000, 6,000 already there, expense 6,000", () => {
+    const c = creditLoss(TZAAD);
+    assert.equal(c.customers, 240_000);
+    assert.equal(c.required, 12_000);
+    assert.equal(c.before, 6_000);
+    assert.equal(c.expense, 6_000);
+    assert.equal(c.net, 228_000);
+  });
+
+  it("Tzaad: posting the entries lands on the same closing balances", () => {
+    const b = balancesOf(ledger(creditLossEntries(TZAAD), { לקוחות: TZAAD.openingCustomers, "הפרשה להפסדי אשראי חזויים": -TZAAD.openingAllowance }));
+    assert.equal(b["לקוחות"], 240_000);
+    assert.equal(b["הפרשה להפסדי אשראי חזויים"], -12_000);
   });
 });
 
