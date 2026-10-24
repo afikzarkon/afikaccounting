@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, CheckCircle2, PlayCircle, Sparkles } from "lucide-react";
+import { ArrowLeft, CheckCircle2, GraduationCap, PlayCircle, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 import { ButtonLink } from "@/components/ui/button";
 import { site } from "@/lib/site";
@@ -52,8 +52,11 @@ export function Hero() {
             <ButtonLink href="/engine" size="lg">
               הפעלת המנוע החשבונאי <ArrowLeft className="h-4 w-4" />
             </ButtonLink>
-            <ButtonLink href="/content" variant="secondary" size="lg">
-              <PlayCircle className="h-4 w-4" /> לעיון בתכנים
+            <ButtonLink href="/learn" variant="secondary" size="lg">
+              <GraduationCap className="h-4 w-4" /> למסלול הלימוד
+            </ButtonLink>
+            <ButtonLink href="/content" variant="ghost" size="lg">
+              <PlayCircle className="h-4 w-4" /> וידאו ומאמרים
             </ButtonLink>
           </motion.div>
           <motion.ul {...rise(0.24)} className="mt-9 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-muted">

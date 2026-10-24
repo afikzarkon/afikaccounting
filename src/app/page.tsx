@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ContentCard } from "@/components/content/content-card";
 import { ACCENTS, CalculatorIcon } from "@/components/engine/calculator-visuals";
 import { Hero } from "@/components/home/hero";
+import { LearningPath } from "@/components/learn-map/learning-path";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge, Container, SectionHeading } from "@/components/ui/primitives";
 import { listContent } from "@/lib/data/content";
@@ -22,6 +23,22 @@ export default async function Home() {
   return (
     <>
       <Hero />
+
+      <Container className="pt-16 sm:pt-20">
+        <SectionHeading
+          eyebrow="מסלול הלימוד"
+          title="מאפס ועד שאלת מבחן — בשלושה שלבים"
+          description="יסודות, נושאי העמקה ותקנים. כל נושא הוא מדריך מלא עם דוגמה מרכזית, דרך לפתור שאלה ומחשבון שמראה את כל הדרך."
+          action={
+            <ButtonLink href="/learn" variant="outline">
+              למפת הלימוד <ArrowLeft className="h-4 w-4" />
+            </ButtonLink>
+          }
+        />
+        <div className="mt-10">
+          <LearningPath compact />
+        </div>
+      </Container>
 
       <Container className="py-16 sm:py-20">
         <SectionHeading

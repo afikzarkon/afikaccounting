@@ -1,29 +1,41 @@
 import Link from "next/link";
+import { LEARN_HUB, LEARNING_PATH, LEARNING_TOOLS } from "@/lib/catalog";
 import { CALCULATORS } from "@/lib/engine/registry";
 import { site } from "@/lib/site";
 import { LogoMark } from "./logo";
 
+// The same map as the menu, from the catalog: learn, calculate, watch, and the account.
 const COLUMNS = [
   {
-    title: "הפלטפורמה",
+    title: "לימוד",
     links: [
-      { href: "/engine", label: "מנוע הפתרונות החשבונאי" },
-      { href: "/content", label: "מרכז התוכן" },
-      { href: "/dashboard", label: "הלוח האישי" },
-      { href: "/about", label: "אודות" },
+      LEARN_HUB,
+      ...LEARNING_PATH.flatMap((s) => s.topics.map((t) => ({ href: t.href, label: t.standard ? `${t.standard} · ${t.title}` : t.title }))),
     ],
   },
   {
     title: "מחשבונים",
-    links: CALCULATORS.map((c) => ({ href: `/engine?calc=${c.slug}`, label: `${c.standard} — ${c.category}` })),
+    links: [
+      ...LEARNING_TOOLS.map((c) => ({ href: c.href, label: c.label })),
+      ...CALCULATORS.map((c) => ({ href: `/engine?calc=${c.slug}`, label: `מנוע: ${c.standard} — ${c.category}` })),
+    ],
   },
   {
-    title: "למידה",
+    title: "וידאו ומאמרים",
     links: [
+      { href: "/content", label: "כל התכנים" },
       { href: "/content?kind=video", label: "שיעורי וידאו" },
       { href: "/content?kind=article", label: "מאמרים" },
-      { href: "/content?level=beginner", label: "מסלול מתחילים" },
+      { href: "/content?level=beginner", label: "למתחילים" },
       { href: "/content?level=advanced", label: "נושאים מתקדמים" },
+    ],
+  },
+  {
+    title: "הפלטפורמה",
+    links: [
+      { href: "/engine", label: "מנוע הפתרונות החשבונאי" },
+      { href: "/dashboard", label: "הלוח האישי" },
+      { href: "/about", label: "אודות" },
     ],
   },
 ];
@@ -40,7 +52,7 @@ export function Footer() {
   return (
     <footer className="no-print mt-24 border-t border-line bg-surface/40">
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid gap-10 lg:grid-cols-[1.3fr_repeat(3,1fr)]">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.3fr_repeat(4,1fr)]">
           <div>
             <div className="flex items-center gap-2.5">
               <LogoMark />

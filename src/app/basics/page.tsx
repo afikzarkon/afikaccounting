@@ -7,6 +7,7 @@ import { FinalChapters } from "@/components/basics/final";
 import { IntroChapters } from "@/components/basics/intro";
 import { TransactionLabChapter } from "@/components/basics/lab-chapter";
 import { Container } from "@/components/ui/primitives";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 
 export const metadata: Metadata = {
   title: "חשבונאות בסיסית מאפס",
@@ -39,7 +40,7 @@ export default function BasicsPage() {
     <div className="relative">
       <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-16 sm:pt-14">
-        <p className="text-xs font-semibold text-accent">לימוד · יסודות</p>
+        <Breadcrumbs trail={[{ label: "שלב 1 · יסודות" }, { label: "חשבונאות מאפס" }]} />
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
           חשבונאות בסיסית <span className="text-gradient">מאפס</span>
         </h1>

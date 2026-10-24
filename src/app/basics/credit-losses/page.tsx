@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { type ChapterLink, ChapterNav } from "@/components/basics/chapter-nav";
 import { CreditLossChapters } from "@/components/basics/credit-losses";
 import { Container } from "@/components/ui/primitives";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 
 export const metadata: Metadata = {
   title: "הפסדי אשראי — מדריך מלא",
@@ -31,7 +32,9 @@ export default function CreditLossesPage() {
         <Link href="/basics#creditloss" className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline">
           <ArrowRight className="h-4 w-4" aria-hidden /> חזרה לחשבונאות מאפס
         </Link>
-        <p className="mt-4 text-xs font-semibold text-accent">לימוד · חשבונאות מאפס · העמקה</p>
+        <div className="mt-4">
+          <Breadcrumbs trail={[{ label: "שלב 2 · העמקה" }, { label: "הפסדי אשראי" }]} />
+        </div>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
           הפסדי <span className="text-gradient">אשראי</span>
         </h1>

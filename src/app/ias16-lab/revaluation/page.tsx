@@ -1,6 +1,5 @@
-import { ArrowRight, Building2, Calculator, ChevronLeft, ListOrdered, Search, TrendingUp } from "lucide-react";
+import { ArrowRight, Building2, Calculator, ListOrdered, Search, TrendingUp } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { RevaluationCalculator } from "@/components/revaluation/calculator";
 import { CheckTipsSection } from "@/components/revaluation/check-tips";
 import { RevaluationExamplesSection } from "@/components/revaluation/examples";
@@ -9,6 +8,7 @@ import { RevaluationStepsSection } from "@/components/revaluation/steps";
 import { LabTabs } from "@/components/study/lab-tabs";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/primitives";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 
 export const metadata: Metadata = {
   title: "מודל הערכה מחדש — תקן IAS 16",
@@ -21,15 +21,7 @@ export default function RevaluationPage() {
     <div className="relative">
       <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-12 sm:pt-14">
-        <nav aria-label="מיקום בעמוד" className="flex flex-wrap items-center gap-1 text-xs font-semibold text-accent">
-          <span>לימוד תקנים</span>
-          <ChevronLeft className="h-3.5 w-3.5 text-subtle" />
-          <Link href="/ias16-lab" className="hover:underline">
-            IAS 16
-          </Link>
-          <ChevronLeft className="h-3.5 w-3.5 text-subtle" />
-          <span aria-current="page">מודל הערכה מחדש</span>
-        </nav>
+        <Breadcrumbs trail={[{ label: "IAS 16 · רכוש קבוע", href: "/ias16-lab" }, { label: "מודל הערכה מחדש" }]} />
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
           מודל <span className="text-gradient">הערכה מחדש</span>
         </h1>

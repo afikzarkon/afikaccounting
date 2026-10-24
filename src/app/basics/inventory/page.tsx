@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { type ChapterLink, ChapterNav } from "@/components/basics/chapter-nav";
 import { InventoryChapters } from "@/components/basics/inventory";
 import { Container } from "@/components/ui/primitives";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 
 export const metadata: Metadata = {
   title: "מלאי (IAS 2) — מדריך מלא ומחשבון",
@@ -43,7 +44,9 @@ export default function InventoryPage() {
         <Link href="/basics#inventory" className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline">
           <ArrowRight className="h-4 w-4" aria-hidden /> חזרה לחשבונאות מאפס
         </Link>
-        <p className="mt-4 text-xs font-semibold text-accent">לימוד · חשבונאות מאפס · העמקה</p>
+        <div className="mt-4">
+          <Breadcrumbs trail={[{ label: "שלב 2 · העמקה" }, { label: "מלאי (IAS 2)" }]} />
+        </div>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
           מלאי <span className="text-gradient">מאפס ועד מבחן</span>
         </h1>

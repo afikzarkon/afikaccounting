@@ -1,21 +1,30 @@
 "use client";
 
-import { ChevronDown, Menu, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, Menu, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Fragment, useEffect, useRef, useState } from "react";
-import { site } from "@/lib/site";
+import { useEffect, useRef, useState } from "react";
+import { type NavEntry, type NavGroup, site } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
-type NavItem = (typeof site.nav)[number];
-type NavGroup = Extract<NavItem, { items: unknown }>;
-
-const isActive = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+const isActive = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`));
+/** A link to a spot inside a page (#tab) or a preset (?calc) is never "the page you're on". */
+const plain = (href: string) => !/[?#]/.test(href);
 // Pages inside a category can nest (/ias16-lab and /ias16-lab/exchange), so each one is active only on its own path.
-const isItemActive = (pathname: string, href: string) => pathname === href;
-const groupActive = (pathname: string, group: NavGroup) => group.items.some((i) => isActive(pathname, i.href));
-const startsSection = (group: NavGroup, n: number) => n === 0 || group.items[n].section !== group.items[n - 1].section;
+const isItemActive = (pathname: string, href: string) => plain(href) && pathname === href;
+const groupActive = (pathname: string, group: NavGroup) => isActive(pathname, group.hub.href) || group.items.some((i) => plain(i.href) && isActive(pathname, i.href));
+
+/** The group's links, gathered under their section headings. */
+const sectionsOf = (group: NavGroup) => {
+  const out: { title: string; items: NavEntry[] }[] = [];
+  for (const i of group.items) {
+    const last = out.at(-1);
+    if (last?.title === i.section) last.items.push(i);
+    else out.push({ title: i.section, items: [i] });
+  }
+  return out;
+};
 
 /**
  * The hook-reading wrappers sit inside Suspense in the navbar, because a
@@ -37,10 +46,7 @@ export function NavLinksView({ pathname = "" }: { pathname?: string }) {
             key={item.href}
             href={item.href}
             aria-current={active ? "page" : undefined}
-            className={cn(
-              "relative rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-              active ? "text-fg" : "text-muted hover:text-fg",
-            )}
+            className={cn("relative rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors", active ? "text-fg" : "text-muted hover:text-fg")}
           >
             {active && <ActivePill />}
             {item.label}
@@ -52,16 +58,10 @@ export function NavLinksView({ pathname = "" }: { pathname?: string }) {
 }
 
 function ActivePill() {
-  return (
-    <motion.span
-      layoutId="nav-pill"
-      className="absolute inset-0 -z-10 rounded-lg bg-surface-2"
-      transition={{ type: "spring", stiffness: 420, damping: 34 }}
-    />
-  );
+  return <motion.span layoutId="nav-pill" className="absolute inset-0 -z-10 rounded-lg bg-surface-2" transition={{ type: "spring", stiffness: 420, damping: 34 }} />;
 }
 
-/** A top-level category whose pages open in a solid panel under it. */
+/** A top-level category: its pages open in a wide panel under the header, sections side by side. */
 function NavDropdown({ group, pathname }: { group: NavGroup; pathname: string }) {
   const [open, setOpen] = useState(false);
   const [lastPath, setLastPath] = useState(pathname);
@@ -86,17 +86,15 @@ function NavDropdown({ group, pathname }: { group: NavGroup; pathname: string })
     };
   }, [open]);
 
+  const sections = sectionsOf(group);
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="true"
-        className={cn(
-          "relative flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-          active || open ? "text-fg" : "text-muted hover:text-fg",
-        )}
+        className={cn("relative flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors", active || open ? "text-fg" : "text-muted hover:text-fg")}
       >
         {active && <ActivePill />}
         {group.label}
@@ -109,24 +107,36 @@ function NavDropdown({ group, pathname }: { group: NavGroup; pathname: string })
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.14 }}
-            className="absolute start-0 top-full z-50 mt-2 w-80 rounded-2xl border border-line-strong bg-surface p-1.5 shadow-xl"
+            className="fixed inset-x-0 top-[4.25rem] z-50 mx-auto w-[min(46rem,calc(100vw-2rem))] rounded-2xl border border-line-strong bg-surface p-2 shadow-xl"
           >
-            {group.items.map((i, n) => {
-              const on = isItemActive(pathname, i.href);
-              return (
-                <Fragment key={i.href}>
-                  {startsSection(group, n) && <p className={cn("px-3 pb-1 text-xs font-semibold text-accent", n ? "mt-1 border-t border-line pt-2.5" : "pt-2")}>{i.section}</p>}
-                  <Link
-                    href={i.href}
-                    aria-current={on ? "page" : undefined}
-                    className={cn("block rounded-xl px-3 py-2.5 transition-colors hover:bg-surface-2", on && "bg-surface-2")}
-                  >
-                    <span className="block text-sm font-semibold text-fg">{i.label}</span>
-                    <span className="block text-xs text-muted">{i.description}</span>
-                  </Link>
-                </Fragment>
-              );
-            })}
+            <div className={cn("max-h-[calc(100vh-9rem)] overflow-y-auto", sections.length > 1 && "columns-2 gap-2")}>
+              {sections.map((s) => (
+                <div key={s.title} className="mb-1 break-inside-avoid rounded-xl p-1">
+                  <p className="px-3 pt-2 pb-1 text-xs font-semibold text-accent">{s.title}</p>
+                  {s.items.map((i) => {
+                    const on = isItemActive(pathname, i.href);
+                    return (
+                      <Link
+                        key={i.href}
+                        href={i.href}
+                        aria-current={on ? "page" : undefined}
+                        className={cn("block rounded-xl px-3 py-2 transition-colors hover:bg-surface-2", on && "bg-surface-2")}
+                      >
+                        <span className="block text-sm font-semibold text-fg">{i.label}</span>
+                        {i.description && <span className="block text-xs text-muted">{i.description}</span>}
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+            <Link
+              href={group.hub.href}
+              className="mt-1 flex items-center justify-between gap-2 rounded-xl border-t border-line bg-surface-2/60 px-4 py-2.5 text-sm font-semibold text-accent hover:bg-surface-2"
+            >
+              {group.hub.label}
+              <ArrowLeft className="h-4 w-4" aria-hidden />
+            </Link>
           </motion.div>
         )}
       </AnimatePresence>
@@ -150,17 +160,17 @@ export function MobileNavView({ pathname = "" }: { pathname?: string }) {
   const link = (href: string, label: string, nested = false) => {
     const on = nested ? isItemActive(pathname, href) : isActive(pathname, href);
     return (
-    <Link
-      key={href}
-      href={href}
-      className={cn(
-        "block rounded-xl px-4 py-3 text-[15px] font-medium",
-        nested && "ms-3 border-s-2 border-line-strong ps-4",
-        on ? "bg-surface-2 text-fg" : "text-muted hover:bg-surface-2 hover:text-fg",
-      )}
-    >
-      {label}
-    </Link>
+      <Link
+        key={href}
+        href={href}
+        className={cn(
+          "block rounded-xl px-4 py-2.5 text-[15px] font-medium",
+          nested && "ms-3 border-s-2 border-line-strong ps-4",
+          on ? "bg-surface-2 text-fg" : "text-muted hover:bg-surface-2 hover:text-fg",
+        )}
+      >
+        {label}
+      </Link>
     );
   };
 
@@ -185,19 +195,31 @@ export function MobileNavView({ pathname = "" }: { pathname?: string }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.16 }}
-            className="absolute inset-x-3 top-[4.25rem] z-50 rounded-2xl border border-line-strong bg-surface p-2 shadow-xl"
+            className="absolute inset-x-3 top-[4.25rem] z-50 max-h-[calc(100vh-5.5rem)] overflow-y-auto rounded-2xl border border-line-strong bg-surface p-2 shadow-xl"
           >
             {site.nav.map((item) =>
               "items" in item ? (
-                <div key={item.label} className="py-1">
-                  <p className="px-4 pt-2 text-xs font-semibold text-subtle">{item.label}</p>
-                  {item.items.map((i, n) => (
-                    <Fragment key={i.href}>
-                      {startsSection(item, n) && <p className="px-4 pt-1.5 pb-1 text-xs font-semibold text-accent">{i.section}</p>}
-                      {link(i.href, i.label, true)}
-                    </Fragment>
+                // Each category folds, so the menu stays short; the one you're in starts open.
+                <details key={item.label} open={groupActive(pathname, item)} className="group py-0.5">
+                  <summary
+                    className={cn(
+                      "flex cursor-pointer list-none items-center justify-between rounded-xl px-4 py-3 text-[15px] font-medium [&::-webkit-details-marker]:hidden",
+                      groupActive(pathname, item) ? "text-fg" : "text-muted",
+                    )}
+                  >
+                    {item.label}
+                    <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden />
+                  </summary>
+                  {sectionsOf(item).map((s) => (
+                    <div key={s.title}>
+                      <p className="px-4 pt-1.5 pb-1 text-xs font-semibold text-accent">{s.title}</p>
+                      {s.items.map((i) => link(i.href, i.label, true))}
+                    </div>
                   ))}
-                </div>
+                  <Link href={item.hub.href} className="mt-1 flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold text-accent">
+                    {item.hub.label} <ArrowLeft className="h-4 w-4" aria-hidden />
+                  </Link>
+                </details>
               ) : (
                 link(item.href, item.label)
               ),

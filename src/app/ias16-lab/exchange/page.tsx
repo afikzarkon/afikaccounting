@@ -1,6 +1,5 @@
-import { ArrowLeftRight, ArrowRight, BookText, CalendarClock, Calculator, ChevronLeft } from "lucide-react";
+import { ArrowLeftRight, ArrowRight, BookText, CalendarClock, Calculator } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ExchangeCalculator } from "@/components/exchange/calculator";
 import { ExchangeJournalSection } from "@/components/exchange/journal";
 import { NewAssetSection } from "@/components/exchange/new-asset";
@@ -8,6 +7,7 @@ import { ExchangeStepsSection } from "@/components/exchange/steps";
 import { LabTabs } from "@/components/study/lab-tabs";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/primitives";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 
 export const metadata: Metadata = {
   title: "החלפת נכסים — תקן IAS 16",
@@ -20,15 +20,7 @@ export default function ExchangePage() {
     <div className="relative">
       <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-12 sm:pt-14">
-        <nav aria-label="מיקום בעמוד" className="flex flex-wrap items-center gap-1 text-xs font-semibold text-accent">
-          <span>לימוד תקנים</span>
-          <ChevronLeft className="h-3.5 w-3.5 text-subtle" />
-          <Link href="/ias16-lab" className="hover:underline">
-            IAS 16
-          </Link>
-          <ChevronLeft className="h-3.5 w-3.5 text-subtle" />
-          <span aria-current="page">החלפת נכסים</span>
-        </nav>
+        <Breadcrumbs trail={[{ label: "IAS 16 · רכוש קבוע", href: "/ias16-lab" }, { label: "החלפת נכסים" }]} />
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
           החלפת נכסים <span className="text-gradient">צעד אחר צעד</span>
         </h1>

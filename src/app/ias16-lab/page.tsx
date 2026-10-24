@@ -7,6 +7,7 @@ import { DepreciationSimulator } from "@/components/learn/simulator";
 import { LabTabs } from "@/components/study/lab-tabs";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/primitives";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 
 export const metadata: Metadata = {
   title: "תקן IAS 16 רכוש קבוע מהקל לקשה",
@@ -19,7 +20,7 @@ export default function Ias16LabPage() {
     <div className="relative">
       <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-12 sm:pt-14">
-        <p className="text-xs font-semibold text-accent">לימוד תקנים · רכוש קבוע</p>
+        <Breadcrumbs trail={[{ label: "שלב 3 · תקנים" }, { label: "IAS 16 · רכוש קבוע" }]} />
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
           תקן IAS 16 רכוש קבוע <span className="text-gradient">מהקל לקשה</span>
         </h1>
