@@ -48,18 +48,18 @@ export default function Ias16LabPage() {
           <LabTabs
             tabs={[
               {
-                id: "method",
-                label: "דרכים לפתור שאלה",
-                blurb: "תשעה שלבים, מהנתונים ועד הפתרון",
-                icon: <ListOrdered className="h-4 w-4" />,
-                panel: <MethodologySection />,
-              },
-              {
                 id: "basics",
                 label: "יסודות ועקרונות",
                 blurb: "מושגים, ורכיבי מטוס",
                 icon: <Plane className="h-4 w-4" />,
                 panel: <FundamentalsSection />,
+              },
+              {
+                id: "method",
+                label: "דרכים לפתור שאלה",
+                blurb: "תשעה שלבים, על שאלה אחת מלאה",
+                icon: <ListOrdered className="h-4 w-4" />,
+                panel: <MethodologySection />,
               },
               {
                 id: "simulator",

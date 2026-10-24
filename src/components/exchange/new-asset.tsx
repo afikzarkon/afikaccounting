@@ -3,7 +3,7 @@ import { Callout, DataTable, JournalEntry, Num } from "@/components/study/blocks
 import { Formula } from "@/components/study/math";
 import { StepCard, texNum } from "@/components/study/ui";
 import { solveExchange } from "@/lib/learn/exchange";
-import { EXAMPLE, yearEndLines } from "./entries";
+import { EXAMPLE, EXCHANGE_YEAR, YEAR_END, yearEndLines } from "./entries";
 
 const WITH = solveExchange(EXAMPLE);
 const WITHOUT = solveExchange({ ...EXAMPLE, commercial: false });
@@ -32,7 +32,7 @@ export function NewAssetSection() {
         <Formula
           tex={String.raw`\text{פחת עד סוף השנה} = \text{פחת שנתי — נכס חדש} \times \frac{\text{החודשים שנותרו}}{12} = ${texNum(WITH.newAnnual)} \times \frac{${WITH.monthsAfter}}{12} = ${texNum(WITH.newDep)}`}
         />
-        <JournalEntry title="פחת הנכס החדש לשנת X4" date="31.12.X4" lines={yearEndLines(WITH)} />
+        <JournalEntry title={`פחת הנכס החדש לשנת ${EXCHANGE_YEAR}`} date={YEAR_END} lines={yearEndLines(WITH)} />
         <DataTable
           caption="הנכס החדש בשלושת המקרים"
           head={["", "לפי השווי של הנכס שנמסר", "לפי השווי של הנכס שהתקבל", "אין מהות מסחרית"]}
@@ -40,7 +40,7 @@ export function NewAssetSection() {
             ["עלות הנכס החדש", WITH.newCost, RECEIVED.newCost, WITHOUT.newCost],
             ["פחת שנתי", WITH.newAnnual, RECEIVED.newAnnual, WITHOUT.newAnnual],
             [`פחת אפריל עד דצמבר (${WITH.monthsAfter} חודשים)`, WITH.newDep, RECEIVED.newDep, WITHOUT.newDep],
-            ["יתרה בספרים ליום 31.12.X4", WITH.newBookValue, RECEIVED.newBookValue, WITHOUT.newBookValue],
+            [`יתרה בספרים ליום ${YEAR_END}`, WITH.newBookValue, RECEIVED.newBookValue, WITHOUT.newBookValue],
           ]}
         />
         <Callout title="למה הפחת נמוך יותר כשאין מהות מסחרית?">
@@ -52,10 +52,10 @@ export function NewAssetSection() {
       </StepCard>
 
       <div className="card p-5">
-        <p className="text-[17px] font-semibold text-fg">התמונה המלאה של שנת X4 (יש מהות מסחרית)</p>
+        <p className="text-[17px] font-semibold text-fg">התמונה המלאה של שנת {EXCHANGE_YEAR} (יש מהות מסחרית)</p>
         <div className="mt-2 grid gap-3 md:grid-cols-2">
           <DataTable
-            caption="הצגה תוצאתית לשנת X4"
+            caption={`הצגה תוצאתית לשנת ${EXCHANGE_YEAR}`}
             head={["סעיף", "סכום"]}
             rows={[
               ["הוצאות פחת — נכס ישן (ינואר עד מרץ)", -WITH.depToDate],
@@ -65,7 +65,7 @@ export function NewAssetSection() {
             foot={["השפעה על הרווח", WITH.gain - WITH.totalDep]}
           />
           <DataTable
-            caption="הצגה מאזנית ליום 31.12.X4"
+            caption={`הצגה מאזנית ליום ${YEAR_END}`}
             head={["רכוש קבוע — נכס חדש", "סכום"]}
             rows={[
               ["עלות", WITH.newCost],

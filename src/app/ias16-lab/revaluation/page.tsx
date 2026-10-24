@@ -72,7 +72,7 @@ export default function RevaluationPage() {
               {
                 id: "check",
                 label: "בדיקה ודגשים",
-                blurb: "טיפ הזהב · מועדים · מסים נדחים",
+                blurb: "טיפ הזהב · מועדים · גריעה",
                 icon: <Search className="h-4 w-4" />,
                 panel: <CheckTipsSection />,
               },

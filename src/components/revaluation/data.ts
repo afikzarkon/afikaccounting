@@ -4,29 +4,26 @@ import type { RevaluationInputs, RevEvent } from "@/lib/learn/revaluation";
 /** A fair value on every 31 December, from `firstYear` on. */
 const yearly = (firstYear: number, values: number[]) => values.map((fairValue, i) => ({ year: firstYear + i, timing: "end" as const, fairValue }));
 
-// The worked examples on the page, revalued every year; the first is also the calculator's default.
-// Every useful life is four years at most. The fair values are picked so each year's new charge
-// comes out round, and so that between them they show a first increase, a later one, a decrease
-// within the surplus and one beyond it. No example has an increase after a loss went to profit or loss.
+// The page's central example, also the calculator's default: a building revalued twice, on 31.12.2020
+// (an increase) and on 31.12.2022 (a decrease that stays within the surplus). Nothing ever goes to
+// profit or loss, so the gold tip's check holds every year. The fair values make every charge round.
+const CENTRAL_REVALUATIONS = [
+  { year: 2020, timing: "end" as const, fairValue: 360_000 },
+  { year: 2022, timing: "end" as const, fairValue: 150_000 },
+];
 export const SL_EX: RevaluationInputs = {
-  cost: 100_000,
+  cost: 300_000,
   salvage: 0,
-  life: 4,
+  life: 5,
   method: "sl",
   firstYear: 2020,
-  revaluations: yearly(2020, [90_000, 54_000, 20_000]),
+  revaluations: CENTRAL_REVALUATIONS,
   transfer: "depreciation",
 };
-export const SYD_EX: RevaluationInputs = {
-  cost: 100_000,
-  salvage: 0,
-  life: 4,
-  method: "syd-desc",
-  firstYear: 2020,
-  revaluations: yearly(2020, [66_000, 36_000, 12_000]),
-  transfer: "depreciation",
-};
-// The rates come out round: 2/3, then 75%, then 80%.
+/** The same building and the same fair values, depreciated by the sum of the years' digits. */
+export const SYD_EX: RevaluationInputs = { ...SL_EX, method: "syd-desc" };
+// Declining balance needs a salvage value, which the central building doesn't have, so it has its own
+// example, revalued every year. The rates come out round: 2/3, then 75%, then 80%.
 export const DB_EX: RevaluationInputs = {
   cost: 135_000,
   salvage: 5_000,
@@ -49,25 +46,6 @@ export const LAND = {
   saleYear: 2024,
   proceeds: 560_000,
 };
-
-// A property with land: one price and one fair value a year, split between the two.
-export const PROPERTY = {
-  firstYear: 2020,
-  land: { cost: 400_000, values: [432_000, 380_000, 370_000] },
-  building: { cost: 600_000, life: 4, values: [480_000, 300_000, 170_000] },
-};
-export const PROPERTY_BUILDING: RevaluationInputs = {
-  cost: PROPERTY.building.cost,
-  salvage: 0,
-  life: PROPERTY.building.life,
-  method: "sl",
-  firstYear: PROPERTY.firstYear,
-  revaluations: yearly(PROPERTY.firstYear, PROPERTY.building.values),
-  transfer: "depreciation",
-};
-export const PROPERTY_LAND = PROPERTY.land.values.map((fairValue, i) => ({ year: PROPERTY.firstYear + i, fairValue }));
-
-export const TAX_RATE = 0.23;
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
 

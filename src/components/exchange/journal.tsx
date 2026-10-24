@@ -1,6 +1,6 @@
 import { Callout, DataTable, JournalEntry, Num } from "@/components/study/blocks";
 import { solveExchange } from "@/lib/learn/exchange";
-import { EXAMPLE, exchangeLines } from "./entries";
+import { EXAMPLE, EXCHANGE_DATE, exchangeLines } from "./entries";
 
 const WITH = solveExchange(EXAMPLE);
 const WITHOUT_X = { ...EXAMPLE, commercial: false };
@@ -46,7 +46,7 @@ export function ExchangeJournalSection() {
           <DataTable head={["חשבון", "צד", "מתי ובאיזה סכום"]} rows={FULL_RULES} />
           <JournalEntry
             title="החלפת המכונה — פקודה מלאה"
-            date="1.4.X4"
+            date={EXCHANGE_DATE}
             lines={exchangeLines(EXAMPLE, WITH, "full")}
             note={
               <>
@@ -62,7 +62,7 @@ export function ExchangeJournalSection() {
           <DataTable head={["חשבון", "צד", "מתי ובאיזה סכום"]} rows={NET_RULES} />
           <JournalEntry
             title="החלפת המכונה — פקודה מקוצרת"
-            date="1.4.X4"
+            date={EXCHANGE_DATE}
             lines={exchangeLines(EXAMPLE, WITH, "net")}
             note={
               <>
@@ -79,7 +79,7 @@ export function ExchangeJournalSection() {
           אותה פקודה בדיוק — בלי שורת רווח או הפסד. הנכס החדש נרשם לפי הערך בספרים של הישן ועוד המזומן ששולם: <Num v={WITH.bookValue} /> +{" "}
           <Num v={EXAMPLE.cashPaid} /> = <Num v={WITHOUT.newCost} />.
         </p>
-        <JournalEntry title="החלפה ללא מהות מסחרית — פקודה מלאה" date="1.4.X4" lines={exchangeLines(WITHOUT_X, WITHOUT, "full")} />
+        <JournalEntry title="החלפה ללא מהות מסחרית — פקודה מלאה" date={EXCHANGE_DATE} lines={exchangeLines(WITHOUT_X, WITHOUT, "full")} />
       </div>
 
       <div className="card p-5">
@@ -90,8 +90,8 @@ export function ExchangeJournalSection() {
           <Num v={RECEIVED.gain} />.
         </p>
         <div className="grid gap-4 xl:grid-cols-2">
-          <JournalEntry title="לפי השווי של הנכס שהתקבל — פקודה מלאה" date="1.4.X4" lines={exchangeLines(RECEIVED_X, RECEIVED, "full")} />
-          <JournalEntry title="לפי השווי של הנכס שהתקבל — פקודה מקוצרת" date="1.4.X4" lines={exchangeLines(RECEIVED_X, RECEIVED, "net")} />
+          <JournalEntry title="לפי השווי של הנכס שהתקבל — פקודה מלאה" date={EXCHANGE_DATE} lines={exchangeLines(RECEIVED_X, RECEIVED, "full")} />
+          <JournalEntry title="לפי השווי של הנכס שהתקבל — פקודה מקוצרת" date={EXCHANGE_DATE} lines={exchangeLines(RECEIVED_X, RECEIVED, "net")} />
         </div>
       </div>
 

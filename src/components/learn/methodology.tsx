@@ -15,25 +15,36 @@ import {
 import { Callout, DataTable, Dt, JournalEntry, Num } from "@/components/study/blocks";
 import { Formula, Tex } from "@/components/study/math";
 import { StepCard, texNum } from "@/components/study/ui";
+import {
+  MACHINE,
+  MACHINE_ANNUAL,
+  MACHINE_BASE,
+  MACHINE_COST,
+  MACHINE_COST_LINES,
+  MACHINE_EXCHANGE_DATE,
+  MACHINE_EXPENSED,
+  MACHINE_FIRST_MONTHS,
+  machineFirstYearByMethod,
+  machineSchedule,
+} from "@/lib/learn/ias16-example";
 import { ProrationWidget } from "./widgets";
 
-// The worked example every step follows; it lands on the simulator's defaults.
-const COST_LINES: [string, number, boolean][] = [
-  ["מחיר המכונה לפי חשבונית הספק (אחרי הנחה מסחרית)", 280_000, true],
-  ["הובלה וביטוח בדרך למפעל", 6_000, true],
-  ["התקנה, הרכבה וכיול על ידי טכנאי הספק", 9_000, true],
-  ["יציקת יסודות בטון למכונה", 5_000, true],
-  ["השתלמות לעובדים שיפעילו את המכונה", 4_000, false],
-  ["מודעות פרסום על קו הייצור החדש", 3_000, false],
-  ["הפסדי הרצה בחודש הראשון לאחר שהמכונה כבר מוכנה", 2_000, false],
-];
-const COST = COST_LINES.filter(([, , inc]) => inc).reduce((s, [, v]) => s + v, 0);
-const EXPENSED = COST_LINES.filter(([, , inc]) => !inc).reduce((s, [, v]) => s + v, 0);
-const SALVAGE = 30_000;
-const LIFE = 5;
-const BASE = COST - SALVAGE;
-const ANNUAL = BASE / LIFE;
-const FIRST = (ANNUAL * 9) / 12;
+// The chapter's central example: every step works the same machine (it lands on the simulator's defaults).
+const COST_LINES = MACHINE_COST_LINES;
+const COST = MACHINE_COST;
+const EXPENSED = MACHINE_EXPENSED;
+const SALVAGE = MACHINE.salvage;
+const LIFE = MACHINE.life;
+const BASE = MACHINE_BASE;
+const ANNUAL = MACHINE_ANNUAL;
+const MONTHS = MACHINE_FIRST_MONTHS;
+const Y1 = MACHINE.firstYear;
+const Y2 = Y1 + 1;
+const SCHEDULE = machineSchedule();
+const FIRST = SCHEDULE[0].dep;
+const SECOND = SCHEDULE[1].dep;
+const BY_METHOD = machineFirstYearByMethod();
+const n = (v: number) => v.toLocaleString("en-US", { maximumFractionDigits: 2 });
 
 const INCLUDED: [string, string][] = [
   ["מחיר רכישה, כולל מכס ומסים שאינם ניתנים להשבה, בניכוי הנחות", "סעיף 16(א)"],
@@ -91,8 +102,8 @@ export function MethodologySection() {
       <div className="card p-5">
         <p className="text-xs font-semibold text-accent">דרכים לפתור שאלה — במבט אחד</p>
         <p className="mt-1 text-[15px] text-fg/90">
-          כל שאלה על רכוש קבוע — פשוטה או מסובכת — נפתרת באותם שלבים, באותו הסדר. לאורך הדרך נפתור דוגמה אחת: מכונה שהוזמנה ושולמה
-          ב-<Dt>1.2.X1</Dt> ונכנסה לשימוש ב-<Dt>1.4.X1</Dt>.
+          כל שאלה על רכוש קבוע — פשוטה או מסובכת — נפתרת באותם שלבים, באותו הסדר. לאורך כל הדרך נפתור שאלה אחת מלאה (בשלב 1): מכונה שהוזמנה
+          ושולמה ב-<Dt>{MACHINE.orderDate}</Dt> ונכנסה לשימוש ב-<Dt>{MACHINE.readyDate}</Dt>. כל מספר בכל שלב מגיע מהשאלה הזו.
         </p>
         <ol className="mt-4 grid gap-2 sm:grid-cols-3">
           {STEPS.map((s, i) => (
@@ -107,21 +118,59 @@ export function MethodologySection() {
       <StepCard step={1} title="רישום כל הנתונים הבסיסיים בשאלה" lead="טבלה אחת בצד הדף, לפני שמחשבים משהו" icon={<ClipboardList className="h-5 w-5" />}>
         <p>
           שאלות מבחן מפזרות נתונים לאורך כמה פסקאות, ולפעמים הנתון החשוב ביותר מופיע בשורה תמימה בסוף. עוברים על השאלה פעם אחת ורושמים כל
-          נתון במקום קבוע — כך שום דבר לא נשכח, והבודק יכול לעקוב אחרי הפתרון.
+          נתון במקום קבוע — כך שום דבר לא נשכח, והבודק יכול לעקוב אחרי הפתרון. זו השאלה שנפתור לאורך כל תשעת השלבים:
         </p>
+        <div className="my-4 rounded-xl border-2 border-accent/40 bg-accent-soft/40 p-4">
+          <p className="text-sm font-semibold text-accent">השאלה המרכזית — {MACHINE.company}</p>
+          <div className="mt-2 space-y-2 text-[15px] leading-relaxed text-fg">
+            <p>
+              ב-<Dt>{MACHINE.orderDate}</Dt> הזמינה החברה מכונה חדשה לקו הייצור ושילמה עליה במזומן. ההתקנה הסתיימה ב-<Dt>{MACHINE.readyDate}</Dt>, ומאותו יום
+              המכונה מוכנה לפעול כפי שההנהלה התכוונה. לפי החשבוניות, החברה שילמה:
+            </p>
+            <ul className="list-inside list-disc space-y-0.5">
+              {COST_LINES.map(([label, v]) => (
+                <li key={label}>
+                  {label}: <Num v={v} /> ₪
+                </li>
+              ))}
+            </ul>
+            <p>
+              אורך החיים השימושיים של המכונה {LIFE} שנים, וערך הגרט <Num v={SALVAGE} /> ₪. החברה מפחיתה בקו ישר ומודדת את המכונות לפי מודל העלות. שנת
+              הכספים מסתיימת ב-31 בדצמבר.
+            </p>
+            <p className="font-semibold">נדרש:</p>
+            <ol className="list-inside list-decimal space-y-0.5">
+              <li>מהי עלות המכונה, ומה נזקף לרווח והפסד?</li>
+              <li>
+                מהן הוצאות הפחת לשנים {Y1} ו-{Y2}? ערכו לוח פחת לכל חיי המכונה.
+              </li>
+              <li>רשמו את פקודות היומן לשנת {Y1} ולשנת {Y2}.</li>
+              <li>
+                הציגו את המכונה במאזן ליום 31.12.{Y1} וליום 31.12.{Y2}, ואת ההשפעה על דוח רווח והפסד לשנת {Y1}.
+              </li>
+            </ol>
+            <p className="text-sm text-muted">
+              והמשך הסיפור: ב-<Dt>{MACHINE_EXCHANGE_DATE.label}</Dt> החברה מחליפה את אותה מכונה במכונה חדשה — זו הדוגמה המרכזית בעמוד{" "}
+              <a href="/ias16-lab/exchange" className="font-medium text-accent hover:underline">
+                החלפת נכסים
+              </a>
+              .
+            </p>
+          </div>
+        </div>
         <DataTable
-          caption="בדוגמה שלנו"
+          caption="הנתונים מהשאלה, במקום אחד"
           head={["נתון", "מה כתוב בשאלה"]}
           rows={[
-            ["הזמנה ותשלום", <Dt key="d">1.2.X1</Dt>],
-            ["סיום ההתקנה — המכונה מוכנה לעבודה", <Dt key="d">1.4.X1</Dt>],
-            ["רכיבי עלות", "שבעה סכומים מהחשבוניות (שלב 4)"],
+            ["הזמנה ותשלום", <Dt key="d">{MACHINE.orderDate}</Dt>],
+            ["סיום ההתקנה — המכונה מוכנה לעבודה", <Dt key="d">{MACHINE.readyDate}</Dt>],
+            ["רכיבי עלות", `${COST_LINES.length} סכומים מהחשבוניות (שלב 4)`],
             ["אורך חיים", `${LIFE} שנים`],
             ["ערך גרט", SALVAGE],
             ["שיטת פחת", "קו ישר"],
             ["מודל", "מודל העלות"],
-            ["שינויים במהלך החיים", "אין"],
-            ["נדרשי השאלה", "פקודת יומן, הצגה מאזנית ליום 31.12.X1 והצגה תוצאתית לשנת X1"],
+            ["שינויים במהלך החיים", `אין עד ${MACHINE_EXCHANGE_DATE.label} (החלפה — בעמוד נפרד)`],
+            ["נדרשי השאלה", `עלות; פחת ולוח פחת; פקודות יומן ל-${Y1} ול-${Y2}; הצגה במאזן ובדוח רווח והפסד`],
           ]}
         />
       </StepCard>
@@ -134,8 +183,8 @@ export function MethodologySection() {
         </p>
         <Callout kind="warn" title="המלכודת הקלאסית">
           <p>
-            &quot;החברה רכשה ושילמה ב-1.2&quot; — ורק בהמשך השאלה, בשורה תמימה: &quot;ההתקנה הסתיימה ב-1.4&quot;. מי שמחשב 11 חודשי פחת במקום 9
-            מאבד את כל הלוח. סמנו בטקסט השאלה כל תאריך, ושאלו על כל אחד: האם <em>בתאריך הזה</em> הנכס כבר יכול לעבוד?
+            בשאלה שלנו: &quot;הזמינה ושילמה ב-<Dt>{MACHINE.orderDate}</Dt>&quot; — ורק בהמשך, בשורה תמימה: &quot;ההתקנה הסתיימה ב-<Dt>{MACHINE.readyDate}</Dt>&quot;.
+            מי שמחשב 11 חודשי פחת (מפברואר) במקום {MONTHS} (מאפריל) מאבד את כל הלוח. סמנו בטקסט השאלה כל תאריך, ושאלו על כל אחד: האם <em>בתאריך הזה</em> הנכס כבר יכול לעבוד?
           </p>
         </Callout>
       </StepCard>
@@ -146,6 +195,29 @@ export function MethodologySection() {
           אותה ולדעת מה היא משנה בחישוב:
         </p>
         <DataTable head={["שיטה", "מתי מתאימה", "מה זה אומר בחישוב"]} rows={METHODS} />
+        <p>
+          בשאלה שלנו השיטה נתונה — <strong>קו ישר</strong>. כדי לראות מה השיטה משנה, הנה הפחת של אותה מכונה בשנת {Y1} ({MONTHS} חודשים) בכל אחת מהשיטות.
+          בסכום ספרות השנים וביתרה פוחתת הנתונים הנוספים (שיעור, תפוקה) הם הנחה לצורך ההדגמה בלבד:
+        </p>
+        <DataTable
+          caption={`המכונה מהשאלה — פחת לשנת ${Y1}`}
+          head={["שיטה", "החישוב", "פחת לשנת " + Y1]}
+          rows={[
+            ["קו ישר (נתון בשאלה)", <Calc key="c" math={`(${n(COST)} − ${n(SALVAGE)}) ÷ ${LIFE} × ${MONTHS}/12`} />, BY_METHOD.sl],
+            [
+              "סכום ספרות השנים",
+              <Calc key="c" math={`${n(BASE)} × ${LIFE}/${(LIFE * (LIFE + 1)) / 2} × ${MONTHS}/12`} note={`שנת החיים הראשונה: ${n(BY_METHOD.sydLifeYear)}`} />,
+              BY_METHOD.syd,
+            ],
+            [`יתרה פוחתת (שיעור ${MACHINE.dbRate * 100}%)`, <Calc key="c" math={`${n(COST)} × ${MACHINE.dbRate * 100}% × ${MONTHS}/12`} note="הגרט לא מנוכה מהבסיס" />, BY_METHOD.db],
+            [
+              "יחידות תפוקה",
+              <Calc key="c" math={`${n(BASE)} ÷ ${n(MACHINE.totalUnits)} × ${n(MACHINE.unitsFirstYear)}`} note={`${BY_METHOD.perUnit} ₪ ליחידה × היחידות שהופקו ב-${Y1}`} />,
+              BY_METHOD.units,
+            ],
+          ]}
+          highlight={[0]}
+        />
         <p>
           את כל ארבע השיטות, עם לוח נוסחאות צמוד, אפשר לנסות ב<a href="#simulator" className="font-medium text-accent hover:underline">סימולטור הפחת</a>.
         </p>
@@ -222,7 +294,12 @@ export function MethodologySection() {
         <Callout title="מחלקים את ציר הזמן בכל אירוע">
           <p>
             מחשבים פחת עד מועד האירוע לפי הנתונים הישנים, מטפלים באירוע עצמו (רישום, רווח או הפסד), ורק אז ממשיכים עם הנתונים החדשים על
-            יתרת החיים. בדוגמה שלנו אין שינויים, ולכן הלוח רציף.
+            יתרת החיים. בשאלה שלנו אין שינויים עד <Dt>{MACHINE_EXCHANGE_DATE.label}</Dt>, ולכן הלוח רציף; ביום הזה המכונה מוחלפת — וזו בדיוק
+            החלוקה של ציר הזמן שמתוארת בעמוד{" "}
+            <a href="/ias16-lab/exchange" className="font-medium text-accent hover:underline">
+              החלפת נכסים
+            </a>
+            .
           </p>
         </Callout>
       </StepCard>
@@ -233,11 +310,11 @@ export function MethodologySection() {
           בשנת הכספים הראשונה מפחיתים רק את החודשים מחודש הכניסה (כולל) ועד דצמבר, ואת שאר החודשים של אותה שנת חיים — בשנת הכספים הבאה.
         </p>
         <p>
-          בדוגמה: המכונה נכנסה לשימוש באפריל. אפריל, מאי, יוני... ועד דצמבר — <strong>9 חודשים</strong>. במילים אחרות: שנה מלאה, פחות שלושת
-          החודשים שעברו לפני הכניסה (ינואר עד מרץ).
+          בדוגמה: המכונה נכנסה לשימוש ב-<Dt>{MACHINE.readyDate}</Dt>. אפריל, מאי, יוני... ועד דצמבר — <strong>{MONTHS} חודשים</strong>. במילים אחרות: שנה
+          מלאה, פחות שלושת החודשים שעברו לפני הכניסה (ינואר עד מרץ).
         </p>
         <Formula
-          tex={String.raw`\text{פחת בשנה הראשונה} = \text{פחת לשנה מלאה} \times \frac{\text{חודשי שימוש}}{12} = ${texNum(ANNUAL)} \times \frac{9}{12} = ${texNum(FIRST)}`}
+          tex={String.raw`\text{פחת לשנת ${Y1}} = \text{פחת לשנה מלאה} \times \frac{\text{חודשי שימוש}}{12} = ${texNum(ANNUAL)} \times \frac{${MONTHS}}{12} = ${texNum(FIRST)}`}
         />
         <p>שחקו עם חודש הכניסה:</p>
         <ProrationWidget annual={ANNUAL} />
@@ -258,41 +335,89 @@ export function MethodologySection() {
           head={["הנדרש", "מה מציגים"]}
           rows={[
             ["פקודות יומן", "פקודה מאוזנת לכל אירוע ולכל שנה שנדרשה: רכישה, פחת, שיפור, הערכה מחדש, ירידת ערך, מכירה"],
-            ["הצגה מאזנית לשנת 20XX", "עלות, פחת נצבר ויתרה בספרים ליום 31.12.20XX — ובמודל הערכה מחדש גם קרן הערכה מחדש"],
-            ["הצגה תוצאתית לשנת 20XX", "הוצאות פחת, הפסד מירידת ערך, רווח או הפסד ממימוש — ובמודל הערכה מחדש גם רווח כולל אחר"],
+            ["הצגה מאזנית ליום 31.12 של השנה המבוקשת", "עלות, פחת נצבר ויתרה בספרים — ובמודל הערכה מחדש גם קרן הערכה מחדש"],
+            ["הצגה תוצאתית לשנה המבוקשת", "הוצאות פחת, הפסד מירידת ערך, רווח או הפסד ממימוש — ובמודל הערכה מחדש גם רווח כולל אחר"],
             ["לוח פחת", "שורה לכל שנת כספים: יתרת פתיחה, פחת, פחת נצבר ויתרה בספרים"],
           ]}
         />
-        <p>בדוגמה שלנו נדרשו שלושה סעיפים, כולם לשנת X1:</p>
+        <p className="font-semibold text-fg">הפתרון לשאלה שלנו, סעיף אחרי סעיף:</p>
+        <p>
+          <strong>נדרש 1 — עלות:</strong> <Num v={COST} /> ₪ למכונה (שלב 4), ו-<Num v={EXPENSED} /> ₪ להוצאות של {Y1}.
+        </p>
+        <p>
+          <strong>נדרש 2 — פחת ולוח פחת:</strong> {Y1}: <Num v={FIRST} /> ({MONTHS} חודשים, שלב 8). {Y2}: שנה מלאה — <Num v={SECOND} /> (שלב 5).
+        </p>
+        <DataTable
+          caption="לוח הפחת של המכונה — קו ישר"
+          head={["שנת כספים", "חודשי פחת", "פחת השנה", "פחת נצבר", "יתרה בספרים ליום 31.12"]}
+          rows={SCHEDULE.map((r) => [String(r.year), r.months, r.dep, r.accumulated, r.carrying])}
+          foot={["סה״כ", LIFE * 12, BASE, "", ""]}
+          highlight={[0, 1]}
+        />
+        <p>
+          <strong>נדרש 3 — פקודות יומן:</strong>
+        </p>
         <div className="my-4 rounded-2xl bg-linear-to-br from-[#0b1d4a] to-[#060d22] p-1 shadow-card ring-1 ring-white/10">
-          <div className="rounded-xl bg-surface">
+          <div className="grid gap-1 rounded-xl bg-surface p-1 xl:grid-cols-3">
             <JournalEntry
-              title="פחת לשנת X1 — קו ישר"
-              date="31.12.X1"
+              title="רכישת המכונה והוצאות ההקמה (במזומן)"
+              date={MACHINE.readyDate}
+              lines={[
+                { account: "מכונות — עלות", dr: COST },
+                { account: "הוצאות (הדרכה, פרסום, הרצה)", dr: EXPENSED },
+                { account: "מזומן", cr: COST + EXPENSED },
+              ]}
+              note={<>רק רכיבי העלות נכנסים לנכס; השאר — לרווח והפסד של {Y1}.</>}
+            />
+            <JournalEntry
+              title={`פחת לשנת ${Y1}`}
+              date={`31.12.${Y1}`}
               lines={[
                 { account: "הוצאות פחת", dr: FIRST },
                 { account: "פחת נצבר — מכונות", cr: FIRST },
               ]}
               note={
                 <>
-                  חובה: הוצאות פחת (רווח והפסד) · זכות: פחת נצבר (חשבון שמקטין את הנכס). היתרה בספרים: <Num v={COST} /> − <Num v={FIRST} /> ={" "}
-                  <Num v={COST - FIRST} />.
+                  {MONTHS} חודשים: <Num v={ANNUAL} /> × {MONTHS}/12.
                 </>
               }
             />
+            <JournalEntry
+              title={`פחת לשנת ${Y2}`}
+              date={`31.12.${Y2}`}
+              lines={[
+                { account: "הוצאות פחת", dr: SECOND },
+                { account: "פחת נצבר — מכונות", cr: SECOND },
+              ]}
+              note="שנה מלאה."
+            />
           </div>
         </div>
-        <div className="grid gap-3 md:grid-cols-2">
+        <p>
+          <strong>נדרש 4 — הצגה בדוחות:</strong>
+        </p>
+        <div className="grid gap-3 md:grid-cols-3">
+          {[SCHEDULE[0], SCHEDULE[1]].map((r) => (
+            <DataTable
+              key={r.year}
+              caption={`במאזן ליום 31.12.${r.year}`}
+              head={["רכוש קבוע", "סכום"]}
+              rows={[
+                ["עלות", COST],
+                ["בניכוי פחת נצבר", -r.accumulated],
+              ]}
+              foot={["יתרה בספרים", r.carrying]}
+            />
+          ))}
           <DataTable
-            caption="הצגה מאזנית ליום 31.12.X1"
-            head={["רכוש קבוע", "סכום"]}
+            caption={`בדוח רווח והפסד לשנת ${Y1}`}
+            head={["סעיף", "סכום"]}
             rows={[
-              ["עלות", COST],
-              ["בניכוי פחת נצבר", -FIRST],
+              ["הוצאות פחת", -FIRST],
+              ["הוצאות הקמה שלא הוונו", -EXPENSED],
             ]}
-            foot={["יתרה בספרים", COST - FIRST]}
+            foot={["השפעה על הרווח", -(FIRST + EXPENSED)]}
           />
-          <DataTable caption="הצגה תוצאתית לשנת X1" head={["סעיף", "סכום"]} rows={[["הוצאות פחת", FIRST]]} />
         </div>
         <Callout kind="check" title="שלוש בדיקות מהירות לפני שממשיכים">
           <ul className="list-inside list-disc space-y-1">
@@ -301,7 +426,8 @@ export function MethodologySection() {
             </li>
             <li>היתרה בספרים אף פעם לא יורדת מתחת לגרט.</li>
             <li>
-              נכס של {LIFE} שנים שנכנס באמצע שנה מופיע ב-{LIFE + 1} שנות כספים: 9 חודשים בהתחלה ו-3 בסוף.
+              נכס של {LIFE} שנים שנכנס באמצע שנה מופיע ב-{SCHEDULE.length} שנות כספים: {SCHEDULE[0].months} חודשים בהתחלה ו-{SCHEDULE.at(-1)!.months} בסוף (
+              {SCHEDULE[0].year} עד {SCHEDULE.at(-1)!.year}).
             </li>
           </ul>
         </Callout>
@@ -311,6 +437,18 @@ export function MethodologySection() {
         </p>
       </StepCard>
     </>
+  );
+}
+
+/** A calculation that reads left to right, with an optional note in Hebrew under it. */
+function Calc({ math, note }: { math: string; note?: string }) {
+  return (
+    <span className="block">
+      <bdi dir="ltr" className="num whitespace-nowrap">
+        {math}
+      </bdi>
+      {note && <span className="block text-xs text-muted">{note}</span>}
+    </span>
   );
 }
 

@@ -9,6 +9,7 @@ import { inputClass } from "@/components/ui/form";
 import { type RevaluationInputs, type RevMethod, revaluationErrors, solveRevaluation, type Timing, TIMING_LABEL, type Transfer } from "@/lib/learn/revaluation";
 import { cn } from "@/lib/utils";
 import { nettingLines, proportionalLines, SL_EX } from "./data";
+import { ENRICHMENT_LABEL, EnrichmentBadge } from "./enrichment";
 import { RevSchedule } from "./schedule";
 
 type Row = { year: string; timing: Timing; fairValue: string };
@@ -127,8 +128,8 @@ export function RevaluationCalculator() {
             value={f.presentation}
             onChange={(v) => set("presentation", v as Form["presentation"])}
             options={[
-              ["netting", "שיטת הביטול", "מבטלים את הפחת הנצבר"],
-              ["proportional", "התאמה יחסית", "עלות ופחת באותו יחס"],
+              ["netting", "שיטת הביטול", "מבטלים את הפחת הנצבר · נדרש בבחינות"],
+              ["proportional", "התאמה יחסית", ENRICHMENT_LABEL],
             ]}
           />
         </div>
@@ -204,6 +205,7 @@ export function RevaluationCalculator() {
                   ))}
                 </div>
               </div>
+              {f.presentation === "proportional" && <EnrichmentBadge className="mt-2" />}
               <JournalEntry
                 title={`${TIMING_LABEL[r.events[event].timing]} ${r.events[event].year} — ${f.presentation === "netting" ? "שיטת הביטול" : "התאמה יחסית"}`}
                 lines={f.presentation === "netting" ? nettingLines(r.events[event]) : proportionalLines(r.events[event])}

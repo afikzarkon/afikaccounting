@@ -1,5 +1,6 @@
 "use client";
 
+import { MACHINE } from "@/lib/learn/ias16-example";
 import { CircleCheck, Gauge, Minus, Plus, RotateCcw, Ruler, Sigma, TrendingDown, TriangleAlert } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { DataTable, JournalEntry, n, Num } from "@/components/study/blocks";
@@ -53,7 +54,8 @@ const r2 = (v: number) => Math.round(v * 100) / 100;
 const pctTex = (r: number) => `${(r * 100).toFixed(2)}\\%`;
 /** More decimals than texNum, for a per-unit rate. */
 const texRate = (v: number) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 }).format(v).replace(/,/g, "{,}");
-const fy = (t: number) => `X${t}`;
+/** Fiscal year t (1-based) as a calendar year: the simulator starts where the central example does. */
+const fy = (t: number) => String(MACHINE.firstYear + t - 1);
 
 type Result =
   | { ok: false; errors: Record<string, string> }

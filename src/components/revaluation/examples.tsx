@@ -1,13 +1,13 @@
 import { Callout, DataTable, JournalEntry, Num, Topic } from "@/components/study/blocks";
 import { Formula } from "@/components/study/math";
 import { texNum } from "@/components/study/ui";
-import { dbRate, type RevaluationResult, type RevEvent, solveLand, solveRevaluation } from "@/lib/learn/revaluation";
-import { DB_EX, depLines, nettingLines, PROPERTY, PROPERTY_BUILDING, PROPERTY_LAND, SL_EX, SYD_EX, transferLines } from "./data";
+import { dbRate, type RevaluationResult, type RevEvent, solveRevaluation } from "@/lib/learn/revaluation";
+import { DB_EX, depLines, nettingLines, SL_EX, SYD_EX, transferLines } from "./data";
 import { RevSchedule } from "./schedule";
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
-/** What each year's revaluation found and where its gap went. */
+/** What each revaluation found and where its gap went. */
 function EventsTable({ r, caption }: { r: RevaluationResult; caption: string }) {
   return (
     <DataTable
@@ -25,7 +25,6 @@ function EventsTable({ r, caption }: { r: RevaluationResult; caption: string }) 
         r2(ev.surplusAfter) + 0,
         whatHappened(ev),
       ])}
-      highlight={r.events.map((ev, i) => (Math.abs(ev.pl) > 0.005 ? i : -1)).filter((i) => i >= 0)}
     />
   );
 }
@@ -36,86 +35,113 @@ function whatHappened(ev: RevEvent) {
   return ev.pl < 0 ? (ev.oci < 0 ? "הקרן מתאפסת, והיתרה הפסד" : "ירידה — הפסד ברווח והפסד") : "ירידה — מקטינה את הקרן";
 }
 
+/** Every 31.12 in the same order: the year's depreciation, the transfer to retained earnings, then the revaluation. */
+function YearEntries({ r, year, asset = "מבנה" }: { r: RevaluationResult; year: number; asset?: string }) {
+  const row = r.rows.find((x) => x.year === year)!;
+  const ev = r.events.find((e) => e.year === year);
+  return (
+    <div className="space-y-1">
+      <p className="text-sm font-semibold text-fg">31.12.{year}</p>
+      <div className="grid gap-3 xl:grid-cols-3">
+        <JournalEntry title="1. פחת השנה" date={`31.12.${year}`} lines={depLines(row.dep)} />
+        {row.transfer > 0.005 ? (
+          <JournalEntry
+            title="2. העברה לעודפים"
+            date={`31.12.${year}`}
+            lines={transferLines(row.transfer)}
+            note={
+              <>
+                <Num v={r2(row.dep)} /> − <Num v={r2(row.costDep)} /> = <Num v={r2(row.transfer)} />. פקודה בהון העצמי — לא דרך רווח והפסד.
+              </>
+            }
+          />
+        ) : (
+          <p className="rounded-xl border border-dashed border-line px-4 py-3 text-sm text-muted">2. אין העברה לעודפים — עדיין אין קרן, או שהפחת שווה לפחת לפי העלות.</p>
+        )}
+        {ev ? (
+          <JournalEntry title="3. הערכה מחדש (שיטת הביטול)" date={`31.12.${year}`} lines={nettingLines(ev, asset)} note={<>הפחת הנצבר שנסגר: <Num v={r2(ev.accEliminated)} />.</>} />
+        ) : (
+          <p className="rounded-xl border border-dashed border-line px-4 py-3 text-sm text-muted">3. אין הערכה מחדש בשנה הזו.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function RevaluationExamplesSection() {
   const sl = solveRevaluation(SL_EX);
   const syd = solveRevaluation(SYD_EX);
   const db = solveRevaluation(DB_EX);
+  const years = sl.rows.map((x) => x.year);
+  const [first, second] = sl.events;
   const row = (r: RevaluationResult, year: number) => r.rows.find((x) => x.year === year)!;
-  const first = sl.events[0];
-  const y2021 = row(sl, 2021);
-  const ev2021 = sl.events.find((e) => e.year === 2021)!;
-  const sydFirst = syd.events[0];
-  const loss = sl.events.find((e) => e.pl < 0)!;
-  const lossRow = row(sl, loss.year);
-  const pb = solveRevaluation(PROPERTY_BUILDING);
-  const pl = solveLand(PROPERTY.land.cost, PROPERTY_LAND);
+  const firstRow = row(sl, first.year + 1);
+  const [sydFirst, sydSecond] = syd.events;
+  const n = SL_EX.life;
 
   return (
     <>
-      <Topic title="דוגמה 1: מבנה בקו ישר — הערכה מחדש בכל שנה, העברה לעודפים בקצב הפחת" open>
+      <Topic title="דוגמה 1: המבנה המרכזי בקו ישר — כל הפקודות, שנה אחרי שנה" open>
         <p>
-          מבנה שנרכש ב-1.1.{SL_EX.firstYear} ב-<Num v={SL_EX.cost} /> ₪, אורך חיים {SL_EX.life} שנים, קו ישר, ללא גרט. החברה מעריכה אותו מחדש בכל 31.12. בכל
-          שנה אותם שלבים: פחת השנה לפי השווי ההוגן הקודם, פער מול השווי החדש, סיווג — ופחת חדש על יתרת החיים.
+          המבנה מהשלבים: נרכש ב-1.1.{SL_EX.firstYear} ב-<Num v={SL_EX.cost} /> ₪, {n} שנים, קו ישר, ללא גרט. שתי הערכות מחדש: ב-31.12.{first.year} לשווי הוגן של{" "}
+          <Num v={first.fairValue} />, וב-31.12.{second.year} לשווי הוגן של <Num v={second.fairValue} />. העברה לעודפים בקצב הפחת.
         </p>
-        <EventsTable r={sl} caption="ההערכות מחדש, שנה אחרי שנה" />
+        <EventsTable r={sl} caption="שתי ההערכות מחדש" />
         <Formula
-          tex={String.raw`\text{פחת השנה} = \frac{\text{השווי ההוגן הקודם}}{\text{יתרת אורך החיים}} \qquad \text{למשל לשנת 2021:} \ \frac{${texNum(first.fairValue)}}{${first.monthsLeft / 12}} = ${texNum(first.firstYearCharge)}`}
+          tex={String.raw`\text{פחת אחרי הערכה} = \frac{\text{השווי ההוגן}}{\text{יתרת אורך החיים}} \qquad ${first.year + 1}: \ \frac{${texNum(first.fairValue)}}{${first.monthsLeft / 12}} = ${texNum(first.firstYearCharge)} \qquad ${second.year + 1}: \ \frac{${texNum(second.fairValue)}}{${second.monthsLeft / 12}} = ${texNum(second.firstYearCharge)}`}
         />
         <Formula
-          tex={String.raw`\text{העברה לעודפים} = \text{פחת לפי שווי הוגן} - \text{פחת לפי מודל העלות} \qquad \text{לשנת 2021:} \ ${texNum(y2021.dep)} - ${texNum(y2021.costDep)} = ${texNum(y2021.transfer)}`}
+          tex={String.raw`\text{העברה לעודפים} = \text{פחת לפי השווי ההוגן} - \text{פחת לפי העלות} \qquad ${first.year + 1}: \ ${texNum(firstRow.dep)} - ${texNum(firstRow.costDep)} = ${texNum(firstRow.transfer)}`}
         />
-        <p className="!mb-1 font-semibold text-fg">הפקודות של שנת 2021 — ירידה בתוך הקרן</p>
-        <div className="grid gap-3 xl:grid-cols-3">
-          <JournalEntry title="1. פחת השנה" date="31.12.2021" lines={depLines(y2021.dep)} />
-          <JournalEntry title="2. העברה לעודפים" date="31.12.2021" lines={transferLines(y2021.transfer)} note="פקודה בהון העצמי — לא דרך רווח והפסד." />
-          <JournalEntry title="3. הערכה מחדש (שיטת הביטול)" date="31.12.2021" lines={nettingLines(ev2021)} />
+        <p className="!mb-1 font-semibold text-fg">הפקודות — באותו סדר בכל 31.12: פחת ← העברה לעודפים ← הערכה מחדש</p>
+        <div className="space-y-4">
+          {years.map((y) => (
+            <YearEntries key={y} r={sl} year={y} />
+          ))}
         </div>
-        <p className="!mb-1 font-semibold text-fg">והפקודות של שנת {loss.year} — כשהירידה עוברת את הקרן</p>
-        <div className="grid gap-3 xl:grid-cols-3">
-          <JournalEntry title="1. פחת השנה" date={`31.12.${loss.year}`} lines={depLines(lossRow.dep)} />
-          <JournalEntry title="2. העברה לעודפים" date={`31.12.${loss.year}`} lines={transferLines(lossRow.transfer)} />
-          <JournalEntry
-            title="3. הערכה מחדש — קודם הקרן, היתרה הפסד"
-            date={`31.12.${loss.year}`}
-            lines={nettingLines(loss)}
-            note={
-              <>
-                בקרן נותרו <Num v={r2(loss.surplusBefore)} /> בלבד, ולכן מתוך ירידה של <Num v={r2(-loss.diff)} /> — <Num v={r2(-loss.oci)} /> מאפסים את הקרן ו-
-                <Num v={r2(-loss.pl)} /> נזקפים להפסד.
-              </>
-            }
-          />
-        </div>
-        <RevSchedule r={sl} caption="לוח מלא — קו ישר, הערכה בכל שנה" />
-        <p className="text-sm text-muted">
-          שימו לב: הסדר בכל 31.12 הוא תמיד פחת ← העברה לעודפים ← הערכה מחדש. ההעברה מחושבת לפי הפחת של השנה, ולכן נרשמת לפני ההערכה של אותו
-          יום.
-        </p>
+        <RevSchedule r={sl} caption="לוח מלא — קו ישר" />
+        <Callout kind="check" title="בדיקה: בסוף החיים הקרן מתאפסת">
+          <p>
+            הקרן נוצרה ב-<Num v={first.oci} />, ירדה ב-<Num v={-second.oci} /> בהערכה השנייה, והשאר עבר לעודפים בהדרגה:{" "}
+            {sl.rows
+              .filter((x) => x.transfer > 0.005)
+              .map((x) => r2(x.transfer).toLocaleString("en-US"))
+              .join(" + ")}{" "}
+            = <Num v={r2(sl.rows.reduce((s, x) => s + x.transfer, 0))} />. ביחד: <Num v={first.oci} /> − <Num v={-second.oci} /> −{" "}
+            <Num v={r2(sl.rows.reduce((s, x) => s + x.transfer, 0))} /> = 0.
+          </p>
+        </Callout>
       </Topic>
 
-      <Topic title="דוגמה 2: הערכה בכל שנה בשיטות מואצות" open>
-        <p className="!mb-1 font-semibold text-fg">סכום ספרות השנים — יורד</p>
+      <Topic title="דוגמה 2: אותו מבנה, באותם שווים הוגנים — סכום ספרות השנים" open>
         <p>
-          מבנה בעלות <Num v={SYD_EX.cost} /> ₪, {SYD_EX.life} שנים, ללא גרט, מוערך בכל 31.12. אחרי כל הערכה מחשבים <strong>מכנה חדש</strong> לפי יתרת
-          השנים, ושנת החיים הראשונה מתחילה מחדש:
+          כל הנתונים זהים לדוגמה 1, רק שיטת הפחת שונה. אחרי כל הערכה מחשבים <strong>מכנה חדש</strong> לפי יתרת השנים, ושנת החיים הראשונה מתחילה מחדש.
+          שימו לב שאותו שווי הוגן ב-{sydSecond.year} נותן כאן <strong>עלייה</strong> של <Num v={sydSecond.diff} />, ולא ירידה כמו בקו ישר — כי הפחת המואץ
+          הוריד את הערך בספרים יותר.
         </p>
         <DataTable
           head={["אחרי ההערכה של", "שווי הוגן", "יתרת שנים", "מכנה חדש", "פחת השנה הבאה"]}
           rows={syd.events.map((ev) => {
-            const n = ev.monthsLeft / 12;
-            return [String(ev.year), ev.fairValue, n, (n * (n + 1)) / 2, r2(ev.firstYearCharge)];
+            const left = ev.monthsLeft / 12;
+            return [String(ev.year), ev.fairValue, left, (left * (left + 1)) / 2, r2(ev.firstYearCharge)];
           })}
         />
+        <EventsTable r={syd} caption="שתי ההערכות מחדש — סכום ספרות השנים" />
         <p>
-          לוח הצל של מודל העלות ממשיך כאילו לא הייתה אף הערכה: 4/10, 3/10, 2/10, 1/10 מהעלות המקורית. ההעברה לעודפים בכל שנה — ההפרש. שימו לב
-          ל-{syd.events[1].year}: עלייה נוספת, שמצטרפת לקרן שכבר נוצרה ב-{sydFirst.year}:
+          לוח הצל של מודל העלות ממשיך כאילו לא הייתה הערכה: {Array.from({ length: n }, (_, i) => `${n - i}/${(n * (n + 1)) / 2}`).join(", ")} מהעלות. ההעברה לעודפים בכל
+          שנה — ההפרש בין שני הלוחות, ולכן היא לא קבועה כמו בקו ישר.
         </p>
+        <div className="space-y-4">
+          <YearEntries r={syd} year={sydFirst.year + 1} />
+          <YearEntries r={syd} year={sydSecond.year} />
+        </div>
         <RevSchedule r={syd} caption="לוח מלא — סכום ספרות השנים" />
+      </Topic>
 
-        <p className="!mb-1 font-semibold text-fg">יתרה פוחתת</p>
+      <Topic title="דוגמה 3 (נפרדת): יתרה פוחתת" open>
         <p>
-          מבנה בעלות <Num v={DB_EX.cost} /> ₪, {DB_EX.life} שנים, גרט <Num v={DB_EX.salvage} /> ₪, מוערך בכל 31.12. אחרי כל הערכה מחשבים{" "}
-          <strong>שיעור חדש</strong> מהשווי ההוגן:
+          ביתרה פוחתת השיעור מחושב מהגרט, ולמבנה המרכזי אין גרט — לכן לשיטה הזו דוגמה נפרדת: מבנה בעלות <Num v={DB_EX.cost} /> ₪, {DB_EX.life} שנים, גרט{" "}
+          <Num v={DB_EX.salvage} /> ₪, מוערך בכל 31.12. אחרי כל הערכה מחשבים <strong>שיעור חדש</strong> מהשווי ההוגן:
         </p>
         <Formula tex={String.raw`\text{שיעור חדש} = 1 - \left(\frac{\text{גרט}}{\text{שווי הוגן}}\right)^{\frac{1}{\text{יתרת שנים}}}`} />
         <DataTable
@@ -123,65 +149,18 @@ export function RevaluationExamplesSection() {
           rows={[
             ["שיעור מקורי (מהעלות)", DB_EX.cost, DB_EX.life, `${(dbRate(DB_EX.cost, DB_EX.salvage, DB_EX.life) * 100).toFixed(2)}%`, r2(db.rows[0].dep)],
             ...db.events.map((ev) => {
-              const n = ev.monthsLeft / 12;
-              return [String(ev.year), ev.fairValue, n, `${(dbRate(ev.fairValue, DB_EX.salvage, n) * 100).toFixed(2)}%`, r2(ev.firstYearCharge)];
+              const left = ev.monthsLeft / 12;
+              return [String(ev.year), ev.fairValue, left, `${(dbRate(ev.fairValue, DB_EX.salvage, left) * 100).toFixed(2)}%`, r2(ev.firstYearCharge)];
             }),
           ]}
         />
         <RevSchedule r={db} caption="לוח מלא — יתרה פוחתת" />
         <Callout title="איך מודדים את הפרש הפחת בשיטות מואצות">
           <p>
-            מחשבים שני לוחות במקביל: הלוח בפועל — מהשווי ההוגן האחרון, במכנה או בשיעור חדשים — ולוח &quot;צל&quot; של מודל העלות, שממשיך כאילו לא
-            הייתה הערכה. ההעברה בכל שנה היא ההפרש ביניהם, ולכן היא לא קבועה כמו בקו ישר — אבל בסוף החיים הקרן מתאפסת בדיוק.
+            מחשבים שני לוחות במקביל: הלוח בפועל — מהשווי ההוגן האחרון, במכנה או בשיעור חדשים — ולוח &quot;צל&quot; של מודל העלות, שממשיך כאילו לא הייתה
+            הערכה. ההעברה בכל שנה היא ההפרש ביניהם, ובסוף החיים הקרן מתאפסת בדיוק.
           </p>
         </Callout>
-      </Topic>
-
-      <Topic title="דוגמה 3: נכס עם קרקע — מבנה וקרקע מוערכים בנפרד" open>
-        <p>
-          ב-1.1.{PROPERTY.firstYear} נרכש נכס ב-<Num v={PROPERTY.land.cost + PROPERTY.building.cost} /> ₪: קרקע <Num v={PROPERTY.land.cost} /> ומבנה{" "}
-          <Num v={PROPERTY.building.cost} /> (אורך חיים {PROPERTY.building.life} שנים, קו ישר). בכל 31.12 נקבע שווי הוגן לנכס כולו, ומפצלים אותו בין
-          הקרקע למבנה. כל מרכיב מוערך <strong>בנפרד</strong>, עם קרן משלו — ירידה בקרקע לא מקוזזת מול הקרן של המבנה (סעיף 58).
-        </p>
-        <DataTable
-          caption="השווי ההוגן ופיצולו"
-          head={["31.12", "שווי הוגן — נכס כולו", "מתוכו קרקע", "מתוכו מבנה"]}
-          rows={pl.map((l, i) => [String(l.year), l.fairValue + pb.events[i].fairValue, l.fairValue, pb.events[i].fairValue])}
-        />
-        <div className="grid gap-4 xl:grid-cols-2">
-          <DataTable
-            caption="הקרקע — אין פחת"
-            head={["31.12", "לפני", "פער", "לקרן", "לרווח והפסד", "קרן קרקע"]}
-            rows={pl.map((l) => [String(l.year), l.opening, l.diff, l.oci + 0, l.pl + 0, l.surplus + 0])}
-          />
-          <DataTable
-            caption="המבנה — פחת, הערכה, העברה"
-            head={["31.12", "פחת", "לפני", "פער", "לקרן", "קרן מבנה"]}
-            rows={pb.events.map((ev) => [String(ev.year), r2(row(pb, ev.year).dep), r2(ev.before), r2(ev.diff), r2(ev.oci) + 0, r2(ev.surplusAfter) + 0])}
-          />
-        </div>
-        <Callout kind="warn" title="שני מרכיבים, שתי קרנות — לא מקזזים ביניהם">
-          <p>
-            ב-{pl[1].year} הקרקע ירדה ב-<Num v={-pl[1].diff} />: הקרן שלה (<Num v={pl[0].surplus} />) התאפסה, והיתרה — <Num v={-pl[1].pl} /> — נזקפה להפסד.
-            לא משתמשים לשם כך בקרן של המבנה: כל מרכיב והקרן שלו. ב-{pl[2].year} הקרקע ירדה שוב ב-<Num v={-pl[2].diff} />, ואין לה עוד קרן — ולכן כל הירידה
-            הפסד, אף שלמבנה יש באותה שנה קרן של <Num v={r2(pb.events[2].surplusAfter)} />.
-          </p>
-        </Callout>
-        <div className="grid gap-3 xl:grid-cols-2">
-          <JournalEntry
-            title={`הערכה מחדש ${pl[1].year} — קרקע`}
-            date={`31.12.${pl[1].year}`}
-            lines={[
-              { account: "קרן הערכה מחדש — קרקע", dr: -pl[1].oci },
-              { account: "הפסד מירידת ערך קרקע (רווח והפסד)", dr: -pl[1].pl },
-              { account: "קרקע", cr: -pl[1].diff },
-            ]}
-          />
-          <JournalEntry title={`הערכה מחדש ${pb.events[1].year} — מבנה`} date={`31.12.${pb.events[1].year}`} lines={nettingLines(pb.events[1])} />
-        </div>
-        <p className="text-sm text-muted">
-          רק קרן המבנה עוברת לעודפים בקצב הפחת. קרן הקרקע נשארת בהון עד שהקרקע נמכרת.
-        </p>
       </Topic>
     </>
   );

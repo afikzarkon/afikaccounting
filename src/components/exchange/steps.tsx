@@ -3,13 +3,14 @@ import { Callout, DataTable, Dt, JournalEntry, Num } from "@/components/study/bl
 import { Formula } from "@/components/study/math";
 import { StepCard, texNum } from "@/components/study/ui";
 import { solveExchange } from "@/lib/learn/exchange";
-import { catchUpLines, EXAMPLE, exchangeLines } from "./entries";
+import { MACHINE } from "@/lib/learn/ias16-example";
+import { catchUpLines, EXAMPLE, EXCHANGE_DATE, EXCHANGE_YEAR, exchangeLines } from "./entries";
 
 const WITH = solveExchange(EXAMPLE);
 const WITHOUT = solveExchange({ ...EXAMPLE, commercial: false });
 const RECEIVED_X = { ...EXAMPLE, basis: "received" as const };
 const RECEIVED = solveExchange(RECEIVED_X);
-const YEARS_BEFORE = EXAMPLE.accumulatedOpening / WITH.oldAnnual;
+const MONTHS_BEFORE = Math.round((EXAMPLE.accumulatedOpening / WITH.oldAnnual) * 12);
 
 const STEPS = ["זיהוי תאריך ההחלפה", "עדכון פחת עד לתאריך ההחלפה", "סיווג העסקה וקביעת עלות הנכס החדש"];
 
@@ -19,9 +20,13 @@ export function ExchangeStepsSection() {
       <div className="card p-5">
         <p className="text-xs font-semibold text-accent">דרכים לפתור שאלת החלפה — במבט אחד</p>
         <p className="mt-1 text-[15px] text-fg/90">
-          כל שאלת החלפת נכסים נפתרת באותם שלושה שלבים, באותו הסדר. לאורך הדרך נפתור דוגמה אחת: ב-<Dt>1.1.X1</Dt> רכשה החברה מכונה בעלות{" "}
-          <Num v={EXAMPLE.oldCost} /> ₪, לאורך חיים של {EXAMPLE.oldLife} שנים, ללא ערך גרט ובקו ישר. ב-<Dt>1.4.X4</Dt> החליפה אותה במכונה
-          חדשה ושילמה בנוסף <Num v={EXAMPLE.cashPaid} /> ₪ במזומן. השווי ההוגן של המכונה הישנה ביום ההחלפה: <Num v={EXAMPLE.fairValueGiven} />{" "}
+          כל שאלת החלפת נכסים נפתרת באותם שלושה שלבים, באותו הסדר. לאורך הדרך נמשיך את השאלה המרכזית של הפרק (
+          <a href="/ias16-lab#method" className="font-medium text-accent hover:underline">
+            דרכים לפתור שאלה
+          </a>
+          ): המכונה של {MACHINE.company} נכנסה לשימוש ב-<Dt>{MACHINE.readyDate}</Dt> בעלות <Num v={EXAMPLE.oldCost} /> ₪, לאורך חיים של{" "}
+          {EXAMPLE.oldLife} שנים, ערך גרט <Num v={EXAMPLE.oldSalvage} /> ₪ ובקו ישר. ב-<Dt>{EXCHANGE_DATE}</Dt> החליפה אותה החברה במכונה חדשה ושילמה
+          בנוסף <Num v={EXAMPLE.cashPaid} /> ₪ במזומן. השווי ההוגן של המכונה הישנה ביום ההחלפה: <Num v={EXAMPLE.fairValueGiven} />{" "}
           ₪. למכונה החדשה: אורך חיים של {EXAMPLE.newLife} שנים וערך גרט של <Num v={EXAMPLE.newSalvage} /> ₪.
         </p>
         <ol className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -40,8 +45,8 @@ export function ExchangeStepsSection() {
           להפחית את הנכס החדש. מסמנים אותו בשאלה לפני כל חישוב.
         </p>
         <DataTable
-          caption="בדוגמה: החלפה ב-1.4.X4"
-          head={["נכס", "תקופה בשנת X4", "חודשי פחת"]}
+          caption={`בדוגמה: החלפה ב-${EXCHANGE_DATE}`}
+          head={["נכס", `תקופה בשנת ${EXCHANGE_YEAR}`, "חודשי פחת"]}
           rows={[
             ["הנכס הישן", "ינואר עד מרץ", `${WITH.monthsBefore} חודשים`],
             ["הנכס החדש", "אפריל עד דצמבר", `${WITH.monthsAfter} חודשים`],
@@ -70,15 +75,15 @@ export function ExchangeStepsSection() {
           caption="הפחת הנצבר של המכונה הישנה"
           head={["", "סכום"]}
           rows={[
-            [`פחת נצבר ליום 1.1.X4 (${YEARS_BEFORE} שנים מלאות)`, EXAMPLE.accumulatedOpening],
-            ["פחת ינואר עד מרץ X4", WITH.depToDate],
+            [`פחת נצבר ליום 1.1.${EXCHANGE_YEAR} (${MONTHS_BEFORE} חודשים מ-${MACHINE.readyDate}, לפי לוח הפחת בשאלה המרכזית)`, EXAMPLE.accumulatedOpening],
+            [`פחת ינואר עד מרץ ${EXCHANGE_YEAR}`, WITH.depToDate],
           ]}
           foot={["פחת נצבר מעודכן ליום ההחלפה", WITH.accumulated]}
         />
         <Formula
           tex={String.raw`\text{ערך בספרים ליום ההחלפה} = \text{עלות מקורית} - \text{פחת נצבר מעודכן} = ${texNum(EXAMPLE.oldCost)} - ${texNum(WITH.accumulated)} = ${texNum(WITH.bookValue)}`}
         />
-        <JournalEntry title="פחת הנכס הישן עד יום ההחלפה" date="1.4.X4" lines={catchUpLines(WITH)} />
+        <JournalEntry title="פחת הנכס הישן עד יום ההחלפה" date={EXCHANGE_DATE} lines={catchUpLines(WITH)} />
         <Callout kind="warn" title="המלכודת הקלאסית">
           <p>
             מי שמדלג על הפחת של החודשים האחרונים מחשב ערך בספרים גבוה מדי (<Num v={EXAMPLE.oldCost - EXAMPLE.accumulatedOpening} /> במקום{" "}
@@ -147,7 +152,7 @@ export function ExchangeStepsSection() {
           <Formula
             tex={String.raw`\text{רווח (הפסד) מהחלפה} = \text{שווי הוגן נמסר} - \text{ערך בספרים נמסר} = ${texNum(RECEIVED.fairValueGiven!)} - ${texNum(RECEIVED.bookValue)} = ${texNum(RECEIVED.gain)}`}
           />
-          <JournalEntry title="החלפה לפי השווי ההוגן של הנכס שהתקבל — פקודה מלאה" date="1.4.X4" lines={exchangeLines(RECEIVED_X, RECEIVED, "full")} />
+          <JournalEntry title="החלפה לפי השווי ההוגן של הנכס שהתקבל — פקודה מלאה" date={EXCHANGE_DATE} lines={exchangeLines(RECEIVED_X, RECEIVED, "full")} />
           <p className="text-[13.5px] text-fg/85">
             שימו לב: המזומן ששולם כבר &quot;בתוך&quot; השווי של הנכס שהתקבל, ולכן לא מוסיפים אותו לעלות — מנכים אותו כדי להגיע לשווי של מה
             שנמסר.

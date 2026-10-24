@@ -1,22 +1,13 @@
 import type { EntryLine } from "@/components/study/blocks";
 import type { ExchangeInputs, ExchangeResult } from "@/lib/learn/exchange";
+import { MACHINE_EXCHANGE, MACHINE_EXCHANGE_DATE } from "@/lib/learn/ias16-example";
 
-// The worked example the whole page follows, and the calculator's defaults.
-export const EXAMPLE: ExchangeInputs = {
-  oldCost: 500_000,
-  oldSalvage: 0,
-  oldLife: 10,
-  accumulatedOpening: 150_000,
-  month: 4,
-  commercial: true,
-  basis: "given",
-  fairValueGiven: 360_000,
-  fairValueReceived: 390_000,
-  cashPaid: 40_000,
-  cashReceived: 0,
-  newLife: 5,
-  newSalvage: 40_000,
-};
+// The worked example the whole page follows, and the calculator's defaults: the chapter's central
+// machine (see "how to solve a question"), exchanged on 1.4.2023.
+export const EXAMPLE: ExchangeInputs = MACHINE_EXCHANGE;
+export const EXCHANGE_YEAR = MACHINE_EXCHANGE_DATE.year;
+export const EXCHANGE_DATE = MACHINE_EXCHANGE_DATE.label;
+export const YEAR_END = `31.12.${EXCHANGE_YEAR}`;
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
 

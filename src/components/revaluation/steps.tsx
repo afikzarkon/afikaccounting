@@ -4,6 +4,7 @@ import { Formula } from "@/components/study/math";
 import { StepCard, texNum } from "@/components/study/ui";
 import { solveRevaluation, splitRevaluation } from "@/lib/learn/revaluation";
 import { depLines, nettingLines, proportionalLines, SL_EX } from "./data";
+import { EnrichmentBox, EnrichmentLegend } from "./enrichment";
 
 const R = solveRevaluation(SL_EX);
 const EV = R.events[0];
@@ -11,7 +12,6 @@ const YEARS_BEFORE = EV.t / 12;
 const OLD_ANNUAL = SL_EX.cost / SL_EX.life;
 const NEW_ANNUAL = EV.firstYearCharge;
 const SECOND_DOWN = R.events.find((e) => e.diff < 0 && e.pl === 0)!;
-const LOSS = R.events.find((e) => e.pl < 0)!;
 
 // How a gap can land, on small round figures.
 const CASES = [
@@ -30,9 +30,10 @@ export function RevaluationStepsSection() {
         <p className="text-xs font-semibold text-accent">דרכים לפתור שאלת הערכה מחדש — במבט אחד</p>
         <p className="mt-1 text-[15px] text-fg/90">
           במודל הערכה מחדש הנכס מוצג בשווי ההוגן שלו ביום ההערכה, בניכוי פחת שנצבר מאז (סעיף 31). כל שאלה נפתרת באותם שלבים. לאורך הדרך נפתור
-          דוגמה אחת: מבנה שנרכש ב-1.1.{SL_EX.firstYear} בעלות <Num v={SL_EX.cost} /> ₪, לאורך חיים של {SL_EX.life} שנים, בקו ישר. החברה מעריכה
-          אותו מחדש <strong>בכל 31.12</strong>, ובכל שנה יש לו שווי הוגן חדש. כאן נפתור את ההערכה הראשונה — ב-31.12.{EV.year} השווי ההוגן{" "}
-          <Num v={EV.fairValue} /> ₪ — ובכל שנה שאחריה חוזרים על אותם שלבים בדיוק (הלוח המלא בלשונית &quot;דוגמאות לפי שיטות&quot;).
+          דוגמה אחת לאורך כל העמוד: מבנה שנרכש ב-1.1.{SL_EX.firstYear} בעלות <Num v={SL_EX.cost} /> ₪, לאורך חיים של {SL_EX.life} שנים, בקו ישר וללא
+          ערך גרט. החברה מעריכה אותו מחדש פעמיים: ב-31.12.{EV.year} השווי ההוגן <Num v={EV.fairValue} /> ₪, וב-31.12.{SECOND_DOWN.year} —{" "}
+          <Num v={SECOND_DOWN.fairValue} /> ₪. כאן נפתור את ההערכה הראשונה; בשנייה חוזרים על אותם שלבים בדיוק (הלוח המלא בלשונית &quot;דוגמאות לפי
+          שיטות&quot;).
         </p>
         <ol className="mt-4 grid gap-2 sm:grid-cols-4">
           {STEPS.map((s, i) => (
@@ -92,8 +93,9 @@ export function RevaluationStepsSection() {
           rows={CASES.map((c) => [c.title, c.before, c.fv, c.fv - c.before, c.oci, c.pl])}
         />
         <p>
-          בדוגמה שלנו זו הערכה ראשונה והפער חיובי — כל <Num v={EV.oci} /> נזקפים לקרן הערכה מחדש. בשנים הבאות של אותה דוגמה מופיעים גם שאר
-          המקרים: ירידה שמקטינה את הקרן ({SECOND_DOWN.year}), וירידה שעוברת אותה ונזקפת לרווח והפסד ({LOSS.year}). עלייה נוספת — בדוגמה 2.
+          בדוגמה שלנו זו הערכה ראשונה והפער חיובי — כל <Num v={EV.oci} /> נזקפים לקרן הערכה מחדש. בהערכה השנייה ({SECOND_DOWN.year}) יש ירידה של{" "}
+          <Num v={-SECOND_DOWN.diff} />, והיא כולה בתוך הקרן — מקטינה אותה ולא נוגעת ברווח והפסד. ירידה שעוברת את הקרן מופיעה בטבלת המקרים
+          למעלה.
         </p>
       </StepCard>
 
@@ -103,18 +105,20 @@ export function RevaluationStepsSection() {
         </p>
         <p className="mt-1 text-[15px] text-fg/90">
           שתי השיטות מביאות את הנכס לאותו ערך בספרים — <Num v={EV.fairValue} /> — ואותו סכום לקרן. ההבדל רק באופן ההצגה של העלות והפחת הנצבר (סעיף
-          35).
+          35). <strong>בבחינות נשאלת רק שיטת הביטול</strong>; ההתאמה היחסית מוצגת כאן להעשרה בלבד.
         </p>
-        <div className="mt-3 grid gap-4 xl:grid-cols-2">
+        <div className="mt-3">
+          <EnrichmentLegend />
+        </div>
+        <div className="mt-3 grid grid-cols-1 gap-4 xl:grid-cols-2">
           <div className="rounded-xl border border-success/30 bg-success/[0.05] p-4">
-            <p className="text-sm font-semibold text-success">שיטת הביטול (הקיזוז) — השכיחה בבחינות</p>
+            <p className="text-sm font-semibold text-success">שיטת הביטול (הקיזוז) — הנדרשת בבחינות</p>
             <p className="mt-1 text-[14px] text-fg/90">
               מבטלים את כל הפחת הנצבר כנגד הנכס, ומתאימים את יתרת הנכס לשווי ההוגן. אחרי הרישום: נכס <Num v={EV.fairValue} />, פחת נצבר 0.
             </p>
             <JournalEntry title="הערכה מחדש — שיטת הביטול" date={`31.12.${EV.year}`} lines={nettingLines(EV)} />
           </div>
-          <div className="rounded-xl border border-line bg-surface-2/40 p-4">
-            <p className="text-sm font-semibold text-fg">שיטת ההתאמה היחסית</p>
+          <EnrichmentBox title="שיטת ההתאמה היחסית (פרופורציונלית)">
             <p className="mt-1 text-[14px] text-fg/90">
               מעדכנים גם את העלות וגם את הפחת הנצבר באותו יחס שבו השתנה הערך בספרים:{" "}
               <bdi dir="ltr" className="num">
@@ -123,11 +127,11 @@ export function RevaluationStepsSection() {
               . אחרי הרישום: נכס <Num v={EV.propGrossAfter} />, פחת נצבר <Num v={EV.propAccAfter} />.
             </p>
             <JournalEntry title="הערכה מחדש — התאמה יחסית" date={`31.12.${EV.year}`} lines={proportionalLines(EV)} />
-          </div>
+          </EnrichmentBox>
         </div>
         <DataTable
           caption="היתרות אחרי ההערכה"
-          head={["", "שיטת הביטול", "התאמה יחסית"]}
+          head={["", "שיטת הביטול", "התאמה יחסית (העשרה)"]}
           rows={[
             ["מבנה", EV.fairValue, EV.propGrossAfter],
             ["בניכוי פחת נצבר", 0, -EV.propAccAfter],
