@@ -176,7 +176,7 @@ function FullTab({ st, set }: { st: CalcState; set: Update }) {
   const method: Method = st.method === "compare" ? "fifo" : st.method;
   const solution = useMemo(() => solveAll(st, built, method), [st, built, method]);
   return (
-    <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+    <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <div className="no-print min-w-0">
         <Wizard st={st} set={set} built={built} solution={solution} />
       </div>
@@ -274,7 +274,7 @@ function Wizard({ st, set, built, solution }: { st: CalcState; set: Update; buil
 
           {st.step === 1 && (
             <>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <TextField label="שם החברה (לתצוגה)" value={st.company} onChange={(v) => set((s) => ({ ...s, company: v }))} />
                 <Select
                   label="מדיניות עיגול"
@@ -358,7 +358,7 @@ function Wizard({ st, set, built, solution }: { st: CalcState; set: Update; buil
               ) : ay > 0 && y.fromPrev ? (
                 <p className="rounded-lg bg-surface-2/70 px-3 py-2 text-sm text-fg">מלאי הפתיחה נלקח מהסגירה בספרים של {st.years[ay - 1].label}.</p>
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <NumField label="יחידות במלאי הפתיחה" value={y.openUnits} onChange={(v) => setYear((x) => ({ ...x, openUnits: { ...x.openUnits, v } }))} error={err("openUnits")} letter={built.letters[`y${ay}.openUnits`]} onToggleUnknown={() => setYear((x) => ({ ...x, openUnits: { ...x.openUnits, unknown: !x.openUnits.unknown } }))} />
                   <NumField label="עלות מלאי הפתיחה (סה״כ)" suffix="₪" value={y.openCost} onChange={(v) => setYear((x) => ({ ...x, openCost: { ...x.openCost, v } }))} error={err("openCost")} letter={built.letters[`y${ay}.openCost`]} onToggleUnknown={() => setYear((x) => ({ ...x, openCost: { ...x.openCost, unknown: !x.openCost.unknown } }))} />
                 </div>
@@ -396,7 +396,7 @@ function Wizard({ st, set, built, solution }: { st: CalcState; set: Update; buil
                         <Trash2 className="h-4 w-4" aria-hidden />
                       </button>
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                       <div>
                         <TextField label="תאריך" type="date" value={x.date} onChange={(v) => setS({ date: v })} />
                         {err(sk("date")) && <p className="mt-1 text-xs text-danger">{err(sk("date"))}</p>}
@@ -435,7 +435,7 @@ function Wizard({ st, set, built, solution }: { st: CalcState; set: Update; buil
                   ["total", "שמ״נ כולל (סכום)"],
                 ]}
               />
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {y.nrvMode === "unit" && <NumField label="שמ״נ ליחידה" suffix="₪" value={y.nrvUnit} onChange={(v) => setYear((x) => ({ ...x, nrvUnit: v }))} error={err("nrvUnit")} />}
                 {y.nrvMode === "total" && <NumField label="שמ״נ כולל" suffix="₪" value={y.nrvTotal} onChange={(v) => setYear((x) => ({ ...x, nrvTotal: v }))} error={err("nrvTotal")} />}
                 {y.nrvMode === "build" && (
@@ -456,7 +456,7 @@ function Wizard({ st, set, built, solution }: { st: CalcState; set: Update; buil
                 />
               )}
               {y.fair && <p className="text-xs text-muted">שמ״נ הוא ערך ספציפי לחברה; שווי הוגן הוא מחיר שוק. המחשבון מתעלם מהשווי ההוגן.</p>}
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <NumField label="הורדת ערך שכבר רשומה במלאי הפתיחה" suffix="₪" value={y.priorWriteDown} onChange={(v) => setYear((x) => ({ ...x, priorWriteDown: v }))} error={err("prior")} />
                 <NumField label="כמות שנספרה בפועל (אם שונה מהספרים)" value={y.counted} onChange={(v) => setYear((x) => ({ ...x, counted: v }))} error={err("counted")} />
               </div>
@@ -543,7 +543,7 @@ function PurchaseRow({ p, i, ay, built, setYear }: { p: PurchaseForm; i: number;
           </button>
         </div>
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
           <TextField label="תאריך" type="date" value={p.date} onChange={(v) => setP((x) => ({ ...x, date: v }))} />
           {err("date") && <p className="mt-1 text-xs text-danger">{err("date")}</p>}
@@ -586,7 +586,7 @@ function PurchaseRow({ p, i, ay, built, setYear }: { p: PurchaseForm; i: number;
                       <Trash2 className="h-4 w-4" aria-hidden />
                     </button>
                   </div>
-                  <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {d.kind !== "target" && <NumField label={d.kind === "per-unit-above" ? "מעבר ליחידה ה-" : "מעל כמה יחידות"} value={d.threshold} onChange={(v) => setD(j, { threshold: v })} error={err(dk("threshold"))} />}
                     {d.kind === "per-unit-above" ? (
                       <NumField label="הנחה ליחידה" suffix="₪" value={d.amount} onChange={(v) => setD(j, { amount: v })} error={err(dk("amount"))} />
@@ -684,16 +684,12 @@ function KnownsStep({ st, set, built }: { st: CalcState; set: Update; built: Bui
         const needsIndex = k.metric === "saleCost" || k.metric === "purchaseDiscount" || k.metric === "purchaseTotal";
         const setK = (patch: Partial<typeof k>) => set((s) => ({ ...s, knowns: s.knowns.map((x, j) => (j === i ? { ...x, ...patch } : x)) }));
         return (
-          <div key={k.id} className="grid items-end gap-2 rounded-lg bg-surface-2/50 p-2.5 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+          <div key={k.id} className="grid grid-cols-1 items-end gap-2 rounded-lg bg-surface-2/50 p-2.5 sm:grid-cols-2">
             <Select label="מה ידוע" value={k.metric} onChange={(v) => setK({ metric: v })} options={METRICS} />
-            {st.years.length > 1 ? (
-              <Select label="שנה" value={String(k.year)} onChange={(v) => setK({ year: Number(v) })} options={st.years.map((y, j) => [String(j), y.label])} />
-            ) : needsIndex ? null : (
-              <span />
-            )}
+            {st.years.length > 1 && <Select label="שנה" value={String(k.year)} onChange={(v) => setK({ year: Number(v) })} options={st.years.map((y, j) => [String(j), y.label])} />}
             {needsIndex && <NumField label={k.metric === "saleCost" ? "מכירה מס'" : "רכישה מס'"} value={k.index} onChange={(v) => setK({ index: v })} error={built.errors[`k${i}.idx`]} />}
             <NumField label="ערך" suffix={k.metric === "gpPct" ? "%" : k.metric === "closingUnits" ? "יח'" : "₪"} value={k.value} onChange={(v) => setK({ value: v })} error={built.errors[`k${i}`]} />
-            <button type="button" className={smallBtn} aria-label="הסירו נתון" onClick={() => set((s) => ({ ...s, knowns: s.knowns.filter((_, j) => j !== i) }))}>
+            <button type="button" className={cn(smallBtn, "justify-self-start")} aria-label="הסירו נתון" onClick={() => set((s) => ({ ...s, knowns: s.knowns.filter((_, j) => j !== i) }))}>
               <Trash2 className="h-4 w-4" aria-hidden />
             </button>
           </div>
@@ -967,7 +963,7 @@ function Guess({ r }: { r: PeriodResult }) {
       <p className="text-sm font-semibold text-fg">
         נחשו לפני שאתם מסתכלים · קלעתם <span className="num">{score}</span> מתוך <span className="num">{keys.length}</span>
       </p>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {keys.map(([label, value], i) => (
           <div key={label}>
             <NumField label={label} value={g[i]} onChange={(v) => setG((s) => s.map((x, j) => (j === i ? v : x)))} />

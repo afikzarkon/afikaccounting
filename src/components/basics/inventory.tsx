@@ -72,7 +72,7 @@ export function InventoryChapters() {
         <p>
           חנות הנרות &quot;להבה&quot; קנתה 10 ערכות נרות ב-50 ₪ ליחידה ומכרה 6 מהן ב-150 ₪ ליחידה, הכול במזומן. כמה הרוויחה? יש שתי דרכים לענות — ורק אחת נכונה.
         </p>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Card title="✗ הדרך השגויה" className="border-danger/40">
             <p>
               כל הקניות כהוצאה: מכירות <Money v={LEH.netSales} /> פחות קניות <Money v={LEH.purchasesCost} /> ={" "}
@@ -115,7 +115,7 @@ export function InventoryChapters() {
 
       <Chapter n={2} id="inv-terms" title="אוצר מילים בעשר דקות" lead="כל מונח — הגדרה, מספר, ואיפה הוא גר">
         <p>לפני החישובים — המילים. ליד כל מונח: הגדרה במשפט, דוגמה מחנות להבה, והדוח שבו הוא מופיע.</p>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {TERMS.map((t) => (
             <div key={t.term} className="card min-w-0 p-4">
               <div className="flex items-start justify-between gap-2">
@@ -259,7 +259,7 @@ export function InventoryChapters() {
           עלות המאווררים: <Money v={SHEMESH_R.purchasesCost} /> — <Money v={SHEMESH_R.costs[0].perUnit} /> ליחידה. האחסון והמע״מ נשארים מחוץ לעלות.
         </Rule>
         <h3 className="text-lg font-semibold text-fg">שלושה סוגי הנחה</h3>
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <Card title="א. על כל הרכישה">
             <p>&quot;5% הנחה ברכישה של מעל 800 יחידות&quot; — 1,000 יח׳ ב-20 ₪:</p>
             <p>

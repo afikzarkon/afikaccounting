@@ -120,7 +120,7 @@ export function InventoryExamChapters() {
         </p>
         <h3 className="text-lg font-semibold text-fg">שגרת שמונה הצעדים</h3>
         <Rule>מה מבקשים ← נתונים נוספים ← שיטה ← עלות לכל רכישה ← גלגול כמויות ← הערכה ושמ״נ ← דוח ונעלמים ← בדיקות סבירות</Rule>
-        <ol className="grid gap-3 md:grid-cols-2">
+        <ol className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {STEPS.map((s, i) => (
             <li key={s.title} className="card min-w-0 p-4">
               <p className="font-semibold text-fg">

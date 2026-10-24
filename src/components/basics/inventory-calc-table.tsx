@@ -84,14 +84,14 @@ export function TableTab({ st, set }: { st: CalcState; set: Update }) {
         <Check label="מלאי הפתיחה של כל שנה = הסגירה של הקודמת" checked={t.chain} onChange={(v) => setT((x) => ({ ...x, chain: v }))} />
         <Check label={`${t.years[0]?.label ?? "השנה הראשונה"}: החברה הוקמה השנה (פתיחה אפס)`} checked={!!t.years[0]?.founded} onChange={(v) => setT((x) => ({ ...x, years: x.years.map((y, j) => (j === 0 ? { ...y, founded: v } : y)) }))} />
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {t.years.map((y, i) => (
           <NumField key={i} label={`${y.label}: עלות המכר = p% מהקניות`} suffix="%" value={y.soldPct} onChange={(v) => setT((x) => ({ ...x, years: x.years.map((z, j) => (j === i ? { ...z, soldPct: v } : z)) }))} />
         ))}
       </div>
       {Object.keys(errors).length > 0 && <p className="text-sm text-danger">בכל תא: מספר, ? או —.</p>}
 
-      <div className="grid items-start gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
         <div className="min-w-0 space-y-3">
           <Scroller caption="הטבלה המלאה">
             <table className="w-full min-w-[24rem] text-sm" aria-label="הטבלה המלאה">
@@ -112,7 +112,7 @@ export function TableTab({ st, set }: { st: CalcState; set: Update }) {
                       const solved = solvedSet.has(`${i}:${r}`);
                       const missing = result.missing.some((x) => x.year === i && x.row === r);
                       return (
-                        <td key={i} className={cn("px-3 py-1.5 text-end", solved && "bg-success/12 text-fg", missing && "bg-danger/10")}>
+                        <td key={i} className={cn("relative px-3 py-1.5 text-end", solved && "bg-success/12 text-fg", missing && "bg-danger/10")}>
                           {v === undefined ? (missing ? <span className="text-danger">לא ניתן לקבוע</span> : "") : r === "gpPct" ? <bdi dir="ltr" className="num">{fmt(Math.round(v * 10000) / 100)}%</bdi> : <Money v={v} plain />}
                           {solved && <span className="sr-only"> (חושב)</span>}
                         </td>

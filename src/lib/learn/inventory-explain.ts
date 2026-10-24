@@ -245,7 +245,7 @@ export function explainSolve(s: SolveResult): TraceStep[] {
     formula.push(`${ax}${e.b ? ` ${e.b < 0 ? "−" : "+"} ${m(Math.abs(e.b))}` : ""} = ${m(e.target)}`);
     formula.push(`x = (${m(e.target)} − ${m(e.b)}) ÷ ${u(e.a)} = ${u(e.x)}`);
     const got = s.residuals.find((r) => r.known === e.known);
-    const checks = got ? [{ ok: Math.abs(got.got - got.value) < 0.005 + 1e-6, text: `אימות: מציבים x = ${u(e.x)} ומקבלים ${e.known} = ${m(got.got)}` }] : undefined;
+    const checks = got ? [{ ok: Math.abs(got.got - got.value) < 0.005 + 1e-6, text: `אימות: מציבים x = ${u(e.x)} ומקבלים ${e.known} = ${got.known.startsWith("שיעור") ? pc(got.got) : m(got.got)}` }] : undefined;
     return { id: `solve-${i}`, title: `נעלם: ${e.unknown}`, text, formula, checks, rules: ["R30", "R31"] };
   });
 }

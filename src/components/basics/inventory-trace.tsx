@@ -7,6 +7,8 @@ import { Money, Scroller } from "./ui";
 
 // Shared by the chapters (server) and the calculator (client): no hooks here.
 
+const HEBREW = /[֐-׿]/;
+
 /** A table from the engine's working: numbers formatted, struck-out rows for what stays outside cost. */
 export function TraceTableView({ t }: { t: TraceTable }) {
   const showHead = t.head.some(Boolean);
@@ -77,7 +79,8 @@ export function TraceStepView({ s, n, children }: { s: TraceStep; n?: number; ch
       {s.formula && (
         <div className="space-y-1 rounded-lg bg-surface-2/70 px-3 py-2 text-[14.5px] font-medium text-fg ring-1 ring-accent/25">
           {s.formula.map((f, i) => (
-            <p key={i} className="num">
+            // A line of pure math reads left to right; one with Hebrew words follows the page.
+            <p key={i} dir={HEBREW.test(f) ? undefined : "ltr"} className={cn("num", HEBREW.test(f) ? "text-start" : "text-end")}>
               {f}
             </p>
           ))}

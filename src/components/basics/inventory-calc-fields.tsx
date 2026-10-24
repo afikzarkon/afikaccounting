@@ -125,7 +125,7 @@ export function Choice<T extends string>({ label, value, onChange, options }: { 
   return (
     <fieldset>
       <legend className="mb-2 text-[13px] font-medium text-fg">{label}</legend>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {options.map(([v, title, hint]) => (
           <button
             key={v}

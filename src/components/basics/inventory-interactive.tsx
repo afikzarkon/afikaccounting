@@ -158,14 +158,14 @@ export function SystemSwitch({ data }: { data: Record<"periodic" | "perpetual", 
       <p aria-live="polite" className="text-sm text-muted">
         {d.groups[step].length === 0 ? "בשיטה תמידית אין פקודת התאמה בסוף השנה — המלאי בספרים כבר מעודכן." : `אחרי ${EVENTS[step]}: ${d.groups[step].length} ${d.groups[step].length > 1 ? "פקודות" : "פקודה"}.`}
       </p>
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         {entries.map((e, i) => (
-          <div key={e.id} className={cn(!current.has(shown[i]) && "opacity-60")}>
+          <div key={e.id} className={cn("min-w-0", !current.has(shown[i]) && "opacity-60")}>
             <EntryView entry={e} title={e.text} effect={false} note={e.why ?? null} />
           </div>
         ))}
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {accounts.map((t) => (
           <TCard key={t.account} t={t} />
         ))}
@@ -344,7 +344,7 @@ export function FormulaLab() {
   const order = [rows[0], rows[2], rows[3]].sort((a, b) => b.r.grossProfit - a.r.grossProfit);
   return (
     <div className="card space-y-4 p-5">
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {(["1.2 (10 יח')", "10.4 (5 יח')", "17.8 (6 יח')"] as const).map((l, i) => (
           <NumberInput key={l} label={`מחיר הרכישה ב-${l}`} suffix="₪" value={prices[i]} onChange={(v) => setPrices((s) => s.map((x, j) => (j === i ? v : x)) as [string, string, string])} error={Number.isFinite(p[i]) && p[i] >= 0 ? undefined : "הזינו מחיר"} />
         ))}
@@ -468,7 +468,7 @@ export function CountBridge({ rows }: { rows: { label: string; amount: number; s
   return (
     <div className="card space-y-3 p-5">
       <p className="font-semibold text-fg">גשר ספירה: מהמחסן ליתרה בדוחות</p>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {rows.map((r, i) => (
           <div key={r.label}>
             <NumberInput label={`${r.sign === 1 ? "+" : "−"} ${r.label}`} suffix="₪" value={v[i]} onChange={(x) => setV((s) => s.map((y, j) => (j === i ? x : y)))} />
@@ -491,7 +491,7 @@ export function AnswerCheck({ answers }: { answers: { label: string; value: numb
   const [shown, setShown] = useState(false);
   return (
     <div className="space-y-2">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {answers.map((a, i) => {
           const x = parseNumber(v[i]);
           const target = a.kind === "pct" ? a.value * 100 : a.value;

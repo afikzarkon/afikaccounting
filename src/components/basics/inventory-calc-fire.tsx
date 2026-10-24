@@ -75,7 +75,7 @@ export function FireTab({ st, set }: { st: CalcState; set: Update }) {
         <h3 id="retail-title" className="font-semibold text-fg">
           א. מלאי סגירה משיעור גולמי (שיטה קמעונאית)
         </h3>
-        <div className="grid gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
           <NumField label="מכירות נטו" suffix="₪" value={f.retail.netSales} onChange={(v) => setRetail({ netSales: v })} />
           <NumField label="שיעור רווח גולמי" suffix="%" value={f.retail.rate} onChange={(v) => setRetail({ rate: v })} />
           <NumField label="מלאי פתיחה" suffix="₪" value={f.retail.opening} onChange={(v) => setRetail({ opening: v })} />
@@ -127,7 +127,7 @@ export function FireTab({ st, set }: { st: CalcState; set: Update }) {
               </button>
               {f.gpYears.length > 1 && <Check label="ממוצע משוקלל לפי המכירות (ברירת המחדל: ממוצע פשוט)" checked={f.weighted} onChange={(v) => setF({ weighted: v })} />}
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <NumField label="מלאי פתיחה (בעלות)" suffix="₪" value={f.opening} onChange={(v) => setF({ opening: v })} />
               <NumField label="קניות עד תאריך השריפה" suffix="₪" value={f.purchases} onChange={(v) => setF({ purchases: v })} />
               <NumField label="מכירות עד תאריך השריפה" suffix="₪" value={f.sales} onChange={(v) => setF({ sales: v })} />
@@ -141,7 +141,7 @@ export function FireTab({ st, set }: { st: CalcState; set: Update }) {
               ההיסטוריה נלקחת מלשונית ①: {st.years.map((y) => y.label).join(", ")} — השנה האחרונה היא התקופה עד השריפה. שיטת הפוליסה יכולה להיות שונה משיטת החברה, והחישוב הוא בלי
               שמ״נ.
             </p>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Choice<Method>
                 label="שיטת הפוליסה"
                 value={f.policy}
@@ -155,7 +155,7 @@ export function FireTab({ st, set }: { st: CalcState; set: Update }) {
             </button>
           </>
         )}
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Choice
             label="השתתפות עצמית"
             value={f.dedKind}

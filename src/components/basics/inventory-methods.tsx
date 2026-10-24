@@ -329,7 +329,7 @@ export function InventoryMethodChapters() {
             <li>&quot;נמכר p% מהקניות&quot;, &quot;הכפילה&quot;, &quot;גדל ב-X%&quot; ← תבנית 8.</li>
           </ul>
         </Card>
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <Pattern n={1} unknown="תאים חסרים בדוח" given="דוח רב-שנתי עם ?" tool="שרשרת המשוואות; פתיחה(t) = סגירה(t−1)" calc="daf">
             ראו את הטבלה המתמלאת בפרק 4: כל צעד הוא משוואה עם נעלם אחד.
           </Pattern>
