@@ -785,3 +785,21 @@ export function historyFire(x: HistoryFireInput) {
   }
   return { chain, unitsAtFire, costAtFire: last.closingCostBasis, burnedUnits, burned, slices, avg: x.method === "fifo" ? undefined : last.avgCost, settlement: settle(burned, x.terms) };
 }
+
+/** FIFO layers after each event, for stepping through the shelf (perpetual order). */
+export function fifoSnapshots(period: Period): { label: string; date?: string; kind: "open" | "buy" | "sell"; qty: number; layers: Layer[]; slices: Slice[] }[] {
+  const costs = period.purchases.map(purchaseCost);
+  const { events } = timeline(period, costs, false);
+  const queue = openingLayers(period.opening ?? { units: 0, cost: 0 }, false);
+  const out: ReturnType<typeof fifoSnapshots> = [{ label: "תחילת השנה", kind: "open", qty: period.opening?.units ?? 0, layers: queue.map((l) => ({ ...l })), slices: [] }];
+  for (const e of events) {
+    if (e.kind === "buy") {
+      queue.push({ source: e.label, date: e.date, units: e.units, cost: e.cost, origCost: e.cost });
+      out.push({ label: e.label, date: e.date, kind: "buy", qty: e.units, layers: queue.map((l) => ({ ...l })), slices: [] });
+    } else if (e.kind === "sell") {
+      const t = take(queue, e.units, partOf({ mode: "exact" }));
+      out.push({ label: e.label, date: e.date, kind: "sell", qty: e.units, layers: queue.map((l) => ({ ...l })), slices: t.slices });
+    }
+  }
+  return out;
+}

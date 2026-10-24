@@ -182,6 +182,18 @@
     position: absolute;
     inset: 0 0 auto 0;
   }
+  /* The inventory calculator's solution prints on its own, the same way. */
+  .printing-inv body * {
+    visibility: hidden;
+  }
+  .printing-inv .inv-print,
+  .printing-inv .inv-print * {
+    visibility: visible;
+  }
+  .printing-inv .inv-print {
+    position: absolute;
+    inset: 0 0 auto 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

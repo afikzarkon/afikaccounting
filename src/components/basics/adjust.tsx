@@ -212,6 +212,23 @@ export function AdjustChapters() {
             note="שני חשבונות באותו סכום: אחד מאזני (הנכס שבמחסן), ואחד תוצאתי (שמקטין את עלות הקניות). בשנה הבאה, המלאי הזה יהיה מלאי הפתיחה."
           />
         </Card>
+        <Link
+          href="/basics/inventory"
+          className="group flex items-center gap-4 rounded-xl border-2 border-accent bg-accent-soft px-5 py-4 transition-colors hover:bg-accent-soft/70"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block text-[17px] font-bold text-fg">המדריך המלא למלאי נמצא בעמוד נפרד</span>
+            <span className="mt-0.5 block text-sm text-fg/85">
+              שם הנושא נלמד מההתחלה, צעד אחר צעד: רישום תקופתי ותמידי, FIFO וממוצעים, שווי מימוש נטו, חילוץ נעלמים — ומחשבון שמראה את כל הדרך.
+            </span>
+            <span className="mt-1.5 block text-sm font-semibold text-accent">למדריך המלא ←</span>
+          </span>
+          <ArrowLeft className="h-5 w-5 shrink-0 text-accent transition-transform group-hover:-translate-x-1" aria-hidden />
+        </Link>
+        <p className="rounded-xl border border-amber-500/40 bg-amber-500/[0.08] px-4 py-3 text-[15px] text-fg">
+          <strong>שימו לב:</strong> הדוגמה כאן היא דוגמה קצרה לחזרה — למי שכבר עבר על המדריך. אם זו הפעם הראשונה שאתם פוגשים מלאי, התחילו במדריך וחזרו לכאן אחר
+          כך.
+        </p>
       </Chapter>
 
       <Chapter n={14} id="creditloss" title="הפסדי אשראי" lead="לא כל לקוח ישלם — וצריך לומר זאת מראש">

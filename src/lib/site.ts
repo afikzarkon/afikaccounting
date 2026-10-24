@@ -9,12 +9,13 @@ export const site = {
     { href: "/basics", label: "חשבונאות מאפס" },
     {
       label: "לימוד תקנים",
-      title: "IAS 16 · רכוש קבוע",
+      // Items are grouped by standard; the menu prints a heading wherever the section changes.
       items: [
-        { href: "/ias16-lab", label: "יסודות ועקרונות", description: "כולל סימולטור פחת, דרכים לפתור שאלה וטיפים למבחן" },
-        { href: "/ias16-lab/exchange", label: "החלפת נכסים", description: "שלושה שלבים, פקודות יומן ומחשבון החלפה" },
-        { href: "/ias16-lab/renovation", label: "שיפוצים ואירועים עוקבים", description: "נכנס לנכס או הוצאה, דוגמאות בכל השיטות ומחשבון" },
-        { href: "/ias16-lab/revaluation", label: "מודל הערכה מחדש", description: "קרן הערכה מחדש, קרקע מול מבנה, טיפ בדיקה ומחשבון" },
+        { section: "IAS 16 · רכוש קבוע", href: "/ias16-lab", label: "יסודות ועקרונות", description: "כולל סימולטור פחת, דרכים לפתור שאלה וטיפים למבחן" },
+        { section: "IAS 16 · רכוש קבוע", href: "/ias16-lab/exchange", label: "החלפת נכסים", description: "שלושה שלבים, פקודות יומן ומחשבון החלפה" },
+        { section: "IAS 16 · רכוש קבוע", href: "/ias16-lab/renovation", label: "שיפוצים ואירועים עוקבים", description: "נכנס לנכס או הוצאה, דוגמאות בכל השיטות ומחשבון" },
+        { section: "IAS 16 · רכוש קבוע", href: "/ias16-lab/revaluation", label: "מודל הערכה מחדש", description: "קרן הערכה מחדש, קרקע מול מבנה, טיפ בדיקה ומחשבון" },
+        { section: "IAS 2 · מלאי", href: "/basics/inventory", label: "מלאי — מדריך מלא ומחשבון", description: "FIFO וממוצעים, שמ״נ, חילוץ נעלמים, שריפה ומחשבון" },
       ],
     },
     { href: "/content", label: "מרכז התוכן" },

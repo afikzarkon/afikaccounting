@@ -4,7 +4,7 @@ import { ChevronDown, Menu, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { site } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,7 @@ const isActive = (pathname: string, href: string) => (href === "/" ? pathname ==
 // Pages inside a category can nest (/ias16-lab and /ias16-lab/exchange), so each one is active only on its own path.
 const isItemActive = (pathname: string, href: string) => pathname === href;
 const groupActive = (pathname: string, group: NavGroup) => group.items.some((i) => isActive(pathname, i.href));
+const startsSection = (group: NavGroup, n: number) => n === 0 || group.items[n].section !== group.items[n - 1].section;
 
 /**
  * The hook-reading wrappers sit inside Suspense in the navbar, because a
@@ -110,19 +111,20 @@ function NavDropdown({ group, pathname }: { group: NavGroup; pathname: string })
             transition={{ duration: 0.14 }}
             className="absolute start-0 top-full z-50 mt-2 w-80 rounded-2xl border border-line-strong bg-surface p-1.5 shadow-xl"
           >
-            <p className="px-3 pt-2 pb-1 text-xs font-semibold text-accent">{group.title}</p>
-            {group.items.map((i) => {
+            {group.items.map((i, n) => {
               const on = isItemActive(pathname, i.href);
               return (
-                <Link
-                  key={i.href}
-                  href={i.href}
-                  aria-current={on ? "page" : undefined}
-                  className={cn("block rounded-xl px-3 py-2.5 transition-colors hover:bg-surface-2", on && "bg-surface-2")}
-                >
-                  <span className="block text-sm font-semibold text-fg">{i.label}</span>
-                  <span className="block text-xs text-muted">{i.description}</span>
-                </Link>
+                <Fragment key={i.href}>
+                  {startsSection(group, n) && <p className={cn("px-3 pb-1 text-xs font-semibold text-accent", n ? "mt-1 border-t border-line pt-2.5" : "pt-2")}>{i.section}</p>}
+                  <Link
+                    href={i.href}
+                    aria-current={on ? "page" : undefined}
+                    className={cn("block rounded-xl px-3 py-2.5 transition-colors hover:bg-surface-2", on && "bg-surface-2")}
+                  >
+                    <span className="block text-sm font-semibold text-fg">{i.label}</span>
+                    <span className="block text-xs text-muted">{i.description}</span>
+                  </Link>
+                </Fragment>
               );
             })}
           </motion.div>
@@ -189,8 +191,12 @@ export function MobileNavView({ pathname = "" }: { pathname?: string }) {
               "items" in item ? (
                 <div key={item.label} className="py-1">
                   <p className="px-4 pt-2 text-xs font-semibold text-subtle">{item.label}</p>
-                  <p className="px-4 pb-1 text-xs font-semibold text-accent">{item.title}</p>
-                  {item.items.map((i) => link(i.href, i.label, true))}
+                  {item.items.map((i, n) => (
+                    <Fragment key={i.href}>
+                      {startsSection(item, n) && <p className="px-4 pt-1.5 pb-1 text-xs font-semibold text-accent">{i.section}</p>}
+                      {link(i.href, i.label, true)}
+                    </Fragment>
+                  ))}
                 </div>
               ) : (
                 link(item.href, item.label)
