@@ -1,8 +1,8 @@
 /**
- * Credit losses, in depth: the allowance account, its T-account, and every
- * exam situation — unknowns, aging, specific against general, credit sales and
- * a full exam question. As on the basics page, journal entries are the input
- * and every balance is computed from them.
+ * Credit losses, in depth: the customers account and the allowance against it,
+ * from the idea itself to a full exam question. As on the basics page, journal
+ * entries are the input and every balance is computed from them; each example
+ * keeps both accounts, so the page can draw both T-accounts for it.
  */
 
 import { type Balances, balancesOf, type Entry, type Line, ledger, round2 } from "./basics";
@@ -54,157 +54,140 @@ export function adjustment(id: string, date: string, before: number, required: n
 function close(entries: Entry[], opening: Balances) {
   const accounts = ledger(entries, opening);
   const b = balancesOf(accounts);
-  return { accounts, b, gross: b[AR] ?? 0, allowance: -(b[ALLOW] ?? 0), expense: b[EXPENSE] ?? 0 };
+  const gross = b[AR] ?? 0;
+  const allowance = -(b[ALLOW] ?? 0);
+  return { accounts, b, gross, allowance, net: round2(gross - allowance), expense: b[EXPENSE] ?? 0 };
 }
 
-// ---------------------------------------------------------------------------
-// 1. The T-account: Alon Ltd.
+type Year = {
+  openingAR: number;
+  openingAllowance: number;
+  creditSales?: number;
+  collections?: number;
+  writeOffs?: number;
+  recovered?: number;
+  /** The allowance required at year end, from the customers' closing gross balance. */
+  required: (gross: number) => number;
+};
 
-export const ALON = (() => {
-  const opening = 30_000;
-  const written = 12_000;
-  const gross = 800_000;
+/**
+ * One year of the two accounts: credit sales, collections, write-offs and
+ * recoveries, then the year-end adjustment to the required allowance. `ids`
+ * names each entry, so a page can hide one as the unknown.
+ */
+export function year(p: Year) {
+  const entries: Entry[] = [];
+  const ids: Partial<Record<"sales" | "collections" | "writeOff" | "recovery" | "adj", string>> = {};
+  let n = 0;
+  const id = () => String(++n);
+  if (p.creditSales) {
+    ids.sales = id();
+    entries.push(e(ids.sales, "", "מכירות באשראי", [{ account: AR, dr: p.creditSales }, { account: "מכירות", cr: p.creditSales }]));
+  }
+  if (p.collections) {
+    ids.collections = id();
+    entries.push(e(ids.collections, "", "גבייה מלקוחות", [{ account: "מזומן", dr: p.collections }, { account: AR, cr: p.collections }]));
+  }
+  if (p.writeOffs) {
+    ids.writeOff = id();
+    entries.push(writeOff(ids.writeOff, "", p.writeOffs));
+  }
+  if (p.recovered) {
+    ids.recovery = id();
+    entries.push(...recovery(ids.recovery, "", p.recovered));
+  }
+  const opening: Balances = { [AR]: p.openingAR, [ALLOW]: -p.openingAllowance };
+  const mid = close(entries, opening);
+  const required = round2(p.required(mid.gross));
+  ids.adj = id();
+  const adj = adjustment(ids.adj, "31.12", mid.allowance, required);
+  const all = [...entries, adj];
+  return { ...p, ids: ids as Required<typeof ids>, year: entries, mid, required, adj, entries: all, result: close(all, opening) };
+}
+
+export type YearResult = ReturnType<typeof year>;
+
+// ---------------------------------------------------------------------------
+// The idea, with round numbers: Ronit's shop.
+
+export const RONIT = { customers: 100, each: 1_000, unpaid: 5 };
+
+// ---------------------------------------------------------------------------
+// The first full example: Alon Ltd, and the same year with a smaller estimate.
+
+const ALON_YEAR = { openingAR: 700_000, openingAllowance: 30_000, creditSales: 2_000_000, collections: 1_888_000, writeOffs: 12_000 };
+export const ALON = { rate: 0.05, lowRate: 0.02, ...year({ ...ALON_YEAR, required: (g) => g * 0.05 }) };
+export const ALON_LOW = year({ ...ALON_YEAR, required: (g) => g * ALON.lowRate });
+
+// ---------------------------------------------------------------------------
+// Scenario A: the opening gross is unknown; the opening net and the rate are given.
+
+export const SCENARIO_A = (() => {
+  const openingNet = 570_000;
   const rate = 0.05;
-  const lowRate = 0.02;
-  const before = opening - written;
-  const required = round2(gross * rate);
-  const lowRequired = round2(gross * lowRate);
-  const entries = [writeOff("1", "15.5.2025", written), adjustment("2", "31.12.2025", before, required)];
-  const reversal = [writeOff("1", "15.5.2025", written), adjustment("2", "31.12.2025", before, lowRequired)];
-  return {
-    opening,
-    written,
-    gross,
-    rate,
-    lowRate,
-    before,
-    required,
-    lowRequired,
-    entries,
-    reversal,
-    result: close(entries, { [ALLOW]: -opening }),
-    reversed: close(reversal, { [ALLOW]: -opening }),
-  };
+  // Net is what is left after the allowance: gross × (1 − rate).
+  const openingAR = round2(openingNet / (1 - rate));
+  const openingAllowance = round2(openingAR * rate);
+  return { openingNet, rate, ...year({ openingAR, openingAllowance, creditSales: 1_500_000, collections: 1_420_000, writeOffs: 10_000, required: (g) => g * rate }) };
 })();
 
 // ---------------------------------------------------------------------------
-// 2. The unknown opening balance: Barak Ltd. Closing figures are given; the openings are solved backwards.
+// Scenario B: the year's expense is unknown. The rate is extracted from last year's closing balances.
 
-export const BARAK = (() => {
-  const closingGross = 1_500_000;
-  const rate = 0.03;
-  const closingAllowance = round2(closingGross * rate);
-  const expense = 28_000;
-  const written = 20_000;
-  const creditSales = 2_400_000;
-  const collections = 2_280_000;
-  // Allowance: opening − write-offs + expense = closing.
-  const openingAllowance = round2(closingAllowance - expense + written);
+export const SCENARIO_B = (() => {
+  const openingAR = 900_000;
+  const openingAllowance = 45_000;
+  const rate = round2(openingAllowance / openingAR);
+  return { rate, ...year({ openingAR, openingAllowance, creditSales: 3_000_000, collections: 2_832_000, writeOffs: 28_000, required: (g) => g * rate }) };
+})();
+
+// ---------------------------------------------------------------------------
+// Scenario C: collections are unknown; both customer balances, sales and write-offs are given.
+
+export const SCENARIO_C = (() => {
+  const openingAR = 400_000;
+  const closingAR = 460_000;
+  const creditSales = 1_250_000;
+  const writeOffs = 14_000;
+  const rate = 0.04;
   // Customers: opening + credit sales − collections − write-offs = closing.
-  const openingGross = round2(closingGross - creditSales + collections + written);
-  const entries = [
-    e("1", "2025", "מכירות באשראי במהלך השנה", [
-      { account: AR, dr: creditSales },
-      { account: "מכירות", cr: creditSales },
-    ]),
-    e("2", "2025", "גבייה מלקוחות במהלך השנה", [
-      { account: "מזומן", dr: collections },
-      { account: AR, cr: collections },
-    ]),
-    writeOff("3", "2025", written),
-    adjustment("4", "31.12.2025", openingAllowance - written, closingAllowance),
-  ];
-  return {
-    closingGross,
-    rate,
-    closingAllowance,
-    expense,
-    written,
-    creditSales,
-    collections,
-    openingAllowance,
-    openingGross,
-    entries,
-    result: close(entries, { [AR]: openingGross, [ALLOW]: -openingAllowance }),
-  };
+  const collections = round2(openingAR + creditSales - writeOffs - closingAR);
+  return { closingAR, rate, ...year({ openingAR, openingAllowance: round2(openingAR * rate), creditSales, collections, writeOffs, required: (g) => g * rate }) };
 })();
 
 // ---------------------------------------------------------------------------
-// 3. The closing balance: a flat rate against an aging schedule, Hen Ltd.
-
-export const HEN = (() => {
-  const gross = 1_000_000;
-  const opening = 40_000;
-  const written = 9_000;
-  const before = opening - written;
-  const flatRate = 0.025;
-  const buckets = [
-    { label: "עד 30 יום", amount: 600_000, rate: 0.01 },
-    { label: "31 עד 90 יום", amount: 250_000, rate: 0.04 },
-    { label: "91 עד 180 יום", amount: 100_000, rate: 0.12 },
-    { label: "מעל 180 יום", amount: 50_000, rate: 0.4 },
-  ].map((x) => ({ ...x, allowance: round2(x.amount * x.rate) }));
-  const flat = round2(gross * flatRate);
-  const aging = round2(buckets.reduce((s, x) => s + x.allowance, 0));
-  return {
-    gross,
-    opening,
-    written,
-    before,
-    flatRate,
-    buckets,
-    bucketsTotal: buckets.reduce((s, x) => s + x.amount, 0),
-    flat,
-    aging,
-    flatEntry: adjustment("א", "31.12.2025", before, flat),
-    agingEntry: adjustment("ב", "31.12.2025", before, aging),
-  };
-})();
-
-// ---------------------------------------------------------------------------
-// 4. Specific against general: Dor Ltd and a garage in trouble.
+// Scenario D: a specific customer in trouble beside the general allowance — Dor Ltd and a garage.
 
 export const DOR = (() => {
-  const gross = 900_000;
   const specificName = "מוסך הצפון";
   const specificDebt = 60_000;
   const specificRate = 0.7;
   const generalRate = 0.04;
-  const before = 50_000;
-  const specific = round2(specificDebt * specificRate);
-  const general = round2((gross - specificDebt) * generalRate);
-  const required = round2(specific + general);
-  // The common mistake: the general rate on all customers, the troubled one included.
-  const wrongGeneral = round2(gross * generalRate);
-  const wrongRequired = round2(specific + wrongGeneral);
-  // Variant: the garage went bankrupt before year end, so the debt is written off and leaves the customers.
-  const bankruptGross = gross - specificDebt;
-  const bankruptBefore = before - specificDebt;
-  const bankruptRequired = round2(bankruptGross * generalRate);
-  const bankrupt = [writeOff("1", "20.11.2025", specificDebt, specificName), adjustment("2", "31.12.2025", bankruptBefore, bankruptRequired)];
+  const base = { openingAR: 820_000, openingAllowance: 50_000, creditSales: 2_600_000, collections: 2_520_000 };
+  const split = (gross: number, specificLeft: number) => {
+    const specific = round2(specificLeft * specificRate);
+    const general = round2((gross - specificLeft) * generalRate);
+    return { specific, general, required: round2(specific + general) };
+  };
+  // The garage still owes its debt at year end: a specific allowance on it, the general rate on the rest.
+  const main = year({ ...base, required: (g) => split(g, specificDebt).required });
+  // Variant: the garage went bankrupt before year end, so its debt is written off and only the general rate is left.
+  const bankrupt = year({ ...base, writeOffs: specificDebt, required: (g) => split(g, 0).required });
   return {
-    gross,
     specificName,
     specificDebt,
     specificRate,
     generalRate,
-    before,
-    specific,
-    general,
-    required,
-    wrongGeneral,
-    wrongRequired,
-    entry: adjustment("1", "31.12.2025", before, required),
-    bankruptGross,
-    bankruptBefore,
-    bankruptRequired,
+    ...main,
+    ...split(main.mid.gross, specificDebt),
+    // The common mistake: the general rate on all customers, the troubled one included.
+    wrongGeneral: round2(main.mid.gross * generalRate),
     bankrupt,
-    bankruptResult: close(bankrupt, { [AR]: gross, [ALLOW]: -before }),
   };
 })();
 
 // ---------------------------------------------------------------------------
-// 5. Credit sales, collections and a recovered debt: Eran Ltd.
+// Credit sales, a distracting purchase and a recovered debt: Eran Ltd.
 
 export const ERAN = (() => {
   const openingGross = 500_000;
@@ -215,7 +198,7 @@ export const ERAN = (() => {
   const written = 15_000;
   const recovered = 4_000;
   const rate = 0.04;
-  const year = [
+  const yearEntries = [
     e("1", "2025", "מכירות באשראי", [
       { account: AR, dr: creditSales },
       { account: "מכירות", cr: creditSales },
@@ -231,35 +214,20 @@ export const ERAN = (() => {
     writeOff("4", "2025", written),
     ...recovery("5", "2025", recovered),
   ];
-  const mid = close(year, { [AR]: openingGross, [ALLOW]: -openingAllowance });
+  const opening = { [AR]: openingGross, [ALLOW]: -openingAllowance };
+  const mid = close(yearEntries, opening);
   const required = round2(mid.gross * rate);
   const adj = adjustment("6", "31.12.2025", mid.allowance, required);
-  const entries = [...year, adj];
-  return {
-    openingGross,
-    openingAllowance,
-    creditSales,
-    collections,
-    creditPurchases,
-    written,
-    recovered,
-    rate,
-    year,
-    mid,
-    required,
-    adj,
-    entries,
-    result: close(entries, { [AR]: openingGross, [ALLOW]: -openingAllowance }),
-  };
+  const entries = [...yearEntries, adj];
+  return { openingGross, openingAllowance, creditSales, collections, creditPurchases, written, recovered, rate, year: yearEntries, mid, required, adj, entries, result: close(entries, opening) };
 })();
 
 // ---------------------------------------------------------------------------
-// 6. The exam question: Gilboa Ltd, 2025.
+// The exam question: Gilboa Ltd, 2025.
 
 export const GILBOA = (() => {
   const openingNet = 912_000;
   const openingRate = 0.05;
-  // Net = gross × (1 − rate), so the opening gross is solved from the net.
   const openingGross = round2(openingNet / (1 - openingRate));
   const openingAllowance = round2(openingGross - openingNet);
   const openingSuppliers = 600_000;
@@ -275,7 +243,7 @@ export const GILBOA = (() => {
   const specificDebt = 70_000;
   const specificRate = 0.6;
   const generalRate = 0.05;
-  const year: Entry[] = [
+  const yearEntries: Entry[] = [
     e("1", "2025", "מכירות באשראי", [
       { account: AR, dr: creditSales },
       { account: "מכירות", cr: creditSales },
@@ -300,12 +268,12 @@ export const GILBOA = (() => {
     ...recovery("7", "10.9.2025", recovered),
   ];
   const opening: Balances = { [AR]: openingGross, [ALLOW]: -openingAllowance, ספקים: -openingSuppliers };
-  const mid = close(year, opening);
+  const mid = close(yearEntries, opening);
   const specific = round2(specificDebt * specificRate);
   const general = round2((mid.gross - specificDebt) * generalRate);
   const required = round2(specific + general);
   const adj = adjustment("8", "31.12.2025", mid.allowance, required);
-  const entries = [...year, adj];
+  const entries = [...yearEntries, adj];
   const result = close(entries, opening);
   return {
     openingNet,
@@ -325,7 +293,7 @@ export const GILBOA = (() => {
     specificDebt,
     specificRate,
     generalRate,
-    year,
+    year: yearEntries,
     mid,
     specific,
     general,
@@ -333,11 +301,23 @@ export const GILBOA = (() => {
     adj,
     entries,
     result,
-    net: round2(result.gross - result.allowance),
+    net: result.net,
   };
 })();
 
+// ---------------------------------------------------------------------------
+// Self-check: three short questions, each with the year behind it.
+
+export const SELF = [
+  // The write-offs ran past the allowance; the year-end entry covers the gap and the required balance.
+  year({ openingAR: 500_000, openingAllowance: 25_000, creditSales: 1_200_000, collections: 869_000, writeOffs: 31_000, required: (g) => g * 0.05 }),
+  // The opening allowance is the unknown: closing 54,000, expense 18,000.
+  year({ openingAR: 860_000, openingAllowance: 43_000, creditSales: 2_000_000, collections: 1_951_000, writeOffs: 9_000, recovered: 2_000, required: (g) => g * 0.06 }),
+  // A specific customer of 50,000 at 80%, 3% on the rest — and too much allowance already.
+  year({ openingAR: 380_000, openingAllowance: 60_000, creditSales: 1_000_000, collections: 980_000, required: (g) => 50_000 * 0.8 + (g - 50_000) * 0.03 }),
+];
+
 /** Every entry on the page, for the balance checks. */
 export function allCreditLossEntries(): Entry[] {
-  return [...ALON.entries, ...ALON.reversal, ...BARAK.entries, HEN.flatEntry, HEN.agingEntry, DOR.entry, ...DOR.bankrupt, ...ERAN.entries, ...GILBOA.entries];
+  return [ALON, ALON_LOW, SCENARIO_A, SCENARIO_B, SCENARIO_C, DOR, DOR.bankrupt, ERAN, GILBOA, ...SELF].flatMap((x) => x.entries);
 }

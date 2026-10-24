@@ -209,7 +209,7 @@ type MiniCol = { name: string; rows: [string, number][]; total?: string };
 /** One of Shula's two pages, under a banner naming the report it really is. */
 function Mini({ report, when, title, cols, verdict }: { report: string; when: string; title: string; cols: MiniCol[]; verdict: React.ReactNode }) {
   const col = ({ name, rows, total: label }: MiniCol, i: number) => (
-    <div className={cn("flex min-w-0 flex-col", i === 0 && "border-e-2 border-fg/70 pe-3")}>
+    <div key={name} className={cn("flex min-w-0 flex-col", i === 0 && "border-e-2 border-fg/70 pe-3")}>
       <p className="border-b border-line pb-1 text-xs font-bold text-muted">{name}</p>
       <ul className="mt-1 space-y-0.5 text-sm">
         {rows.map(([a, v]) => (

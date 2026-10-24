@@ -206,7 +206,7 @@ export function AdjustChapters() {
           <span className="min-w-0 flex-1">
             <span className="block text-[16px] font-bold text-fg">מדריך מלא: הפסדי אשראי</span>
             <span className="block text-sm text-muted">
-              כרטיס ההפרשה, ביטול הפרשה, נעלם ביתרת פתיחה, ניתוח גיל חובות, ספציפית מול כללית, חוב שנמחק ונגבה — ושאלה פתורה ברמת בחינה.
+              מהרעיון הפשוט, דרך מתווה 3 הכללים ושני כרטיסי T, ועד חילוץ נעלמים, הפרשה ספציפית ושאלה פתורה ברמת בחינה.
             </span>
           </span>
           <ArrowLeft className="h-5 w-5 shrink-0 text-accent transition-transform group-hover:-translate-x-1" aria-hidden />

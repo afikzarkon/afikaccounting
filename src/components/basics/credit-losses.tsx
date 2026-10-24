@@ -1,12 +1,249 @@
+import type { ReactNode } from "react";
 import { Callout, DataTable } from "@/components/study/blocks";
 import { type Entry, round2, type TAccount } from "@/lib/learn/basics";
-import { ALLOW, ALON, AR, BARAK, DOR, ERAN, GILBOA, HEN } from "@/lib/learn/credit-losses";
+import { ALLOW, ALON, ALON_LOW, AR, DOR, ERAN, GILBOA, RONIT, SCENARIO_A, SCENARIO_B, SCENARIO_C, SELF, year } from "@/lib/learn/credit-losses";
+import { cn } from "@/lib/utils";
 import { CreditLossCalculator } from "./credit-calculator";
-import { Card, Chapter, EntryView, Money, Rule, TCard, Term } from "./ui";
+import { Card, Chapter, EntryView, Money, Rule, Term } from "./ui";
 
 const pct = (r: number) => `${round2(r * 100)}%`;
 const f = (v: number) => v.toLocaleString("he-IL");
-const pick = (accounts: TAccount[], ...names: string[]) => names.map((n) => accounts.find((t) => t.account === n)!).filter(Boolean);
+/** A key naming one line of a T-account: its account, and an entry id, "פתיחה" or "סגירה". */
+const k = (account: string, ref: string) => `${account}|${ref}`;
+
+const RONIT_YEAR = year({ openingAR: 0, openingAllowance: 0, creditSales: RONIT.customers * RONIT.each, required: (g) => g * (RONIT.unpaid / RONIT.customers) });
+
+// ---------------------------------------------------------------------------
+// The two T-accounts.
+
+type Row = { key: string; label: string; ref?: string; amount: number; close?: boolean };
+
+/** What a posting is, read from the account on the other side of its entry. */
+function labelOf(account: string, side: "dr" | "cr", entry?: Entry) {
+  const other = entry?.lines.find((l) => l.account !== account)?.account;
+  if (account === AR) {
+    if (side === "dr") return other === ALLOW ? "החזרת חוב שנמחק" : "מכירות באשראי";
+    if (other === ALLOW) return "מחיקת חוב אבוד";
+    return entry?.id.endsWith("ב") ? "גביית החוב שחזר" : "גבייה מלקוחות";
+  }
+  if (side === "dr") return other === AR ? "מחיקת חוב אבוד" : "ביטול הפרשה (קיטון)";
+  return other === AR ? "החזרת חוב שנמחק" : "הוצאות הפסדי אשראי (גידול)";
+}
+
+/** A T-account balanced the way it is done on paper: the closing balance on the smaller side, then equal totals. */
+function rowsOf(t: TAccount, entries: Entry[]) {
+  const byId = new Map(entries.map((x) => [x.id, x]));
+  const dr: Row[] = [];
+  const cr: Row[] = [];
+  const open: Row = { key: k(t.account, "פתיחה"), label: "יתרת פתיחה", amount: Math.abs(t.opening) };
+  if (t.opening > 0) dr.push(open);
+  if (t.opening < 0) cr.push(open);
+  for (const p of t.dr) dr.push({ key: k(t.account, p.ref), label: labelOf(t.account, "dr", byId.get(p.ref)), ref: p.ref, amount: p.amount });
+  for (const p of t.cr) cr.push({ key: k(t.account, p.ref), label: labelOf(t.account, "cr", byId.get(p.ref)), ref: p.ref, amount: p.amount });
+  const closing: Row = { key: k(t.account, "סגירה"), label: t.account === AR ? "יתרת סגירה (ברוטו)" : "יתרת סגירה", amount: Math.abs(t.balance), close: true };
+  if (t.balance > 0) cr.push(closing);
+  if (t.balance < 0) dr.push(closing);
+  return { dr, cr, total: round2(dr.reduce((s, r) => s + r.amount, 0)) };
+}
+
+function TBox({ t, entries, unknown, mode }: { t: TAccount; entries: Entry[]; unknown: Set<string>; mode: "question" | "solved" }) {
+  const { dr, cr, total } = rowsOf(t, entries);
+  const hidden = (r: Row) => unknown.has(r.key);
+  const n = Math.max(dr.length, cr.length);
+  const showTotal = mode === "solved" || !(dr.some(hidden) && cr.some(hidden));
+  const side = (rows: Row[], first: boolean) => (
+    <div className={cn("flex min-w-0 flex-col", first && "border-e-2 border-fg/70")}>
+      <p className={cn("px-2 pt-1 text-[11px] font-bold", first ? "text-debit" : "text-credit")}>{first ? "חובה" : "זכות"}</p>
+      <ul className="flex-1 space-y-0.5 px-1 pb-1">
+        {rows.map((r) => (
+          <li
+            key={r.key}
+            className={cn(
+              "flex items-center justify-between gap-2 rounded px-1.5 py-1 text-[12.5px]",
+              r.close && "mt-1 border-t border-dashed border-line font-semibold",
+              hidden(r) && (mode === "question" ? "bg-amber-500/15 ring-1 ring-amber-500/50" : "bg-success/10 ring-1 ring-success/40"),
+            )}
+          >
+            <span className="min-w-0 text-fg">
+              {r.label}
+              {r.ref && <span className="ms-1 text-[10px] text-subtle">({r.ref})</span>}
+            </span>
+            {hidden(r) && mode === "question" ? <span className="shrink-0 font-bold text-amber-600 dark:text-amber-400">?</span> : <Money v={r.amount} plain className="shrink-0" />}
+          </li>
+        ))}
+        {Array.from({ length: n - rows.length }, (_, i) => (
+          <li key={`e${i}`} className="py-1 text-[12.5px]">
+            &nbsp;
+          </li>
+        ))}
+      </ul>
+      <p className="flex justify-between gap-2 border-t-2 border-fg/70 px-2.5 py-1.5 text-[12.5px] font-bold text-fg">
+        <span>סה״כ</span>
+        {showTotal ? <Money v={total} plain /> : <span className="text-amber-600 dark:text-amber-400">?</span>}
+      </p>
+    </div>
+  );
+  return (
+    <figure className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface">
+      <figcaption className="flex items-center justify-between gap-2 border-b-2 border-fg/70 bg-surface-2/60 px-3 py-2 text-sm font-bold text-fg">
+        <span>{t.account === AR ? "לקוחות (ברוטו)" : t.account}</span>
+        <span className="text-[11px] font-normal text-subtle">{t.account === AR ? "נכס" : "מקטין את הלקוחות"}</span>
+      </figcaption>
+      <div className="grid grid-cols-2">
+        {side(dr, true)}
+        {side(cr, false)}
+      </div>
+    </figure>
+  );
+}
+
+/** Customers and the allowance, side by side — the two cards every question is solved in. */
+function TwoT({ accounts, entries, unknown = [], mode = "solved", caption }: { accounts: TAccount[]; entries: Entry[]; unknown?: string[]; mode?: "question" | "solved"; caption?: string }) {
+  const set = new Set(unknown);
+  const pair = [AR, ALLOW].map((a) => accounts.find((t) => t.account === a)).filter((t): t is TAccount => !!t);
+  return (
+    <div className="my-3">
+      {caption && <p className="mb-1.5 text-sm font-semibold text-fg">{caption}</p>}
+      <div className="grid gap-3 md:grid-cols-2">
+        {pair.map((t) => (
+          <TBox key={t.account} t={t} entries={entries} unknown={set} mode={mode} />
+        ))}
+      </div>
+      {unknown.length > 0 && (
+        <p className="mt-1.5 text-xs text-muted">
+          {mode === "question" ? (
+            <>
+              <span className="rounded bg-amber-500/15 px-1.5 font-bold text-amber-600 dark:text-amber-400">?</span> — נעלם שנחלץ בכלל 3. סה״כ מופיע בצד
+              שכולו ידוע — ושני הצדדים תמיד שווים.
+            </>
+          ) : (
+            <>
+              <span className="rounded bg-success/10 px-1.5 font-bold text-success">מודגש</span> — הנעלמים, אחרי החילוץ.
+            </>
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// The method, and the frames it is applied in.
+
+const RULES: { title: string; body: ReactNode }[] = [
+  {
+    title: "פותחים שני כרטיסי T סמוכים",
+    body: (
+      <>
+        כרטיס אחד ל<strong>לקוחות (ברוטו)</strong> וכרטיס שני ל<strong>הפרשה להפסדי אשראי</strong> — זה ליד זה. כל שאלה נפתרת בתוך שני הכרטיסים האלה.
+      </>
+    ),
+  },
+  {
+    title: "מציבים את כל הנתונים הידועים — בצד הנכון",
+    body: (
+      <>
+        כל נתון מהשאלה נכנס לכרטיס שלו, בחובה או בזכות. מה שלא ידוע מסמנים <span className="font-bold text-amber-600 dark:text-amber-400">?</span>.
+      </>
+    ),
+  },
+  {
+    title: "מחלצים את הנעלמים — אחורה או קדימה",
+    body: (
+      <ul className="mt-1 space-y-1.5">
+        <li>
+          <strong>אחוז ההפרשה:</strong> נתונות ההפרשה והלקוחות ברוטו באותו יום (למשל ב-31.12 אשתקד)? אחוז = הפרשה ÷ לקוחות ברוטו.
+        </li>
+        <li>
+          <strong>יתרת הפתיחה של ההפרשה:</strong> נתונים האחוז והלקוחות ברוטו לתחילת השנה? הפרשה = לקוחות ברוטו × אחוז. (זו יתרת הסגירה של אשתקד — כשאין
+          הפרשה ספציפית.)
+        </li>
+        <li>
+          <strong>לקוחות נטו:</strong> נטו = ברוטו − הפרשה. ולהפך: אם נתונים הנטו והאחוז, ברוטו = נטו ÷ (100% − אחוז), והפרשה = ברוטו − נטו.
+        </li>
+        <li>
+          <strong>ומה שנשאר:</strong> מאזנים כל כרטיס — סך החובה = סך הזכות — והנעלם הוא ההפרש.
+        </li>
+      </ul>
+    ),
+  },
+];
+
+/** The three rules, framed so they can't be missed. */
+function MethodBox() {
+  return (
+    <section className="overflow-hidden rounded-2xl border-[3px] border-accent bg-surface shadow-[0_12px_30px_-18px_var(--accent)]" aria-labelledby="method-title">
+      <header className="bg-accent px-5 py-3 text-accent-fg">
+        <h3 id="method-title" className="text-xl font-extrabold tracking-tight">
+          מתווה 3 הכללים — לפתרון כל שאלה בהפסדי אשראי
+        </h3>
+        <p className="text-sm opacity-90">אותו סדר, בכל שאלה, מהקלה ביותר ועד שאלת הבחינה.</p>
+      </header>
+      <ol className="divide-y divide-line">
+        {RULES.map((r, i) => (
+          <li key={r.title} className="flex gap-4 px-5 py-4">
+            <span className="num grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent text-lg font-bold text-accent-fg">{i + 1}</span>
+            <div className="min-w-0 text-[15px] leading-relaxed text-fg/90">
+              <p className="text-[16px] font-bold text-fg">
+                כלל {i + 1}: {r.title}
+              </p>
+              <div className="mt-0.5">{r.body}</div>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+/** A step of a solution, tagged with the rule it applies. */
+function RuleStep({ rules, title, children }: { rules: number[]; title: string; children: ReactNode }) {
+  return (
+    <div className="rounded-xl border border-line bg-surface p-4">
+      <p className="flex flex-wrap items-center gap-2 font-semibold text-fg">
+        {rules.map((r) => (
+          <span key={r} className="num rounded-md bg-accent px-2 py-0.5 text-xs font-bold text-accent-fg">
+            כלל {r}
+          </span>
+        ))}
+        {title}
+      </p>
+      <div className="mt-2 space-y-3 text-[15px] leading-relaxed text-fg/90">{children}</div>
+    </div>
+  );
+}
+
+/** A whole example: open and fill the two cards, extract the unknowns, then the entries and the balance sheet. */
+function Walkthrough({
+  x,
+  unknown,
+  given,
+  solve,
+  netCaption = "המאזן בסוף השנה — סעיף הלקוחות",
+}: {
+  x: { result: { accounts: TAccount[]; gross: number; allowance: number }; entries: Entry[] };
+  unknown: string[];
+  given?: ReactNode;
+  solve: ReactNode;
+  netCaption?: string;
+}) {
+  return (
+    <div className="space-y-3">
+      <RuleStep rules={[1, 2]} title="פותחים את שני הכרטיסים ומציבים את הנתונים">
+        {given}
+        <TwoT accounts={x.result.accounts} entries={x.entries} unknown={unknown} mode="question" />
+      </RuleStep>
+      <RuleStep rules={[3]} title="מחלצים את הנעלמים">
+        {solve}
+        <TwoT accounts={x.result.accounts} entries={x.entries} unknown={unknown} mode="solved" />
+      </RuleStep>
+      <RuleStep rules={[]} title="פקודות היומן, וההצגה במאזן">
+        <Entries entries={x.entries} />
+        <NetView gross={x.result.gross} allowance={x.result.allowance} caption={netCaption} />
+      </RuleStep>
+    </div>
+  );
+}
 
 /** Customers as the balance sheet shows them: gross, less the allowance, net. */
 function NetView({ gross, allowance, caption }: { gross: number; allowance: number; caption: string }) {
@@ -31,10 +268,9 @@ function NetView({ gross, allowance, caption }: { gross: number; allowance: numb
   );
 }
 
-/** A few entries side by side. */
-function Entries({ entries, cols = 2 }: { entries: Entry[]; cols?: 2 | 3 }) {
+function Entries({ entries }: { entries: Entry[] }) {
   return (
-    <div className={cols === 3 ? "grid gap-3 xl:grid-cols-3" : "grid gap-3 lg:grid-cols-2"}>
+    <div className="grid gap-3 lg:grid-cols-2">
       {entries.map((x) => (
         <EntryView key={x.id} entry={x} title={`${x.id}. ${x.text}`} />
       ))}
@@ -42,34 +278,39 @@ function Entries({ entries, cols = 2 }: { entries: Entry[]; cols?: 2 | 3 }) {
   );
 }
 
-function TCards({ accounts }: { accounts: TAccount[] }) {
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {accounts.map((t) => (
-        <TCard key={t.account} t={t} />
-      ))}
+/** One side of a template T-account: what is written there. */
+function TemplateT({ title, dr, cr }: { title: string; dr: string[]; cr: string[] }) {
+  const col = (items: string[], first: boolean) => (
+    <div className={cn("min-w-0 p-2", first && "border-e-2 border-fg/70")}>
+      <p className={cn("text-[11px] font-bold", first ? "text-debit" : "text-credit")}>{first ? "חובה" : "זכות"}</p>
+      <ul className="mt-1 space-y-1 text-[13px] text-fg">
+        {items.map((x) => (
+          <li key={x} className={cn(x.startsWith("יתרת סגירה") && "border-t border-dashed border-line pt-1 font-semibold")}>
+            {x}
+          </li>
+        ))}
+      </ul>
     </div>
+  );
+  return (
+    <figure className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface">
+      <figcaption className="border-b-2 border-fg/70 bg-surface-2/60 px-3 py-2 text-sm font-bold text-fg">{title}</figcaption>
+      <div className="grid grid-cols-2">
+        {col(dr, true)}
+        {col(cr, false)}
+      </div>
+    </figure>
   );
 }
 
-/** One numbered step of a worked solution. */
-function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-xl border border-line bg-surface p-4">
-      <p className="flex items-center gap-2 font-semibold text-fg">
-        <span className="num grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent text-xs text-accent-fg">{n}</span>
-        {title}
-      </p>
-      <div className="mt-2 space-y-3 text-[15px] leading-relaxed text-fg/90">{children}</div>
-    </div>
-  );
-}
+// ---------------------------------------------------------------------------
+// Tables and lists.
 
 const ENTRY_TABLE: [string, string, string, string][] = [
   ["מכירה באשראי", "לקוחות", "מכירות", "לקוחות ברוטו גדלים"],
   ["גבייה מלקוח", "מזומן", "לקוחות", "לקוחות ברוטו קטנים; ההפרשה לא משתנה"],
-  ["הגדלת ההפרשה בסוף השנה", "הוצאות הפסדי אשראי", "הפרשה להפסדי אשראי חזויים", "הוצאה ברווח והפסד; לקוחות נטו קטנים"],
-  ["ביטול הפרשה עודפת", "הפרשה להפסדי אשראי חזויים", "הוצאות הפסדי אשראי", "מקטין את ההוצאה; לקוחות נטו גדלים"],
+  ["גידול בהפרשה בסוף השנה", "הוצאות הפסדי אשראי", "הפרשה להפסדי אשראי חזויים", "הוצאה ברווח והפסד; לקוחות נטו קטנים"],
+  ["ביטול הפרשה עודפת (קיטון)", "הפרשה להפסדי אשראי חזויים", "הוצאות הפסדי אשראי", "מקטין את ההוצאה; לקוחות נטו גדלים"],
   ["מחיקת חוב אבוד", "הפרשה להפסדי אשראי חזויים", "לקוחות", "ברוטו וההפרשה קטנים יחד; הנטו ורווח והפסד לא משתנים"],
   ["גביית חוב שנמחק — שלב 1", "לקוחות", "הפרשה להפסדי אשראי חזויים", "מחזירים את החוב לספרים"],
   ["גביית חוב שנמחק — שלב 2", "מזומן", "לקוחות", "גבייה רגילה"],
@@ -77,108 +318,109 @@ const ENTRY_TABLE: [string, string, string, string][] = [
 
 const MISTAKES: [string, string][] = [
   ["רושמים הוצאה במחיקת חוב אבוד", "המחיקה היא כנגד ההפרשה בלבד. ההוצאה נרשמה כבר כשהופרש, ותושלם — אם צריך — בהתאמה של סוף השנה."],
-  ["רושמים כהוצאה את ההפרשה הנדרשת כולה", "ההוצאה היא רק ההפרש בין הנדרשת לבין היתרה שכבר יש בהפרשה (אחרי מחיקות וגביות)."],
+  ["רושמים כהוצאה את ההפרשה הנדרשת כולה", "ההוצאה היא רק ההפרש בין הנדרשת לבין היתרה שכבר יש בכרטיס (אחרי מחיקות וגביות)."],
   ["מחשבים הפרשה כללית גם על הלקוח הספציפי", "קודם מוציאים את הלקוח הספציפי מהבסיס, ורק על השאר מחילים את האחוז הכללי."],
-  ["מחשבים את האחוז לפני מחיקת החובות האבודים", "האחוז חל על יתרת הלקוחות בסוף השנה — אחרי המחיקות, הגבייה והמכירות."],
-  ["מציגים במאזן רק את הלקוחות נטו", "מציגים שלוש שורות: לקוחות ברוטו, בניכוי ההפרשה, ולקוחות נטו."],
+  ["מחשבים את האחוז לפני מחיקת החובות האבודים", "האחוז חל על יתרת הסגירה של כרטיס הלקוחות — אחרי מכירות, גבייה ומחיקות."],
+  ["מציבים את הנטו בכרטיס הלקוחות", "בכרטיס יש רק ברוטו. את הנטו מפרקים קודם לברוטו ולהפרשה (כלל 3)."],
   ["חושבים שקניות באשראי משפיעות על ההפרשה", "קניות באשראי מגדילות ספקים — התחייבות. אין להן קשר ללקוחות או להפרשה."],
 ];
 
-const SELF: { q: string; a: string }[] = [
+const SELF_TEXT: { q: string; unknown: string[]; a: string }[] = [
   {
-    q: "יתרת ההפרשה ב-1.1 היא 25,000. במהלך השנה נמחקו חובות של 31,000. ההפרשה הנדרשת בסוף השנה 40,000. מה הוצאות הפסדי האשראי?",
-    a: "יתרה לפני התאמה: 25,000 − 31,000 = 6,000 בחובה (מינוס 6,000). כדי להגיע ל-40,000 בזכות צריך 46,000. פקודה: ח' הוצאות הפסדי אשראי / ז' הפרשה 46,000.",
+    q: "לקוחות ב-1.1: 500,000, הפרשה 25,000. במהלך השנה: מכירות באשראי 1,200,000, גבייה 869,000, מחיקת חובות אבודים 31,000. ההפרשה הנדרשת בסוף השנה: 5% מהלקוחות. מה הוצאות הפסדי האשראי?",
+    unknown: [k(AR, "סגירה"), k(ALLOW, SELF[0].ids.adj), k(ALLOW, "סגירה")],
+    a: "לקוחות בסוף השנה: 500,000 + 1,200,000 − 869,000 − 31,000 = 800,000, ולכן נדרשת 40,000. בכרטיס ההפרשה המחיקה (31,000) גדולה מהפתיחה (25,000) — לפני ההתאמה יש 6,000 בחובה. כדי להגיע ל-40,000 בזכות: 46,000. פקודה: ח' הוצאות הפסדי אשראי / ז' הפרשה 46,000.",
   },
   {
-    q: "יתרת ההפרשה ב-31.12 היא 54,000 והוצאות הפסדי האשראי השנה 18,000. נמחקו חובות של 9,000 ונגבה חוב שנמחק בעבר בסך 2,000. מה הייתה יתרת הפתיחה?",
-    a: "פתיחה − מחיקות + גביית חוב שנמחק + הוצאה = סגירה. פתיחה = 54,000 − 18,000 + 9,000 − 2,000 = 43,000.",
+    q: "לקוחות ב-1.1: 860,000. במהלך השנה: מכירות באשראי 2,000,000, גבייה 1,951,000, מחיקות 9,000, ונגבה חוב שנמחק בעבר בסך 2,000. ב-31.12 ההפרשה היא 6% מהלקוחות, והוצאות הפסדי האשראי השנה 18,000. מה הייתה יתרת הפתיחה של ההפרשה?",
+    unknown: [k(AR, "סגירה"), k(ALLOW, "פתיחה"), k(ALLOW, "סגירה")],
+    a: "לקוחות בסוף השנה: 860,000 + 2,000,000 − 1,951,000 − 9,000 + 2,000 − 2,000 = 900,000, ולכן ההפרשה בסגירה 54,000. מאזנים את כרטיס ההפרשה אחורה: פתיחה = 54,000 + 9,000 − 2,000 − 18,000 = 43,000.",
   },
   {
-    q: "לקוחות 400,000, מהם לקוח בקשיים שחייב 50,000 (הפרשה ספציפית 80%). הפרשה כללית 3%. יתרת ההפרשה לפני התאמה 60,000. מה הפקודה?",
-    a: "ספציפית 40,000 + כללית 3% × 350,000 = 10,500 → נדרשת 50,500. קיימת 60,000 → ביטול 9,500: ח' הפרשה / ז' הוצאות הפסדי אשראי 9,500.",
+    q: "לקוחות ב-1.1: 380,000, הפרשה 60,000. במהלך השנה: מכירות באשראי 1,000,000, גבייה 980,000. בסוף השנה לקוח בקשיים חייב 50,000 (הפרשה ספציפית 80%), ועל השאר 3%. מה הפקודה?",
+    unknown: [k(ALLOW, SELF[2].ids.adj), k(ALLOW, "סגירה")],
+    a: "לקוחות בסוף השנה: 400,000. ספציפית 40,000 + כללית 3% × 350,000 = 10,500 → נדרשת 50,500. בכרטיס 60,000 — עודף של 9,500: ח' הפרשה / ז' הוצאות הפסדי אשראי 9,500.",
   },
 ];
 
+// ---------------------------------------------------------------------------
+
 export function CreditLossChapters() {
   const g = GILBOA;
+  const ronitTotal = RONIT.customers * RONIT.each;
+  const ronitLoss = RONIT.unpaid * RONIT.each;
   return (
     <>
-      <Chapter n={1} id="cl-why" title="למה מפרישים להפסדי אשראי" lead="לקוחות שלא ישלמו הם הפסד כבר היום — גם אם עוד לא יודעים מי">
+      <Chapter n={1} id="cl-idea" title="הרעיון בפשטות" lead="לא כל מי שקנה בהקפה ישלם — ואת זה כדאי לומר כבר עכשיו">
         <p>
-          כשעסק מוכר באשראי, הוא רושם <Term he="לקוחות" /> — נכס: כסף שמגיע לו. אבל ניסיון מלמד שלא כל הלקוחות ישלמו. אם נציג את כל החוב במאזן, נציג נכס
-          גדול ממה שבאמת ייגבה, ורווח גדול ממה שבאמת הורווח.
+          רונית מחזיקה חנות קטנה. השנה {RONIT.customers} לקוחות קנו אצלה &quot;בהקפה&quot; — לקחו סחורה ויבואו לשלם אחר כך — כל אחד ב-
+          <Money v={RONIT.each} />. בסך הכול מגיעים לה <Money v={ronitTotal} />.
         </p>
-        <p>
-          לכן בכל סוף שנה מעריכים כמה מהחוב <strong>צפוי</strong> שלא ייגבה, ורושמים את האומדן בחשבון נפרד:{" "}
-          <Term he="הפרשה להפסדי אשראי חזויים" />. זה <Term he="חשבון מנוגד לנכס" /> — יתרתו בזכות, והוא מקטין את הלקוחות במאזן. את חשבון הלקוחות עצמו לא
-          מקטינים, כי עוד לא יודעים <em>איזה</em> לקוח לא ישלם.
-        </p>
-        <div className="grid gap-3 md:grid-cols-3">
-          <Card title="לקוחות ברוטו">
-            <p>כל מה שהלקוחות חייבים לפי החשבוניות. יתרה בחובה.</p>
-          </Card>
-          <Card title="הפרשה להפסדי אשראי">
-            <p>האומדן של החלק שלא ייגבה. יתרה בזכות — מנוגדת ללקוחות.</p>
-          </Card>
-          <Card title="לקוחות נטו">
-            <p>ברוטו פחות ההפרשה — מה שהעסק באמת מצפה לגבות. זה הסכום שנכנס לסך הנכסים.</p>
-          </Card>
+        <div className="card p-4">
+          <div className="mx-auto grid max-w-xs grid-cols-10 gap-1" role="img" aria-label={`${RONIT.customers} לקוחות, מתוכם ${RONIT.unpaid} שלא ישלמו`}>
+            {Array.from({ length: RONIT.customers }, (_, i) => (
+              <span key={i} className={cn("aspect-square rounded-sm", i >= RONIT.customers - RONIT.unpaid ? "bg-danger" : "bg-accent/70")} />
+            ))}
+          </div>
+          <p className="mt-3 text-center text-sm text-muted">
+            מניסיון של שנים רונית יודעת: בערך {RONIT.unpaid} מכל {RONIT.customers} לקוחות לא משלמים בסוף. היא לא יודעת <strong>מי</strong> — רק <strong>כמה</strong>.
+          </p>
         </div>
         <p>
-          ההוצאה — <Term he="הוצאות הפסדי אשראי" /> — נרשמת ברווח והפסד של <strong>השנה שבה נעשתה המכירה</strong>, לפי עיקרון ההקבלה: ההפסד הצפוי שייך
-          לשנה שבה נרשמה ההכנסה, לא לשנה שבה התברר שהלקוח פשט רגל.
+          אז כמה באמת יש לה? לא <Money v={ronitTotal} />, אלא בערך <Money v={ronitTotal - ronitLoss} />. את ה-<Money v={ronitLoss} /> שכנראה לא יגיעו היא רושמת
+          כבר עכשיו כ&quot;כרית&quot; בצד — זו <strong>ההפרשה להפסדי אשראי</strong>.
         </p>
-        <Rule>שלוש פעולות בלבד נוגעות בהפרשה: הוצאה בסוף השנה (מגדילה), מחיקת חוב אבוד (מקטינה), וגבייה של חוב שנמחק (מחזירה).</Rule>
+        <Rule>
+          את הלקוחות לא מוחקים — הרי לא יודעים מי לא ישלם. רושמים לידם חשבון נפרד, &quot;כרית&quot;, שמקטין אותם. וכשמתברר שלקוח מסוים באמת לא ישלם — מורידים אותו
+          מהלקוחות ומהכרית יחד.
+        </Rule>
       </Chapter>
 
-      <Chapter n={2} id="cl-taccount" title="כרטיס ההפרשה" lead="יתרת פתיחה, מחיקות, התאמה — ויתרת סגירה">
-        <p>כל שאלה על הפסדי אשראי נפתרת בכרטיס אחד. זה המבנה שלו (חובה מימין, זכות משמאל):</p>
-        <DataTable
-          caption="כרטיס הפרשה להפסדי אשראי חזויים"
-          head={["חובה — מה מקטין את ההפרשה", "זכות — מה מגדיל את ההפרשה"]}
-          rows={[
-            ["מחיקת חובות אבודים", "יתרת פתיחה (1.1)"],
-            ["ביטול הפרשה עודפת (קיטון)", "גביית חובות שנמחקו בעבר"],
-            ["", "הוצאות הפסדי אשראי (גידול)"],
-            ["יתרת סגירה (31.12) — ההפרשה הנדרשת", ""],
-          ]}
-        />
-        <Rule>יתרת פתיחה − מחיקות + גביית חובות שנמחקו + הוצאה (או − ביטול) = יתרת סגירה</Rule>
+      <Chapter n={2} id="cl-terms" title="שני חשבונות ושלושה מושגים" lead="לקוחות ברוטו, הפרשה, ולקוחות נטו">
+        <div className="grid gap-3 md:grid-cols-3">
+          <Card title="לקוחות ברוטו">
+            <p>
+              כל מה שהלקוחות חייבים לפי החשבוניות. נכס, יתרה בחובה. אצל רונית: <Money v={ronitTotal} />.
+            </p>
+          </Card>
+          <Card title="הפרשה להפסדי אשראי">
+            <p>
+              הכרית — החלק שצפוי לא להיגבות. יתרה בזכות, והיא מקטינה את הלקוחות. אצל רונית: <Money v={ronitLoss} />.
+            </p>
+          </Card>
+          <Card title="לקוחות נטו">
+            <p>
+              מה שבאמת צפוי להיגבות: ברוטו פחות ההפרשה. זה הסכום שנכנס לסך הנכסים. אצל רונית: <Money v={ronitTotal - ronitLoss} />.
+            </p>
+          </Card>
+        </div>
+        <p className="rounded-xl bg-surface-2/70 py-4 text-center text-xl font-semibold text-fg">לקוחות ברוטו − הפרשה להפסדי אשראי = לקוחות נטו</p>
         <p>
-          הסדר בשאלות תמיד זהה: קודם רושמים את מה שקרה במהלך השנה (מחיקות, גביות), אחר כך מחשבים את ההפרשה <strong>הנדרשת</strong> בסוף השנה, וההוצאה היא
-          ההפרש — מה שחסר בכרטיס כדי להגיע לנדרשת.
+          את ההפרשה רושמים כהוצאה — <Term he="הוצאות הפסדי אשראי" /> — בשנה שבה נעשו המכירות, כי ההפסד הצפוי שייך לשנה שבה נרשמה ההכנסה. כך זה נראה בשני
+          הכרטיסים של רונית:
         </p>
-        <Card title='דוגמה: חברת אלון בע"מ, 2025'>
-          <p>
-            יתרת ההפרשה ב-1.1.2025: <Money v={ALON.opening} />. ב-15.5 נמחק חוב אבוד של <Money v={ALON.written} />. ב-31.12 יתרת הלקוחות (ברוטו, אחרי
-            המחיקה) <Money v={ALON.gross} />, וההנהלה מעריכה ש-{pct(ALON.rate)} לא ייגבו.
-          </p>
-          <DataTable
-            head={["", "חישוב", "סכום"]}
-            rows={[
-              ["יתרת פתיחה", "", ALON.opening],
-              ["פחות מחיקה", "", -ALON.written],
-              ["יתרה לפני התאמה", `${f(ALON.opening)} − ${f(ALON.written)}`, ALON.before],
-              ["הפרשה נדרשת", `${f(ALON.gross)} × ${pct(ALON.rate)}`, ALON.required],
-            ]}
-            foot={["הוצאות הפסדי אשראי", "נדרשת − לפני התאמה", ALON.required - ALON.before]}
-          />
-          <Entries entries={ALON.entries} />
-          <TCards accounts={pick(ALON.result.accounts, ALLOW)} />
-          <NetView gross={ALON.gross} allowance={ALON.result.allowance} caption="המאזן ליום 31.12.2025 — סעיף הלקוחות" />
-        </Card>
-        <Card title="ואם ההפרשה הקיימת גדולה מהנדרשת? ביטול הפרשה">
-          <p>
-            נניח שבאלון ההנהלה מעריכה רק {pct(ALON.lowRate)}: נדרשת <Money v={ALON.lowRequired} />, אבל בכרטיס כבר יש <Money v={ALON.before} />. יש עודף של{" "}
-            <Money v={ALON.before - ALON.lowRequired} />, ומבטלים אותו — ההפרשה קטנה (חובה), וההוצאה קטנה (זכות). אם אין השנה הוצאה אחרת, הזכות הזו מוצגת
-            ברווח והפסד כהקטנת הוצאות (או כהכנסה מביטול הפרשה).
-          </p>
-          <EntryView entry={ALON.reversal[1]} title={`2. ${ALON.reversal[1].text}`} />
-          <TCards accounts={pick(ALON.reversed.accounts, ALLOW)} />
-        </Card>
+        <TwoT accounts={RONIT_YEAR.result.accounts} entries={RONIT_YEAR.entries} />
+        <Entries entries={RONIT_YEAR.entries} />
+        <NetView gross={RONIT_YEAR.result.gross} allowance={RONIT_YEAR.result.allowance} caption="המאזן של רונית — סעיף הלקוחות" />
       </Chapter>
 
-      <Chapter n={3} id="cl-entries" title="כל פקודות היומן" lead="שבע פקודות — וכל שאלה בנויה מהן">
+      <Chapter n={3} id="cl-method" title="מתווה 3 הכללים" lead="שיטה אחת לכל שאלה — שווה לזכור בעל פה">
+        <MethodBox />
+        <p>וזה מה שנכנס לכל צד בשני הכרטיסים. כל נתון בשאלה הוא אחת מהשורות האלה:</p>
+        <div className="grid gap-3 md:grid-cols-2">
+          <TemplateT title="לקוחות (ברוטו)" dr={["יתרת פתיחה", "מכירות באשראי", "החזרת חוב שנמחק"]} cr={["גבייה מלקוחות", "מחיקת חוב אבוד", "יתרת סגירה (ברוטו)"]} />
+          <TemplateT
+            title="הפרשה להפסדי אשראי חזויים"
+            dr={["מחיקת חוב אבוד", "ביטול הפרשה (קיטון)", "יתרת סגירה"]}
+            cr={["יתרת פתיחה", "החזרת חוב שנמחק", "הוצאות הפסדי אשראי (גידול)"]}
+          />
+        </div>
+        <p className="text-sm text-muted">
+          יתרת הסגירה נרשמת בצד ההפוך ליתרה, כדי ששני הצדדים יהיו שווים — כך &quot;מאזנים&quot; כרטיס, וכך מוצאים נעלם: מה שחסר כדי שהצדדים יהיו שווים.
+        </p>
+      </Chapter>
+
+      <Chapter n={4} id="cl-entries" title="פקודות היומן" lead="שבע פקודות — וכל שאלה בנויה מהן">
         <div className="my-4 overflow-hidden rounded-xl border border-line">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[40rem] table-fixed text-sm">
@@ -211,170 +453,241 @@ export function CreditLossChapters() {
         </div>
         <Callout kind="warn" title="למה מחיקת חוב לא נוגעת ברווח והפסד?">
           <p>
-            כי ההפסד כבר נרשם — כשהפרשנו. המחיקה רק מעבירה את החוב מ&quot;צפוי שלא ייגבה&quot; ל&quot;ודאי שלא ייגבה&quot;: הלקוחות והפרשה קטנים באותו סכום, והלקוחות
-            נטו לא משתנים. אם המחיקות גדולות מההפרשה, הכרטיס עובר זמנית לחובה — וההתאמה של סוף השנה משלימה.
+            כי ההפסד כבר נרשם — כשהפרשנו. המחיקה רק מורידה את הלקוח מהלקוחות ומהכרית יחד: הלקוחות נטו לא משתנים. אם המחיקות גדולות מהכרית, כרטיס ההפרשה
+            עובר זמנית לחובה — וההתאמה של סוף השנה משלימה.
           </p>
         </Callout>
         <Callout title="גביית חוב שנמחק — למה בשני שלבים?">
           <p>
-            כדי שכרטיס הלקוח יספר את כל הסיפור: החוב חוזר לספרים (מבטלים את המחיקה), ואז נגבה כרגיל. התוצאה נטו: מזומן בחובה, הפרשה בזכות. ההפרשה גדלה
-            — ולכן ההוצאה של סוף השנה תהיה קטנה יותר באותו סכום.
+            כדי שכרטיס הלקוחות יספר את כל הסיפור: החוב חוזר לספרים (מבטלים את המחיקה), ואז נגבה כרגיל. ההפרשה גדלה — ולכן ההוצאה של סוף השנה תהיה קטנה
+            יותר באותו סכום.
           </p>
         </Callout>
       </Chapter>
 
-      <Chapter n={4} id="cl-opening" title="נעלם ביתרת הפתיחה" lead="נתונה הסגירה — מחשבים אחורה">
-        <p>
-          לפעמים השאלה נותנת את סוף הסיפור ומבקשת את ההתחלה. הכלי: אותה משוואת כרטיס, רק פותרים אותה לנעלם. כך גם בכרטיס הלקוחות:
-        </p>
-        <Rule>לקוחות: פתיחה + מכירות באשראי − גבייה − מחיקות = סגירה</Rule>
-        <Card title='דוגמה: חברת ברק בע"מ, 2025'>
+      <Chapter n={5} id="cl-first" title="דוגמה ראשונה, מלאה" lead="שנה אחת של חברה — לפי שלושת הכללים">
+        <Card title='חברת אלון בע"מ, 2025'>
           <p>
-            נתונים ל-31.12.2025: לקוחות ברוטו <Money v={BARAK.closingGross} />, וההפרשה בסוף השנה {pct(BARAK.rate)} מהם. ברווח והפסד של 2025 הוצאות הפסדי
-            אשראי <Money v={BARAK.expense} />. במהלך השנה: מכירות באשראי <Money v={BARAK.creditSales} />, גבייה מלקוחות <Money v={BARAK.collections} />,
-            ומחיקת חובות אבודים <Money v={BARAK.written} />. מה היו יתרות הלקוחות וההפרשה ב-1.1.2025?
+            ב-1.1.2025: לקוחות <Money v={ALON.openingAR} />, הפרשה <Money v={ALON.openingAllowance} />. במהלך השנה: מכירות באשראי <Money v={ALON.creditSales!} />,
+            גבייה <Money v={ALON.collections!} />, ונמחק חוב אבוד של <Money v={ALON.writeOffs!} />. בסוף השנה ההנהלה מעריכה ש-{pct(ALON.rate)} מהלקוחות לא ייגבו.
           </p>
-          <div className="space-y-3">
-            <Step n={1} title="יתרת הסגירה של ההפרשה">
-              <p>
-                {f(BARAK.closingGross)} × {pct(BARAK.rate)} = <Money v={BARAK.closingAllowance} />.
-              </p>
-            </Step>
-            <Step n={2} title="יתרת הפתיחה של ההפרשה — הנעלם">
-              <p>
-                פתיחה − מחיקות + הוצאה = סגירה, ולכן: פתיחה = {f(BARAK.closingAllowance)} − {f(BARAK.expense)} + {f(BARAK.written)} ={" "}
-                <strong>
-                  <Money v={BARAK.openingAllowance} />
-                </strong>
-                .
-              </p>
-            </Step>
-            <Step n={3} title="יתרת הפתיחה של הלקוחות — הנעלם">
-              <p>
-                פתיחה = סגירה − מכירות באשראי + גבייה + מחיקות = {f(BARAK.closingGross)} − {f(BARAK.creditSales)} + {f(BARAK.collections)} + {f(BARAK.written)} ={" "}
-                <strong>
-                  <Money v={BARAK.openingGross} />
-                </strong>
-                .
-              </p>
-            </Step>
-            <Step n={4} title="בדיקה: רושמים קדימה ומגיעים לסגירה הנתונה">
-              <Entries entries={BARAK.entries} />
-              <TCards accounts={pick(BARAK.result.accounts, AR, ALLOW)} />
-            </Step>
-          </div>
-          <NetView gross={BARAK.result.gross} allowance={BARAK.result.allowance} caption="המאזן ליום 31.12.2025 — סעיף הלקוחות" />
-        </Card>
-      </Chapter>
-
-      <Chapter n={5} id="cl-closing" title="חישוב יתרת הסגירה" lead="אחוז מהלקוחות, או ניתוח גיל חובות">
-        <p>
-          ההפרשה הנדרשת בסוף השנה היא אומדן. שתי השיטות הנפוצות בשאלות: <strong>אחוז אחיד</strong> מיתרת הלקוחות ברוטו, או{" "}
-          <Term he="ניתוח גיל חובות" /> — מחלקים את הלקוחות לפי כמה זמן החוב פתוח, וככל שהחוב ותיק יותר, אחוז ההפרשה גבוה יותר.
-        </p>
-        <Card title='דוגמה: חברת חן בע"מ, 31.12.2025'>
-          <p>
-            לקוחות ברוטו <Money v={HEN.gross} />. ההפרשה ב-1.1 הייתה <Money v={HEN.opening} />, ובמהלך השנה נמחקו <Money v={HEN.written} /> — לפני ההתאמה יש
-            בכרטיס <Money v={HEN.before} />.
-          </p>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="min-w-0">
-              <p className="font-semibold text-fg">שיטה א: אחוז אחיד של {pct(HEN.flatRate)}</p>
-              <p className="text-sm text-muted">
-                נדרשת: {f(HEN.gross)} × {pct(HEN.flatRate)} = <Money v={HEN.flat} />. בכרטיס יש יותר — מבטלים <Money v={HEN.before - HEN.flat} />.
-              </p>
-              <EntryView entry={HEN.flatEntry} title={`א. ${HEN.flatEntry.text}`} />
-            </div>
-            <div className="min-w-0">
-              <p className="font-semibold text-fg">שיטה ב: ניתוח גיל חובות</p>
-              <DataTable
-                head={["גיל החוב", "יתרה", "אחוז", "הפרשה"]}
-                rows={HEN.buckets.map((b) => [b.label, b.amount, pct(b.rate), b.allowance])}
-                foot={["סה״כ", HEN.bucketsTotal, "", HEN.aging]}
-              />
-              <p className="text-sm text-muted">
-                נדרשת <Money v={HEN.aging} />, בכרטיס <Money v={HEN.before} /> — משלימים <Money v={HEN.aging - HEN.before} />.
-              </p>
-              <EntryView entry={HEN.agingEntry} title={`ב. ${HEN.agingEntry.text}`} />
-            </div>
-          </div>
-          <Rule>אותה יתרה לפני התאמה, שתי שיטות — ושני כיוונים. ההוצאה תלויה תמיד בהפרש, לא בנדרשת לבדה.</Rule>
-        </Card>
-      </Chapter>
-
-      <Chapter n={6} id="cl-specific" title="הפרשה ספציפית מול הפרשה כללית" lead="לקוח בקשיים מקבל חישוב משלו — ויוצא מהבסיס הכללי">
-        <p>
-          <Term he="הפרשה ספציפית" /> נקבעת ללקוח מסוים שידוע שהוא בקשיים (הליכי פשיטת רגל, צ&apos;קים שחזרו): מעריכים איזה חלק מהחוב שלו לא ייגבה.{" "}
-          <Term he="הפרשה כללית" /> היא אחוז על <strong>שאר</strong> הלקוחות. הלקוח הספציפי לא נכנס לבסיס הכללי — אחרת ההפסד שלו נספר פעמיים.
-        </p>
-        <Card title='דוגמה: חברת דור בע"מ, 31.12.2025'>
-          <p>
-            לקוחות ברוטו <Money v={DOR.gross} />, מהם <Money v={DOR.specificDebt} /> של &quot;{DOR.specificName}&quot; שנקלע לקשיים — מעריכים ש-
-            {pct(DOR.specificRate)} מהחוב לא ייגבה. על שאר הלקוחות מפרישים {pct(DOR.generalRate)}. לפני ההתאמה יש בכרטיס <Money v={DOR.before} />.
-          </p>
-          <DataTable
-            caption="נכון: הלקוח הספציפי מחוץ לבסיס הכללי"
-            head={["", "חישוב", "סכום"]}
-            rows={[
-              ["הפרשה ספציפית", `${f(DOR.specificDebt)} × ${pct(DOR.specificRate)}`, DOR.specific],
-              ["הפרשה כללית", `(${f(DOR.gross)} − ${f(DOR.specificDebt)}) × ${pct(DOR.generalRate)}`, DOR.general],
-              ["הפרשה נדרשת", "ספציפית + כללית", DOR.required],
-              ["פחות יתרה לפני התאמה", "", -DOR.before],
-            ]}
-            foot={["הוצאות הפסדי אשראי", "", DOR.required - DOR.before]}
+          <Walkthrough
+            x={ALON}
+            unknown={[k(AR, "סגירה"), k(ALLOW, ALON.ids.adj), k(ALLOW, "סגירה")]}
+            solve={
+              <ol className="list-inside list-decimal space-y-1">
+                <li>
+                  מאזנים את כרטיס הלקוחות: {f(ALON.openingAR)} + {f(ALON.creditSales!)} − {f(ALON.collections!)} − {f(ALON.writeOffs!)} ={" "}
+                  <strong>
+                    <Money v={ALON.result.gross} />
+                  </strong>
+                  .
+                </li>
+                <li>
+                  ההפרשה הנדרשת (יתרת הסגירה): {f(ALON.result.gross)} × {pct(ALON.rate)} ={" "}
+                  <strong>
+                    <Money v={ALON.required} />
+                  </strong>
+                  .
+                </li>
+                <li>
+                  בכרטיס ההפרשה כבר יש {f(ALON.openingAllowance)} − {f(ALON.writeOffs!)} = <Money v={ALON.mid.allowance} />. מה שחסר עד הנדרשת הוא ההוצאה:{" "}
+                  <strong>
+                    <Money v={ALON.result.expense} />
+                  </strong>
+                  .
+                </li>
+              </ol>
+            }
           />
-          <DataTable
-            caption="שגוי: האחוז הכללי על כל הלקוחות"
-            head={["", "חישוב", "סכום"]}
-            rows={[
-              ["הפרשה ספציפית", `${f(DOR.specificDebt)} × ${pct(DOR.specificRate)}`, DOR.specific],
-              ["הפרשה כללית", `${f(DOR.gross)} × ${pct(DOR.generalRate)}`, DOR.wrongGeneral],
-            ]}
-            foot={["נדרשת (שגוי)", `עודף של ${f(DOR.wrongRequired - DOR.required)}`, DOR.wrongRequired]}
+        </Card>
+        <Card title="ואם ההפרשה הקיימת גדולה מהנדרשת? ביטול הפרשה">
+          <p>
+            אותה שנה, אבל ההנהלה מעריכה רק {pct(ALON.lowRate)}: נדרשת <Money v={ALON_LOW.required} />, ובכרטיס כבר יש <Money v={ALON_LOW.mid.allowance} />. העודף,{" "}
+            <Money v={-ALON_LOW.result.expense} />, מבוטל — ההפרשה קטנה (חובה) וההוצאה קטנה (זכות). הפעם הנעלם יושב בצד <strong>החובה</strong> של ההפרשה.
+          </p>
+          <TwoT accounts={ALON_LOW.result.accounts} entries={ALON_LOW.entries} unknown={[k(ALLOW, ALON_LOW.ids.adj)]} />
+          <EntryView entry={ALON_LOW.adj} title={`${ALON_LOW.adj.id}. ${ALON_LOW.adj.text}`} />
+        </Card>
+      </Chapter>
+
+      <Chapter n={6} id="cl-scenarios" title="חילוץ נעלמים: ארבעה תרחישים" lead="אותם שני כרטיסים — והנעלם בכל פעם במקום אחר">
+        <p>בכל תרחיש: קודם מציבים בשני הכרטיסים את מה שידוע (כלל 2), ורק אז מחלצים (כלל 3). שימו לב איפה מופיע סימן השאלה.</p>
+
+        <Card title="תרחיש א: נעלם בלקוחות ברוטו לתחילת השנה">
+          <p>
+            במאזן ליום 31.12.2024 הוצגו לקוחות נטו <Money v={SCENARIO_A.openingNet} />, וההפרשה היא {pct(SCENARIO_A.rate)} מהלקוחות ברוטו. ב-2025: מכירות באשראי{" "}
+            <Money v={SCENARIO_A.creditSales!} />, גבייה <Money v={SCENARIO_A.collections!} />, מחיקה <Money v={SCENARIO_A.writeOffs!} />. האחוז לא השתנה.
+          </p>
+          <Walkthrough
+            x={SCENARIO_A}
+            unknown={[k(AR, "פתיחה"), k(ALLOW, "פתיחה"), k(AR, "סגירה"), k(ALLOW, SCENARIO_A.ids.adj), k(ALLOW, "סגירה")]}
+            given={<p className="text-sm text-muted">את הנטו לא מציבים בכרטיס — בכרטיס הלקוחות יש רק ברוטו. לכן שתי יתרות הפתיחה הן נעלם.</p>}
+            solve={
+              <ol className="list-inside list-decimal space-y-1">
+                <li>
+                  הנטו הוא {pct(1 - SCENARIO_A.rate)} מהברוטו. ברוטו = {f(SCENARIO_A.openingNet)} ÷ {pct(1 - SCENARIO_A.rate)} ={" "}
+                  <strong>
+                    <Money v={SCENARIO_A.openingAR} />
+                  </strong>
+                  ; הפרשה = {f(SCENARIO_A.openingAR)} − {f(SCENARIO_A.openingNet)} ={" "}
+                  <strong>
+                    <Money v={SCENARIO_A.openingAllowance} />
+                  </strong>
+                  .
+                </li>
+                <li>
+                  עכשיו מאזנים את הלקוחות: יתרת סגירה <Money v={SCENARIO_A.result.gross} />, ולכן נדרשת {pct(SCENARIO_A.rate)} ={" "}
+                  <Money v={SCENARIO_A.required} />.
+                </li>
+                <li>
+                  בכרטיס ההפרשה לפני התאמה <Money v={SCENARIO_A.mid.allowance} /> — ההוצאה <Money v={SCENARIO_A.result.expense} />.
+                </li>
+              </ol>
+            }
           />
-          <EntryView entry={DOR.entry} title={`${DOR.entry.text} — עם הלקוח הספציפי`} />
-          <NetView gross={DOR.gross} allowance={DOR.required} caption="המאזן ליום 31.12.2025 — סעיף הלקוחות" />
         </Card>
-        <Card title="וריאציה: הלקוח פשט רגל לפני סוף השנה">
+
+        <Card title="תרחיש ב: נעלם בהוצאות הפסדי האשראי (הגידול בהפרשה)">
           <p>
-            אם עוד לפני 31.12 התברר ש&quot;{DOR.specificName}&quot; לא ישלם דבר, זה כבר לא אומדן — זה חוב אבוד. מוחקים את כל <Money v={DOR.specificDebt} />{" "}
-            כנגד ההפרשה, הלקוח יוצא מהלקוחות, ואין לו יותר הפרשה ספציפית. המחיקה גדולה מהיתרה שבכרטיס, ולכן לפני ההתאמה ההפרשה בחובה:{" "}
-            <Money v={-DOR.bankruptBefore} />.
+            ב-1.1.2025: לקוחות <Money v={SCENARIO_B.openingAR} />, הפרשה <Money v={SCENARIO_B.openingAllowance} />. ב-2025: מכירות באשראי{" "}
+            <Money v={SCENARIO_B.creditSales!} />, גבייה <Money v={SCENARIO_B.collections!} />, מחיקת חובות <Money v={SCENARIO_B.writeOffs!} />. בסוף השנה מפרישים
+            באותו אחוז כמו אשתקד.
+          </p>
+          <Walkthrough
+            x={SCENARIO_B}
+            unknown={[k(AR, "סגירה"), k(ALLOW, SCENARIO_B.ids.adj), k(ALLOW, "סגירה")]}
+            solve={
+              <ol className="list-inside list-decimal space-y-1">
+                <li>
+                  חילוץ האחוז מהיתרות של אשתקד: {f(SCENARIO_B.openingAllowance)} ÷ {f(SCENARIO_B.openingAR)} ={" "}
+                  <strong>{pct(SCENARIO_B.rate)}</strong>.
+                </li>
+                <li>
+                  מאזנים את הלקוחות: יתרת סגירה <Money v={SCENARIO_B.result.gross} />; הפרשה נדרשת: × {pct(SCENARIO_B.rate)} = <Money v={SCENARIO_B.required} />.
+                </li>
+                <li>
+                  מאזנים את ההפרשה: בזכות יש פתיחה {f(SCENARIO_B.openingAllowance)}, בחובה מחיקה {f(SCENARIO_B.writeOffs!)} וסגירה {f(SCENARIO_B.required)}. כדי שהצדדים
+                  יהיו שווים חסרים בזכות{" "}
+                  <strong>
+                    <Money v={SCENARIO_B.result.expense} />
+                  </strong>{" "}
+                  — זו ההוצאה.
+                </li>
+              </ol>
+            }
+          />
+        </Card>
+
+        <Card title="תרחיש ג: נעלם בגבייה מלקוחות">
+          <p>
+            לקוחות ב-1.1.2025: <Money v={SCENARIO_C.openingAR} />, וב-31.12.2025: <Money v={SCENARIO_C.closingAR} />. ב-2025: מכירות באשראי{" "}
+            <Money v={SCENARIO_C.creditSales!} />, מחיקת חובות <Money v={SCENARIO_C.writeOffs!} />. ההפרשה — {pct(SCENARIO_C.rate)} מהלקוחות, בתחילת השנה ובסופה. כמה
+            נגבה מהלקוחות?
+          </p>
+          <Walkthrough
+            x={SCENARIO_C}
+            unknown={[k(AR, SCENARIO_C.ids.collections), k(ALLOW, "פתיחה"), k(ALLOW, SCENARIO_C.ids.adj), k(ALLOW, "סגירה")]}
+            solve={
+              <ol className="list-inside list-decimal space-y-1">
+                <li>
+                  בכרטיס הלקוחות צד החובה ידוע כולו: {f(SCENARIO_C.openingAR)} + {f(SCENARIO_C.creditSales!)} = <Money v={SCENARIO_C.openingAR + SCENARIO_C.creditSales!} />.
+                  בזכות: מחיקה {f(SCENARIO_C.writeOffs!)} וסגירה {f(SCENARIO_C.closingAR)}. מה שחסר הוא הגבייה:{" "}
+                  <strong>
+                    <Money v={SCENARIO_C.collections!} />
+                  </strong>
+                  .
+                </li>
+                <li>
+                  ההפרשה: פתיחה {f(SCENARIO_C.openingAR)} × {pct(SCENARIO_C.rate)} = <Money v={SCENARIO_C.openingAllowance} />; סגירה {f(SCENARIO_C.closingAR)} ×{" "}
+                  {pct(SCENARIO_C.rate)} = <Money v={SCENARIO_C.required} />; לפני התאמה <Money v={SCENARIO_C.mid.allowance} />, ולכן ההוצאה{" "}
+                  <Money v={SCENARIO_C.result.expense} />.
+                </li>
+              </ol>
+            }
+          />
+        </Card>
+
+        <Card title="תרחיש ד: הפרשה ספציפית לצד הפרשה כללית">
+          <p>
+            <Term he="הפרשה ספציפית" /> נקבעת ללקוח מסוים שידוע שהוא בקשיים. <Term he="הפרשה כללית" /> היא אחוז על <strong>שאר</strong> הלקוחות — בלי הלקוח הספציפי,
+            אחרת ההפסד שלו נספר פעמיים.
           </p>
           <p>
-            נדרשת: {f(DOR.bankruptGross)} × {pct(DOR.generalRate)} = <Money v={DOR.bankruptRequired} />. ההתאמה משלימה מ-
-            <Money v={-DOR.bankruptBefore} /> בחובה עד <Money v={DOR.bankruptRequired} /> בזכות: <Money v={DOR.bankruptResult.expense} />.
+            חברת דור, 2025: לקוחות ב-1.1 <Money v={DOR.openingAR} />, הפרשה <Money v={DOR.openingAllowance} />. מכירות באשראי <Money v={DOR.creditSales!} />, גבייה{" "}
+            <Money v={DOR.collections!} />. ב-31.12 &quot;{DOR.specificName}&quot; חייב <Money v={DOR.specificDebt} /> ונמצא בקשיים — מעריכים ש-{pct(DOR.specificRate)}{" "}
+            מהחוב לא ייגבה. על שאר הלקוחות {pct(DOR.generalRate)}.
           </p>
-          <Entries entries={DOR.bankrupt} />
-          <TCards accounts={pick(DOR.bankruptResult.accounts, AR, ALLOW)} />
+          <Walkthrough
+            x={DOR}
+            unknown={[k(AR, "סגירה"), k(ALLOW, DOR.ids.adj), k(ALLOW, "סגירה")]}
+            solve={
+              <>
+                <p>
+                  מאזנים את הלקוחות: <Money v={DOR.result.gross} />. הלקוח הספציפי עדיין חייב — הוא נשאר בכרטיס הלקוחות, ורק ההפרשה עליו מחושבת לחוד:
+                </p>
+                <DataTable
+                  head={["", "חישוב", "סכום"]}
+                  rows={[
+                    ["הפרשה ספציפית", `${f(DOR.specificDebt)} × ${pct(DOR.specificRate)}`, DOR.specific],
+                    ["הפרשה כללית — נכון", `(${f(DOR.result.gross)} − ${f(DOR.specificDebt)}) × ${pct(DOR.generalRate)}`, DOR.general],
+                    ["הפרשה כללית — שגוי (על כולם)", `${f(DOR.result.gross)} × ${pct(DOR.generalRate)}`, DOR.wrongGeneral],
+                  ]}
+                  foot={["יתרת סגירה נדרשת", "ספציפית + כללית נכונה", DOR.required]}
+                />
+                <p>
+                  בכרטיס ההפרשה יש <Money v={DOR.mid.allowance} />; ההוצאה: <Money v={DOR.result.expense} />. יתרת הסגירה ({f(DOR.required)}) מורכבת משני חלקים:{" "}
+                  {f(DOR.specific)} ספציפית ו-{f(DOR.general)} כללית.
+                </p>
+              </>
+            }
+          />
+          <h4 className="pt-2 font-semibold text-fg">ואם הלקוח פשט רגל עוד לפני סוף השנה?</h4>
+          <p>
+            אז זה כבר לא אומדן — זה חוב אבוד. מוחקים את כל <Money v={DOR.specificDebt} /> משני הכרטיסים: הוא יוצא מהלקוחות (זכות) ומההפרשה (חובה), ואין לו יותר
+            הפרשה ספציפית. המחיקה גדולה מהיתרה שבכרטיס, ולכן לפני ההתאמה ההפרשה בחובה: <Money v={-DOR.bankrupt.mid.allowance} />. נדרשת רק כללית:{" "}
+            {f(DOR.bankrupt.result.gross)} × {pct(DOR.generalRate)} = <Money v={DOR.bankrupt.required} />, וההוצאה <Money v={DOR.bankrupt.result.expense} />.
+          </p>
+          <TwoT accounts={DOR.bankrupt.result.accounts} entries={DOR.bankrupt.entries} unknown={[k(ALLOW, DOR.bankrupt.ids.adj), k(ALLOW, "סגירה")]} />
+          <Entries entries={[DOR.bankrupt.entries.find((x) => x.id === DOR.bankrupt.ids.writeOff)!, DOR.bankrupt.adj]} />
         </Card>
       </Chapter>
 
-      <Chapter n={7} id="cl-flow" title="מכירות באשראי, גבייה וחוב שחזר" lead="איך תנועות השנה בונות את יתרת הלקוחות — לפני ההפרשה ואחריה">
-        <Card title='דוגמה: חברת ערן בע"מ, 2025'>
+      <Chapter n={7} id="cl-flow" title="מסיחים וחוב שחזר" lead="קניות באשראי שלא שייכות לכאן, וחוב שנמחק ונגבה">
+        <Card title='חברת ערן בע"מ, 2025'>
           <p>
-            ב-1.1.2025: לקוחות <Money v={ERAN.openingGross} />, הפרשה <Money v={ERAN.openingAllowance} />. במהלך השנה: מכירות באשראי{" "}
-            <Money v={ERAN.creditSales} />, גבייה <Money v={ERAN.collections} />, קניות באשראי <Money v={ERAN.creditPurchases} />, מחיקת חוב אבוד{" "}
-            <Money v={ERAN.written} />, וגבייה של חוב שנמחק ב-2024 בסך <Money v={ERAN.recovered} />. בסוף השנה מפרישים {pct(ERAN.rate)} מהלקוחות.
+            ב-1.1.2025: לקוחות <Money v={ERAN.openingGross} />, הפרשה <Money v={ERAN.openingAllowance} />. במהלך השנה: מכירות באשראי <Money v={ERAN.creditSales} />,
+            גבייה <Money v={ERAN.collections} />, קניות באשראי <Money v={ERAN.creditPurchases} />, מחיקת חוב אבוד <Money v={ERAN.written} />, וגבייה של חוב שנמחק ב-2024
+            בסך <Money v={ERAN.recovered} />. בסוף השנה מפרישים {pct(ERAN.rate)} מהלקוחות.
           </p>
-          <Entries entries={ERAN.year} />
-          <Callout kind="check" title="הקניות באשראי לא נוגעות בלקוחות">
-            <p>פקודה 3 מגדילה ספקים (התחייבות) וקניות (הוצאה). אין לה קשר ללקוחות או להפרשה — היא כאן כי שאלות בחינה אוהבות לשלב אותה כמסיח.</p>
-          </Callout>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <NetView gross={ERAN.mid.gross} allowance={ERAN.mid.allowance} caption="לפני ההתאמה של סוף השנה" />
-            <NetView gross={ERAN.result.gross} allowance={ERAN.result.allowance} caption="אחרי ההתאמה — כפי שיוצג במאזן" />
-          </div>
-          <p>
-            נדרשת: {f(ERAN.mid.gross)} × {pct(ERAN.rate)} = <Money v={ERAN.required} />. בכרטיס לפני התאמה: {f(ERAN.openingAllowance)} − {f(ERAN.written)} +{" "}
-            {f(ERAN.recovered)} = <Money v={ERAN.mid.allowance} />. ההוצאה: <Money v={ERAN.result.expense} />.
-          </p>
-          <EntryView entry={ERAN.adj} title={`${ERAN.adj.id}. ${ERAN.adj.text}`} />
-          <TCards accounts={pick(ERAN.result.accounts, AR, ALLOW)} />
+          <Walkthrough
+            x={ERAN}
+            unknown={[k(AR, "סגירה"), k(ALLOW, ERAN.adj.id), k(ALLOW, "סגירה")]}
+            given={
+              <p className="text-sm text-muted">
+                הקניות באשראי לא נכנסות לאף אחד מהכרטיסים: הן מגדילות ספקים — התחייבות. החוב שחזר נכנס פעמיים לכרטיס הלקוחות (החזרה בחובה, גבייה בזכות) ופעם אחת
+                להפרשה (בזכות).
+              </p>
+            }
+            solve={
+              <ol className="list-inside list-decimal space-y-1">
+                <li>
+                  לקוחות בסוף השנה: <Money v={ERAN.mid.gross} />; נדרשת × {pct(ERAN.rate)} = <Money v={ERAN.required} />.
+                </li>
+                <li>
+                  בהפרשה לפני התאמה: {f(ERAN.openingAllowance)} − {f(ERAN.written)} + {f(ERAN.recovered)} = <Money v={ERAN.mid.allowance} />. ההוצאה:{" "}
+                  <strong>
+                    <Money v={ERAN.result.expense} />
+                  </strong>
+                  .
+                </li>
+              </ol>
+            }
+          />
         </Card>
       </Chapter>
 
-      <Chapter n={8} id="cl-exam" title="שאלה ברמת בחינה" lead="הכול ביחד: נעלם בפתיחה, אשראי, פשיטת רגל, חוב שחזר, לקוח ספציפי והצגה במאזן">
+      <Chapter n={8} id="cl-exam" title="שאלה ברמת בחינה" lead="הכול ביחד: נטו בפתיחה, אשראי, פשיטת רגל, חוב שחזר ולקוח ספציפי">
         <Card title='חברת גלבוע בע"מ — 2025'>
           <ul className="list-inside list-disc space-y-1.5">
             <li>
@@ -403,11 +716,22 @@ export function CreditLossChapters() {
           </p>
         </Card>
 
-        <h3 className="pt-2 text-lg font-semibold text-fg">הפתרון, שלב אחר שלב</h3>
+        <h3 className="pt-2 text-lg font-semibold text-fg">הפתרון, לפי שלושת הכללים</h3>
         <div className="space-y-3">
-          <Step n={1} title="יתרות פתיחה — מתוך הנטו">
+          <RuleStep rules={[1, 2]} title="פותחים את שני הכרטיסים ומציבים את מה שידוע">
+            <p className="text-sm text-muted">
+              מכירות במזומן, קניות ותשלומים לספקים לא נכנסים לאף אחד מהכרטיסים. הנטו לא מוצב — יתרות הפתיחה הן נעלם.
+            </p>
+            <TwoT
+              accounts={g.result.accounts}
+              entries={g.entries}
+              unknown={[k(AR, "פתיחה"), k(ALLOW, "פתיחה"), k(AR, "סגירה"), k(ALLOW, g.adj.id), k(ALLOW, "סגירה")]}
+              mode="question"
+            />
+          </RuleStep>
+          <RuleStep rules={[3]} title="יתרות הפתיחה — מתוך הנטו">
             <p>
-              הנטו הוא ברוטו פחות {pct(g.openingRate)}, כלומר {pct(1 - g.openingRate)} מהברוטו. ברוטו = {f(g.openingNet)} ÷ {pct(1 - g.openingRate)} ={" "}
+              הנטו הוא {pct(1 - g.openingRate)} מהברוטו. ברוטו = {f(g.openingNet)} ÷ {pct(1 - g.openingRate)} ={" "}
               <strong>
                 <Money v={g.openingGross} />
               </strong>
@@ -417,20 +741,17 @@ export function CreditLossChapters() {
               </strong>
               .
             </p>
-          </Step>
-          <Step n={2} title="פקודות היומן של השנה">
-            <Entries entries={g.year} />
-          </Step>
-          <Step n={3} title="יתרת הלקוחות ברוטו בסוף השנה">
+          </RuleStep>
+          <RuleStep rules={[3]} title="מאזנים את כרטיס הלקוחות">
             <p>
-              {f(g.openingGross)} + {f(g.creditSales)} − {f(g.collections)} − {f(g.bankruptDebt)} + {f(g.recovered)} − {f(g.recovered)} ={" "}
+              {f(g.openingGross)} + {f(g.creditSales)} + {f(g.recovered)} − {f(g.collections)} − {f(g.bankruptDebt)} − {f(g.recovered)} ={" "}
               <strong>
                 <Money v={g.mid.gross} />
               </strong>
-              . מכירות במזומן, קניות ותשלומים לספקים לא נכנסים לחישוב.
+              .
             </p>
-          </Step>
-          <Step n={4} title="ההפרשה הנדרשת">
+          </RuleStep>
+          <RuleStep rules={[3]} title="ההפרשה הנדרשת — יתרת הסגירה של ההפרשה">
             <DataTable
               head={["", "חישוב", "סכום"]}
               rows={[
@@ -439,21 +760,25 @@ export function CreditLossChapters() {
               ]}
               foot={["הפרשה נדרשת", "", g.required]}
             />
-          </Step>
-          <Step n={5} title="היתרה בכרטיס לפני ההתאמה, וההוצאה">
+          </RuleStep>
+          <RuleStep rules={[3]} title="מאזנים את כרטיס ההפרשה — ההוצאה">
             <p>
-              {f(g.openingAllowance)} − {f(g.bankruptDebt)} + {f(g.recovered)} = <Money v={g.mid.allowance} />. ההוצאה: {f(g.required)} − {f(g.mid.allowance)} ={" "}
+              בזכות: פתיחה {f(g.openingAllowance)} + החוב שחזר {f(g.recovered)}. בחובה: מחיקה {f(g.bankruptDebt)} וסגירה {f(g.required)}. חסר בזכות:{" "}
               <strong>
                 <Money v={g.result.expense} />
-              </strong>
-              .
+              </strong>{" "}
+              — הוצאות הפסדי האשראי.
             </p>
-            <EntryView entry={g.adj} title={`${g.adj.id}. ${g.adj.text}`} />
-          </Step>
-          <Step n={6} title="כרטיסי הלקוחות וההפרשה">
-            <TCards accounts={pick(g.result.accounts, AR, ALLOW)} />
-          </Step>
-          <Step n={7} title="הצגה בדוחות">
+            <TwoT
+              accounts={g.result.accounts}
+              entries={g.entries}
+              unknown={[k(AR, "פתיחה"), k(ALLOW, "פתיחה"), k(AR, "סגירה"), k(ALLOW, g.adj.id), k(ALLOW, "סגירה")]}
+            />
+          </RuleStep>
+          <RuleStep rules={[]} title="פקודות היומן">
+            <Entries entries={g.entries} />
+          </RuleStep>
+          <RuleStep rules={[]} title="הצגה בדוחות">
             <div className="grid gap-4 lg:grid-cols-2">
               <NetView gross={g.result.gross} allowance={g.result.allowance} caption="המאזן ליום 31.12.2025 — סעיף הלקוחות" />
               <figure className="my-3 overflow-hidden rounded-xl border-2 border-fg/30 bg-surface">
@@ -470,7 +795,7 @@ export function CreditLossChapters() {
                 </div>
               </figure>
             </div>
-          </Step>
+          </RuleStep>
         </div>
       </Chapter>
 
@@ -490,15 +815,23 @@ export function CreditLossChapters() {
         </div>
         <div className="card p-5">
           <h3 className="text-lg font-semibold text-fg">תרגול עצמי</h3>
+          <p className="mt-1 text-sm text-muted">פתרו לפי שלושת הכללים, ורק אז פתחו את הפתרון.</p>
           <div className="mt-3 divide-y divide-line">
-            {SELF.map(({ q, a }, i) => (
+            {SELF_TEXT.map(({ q, a, unknown }, i) => (
               <details key={i} className="group py-3">
                 <summary className="cursor-pointer list-none text-[15px] font-medium text-fg [&::-webkit-details-marker]:hidden">
                   <span className="num me-2 text-accent">{i + 1}.</span>
                   {q}
                   <span className="ms-2 text-xs text-accent group-open:hidden">הציגו פתרון</span>
                 </summary>
-                <p className="mt-2 rounded-lg bg-surface-2/70 px-3 py-2 text-sm text-fg">{a}</p>
+                <div className="mt-2 space-y-2">
+                  <TwoT accounts={SELF[i].result.accounts} entries={SELF[i].entries} unknown={unknown} mode="question" caption="כללים 1 ו-2: שני הכרטיסים עם הנתונים" />
+                  <p className="rounded-lg bg-surface-2/70 px-3 py-2 text-sm text-fg">
+                    <strong>כלל 3: </strong>
+                    {a}
+                  </p>
+                  <TwoT accounts={SELF[i].result.accounts} entries={SELF[i].entries} unknown={unknown} caption="אחרי החילוץ" />
+                </div>
               </details>
             ))}
           </div>
