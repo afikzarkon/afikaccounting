@@ -80,7 +80,7 @@ export function TransactionLab() {
       </div>
 
       <div className="border-t border-line px-4 pb-4">
-        <BalanceSheetT s={s} prev={prevS} title={isClosing ? "המאזן בסוף השנה" : `המאזן אחרי פעולה ${entry.id}`} retainedLabel={s.profit >= 0 ? "רווח עד כה" : "הפסד עד כה"} />
+        <BalanceSheetT s={s} prev={prevS} title={isClosing ? "המאזן בסוף השנה" : `המאזן אחרי פעולה ${entry.id}`} />
         <p className={cn("flex flex-wrap items-center gap-1.5 text-sm font-medium", identityHolds(s) ? "text-success" : "text-danger")}>
           <CircleCheck className="h-4 w-4 shrink-0" /> נכסים <Money v={s.totalAssets} /> = התחייבויות <Money v={s.totalLiabilities} /> + הון{" "}
           <Money v={s.totalEquity} />

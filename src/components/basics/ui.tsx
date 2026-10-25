@@ -306,7 +306,7 @@ export function StatementsView({ s, year }: { s: Statements; year: string }) {
  * equity on the left, a total under each side. With `prev`, the rows that moved
  * are marked with their change.
  */
-export function BalanceSheetT({ s, prev, title, retainedLabel }: { s: Statements; prev?: Statements; title: ReactNode; retainedLabel?: string }) {
+export function BalanceSheetT({ s, prev, title }: { s: Statements; prev?: Statements; title: ReactNode }) {
   const before = prev ? new Map([...prev.assets, ...prev.liabilities, ...prev.equity]) : null;
   const ok = Math.abs(s.totalAssets - (s.totalLiabilities + s.totalEquity)) < 0.005;
   const rows = (items: [string, number][]) =>
@@ -314,7 +314,7 @@ export function BalanceSheetT({ s, prev, title, retainedLabel }: { s: Statements
       const delta = before ? round2(v - (before.get(a) ?? 0)) : 0;
       return (
         <li key={a} className={cn("flex items-center justify-between gap-2 px-3 py-1.5 text-[13.5px]", delta !== 0 && "bg-accent-soft/70 font-semibold")}>
-          <span className="min-w-0 text-fg">{a === "עודפים" && retainedLabel ? retainedLabel : a}</span>
+          <span className="min-w-0 text-fg">{a}</span>
           <span className="flex shrink-0 items-center gap-2">
             {delta !== 0 && (
               <span className={cn("text-[11px]", delta > 0 ? "text-success" : "text-danger")}>
