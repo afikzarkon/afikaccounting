@@ -1,4 +1,4 @@
-import { ArrowLeft, Banknote } from "lucide-react";
+import { ArrowLeft, Banknote, Gift, HandCoins, NotebookPen, Ticket } from "lucide-react";
 import Link from "next/link";
 import { DataTable } from "@/components/study/blocks";
 import {
@@ -25,6 +25,8 @@ const TZAAD_C = creditLoss(TZAAD);
 const TZAAD_ENTRIES = creditLossEntries(TZAAD);
 const TZAAD_LEDGER = ledger(TZAAD_ENTRIES, { לקוחות: TZAAD.openingCustomers, "הפרשה להפסדי אשראי חזויים": -TZAAD.openingAllowance });
 const f = (v: number) => v.toLocaleString("he-IL");
+// An illustrative net realisable value for Mia's closing stock, below its cost.
+const MIA_NRV = 300_000;
 const pct = (r: number) => `${round2(r * 100)}%`;
 
 /** One numbered step of the worked example. */
@@ -73,7 +75,38 @@ const MATRIX: [string, string, string][] = [
   ["צד ההכנסות", "הכנסות לקבל — נכס", "הכנסות מראש — התחייבות"],
 ];
 
-function CutoffCard({ title, kind, plain, timeline, entry, why }: { title: string; kind: string; plain: string; timeline: React.ReactNode; entry: Entry; why: string }) {
+/** An everyday picture of a cut-off account, before its numbers. */
+function Analogy({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-3 rounded-xl border border-accent/30 bg-accent-soft/60 p-3">
+      <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent text-accent-fg" aria-hidden>
+        {icon}
+      </span>
+      <div className="min-w-0 text-[14.5px]">
+        <p className="font-semibold text-fg">{title}</p>
+        <p className="mt-0.5 text-fg/90">{children}</p>
+      </div>
+    </div>
+  );
+}
+
+function CutoffCard({
+  title,
+  kind,
+  plain,
+  analogy,
+  timeline,
+  entry,
+  why,
+}: {
+  title: string;
+  kind: string;
+  plain: string;
+  analogy: React.ReactNode;
+  timeline: React.ReactNode;
+  entry: Entry;
+  why: string;
+}) {
   return (
     <Card
       title={
@@ -83,6 +116,7 @@ function CutoffCard({ title, kind, plain, timeline, entry, why }: { title: strin
         </span>
       }
     >
+      {analogy}
       <p>{plain}</p>
       {timeline}
       <EntryView entry={entry} title={entry.text} note={why} />
@@ -107,8 +141,13 @@ export function AdjustChapters() {
         <div className="grid gap-4 xl:grid-cols-2">
           <CutoffCard
             title="הוצאות מראש"
-           
             kind="נכס"
+            analogy={
+              <Analogy icon={<Gift className="h-4 w-4" />} title="כמו גיפט קארד שקנינו">
+                קנינו גיפט קארד ומשתמשים בו בכל פעם שרוצים. הוא שווה כסף, כמו מזומן — רק שאת הכסף כבר העברנו מראש, ולכן בכל קנייה לא מוציאים שוב מזומן אלא מקזזים
+                מהכרטיס. מה שנשאר בכרטיס הוא <strong>נכס</strong>: ערך שעוד נקבל.
+              </Analogy>
+            }
             plain="שילמנו עכשיו על משהו שנקבל גם בשנים הבאות. החלק של השנים הבאות הוא נכס."
             timeline={<Timeline cash="תשלום 120,000 ב-1.1.2020" cashAt="start" segments={[{ months: 12, label: "2020 — הוצאה", year: "this" }, { months: 12, label: "2021 — מראש", year: "next" }]} />}
             entry={CUTOFF.prepaid}
@@ -116,8 +155,13 @@ export function AdjustChapters() {
           />
           <CutoffCard
             title="הוצאות לשלם"
-           
             kind="התחייבות"
+            analogy={
+              <Analogy icon={<NotebookPen className="h-4 w-4" />} title='כמו "רשום בפנקס" אצל בעל המכולת'>
+                פעם היו לוקחים מצרכים מהמכולת ואומרים &quot;תרשום לי&quot;. החוב לבעל המכולת הולך ומצטבר, אבל מהקופה עוד לא יצא שקל — ונשלם רק כשהוא יבקש. עד אז
+                זו <strong>התחייבות שוטפת</strong>: כבר נהנינו, ועוד חייבים.
+              </Analogy>
+            }
             plain="קיבלנו משהו השנה ועוד לא שילמנו עליו — למשל שכר דצמבר שישולם בינואר, או חשמל שהחשבונית שלו עוד לא הגיעה."
             timeline={<Timeline cash="תשלום ב-5.1.2021" cashAt="end" segments={[{ months: 11, label: "ינואר–נובמבר — נרשם", year: "this" }, { months: 1, label: "דצמבר", year: "this" }]} />}
             entry={CUTOFF.accruedSalary}
@@ -125,8 +169,13 @@ export function AdjustChapters() {
           />
           <CutoffCard
             title="הכנסות מראש"
-           
             kind="התחייבות"
+            analogy={
+              <Analogy icon={<Ticket className="h-4 w-4" />} title="כמו גיפט קארד שמכרנו">
+                התמונה ההפוכה: לקוח קנה <strong>מאיתנו</strong> גיפט קארד. בעתיד הוא יבוא, ישתמש בשירות שלנו ולא יביא איתו כסף — כי כבר שילם. עד שנספק לו את
+                השירות אנחנו <strong>חייבים</strong> לו אותו, ולכן זו התחייבות.
+              </Analogy>
+            }
             plain="קיבלנו כסף עכשיו על משהו שניתן גם בשנים הבאות. עד שניתן אותו — אנחנו חייבים אותו."
             timeline={<Timeline cash="תקבול 120,000 ב-1.1.2019" cashAt="start" segments={[{ months: 12, label: "2019 — הכנסה", year: "this" }, { months: 24, label: "2020–2021 — מראש", year: "next" }]} />}
             entry={CUTOFF.unearned}
@@ -134,8 +183,13 @@ export function AdjustChapters() {
           />
           <CutoffCard
             title="הכנסות לקבל"
-           
             kind="נכס"
+            analogy={
+              <Analogy icon={<HandCoins className="h-4 w-4" />} title="כמו להיות בעל המכולת עם הפנקס">
+                עכשיו אנחנו בצד של בעל המכולת: נותנים שירות ורושמים ללקוח חוב שגדל והולך, ובסוף התקופה הוא ישלם לנו במזומן. בינתיים מגיע לנו כסף שחייבים לנו —
+                ולכן זה <strong>נכס</strong>.
+              </Analogy>
+            }
             plain="נתנו משהו השנה ועוד לא קיבלנו עליו כסף — למשל ריבית על הלוואה שנתנו, שתשולם רק בשנה הבאה."
             timeline={<Timeline cash="ריבית תתקבל ב-1.1.2021" cashAt="end" segments={[{ months: 12, label: "2020 — הריבית הורווחה", year: "this" }]} />}
             entry={CUTOFF.accruedInterest}
@@ -210,6 +264,31 @@ export function AdjustChapters() {
               ],
             }}
             note="שני חשבונות באותו סכום: אחד מאזני (הנכס שבמחסן), ואחד תוצאתי (שמקטין את עלות הקניות). בשנה הבאה, המלאי הזה יהיה מלאי הפתיחה."
+          />
+        </Card>
+        <Card title="מלאי בשאלות מאזן בוחן: מה באמת צריך לדעת">
+          <p>
+            בשאלות מאזן בוחן אין בדרך כלל חישוב מורכב של המלאי הפיזי — כמות הסגירה ועלותה ניתנות בשאלה. הכלל המרכזי הוא אחד: המלאי נרשם לפי{" "}
+            <strong>הנמוך מבין העלות בספרים לבין שווי המימוש נטו</strong> — הסכום שנקבל עליו במכירה, פחות מה שיעלה למכור אותו.
+          </p>
+          <p className="rounded-lg bg-surface-2/70 px-3 py-2 text-sm">
+            למשל במיה: עלות המלאי בספרים <Money v={MIA.closing} />. אם שווי המימוש נטו שלו היה רק <Money v={MIA_NRV} />, רושמים{" "}
+            <strong>
+              <Money v={Math.min(MIA.closing, MIA_NRV)} />
+            </strong>{" "}
+            — כי אי אפשר להציג נכס ביותר ממה שיביא.
+          </p>
+          <EntryView
+            entry={{
+              id: "התאמה",
+              date: "31.12",
+              text: "פקודת התאמה תקופתית — מלאי סגירה",
+              lines: [
+                { account: "מלאי (מאזני)", dr: Math.min(MIA.closing, MIA_NRV) },
+                { account: "שינוי מלאי (רווח והפסד)", cr: Math.min(MIA.closing, MIA_NRV) },
+              ],
+            }}
+            note="זו פקודת התאמה תקופתית: מבצעים אותה פעם אחת, בסוף התקופה, אחרי ספירת המלאי — ולא במהלך השנה. בחלק מהשאלות החשבונות נקראים מלאי סגירה מאזני ומלאי סגירה רווח או הפסד; זו אותה פקודה."
           />
         </Card>
         <Link

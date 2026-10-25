@@ -2,13 +2,13 @@ import { ArrowLeft, Building2, FileText, Ruler, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, Chapter, Money, Rule, Term } from "./ui";
 
-// Shula, the neighbour: a household described the way a business is. Illustrative figures.
+// Shula, the neighbour: a household described the way a business is. Illustrative figures; income and expenses are for a whole year.
 const SHULA = {
-  income: [["משכורת", 14_000]] as [string, number][],
+  income: [["משכורת", 168_000]] as [string, number][],
   expenses: [
-    ["שכר דירה", 5_000],
-    ["אוכל וקניות לבית", 3_500],
-    ["דלק וחשמל", 1_500],
+    ["שכר דירה", 60_000],
+    ["אוכל וקניות לבית", 42_000],
+    ["דלק וחשמל", 18_000],
   ] as [string, number][],
   assets: [
     ["רכב", 70_000],
@@ -47,22 +47,24 @@ export function IntroChapters() {
           <div className="grid gap-4 md:grid-cols-2">
             <Mini
               report="רווח והפסד"
-              when="מה קרה בתקופה — כל חודש"
-              title="כמה נכנס וכמה יצא?"
+              when="מה קרה בתקופה — סיכום שנתי"
+              title="כמה נכנס וכמה יצא במהלך השנה?"
+              note="חשבונות תוצאתיים: מתאפסים בתחילת כל שנה — ב-1.1 סופרים שוב מאפס."
               cols={[
                 { name: "הכנסות", rows: SHULA.income },
                 { name: "הוצאות", rows: SHULA.expenses },
               ]}
               verdict={
                 <>
-                  רווח החודש (הכנסות פחות הוצאות): <Money v={total(SHULA.income) - total(SHULA.expenses)} />
+                  רווח השנה (הכנסות פחות הוצאות): <Money v={total(SHULA.income) - total(SHULA.expenses)} />
                 </>
               }
             />
             <Mini
               report="מאזן"
-              when="מה המצב ביום מסוים — ברגע זה"
+              when="מה המצב ביום מסוים — כאן, 31.12"
               title="מה יש לה, וממי זה הגיע?"
+              note="סך הנכסים, ההתחייבויות וההון — המצב הקיים של העסק. חשבונות מאזניים: עוברים משנה לשנה, ולא מתאפסים ב-1.1."
               cols={[
                 { name: "נכסים", rows: SHULA.assets, total: "סך הנכסים" },
                 {
@@ -78,7 +80,10 @@ export function IntroChapters() {
               }
             />
           </div>
-          <Rule>שתי השאלות האלה הן בדיוק שני הדוחות החשובים של כל עסק: רווח והפסד — מה קרה בתקופה; מאזן — מה המצב ביום מסוים.</Rule>
+          <Rule>
+            שתי השאלות האלה הן בדיוק שני הדוחות החשובים של כל עסק: רווח והפסד — מה קרה בשנה, ומתחיל כל שנה מאפס; מאזן — מה המצב ביום מסוים, וממשיך
+            לשנה הבאה.
+          </Rule>
         </Card>
         <p>למה עסק צריך את זה? עסק קיים כדי להרוויח לבעליו. כדי לדעת אם הרוויח, וכמה — צריך שיטת רישום אחידה. זו החשבונאות.</p>
         <div className="grid gap-3 sm:grid-cols-3">
@@ -206,8 +211,8 @@ export function SideTag({ side, pill }: { side: "חובה" | "זכות"; pill?: 
 
 type MiniCol = { name: string; rows: [string, number][]; total?: string };
 
-/** One of Shula's two pages, under a banner naming the report it really is. */
-function Mini({ report, when, title, cols, verdict }: { report: string; when: string; title: string; cols: MiniCol[]; verdict: React.ReactNode }) {
+/** One of Shula's two pages, under a banner naming the report it really is; the note says whether its accounts reset each year. */
+function Mini({ report, when, title, note, cols, verdict }: { report: string; when: string; title: string; note: string; cols: MiniCol[]; verdict: React.ReactNode }) {
   const col = ({ name, rows, total: label }: MiniCol, i: number) => (
     <div key={name} className={cn("flex min-w-0 flex-col", i === 0 && "border-e-2 border-fg/70 pe-3")}>
       <p className="border-b border-line pb-1 text-xs font-bold text-muted">{name}</p>
@@ -237,6 +242,7 @@ function Mini({ report, when, title, cols, verdict }: { report: string; when: st
         <p className="text-sm font-semibold text-fg">{title}</p>
         <div className="mt-2 grid grid-cols-2 gap-3">{cols.map(col)}</div>
         <p className="mt-2 border-t border-line pt-2 text-sm font-semibold text-fg">{verdict}</p>
+        <p className="mt-2 rounded-lg border-s-4 border-accent bg-accent-soft px-3 py-2 text-[13px] font-medium text-fg">{note}</p>
       </div>
     </section>
   );

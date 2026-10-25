@@ -40,7 +40,7 @@ export const LEARNING_PATH: Stage[] = [
         description: "17 פרקים קצרים, מ״מה זה בכלל חשבונאות״ ועד גיליון רב-טורי עם התאמות סוף שנה.",
         covers: ["חובה וזכות", "פקודות יומן", "כרטיסי T", "מאזן בוחן", "דוחות כספיים", "התאמות סוף שנה"],
         tools: [
-          { href: "/basics#lab", label: "מעבדת עסקאות" },
+          { href: "/basics#lab", label: "פקודות יומן לפי סוגיהן" },
           { href: "/basics#practice", label: "15 שאלות תרגול" },
         ],
       },

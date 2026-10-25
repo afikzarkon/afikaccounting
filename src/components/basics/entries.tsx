@@ -2,7 +2,6 @@ import { Laptop, Receipt } from "lucide-react";
 import { Callout } from "@/components/study/blocks";
 import type { Entry } from "@/lib/learn/basics";
 import { ActionFinder } from "./action-finder";
-import { EquationWidget } from "./equation";
 import { Card, Chapter, EntryView, Money, Rule, Term } from "./ui";
 
 const SIMPLE: Entry = {
@@ -31,13 +30,20 @@ export function EntriesChapters() {
           כל מה שיש לעסק הגיע ממקום כלשהו: או שמישהו הלווה לו, או שהבעלים השקיעו (או שהעסק הרוויח בעצמו). זו{" "}
           <Term he="הזהות החשבונאית" />:
         </p>
-        <p className="rounded-xl bg-surface-2/70 py-4 text-center text-xl font-semibold text-fg">
-          נכסים = התחייבויות + הון
-        </p>
+        <div className="flex flex-wrap items-stretch justify-center gap-2 rounded-xl bg-surface-2/70 p-4 text-center sm:gap-3" role="math" aria-label="נכסים שווה התחייבויות ועוד הון">
+          <IdentityPart name="נכסים" hint="מה יש לעסק" />
+          <span className="self-center text-2xl font-bold text-muted" aria-hidden>
+            =
+          </span>
+          <IdentityPart name="התחייבויות" hint="מה העסק חייב לאחרים" />
+          <span className="self-center text-2xl font-bold text-muted" aria-hidden>
+            +
+          </span>
+          <IdentityPart name="הון" hint="מה ששייך לבעלים" />
+        </div>
         <p>
-          כל פעולה משנה את המשוואה בשני מקומות לפחות, כך שהיא נשארת מאוזנת. נסו בעצמכם על העסק לערכות מדע מפרק 7 — כל לחיצה רושמת עוד פעולה:
+          כל פעולה משנה את המשוואה בשני מקומות לפחות, כך שהיא תמיד נשארת מאוזנת. את זה תראו בפועל, פעולה אחר פעולה, בפרק 7.
         </p>
-        <EquationWidget />
       </Chapter>
 
       <Chapter n={5} id="expense" title="הוצאה מול השקעה" lead="מה נעלם בתוך החודש, ומה נשאר לשנים">
@@ -107,5 +113,14 @@ export function EntriesChapters() {
         </Callout>
       </Chapter>
     </>
+  );
+}
+
+function IdentityPart({ name, hint }: { name: string; hint: string }) {
+  return (
+    <span className="min-w-[6.5rem] rounded-xl border border-line bg-surface px-3 py-2.5">
+      <span className="block text-xl font-bold text-fg">{name}</span>
+      <span className="block text-xs text-muted">{hint}</span>
+    </span>
   );
 }

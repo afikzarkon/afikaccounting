@@ -6,6 +6,15 @@ import { TAccountsWidget } from "./t-accounts";
 import { Card, Chapter, EntryView, Money, Rule, StatementsView, TBTable, TCard, Term } from "./ui";
 
 const Y20 = statements(YUVAL.tb2020);
+const Y20_RETAINED = Y20.equity.find(([a]) => a === "עודפים")![1];
+
+// The trial balance read left to right, as a worksheet lays it out.
+const TB_COLUMNS: [string, string][] = [
+  ["יתרות ליום 1.1", "מה שהיה בתחילת השנה. חשבונות מאזניים — יתרות הסגירה של השנה הקודמת; חשבונות תוצאתיים — 0. בעסק חדש, כמו יובל ב-2020, הכול 0."],
+  ["פקודות התאמה", "פקודות השנה כבר בפנים. בסוף השנה מוסיפים את מה שחסר — פחת רכוש קבוע, חשבונות חתך, מלאי — וכל פקודה מתקנת עוד כמה יתרות, אחת אחרי השנייה."],
+  ["מאזן בוחן סופי", "לכל חשבון: היתרה שלפני ההתאמות, ועוד ההתאמות. אלה היתרות הנכונות, וגם כאן סך החובה = סך הזכות."],
+  ["מיון ומציאת העודפים", "כל יתרה עוברת לעמודת תוצאתי (לרווח והפסד) או מאזני (למאזן). ההפרש בעמודות התוצאתי הוא רווח השנה — בדיוק מה שחסר בעודפים כדי שהמאזן יתאזן."],
+];
 const OPENING_21 = carryForward(YUVAL.tb2020);
 const LEDGER_21 = ledger(YUVAL.entries2021, OPENING_21);
 const B21 = balancesOf(LEDGER_21);
@@ -87,6 +96,61 @@ export function BooksChapters() {
         </p>
         <ClassifyExercise balances={YUVAL.tb2020} />
         <TBTable tb={trialBalance(YUVAL.tb2020)} caption="הפתרון: מאזן הבוחן של יובל ליום 31.12.2020" kind />
+
+        <h3 className="pt-2 text-lg font-semibold text-fg">מאזן הבוחן בשלבים: מ-1.1 ועד הדוחות</h3>
+        <p>
+          בבחינה ובעבודה, מאזן הבוחן הוא לא טבלה אחת אלא כמה עמודות זו ליד זו. כל עמודה היא שלב, וכל שלב נבנה על הקודם. כך קוראים אותן, מימין לשמאל:
+        </p>
+        <ol className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {TB_COLUMNS.map(([title, text], i) => (
+            <li key={title} className="relative rounded-xl border border-line bg-surface p-3">
+              <p className="flex items-center gap-2 text-sm font-semibold text-fg">
+                <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-xs text-accent-fg">{i + 1}</span>
+                {title}
+              </p>
+              <p className="mt-1.5 text-[13.5px] leading-relaxed text-fg/85">{text}</p>
+            </li>
+          ))}
+        </ol>
+        <Callout kind="warn" title="מאזן הבוחן שמקבלים הוא לפני התאמות">
+          <p>
+            בשאלה נותנים כמעט תמיד <strong>מאזן בוחן ראשוני</strong>: כל מה שנרשם במהלך השנה, אבל לא מה שעוד חסר בסופה — פחת על הרכוש הקבוע, חשבונות חתך
+            (פרק 12), מלאי סגירה (פרק 13). לכן קודם רושמים פקודות התאמה, ורק אחריהן מפיקים מאזן בוחן סופי. דוחות שנבנים ישר מהמאזן הראשוני — שגויים.
+          </p>
+          <p>
+            ועוד פרט שמבלבל: <strong>העודפים במאזן הבוחן הם עדיין היתרה של 1.1</strong>. רווח השנה הנוכחית עוד לא נכנס אליהם — הוא מפוזר בחשבונות ההכנסות
+            וההוצאות.
+          </p>
+        </Callout>
+        <Card title="מה הם עודפים — ואיך מוצאים אותם?">
+          <p>
+            <Term he="עודפים" /> הם כל הרווחים שהעסק צבר מאז שקם, ולא חילק לבעלים — כמו קופת חיסכון של הרווחים. כל שנה נכנס אליה רווח השנה (או יוצא ממנה
+            ההפסד). הם חלק מההון, כי הרווח שייך לבעלים.
+          </p>
+          <p>
+            כמעט אף פעם לא נותנים את העודפים בסוף השנה — <strong>הם הנעלם</strong>. מוצאים אותם בשתי דרכים, ושתיהן חייבות לתת אותו מספר:
+          </p>
+          <ul className="list-inside list-disc space-y-1">
+            <li>
+              <strong>מהרווח:</strong> עודפים 31.12 = עודפים 1.1 + רווח השנה (− הפסד, − מה שחולק לבעלים).
+            </li>
+            <li>
+              <strong>מהמאזן:</strong> העודפים הם המספר שחסר כדי ששני הצדדים יהיו שווים — נכסים פחות התחייבויות פחות שאר ההון.
+            </li>
+          </ul>
+          <p className="rounded-lg bg-surface-2/70 px-3 py-2 text-sm">
+            ביובל 2020: עודפי 1.1 = 0 (עסק חדש) + רווח השנה <Money v={Y20.profit} /> = <Money v={Y20_RETAINED} />. ובדיקה מהמאזן: נכסים{" "}
+            <Money v={Y20.totalAssets} /> − התחייבויות <Money v={Y20.totalLiabilities} /> − הון בעלים <Money v={Y20.totalEquity - Y20_RETAINED} /> ={" "}
+            <Money v={Y20_RETAINED} />. אותו מספר — וזה מה שמאזן את המאזן.
+          </p>
+          <p className="text-sm text-muted">
+            את כל הדרך, עמודה אחר עמודה ועם פקודות התאמה אמיתיות, תראו בגיליון הרב-טורי של חברת רונן{" "}
+            <a href="#worksheet" className="font-medium text-accent hover:underline">
+              בפרק 15
+            </a>
+            .
+          </p>
+        </Card>
       </Chapter>
 
       <Chapter n={11} id="reports" title="מאזני מול תוצאתי, והדוחות" lead="איך מאזן הבוחן הופך לשני דוחות — ומה עובר לשנה הבאה">

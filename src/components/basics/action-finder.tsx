@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { useId, useState } from "react";
 import { inputClass } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
+import { ReportTag } from "./ui";
 
 type Action = { group: string; action: string; dr: string; cr: string; note?: string };
 
@@ -36,6 +37,18 @@ const ACTIONS: Action[] = [
   { group: "מקדמות", action: "הספק סיפק את הסחורה ששולמה במקדמה", dr: "קניות", cr: "מקדמות לספקים" },
 ];
 const GROUPS = ["הכול", ...new Set(ACTIONS.map((a) => a.group))];
+// Placeholders in the table, mapped to an account of the same kind so they can be tagged.
+const STANDS_FOR: Record<string, string> = { "שם הרכוש": "ציוד", "ספקים / זכאים": "ספקים" };
+
+function AccountCell({ name, tone }: { name: string; tone: string }) {
+  return (
+    <td className={cn("px-4 py-2 font-medium", tone)}>
+      <span className="flex flex-wrap items-center gap-1.5">
+        {name} <ReportTag account={STANDS_FOR[name] ?? name} />
+      </span>
+    </td>
+  );
+}
 
 export function ActionFinder() {
   const id = useId();
@@ -87,8 +100,8 @@ export function ActionFinder() {
                   {a.action}
                   {a.note && <span className="mt-0.5 block text-xs text-muted">{a.note}</span>}
                 </td>
-                <td className="px-4 py-2 font-medium text-debit">{a.dr}</td>
-                <td className="px-4 py-2 font-medium text-credit">{a.cr}</td>
+                <AccountCell name={a.dr} tone="text-debit" />
+                <AccountCell name={a.cr} tone="text-credit" />
               </tr>
             ))}
             {rows.length === 0 && (

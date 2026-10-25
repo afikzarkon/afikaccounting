@@ -77,7 +77,7 @@ export function Callout({ kind = "tip", title, children }: { kind?: keyof typeof
   );
 }
 
-export type EntryLine = { account: string; dr?: number; cr?: number };
+export type EntryLine = { account: string; dr?: number; cr?: number; tag?: ReactNode };
 
 /** A journal entry, debits first, with totals and a balance check computed from the lines. */
 export function JournalEntry({ title, date, lines, note }: { title: string; date?: string; lines: EntryLine[]; note?: ReactNode }) {
@@ -112,6 +112,7 @@ export function JournalEntry({ title, date, lines, note }: { title: string; date
                     {l.cr !== undefined ? "ז׳" : "ח׳"}
                   </span>
                   {l.account}
+                  {l.tag && <span className="ms-2 inline-block align-middle">{l.tag}</span>}
                 </td>
                 <td className="px-4 py-2 text-end">{l.dr !== undefined && <Num v={l.dr} />}</td>
                 <td className="px-4 py-2 text-end">{l.cr !== undefined && <Num v={l.cr} />}</td>

@@ -22,7 +22,7 @@ const CHAPTERS: ChapterLink[] = [
   { id: "equation", title: "הזהות החשבונאית" },
   { id: "expense", title: "הוצאה מול השקעה" },
   { id: "double", title: "רישום כפול ופקודת יומן" },
-  { id: "lab", title: "מעבדת עסקאות" },
+  { id: "lab", title: "פקודות יומן לפי סוגיהן" },
   { id: "credit", title: "עסקאות באשראי" },
   { id: "taccounts", title: "כרטיסי T" },
   { id: "trial", title: "מאזן בוחן" },

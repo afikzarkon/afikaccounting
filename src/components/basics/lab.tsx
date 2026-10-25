@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight, CircleCheck, TriangleAlert } from "lucide-react";
 import { useState } from "react";
-import { balancesOf, identityHolds, KITS, ledger, statements, trialBalance } from "@/lib/learn/basics";
+import { balancesOf, type Entry, identityHolds, isBalanceSheet, KITS, ledger, statements, trialBalance } from "@/lib/learn/basics";
 import { cn } from "@/lib/utils";
 import { BalanceSheetT, EntryView, Money, TBTable } from "./ui";
 
@@ -12,6 +12,14 @@ const FINAL_AFTER = statements(balancesOf(ledger(STEPS)));
 const FINAL_BALANCES = balancesOf(ledger(STEPS));
 const INVESTED = KITS.entries[0].lines[0].dr!;
 const WITHDRAWN = KITS.entries.find((x) => x.lines[0].account === "הון בעלים")!.lines[0].dr!;
+
+/** What kind of entry this is: does it only move balance-sheet accounts, or does it reach profit or loss? */
+function entryKind(entry: Entry) {
+  const sheet = entry.lines.filter((l) => isBalanceSheet(l.account)).length;
+  if (sheet === entry.lines.length) return { label: "מאזני מול מאזני", hint: "משנה רק את המאזן — לא משפיעה על הרווח" };
+  if (sheet === 0) return { label: "תוצאתי מול תוצאתי", hint: "משנה רק את רווח והפסד" };
+  return { label: "מאזני מול תוצאתי", hint: "משנה את המאזן וגם את רווח והפסד" };
+}
 
 export function TransactionLab() {
   const [step, setStep] = useState(1);
@@ -54,6 +62,10 @@ export function TransactionLab() {
 
       <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="min-w-0">
+          <p className="mb-1.5 flex flex-wrap items-center gap-2 text-xs">
+            <span className="rounded-md bg-fg px-2 py-0.5 font-bold text-surface">סוג הפקודה: {entryKind(entry).label}</span>
+            <span className="text-muted">{entryKind(entry).hint}</span>
+          </p>
           <p className="text-[15px] font-semibold text-fg">{entry.text}</p>
           {entry.why && <p className="mt-1 text-sm text-muted">{entry.why}</p>}
           <EntryView entry={entry} title={`פקודת יומן ${entry.id}`} note={isClosing ? "המלאי הוא נכס (מאזני). צדו השני מקטין את עלות הקניות ברווח והפסד." : undefined} />

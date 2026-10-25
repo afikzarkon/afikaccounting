@@ -53,6 +53,21 @@ export function Card({ title, children, className }: { title?: ReactNode; childr
   );
 }
 
+/** Whether an account lands in the balance sheet (carried forward) or in profit or loss (reset each year). */
+export function ReportTag({ account }: { account: string }) {
+  const sheet = isBalanceSheet(account);
+  return (
+    <span
+      className={cn(
+        "inline-block whitespace-nowrap rounded-full px-2 py-px text-[10.5px] font-semibold ring-1",
+        sheet ? "bg-accent-soft text-accent ring-accent/30" : "bg-surface-2 text-fg/80 ring-line-strong",
+      )}
+    >
+      {sheet ? "מאזני" : "תוצאתי"}
+    </span>
+  );
+}
+
 /** A journal entry from the model, through the shared journal-entry view, with what it does to each report. */
 export function EntryView({ entry, title, note, effect = true }: { entry: Entry; title?: string; note?: ReactNode; effect?: boolean }) {
   if (!isBalanced(entry)) throw new Error(`Unbalanced entry ${entry.id}`);
@@ -61,7 +76,7 @@ export function EntryView({ entry, title, note, effect = true }: { entry: Entry;
     <JournalEntry
       title={title ?? entry.text}
       date={entry.date || undefined}
-      lines={entry.lines.map((l) => ({ account: l.account, dr: l.dr, cr: l.cr }))}
+      lines={entry.lines.map((l) => ({ account: l.account, dr: l.dr, cr: l.cr, tag: <ReportTag account={l.account} /> }))}
       note={
         effect || text ? (
           <div className="space-y-2.5">
@@ -185,7 +200,13 @@ export function TBTable({ tb, caption, kind, changed }: { tb: TrialBalance; capt
           {tb.rows.map((r) => (
             <tr key={r.account} className={cn("border-t border-line/70", changed?.has(r.account) && "bg-accent-soft/70 font-semibold")}>
               <td className="px-4 py-2 text-fg">{r.account}</td>
-              {kind && <td className="px-4 py-2 text-xs text-muted">{TYPE_LABEL[typeOf(r.account)]}</td>}
+              {kind && (
+                <td className="px-4 py-2 text-xs text-muted">
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    {TYPE_LABEL[typeOf(r.account)]} <ReportTag account={r.account} />
+                  </span>
+                </td>
+              )}
               <td className="px-4 py-2 text-end">{r.dr ? <Money v={r.dr} plain /> : ""}</td>
               <td className="px-4 py-2 text-end">{r.cr ? <Money v={r.cr} plain /> : ""}</td>
             </tr>
