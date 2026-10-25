@@ -49,6 +49,8 @@ const EXPLICIT: Record<string, AccountType> = {
   עודפים: "equity",
   מכירות: "income",
   "מלאי סגירה רווח או הפסד": "income",
+  // The year-end closing account that gathers income and expenses before the result moves to retained earnings.
+  "סיכום הכנסות והוצאות": "income",
   "שינוי מלאי (רווח והפסד)": "income",
   קניות: "expense",
   "מלאי פתיחה": "expense",
