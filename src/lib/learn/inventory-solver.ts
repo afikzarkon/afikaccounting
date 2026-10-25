@@ -50,7 +50,9 @@ export type Metric =
   | "avgCost"
   | "saleCost"
   | "purchaseDiscount"
-  | "purchaseTotal";
+  | "purchaseTotal"
+  /** This year's gross margin less last year's, in points (0.02 = two points higher). */
+  | "gpPctChange";
 
 export const METRIC_LABEL: Record<Metric, string> = {
   closingUnits: "כמות במלאי הסגירה",
@@ -65,6 +67,7 @@ export const METRIC_LABEL: Record<Metric, string> = {
   saleCost: "עלות מכירה מסוימת",
   purchaseDiscount: "הנחה ברכישה מסוימת",
   purchaseTotal: "עלות רכישה מסוימת",
+  gpPctChange: "שינוי בשיעור הרווח הגולמי לעומת השנה הקודמת",
 };
 
 export type Unknown = { id: string; label: string; ref: Ref; guess?: number };
@@ -140,6 +143,8 @@ export function metricOf(results: PeriodResult[], periods: Period[], k: Known): 
       return r.avgCost ?? 0;
     case "closingCost":
       return r.closingCostBasis;
+    case "gpPctChange":
+      return r.gpPct - (results[k.year - 1]?.gpPct ?? 0);
     default:
       return r[k.metric];
   }
@@ -166,7 +171,10 @@ export function solveUnknowns(periods: Period[], method: Method, unknowns: Unkno
   // A margin is a ratio; its residual is taken as gross profit − margin × net sales, which stays piecewise linear.
   const evalK = (k: Known) => {
     const rs = valuateChain(work, method, opts);
-    return k.metric === "gpPct" ? rs[k.year].grossProfit - k.value * rs[k.year].netSales + k.value : metricOf(rs, work, k);
+    if (k.metric === "gpPct") return rs[k.year].grossProfit - k.value * rs[k.year].netSales + k.value;
+    // The same residual, with the margin it implies: last year's margin plus the change.
+    if (k.metric === "gpPctChange") return rs[k.year].grossProfit - ((rs[k.year - 1]?.gpPct ?? 0) + k.value) * rs[k.year].netSales + k.value;
+    return metricOf(rs, work, k);
   };
   const at = (u: Unknown, x: number, k: Known) => {
     const old = getRef(work, u.ref);
@@ -348,7 +356,16 @@ function linearise(u: Unknown, k: Known, x: number, f: (v: number) => number, wo
   const h = Math.max(1e-4 * Math.abs(x), isPct(u.ref) ? 1e-6 : 1e-4);
   const a = clean((fn(x) - fn(x - h)) / h || (fn(x + h) - fn(x)) / h);
   const b = clean(fn(x) - a * x);
-  const known = k.metric === "gpPct" && !viaSales ? `רווח גולמי − ${Math.round(k.value * 1e4) / 100}% × מכירות נטו` : knownLabel(k);
+  if (k.metric === "gpPctChange") {
+    fn = (v) => f(v) - k.value;
+    target = 0;
+  }
+  const known =
+    k.metric === "gpPct" && !viaSales
+      ? `רווח גולמי − ${Math.round(k.value * 1e4) / 100}% × מכירות נטו`
+      : k.metric === "gpPctChange"
+        ? `רווח גולמי − (שיעור השנה הקודמת ${k.value < 0 ? "−" : "+"} ${Math.round(Math.abs(k.value) * 1e4) / 100} נקודות) × מכירות נטו`
+        : knownLabel(k);
   return { unknown: u.label, known, a, b, target, x, viaSales };
 }
 
@@ -396,14 +413,29 @@ export const ROW_LABEL: Record<TableRow, string> = {
   gpPct: "שיעור רווח גולמי",
 };
 
+/** What each of the table's equations says, in words, for the reason beside a step. */
+const WHY_EQUATION: Partial<Record<TableRow, string>> = {
+  netSales: "מכירות נטו = מכירות ברוטו פחות מה שהוחזר ללקוחות או הונח להם.",
+  netPurchases: "קניות נטו = קניות ברוטו פחות ההנחות וההחזרות מהספקים.",
+  cogs: "עלות המכר = מה שהיה בתחילת השנה, ועוד מה שנקנה, פחות מה שנשאר בסוף.",
+  grossProfit: "רווח גולמי = מכירות נטו פחות עלות המכר.",
+};
+
 /** Discounts and returns left blank in a question mean none. */
 const ZERO_IF_BLANK: TableRow[] = ["custDiscounts", "custReturns", "suppDiscounts", "suppReturns"];
 
 /** A number, an unknown ("?"), or a blank. A dash in a question is a zero. */
 export type CellIn = number | "?" | null;
-export type TableYear = { label: string; cells: Partial<Record<TableRow, CellIn>>; founded?: boolean; cogsPctOfPurchases?: number };
+export type TableYear = {
+  label: string;
+  cells: Partial<Record<TableRow, CellIn>>;
+  founded?: boolean;
+  cogsPctOfPurchases?: number;
+  /** "The margin rose (or fell) by so many points on last year": this year's margin less last year's. */
+  gpPctDelta?: number;
+};
 export type TableInput = { years: TableYear[]; chainOpening?: boolean };
-export type TableStep = { n: number; year: number; row: TableRow; equation: string; substitution: string; value: number; rule: string };
+export type TableStep = { n: number; year: number; row: TableRow; equation: string; substitution: string; value: number; rule: string; why: string };
 export type TableResult = {
   values: Partial<Record<TableRow, number>>[];
   given: Set<string>[];
@@ -443,75 +475,110 @@ export function solveTable(input: TableInput): TableResult {
   const lin: Linear[] = [];
   const T = (year: number, row: TableRow, sign: 1 | -1 = 1): Term => ({ year, row, sign });
   for (const t of input.years.keys()) {
+    if (t > 0 && chain) lin.push({ lhs: T(t, "opening"), rhs: [T(t - 1, "closing")], rule: "R9" });
     lin.push({ lhs: T(t, "netSales"), rhs: [T(t, "grossSales"), T(t, "custDiscounts", -1), T(t, "custReturns", -1)], rule: "R6" });
     lin.push({ lhs: T(t, "netPurchases"), rhs: [T(t, "grossPurchases"), T(t, "suppDiscounts", -1), T(t, "suppReturns", -1)], rule: "R6" });
     lin.push({ lhs: T(t, "cogs"), rhs: [T(t, "opening"), T(t, "netPurchases"), T(t, "closing", -1)], rule: "R5" });
     lin.push({ lhs: T(t, "grossProfit"), rhs: [T(t, "netSales"), T(t, "cogs", -1)], rule: "R7" });
-    if (t > 0 && chain) lin.push({ lhs: T(t, "opening"), rhs: [T(t - 1, "closing")], rule: "R9" });
   }
   const steps: TableStep[] = [];
   const get = (x: Term) => values[x.year][x.row];
-  const name = (x: Term, t: number) => (x.year === t ? ROW_LABEL[x.row] : `${ROW_LABEL[x.row]} ${input.years[x.year].label}`);
-  const record = (year: number, row: TableRow, value: number, equation: string, substitution: string, rule: string) => {
+  const label = (t: number) => input.years[t].label;
+  const name = (x: Term, t: number) => (x.year === t ? ROW_LABEL[x.row] : `${ROW_LABEL[x.row]} ${label(x.year)}`);
+  const record = (year: number, row: TableRow, value: number, equation: string, substitution: string, rule: string, why: string) => {
     values[year][row] = value;
-    steps.push({ n: steps.length + 1, year, row, equation, substitution, value, rule });
+    steps.push({ n: steps.length + 1, year, row, equation, substitution, value, rule, why });
   };
+  const pts = (v: number) => `${nf.format(Math.abs(v) * 100)} נקודות`;
 
-  for (let guard = 0; guard < 500; guard++) {
-    let progress = false;
+  // A move the table can make now: the year of the cell it fills, and how.
+  type Move = { year: number; run: () => void };
+  const linearMoves = (): Move[] => {
+    const out: Move[] = [];
     for (const e of lin) {
       const terms = [{ ...e.lhs, sign: 1 as const, isL: true }, ...e.rhs.map((r) => ({ ...r, isL: false }))];
       const open = terms.filter((x) => get(x) === undefined);
       if (open.length !== 1) continue;
       const u = open[0];
-      const t = u.year;
-      // Rearranged so the unknown stands alone: L = Σ s·R, or R_j = (L − Σ_{i≠j} s·R_i) / s_j.
-      let parts: { sign: 1 | -1; term: Term }[];
-      if (u.isL) parts = e.rhs.map((r) => ({ sign: r.sign, term: r }));
-      else {
-        const others = e.rhs.filter((r) => !(r.year === u.year && r.row === u.row));
-        parts = u.sign === 1 ? [{ sign: 1, term: e.lhs }, ...others.map((r) => ({ sign: (-r.sign) as 1 | -1, term: r }))] : [...others.map((r) => ({ sign: r.sign, term: r })), { sign: -1, term: e.lhs }];
-      }
-      const value = parts.reduce((s, p) => s + p.sign * get(p.term)!, 0);
-      const words = parts.map((p, i) => `${i ? (p.sign === 1 ? " + " : " − ") : p.sign === 1 ? "" : "−"}${name(p.term, t)}`).join("");
-      const nums = parts.map((p, i) => `${i ? (p.sign === 1 ? " + " : " − ") : p.sign === 1 ? "" : "−"}${nf.format(get(p.term)!)}`).join("");
-      record(t, u.row, value, `${ROW_LABEL[u.row]} = ${words}`, `${nums} = ${nf.format(value)}`, e.rule);
-      progress = true;
+      out.push({
+        year: u.year,
+        run: () => {
+          const t = u.year;
+          // Rearranged so the unknown stands alone: L = Σ s·R, or R_j = (L − Σ_{i≠j} s·R_i) / s_j.
+          let parts: { sign: 1 | -1; term: Term }[];
+          if (u.isL) parts = e.rhs.map((r) => ({ sign: r.sign, term: r }));
+          else {
+            const others = e.rhs.filter((r) => !(r.year === u.year && r.row === u.row));
+            parts = u.sign === 1 ? [{ sign: 1, term: e.lhs }, ...others.map((r) => ({ sign: (-r.sign) as 1 | -1, term: r }))] : [...others.map((r) => ({ sign: r.sign, term: r })), { sign: -1, term: e.lhs }];
+          }
+          const value = parts.reduce((sum, p) => sum + p.sign * get(p.term)!, 0);
+          const words = parts.map((p, i) => `${i ? (p.sign === 1 ? " + " : " − ") : p.sign === 1 ? "" : "−"}${name(p.term, t)}`).join("");
+          const nums = parts.map((p, i) => `${i ? (p.sign === 1 ? " + " : " − ") : p.sign === 1 ? "" : "−"}${nf.format(get(p.term)!)}`).join("");
+          const why =
+            e.rule === "R9"
+              ? u.row === "opening"
+                ? `מלאי הסגירה של ${label(t - 1)} הוא מה שעמד במחסן בלילה שבין השנים — ולכן הוא מלאי הפתיחה של ${label(t)}. המספר פשוט עובר שנה.`
+                : `מלאי הפתיחה של ${label(t + 1)} ידוע, והוא בדיוק מלאי הסגירה של ${label(t)}.`
+              : `${WHY_EQUATION[e.lhs.row] ?? ""} בשורה הזו כל המספרים ידועים חוץ מ${ROW_LABEL[u.row]} — ולכן אפשר לחלץ אותו עכשיו.`.trim();
+          record(t, u.row, value, `${ROW_LABEL[u.row]} = ${words}`, `${nums} = ${nf.format(value)}`, e.rule, why);
+        },
+      });
     }
-    for (const [t, y] of input.years.entries()) {
-      const v = values[t];
-      // gross profit = margin × net sales, in whichever direction has one unknown.
-      if (v.gpPct !== undefined && v.netSales !== undefined && v.grossProfit === undefined) {
-        record(t, "grossProfit", v.gpPct * v.netSales, "רווח גולמי = שיעור רווח גולמי × מכירות נטו", `${fv("gpPct", v.gpPct)} × ${nf.format(v.netSales)} = ${nf.format(v.gpPct * v.netSales)}`, "R7");
-        progress = true;
-      } else if (v.gpPct !== undefined && v.grossProfit !== undefined && v.netSales === undefined && v.gpPct !== 0) {
-        record(t, "netSales", v.grossProfit / v.gpPct, "מכירות נטו = רווח גולמי ÷ שיעור רווח גולמי", `${nf.format(v.grossProfit)} ÷ ${fv("gpPct", v.gpPct)} = ${nf.format(v.grossProfit / v.gpPct)}`, "R7");
-        progress = true;
-      } else if (v.gpPct === undefined && v.grossProfit !== undefined && v.netSales) {
-        record(t, "gpPct", v.grossProfit / v.netSales, "שיעור רווח גולמי = רווח גולמי ÷ מכירות נטו", `${nf.format(v.grossProfit)} ÷ ${nf.format(v.netSales)} = ${fv("gpPct", v.grossProfit / v.netSales)}`, "R7");
-        progress = true;
-      } else if (v.gpPct !== undefined && v.cogs !== undefined && v.netSales === undefined && v.grossProfit === undefined) {
-        const ns = salesFromGp(v.cogs, v.gpPct);
-        record(t, "netSales", ns, "מכירות נטו = עלות המכר ÷ (1 − שיעור רווח גולמי)", `${nf.format(v.cogs)} ÷ (1 − ${fv("gpPct", v.gpPct)}) = ${nf.format(ns)}`, "R30");
-        progress = true;
-      } else if (v.gpPct !== undefined && v.netSales !== undefined && v.cogs === undefined && v.grossProfit === undefined) {
-        const c = v.netSales * (1 - v.gpPct);
-        record(t, "cogs", c, "עלות המכר = מכירות נטו × (1 − שיעור רווח גולמי)", `${nf.format(v.netSales)} × (1 − ${fv("gpPct", v.gpPct)}) = ${nf.format(c)}`, "R30");
-        progress = true;
-      }
-      // "Sold p% of the year's purchases" (R31ו).
-      const p = y.cogsPctOfPurchases;
-      if (p) {
-        if (v.cogs === undefined && v.netPurchases !== undefined) {
-          record(t, "cogs", p * v.netPurchases, "עלות המכר = p × קניות נטו", `${nf.format(p * 100)}% × ${nf.format(v.netPurchases)} = ${nf.format(p * v.netPurchases)}`, "R31ו");
-          progress = true;
-        } else if (v.cogs !== undefined && v.netPurchases === undefined) {
-          record(t, "netPurchases", v.cogs / p, "קניות נטו = עלות המכר ÷ p", `${nf.format(v.cogs)} ÷ ${nf.format(p * 100)}% = ${nf.format(v.cogs / p)}`, "R31ו");
-          progress = true;
-        }
-      }
+    return out;
+  };
+  const marginMoves = (t: number): Move[] => {
+    const v = values[t];
+    const y = input.years[t];
+    const out: Move[] = [];
+    const add = (run: () => void) => out.push({ year: t, run });
+    // A margin given as a change on last year: this year's margin is last year's plus the change.
+    const d = y.gpPctDelta;
+    if (d !== undefined && t > 0 && v.gpPct === undefined) {
+      const pv = values[t - 1];
+      const prev = pv.gpPct ?? (pv.netSales && pv.grossProfit !== undefined ? pv.grossProfit / pv.netSales : undefined);
+      if (prev !== undefined)
+        add(() =>
+          record(
+            t,
+            "gpPct",
+            prev + d,
+            `שיעור רווח גולמי = שיעור ${label(t - 1)} ${d < 0 ? "−" : "+"} ${pts(d)}`,
+            `${fv("gpPct", prev)} ${d < 0 ? "−" : "+"} ${fv("gpPct", Math.abs(d))} = ${fv("gpPct", prev + d)}`,
+            "R30",
+            `השאלה לא נותנת את השיעור של ${label(t)} ישירות, אלא אומרת שהוא ${d < 0 ? "נמוך" : "גבוה"} ב-${pts(d)} מזה של ${label(t - 1)}. השיעור של ${label(t - 1)} כבר ידוע — מוסיפים את ההפרש.`,
+          ),
+        );
     }
-    if (!progress) break;
+    if (v.gpPct !== undefined && v.netSales !== undefined && v.grossProfit === undefined)
+      add(() => record(t, "grossProfit", v.gpPct! * v.netSales!, "רווח גולמי = שיעור רווח גולמי × מכירות נטו", `${fv("gpPct", v.gpPct!)} × ${nf.format(v.netSales!)} = ${nf.format(v.gpPct! * v.netSales!)}`, "R7", "השיעור אומר כמה מכל שקל של מכירות נשאר כרווח גולמי. המכירות נטו ידועות — כופלים."));
+    else if (v.gpPct !== undefined && v.grossProfit !== undefined && v.netSales === undefined && v.gpPct !== 0)
+      add(() => record(t, "netSales", v.grossProfit! / v.gpPct!, "מכירות נטו = רווח גולמי ÷ שיעור רווח גולמי", `${nf.format(v.grossProfit!)} ÷ ${fv("gpPct", v.gpPct!)} = ${nf.format(v.grossProfit! / v.gpPct!)}`, "R7", "ידוע הרווח הגולמי בשקלים, וגם איזה חלק הוא מהמכירות — מחלקים כדי לקבל את המכירות."));
+    else if (v.gpPct === undefined && v.grossProfit !== undefined && v.netSales)
+      add(() => record(t, "gpPct", v.grossProfit! / v.netSales!, "שיעור רווח גולמי = רווח גולמי ÷ מכירות נטו", `${nf.format(v.grossProfit!)} ÷ ${nf.format(v.netSales!)} = ${fv("gpPct", v.grossProfit! / v.netSales!)}`, "R7", "הרווח הגולמי והמכירות נטו כבר ידועים. השיעור מחושב תמיד על המכירות — לא על העלות."));
+    else if (v.gpPct !== undefined && v.cogs !== undefined && v.netSales === undefined && v.grossProfit === undefined) {
+      const ns = salesFromGp(v.cogs, v.gpPct);
+      add(() => record(t, "netSales", ns, "מכירות נטו = עלות המכר ÷ (1 − שיעור רווח גולמי)", `${nf.format(v.cogs!)} ÷ (1 − ${fv("gpPct", v.gpPct!)}) = ${nf.format(ns)}`, "R30", "אם הרווח הגולמי הוא p מהמכירות, עלות המכר היא החלק הנותר — (1 − p) מהמכירות. עלות המכר ידועה, ולכן מחלקים בחלק הזה."));
+    } else if (v.gpPct !== undefined && v.netSales !== undefined && v.cogs === undefined && v.grossProfit === undefined) {
+      const c = v.netSales * (1 - v.gpPct);
+      add(() => record(t, "cogs", c, "עלות המכר = מכירות נטו × (1 − שיעור רווח גולמי)", `${nf.format(v.netSales!)} × (1 − ${fv("gpPct", v.gpPct!)}) = ${nf.format(c)}`, "R30", "מה שלא נשאר כרווח גולמי הוא עלות המכר: (1 − השיעור) מהמכירות."));
+    }
+    // "Sold p% of the year's purchases" (R31ו).
+    const p = y.cogsPctOfPurchases;
+    if (p) {
+      if (v.cogs === undefined && v.netPurchases !== undefined)
+        add(() => record(t, "cogs", p * v.netPurchases!, "עלות המכר = p × קניות נטו", `${nf.format(p * 100)}% × ${nf.format(v.netPurchases!)} = ${nf.format(p * v.netPurchases!)}`, "R31ו", `השאלה אומרת שנמכרו ${nf.format(p * 100)}% מהקניות — זו עלות המכר.`));
+      else if (v.cogs !== undefined && v.netPurchases === undefined)
+        add(() => record(t, "netPurchases", v.cogs! / p, "קניות נטו = עלות המכר ÷ p", `${nf.format(v.cogs!)} ÷ ${nf.format(p * 100)}% = ${nf.format(v.cogs! / p)}`, "R31ו", `עלות המכר היא ${nf.format(p * 100)}% מהקניות — מחלקים כדי לקבל את הקניות.`));
+    }
+    return out;
+  };
+
+  // Always the earliest year that can move, so a year is finished before the next one starts.
+  for (let guard = 0; guard < 500; guard++) {
+    const moves = [...linearMoves(), ...input.years.flatMap((_, t) => marginMoves(t))];
+    if (!moves.length) break;
+    const first = Math.min(...moves.map((x) => x.year));
+    moves.find((x) => x.year === first)!.run();
   }
 
   const missing: { year: number; row: TableRow }[] = [];

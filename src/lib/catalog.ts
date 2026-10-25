@@ -58,7 +58,7 @@ export const LEARNING_PATH: Stage[] = [
         standard: "IAS 2",
         href: "/basics/inventory",
         description: "רישום תקופתי ותמידי, FIFO וממוצעים, שווי מימוש נטו, חילוץ נעלמים ושריפה.",
-        covers: ["תקופתי ותמידי", "FIFO", "ממוצע משוקלל", "שמ״נ", "חילוץ נעלמים", "שריפה וביטוח"],
+        covers: ["תקופתי ותמידי", "FIFO", "ממוצע משוקלל", "שווי מימוש נטו", "חילוץ נעלמים", "שריפה וביטוח"],
         tools: [{ href: "/basics/inventory#inv-calc", label: "מחשבון מלאי" }],
       },
       {

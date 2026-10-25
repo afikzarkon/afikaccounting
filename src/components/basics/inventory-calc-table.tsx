@@ -6,7 +6,7 @@ import { inputClass } from "@/components/ui/form";
 import { explainTable } from "@/lib/learn/inventory-explain";
 import { ROW_LABEL, solveTable, TABLE_ROWS, type TableRow } from "@/lib/learn/inventory-solver";
 import { cn } from "@/lib/utils";
-import { Check, NumField, smallBtn } from "./inventory-calc-fields";
+import { Check, NumField, Select, smallBtn } from "./inventory-calc-fields";
 import { buildTable, type CalcState } from "./inventory-calc-state";
 import type { Update } from "./inventory-calculator";
 import { GrossProfitStatementView, TraceView } from "./inventory-trace";
@@ -89,6 +89,32 @@ export function TableTab({ st, set }: { st: CalcState; set: Update }) {
           <NumField key={i} label={`${y.label}: עלות המכר = p% מהקניות`} suffix="%" value={y.soldPct} onChange={(v) => setT((x) => ({ ...x, years: x.years.map((z, j) => (j === i ? { ...z, soldPct: v } : z)) }))} />
         ))}
       </div>
+      {t.years.length > 1 && (
+        <div className="space-y-2 rounded-xl border border-line p-3">
+          <p className="text-sm font-semibold text-fg">שיעור הרווח הגולמי כנעלם: גבוה או נמוך מהשנה הקודמת</p>
+          <p className="text-xs text-muted">למשל ״שיעור הרווח הגולמי ירד ב-3% לעומת אשתקד״. השאירו את התא של השיעור ריק או ?, והזינו כאן את השינוי.</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {t.years.slice(1).map((y, n) => {
+              const i = n + 1;
+              const setY = (patch: Partial<typeof y>) => setT((x) => ({ ...x, years: x.years.map((z, j) => (j === i ? { ...z, ...patch } : z)) }));
+              return (
+                <div key={i} className="grid grid-cols-2 gap-2">
+                  <Select
+                    label={`${y.label} לעומת ${t.years[i - 1].label}`}
+                    value={y.gpDir ?? "up"}
+                    onChange={(v) => setY({ gpDir: v })}
+                    options={[
+                      ["up", "גבוה יותר ב-"],
+                      ["down", "נמוך יותר ב-"],
+                    ]}
+                  />
+                  <NumField label="נקודות אחוז" suffix="%" value={y.gpDelta ?? ""} onChange={(v) => setY({ gpDelta: v })} />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
       {Object.keys(errors).length > 0 && <p className="text-sm text-danger">בכל תא: מספר, ? או —.</p>}
 
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">

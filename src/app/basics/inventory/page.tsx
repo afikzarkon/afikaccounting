@@ -18,11 +18,11 @@ const CHAPTERS: ChapterLink[] = [
   { id: "inv-systems", title: "תקופתי ותמידי" },
   { id: "inv-cogs", title: "עלות המכר והדוח" },
   { id: "inv-cost", title: "עלות המלאי" },
-  { id: "inv-formulas", title: "שלוש נוסחאות" },
+  { id: "inv-formulas", title: "שתי נוסחאות" },
   { id: "inv-fifo", title: "FIFO" },
   { id: "inv-wa", title: "ממוצע תקופתי" },
   { id: "inv-ma", title: "ממוצע נע" },
-  { id: "inv-nrv", title: "עלות או שמ״נ" },
+  { id: "inv-nrv", title: "עלות או שווי מימוש נטו" },
   { id: "inv-count", title: "מה נספר כמלאי" },
   { id: "inv-unknowns", title: "חילוץ נעלמים" },
   { id: "inv-exam", title: "פתרון שאלת מבחן" },
@@ -51,7 +51,7 @@ export default function InventoryPage() {
           מלאי <span className="text-gradient">מאפס ועד מבחן</span>
         </h1>
         <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted">
-          מה שלא נמכר — לא הוצאה של השנה. מכאן מתחילים, ומשם מתקדמים צעד אחר צעד: שיטות רישום, עלות לפי IAS 2, שלוש נוסחאות עלות, שווי מימוש נטו, חילוץ נעלמים — ומחשבון שמראה את כל הדרך.
+          מה שלא נמכר — לא הוצאה של השנה. מכאן מתחילים, ומשם מתקדמים צעד אחר צעד: שיטות רישום, עלות לפי IAS 2, שתי נוסחאות עלות (FIFO וממוצע משוקלל), שווי מימוש נטו, חילוץ נעלמים — ומחשבון שמראה את כל הדרך.
         </p>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           {ROADMAP.map(([href, title, hint]) => (

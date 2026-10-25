@@ -19,8 +19,33 @@ import {
 import { ROW_LABEL, type SolveResult, type TableInput, type TableResult } from "./inventory-solver";
 
 export type Cell = string | number | null;
-export type TraceTable = { caption?: string; head: string[]; rows: Cell[][]; foot?: Cell[]; strike?: number[]; highlight?: number[] };
-export type TraceStep = { id: string; title: string; text: string[]; formula?: string[]; tables?: TraceTable[]; rules?: string[]; checks?: { ok: boolean; text: string }[] };
+export type TraceTable = {
+  caption?: string;
+  head: string[];
+  /** A header row above `head`, grouping its columns. */
+  groups?: { label: string; span: number; tone?: "accent" }[];
+  rows: Cell[][];
+  foot?: Cell[];
+  strike?: number[];
+  highlight?: number[];
+  /** Columns painted to stand out, such as a running balance. */
+  hlCols?: number[];
+};
+/** One box of a flow strip: where a number comes from, or where it goes. */
+export type FlowBox = { label: string; value: string; tone?: "accent" };
+export type TraceStep = {
+  id: string;
+  title: string;
+  text: string[];
+  /** The working in order, one line per move. */
+  walk?: string[];
+  formula?: string[];
+  tables?: TraceTable[];
+  /** Strips of boxes joined by arrows: a number's way from the data to the answer. */
+  flow?: FlowBox[][];
+  rules?: string[];
+  checks?: { ok: boolean; text: string }[];
+};
 
 const nf2 = new Intl.NumberFormat("he-IL", { maximumFractionDigits: 2 });
 const nf4 = new Intl.NumberFormat("he-IL", { maximumFractionDigits: 4 });
@@ -65,14 +90,47 @@ export function explainCosts(period: Period, r: PeriodResult): TraceStep {
   };
 }
 
-export function explainQuantities(r: PeriodResult): TraceStep {
-  const text = [`מלאי פתיחה ${q(r.openingUnits)} + רכישות ${q(r.purchasesUnits)} − מכירות ${q(r.soldUnits)}${r.shrinkUnits ? ` − חוסר בספירה ${q(r.shrinkUnits)}` : ""} = ${q(r.closingUnits)} יחידות במלאי הסגירה.`];
+/** Every purchase and sale of the year in one table, in time order, with the units on hand after each. */
+export function movementsTable(period: Period, r: PeriodResult): TraceTable {
+  const rows: Cell[][] = [];
+  for (const x of r.ledger) {
+    if (x.kind === "open") rows.push(["פתיחה", "מלאי פתיחה", x.qty, null, u(x.unitCost), x.amount, x.units]);
+    else if (x.kind === "buy") rows.push([dateLabel(x.date), x.label, x.qty, null, u(x.unitCost), x.amount, x.units]);
+    else if (x.kind === "sell") {
+      const sale = x.index !== undefined ? period.sales[x.index] : undefined;
+      const price = sale?.unitPrice;
+      rows.push([dateLabel(x.date), x.label, null, x.qty, price === undefined ? "—" : `${u(price)} (מחיר מכירה)`, price === undefined ? null : price * x.qty, x.units]);
+    } else rows.push([dateLabel(x.date), "חוסר בספירה", null, x.qty, null, null, x.units]);
+  }
+  return {
+    caption: "טבלת הרכישות והמכירות — כל התנועות של השנה בטבלה אחת",
+    head: ["תאריך", "תנועה", "נכנס (יח׳)", "יצא (יח׳)", "עלות / מחיר ליחידה", "סכום", "יתרה (יח׳)"],
+    rows,
+    hlCols: [6],
+    foot: ["", "סה״כ", r.openingUnits + r.purchasesUnits, r.soldUnits + r.shrinkUnits, null, null, r.closingUnits],
+  };
+}
+
+export function explainQuantities(r: PeriodResult, period?: Period): TraceStep {
+  const text = [
+    "בונים טבלה אחת של כל התנועות לפי סדר התאריכים: כל רכישה מוסיפה יחידות, כל מכירה מורידה. העמודה האחרונה — היתרה — אומרת כמה יחידות במחסן אחרי כל תנועה.",
+    `מלאי פתיחה ${q(r.openingUnits)} + רכישות ${q(r.purchasesUnits)} − מכירות ${q(r.soldUnits)}${r.shrinkUnits ? ` − חוסר בספירה ${q(r.shrinkUnits)}` : ""} = ${q(r.closingUnits)} יחידות במלאי הסגירה.`,
+  ];
   if (r.openingUnits === 0) text.push("אין מלאי פתיחה (חברה שהוקמה השנה, או שהמלאי נמכר כולו).");
   return {
     id: "qty",
-    title: "גלגול כמויות",
+    title: "טבלת רכישות ומכירות וגלגול כמויות",
     text,
     formula: ["פתיחה + רכישות − מכירות = סגירה"],
+    tables: period && r.ledger.length ? [movementsTable(period, r)] : undefined,
+    flow: [
+      [
+        { label: "מלאי פתיחה", value: `${q(r.openingUnits)} יח׳` },
+        { label: "+ נקנו", value: `${q(r.purchasesUnits)} יח׳` },
+        { label: "− נמכרו", value: `${q(r.soldUnits + r.shrinkUnits)} יח׳` },
+        { label: "= במחסן בסוף השנה", value: `${q(r.closingUnits)} יח׳`, tone: "accent" },
+      ],
+    ],
     checks: r.errors.length ? r.errors.map((e) => ({ ok: false, text: e })) : undefined,
     rules: ["R5"],
   };
@@ -90,69 +148,161 @@ function fifoPeriodicTable(r: PeriodResult): TraceTable {
   return { caption: "השכבות שנשארו במלאי — מתחילים מהרכישה האחרונה", head: ["שכבה", "יחידות", "עלות ליחידה", "עלות"], rows, foot: ["מלאי סגירה", r.closingUnits, "", r.closingCostBasis] };
 }
 
-function ledgerTable(r: PeriodResult, withSlices: boolean): TraceTable {
+/** FIFO's closing units, taken one layer at a time from the latest purchase back. */
+function fifoWalk(r: PeriodResult): string[] {
+  const out: string[] = [];
+  let need = r.closingUnits;
+  out.push(`צריך להעריך ${q(need)} יחידות. מתחילים מהרכישה האחרונה וזזים אחורה, כי הרכישות הוותיקות כבר נמכרו.`);
+  for (let i = r.layers.length - 1; i >= 0; i--) {
+    const l = r.layers[i];
+    const full = r.ledger.find((x) => x.kind !== "sell" && x.label === l.source);
+    const whole = !full || Math.abs(full.qty - l.units) < 1e-9;
+    need -= l.units;
+    out.push(
+      `${l.source}: לוקחים ${q(l.units)} יח׳${whole ? (full ? " — את כולה" : "") : ` מתוך ${q(full!.qty)} (רק מה שעוד חסר)`} × ${u(l.units ? l.cost / l.units : 0)} = ${m(l.cost)} ₪.${need > 1e-9 ? ` חסרות עוד ${q(need)} יח׳.` : " השלמנו את הכמות."}`,
+    );
+  }
+  out.push(`מחברים את השכבות: מלאי הסגירה בעלות = ${m(r.closingCostBasis)} ₪.`);
+  return out;
+}
+
+function ledgerTable(r: PeriodResult): TraceTable {
   const rows: Cell[][] = [];
   const highlight: number[] = [];
   for (const x of r.ledger) {
     const kind = x.kind === "buy" ? "רכישה" : x.kind === "open" ? "מלאי פתיחה" : x.kind === "shrink" ? "חוסר בספירה" : "מכירה";
     const outflow = x.kind === "sell" || x.kind === "shrink";
     if (x.kind === "buy") highlight.push(rows.length);
-    rows.push([
-      dateLabel(x.date),
-      kind + (withSlices && x.slices?.length ? `: ${x.slices.map((s) => `${q(s.units)} מ${s.source}`).join(" + ")}` : ""),
-      outflow ? -x.qty : x.qty,
-      u(x.unitCost),
-      outflow ? -x.amount : x.amount,
-      withSlices ? null : u(x.avg),
-      outflow ? x.amount : null,
-    ]);
-    rows.push(["", "יתרה", x.units, null, x.cost, withSlices ? null : u(x.avg), null]);
+    rows.push([dateLabel(x.date), kind + (x.slices?.length ? `: ${x.slices.map((s) => `${q(s.units)} מ${s.source}`).join(" + ")}` : ""), outflow ? -x.qty : x.qty, u(x.unitCost), outflow ? -x.amount : x.amount, outflow ? x.amount : null]);
+    rows.push(["", "יתרה", x.units, null, x.cost, null]);
   }
   return {
-    caption: withSlices ? "FIFO תמידי: בכל מכירה לוקחים מהשכבה הוותיקה ביותר" : "ממוצע נע: הממוצע מתעדכן רק ברכישה (השורות המודגשות)",
-    head: ["תאריך", "מהות", "כמות", "עלות ליחידה", "עלות המלאי", withSlices ? "" : "מחיר ממוצע", "עלות המכירות"],
+    caption: "FIFO תמידי: בכל מכירה לוקחים מהשכבה הוותיקה ביותר",
+    head: ["תאריך", "מהות", "כמות", "עלות ליחידה", "עלות המלאי", "עלות המכירות"],
     rows,
     highlight,
-    foot: ["", "סה״כ עלות המכירות", null, null, null, null, r.saleCosts.reduce((s, v) => s + v, 0) + r.shrinkCost],
+    foot: ["", "סה״כ עלות המכירות", null, null, null, r.saleCosts.reduce((s, v) => s + v, 0) + r.shrinkCost],
   };
 }
 
+/** The moving average as the course draws it: in, out and balance side by side, one row per event. */
+function stockCard(r: PeriodResult): TraceTable {
+  const rows: Cell[][] = [];
+  const highlight: number[] = [];
+  for (const x of r.ledger) {
+    const inflow = x.kind === "buy" || x.kind === "open";
+    if (x.kind === "buy") highlight.push(rows.length);
+    const what = x.kind === "buy" ? x.label : x.kind === "open" ? "מלאי פתיחה" : x.kind === "shrink" ? "חוסר בספירה" : x.label;
+    rows.push([dateLabel(x.date), what, inflow ? x.qty : null, inflow ? u(x.unitCost) : null, inflow ? x.amount : null, inflow ? null : x.qty, inflow ? null : u(x.unitCost), inflow ? null : x.amount, x.units, u(x.avg), x.cost]);
+  }
+  return {
+    caption: "כרטיס מלאי בממוצע נע — נכנס, יצא ויתרה בכל תנועה",
+    head: ["תאריך", "תנועה", "כמות", "ליחידה", "סה״כ", "כמות", "ליחידה", "סה״כ", "כמות", "ממוצע", "סה״כ"],
+    groups: [
+      { label: "", span: 2 },
+      { label: "נכנס (רכישה)", span: 3 },
+      { label: "יצא (מכירה)", span: 3 },
+      { label: "יתרה אחרי התנועה", span: 3, tone: "accent" },
+    ],
+    rows,
+    highlight,
+    hlCols: [8, 9, 10],
+    foot: ["", "סה״כ", r.purchasesUnits, null, r.purchasesCost, r.soldUnits + r.shrinkUnits, null, r.saleCosts.reduce((s, v) => s + v, 0) + r.shrinkCost, r.closingUnits, u(r.avgCost ?? 0), r.closingCostBasis],
+  };
+}
+
+/** The moving average, event by event: a new average after each purchase, and each sale out at the average before it. */
+function movingWalk(r: PeriodResult): string[] {
+  const out: string[] = [];
+  let units = 0;
+  let cost = 0;
+  for (const x of r.ledger) {
+    if (x.kind === "open") out.push(`מלאי פתיחה: ${q(x.qty)} יח׳ בעלות ${m(x.amount)} ₪ — ממוצע פתיחה ${u(x.avg)}.`);
+    else if (x.kind === "buy")
+      out.push(
+        units > 1e-9
+          ? `${dateLabel(x.date)} — רכישה ← ממוצע חדש: (${m(cost)} ביתרה + ${m(x.amount)} שנקנו) ÷ (${q(units)} + ${q(x.qty)} יח׳) = ${m(x.cost)} ÷ ${q(x.units)} = ${u(x.avg)} ליחידה.`
+          : `${dateLabel(x.date)} — רכישה למחסן ריק: ${m(x.amount)} ÷ ${q(x.qty)} = ${u(x.avg)} ליחידה.`,
+      );
+    else
+      out.push(
+        `${dateLabel(x.date)} — ${x.kind === "sell" ? "מכירה" : "חוסר"}: לפני שמוציאים בודקים מה הממוצע העדכני — ${u(x.unitCost)}. ${q(x.qty)} × ${u(x.unitCost)} = ${m(x.amount)} ₪ ← לעלות המכר. הממוצע לא משתנה; ביתרה נשארו ${q(x.units)} יח׳ (${m(x.cost)} ₪).`,
+      );
+    units = x.units;
+    cost = x.cost;
+  }
+  return out;
+}
+
 export function explainValuation(r: PeriodResult): TraceStep {
+  const cogsBefore = r.availableCost - r.closingCostBasis;
+  const toCogs: FlowBox[] = [
+    { label: "עלות כל מה שהיה זמין", value: `${m(r.availableCost)} ₪` },
+    { label: "− מלאי הסגירה", value: `${m(r.closingCostBasis)} ₪` },
+    { label: "= עלות המכר (לפני בדיקת שווי מימוש נטו)", value: `${m(cogsBefore)} ₪`, tone: "accent" },
+  ];
   if (r.method === "fifo") {
     const tables = [fifoPeriodicTable(r)];
-    if (r.system === "perpetual" && r.ledger.length) tables.push(ledgerTable(r, true));
+    if (r.system === "perpetual" && r.ledger.length) tables.push(ledgerTable(r));
     return {
       id: "value",
       title: `הערכת מלאי הסגירה — ${METHOD_LABEL.fifo}`,
       text: [
         `נכנס ראשון — יוצא ראשון: מה שנמכר הוא הוותיק ביותר, ולכן ${q(r.closingUnits)} היחידות שנשארו הן מהרכישות האחרונות.`,
-        `מורידים מסוף הרכישות את כמות הסגירה; שכבה שנלקחה חלקית מוערכת לפי חלקה. מלאי הסגירה בעלות: ${m(r.closingCostBasis)} ₪.`,
         "FIFO נותן אותה תוצאה בשיטה תקופתית ובשיטה תמידית.",
       ],
+      walk: fifoWalk(r),
       tables,
+      flow: [toCogs],
       rules: ["R18"],
     };
   }
   if (r.method === "wa-periodic") {
+    const rows: Cell[][] = r.ledger.filter((x) => x.kind === "open" || x.kind === "buy").map((x) => [x.kind === "open" ? "מלאי פתיחה" : x.label, x.qty, u(x.unitCost), x.amount]);
+    const avg = r.avgCost ?? 0;
     return {
       id: "value",
       title: `הערכת מלאי הסגירה — ${METHOD_LABEL["wa-periodic"]}`,
-      text: [
-        `ממוצע אחד לכל השנה: עלות מלאי הפתיחה ועלות כל הקניות, חלקי כל היחידות שהיו זמינות. תאריכי המכירות לא משפיעים.`,
-        `מלאי הסגירה = ${u(r.avgCost ?? 0)} × ${q(r.closingUnits)} = ${m(r.closingCostBasis)} ₪.`,
+      text: [`ממוצע אחד לכל השנה: עלות מלאי הפתיחה ועלות כל הקניות, חלקי כל היחידות שהיו זמינות. תאריכי המכירות לא משפיעים.`],
+      walk: [
+        `מסדרים את מלאי הפתיחה ואת כל הרכישות בטבלה: כמות × עלות ליחידה = עלות. מחברים את שתי העמודות — ${q(r.openingUnits + r.purchasesUnits)} יח׳ בעלות ${m(r.availableCost)} ₪.`,
+        `הממוצע = סך העלות ÷ סך היחידות = ${m(r.availableCost)} ÷ ${q(r.openingUnits + r.purchasesUnits)} = ${u(avg)} ליחידה. לא מעגלים באמצע.`,
+        `מלאי הסגירה = הממוצע × היחידות שנשארו = ${u(avg)} × ${q(r.closingUnits)} = ${m(r.closingCostBasis)} ₪.`,
+        `עלות המכר = הממוצע × היחידות שנמכרו = ${u(avg)} × ${q(r.soldUnits + r.shrinkUnits)} = ${m(cogsBefore)} ₪ — ובדיקה: ${m(r.availableCost)} − ${m(r.closingCostBasis)} = ${m(cogsBefore)}.`,
       ],
-      formula: [`(${m(r.openingCost)} + ${m(r.purchasesCost)}) ÷ (${q(r.openingUnits)} + ${q(r.purchasesUnits)}) = ${u(r.avgCost ?? 0)}`],
+      formula: [`(${m(r.openingCost)} + ${m(r.purchasesCost)}) ÷ (${q(r.openingUnits)} + ${q(r.purchasesUnits)}) = ${u(avg)}`],
+      tables: [{ caption: "בניית הממוצע — כל מה שהיה זמין למכירה", head: ["", "יחידות", "עלות ליחידה", "עלות"], rows, foot: ["סה״כ זמין", r.openingUnits + r.purchasesUnits, `ממוצע ${u(avg)}`, r.availableCost] }],
+      flow: [
+        [
+          { label: "ממוצע לשנה", value: u(avg), tone: "accent" },
+          { label: `× ${q(r.closingUnits)} יח׳ שנשארו`, value: "" },
+          { label: "= מלאי סגירה", value: `${m(r.closingCostBasis)} ₪` },
+        ],
+        [
+          { label: "ממוצע לשנה", value: u(avg), tone: "accent" },
+          { label: `× ${q(r.soldUnits + r.shrinkUnits)} יח׳ שנמכרו`, value: "" },
+          { label: "= עלות המכר", value: `${m(cogsBefore)} ₪` },
+        ],
+      ],
       rules: ["R19"],
     };
   }
+  const saleCosts = r.ledger.filter((x) => x.kind === "sell" || x.kind === "shrink");
   return {
     id: "value",
     title: `הערכת מלאי הסגירה — ${METHOD_LABEL["moving-avg"]}`,
     text: [
-      "אחרי כל רכישה מחשבים ממוצע חדש: סך עלות המלאי ÷ סך היחידות. מכירה לא משנה את הממוצע — היא רק מוציאה יחידות בממוצע הקיים.",
-      `מלאי הסגירה: ${q(r.closingUnits)} יחידות בעלות ${m(r.closingCostBasis)} ₪ (ממוצע ${u(r.avgCost ?? 0)}).`,
+      "הכלל: לפני כל מכירה מחשבים ממוצע עדכני. אם מאז המכירה הקודמת נכנסה רכישה, הממוצע השתנה — ממוצע חדש = (עלות היתרה + עלות הרכישה) ÷ (יחידות ביתרה + יחידות שנקנו). המכירה עצמה יוצאת בממוצע הזה, ולא משנה אותו.",
+      "בכרטיס המלאי שלמטה, עמודות היתרה (צבועות) הן הלב: אחרי כל תנועה רושמים כמה יחידות נשארו, בכמה כל אחת, ובכמה הכול.",
     ],
-    tables: [ledgerTable(r, false)],
+    walk: movingWalk(r),
+    tables: [stockCard(r)],
+    flow: [
+      [
+        ...saleCosts.map((x, i) => ({ label: `${i ? "+ " : ""}${dateLabel(x.date)}: ${q(x.qty)} × ${u(x.unitCost)}`, value: `${m(x.amount)} ₪` })),
+        { label: "= עלות המכר (לפני בדיקת שווי מימוש נטו)", value: `${m(cogsBefore)} ₪`, tone: "accent" as const },
+      ],
+    ],
     rules: ["R20"],
   };
 }
@@ -161,12 +311,12 @@ export function explainNrv(period: Period, r: PeriodResult): TraceStep | null {
   if (r.nrvTotal === undefined) return null;
   const per = period.nrvPerUnit;
   const text = [
-    `שמ״נ${per !== undefined ? ` = ${q(r.closingUnits)} × ${u(per)}` : ""} = ${m(r.nrvTotal)} ₪, מול עלות של ${m(r.closingCostBasis)} ₪.`,
+    `שווי מימוש נטו${per !== undefined ? ` = ${q(r.closingUnits)} × ${u(per)}` : ""} = ${m(r.nrvTotal)} ₪, מול עלות של ${m(r.closingCostBasis)} ₪.`,
   ];
-  if (r.writeDown) text.push(`השמ״נ נמוך מהעלות: מורידים ${m(r.writeDown)} ₪, והמלאי מוצג ב-${m(r.closingCarrying)} ₪. ההורדה נכנסת לעלות המכר.`);
-  else if (r.reversal) text.push(`השמ״נ עלה: מבטלים ${m(r.reversal)} ₪ מהורדת הערך הקודמת — עד העלות המקורית בלבד. הביטול מקטין את עלות המכר.`);
-  else text.push("השמ״נ לא נמוך מהעלות — אין הורדת ערך. רווח צפוי לא נרשם; הוא יוכר במכירה.");
-  return { id: "nrv", title: "בדיקת שווי מימוש נטו", text, formula: ["מלאי בספרים = הנמוך מבין העלות לשמ״נ"], rules: ["R11", "R21", "R22"] };
+  if (r.writeDown) text.push(`שווי המימוש נטו נמוך מהעלות: מורידים ${m(r.writeDown)} ₪, והמלאי מוצג ב-${m(r.closingCarrying)} ₪. ההורדה נכנסת לעלות המכר.`);
+  else if (r.reversal) text.push(`שווי המימוש נטו עלה: מבטלים ${m(r.reversal)} ₪ מהורדת הערך הקודמת — עד העלות המקורית בלבד. הביטול מקטין את עלות המכר.`);
+  else text.push("שווי המימוש נטו לא נמוך מהעלות — אין הורדת ערך. רווח צפוי לא נרשם; הוא יוכר במכירה.");
+  return { id: "nrv", title: "בדיקת שווי מימוש נטו", text, formula: ["מלאי בספרים = הנמוך מבין העלות לשווי מימוש נטו"], rules: ["R11", "R21", "R22"] };
 }
 
 export function statementTable(s: ReturnType<typeof statement>, caption?: string): TraceTable {
@@ -221,7 +371,7 @@ export function explainStatement(r: PeriodResult): TraceStep {
 export function explainPeriod(period: Period, r: PeriodResult): TraceStep[] {
   const steps: TraceStep[] = [];
   if (r.costs.some((c) => c.lines.length > 1)) steps.push(explainCosts(period, r));
-  steps.push(explainQuantities(r), explainValuation(r));
+  steps.push(explainQuantities(r, period), explainValuation(r));
   const nrv = explainNrv(period, r);
   if (nrv) steps.push(nrv);
   steps.push(explainStatement(r));
@@ -256,8 +406,8 @@ export function explainSolve(s: SolveResult): TraceStep[] {
 export function explainTable(input: TableInput, r: TableResult): TraceStep[] {
   const steps: TraceStep[] = r.steps.map((s) => ({
     id: `t-${s.n}`,
-    title: `${s.n}. ${ROW_LABEL[s.row]} ${input.years[s.year].label}`,
-    text: [],
+    title: `${s.n}. ${input.years[s.year].label} · ${ROW_LABEL[s.row]}`,
+    text: [s.why],
     formula: [s.equation, s.substitution],
     rules: [s.rule],
   }));
@@ -289,7 +439,7 @@ export function explainHistoryFire(method: Method, r: ReturnType<typeof historyF
   const steps: TraceStep[] = [
     {
       id: "f-hist",
-      title: `חישוב מחדש לפי בסיס הפוליסה: ${METHOD_LABEL[method]}, בלי שמ״נ`,
+      title: `חישוב מחדש לפי בסיס הפוליסה: ${METHOD_LABEL[method]}, בלי שווי מימוש נטו`,
       text: [
         "הפוליסה קובעת את בסיס השיפוי — לא שיטת החברה. מחשבים מחדש את כל ההיסטוריה לפי שיטת הפוליסה, ובלי הורדת ערך (שיפוי לפי עלות).",
         ...r.chain.slice(0, -1).map((c) => `${c.label}: מלאי סגירה ${q(c.closingUnits)} יח' בעלות ${m(c.closingCostBasis)} ₪ — זו הפתיחה של התקופה הבאה.`),
@@ -323,6 +473,8 @@ export function stepsToText(steps: TraceStep[]): string {
   for (const s of steps) {
     out.push(`■ ${s.title}`);
     for (const t of s.text) out.push(t);
+    for (const [i, w] of (s.walk ?? []).entries()) out.push(`  ${i + 1}. ${w}`);
+    for (const f of s.flow ?? []) out.push(`  ${f.map((b) => `${b.label}${b.value ? ` ${b.value}` : ""}`).join(" ← ")}`);
     for (const f of s.formula ?? []) out.push(`  ${f}`);
     for (const t of s.tables ?? []) {
       if (t.caption) out.push(`  [${t.caption}]`);

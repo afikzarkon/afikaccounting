@@ -20,6 +20,7 @@ export function NumField({
   onToggleUnknown,
   placeholder,
   className,
+  labelClassName,
 }: {
   label: string;
   value: F | string;
@@ -31,12 +32,14 @@ export function NumField({
   onToggleUnknown?: () => void;
   placeholder?: string;
   className?: string;
+  /** For a label that a table header already shows on wide screens. */
+  labelClassName?: string;
 }) {
   const id = useId();
   const f = typeof value === "string" ? { v: value, unknown: false } : value;
   return (
     <div className={cn("min-w-0", className)}>
-      <label htmlFor={id} className="mb-1 block text-[12.5px] font-medium text-fg">
+      <label htmlFor={id} className={cn("mb-1 block text-[12.5px] font-medium text-fg", labelClassName)}>
         {label}
       </label>
       <div className="flex gap-1.5">
@@ -77,11 +80,11 @@ export function NumField({
   );
 }
 
-export function TextField({ label, value, onChange, type = "text", className }: { label: string; value: string; onChange: (v: string) => void; type?: string; className?: string }) {
+export function TextField({ label, value, onChange, type = "text", className, labelClassName }: { label: string; value: string; onChange: (v: string) => void; type?: string; className?: string; labelClassName?: string }) {
   const id = useId();
   return (
     <div className={cn("min-w-0", className)}>
-      <label htmlFor={id} className="mb-1 block text-[12.5px] font-medium text-fg">
+      <label htmlFor={id} className={cn("mb-1 block text-[12.5px] font-medium text-fg", labelClassName)}>
         {label}
       </label>
       <input id={id} type={type} value={value} onChange={(e) => onChange(e.target.value)} dir={type === "date" ? "ltr" : undefined} className={cn(inputClass, "h-10")} />

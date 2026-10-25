@@ -247,6 +247,8 @@ export type LedgerRow = {
   cost: number;
   avg: number;
   slices?: Slice[];
+  /** Which purchase or sale of the period this row is. */
+  index?: number;
 };
 
 export interface PeriodResult {
@@ -389,14 +391,14 @@ function run(period: Period, method: Method, events: Ev[], opening: Opening, ori
       if (e.kind === "buy") {
         bal += e.units;
         balCost += e.cost;
-        ledger.push({ date: e.date, kind: "buy", label: e.label, qty: e.units, unitCost: e.cost / e.units, amount: e.cost, units: bal, cost: balCost, avg });
+        ledger.push({ date: e.date, kind: "buy", label: e.label, qty: e.units, unitCost: e.cost / e.units, amount: e.cost, units: bal, cost: balCost, avg, index: e.index });
       } else {
         const c = amtR(avg * e.units);
         if (e.kind === "sell") saleCosts[e.index] = c;
         else shrinkCost = c;
         bal -= e.units;
         balCost -= c;
-        ledger.push({ date: e.date, kind: e.kind, label: e.label, qty: e.units, unitCost: avg, amount: c, units: bal, cost: balCost, avg });
+        ledger.push({ date: e.date, kind: e.kind, label: e.label, qty: e.units, unitCost: avg, amount: c, units: bal, cost: balCost, avg, index: e.index });
       }
     }
     const closingUnits = units - totalSold;
@@ -415,7 +417,7 @@ function run(period: Period, method: Method, events: Ev[], opening: Opening, ori
         units += e.units;
         cost += e.cost;
         avg = units > EPS ? unitR(cost / units) : avg;
-        ledger.push({ date: e.date, kind: "buy", label: e.label, qty: e.units, unitCost: e.cost / (e.units || 1), amount: e.cost, units, cost, avg });
+        ledger.push({ date: e.date, kind: "buy", label: e.label, qty: e.units, unitCost: e.cost / (e.units || 1), amount: e.cost, units, cost, avg, index: e.index });
       } else {
         if (e.units > units + EPS) short(e, units);
         const c = amtR(avg * e.units);
@@ -427,7 +429,7 @@ function run(period: Period, method: Method, events: Ev[], opening: Opening, ori
           units = 0;
           cost = 0;
         }
-        ledger.push({ date: e.date, kind: e.kind, label: e.label, qty: e.units, unitCost: avg, amount: c, units, cost, avg });
+        ledger.push({ date: e.date, kind: e.kind, label: e.label, qty: e.units, unitCost: avg, amount: c, units, cost, avg, index: e.index });
       }
     }
     return { closingUnits: units, closingCost: cost, saleCosts, shrinkCost, layers: [], ledger, avg, errors };
@@ -444,7 +446,7 @@ function run(period: Period, method: Method, events: Ev[], opening: Opening, ori
       queue.push({ source: e.label, date: e.date, units: e.units, cost: e.cost, origCost: e.cost });
       units += e.units;
       cost += e.cost;
-      ledger.push({ date: e.date, kind: "buy", label: e.label, qty: e.units, unitCost: e.cost / (e.units || 1), amount: e.cost, units, cost, avg: units ? cost / units : 0 });
+      ledger.push({ date: e.date, kind: "buy", label: e.label, qty: e.units, unitCost: e.cost / (e.units || 1), amount: e.cost, units, cost, avg: units ? cost / units : 0, index: e.index });
     } else {
       const t = take(queue, e.units, partOf(rounding));
       if (t.short > EPS) {
@@ -456,7 +458,7 @@ function run(period: Period, method: Method, events: Ev[], opening: Opening, ori
       units -= e.units - t.short;
       cost -= t.cost;
       if (Math.abs(units) < EPS) units = cost = 0;
-      ledger.push({ date: e.date, kind: e.kind, label: e.label, qty: e.units, unitCost: e.units ? t.cost / e.units : 0, amount: t.cost, units, cost, avg: units ? cost / units : 0, slices: t.slices });
+      ledger.push({ date: e.date, kind: e.kind, label: e.label, qty: e.units, unitCost: e.units ? t.cost / e.units : 0, amount: t.cost, units, cost, avg: units ? cost / units : 0, slices: t.slices, index: e.index });
     }
   }
   if (periodic && shortage) {
@@ -680,7 +682,7 @@ export function entriesFor(period: Period, r: PeriodResult, system: System, opts
       add(undefined, "מלאי סגירה בסוף השנה", [
         { account: "מלאי סגירה מאזני", dr: c },
         { account: "מלאי סגירה רווח או הפסד", cr: c },
-      ], r.writeDown ? "מלאי הסגירה נרשם בשמ״נ — הורדת הערך מגולמת בעלות המכר" : "פקודת ההתאמה של סוף השנה");
+      ], r.writeDown ? "מלאי הסגירה נרשם בשווי מימוש נטו — הורדת הערך מגולמת בעלות המכר" : "פקודת ההתאמה של סוף השנה");
   } else {
     if (r.shrinkCost > 0.005) add(undefined, "חוסר בספירה", [{ account: "עלות המכר", dr: round2(r.shrinkCost) }, { account: "מלאי", cr: round2(r.shrinkCost) }]);
     if (r.writeDown > 0.005) add(undefined, "הורדת ערך לשווי מימוש נטו", [{ account: "עלות המכר", dr: round2(r.writeDown) }, { account: "מלאי", cr: round2(r.writeDown) }]);

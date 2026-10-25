@@ -225,7 +225,7 @@ export const CALC_EXAMPLES: CalcExample[] = [
   { id: "tzlil", title: "צליל — ארבע שיטות", hint: "דוגמה א': אותם נתונים בכל השיטות", tab: "full", method: "compare", periods: [TZLIL] },
   { id: "neyar", title: "נייר — שמונה אירועים", hint: "דוגמה ב' בממוצע נע", tab: "full", method: "moving-avg", periods: [NEYAR] },
   { id: "shemesh", title: "שמש — בניית עלות", hint: "הנחה, מכס, הובלה, אחסון ומע״מ", tab: "full", method: "fifo", periods: [SHEMESH] },
-  { id: "kol", title: "קול — שמ״נ וביטול", hint: "הורדת ערך ושנה אחרי", tab: "full", method: "fifo", periods: kolNextYear(155), carryWriteDown: true },
+  { id: "kol", title: "קול — שווי מימוש נטו וביטול", hint: "הורדת ערך ושנה אחרי", tab: "full", method: "fifo", periods: kolNextYear(155), carryWriteDown: true },
   {
     id: "or",
     title: "נעלם: כמות מכירה",
@@ -245,7 +245,7 @@ export const CALC_EXAMPLES: CalcExample[] = [
   {
     id: "rimon",
     title: "נעלם: מחיר מכירה משיעור גולמי",
-    hint: "ממוצע נע, שמ״נ ושיעור גולמי 20%",
+    hint: "ממוצע נע, שווי מימוש נטו ושיעור גולמי 20%",
     tab: "full",
     method: "moving-avg",
     periods: [RIMON],
@@ -275,7 +275,7 @@ export const CALC_EXAMPLES: CalcExample[] = [
   { id: "daf", title: "דף — דוח עם חסרים", hint: "שתי שנים, סימני שאלה", tab: "table", table: DAF },
   { id: "gpfire", title: "שריפה לפי שיעור גולמי", hint: "ממוצע שני שיעורים, השתתפות עצמית", tab: "fire", fire: GP_FIRE },
   { id: "agam", title: "שריפה לפי FIFO חוצה שנים", hint: "שכבות שעוברות בין שנים, השתתפות ותקרה", tab: "fire", method: "fifo", periods: AGAM, fire: AGAM_FIRE },
-  { id: "galyam", title: "שאלה מלאה — גל-ים", hint: "הנחות, מכס, מימון, יעד, שמ״נ ונעלם", tab: "full", method: "moving-avg", periods: [GALYAM], unknowns: [GALYAM_UNKNOWN], knowns: [GALYAM_KNOWN], rounding: { mode: "exact" } },
+  { id: "galyam", title: "שאלה מלאה — גל-ים", hint: "הנחות, מכס, מימון, יעד, שווי מימוש נטו ונעלם", tab: "full", method: "moving-avg", periods: [GALYAM], unknowns: [GALYAM_UNKNOWN], knowns: [GALYAM_KNOWN], rounding: { mode: "exact" } },
 ];
 
 export const exampleById = (id: string) => CALC_EXAMPLES.find((e) => e.id === id);
@@ -464,11 +464,11 @@ export const PRACTICE: PracticeItem[] = [
   },
   {
     id: "pr7",
-    title: "שמ״נ, הורדת ערך וביטול",
+    title: "שווי מימוש נטו, הורדת ערך וביטול",
     level: "בינוני",
     prompt: [
       "500 יח' בעלות 40 ₪ ליחידה. מחיר מכירה צפוי 45 ₪, עלויות השלמה 3 ₪, עלויות מכירה 4 ₪.",
-      "בשנה שאחריה כל היחידות עדיין במלאי והשמ״נ עלה ל-39 ₪. כמה הורדת ערך בשנה הראשונה, וכמה מבטלים בשנייה?",
+      "בשנה שאחריה כל היחידות עדיין במלאי ושווי המימוש נטו עלה ל-39 ₪. כמה הורדת ערך בשנה הראשונה, וכמה מבטלים בשנייה?",
     ],
     hint: "ביטול — רק עד גובה ההורדה המקורית, ולא מעל העלות.",
     answers: () => {
@@ -480,7 +480,7 @@ export const PRACTICE: PracticeItem[] = [
     },
     solution: () => {
       const rs = valuateChain(PR_NRV, "fifo", { carryWriteDown: true });
-      return rs.map((r, i) => ({ ...explainNrv({ ...PR_NRV[i], priorWriteDown: i ? rs[0].writeDown : 0 }, r)!, id: `n${i}`, title: `שמ״נ ${r.label}` }));
+      return rs.map((r, i) => ({ ...explainNrv({ ...PR_NRV[i], priorWriteDown: i ? rs[0].writeDown : 0 }, r)!, id: `n${i}`, title: `שווי מימוש נטו ${r.label}` }));
     },
   },
   {
@@ -502,7 +502,7 @@ export const PRACTICE: PracticeItem[] = [
     level: "קשה",
     prompt: [
       "ממוצע נע. 10.1: קנייה 500 יח' ב-30 ₪ · 10.2: קנייה 500 יח' ב-34 ₪ · 10.3: מכירה 600 יח' במחיר ? · 10.5: קנייה 400 יח' ב-38 ₪ · 10.8: מכירה 500 יח' ב-60 ₪.",
-      "שמ״נ ליחידה בסוף השנה 33 ₪. שיעור הרווח הגולמי השנתי 30%. מצאו את מחיר המכירה ב-10.3 (עגלו לשתי ספרות).",
+      "שווי מימוש נטו ליחידה בסוף השנה 33 ₪. שיעור הרווח הגולמי השנתי 30%. מצאו את מחיר המכירה ב-10.3 (עגלו לשתי ספרות).",
     ],
     hint: "הורדת הערך נכנסת לעלות המכר, ואז מכירות = עלות המכר ÷ (1 − 30%).",
     calc: "pr9",
@@ -599,7 +599,7 @@ export const PRACTICE: PracticeItem[] = [
       { text: "מלאי שמסרנו לרשת חנויות במשגור, וטרם נמכר ללקוח הסופי.", answer: true, why: "במשגור הבעלות נשארת אצלנו עד המכירה ללקוח הסופי." },
       { text: "סחורה שנמכרה ללקוח, ארוזה בנפרד במחסן שלנו; האחריות כבר עברה ללקוח.", answer: false, why: "מכור והחזק — המכירה הוכרה והסחורה של הלקוח." },
       { text: "קטלוגים ודוגמיות שמחולקים חינם ללקוחות.", answer: false, why: "לא מוחזקים למכירה — הוצאה." },
-      { text: "מלאי איטי שלא זז שנה וכנראה יימכר מתחת לעלות.", answer: true, why: "עדיין מלאי — אבל צריך לבדוק שמ״נ ולהוריד ערך." },
+      { text: "מלאי איטי שלא זז שנה וכנראה יימכר מתחת לעלות.", answer: true, why: "עדיין מלאי — אבל צריך לבדוק שווי מימוש נטו ולהוריד ערך." },
     ],
   },
   {

@@ -139,7 +139,7 @@ export function FireTab({ st, set }: { st: CalcState; set: Update }) {
           <>
             <p className="text-sm text-fg/90">
               ההיסטוריה נלקחת מלשונית ①: {st.years.map((y) => y.label).join(", ")} — השנה האחרונה היא התקופה עד השריפה. שיטת הפוליסה יכולה להיות שונה משיטת החברה, והחישוב הוא בלי
-              שמ״נ.
+              שווי מימוש נטו.
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Choice<Method>

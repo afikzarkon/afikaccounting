@@ -7,6 +7,7 @@ import { type Entry, ledger } from "@/lib/learn/basics";
 import { compareMethods, METHOD_LABEL, priceTrend, valuatePeriod } from "@/lib/learn/inventory";
 import { lehavaWith, tzlilWith } from "@/lib/learn/inventory-examples";
 import { cn } from "@/lib/utils";
+import { FlowStrip } from "./inventory-trace";
 import { updateProgress, useProgress } from "./store";
 import { EntryView, fmt, Money, Scroller, TCard } from "./ui";
 
@@ -182,13 +183,20 @@ export type FillData = {
   rows: { key: string; label: string; pct?: boolean }[];
   given: boolean[][];
   values: (number | null)[][];
-  steps: { year: number; row: string; equation: string; substitution: string }[];
+  steps: { year: number; row: string; equation: string; substitution: string; why: string }[];
+  /** Where a year's closing balance becomes the next year's opening. */
+  rolls: { from: number; to: number }[];
 };
 
 export function TableFill({ data }: { data: FillData }) {
   const [n, setN] = useState(0);
   const filled = new Set(data.steps.slice(0, n).map((s) => `${s.year}:${s.row}`));
   const cur = n > 0 ? data.steps[n - 1] : null;
+  const at = (t: number, row: string) => {
+    const ri = data.rows.findIndex((r) => r.key === row);
+    const v = ri < 0 ? null : data.values[t][ri];
+    return ri >= 0 && v !== null && (data.given[t][ri] || filled.has(`${t}:${row}`)) ? v : null;
+  };
   return (
     <div className="card space-y-3 p-5">
       <Scroller caption="הדוח עם סימני השאלה">
@@ -218,6 +226,7 @@ export function TableFill({ data }: { data: FillData }) {
                   const isCur = cur && cur.year === t && cur.row === row.key;
                   return (
                     <td key={y} className={cn("px-3 py-1.5 text-end", isCur && "bg-success/15 font-semibold", !data.given[t][ri] && show && !isCur && "bg-accent-soft/60")}>
+                      {row.key === "opening" && t > 0 && <span className="block text-[10px] font-medium text-accent">← מסגירת {data.years[t - 1]}</span>}
                       {show && v !== null ? (
                         row.pct ? (
                           <bdi dir="ltr" className="num">{fmt(v * 100)}%</bdi>
@@ -235,12 +244,34 @@ export function TableFill({ data }: { data: FillData }) {
           </tbody>
         </table>
       </Scroller>
+      {data.rolls.map(({ from, to }) => {
+        const close = at(from, "closing");
+        const open = at(to, "opening");
+        const live = cur?.year === to && cur.row === "opening";
+        return (
+          <div key={to} className={cn("rounded-lg border px-3 py-2", live ? "border-accent bg-accent-soft/50" : "border-line")}>
+            <p className="mb-1.5 text-xs font-semibold text-muted">גלגול יתרות: הסגירה של שנה אחת היא הפתיחה של הבאה</p>
+            <FlowStrip
+              boxes={[
+                { label: `מלאי סגירה ${data.years[from]}`, value: close === null ? "?" : `${fmt(close)} ₪` },
+                { label: "עובר שנה", value: "" },
+                { label: `מלאי פתיחה ${data.years[to]}`, value: open === null ? "?" : `${fmt(open)} ₪`, tone: "accent" },
+              ]}
+            />
+          </div>
+        );
+      })}
       <div className="min-h-16 rounded-lg bg-surface-2/70 px-3 py-2 text-sm" aria-live="polite">
         {cur ? (
           <>
-            <p className="font-semibold text-fg">
-              צעד {n} מתוך {data.steps.length}: {cur.equation}
+            <p className="text-xs font-semibold text-accent">
+              צעד {n} מתוך {data.steps.length} · {data.years[cur.year]}
             </p>
+            <p className="mt-0.5 text-fg/90">
+              <strong>למה עכשיו? </strong>
+              {cur.why}
+            </p>
+            <p className="mt-1 font-semibold text-fg">{cur.equation}</p>
             <p className="num mt-0.5 text-fg/85">{cur.substitution}</p>
           </>
         ) : (

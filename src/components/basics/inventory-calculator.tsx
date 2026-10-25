@@ -25,12 +25,14 @@ import { cn } from "@/lib/utils";
 import { FireTab } from "./inventory-calc-fire";
 import { Check, Choice, NumField, primaryBtn, Select, smallBtn, TextField } from "./inventory-calc-fields";
 import {
+  applyDefaults,
   ASKS,
   build,
   type Built,
   type CalcState,
   defaultState,
   type DiscountForm,
+  emptyDefaults,
   emptyDiscount,
   emptyExtra,
   emptyPurchase,
@@ -39,7 +41,9 @@ import {
   emptyYear,
   fromExample,
   loadState,
+  type PurchaseDefaults,
   type PurchaseForm,
+  type SaleForm,
   saveState,
   type Tab,
   uid,
@@ -47,7 +51,7 @@ import {
 } from "./inventory-calc-state";
 import { TableTab } from "./inventory-calc-table";
 import { LOAD_EVENT } from "./inventory-interactive";
-import { TraceStepView } from "./inventory-trace";
+import { FlowStrip, TraceStepView } from "./inventory-trace";
 import { EntryView, Money, Scroller } from "./ui";
 
 export type Update = (fn: (s: CalcState) => CalcState) => void;
@@ -156,14 +160,14 @@ function Calculator() {
 // ---------------------------------------------------------------------------
 // Tab 1: the guided questionnaire and the full solution.
 
-const STEP_TITLES = ["מה מבקשים?", "שנה וחברה", "שיטת ההערכה", "מלאי פתיחה", "רכישות", "מכירות", "שמ״נ וסיווג", "נתונים ידועים", "סיכום ופתרון"];
+const STEP_TITLES = ["מה מבקשים?", "שנה וחברה", "שיטת ההערכה", "מלאי פתיחה", "רכישות ומכירות", "הנחות ללקוחות", "שווי מימוש נטו וסיווג", "נתונים ידועים", "סיכום ופתרון"];
 const STEP_WHERE = [
   "בסעיף ה״נדרש״ — בדרך כלל בסוף השאלה.",
   "בכותרת: שם החברה ותאריך ההקמה.",
   "בנתונים הנוספים: ״החברה מנהלת את המלאי לפי…״.",
   "בתחילת השאלה, או בסגירה של השנה הקודמת.",
-  "בטבלת הנתונים, ובנתונים הנוספים (הנחות, מכס, הובלה, מימון).",
-  "בטבלת הנתונים; הנחות והחזרות ללקוחות — בנתונים הנוספים.",
+  "בטבלת הנתונים — רכישות ומכירות; תנאים שחלים על כל הרכישות (הנחה, מכס, הובלה) — בנתונים הנוספים.",
+  "בנתונים הנוספים: ״הנחות ללקוחות…״, ״החזרות…״.",
   "בנתונים הנוספים: ״שווי מימוש נטו…״, ״מלאי במשגור…״.",
   "בנתונים: ״עלות המכר הייתה…״, ״שיעור הרווח הגולמי…״, ״בסוף השנה נותרו…״.",
   "",
@@ -181,7 +185,7 @@ function FullTab({ st, set }: { st: CalcState; set: Update }) {
         <Wizard st={st} set={set} built={built} solution={solution} />
       </div>
       <div className="min-w-0 lg:sticky lg:top-24">
-        <Results st={st} built={built} solution={solution} method={method} />
+        <Results st={st} set={set} built={built} solution={solution} method={method} />
       </div>
     </div>
   );
@@ -288,14 +292,22 @@ function Wizard({ st, set, built, solution }: { st: CalcState; set: Update; buil
                 />
                 {st.rounding !== "exact" && <NumField label="מספר ספרות אחרי הנקודה" value={st.roundDigits} onChange={(v) => set((s) => ({ ...s, roundDigits: v }))} />}
               </div>
+              <Choice
+                label="מאיפה מתחילים?"
+                value={st.years[0]?.founded ? "founded" : "given"}
+                onChange={(v) => set((s) => ({ ...s, years: s.years.map((z, j) => (j === 0 ? { ...z, founded: v === "founded" } : z)) }))}
+                options={[
+                  ["founded", "החברה הוקמה בשנה הראשונה", "אין מלאי פתיחה — מתחילים מאפס"],
+                  ["given", "שנה מסוימת, מלאי הפתיחה נתון", "לא צריך למלא שנים קודמות — מזינים את מלאי הפתיחה בשלב 4"],
+                ]}
+              />
               <div className="space-y-2">
                 <p className="text-[13px] font-medium text-fg">שנים בשאלה</p>
+                <p className="text-xs text-muted">שואלים רק על שנה אחת? השאירו שנה אחת ברשימה. כמה שנים ברצף — הוסיפו שנה, וכל שנה תיפתח מהסגירה של הקודמת.</p>
                 {st.years.map((x, i) => (
                   <div key={x.id} className="flex flex-wrap items-end gap-2">
                     <TextField label={`שנה ${i + 1}`} value={x.label} onChange={(v) => set((s) => ({ ...s, years: s.years.map((z, j) => (j === i ? { ...z, label: v } : z)) }))} className="w-32" />
-                    {i === 0 ? (
-                      <Check label="החברה הוקמה השנה (אין מלאי פתיחה)" checked={x.founded} onChange={(v) => set((s) => ({ ...s, years: s.years.map((z, j) => (j === 0 ? { ...z, founded: v } : z)) }))} />
-                    ) : (
+                    {i > 0 && (
                       <button
                         type="button"
                         className={smallBtn}
@@ -316,7 +328,7 @@ function Wizard({ st, set, built, solution }: { st: CalcState; set: Update; buil
                     <Plus className="h-4 w-4" aria-hidden /> הוסיפו שנה
                   </button>
                 )}
-                <p className="text-xs text-muted">מלאי הפתיחה של כל שנה נלקח אוטומטית מהסגירה בספרים של השנה הקודמת.</p>
+                <p className="text-xs text-muted">מלאי הפתיחה של כל שנה נלקח אוטומטית מהסגירה בספרים של השנה הקודמת. אפשר לבטל את זה לשנה מסוימת בשלב 4.</p>
               </div>
             </>
           )}
@@ -369,57 +381,19 @@ function Wizard({ st, set, built, solution }: { st: CalcState; set: Update; buil
 
           {st.step === 4 && (
             <>
-              {y.purchases.map((p, i) => (
-                <PurchaseRow key={p.id} p={p} i={i} ay={ay} built={built} setYear={setYear} />
-              ))}
-              <div className="flex flex-wrap gap-2">
-                <button type="button" className={smallBtn} onClick={() => setYear((x) => ({ ...x, purchases: [...x.purchases, emptyPurchase()] }))}>
-                  <Plus className="h-4 w-4" aria-hidden /> הוסיפו רכישה
-                </button>
-                <button type="button" className={smallBtn} onClick={() => setYear((x) => ({ ...x, purchases: [...x.purchases].sort((a, b) => (a.date || "~").localeCompare(b.date || "~")) }))}>
-                  מיון לפי תאריך
-                </button>
-              </div>
+              <DefaultsPanel st={st} set={set} label={y.label} setYear={setYear} />
+              <MovementsGrid st={st} y={y} ay={ay} built={built} solution={solution} setYear={setYear} />
             </>
           )}
 
           {st.step === 5 && (
-            <>
-              {y.sales.map((x, i) => {
-                const sk = (s: string) => `s${i}.${s}`;
-                const setS = (patch: Partial<typeof x>) => setYear((yy) => ({ ...yy, sales: yy.sales.map((z, j) => (j === i ? { ...z, ...patch } : z)) }));
-                return (
-                  <div key={x.id} className="rounded-xl border border-line p-3">
-                    <div className="mb-2 flex items-center justify-between">
-                      <p className="text-sm font-semibold text-fg">מכירה {i + 1}</p>
-                      <button type="button" className={smallBtn} aria-label={`הסירו את מכירה ${i + 1}`} onClick={() => setYear((yy) => ({ ...yy, sales: yy.sales.filter((_, j) => j !== i) }))}>
-                        <Trash2 className="h-4 w-4" aria-hidden />
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                      <div>
-                        <TextField label="תאריך" type="date" value={x.date} onChange={(v) => setS({ date: v })} />
-                        {err(sk("date")) && <p className="mt-1 text-xs text-danger">{err(sk("date"))}</p>}
-                      </div>
-                      <NumField label="כמות" value={x.qty} onChange={(v) => setS({ qty: { ...x.qty, v } })} error={err(sk("qty"))} letter={built.letters[`y${ay}.${sk("qty")}`]} onToggleUnknown={() => setS({ qty: { ...x.qty, unknown: !x.qty.unknown } })} />
-                      <NumField label="מחיר ליחידה" suffix="₪" value={x.price} onChange={(v) => setS({ price: { ...x.price, v } })} error={err(sk("price"))} letter={built.letters[`y${ay}.${sk("price")}`]} onToggleUnknown={() => setS({ price: { ...x.price, unknown: !x.price.unknown } })} />
-                    </div>
-                  </div>
-                );
-              })}
-              <button type="button" className={smallBtn} onClick={() => setYear((x) => ({ ...x, sales: [...x.sales, emptySale()] }))}>
-                <Plus className="h-4 w-4" aria-hidden /> הוסיפו מכירה
-              </button>
-              <details className="rounded-xl border border-line p-3">
-                <summary className="cursor-pointer text-sm font-semibold text-fg">הנחות והחזרות ללקוחות</summary>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <NumField label="הנחות ללקוחות (סה״כ)" suffix="₪" value={y.custDiscounts} onChange={(v) => setYear((x) => ({ ...x, custDiscounts: v }))} error={err("custDisc")} />
-                  <NumField label="החזרות מלקוחות (סה״כ)" suffix="₪" value={y.custReturns} onChange={(v) => setYear((x) => ({ ...x, custReturns: v }))} error={err("custRet")} />
-                  <NumField label="הנחת כמות ללקוח: מעל כמה יחידות" value={y.saleDiscThreshold} onChange={(v) => setYear((x) => ({ ...x, saleDiscThreshold: v }))} error={err("sdThr")} />
-                  <NumField label="…הנחה על כל המכירה" suffix="%" value={y.saleDiscPct} onChange={(v) => setYear((x) => ({ ...x, saleDiscPct: v }))} error={err("sdPct")} />
-                </div>
-              </details>
-            </>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <NumField label="הנחות ללקוחות (סה״כ)" suffix="₪" value={y.custDiscounts} onChange={(v) => setYear((x) => ({ ...x, custDiscounts: v }))} error={err("custDisc")} />
+              <NumField label="החזרות מלקוחות (סה״כ)" suffix="₪" value={y.custReturns} onChange={(v) => setYear((x) => ({ ...x, custReturns: v }))} error={err("custRet")} />
+              <NumField label="הנחת כמות ללקוח: מעל כמה יחידות" value={y.saleDiscThreshold} onChange={(v) => setYear((x) => ({ ...x, saleDiscThreshold: v }))} error={err("sdThr")} />
+              <NumField label="…הנחה על כל המכירה" suffix="%" value={y.saleDiscPct} onChange={(v) => setYear((x) => ({ ...x, saleDiscPct: v }))} error={err("sdPct")} />
+              <p className="text-xs text-muted sm:col-span-2">אין בשאלה הנחות ללקוחות? השאירו ריק ועברו הלאה.</p>
+            </div>
           )}
 
           {st.step === 6 && (
@@ -429,15 +403,15 @@ function Wizard({ st, set, built, solution }: { st: CalcState; set: Update; buil
                 value={y.nrvMode}
                 onChange={(v) => setYear((x) => ({ ...x, nrvMode: v }))}
                 options={[
-                  ["none", "אין נתון שמ״נ"],
-                  ["unit", "שמ״נ ליחידה"],
+                  ["none", "אין נתון שווי מימוש נטו"],
+                  ["unit", "שווי מימוש נטו ליחידה"],
                   ["build", "מחיר מכירה − השלמה − מכירה"],
-                  ["total", "שמ״נ כולל (סכום)"],
+                  ["total", "שווי מימוש נטו כולל (סכום)"],
                 ]}
               />
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {y.nrvMode === "unit" && <NumField label="שמ״נ ליחידה" suffix="₪" value={y.nrvUnit} onChange={(v) => setYear((x) => ({ ...x, nrvUnit: v }))} error={err("nrvUnit")} />}
-                {y.nrvMode === "total" && <NumField label="שמ״נ כולל" suffix="₪" value={y.nrvTotal} onChange={(v) => setYear((x) => ({ ...x, nrvTotal: v }))} error={err("nrvTotal")} />}
+                {y.nrvMode === "unit" && <NumField label="שווי מימוש נטו ליחידה" suffix="₪" value={y.nrvUnit} onChange={(v) => setYear((x) => ({ ...x, nrvUnit: v }))} error={err("nrvUnit")} />}
+                {y.nrvMode === "total" && <NumField label="שווי מימוש נטו כולל" suffix="₪" value={y.nrvTotal} onChange={(v) => setYear((x) => ({ ...x, nrvTotal: v }))} error={err("nrvTotal")} />}
                 {y.nrvMode === "build" && (
                   <>
                     <NumField label="מחיר מכירה צפוי ליחידה" suffix="₪" value={y.nrvPrice} onChange={(v) => setYear((x) => ({ ...x, nrvPrice: v }))} error={err("nrvPrice")} />
@@ -455,7 +429,7 @@ function Wizard({ st, set, built, solution }: { st: CalcState; set: Update; buil
                   className="sm:max-w-xs"
                 />
               )}
-              {y.fair && <p className="text-xs text-muted">שמ״נ הוא ערך ספציפי לחברה; שווי הוגן הוא מחיר שוק. המחשבון מתעלם מהשווי ההוגן.</p>}
+              {y.fair && <p className="text-xs text-muted">שווי מימוש נטו הוא ערך ספציפי לחברה; שווי הוגן הוא מחיר שוק. המחשבון מתעלם מהשווי ההוגן.</p>}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <NumField label="הורדת ערך שכבר רשומה במלאי הפתיחה" suffix="₪" value={y.priorWriteDown} onChange={(v) => setYear((x) => ({ ...x, priorWriteDown: v }))} error={err("prior")} />
                 <NumField label="כמות שנספרה בפועל (אם שונה מהספרים)" value={y.counted} onChange={(v) => setYear((x) => ({ ...x, counted: v }))} error={err("counted")} />
@@ -491,7 +465,7 @@ function Wizard({ st, set, built, solution }: { st: CalcState; set: Update; buil
 }
 
 function stepQuestion(step: number) {
-  return ["מה מבקשים בשאלה?", "על איזו שנה ואיזו חברה?", "מה שיטת ההערכה בשאלה?", "יש מלאי פתיחה?", "מה נרכש?", "מה נמכר?", "יש שמ״נ או בעיות סיווג?", "יש עוד נתונים מהשאלה, או משהו שחסר?", "סיכום ופתרון"][step];
+  return ["מה מבקשים בשאלה?", "על איזו שנה ואיזו חברה?", "מה שיטת ההערכה בשאלה?", "יש מלאי פתיחה?", "מה נרכש ומה נמכר?", "היו הנחות או החזרות ללקוחות?", "יש שווי מימוש נטו או בעיות סיווג?", "יש עוד נתונים מהשאלה, או משהו שחסר?", "סיכום ופתרון"][step];
 }
 
 function YearTabs({ st, set }: { st: CalcState; set: Update }) {
@@ -522,47 +496,176 @@ const EXTRA_QUICK: [ExtraCategory, ExtraBasis, string][] = [
 ];
 const BASIS_LABEL: Record<ExtraBasis, string> = { "per-shipment": "למשלוח", "per-unit": "ליחידה", "per-pack": "לארגז", "per-kg": "לק״ג", "pct-of-net-price": "% מהמחיר נטו" };
 
-function PurchaseRow({ p, i, ay, built, setYear }: { p: PurchaseForm; i: number; ay: number; built: Built; setYear: (fn: (y: YearForm) => YearForm) => void }) {
-  const [open, setOpen] = useState(p.discounts.length > 0 || p.extras.length > 0 || !!p.financing);
+/** The shared terms for every purchase, typed once. */
+function DefaultsPanel({ st, set, label, setYear }: { st: CalcState; set: Update; label: string; setYear: (fn: (y: YearForm) => YearForm) => void }) {
+  const d = st.defaults ?? emptyDefaults();
+  const setD = (patch: Partial<PurchaseDefaults>) => set((s) => ({ ...s, defaults: { ...(s.defaults ?? emptyDefaults()), ...patch } }));
+  const any = !!(d.discPct || d.duty || d.freightUnit || d.freightShip || d.financing);
+  return (
+    <details open={any} className="rounded-xl border border-accent/40 bg-accent-soft/30 p-3">
+      <summary className="cursor-pointer text-sm font-semibold text-fg">תנאים שחלים על כל הרכישות — הנחה, מכס, הובלה, אשראי</summary>
+      <p className="mt-2 text-xs text-muted">כשכל הרכישות בשאלה חולקות אותם תנאים, מזינים אותם פעם אחת כאן — במקום בכל שורה. תנאים מיוחדים של רכישה אחת מוסיפים בשורה שלה (״פרטים״).</p>
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <NumField label="הנחה על כל רכישה" suffix="%" value={d.discPct} onChange={(v) => setD({ discPct: v })} />
+        <NumField label="מכס — מהמחיר נטו" suffix="%" value={d.duty} onChange={(v) => setD({ duty: v })} />
+        <NumField label="הובלה ליחידה" suffix="₪" value={d.freightUnit} onChange={(v) => setD({ freightUnit: v })} />
+        <NumField label="הובלה לכל משלוח" suffix="₪" value={d.freightShip} onChange={(v) => setD({ freightShip: v })} />
+        <NumField label="אשראי חריג: במזומן זול ב-" suffix="%" value={d.financing} onChange={(v) => setD({ financing: v })} />
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button type="button" className={primaryBtn} onClick={() => setYear((x) => ({ ...x, purchases: x.purchases.map((p) => applyDefaults(p, d)) }))}>
+          החילו על כל הרכישות ב-{label}
+        </button>
+        <Check label="גם רכישה חדשה תיפתח עם התנאים האלה" checked={d.auto} onChange={(v) => setD({ auto: v })} />
+      </div>
+    </details>
+  );
+}
+
+type MoveRow = { kind: "buy" | "sell"; i: number; id: string; date: string; n: number };
+
+/** Every purchase and sale of the year in one table, by date; a purchase's own terms open under its row. */
+function MovementsGrid({ st, y, ay, built, solution, setYear }: { st: CalcState; y: YearForm; ay: number; built: Built; solution: Solution; setYear: (fn: (y: YearForm) => YearForm) => void }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const d = st.defaults ?? emptyDefaults();
+  const rows: MoveRow[] = [...y.purchases.map((p, i) => ({ kind: "buy" as const, i, id: p.id, date: p.date })), ...y.sales.map((x, i) => ({ kind: "sell" as const, i, id: x.id, date: x.date }))]
+    .map((x, n) => ({ ...x, n }))
+    .sort((a, b) => (a.date && b.date ? a.date.localeCompare(b.date) || a.n - b.n : a.date ? -1 : b.date ? 1 : a.n - b.n));
+  const r = solution.results?.[ay];
+  const cols = "@2xl:grid-cols-[4.5rem_9.5rem_minmax(0,1fr)_minmax(0,1fr)_7rem_auto]";
+  const hide = "@2xl:sr-only";
+  return (
+    <div className="space-y-3">
+      <div className="@container overflow-hidden rounded-xl border border-line">
+        <div className={cn("hidden gap-2 bg-surface-2/70 px-3 py-2 text-xs font-semibold text-muted @2xl:grid", cols)} aria-hidden>
+          <span>תנועה</span>
+          <span>תאריך</span>
+          <span>כמות</span>
+          <span>מחיר ליחידה</span>
+          <span>עלות / הכנסה</span>
+          <span />
+        </div>
+        {rows.length === 0 && <p className="px-3 py-4 text-sm text-muted">עוד אין תנועות. הוסיפו רכישה או מכירה.</p>}
+        <ul className="divide-y divide-line">
+          {rows.map((row) =>
+            row.kind === "buy" ? (
+              <BuyRow key={row.id} p={y.purchases[row.i]} i={row.i} ay={ay} built={built} cols={cols} hide={hide} open={open === row.id} onOpen={() => setOpen((o) => (o === row.id ? null : row.id))} setYear={setYear} />
+            ) : (
+              <SellRow key={row.id} x={y.sales[row.i]} i={row.i} ay={ay} built={built} cols={cols} hide={hide} setYear={setYear} />
+            ),
+          )}
+        </ul>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={smallBtn} onClick={() => setYear((x) => ({ ...x, purchases: [...x.purchases, d.auto ? applyDefaults(emptyPurchase(), d) : emptyPurchase()] }))}>
+          <Plus className="h-4 w-4" aria-hidden /> רכישה
+        </button>
+        <button type="button" className={smallBtn} onClick={() => setYear((x) => ({ ...x, sales: [...x.sales, emptySale()] }))}>
+          <Plus className="h-4 w-4" aria-hidden /> מכירה
+        </button>
+      </div>
+      <p className="text-xs text-muted">השורות מסודרות לפי התאריך. בשיטה תמידית (ממוצע נע) הסדר קובע את התוצאה, ולכן שם חובה תאריך לכל שורה.</p>
+      {r && (
+        <FlowStrip
+          label="גלגול כמויות"
+          boxes={[
+            { label: "מלאי פתיחה", value: `${r.openingUnits.toLocaleString("he-IL")} יח׳` },
+            { label: "+ נקנו", value: `${r.purchasesUnits.toLocaleString("he-IL")} יח׳` },
+            { label: "− נמכרו", value: `${(r.soldUnits + r.shrinkUnits).toLocaleString("he-IL")} יח׳` },
+            { label: "= מלאי סגירה", value: `${r.closingUnits.toLocaleString("he-IL", { maximumFractionDigits: 2 })} יח׳`, tone: "accent" },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
+function SellRow({ x, i, ay, built, cols, hide, setYear }: { x: SaleForm; i: number; ay: number; built: Built; cols: string; hide: string; setYear: (fn: (y: YearForm) => YearForm) => void }) {
+  const k = (s: string) => `y${ay}.s${i}.${s}`;
+  const setS = (patch: Partial<SaleForm>) => setYear((yy) => ({ ...yy, sales: yy.sales.map((z, j) => (j === i ? { ...z, ...patch } : z)) }));
+  const q = Number(x.qty.v);
+  const pr = Number(x.price.v);
+  const revenue = !x.qty.unknown && !x.price.unknown && Number.isFinite(q) && Number.isFinite(pr) && x.qty.v && x.price.v ? q * pr : null;
+  return (
+    <li className={cn("grid grid-cols-2 items-start gap-2 px-3 py-2.5", cols)}>
+      <span className="col-span-2 mt-1 inline-flex w-fit @2xl:col-span-1 rounded-md bg-fg px-2 py-0.5 text-xs font-bold text-surface @2xl:mt-2.5">מכירה {i + 1}</span>
+      <div className="col-span-2 @2xl:col-span-1">
+        <TextField label="תאריך" labelClassName={hide} type="date" value={x.date} onChange={(v) => setS({ date: v })} />
+        {built.errors[k("date")] && <p className="mt-1 text-xs text-danger">{built.errors[k("date")]}</p>}
+      </div>
+      <NumField label="כמות" labelClassName={hide} value={x.qty} onChange={(v) => setS({ qty: { ...x.qty, v } })} error={built.errors[k("qty")]} letter={built.letters[k("qty")]} onToggleUnknown={() => setS({ qty: { ...x.qty, unknown: !x.qty.unknown } })} />
+      <NumField label="מחיר מכירה ליחידה" labelClassName={hide} suffix="₪" value={x.price} onChange={(v) => setS({ price: { ...x.price, v } })} error={built.errors[k("price")]} letter={built.letters[k("price")]} onToggleUnknown={() => setS({ price: { ...x.price, unknown: !x.price.unknown } })} />
+      <p className="self-center text-sm text-muted @2xl:mt-2.5 @2xl:self-start">{revenue !== null ? <>הכנסה <Money v={revenue} /></> : "—"}</p>
+      <div className="flex justify-end gap-1">
+        <button type="button" className={smallBtn} aria-label={`הסירו את מכירה ${i + 1}`} onClick={() => setYear((yy) => ({ ...yy, sales: yy.sales.filter((_, j) => j !== i) }))}>
+          <Trash2 className="h-4 w-4" aria-hidden />
+        </button>
+      </div>
+    </li>
+  );
+}
+
+function BuyRow({ p, i, ay, built, cols, hide, open, onOpen, setYear }: { p: PurchaseForm; i: number; ay: number; built: Built; cols: string; hide: string; open: boolean; onOpen: () => void; setYear: (fn: (y: YearForm) => YearForm) => void }) {
   const k = (s: string) => `y${ay}.p${i}.${s}`;
   const err = (s: string) => built.errors[k(s)];
   const setP = (fn: (p: PurchaseForm) => PurchaseForm) => setYear((y) => ({ ...y, purchases: y.purchases.map((z, j) => (j === i ? fn(z) : z)) }));
-  const setD = (j: number, patch: Partial<DiscountForm>) => setP((x) => ({ ...x, discounts: x.discounts.map((d, n) => (n === j ? { ...d, ...patch } : d)) }));
   const engine = built.periods[ay]?.purchases[i];
   const cost = engine && !p.qty.unknown && !p.price.unknown && engine.qty > 0 ? purchaseCost(engine) : null;
+  const terms = p.discounts.length + p.extras.length + (p.financing ? 1 : 0);
   return (
-    <div className="rounded-xl border border-line p-3">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-fg">רכישה {i + 1}</p>
-        <div className="flex gap-1">
-          <button type="button" className={cn(smallBtn, "text-xs")} onClick={() => setYear((y) => ({ ...y, purchases: [...y.purchases.slice(0, i + 1), { ...structuredClone(p), id: uid() }, ...y.purchases.slice(i + 1)] }))}>
-            שכפול
+    <li className="bg-accent-soft/20">
+      <div className={cn("grid grid-cols-2 items-start gap-2 px-3 py-2.5", cols)}>
+        <span className="col-span-2 mt-1 inline-flex w-fit @2xl:col-span-1 rounded-md bg-accent px-2 py-0.5 text-xs font-bold text-accent-fg @2xl:mt-2.5">רכישה {i + 1}</span>
+        <div className="col-span-2 @2xl:col-span-1">
+          <TextField label="תאריך" labelClassName={hide} type="date" value={p.date} onChange={(v) => setP((x) => ({ ...x, date: v }))} />
+          {err("date") && <p className="mt-1 text-xs text-danger">{err("date")}</p>}
+        </div>
+        <NumField label="כמות" labelClassName={hide} value={p.qty} onChange={(v) => setP((x) => ({ ...x, qty: { ...x.qty, v } }))} error={err("qty")} letter={built.letters[k("qty")]} onToggleUnknown={() => setP((x) => ({ ...x, qty: { ...x.qty, unknown: !x.qty.unknown } }))} />
+        <NumField label="מחיר קנייה ליחידה" labelClassName={hide} suffix="₪" value={p.price} onChange={(v) => setP((x) => ({ ...x, price: { ...x.price, v } }))} error={err("price")} letter={built.letters[k("price")]} onToggleUnknown={() => setP((x) => ({ ...x, price: { ...x.price, unknown: !x.price.unknown } }))} />
+        <p className="self-center text-sm text-muted @2xl:mt-2.5 @2xl:self-start" aria-live="polite">
+          {cost ? (
+            <>
+              <Money v={cost.perUnit} /> ליח׳
+            </>
+          ) : (
+            "—"
+          )}
+        </p>
+        <div className="flex flex-wrap justify-end gap-1">
+          <button type="button" className={cn(smallBtn, "px-2 text-xs")} aria-expanded={open} onClick={onOpen}>
+            <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} aria-hidden /> פרטים{terms ? ` (${terms})` : ""}
+          </button>
+          <button type="button" className={cn(smallBtn, "px-2 text-xs")} aria-label={`שכפלו את רכישה ${i + 1}`} onClick={() => setYear((y) => ({ ...y, purchases: [...y.purchases.slice(0, i + 1), { ...structuredClone(p), id: uid() }, ...y.purchases.slice(i + 1)] }))}>
+            <Copy className="h-4 w-4" aria-hidden />
           </button>
           <button type="button" className={smallBtn} aria-label={`הסירו את רכישה ${i + 1}`} onClick={() => setYear((y) => ({ ...y, purchases: y.purchases.filter((_, j) => j !== i) }))}>
             <Trash2 className="h-4 w-4" aria-hidden />
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div>
-          <TextField label="תאריך" type="date" value={p.date} onChange={(v) => setP((x) => ({ ...x, date: v }))} />
-          {err("date") && <p className="mt-1 text-xs text-danger">{err("date")}</p>}
-        </div>
-        <NumField label="כמות" value={p.qty} onChange={(v) => setP((x) => ({ ...x, qty: { ...x.qty, v } }))} error={err("qty")} letter={built.letters[k("qty")]} onToggleUnknown={() => setP((x) => ({ ...x, qty: { ...x.qty, unknown: !x.qty.unknown } }))} />
-        <NumField label="מחיר ליחידה" suffix="₪" value={p.price} onChange={(v) => setP((x) => ({ ...x, price: { ...x.price, v } }))} error={err("price")} letter={built.letters[k("price")]} onToggleUnknown={() => setP((x) => ({ ...x, price: { ...x.price, unknown: !x.price.unknown } }))} />
-      </div>
-      {cost && (
-        <p className="mt-2 text-xs text-muted" aria-live="polite">
-          עלות הרכישה: <Money v={cost.total} /> (<Money v={cost.perUnit} /> ליחידה)
+      {cost && (cost.excluded > 0 || cost.financing > 0 || cost.total !== cost.gross) && (
+        <p className="px-3 pb-2 text-xs text-muted">
+          עלות הרכישה <Money v={cost.total} />
           {cost.excluded > 0 && <> · מחוץ לעלות: <Money v={cost.excluded} /></>}
           {cost.financing > 0 && <> · הוצאות מימון: <Money v={cost.financing} /></>}
         </p>
       )}
-      <button type="button" className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-accent" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} aria-hidden /> עלויות נלוות והנחות
-      </button>
       {open && (
-        <div className="mt-3 space-y-4 border-t border-line pt-3">
+        <div className="border-t border-line bg-surface px-3 py-3">
+          <PurchaseTerms p={p} i={i} ay={ay} built={built} setP={setP} setYear={setYear} />
+        </div>
+      )}
+    </li>
+  );
+}
+
+/** One purchase's own discounts, credit terms and extra costs. */
+function PurchaseTerms({ p, i, ay, built, setP, setYear }: { p: PurchaseForm; i: number; ay: number; built: Built; setP: (fn: (p: PurchaseForm) => PurchaseForm) => void; setYear: (fn: (y: YearForm) => YearForm) => void }) {
+  const k = (s: string) => `y${ay}.p${i}.${s}`;
+  const err = (s: string) => built.errors[k(s)];
+  const setD = (j: number, patch: Partial<DiscountForm>) => setP((x) => ({ ...x, discounts: x.discounts.map((d, n) => (n === j ? { ...d, ...patch } : d)) }));
+  return (
+        <div className="space-y-4">
           <div className="space-y-3">
             <p className="text-[13px] font-semibold text-fg">הנחות (על מחיר הרכישה בלבד)</p>
             {p.discounts.map((d, j) => {
@@ -671,8 +774,6 @@ function PurchaseRow({ p, i, ay, built, setYear }: { p: PurchaseForm; i: number;
             </div>
           </div>
         </div>
-      )}
-    </div>
   );
 }
 
@@ -688,7 +789,25 @@ function KnownsStep({ st, set, built }: { st: CalcState; set: Update; built: Bui
             <Select label="מה ידוע" value={k.metric} onChange={(v) => setK({ metric: v })} options={METRICS} />
             {st.years.length > 1 && <Select label="שנה" value={String(k.year)} onChange={(v) => setK({ year: Number(v) })} options={st.years.map((y, j) => [String(j), y.label])} />}
             {needsIndex && <NumField label={k.metric === "saleCost" ? "מכירה מס'" : "רכישה מס'"} value={k.index} onChange={(v) => setK({ index: v })} error={built.errors[`k${i}.idx`]} />}
-            <NumField label="ערך" suffix={k.metric === "gpPct" ? "%" : k.metric === "closingUnits" ? "יח'" : "₪"} value={k.value} onChange={(v) => setK({ value: v })} error={built.errors[`k${i}`]} />
+            {k.metric === "gpPctChange" && (
+              <Select
+                label="לעומת השנה הקודמת"
+                value={k.dir ?? "up"}
+                onChange={(v) => setK({ dir: v })}
+                options={[
+                  ["up", "גבוה יותר ב-"],
+                  ["down", "נמוך יותר ב-"],
+                ]}
+              />
+            )}
+            <NumField
+              label={k.metric === "gpPctChange" ? "בכמה נקודות אחוז" : "ערך"}
+              suffix={k.metric === "gpPct" || k.metric === "gpPctChange" ? "%" : k.metric === "closingUnits" ? "יח'" : "₪"}
+              value={k.value}
+              onChange={(v) => setK({ value: v })}
+              error={built.errors[`k${i}`]}
+            />
+            {k.metric === "gpPctChange" && <p className="text-xs text-muted sm:col-span-2">למשל ״שיעור הרווח הגולמי עלה ב-2% לעומת אשתקד״ — בחרו את השנה שעליה מדובר, ״גבוה יותר״ ו-2.</p>}
             <button type="button" className={cn(smallBtn, "justify-self-start")} aria-label="הסירו נתון" onClick={() => set((s) => ({ ...s, knowns: s.knowns.filter((_, j) => j !== i) }))}>
               <Trash2 className="h-4 w-4" aria-hidden />
             </button>
@@ -777,7 +896,7 @@ function Summary({ st, built, solution, go }: { st: CalcState; built: Built; sol
 // ---------------------------------------------------------------------------
 // The solution panel.
 
-function Results({ st, built, solution, method }: { st: CalcState; built: Built; solution: Solution; method: Method }) {
+function Results({ st, set, built, solution, method }: { st: CalcState; set: Update; built: Built; solution: Solution; method: Method }) {
   const ay = Math.min(st.activeYear, st.years.length - 1);
   const [sys, setSys] = useState<System | null>(null);
   const [guided, setGuided] = useState(false);
@@ -812,6 +931,26 @@ function Results({ st, built, solution, method }: { st: CalcState; built: Built;
         </p>
         <Check label="נסו קודם בעצמכם" checked={guided} onChange={(v) => { setGuided(v); setReveal(1); }} />
       </div>
+      {st.years.length > 1 && (
+        <div className="flex flex-wrap items-center gap-1" role="group" aria-label="השנה שבפתרון">
+          <span className="me-1 text-xs text-muted">הפתרון לשנה:</span>
+          {st.years.map((yy, i) => (
+            <button key={yy.id} type="button" aria-pressed={ay === i} onClick={() => set((s) => ({ ...s, activeYear: i }))} className={cn(smallBtn, "min-h-8 px-2.5 py-1 text-xs", ay === i && "bg-accent text-accent-fg ring-accent")}>
+              {yy.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {ay > 0 && st.years[ay].fromPrev && solution.results?.[ay - 1] && (
+        <FlowStrip
+          label="גלגול יתרות"
+          boxes={[
+            { label: `מלאי סגירה בספרים ${solution.results[ay - 1].label}`, value: `${m(solution.results[ay - 1].closingCarrying)} ₪` },
+            { label: "עובר שנה", value: "" },
+            { label: `מלאי פתיחה ${r.label}`, value: `${m(r.openingCost)} ₪`, tone: "accent" },
+          ]}
+        />
+      )}
       <p className="sr-only" aria-live="polite">
         עלות המכר {m(r.cogs)}, רווח גולמי {m(r.grossProfit)}
       </p>

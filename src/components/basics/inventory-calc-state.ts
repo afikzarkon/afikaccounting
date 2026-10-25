@@ -31,8 +31,12 @@ export type DiscountForm = {
   controlled: boolean;
   expected: boolean;
   achieved: boolean;
+  /** Added by the shared settings for all purchases; replaced when they are applied again. */
+  global?: boolean;
 };
-export type ExtraForm = { category: ExtraCategory; label: string; amount: string; basis: ExtraBasis; packSize: string; kgPerUnit: string; include: "auto" | "in" | "out" };
+export type ExtraForm = { category: ExtraCategory; label: string; amount: string; basis: ExtraBasis; packSize: string; kgPerUnit: string; include: "auto" | "in" | "out"; global?: boolean };
+/** Terms that every purchase in the question shares, typed once. */
+export type PurchaseDefaults = { discPct: string; duty: string; freightUnit: string; freightShip: string; financing: string; auto: boolean };
 export type PurchaseForm = { id: string; date: string; qty: F; price: F; discounts: DiscountForm[]; financing: string; extras: ExtraForm[] };
 export type SaleForm = { id: string; date: string; qty: F; price: F };
 export type YearForm = {
@@ -58,8 +62,11 @@ export type YearForm = {
   saleDiscPct: string;
   counted: string;
 };
-export type KnownForm = { id: string; year: number; metric: Metric; index: string; value: string };
-export type TableForm = { years: { label: string; founded: boolean; soldPct: string; cells: Record<TableRow, string> }[]; chain: boolean };
+export type KnownForm = { id: string; year: number; metric: Metric; index: string; value: string; /** For a change in margin: up or down on last year. */ dir?: "up" | "down" };
+export type TableForm = {
+  years: { label: string; founded: boolean; soldPct: string; cells: Record<TableRow, string>; gpDelta?: string; gpDir?: "up" | "down" }[];
+  chain: boolean;
+};
 export type FireForm = {
   basis: "gp" | "history";
   gpYears: { label: string; netSales: string; cogs: string }[];
@@ -102,6 +109,7 @@ export type CalcState = {
   table: TableForm;
   fire: FireForm;
   example: string;
+  defaults?: PurchaseDefaults;
 };
 
 let seq = 0;
@@ -112,6 +120,22 @@ const s = (v: number | undefined) => (v === undefined ? "" : String(v));
 export const emptyDiscount = (): DiscountForm => ({ kind: "qty-whole", threshold: "", pct: f(undefined), amount: "", from: "", to: "", controlled: false, expected: false, achieved: false });
 export const emptyExtra = (category: ExtraCategory, basis: ExtraBasis = "per-unit"): ExtraForm => ({ category, label: "", amount: "", basis, packSize: "", kgPerUnit: "", include: "auto" });
 export const emptyPurchase = (): PurchaseForm => ({ id: uid(), date: "", qty: f(undefined), price: f(undefined), discounts: [], financing: "", extras: [] });
+export const emptyDefaults = (): PurchaseDefaults => ({ discPct: "", duty: "", freightUnit: "", freightShip: "", financing: "", auto: true });
+
+/** A purchase with the shared terms in place of any it had from them before; its own terms stay. */
+export function applyDefaults(p: PurchaseForm, d: PurchaseDefaults): PurchaseForm {
+  const discounts = p.discounts.filter((x) => !x.global);
+  if (d.discPct.trim()) discounts.push({ ...emptyDiscount(), kind: "qty-whole", threshold: "0", pct: { v: d.discPct, unknown: false }, global: true });
+  const extras = p.extras.filter((x) => !x.global);
+  const add = (category: ExtraCategory, basis: ExtraBasis, amount: string, label: string) => {
+    if (amount.trim()) extras.push({ ...emptyExtra(category, basis), amount, label, global: true });
+  };
+  add("duty", "pct-of-net-price", d.duty, "מכס (לכל הרכישות)");
+  add("freight", "per-unit", d.freightUnit, "הובלה ליחידה (לכל הרכישות)");
+  add("freight", "per-shipment", d.freightShip, "הובלה למשלוח (לכל הרכישות)");
+  return { ...p, discounts, extras, financing: d.financing.trim() ? d.financing : p.financing };
+}
+
 export const emptySale = (): SaleForm => ({ id: uid(), date: "", qty: f(undefined), price: f(undefined) });
 export const emptyYear = (label: string, first: boolean): YearForm => ({
   id: uid(),
@@ -255,6 +279,8 @@ function tableForm(t: TableInput): TableForm {
       label: y.label,
       founded: !!y.founded,
       soldPct: y.cogsPctOfPurchases ? pctStr(y.cogsPctOfPurchases) : "",
+      gpDelta: y.gpPctDelta ? pctStr(Math.abs(y.gpPctDelta)) : "",
+      gpDir: y.gpPctDelta && y.gpPctDelta < 0 ? "down" : "up",
       cells: Object.fromEntries(TABLE_ROWS.map((r) => {
         const c = y.cells[r];
         return [r, c === "?" ? "?" : typeof c === "number" ? (r === "gpPct" ? pctStr(c) : String(c)) : ""];
@@ -309,7 +335,14 @@ export function fromExample(e: CalcExample): CalcState {
     roundDigits: r && r.mode !== "exact" ? String(r.digits) : "2",
     carryWriteDown: !!e.carryWriteDown,
     years: e.periods ? e.periods.map((p, t) => yearForm(p, t, us)) : st.years,
-    knowns: (e.knowns ?? []).map((k) => ({ id: uid(), year: k.year, metric: k.metric, index: k.index === undefined ? "" : String(k.index + 1), value: k.metric === "gpPct" ? pctStr(k.value) : String(k.value) })),
+    knowns: (e.knowns ?? []).map((k) => ({
+      id: uid(),
+      year: k.year,
+      metric: k.metric,
+      index: k.index === undefined ? "" : String(k.index + 1),
+      value: k.metric === "gpPct" ? pctStr(k.value) : k.metric === "gpPctChange" ? pctStr(Math.abs(k.value)) : String(k.value),
+      dir: k.metric === "gpPctChange" && k.value < 0 ? "down" : "up",
+    })),
     asks: us.length ? ["ערך נעלם"] : e.tab === "fire" ? ["שיפוי ביטוח"] : [],
     table: e.table ? tableForm(e.table) : st.table,
     fire: e.fire ? fireForm(e.fire) : st.fire,
@@ -463,7 +496,10 @@ export function build(st: CalcState): Built {
   const knowns: Known[] = [];
   for (const [i, x] of st.knowns.entries()) {
     const key = `k${i}`;
-    const v = amount(key, x.value, { required: true, pct: x.metric === "gpPct" });
+    const change = x.metric === "gpPctChange";
+    if (change && x.year === 0) errors[key] = "שינוי בשיעור הגולמי צריך שנה קודמת — בחרו שנה שנייה ואילך.";
+    const raw = amount(key, x.value, { required: true, pct: x.metric === "gpPct" || change });
+    const v = raw !== undefined && change && x.dir === "down" ? -raw : raw;
     const needsIndex = x.metric === "saleCost" || x.metric === "purchaseDiscount" || x.metric === "purchaseTotal";
     const idx = needsIndex ? amount(`${key}.idx`, x.index, { positive: true, required: true }) : undefined;
     if (x.year >= st.years.length) errors[key] = "השנה הוסרה.";
@@ -481,6 +517,7 @@ export function buildTable(t: TableForm): { input: TableInput; errors: Record<st
     label: y.label || `שנה ${i + 1}`,
     founded: i === 0 && y.founded,
     cogsPctOfPurchases: y.soldPct.trim() ? num(y.soldPct) / 100 : undefined,
+    gpPctDelta: i > 0 && (y.gpDelta ?? "").trim() && Number.isFinite(num(y.gpDelta!)) ? ((y.gpDir === "down" ? -1 : 1) * num(y.gpDelta!)) / 100 : undefined,
     cells: Object.fromEntries(
       TABLE_ROWS.map((r) => {
         const raw = y.cells[r].trim();

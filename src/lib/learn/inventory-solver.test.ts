@@ -116,7 +116,42 @@ describe("A6 · the page's table", () => {
     near(a.gpPct!, 0.4323, 0.00005);
     assert.deepEqual([b.opening, b.netPurchases, b.cogs, b.netSales, b.custDiscounts], [80_000, 388_000, 373_000, 610_000, 10_000]);
   });
+  it("finishes a year before the next, and opens each year from last year's closing", () => {
+    const steps = solveTable(DAF).steps;
+    const years = steps.map((s) => s.year);
+    assert.deepEqual(years, [...years].sort((x, y) => x - y));
+    assert.equal(steps.find((s) => s.year === 1)!.row, "opening");
+    assert.ok(steps.every((s) => s.why.length > 0));
+  });
+  it("a margin given as a change on last year", () => {
+    const r = solveTable({
+      years: [
+        { label: "1", founded: true, cells: { netSales: 100_000, closing: 10_000, netPurchases: 70_000 } },
+        { label: "2", cells: { netSales: 200_000, netPurchases: "?", closing: 20_000, gpPct: "?" }, gpPctDelta: -0.05 },
+      ],
+    });
+    near(r.values[0].gpPct!, 0.4, 1e-9);
+    near(r.values[1].gpPct!, 0.35, 1e-9);
+    near(r.values[1].cogs!, 130_000);
+    near(r.values[1].netPurchases!, 140_000);
+  });
 });
+
+describe("unknowns: a margin up or down on last year", () => {
+  it("finds this year's sale price from last year's margin plus the change", () => {
+    const periods: Period[] = [
+      { label: "1", opening: { units: 0, cost: 0 }, purchases: [B(undefined, 100, 10)], sales: [S(undefined, 80, 20)] },
+      { label: "2", purchases: [B(undefined, 100, 10)], sales: [S(undefined, 100, 0)] },
+    ];
+    const us: Unknown[] = [{ id: "p", label: "מחיר", ref: { t: "sale", year: 1, index: 0, field: "unitPrice" } }];
+    // Year 1: sales 1,600 on cost 800, a 50% margin. Year 2 is ten points lower: 40% on cost 1,000, so sales of 1,666.67.
+    const k: Known[] = [{ year: 1, metric: "gpPctChange", value: -0.1 }];
+    const sol = solveUnknowns(periods, "fifo", us, k);
+    assert.ok(sol.ok, sol.error);
+    near(sol.values.p, 1000 / 0.6 / 100, 1e-6);
+  });
+});
+
 
 describe("table: random consistent tables with holes", () => {
   it("recovers what the equations reach, and reports what they can't", () => {
