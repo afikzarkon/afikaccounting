@@ -6,6 +6,7 @@
 
 import { parseNumber } from "@/components/study/inputs";
 import {
+  type ClaimTerms,
   type DiscountRule,
   type ExtraBasis,
   type ExtraCategory,
@@ -17,7 +18,7 @@ import {
   type Sale,
   type System,
 } from "@/lib/learn/inventory";
-import { type CalcExample, type FireSetup, anyExample } from "@/lib/learn/inventory-examples";
+import type { CalcExample, FireSetup } from "@/lib/learn/inventory-examples";
 import { type Known, type Metric, TABLE_ROWS, type TableInput, type TableRow, type Unknown } from "@/lib/learn/inventory-solver";
 
 export type F = { v: string; unknown: boolean };
@@ -35,8 +36,10 @@ export type DiscountForm = {
   global?: boolean;
 };
 export type ExtraForm = { category: ExtraCategory; label: string; amount: string; basis: ExtraBasis; packSize: string; kgPerUnit: string; include: "auto" | "in" | "out"; global?: boolean };
-/** Terms that every purchase in the question shares, typed once. */
-export type PurchaseDefaults = { discPct: string; duty: string; freightUnit: string; freightShip: string; financing: string; auto: boolean };
+/** A purchase's own terms, without the purchase: what the shared terms hold. */
+export type PurchaseTermsForm = Pick<PurchaseForm, "discounts" | "extras" | "financing">;
+/** Terms that every purchase shares, typed once with the same options as a single purchase; any there are apply to all of them (`on` is kept for forms saved when it was a switch). */
+export type PurchaseDefaults = { on: boolean; template: PurchaseTermsForm };
 export type PurchaseForm = { id: string; date: string; qty: F; price: F; discounts: DiscountForm[]; financing: string; extras: ExtraForm[] };
 export type SaleForm = { id: string; date: string; qty: F; price: F };
 export type YearForm = {
@@ -48,7 +51,8 @@ export type YearForm = {
   openCost: F;
   purchases: PurchaseForm[];
   sales: SaleForm[];
-  nrvMode: "none" | "unit" | "build" | "total";
+  /** "above": the question says only that NRV is above cost — nothing to write down. */
+  nrvMode: "none" | "above" | "unit" | "build" | "total";
   nrvUnit: string;
   nrvPrice: string;
   nrvCompletion: string;
@@ -61,6 +65,8 @@ export type YearForm = {
   saleDiscThreshold: string;
   saleDiscPct: string;
   counted: string;
+  /** The order the purchases and sales were typed in, by id; rows not listed follow. */
+  order?: string[];
 };
 export type KnownForm = { id: string; year: number; metric: Metric; index: string; value: string; /** For a change in margin: up or down on last year. */ dir?: "up" | "down" };
 export type TableForm = {
@@ -78,6 +84,8 @@ export type FireForm = {
   savedAtPrice: boolean;
   policy: Method;
   savedUnits: string;
+  /** The day of the fire, ISO; purchases and sales after it are left out of the claim. */
+  fireDate?: string;
   dedKind: "pct" | "fixed";
   dedValue: string;
   cap: string;
@@ -86,14 +94,13 @@ export type FireForm = {
 };
 
 export type Tab = "full" | "table" | "fire";
-export const ASKS = ["מלאי סגירה", "עלות המכר", "רווח גולמי", "שיעור גולמי", "ערך נעלם", "שיפוי ביטוח"] as const;
+/** The full question's three steps: the data, the events and givens, the results. */
+export const STEP_COUNT = 3;
 
 export type CalcState = {
   v: 1;
   tab: Tab;
   step: number;
-  visited: number[];
-  asks: string[];
   company: string;
   method: Method | "compare";
   system: System;
@@ -110,6 +117,8 @@ export type CalcState = {
   fire: FireForm;
   example: string;
   defaults?: PurchaseDefaults;
+  /** A fire (or other loss) during the last year, claimed from the history typed in the question. */
+  fireEvent?: boolean;
 };
 
 let seq = 0;
@@ -120,20 +129,19 @@ const s = (v: number | undefined) => (v === undefined ? "" : String(v));
 export const emptyDiscount = (): DiscountForm => ({ kind: "qty-whole", threshold: "", pct: f(undefined), amount: "", from: "", to: "", controlled: false, expected: false, achieved: false });
 export const emptyExtra = (category: ExtraCategory, basis: ExtraBasis = "per-unit"): ExtraForm => ({ category, label: "", amount: "", basis, packSize: "", kgPerUnit: "", include: "auto" });
 export const emptyPurchase = (): PurchaseForm => ({ id: uid(), date: "", qty: f(undefined), price: f(undefined), discounts: [], financing: "", extras: [] });
-export const emptyDefaults = (): PurchaseDefaults => ({ discPct: "", duty: "", freightUnit: "", freightShip: "", financing: "", auto: true });
+export const emptyDefaults = (): PurchaseDefaults => ({ on: false, template: { discounts: [], extras: [], financing: "" } });
+/** The shared terms of a saved form, whatever version saved it. */
+export const defaultsOf = (st: Pick<CalcState, "defaults">): PurchaseDefaults => ({ ...emptyDefaults(), ...st.defaults, template: { ...emptyDefaults().template, ...st.defaults?.template } });
 
-/** A purchase with the shared terms in place of any it had from them before; its own terms stay. */
+/** A purchase with the shared terms after its own: its own discounts and extras first, then the shared ones. */
 export function applyDefaults(p: PurchaseForm, d: PurchaseDefaults): PurchaseForm {
-  const discounts = p.discounts.filter((x) => !x.global);
-  if (d.discPct.trim()) discounts.push({ ...emptyDiscount(), kind: "qty-whole", threshold: "0", pct: { v: d.discPct, unknown: false }, global: true });
-  const extras = p.extras.filter((x) => !x.global);
-  const add = (category: ExtraCategory, basis: ExtraBasis, amount: string, label: string) => {
-    if (amount.trim()) extras.push({ ...emptyExtra(category, basis), amount, label, global: true });
+  const t = d.template;
+  return {
+    ...p,
+    discounts: [...p.discounts.filter((x) => !x.global), ...t.discounts.map((x) => ({ ...x, global: true }))],
+    extras: [...p.extras.filter((x) => !x.global), ...t.extras.map((x) => ({ ...x, global: true }))],
+    financing: t.financing.trim() ? t.financing : p.financing,
   };
-  add("duty", "pct-of-net-price", d.duty, "מכס (לכל הרכישות)");
-  add("freight", "per-unit", d.freightUnit, "הובלה ליחידה (לכל הרכישות)");
-  add("freight", "per-shipment", d.freightShip, "הובלה למשלוח (לכל הרכישות)");
-  return { ...p, discounts, extras, financing: d.financing.trim() ? d.financing : p.financing };
 }
 
 export const emptySale = (): SaleForm => ({ id: uid(), date: "", qty: f(undefined), price: f(undefined) });
@@ -186,8 +194,6 @@ export function emptyState(): CalcState {
     v: 1,
     tab: "full",
     step: 0,
-    visited: [0],
-    asks: [],
     company: "",
     method: "fifo",
     system: "periodic",
@@ -195,7 +201,7 @@ export function emptyState(): CalcState {
     roundDigits: "2",
     carryWriteDown: false,
     salesFirst: false,
-    years: [emptyYear("2025", true)],
+    years: [emptyYear(String(new Date().getFullYear()), true)],
     activeYear: 0,
     knowns: [],
     payable: "ספקים",
@@ -204,6 +210,60 @@ export function emptyState(): CalcState {
     fire: emptyFire(),
     example: "",
   };
+}
+
+// ---------------------------------------------------------------------------
+// Quick entry: short dates, and a question's table pasted as text.
+
+/** The year a short date like "5.1" belongs to: the year's label when it is a year, else this year. */
+export const yearOf = (y: Pick<YearForm, "label">) => (/^\d{4}$/.test(y.label.trim()) ? y.label.trim() : String(new Date().getFullYear()));
+
+/** "5.1", "5/1", "5.1.25" or "5.1.2025" → an ISO date; "" for an empty cell; null when it isn't a date. */
+export function parseDay(text: string, year: string): string | null {
+  const t = text.trim();
+  if (!t) return "";
+  const m = t.match(/^(\d{1,2})[./-](\d{1,2})(?:[./-](\d{2}|\d{4}))?$/);
+  if (!m) return null;
+  const d = Number(m[1]);
+  const mo = Number(m[2]);
+  if (d < 1 || d > 31 || mo < 1 || mo > 12) return null;
+  const yr = m[3] ? (m[3].length === 2 ? `20${m[3]}` : m[3]) : year;
+  return `${yr}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+/** An ISO date as the question writes it: "5.1", with the year only when it isn't the question's. */
+export function showDay(iso: string, year: string): string {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return iso;
+  const dm = `${Number(m[3])}.${Number(m[2])}`;
+  return m[1] === year ? dm : `${dm}.${m[1]}`;
+}
+
+export type PastedMove = { kind: "buy" | "sell"; date: string; qty: F; price: F };
+
+/**
+ * A question's table, pasted line by line: each line a purchase or a sale, a date
+ * if there is one, then the quantity and the price ("?" for an unknown).
+ */
+export function parseMoves(text: string, year: string): { moves: PastedMove[]; skipped: string[] } {
+  const moves: PastedMove[] = [];
+  const skipped: string[] = [];
+  const cell = (x?: string): F => (x === "?" ? { v: "", unknown: true } : { v: x ?? "", unknown: false });
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    const kind = /מכ|נמכר|sale|sell|sold/i.test(line) ? "sell" : /קנ|רכ|נקנ|buy|bought|purchase/i.test(line) ? "buy" : null;
+    const dm = line.match(/\d{1,2}[./]\d{1,2}(?:[./]\d{2,4})?/);
+    const date = dm ? (parseDay(dm[0], year) ?? "") : "";
+    const rest = dm ? line.replace(dm[0], " ") : line;
+    const nums = [...rest.matchAll(/\?|\d[\d,]*(?:\.\d+)?/g)].map((x) => x[0].replace(/,/g, ""));
+    if (!kind || !nums.length) {
+      skipped.push(line);
+      continue;
+    }
+    moves.push({ kind, date, qty: cell(nums[0]), price: cell(nums[1]) });
+  }
+  return { moves, skipped };
 }
 
 // ---------------------------------------------------------------------------
@@ -297,6 +357,7 @@ function fireForm(x: FireSetup): FireForm {
       basis: "history",
       policy: x.method,
       savedUnits: String(x.savedUnits),
+      fireDate: x.fireDate ?? "",
       dedKind: x.terms?.deductible?.kind ?? "pct",
       dedValue: x.terms?.deductible ? (x.terms.deductible.kind === "pct" ? pctStr(x.terms.deductible.value) : String(x.terms.deductible.value)) : "",
       cap: s(x.terms?.cap),
@@ -324,9 +385,13 @@ export function fromExample(e: CalcExample): CalcState {
   const st = emptyState();
   const us = e.unknowns ?? [];
   const r = e.rounding;
+  const years = e.periods ? e.periods.map((p, t) => yearForm(p, t, us)) : st.years;
+  // Terms every purchase shares are shown once, in the shared panel, as a student would type them.
+  const first = years.find((y) => y.purchases.length)?.purchases[0];
+  const defaults: PurchaseDefaults | undefined =
+    e.sharedTerms && first ? { on: true, template: { discounts: first.discounts, extras: first.extras, financing: first.financing } } : undefined;
   return {
     ...st,
-    tab: e.tab,
     example: e.id,
     company: e.title.split(" — ")[0],
     method: e.method ?? "fifo",
@@ -334,7 +399,8 @@ export function fromExample(e: CalcExample): CalcState {
     rounding: r?.mode ?? "exact",
     roundDigits: r && r.mode !== "exact" ? String(r.digits) : "2",
     carryWriteDown: !!e.carryWriteDown,
-    years: e.periods ? e.periods.map((p, t) => yearForm(p, t, us)) : st.years,
+    years: defaults ? years.map((y) => ({ ...y, purchases: y.purchases.map((p) => ({ ...p, discounts: [], extras: [], financing: "" })) })) : years,
+    defaults,
     knowns: (e.knowns ?? []).map((k) => ({
       id: uid(),
       year: k.year,
@@ -343,16 +409,15 @@ export function fromExample(e: CalcExample): CalcState {
       value: k.metric === "gpPct" ? pctStr(k.value) : k.metric === "gpPctChange" ? pctStr(Math.abs(k.value)) : String(k.value),
       dir: k.metric === "gpPctChange" && k.value < 0 ? "down" : "up",
     })),
-    asks: us.length ? ["ערך נעלם"] : e.tab === "fire" ? ["שיפוי ביטוח"] : [],
     table: e.table ? tableForm(e.table) : st.table,
     fire: e.fire ? fireForm(e.fire) : st.fire,
-    step: us.length ? 7 : 2,
-    visited: Array.from({ length: 9 }, (_, i) => i),
+    // A loaded example opens on its answer; a fire claimed by a cost formula is an event of the same question.
+    tab: e.fire?.basis === "history" ? "full" : e.tab,
+    fireEvent: e.fire?.basis === "history",
+    step: STEP_COUNT - 1,
   };
 }
 
-export const DEFAULT_EXAMPLE = "tzlil";
-export const defaultState = () => fromExample(anyExample(DEFAULT_EXAMPLE)!);
 
 // ---------------------------------------------------------------------------
 // Form → engine.
@@ -398,19 +463,28 @@ export function build(st: CalcState): Built {
     return opts.pct ? v / 100 : v;
   };
 
+  // Shared terms, while switched on, sit on every purchase as if typed in each one; their errors belong to the shared panel ("tpl.").
+  const d = defaultsOf(st);
+  const shared = d.template.discounts.length || d.template.extras.length || d.template.financing.trim() ? d : null;
+  let discAdded = false;
   const periods: Period[] = st.years.map((y, t) => {
+    // With more than one year, "sale 1" needs its year to say which.
+    const inYear = st.years.length > 1 ? ` ב-${y.label || `שנה ${t + 1}`}` : "";
     const k = (s: string) => `y${t}.${s}`;
-    const purchases: Purchase[] = y.purchases.map((p, i) => {
+    const ps = shared ? y.purchases.map((p) => applyDefaults(p, shared)) : y.purchases;
+    const purchases: Purchase[] = ps.map((p, i) => {
       const pk = (s: string) => k(`p${i}.${s}`);
+      const ownD = p.discounts.filter((x) => !x.global).length;
+      const ownE = p.extras.filter((x) => !x.global).length;
       if (perpetual && !p.date) errors[pk("date")] = "בשיטה תמידית הסדר הכרונולוגי קובע — הזינו תאריך לכל שורה.";
       let qty = 0;
       let price = 0;
-      if (p.qty.unknown) addU(pk("qty"), `כמות ברכישה ${i + 1}`, { t: "purchase", year: t, index: i, field: "qty" }, num(p.qty.v) || 100);
+      if (p.qty.unknown) addU(pk("qty"), `כמות ברכישה ${i + 1}${inYear}`, { t: "purchase", year: t, index: i, field: "qty" }, num(p.qty.v) || 100);
       else qty = amount(pk("qty"), p.qty.v, { positive: true, required: true }) ?? 0;
-      if (p.price.unknown) addU(pk("price"), `מחיר ליחידה ברכישה ${i + 1}`, { t: "purchase", year: t, index: i, field: "unitPrice" }, num(p.price.v) || 10);
+      if (p.price.unknown) addU(pk("price"), `מחיר ליחידה ברכישה ${i + 1}${inYear}`, { t: "purchase", year: t, index: i, field: "unitPrice" }, num(p.price.v) || 10);
       else price = amount(pk("price"), p.price.v, { min: 0, required: true }) ?? 0;
       const discounts: DiscountRule[] = p.discounts.map((d, j) => {
-        const dk = (s: string) => pk(`d${j}.${s}`);
+        const dk = (s: string) => (d.global ? `tpl.d${j - ownD}.${s}` : pk(`d${j}.${s}`));
         const from = d.from || undefined;
         const to = d.to || undefined;
         const pct = d.pct.unknown ? 0.05 : (amount(dk("pct"), d.pct.v, { pct: true, required: d.kind !== "per-unit-above" }) ?? 0);
@@ -426,7 +500,7 @@ export function build(st: CalcState): Built {
         }
       });
       const extras: ExtraCost[] = p.extras.map((e, j) => {
-        const ek = (s: string) => pk(`e${j}.${s}`);
+        const ek = (s: string) => (e.global ? `tpl.e${j - ownE}.${s}` : pk(`e${j}.${s}`));
         const isPct = e.basis === "pct-of-net-price";
         return {
           category: e.category,
@@ -438,20 +512,23 @@ export function build(st: CalcState): Built {
           include: e.include === "auto" ? undefined : e.include === "in",
         };
       });
-      const financingPct = amount(pk("financing"), p.financing, { pct: true });
+      const financingPct = amount(shared?.template.financing.trim() ? "tpl.financing" : pk("financing"), p.financing, { pct: true });
       return { id: p.id, label: `רכישה ${i + 1}${p.date ? ` (${p.date.split("-").reverse().map((x, n) => (n < 2 ? String(Number(x)) : x)).join(".")})` : ""}`, date: p.date || undefined, qty, unitPrice: price, discounts, financingPct, extras };
     });
-    if (y.purchases.some((p) => p.discounts.some((d) => d.pct.unknown)))
-      addU(k("disc"), `שיעור ההנחה (${y.label})`, { t: "discountPct", year: t }, 0.05);
+    // A rate marked "?" is the question's one rate: "a fixed rate in every such purchase", whatever the year.
+    if (!discAdded && ps.some((p) => p.discounts.some((d) => d.pct.unknown))) {
+      discAdded = true;
+      addU("disc", "שיעור ההנחה", { t: "discountPct", year: t, allYears: true }, 0.05);
+    }
     const sales: Sale[] = y.sales.map((x, i) => {
       const sk = (s: string) => k(`s${i}.${s}`);
       if (perpetual && !x.date) errors[sk("date")] = "בשיטה תמידית הסדר הכרונולוגי קובע — הזינו תאריך לכל שורה.";
       let qty = 0;
       let price: number | undefined;
-      if (x.qty.unknown) addU(sk("qty"), `כמות במכירה ${i + 1}`, { t: "sale", year: t, index: i, field: "qty" }, num(x.qty.v) || 100);
+      if (x.qty.unknown) addU(sk("qty"), `כמות במכירה ${i + 1}${inYear}`, { t: "sale", year: t, index: i, field: "qty" }, num(x.qty.v) || 100);
       else qty = amount(sk("qty"), x.qty.v, { positive: true, required: true }) ?? 0;
       if (x.price.unknown) {
-        addU(sk("price"), `מחיר המכירה במכירה ${i + 1}`, { t: "sale", year: t, index: i, field: "unitPrice" }, num(x.price.v) || 10);
+        addU(sk("price"), `מחיר המכירה במכירה ${i + 1}${inYear}`, { t: "sale", year: t, index: i, field: "unitPrice" }, num(x.price.v) || 10);
         price = 0;
       } else price = amount(sk("price"), x.price.v, { min: 0 });
       return { id: x.id, label: `מכירה ${i + 1}${x.date ? ` (${x.date.split("-").reverse().map((v, n) => (n < 2 ? String(Number(v)) : v)).join(".")})` : ""}`, date: x.date || undefined, qty, unitPrice: price };
@@ -475,7 +552,7 @@ export function build(st: CalcState): Built {
       const pr = amount(k("nrvPrice"), y.nrvPrice, { min: 0, required: true }) ?? 0;
       nrvPerUnit = pr - (amount(k("nrvCompletion"), y.nrvCompletion, { min: 0 }) ?? 0) - (amount(k("nrvSelling"), y.nrvSelling, { min: 0 }) ?? 0);
     }
-    const thr = amount(k("sdThr"), y.saleDiscThreshold, { min: 0 });
+    const thr = amount(k("sdThr"), y.saleDiscThreshold, { min: 0 }) ?? (y.saleDiscPct.trim() ? 0 : undefined);
     const sdp = amount(k("sdPct"), y.saleDiscPct, { pct: true });
     return {
       id: y.id,
@@ -497,12 +574,22 @@ export function build(st: CalcState): Built {
   for (const [i, x] of st.knowns.entries()) {
     const key = `k${i}`;
     const change = x.metric === "gpPctChange";
-    if (change && x.year === 0) errors[key] = "שינוי בשיעור הגולמי צריך שנה קודמת — בחרו שנה שנייה ואילך.";
-    const raw = amount(key, x.value, { required: true, pct: x.metric === "gpPct" || change });
+    const samePrice = x.metric === "salePriceChange";
+    if ((change || samePrice) && x.year === 0) errors[key] = "נתון לעומת השנה הקודמת צריך שנה קודמת — בחרו שנה שנייה ואילך.";
+    // "At the same price as last year" has no number to type: the difference is nil.
+    const raw = samePrice ? 0 : amount(key, x.value, { required: true, pct: x.metric === "gpPct" || change });
     const v = raw !== undefined && change && x.dir === "down" ? -raw : raw;
-    const needsIndex = x.metric === "saleCost" || x.metric === "purchaseDiscount" || x.metric === "purchaseTotal";
+    const needsIndex = x.metric === "saleCost" || x.metric === "saleRevenue" || samePrice || x.metric === "purchaseDiscount" || x.metric === "purchaseTotal";
     const idx = needsIndex ? amount(`${key}.idx`, x.index, { positive: true, required: true }) : undefined;
     if (x.year >= st.years.length) errors[key] = "השנה הוסרה.";
+    else if (idx !== undefined && Number.isInteger(idx) && idx >= 1) {
+      // The row it names must be there: "sale 2" in a year with one sale has nothing to pin.
+      const bySale = x.metric === "saleCost" || x.metric === "saleRevenue" || samePrice;
+      const y = st.years[x.year];
+      const count = bySale ? y.sales.length : y.purchases.length;
+      const what = count === 1 ? (bySale ? "מכירה אחת" : "רכישה אחת") : `${count} ${bySale ? "מכירות" : "רכישות"}`;
+      if (idx > count) errors[`${key}.idx`] = count ? `ב-${y.label} יש רק ${what} — אין ${bySale ? "מכירה" : "רכישה"} מס׳ ${idx}.` : `ב-${y.label} עוד אין ${bySale ? "מכירות" : "רכישות"} בטבלה.`;
+    } else if (idx !== undefined) errors[`${key}.idx`] = "מספר שורה שלם (1, 2, …).";
     if (v !== undefined) knowns.push({ year: x.year, metric: x.metric, index: idx !== undefined ? idx - 1 : undefined, value: v });
   }
   const digits = Number(st.roundDigits) || 0;
@@ -547,6 +634,13 @@ export function loadState(): CalcState | null {
     if (!raw) return null;
     const x = JSON.parse(raw) as CalcState;
     if (x?.v !== 1 || !Array.isArray(x.years) || !x.table || !x.fire) return null;
+    // Saved when the calculator had a longer questionnaire.
+    if (!(x.step >= 0 && x.step < STEP_COUNT)) x.step = 0;
+    // A claim by cost formula was once a mode of the margin tab; it is now the fire event of the full question.
+    if (x.fireEvent === undefined && x.fire.basis === "history") {
+      x.fireEvent = true;
+      if (x.tab === "fire") x.tab = "full";
+    }
     return x;
   } catch {
     return null;
@@ -559,4 +653,23 @@ export function saveState(st: CalcState) {
   } catch {
     // Storage blocked: the form lasts until the page is closed.
   }
+}
+
+// ---------------------------------------------------------------------------
+// The fire claim's terms, shared by the fire event and the margin tools.
+
+/** An optional number as typed: undefined when empty or not a number. */
+export const optNum = (x: string) => {
+  const v = num(x);
+  return x.trim() === "" || !Number.isFinite(v) ? undefined : v;
+};
+
+export function claimTerms(f: FireForm): ClaimTerms {
+  const d = optNum(f.dedValue);
+  return {
+    deductible: d === undefined ? undefined : { kind: f.dedKind, value: f.dedKind === "pct" ? d / 100 : d },
+    // No policy caps a claim at nothing: a 0 typed in the ceiling means there is none.
+    cap: (optNum(f.cap) ?? 0) > 0 ? optNum(f.cap) : undefined,
+    capBeforeDeductible: f.capBefore,
+  };
 }

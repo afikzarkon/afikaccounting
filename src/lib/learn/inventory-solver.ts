@@ -34,8 +34,8 @@ export const unitPriceFromAvg = (avg: number, knownTotal: number, totalUnits: nu
 export type Ref =
   | { t: "purchase"; year: number; index: number; field: "qty" | "unitPrice" }
   | { t: "sale"; year: number; index: number; field: "qty" | "unitPrice" }
-  /** Every discount rule marked `shared` in that year: one rate for all. */
-  | { t: "discountPct"; year: number }
+  /** Every discount rule marked `shared` in that year — or, with `allYears`, in every year: one rate for all. */
+  | { t: "discountPct"; year: number; allYears?: boolean }
   | { t: "opening"; year: number; field: "units" | "cost" };
 
 export type Metric =
@@ -51,8 +51,14 @@ export type Metric =
   | "saleCost"
   | "purchaseDiscount"
   | "purchaseTotal"
+  /** One sale's revenue: quantity × price, as "sales in November–December came to 95,200". */
+  | "saleRevenue"
+  /** Units sold in the whole year. */
+  | "soldUnits"
   /** This year's gross margin less last year's, in points (0.02 = two points higher). */
-  | "gpPctChange";
+  | "gpPctChange"
+  /** A sale's price less last year's (its sale of the same number, else the last): 0 for "at the same price as last year". */
+  | "salePriceChange";
 
 export const METRIC_LABEL: Record<Metric, string> = {
   closingUnits: "כמות במלאי הסגירה",
@@ -67,7 +73,10 @@ export const METRIC_LABEL: Record<Metric, string> = {
   saleCost: "עלות מכירה מסוימת",
   purchaseDiscount: "הנחה ברכישה מסוימת",
   purchaseTotal: "עלות רכישה מסוימת",
+  saleRevenue: "הכנסה ממכירה מסוימת (₪)",
+  soldUnits: "יחידות שנמכרו בשנה",
   gpPctChange: "שינוי בשיעור הרווח הגולמי לעומת השנה הקודמת",
+  salePriceChange: "מחיר המכירה זהה לשנה הקודמת",
 };
 
 export type Unknown = { id: string; label: string; ref: Ref; guess?: number };
@@ -82,7 +91,7 @@ export type Equation = {
   target: number;
   x: number;
   /** When the known is a margin, it is first turned into the net sales it implies. */
-  viaSales?: { cogs: number; gpPct: number };
+  viaSales?: { cogs: number; gpPct: number; prevGpPct?: number; change?: number };
 };
 
 export type SolveResult = {
@@ -107,7 +116,7 @@ export function getRef(ps: Period[], r: Ref): number {
     case "opening":
       return p.opening?.[r.field] ?? 0;
     case "discountPct": {
-      for (const x of p.purchases) for (const d of x.discounts ?? []) if ("shared" in d && d.shared) return d.pct;
+      for (const y of r.allYears ? ps : [p]) for (const x of y.purchases) for (const d of x.discounts ?? []) if ("shared" in d && d.shared) return d.pct;
       return 0;
     }
   }
@@ -126,7 +135,7 @@ export function setRef(ps: Period[], r: Ref, v: number) {
       p.opening = { units: p.opening?.units ?? 0, cost: p.opening?.cost ?? 0, [r.field]: v };
       return;
     case "discountPct":
-      for (const x of p.purchases) for (const d of x.discounts ?? []) if ("shared" in d && d.shared) d.pct = v;
+      for (const y of r.allYears ? ps : [p]) for (const x of y.purchases) for (const d of x.discounts ?? []) if ("shared" in d && d.shared) d.pct = v;
   }
 }
 
@@ -135,16 +144,30 @@ export function metricOf(results: PeriodResult[], periods: Period[], k: Known): 
   switch (k.metric) {
     case "saleCost":
       return r.saleCosts[k.index ?? 0] ?? 0;
+    // A purchase the question doesn't have contributes nothing; the form reports the bad number.
     case "purchaseDiscount":
-      return purchaseCost(periods[k.year].purchases[k.index ?? 0]).discount;
-    case "purchaseTotal":
-      return purchaseCost(periods[k.year].purchases[k.index ?? 0]).total;
+    case "purchaseTotal": {
+      const p = periods[k.year]?.purchases[k.index ?? 0];
+      return p ? purchaseCost(p)[k.metric === "purchaseDiscount" ? "discount" : "total"] : 0;
+    }
     case "avgCost":
       return r.avgCost ?? 0;
     case "closingCost":
       return r.closingCostBasis;
+    case "saleRevenue": {
+      const s = periods[k.year]?.sales[k.index ?? 0];
+      return s ? s.qty * (s.unitPrice ?? 0) : 0;
+    }
+    case "soldUnits":
+      return r.soldUnits;
     case "gpPctChange":
       return r.gpPct - (results[k.year - 1]?.gpPct ?? 0);
+    case "salePriceChange": {
+      const now = periods[k.year]?.sales[k.index ?? 0];
+      const prev = periods[k.year - 1]?.sales;
+      const then = prev?.[k.index ?? 0] ?? prev?.at(-1);
+      return (now?.unitPrice ?? 0) - (then?.unitPrice ?? 0);
+    }
     default:
       return r[k.metric];
   }
@@ -152,7 +175,7 @@ export function metricOf(results: PeriodResult[], periods: Period[], k: Known): 
 
 export const knownLabel = (k: Known) =>
   METRIC_LABEL[k.metric] +
-  (k.metric === "saleCost" ? ` (מכירה ${(k.index ?? 0) + 1})` : k.metric === "purchaseDiscount" || k.metric === "purchaseTotal" ? ` (רכישה ${(k.index ?? 0) + 1})` : "");
+  (k.metric === "saleCost" || k.metric === "saleRevenue" ? ` (מכירה ${(k.index ?? 0) + 1})` : k.metric === "purchaseDiscount" || k.metric === "purchaseTotal" ? ` (רכישה ${(k.index ?? 0) + 1})` : "");
 
 /**
  * Solves up to three unknowns from as many known results. Unknowns that one
@@ -339,33 +362,38 @@ function linearise(u: Unknown, k: Known, x: number, f: (v: number) => number, wo
   let fn = f;
   let target = k.value;
   let viaSales: Equation["viaSales"];
-  if (k.metric === "gpPct") {
+  if (k.metric === "gpPct" || k.metric === "gpPctChange") {
     // A margin is a ratio; when cost of sales doesn't move with x, work with the net sales it implies instead (R31א).
-    const cogsAt = (v: number) => metricOf(valuateChainAt(work, u, v, method, opts), work, { ...k, metric: "cogs" });
-    const c = cogsAt(x);
-    if (Math.abs(cogsAt(x * 1.1 + 1) - c) < 1e-7 * Math.max(1, c)) {
-      viaSales = { cogs: c, gpPct: k.value };
-      target = salesFromGp(c, k.value);
-      fn = (v) => metricOf(valuateChainAt(work, u, v, method, opts), work, { ...k, metric: "netSales" });
+    // A change in margin is the same, once last year's margin is added to it.
+    const rs = (v: number) => valuateChainAt(work, u, v, method, opts);
+    const marginAt = (v: number) => (k.metric === "gpPct" ? k.value : (rs(v)[k.year - 1]?.gpPct ?? 0) + k.value);
+    const c = rs(x)[k.year].cogs;
+    const far = x * 1.1 + 1;
+    if (Math.abs(rs(far)[k.year].cogs - c) < 1e-7 * Math.max(1, c) && Math.abs(marginAt(far) - marginAt(x)) < 1e-9) {
+      const pct = marginAt(x);
+      viaSales = { cogs: c, gpPct: pct, ...(k.metric === "gpPctChange" ? { prevGpPct: pct - k.value, change: k.value } : {}) };
+      target = salesFromGp(c, pct);
+      fn = (v) => rs(v)[k.year].netSales;
     } else {
       // Cost of sales moves too: show gross profit − margin × net sales = 0.
-      fn = (v) => f(v) - k.value;
+      fn = (v) => {
+        const r = rs(v)[k.year];
+        return r.grossProfit - marginAt(v) * r.netSales;
+      };
       target = 0;
     }
   }
   const h = Math.max(1e-4 * Math.abs(x), isPct(u.ref) ? 1e-6 : 1e-4);
   const a = clean((fn(x) - fn(x - h)) / h || (fn(x + h) - fn(x)) / h);
   const b = clean(fn(x) - a * x);
-  if (k.metric === "gpPctChange") {
-    fn = (v) => f(v) - k.value;
-    target = 0;
-  }
   const known =
-    k.metric === "gpPct" && !viaSales
-      ? `רווח גולמי − ${Math.round(k.value * 1e4) / 100}% × מכירות נטו`
-      : k.metric === "gpPctChange"
-        ? `רווח גולמי − (שיעור השנה הקודמת ${k.value < 0 ? "−" : "+"} ${Math.round(Math.abs(k.value) * 1e4) / 100} נקודות) × מכירות נטו`
-        : knownLabel(k);
+    viaSales
+      ? knownLabel(k)
+      : k.metric === "gpPct"
+        ? `רווח גולמי − ${Math.round(k.value * 1e4) / 100}% × מכירות נטו`
+        : k.metric === "gpPctChange"
+          ? `רווח גולמי − (שיעור השנה הקודמת ${k.value < 0 ? "−" : "+"} ${Math.round(Math.abs(k.value) * 1e4) / 100} נקודות) × מכירות נטו`
+          : knownLabel(k);
   return { unknown: u.label, known, a, b, target, x, viaSales };
 }
 

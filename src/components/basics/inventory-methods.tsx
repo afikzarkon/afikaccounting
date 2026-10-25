@@ -1,15 +1,13 @@
 import type { ReactNode } from "react";
 import { Callout, DataTable } from "@/components/study/blocks";
 import { dateLabel, fifoSnapshots, gpFire, grossProfitMethod, valuateChain, valuatePeriod } from "@/lib/learn/inventory";
-import { explainQuantities, explainValuation, u } from "@/lib/learn/inventory-explain";
+import { explainNrv, explainQuantities, explainValuation, u } from "@/lib/learn/inventory-explain";
 import {
   COUNT_BRIDGE,
   DAF,
   GP_FIRE,
   KOL,
-  KOL_NRV,
   kolNextYear,
-  kolNrv,
   NEYAR,
   P_AVG,
   P_AVG_KNOWN,
@@ -241,21 +239,16 @@ export function InventoryMethodChapters() {
 
       <Chapter n={10} id="inv-nrv" title="הנמוך מבין העלות לשווי מימוש נטו" lead="הפסד צפוי — מיד; רווח צפוי — רק כשמוכרים">
         <p>
-          מלאי נמדד לפי <strong>הנמוך מבין העלות לבין <Term he="שווי מימוש נטו" /></strong>. שווי מימוש נטו = מחיר המכירה הצפוי, פחות עלויות ההשלמה, פחות העלויות הנדרשות כדי
-          למכור. אם הוא נמוך מהעלות — מורידים ערך מיד. אם הוא גבוה — לא עושים כלום; הרווח יוכר במכירה.
+          מלאי נמדד לפי <strong>הנמוך מבין העלות לבין <Term he="שווי מימוש נטו" /></strong> — הסכום שהחברה צפויה לקבל על המלאי, נטו. בשאלות הוא ניתן בדרך כלל כנתון מוכן
+          ליחידה, ואז הבדיקה פשוטה: משווים שני מספרים ולוקחים את הנמוך. אם שווי המימוש נטו נמוך מהעלות — מורידים ערך מיד. אם הוא גבוה — לא עושים כלום; הרווח יוכר במכירה.
         </p>
         <Card title='דוגמה: 120 רמקולים של "קול"'>
           <p>
-            עלות <Money v={KOL.opening!.cost} /> (<Money v={KOL_UNIT} /> ליחידה). מחיר מכירה צפוי {KOL_NRV.price} ₪, אריזה (השלמה) {KOL_NRV.completion} ₪, עמלת מכירה {KOL_NRV.selling} ₪.
+            במלאי הסגירה 120 רמקולים, בעלות <Money v={KOL.opening!.cost} /> (<Money v={KOL_UNIT} /> ליחידה). <strong>שווי מימוש נטו ליחידה: <Money v={KOL.nrvPerUnit!} /></strong> (נתון).
           </p>
-          <p className="num">
-            שווי מימוש נטו ליחידה: {KOL_NRV.price} − {KOL_NRV.completion} − {KOL_NRV.selling} = {kolNrv(KOL_NRV)} · סה״כ {KOL1.closingUnits} × {kolNrv(KOL_NRV)} = <Money v={KOL1.nrvTotal!} />
-          </p>
-          <p>
-            הורדת ערך: <strong><Money v={KOL1.writeDown} /></strong>. המלאי בספרים: <Money v={KOL1.closingCarrying} />.
-          </p>
+          <TraceStepView s={explainNrv(KOL, KOL1)!} />
           <ul className="list-inside list-disc space-y-1 text-sm">
-            <li>ההורדה מגדילה את עלות המכר (ולכן מקטינה את הרווח הגולמי).</li>
+            <li>ההפחתה מגדילה את עלות המכר (ולכן מקטינה את הרווח הגולמי).</li>
             <li>בשיטה תקופתית — היא &quot;מגולמת&quot;: מלאי הסגירה פשוט נרשם ב-<Money v={KOL1.closingCarrying} />.</li>
             <li>
               בשיטה תמידית — פקודה: ח&apos; עלות המכר <Money v={KOL1.writeDown} plain /> / ז&apos; מלאי <Money v={KOL1.writeDown} plain />.
@@ -271,17 +264,9 @@ export function InventoryMethodChapters() {
             ואם שווי המימוש נטו עלה ל-170 ₪? עדיין <Money v={KOL170.closingCarrying} /> — לא עולים מעל העלות. רווח צפוי לא נרשם.
           </p>
         </Card>
-        <DataTable
-          caption="שווי מימוש נטו מול שווי הוגן — מה מנכים?"
-          head={["פריט בשאלה", "בשווי מימוש נטו?"]}
-          rows={[
-            ["מחיר מכירה צפוי של החברה", "✓ נקודת המוצא"],
-            ["עלויות השלמה (אריזה, הרכבה)", "✓ מנכים"],
-            ["עלויות מכירה (עמלה, הובלה ללקוח)", "✓ מנכים"],
-            ["עלויות שיווק ופרסום כלליות", "✗ בפתרונות הקורס לא מנכים"],
-            ["שווי הוגן (מחיר בשוק בין משתתפים)", "✗ מסיח — שווי מימוש נטו הוא ספציפי לחברה"],
-          ]}
-        />
+        <Callout kind="tip" title="שווי מימוש נטו ≠ שווי הוגן">
+          <p>אם השאלה נותנת גם &quot;שווי הוגן&quot; (מחיר בשוק) — זה מסיח. משווים לעלות רק את שווי המימוש נטו של החברה.</p>
+        </Callout>
         <p>
           את הבדיקה עושים לכל קבוצת פריטים דומים יחד (יחידות × שווי מימוש נטו ליחידה מול העלות הכוללת), בכל תאריך דוח. חריג: <Term he="חומרי גלם" /> לא יורדים מתחת לעלות אם
           המוצרים הגמורים שבהם ייכללו צפויים להימכר בעלות או מעליה.

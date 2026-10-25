@@ -760,11 +760,37 @@ export type HistoryFireInput = {
   savedUnits: number;
   terms?: ClaimTerms;
   rounding?: Rounding;
+  /** The day of the fire: dated purchases and sales after it are left out, and so are years that start after it. */
+  fireDate?: string;
 };
+
+export type AfterFire = { label: string; date: string; kind: "buy" | "sell"; qty: number };
+
+/** The history up to the fire: what happened after it isn't in the stock that burned. */
+export function cutAtFire(periods: Period[], fireDate?: string): { periods: Period[]; after: AfterFire[] } {
+  if (!fireDate) return { periods, after: [] };
+  const after: AfterFire[] = [];
+  const late = (d?: string) => !!d && d > fireDate;
+  const cut = periods.map((p) => {
+    for (const b of p.purchases) if (late(b.date)) after.push({ label: b.label ?? "רכישה", date: b.date!, kind: "buy", qty: b.qty });
+    for (const s of p.sales) if (late(s.date)) after.push({ label: s.label ?? "מכירה", date: s.date!, kind: "sell", qty: s.qty });
+    return { ...p, purchases: p.purchases.filter((b) => !late(b.date)), sales: p.sales.filter((s) => !late(s.date)) };
+  });
+  // A year whose every dated event came after the fire is past it; the last year left is the one with the fire.
+  let end = cut.length;
+  while (end > 1) {
+    const orig = periods[end - 1];
+    const dated = [...orig.purchases, ...orig.sales].filter((e) => e.date);
+    if (dated.length && dated.every((e) => late(e.date)) && !cut[end - 1].purchases.length && !cut[end - 1].sales.length) end--;
+    else break;
+  }
+  return { periods: cut.slice(0, end), after };
+}
 
 /** A claim by cost formula: the whole history recomputed by the policy's method, without NRV (R28). */
 export function historyFire(x: HistoryFireInput) {
-  const chain = valuateChain(x.periods, x.method, { nrv: false, rounding: x.rounding });
+  const { periods, after } = cutAtFire(x.periods, x.fireDate);
+  const chain = valuateChain(periods, x.method, { nrv: false, rounding: x.rounding });
   const last = chain[chain.length - 1];
   const unitsAtFire = last.closingUnits;
   const burnedUnits = Math.max(0, unitsAtFire - x.savedUnits);
@@ -785,7 +811,7 @@ export function historyFire(x: HistoryFireInput) {
   } else {
     burned = (last.avgCost ?? 0) * burnedUnits;
   }
-  return { chain, unitsAtFire, costAtFire: last.closingCostBasis, burnedUnits, burned, slices, avg: x.method === "fifo" ? undefined : last.avgCost, settlement: settle(burned, x.terms) };
+  return { chain, unitsAtFire, costAtFire: last.closingCostBasis, burnedUnits, burned, slices, avg: x.method === "fifo" ? undefined : last.avgCost, settlement: settle(burned, x.terms), after, fireDate: x.fireDate };
 }
 
 /** FIFO layers after each event, for stepping through the shelf (perpetual order). */

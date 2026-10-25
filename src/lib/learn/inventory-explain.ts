@@ -60,24 +60,43 @@ const q = fmtQty;
 // One period, start to finish.
 
 export function explainCosts(period: Period, r: PeriodResult): TraceStep {
-  const rows: Cell[][] = r.costs.map((c, i) => {
+  const names = r.costs.map((_, i) => {
     const p = period.purchases[i];
-    return [p.label ?? `רכישה ${i + 1}${p.date ? ` (${dateLabel(p.date)})` : ""}`, p.qty, c.gross, c.discount ? -c.discount : null, c.financing ? -c.financing : null, c.extras || null, c.total, u(c.perUnit)];
+    return p.label ?? `רכישה ${i + 1}${p.date ? ` (${dateLabel(p.date)})` : ""}`;
   });
-  const details: TraceTable[] = r.costs
-    .map((c, i) => ({ c, i }))
-    .filter(({ c }) => c.lines.length > 1)
-    .map(({ c, i }) => ({
-      caption: `${period.purchases[i].label ?? `רכישה ${i + 1}`}: בניית העלות`,
-      head: ["רכיב", "סכום", "נכלל בעלות?", "סעיף"],
-      rows: c.lines.map((l) => [l.label + (l.reason && !l.included ? ` — ${l.reason}` : ""), l.amount, l.included ? (l.kind === "price" ? "✓" : l.amount < 0 ? "✂ מנוכה" : "✓ נכלל") : "← הוצאה / לא נרשם", l.section ?? ""]),
-      strike: c.lines.map((l, j) => (l.included ? -1 : j)).filter((j) => j >= 0),
-      foot: ["עלות הרכישה", c.total, `${u(c.perUnit)} ליחידה`, ""],
-    }));
+  // One row per cost component, one column per purchase: a component that recurs across purchases shares its row.
+  type Row = { label: string; included: boolean; status: string; section: string; note: string; amounts: (number | null)[] };
+  const parts: Row[] = [];
+  r.costs.forEach((c, i) =>
+    c.lines.forEach((l) => {
+      let row = parts.find((x) => x.label === l.label && x.included === l.included);
+      if (!row) {
+        row = {
+          label: l.label,
+          included: l.included,
+          // Non-breaking spaces keep these short labels on one line in a narrow column.
+          status: (l.included ? (l.kind === "price" ? "✓" : l.amount < 0 ? "✂ מנוכה" : "✓ נכלל") : "✗ לא בעלות").replace(/ /g, " "),
+          section: (l.section ?? "").replace(/ /g, " "),
+          note: l.kind === "price" ? "" : (l.reason ?? ""),
+          amounts: r.costs.map(() => null),
+        };
+        parts.push(row);
+      }
+      row.amounts[i] = (row.amounts[i] ?? 0) + l.amount;
+    }),
+  );
+  const multi = r.costs.length > 1;
+  const sum = (xs: (number | null)[]) => xs.reduce<number>((s, x) => s + (x ?? 0), 0);
+  const rows: Cell[][] = [
+    ["כמות (יח׳)", "", "", ...period.purchases.map((p) => q(p.qty)), ...(multi ? [q(r.purchasesUnits)] : []), ""],
+    ...parts.map((row) => [row.label, row.status, row.section, ...row.amounts, ...(multi ? [sum(row.amounts)] : []), row.note]),
+    ["עלות הרכישה", "", "", ...r.costs.map((c) => c.total), ...(multi ? [r.purchasesCost] : []), "מה שנכנס למלאי"],
+  ];
   const excluded = r.costs.reduce((s, c) => s + c.excluded, 0);
   const financing = r.costs.reduce((s, c) => s + c.financing, 0);
   const text = [
-    `עלות כל רכישה = מחיר הרכישה, פחות הנחות (ורכיב מימון אם יש), ועוד העלויות שהביאו את המלאי למיקומו ולמצבו. סך עלות הרכישות: ${m(r.purchasesCost)} ₪.`,
+    "כל הרכישות בטבלה אחת: כל עמודה היא רכישה, וכל שורה היא רכיב של העלות. עלות כל רכישה = מחיר הרכישה, פחות הנחות (ורכיב מימון אם יש), ועוד העלויות שהביאו את המלאי למיקומו ולמצבו. שורות מחוקות נשארות מחוץ לעלות.",
+    `סך עלות הרכישות: ${m(r.purchasesCost)} ₪.`,
   ];
   if (excluded) text.push(`${m(excluded)} ₪ של עלויות נוספות נשארו מחוץ לעלות המלאי (הוצאה בתקופה או מס בר-קיזוז).`);
   if (financing) text.push(`${m(financing)} ₪ הם רכיב מימון — נרשמים כהוצאות מימון על פני תקופת האשראי, לא כעלות מלאי.`);
@@ -85,7 +104,16 @@ export function explainCosts(period: Period, r: PeriodResult): TraceStep {
     id: "cost",
     title: "בניית העלות של כל רכישה",
     text,
-    tables: [{ caption: "סיכום עלויות הרכישה", head: ["רכישה", "כמות", "מחיר", "הנחה", "מימון", "נלוות", "סה״כ", "ליחידה"], rows, foot: ["סה״כ", r.purchasesUnits, null, null, null, null, r.purchasesCost, ""] }, ...details],
+    tables: [
+      {
+        caption: "בניית עלות הרכישות — כל הספקים והרכישות יחד",
+        head: ["רכיב", "בעלות?", "סעיף", ...names, ...(multi ? ["סה״כ"] : []), "הערה"],
+        rows,
+        strike: parts.map((row, j) => (row.included ? -1 : j + 1)).filter((j) => j >= 0),
+        highlight: [rows.length - 1],
+        foot: ["עלות ליחידה", "", "", ...r.costs.map((c) => u(c.perUnit)), ...(multi ? [""] : []), ""],
+      },
+    ],
     rules: ["R12", "R13", "R14", "R15", "R16"],
   };
 }
@@ -310,13 +338,39 @@ export function explainValuation(r: PeriodResult): TraceStep {
 export function explainNrv(period: Period, r: PeriodResult): TraceStep | null {
   if (r.nrvTotal === undefined) return null;
   const per = period.nrvPerUnit;
+  const lower = Math.min(r.closingCostBasis, r.nrvTotal);
+  const cut = r.closingCostBasis - lower;
   const text = [
-    `שווי מימוש נטו${per !== undefined ? ` = ${q(r.closingUnits)} × ${u(per)}` : ""} = ${m(r.nrvTotal)} ₪, מול עלות של ${m(r.closingCostBasis)} ₪.`,
+    per !== undefined ? `שווי מימוש נטו ליחידה נתון בשאלה: ${u(per)} ₪. משווים שני מספרים בלבד, ולוקחים את הנמוך.` : `שווי המימוש נטו של כל המלאי נתון בשאלה: ${m(r.nrvTotal)} ₪. משווים אותו לעלות, ולוקחים את הנמוך.`,
   ];
-  if (r.writeDown) text.push(`שווי המימוש נטו נמוך מהעלות: מורידים ${m(r.writeDown)} ₪, והמלאי מוצג ב-${m(r.closingCarrying)} ₪. ההורדה נכנסת לעלות המכר.`);
+  if (r.writeDown) text.push(`הנמוך הוא שווי המימוש נטו, ולכן מורידים את ההפרש: ${m(r.closingCostBasis)} − ${m(lower)} = ${m(r.writeDown)} ₪. ההפחתה נכנסת לעלות המכר.`);
   else if (r.reversal) text.push(`שווי המימוש נטו עלה: מבטלים ${m(r.reversal)} ₪ מהורדת הערך הקודמת — עד העלות המקורית בלבד. הביטול מקטין את עלות המכר.`);
-  else text.push("שווי המימוש נטו לא נמוך מהעלות — אין הורדת ערך. רווח צפוי לא נרשם; הוא יוכר במכירה.");
-  return { id: "nrv", title: "בדיקת שווי מימוש נטו", text, formula: ["מלאי בספרים = הנמוך מבין העלות לשווי מימוש נטו"], rules: ["R11", "R21", "R22"] };
+  else if (cut <= 0) text.push("העלות היא הנמוכה — אין הפחתה. רווח צפוי לא נרשם; הוא יוכר במכירה.");
+  return {
+    id: "nrv",
+    title: "הנמוך מבין העלות לשווי מימוש נטו",
+    text,
+    tables: [
+      {
+        caption: "השוואה ישירה",
+        head: ["", "סכום"],
+        rows: [
+          ["1. עלות מלאי הסגירה בספרים", r.closingCostBasis],
+          [per !== undefined ? `2. כמות × שווי מימוש נטו ליחידה: ${q(r.closingUnits)} × ${u(per)}` : "2. שווי מימוש נטו (נתון)", r.nrvTotal],
+        ],
+        highlight: [r.nrvTotal < r.closingCostBasis ? 1 : 0],
+        foot: ["הנמוך — מלאי הסגירה בספרים", r.closingCarrying],
+      },
+    ],
+    flow: r.reversal ? undefined : [
+      [
+        { label: "עלות בספרים", value: `${m(r.closingCostBasis)} ₪` },
+        { label: "− הנמוך מבין השניים", value: `${m(lower)} ₪` },
+        { label: "= הפחתת ערך המלאי (לעלות המכר)", value: `${m(Math.max(0, cut))} ₪`, tone: "accent" },
+      ],
+    ],
+    rules: ["R11", "R21", "R22"],
+  };
 }
 
 export function statementTable(s: ReturnType<typeof statement>, caption?: string): TraceTable {
@@ -388,14 +442,18 @@ export function explainSolve(s: SolveResult): TraceStep[] {
     const text = [`ידוע: ${e.known}. מחפשים: ${e.unknown}.`];
     const formula: string[] = [];
     if (e.viaSales) {
-      text.push(`עלות המכר אינה תלויה בנעלם (${m(e.viaSales.cogs)} ₪), ולכן המכירות הנדרשות = עלות המכר ÷ (1 − שיעור הרווח הגולמי).`);
-      formula.push(`מכירות נטו = ${m(e.viaSales.cogs)} ÷ (1 − ${pc(e.viaSales.gpPct)}) = ${m(e.target)}`);
+      const v = e.viaSales;
+      if (v.prevGpPct !== undefined && v.change !== undefined)
+        formula.push(`שיעור הרווח הגולמי השנה = ${pc(v.prevGpPct)} (שנה קודמת) ${v.change < 0 ? "−" : "+"} ${pc(Math.abs(v.change))} = ${pc(v.gpPct)}`);
+      text.push(`עלות המכר אינה תלויה בנעלם (${m(v.cogs)} ₪, כולל הורדת ערך אם יש), ולכן המכירות הנדרשות = עלות המכר ÷ שיעור עלות המכר (1 − שיעור הרווח הגולמי).`);
+      formula.push(`שיעור עלות המכר = 1 − ${pc(v.gpPct)} = ${pc(1 - v.gpPct)}`);
+      formula.push(`מכירות נטו = ${m(v.cogs)} ÷ ${pc(1 - v.gpPct)} = ${m(e.target)}`);
     }
     const ax = e.a === 1 ? "x" : e.a === -1 ? "−x" : `${u(e.a)}·x`;
     formula.push(`${ax}${e.b ? ` ${e.b < 0 ? "−" : "+"} ${m(Math.abs(e.b))}` : ""} = ${m(e.target)}`);
     formula.push(`x = (${m(e.target)} − ${m(e.b)}) ÷ ${u(e.a)} = ${u(e.x)}`);
     const got = s.residuals.find((r) => r.known === e.known);
-    const checks = got ? [{ ok: Math.abs(got.got - got.value) < 0.005 + 1e-6, text: `אימות: מציבים x = ${u(e.x)} ומקבלים ${e.known} = ${got.known.startsWith("שיעור") ? pc(got.got) : m(got.got)}` }] : undefined;
+    const checks = got ? [{ ok: Math.abs(got.got - got.value) < 0.005 + 1e-6, text: `אימות: מציבים x = ${u(e.x)} ומקבלים ${e.known} = ${got.known.includes("שיעור") ? pc(got.got) : m(got.got)}` }] : undefined;
     return { id: `solve-${i}`, title: `נעלם: ${e.unknown}`, text, formula, checks, rules: ["R30", "R31"] };
   });
 }
@@ -436,7 +494,20 @@ export function explainGpFire(x: Parameters<typeof gpFire>[0], r: ReturnType<typ
 }
 
 export function explainHistoryFire(method: Method, r: ReturnType<typeof historyFire>): TraceStep[] {
-  const steps: TraceStep[] = [
+  const last = r.chain[r.chain.length - 1];
+  const steps: TraceStep[] = [];
+  if (r.fireDate)
+    steps.push({
+      id: "f-cut",
+      title: `רק מה שקרה עד השריפה (${dateLabel(r.fireDate)})`,
+      text: r.after.length
+        ? [
+            "מה שנקנה או נמכר אחרי השריפה לא היה במחסן כשנשרף — לא נכנס לחישוב:",
+            ...r.after.map((a) => `${a.kind === "buy" ? "רכישה" : "מכירה"} ב-${dateLabel(a.date)} (${q(a.qty)} יח') — אחרי השריפה, לא נכללת.`),
+          ]
+        : ["כל הרכישות והמכירות שהוזנו קרו עד תאריך השריפה."],
+    });
+  steps.push(
     {
       id: "f-hist",
       title: `חישוב מחדש לפי בסיס הפוליסה: ${METHOD_LABEL[method]}, בלי שווי מימוש נטו`,
@@ -445,12 +516,13 @@ export function explainHistoryFire(method: Method, r: ReturnType<typeof historyF
         ...r.chain.slice(0, -1).map((c) => `${c.label}: מלאי סגירה ${q(c.closingUnits)} יח' בעלות ${m(c.closingCostBasis)} ₪ — זו הפתיחה של התקופה הבאה.`),
         `בתאריך השריפה: ${q(r.unitsAtFire)} יחידות בעלות ${m(r.costAtFire)} ₪${r.avg !== undefined ? ` (ממוצע ${u(r.avg)})` : ""}.`,
       ],
+      formula: [`יחידות בתאריך השריפה = ${q(last.openingUnits)} (פתיחה) + ${q(last.purchasesUnits)} (קניות) − ${q(last.soldUnits)} (מכירות) = ${q(r.unitsAtFire)}`],
       rules: ["R28"],
     },
-  ];
+  );
   const burnText =
     method === "fifo"
-      ? `הנשרף מוערך מהשכבות האחרונות: ${r.slices.map((s) => `${q(s.units)} × ${u(s.cost / s.units)}`).join(" + ")} = ${m(r.burned)}.`
+      ? `הנשרף מוערך מהשכבות האחרונות (FIFO: מה שנשאר במחסן הוא מה שנקנה אחרון): ${r.slices.map((s) => `${q(s.units)} × ${u(s.cost / s.units)} (${s.source})`).join(" + ")} = ${m(r.burned)}.`
       : `הנשרף = ${q(r.burnedUnits)} × ${u(r.avg ?? 0)} = ${m(r.burned)}.`;
   steps.push({ id: "f-burn", title: "המלאי שנשרף", text: [`נשרפו ${q(r.unitsAtFire)} − ${q(r.unitsAtFire - r.burnedUnits)} (שניצלו) = ${q(r.burnedUnits)} יחידות.`, burnText], rules: ["R27"] });
   steps.push(settleStep(r.costAtFire, r.costAtFire - r.burned, r.burned, r.settlement, ""));

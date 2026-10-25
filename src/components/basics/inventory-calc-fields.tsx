@@ -145,3 +145,45 @@ export function Choice<T extends string>({ label, value, onChange, options }: { 
     </fieldset>
   );
 }
+
+/** A compact one-of-a-few row: the label above, the options side by side. */
+export function Segmented<T extends string>({ label, value, onChange, options, className }: { label: string; value: T; onChange: (v: T) => void; options: [T, string, string?][]; className?: string }) {
+  return (
+    <fieldset className={cn("min-w-0", className)}>
+      <legend className="mb-1.5 text-[12.5px] font-medium text-fg">{label}</legend>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map(([v, title, hint]) => (
+          <button
+            key={v}
+            type="button"
+            aria-pressed={v === value}
+            onClick={() => onChange(v)}
+            title={hint}
+            className={cn(
+              "min-h-10 rounded-lg border px-3 py-1.5 text-start text-sm transition-colors",
+              v === value ? "border-accent bg-accent-soft font-semibold text-fg" : "border-line bg-surface text-fg/85 hover:border-line-strong",
+            )}
+          >
+            {title}
+            {hint && <span className="block text-[11px] font-normal text-muted">{hint}</span>}
+          </button>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+/** An on/off switch with a title and a line under it. */
+export function Switch({ on, onChange, title, hint }: { on: boolean; onChange: (v: boolean) => void; title: string; hint?: string }) {
+  return (
+    <button type="button" role="switch" aria-checked={on} onClick={() => onChange(!on)} className="flex w-full items-center gap-3 text-start">
+      <span className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors", on ? "bg-accent" : "bg-line-strong")} aria-hidden>
+        <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all", on ? "start-[1.375rem]" : "start-0.5")} />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-semibold text-fg">{title}</span>
+        {hint && <span className="block text-xs text-muted">{hint}</span>}
+      </span>
+    </button>
+  );
+}

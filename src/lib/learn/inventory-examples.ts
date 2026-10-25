@@ -166,7 +166,7 @@ export const P_SOLD = { cogs: 260_000, p: 0.65 };
 
 export type FireSetup =
   | { basis: "gp"; years: { label: string; netSales: number; cogs: number }[]; input: Omit<GpFireInput, "rates"> }
-  | { basis: "history"; method: Method; savedUnits: number; terms?: ClaimTerms };
+  | { basis: "history"; method: Method; savedUnits: number; terms?: ClaimTerms; fireDate?: string };
 
 export type CalcExample = {
   id: string;
@@ -182,6 +182,8 @@ export type CalcExample = {
   carryWriteDown?: boolean;
   table?: TableInput;
   fire?: FireSetup;
+  /** Every purchase has the same terms: the calculator shows them once, in its shared terms. */
+  sharedTerms?: boolean;
 };
 
 const OR: Period = {
@@ -220,6 +222,42 @@ export const GP_FIRE: FireSetup = {
   ],
   input: { opening: 60_000, purchases: 120_000, sales: 200_000, saved: 5_000, terms: { deductible: { kind: "pct", value: 0.1 } } },
 };
+
+/**
+ * Gabi Ltd: three years by periodic average, then a fire claimed by FIFO. Every
+ * order carries the same terms: 6% off each unit from the 401st, duty and
+ * freight per order in the cost, storage an expense. (The sales bonus is a
+ * percentage of sales, a selling expense with no place in a purchase.)
+ */
+const gabiTerms = (): Partial<Purchase> => ({
+  discounts: [{ kind: "qty-excess", threshold: 400, pct: 0.06 }],
+  extras: [
+    { category: "duty", label: "מס ייבוא", amount: 1_500, basis: "per-shipment" },
+    { category: "freight", amount: 500, basis: "per-shipment" },
+    { category: "storage", amount: 5, basis: "per-unit" },
+  ],
+});
+const G = (date: string, qty: number, unitPrice: number) => B(date, qty, unitPrice, gabiTerms());
+export const GABI: Period[] = [
+  { label: "2022", purchases: [G("2022-10-31", 400, 195), G("2022-12-10", 100, 200)], sales: [S(undefined, 0, 272)] },
+  {
+    label: "2023",
+    // The question's "31.11" is a day November doesn't have; its last day stands in.
+    purchases: [G("2023-01-23", 250, 200), G("2023-03-30", 400, 250), G("2023-07-28", 500, 180), G("2023-11-30", 600, 210), G("2023-12-31", 530, 225)],
+    sales: [S(undefined, 1_850, 0)],
+    nrvPerUnit: 205,
+  },
+  { label: "2024", purchases: [G("2024-04-01", 350, 210), G("2024-06-27", 250, 220), G("2024-07-15", 400, 230)], sales: [S(undefined, 850, 275)] },
+];
+export const GABI_UNKNOWNS: Unknown[] = [
+  { id: "q", label: "כמות שנמכרה ב-2022", ref: { t: "sale", year: 0, index: 0, field: "qty" }, guess: 100 },
+  { id: "p", label: "מחיר המכירה ב-2023", ref: { t: "sale", year: 1, index: 0, field: "unitPrice" }, guess: 200 },
+];
+export const GABI_KNOWNS: Known[] = [
+  { year: 0, metric: "saleRevenue", index: 0, value: 95_200 },
+  { year: 1, metric: "gpPctChange", value: -0.02 },
+];
+export const GABI_FIRE: FireSetup = { basis: "history", method: "fifo", savedUnits: 0, terms: { deductible: { kind: "pct", value: 0.12 } }, fireDate: "2024-07-01" };
 
 export const CALC_EXAMPLES: CalcExample[] = [
   { id: "tzlil", title: "צליל — ארבע שיטות", hint: "דוגמה א': אותם נתונים בכל השיטות", tab: "full", method: "compare", periods: [TZLIL] },
@@ -275,7 +313,19 @@ export const CALC_EXAMPLES: CalcExample[] = [
   { id: "daf", title: "דף — דוח עם חסרים", hint: "שתי שנים, סימני שאלה", tab: "table", table: DAF },
   { id: "gpfire", title: "שריפה לפי שיעור גולמי", hint: "ממוצע שני שיעורים, השתתפות עצמית", tab: "fire", fire: GP_FIRE },
   { id: "agam", title: "שריפה לפי FIFO חוצה שנים", hint: "שכבות שעוברות בין שנים, השתתפות ותקרה", tab: "fire", method: "fifo", periods: AGAM, fire: AGAM_FIRE },
-  { id: "galyam", title: "שאלה מלאה — גל-ים", hint: "הנחות, מכס, מימון, יעד, שווי מימוש נטו ונעלם", tab: "full", method: "moving-avg", periods: [GALYAM], unknowns: [GALYAM_UNKNOWN], knowns: [GALYAM_KNOWN], rounding: { mode: "exact" } },
+  { id: "galyam", title: "גל-ים — שאלה מלאה", hint: "הנחות, מכס, מימון, יעד, שווי מימוש נטו ונעלם", tab: "full", method: "moving-avg", periods: [GALYAM], unknowns: [GALYAM_UNKNOWN], knowns: [GALYAM_KNOWN], rounding: { mode: "exact" } },
+  {
+    id: "gabi",
+    title: "גאבי — שאלה מלאה: 3 שנים ושריפה",
+    hint: "הנחה מדורגת, מכס והובלה, ירידה בשיעור הגולמי ושיפוי לפי FIFO",
+    tab: "full",
+    method: "wa-periodic",
+    periods: GABI,
+    unknowns: GABI_UNKNOWNS,
+    knowns: GABI_KNOWNS,
+    fire: GABI_FIRE,
+    sharedTerms: true,
+  },
 ];
 
 export const exampleById = (id: string) => CALC_EXAMPLES.find((e) => e.id === id);

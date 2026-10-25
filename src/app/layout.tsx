@@ -29,7 +29,8 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="he" dir="rtl" suppressHydrationWarning className={`${heebo.variable} ${geistMono.variable} h-full`}>
-      <body className="flex min-h-full flex-col">
+      {/* Extensions such as Grammarly add attributes to <body> before React loads. */}
+      <body suppressHydrationWarning className="flex min-h-full flex-col">
         <ThemeProvider>
           <a
             href="#main"

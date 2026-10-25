@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { type Method, METHODS, type Period, type Purchase, type Sale, valuatePeriod } from "./inventory";
-import { explainSolve, explainTable } from "./inventory-explain";
-import { CALC_EXAMPLES, DAF, galyam, P_AVG, P_AVG_KNOWN, P_DISC, P_LAST, P_PRICE, P_QTY_MA, P_QTY_MA_COST, P_RETAIL, P_SOLD } from "./inventory-examples";
+import { historyFire, type Method, METHODS, type Period, purchaseCost, type Purchase, type Sale, valuateChain, valuatePeriod } from "./inventory";
+import { explainHistoryFire, explainSolve, explainTable, stepsToText } from "./inventory-explain";
+import { CALC_EXAMPLES, DAF, GABI, GABI_FIRE, GABI_KNOWNS, GABI_UNKNOWNS, galyam, P_AVG, P_AVG_KNOWN, P_DISC, P_LAST, P_PRICE, P_QTY_MA, P_QTY_MA_COST, P_RETAIL, P_SOLD } from "./inventory-examples";
 import {
   closingFromSoldPct,
   discountPctFromAmount,
@@ -405,5 +405,124 @@ describe("calculator presets", () => {
     near(solve("rimon").p, 57.5, 1e-6);
     near(solve("aron").x, 530, 1e-6);
     near(solve("galim").d, 0.06, 1e-9);
+  });
+});
+
+describe("unknowns: givens from the speaker question", () => {
+  it("sales of a period at a fixed price fix that sale's quantity, and units sold fix the missing one", () => {
+    const periods: Period[] = [
+      { label: "2022", opening: { units: 0, cost: 0 }, purchases: [B("2022-10-01", 1_000, 150)], sales: [S("2022-12-31", 0, 272)] },
+      { label: "2023", purchases: [B("2023-03-01", 2_000, 160)], sales: [S("2023-05-01", 1_000, 280), S("2023-11-01", 0, 290)] },
+    ];
+    const us: Unknown[] = [
+      { id: "q22", label: "כמות 2022", ref: { t: "sale", year: 0, index: 0, field: "qty" } },
+      { id: "q23", label: "כמות 2023", ref: { t: "sale", year: 1, index: 1, field: "qty" } },
+    ];
+    const k: Known[] = [
+      { year: 0, metric: "saleRevenue", index: 0, value: 95_200 },
+      { year: 1, metric: "soldUnits", value: 1_850 },
+    ];
+    const sol = solveUnknowns(periods, "fifo", us, k);
+    assert.ok(sol.ok, sol.error);
+    near(sol.values.q22, 350, 1e-6);
+    near(sol.values.q23, 850, 1e-6);
+  });
+});
+
+describe("Gabi · three years by periodic average, then a fire claimed by FIFO", () => {
+  const s = solveUnknowns(GABI, "wa-periodic", GABI_UNKNOWNS, GABI_KNOWNS);
+  const rs = valuateChain(s.periods, "wa-periodic");
+  it("orders cost price less the graded discount, plus duty and freight; storage is an expense", () => {
+    const c = purchaseCost(GABI[1].purchases[2]);
+    near(c.discount, 100 * 180 * 0.06);
+    near(c.total, 90_920);
+    near(c.excluded, 2_500);
+    near(purchaseCost(GABI[0].purchases[0]).total, 80_000);
+  });
+  it("2022: 350 units from the revenue, a 25% margin", () => {
+    assert.ok(s.ok, s.error);
+    near(s.values.q, 350, 1e-6);
+    near(rs[0].avgCost!, 204, 1e-9);
+    near(rs[0].cogs, 71_400);
+    near(rs[0].gpPct, 0.25, 1e-9);
+  });
+  it("2023: 23% margin, the write-down in cost of sales, and the sales it implies", () => {
+    near(rs[1].availableCost, 520_495);
+    near(rs[1].avgCost!, 214.1955, 1e-4);
+    near(rs[1].closingCostBasis, 124_233.37);
+    near(rs[1].writeDown, 5_333.37);
+    near(rs[1].cogs, 401_595);
+    near(rs[1].netSales, 521_551.95);
+    const e = s.equations.find((x) => x.viaSales?.change !== undefined)!;
+    near(e.viaSales!.prevGpPct!, 0.25, 1e-9);
+    near(e.viaSales!.gpPct, 0.23, 1e-9);
+    assert.match(stepsToText(explainSolve(s)), /מכירות נטו = 401,595 ÷ 77% = 521,551\.95/);
+  });
+  it("2024: the order after the fire is left out; 330 units burn, 74,257 by FIFO, 65,346 after the 12% deductible", () => {
+    assert.equal(GABI_FIRE.basis, "history");
+    if (GABI_FIRE.basis !== "history") return;
+    const f = historyFire({ periods: s.periods, method: "fifo", savedUnits: 0, terms: GABI_FIRE.terms, fireDate: GABI_FIRE.fireDate });
+    assert.deepEqual(f.after.map((a) => a.date), ["2024-07-15"]);
+    assert.equal(f.chain.length, 3);
+    assert.equal(f.burnedUnits, 330);
+    near(f.slices[0].units, 80);
+    near(f.slices[0].cost / 80, 215.7143, 1e-4);
+    near(f.slices[1].cost, 57_000);
+    near(f.burned, 74_257.14);
+    near(f.settlement.net, 65_346.29);
+    assert.match(stepsToText(explainHistoryFire("fifo", f)), /580 \(פתיחה\) \+ 600 \(קניות\) − 850 \(מכירות\) = 330/);
+  });
+  it("a year that starts after the fire is left out whole", () => {
+    const later: Period = { label: "2025", purchases: [{ date: "2025-02-01", qty: 10, unitPrice: 1 }], sales: [] };
+    const f = historyFire({ periods: [...s.periods, later], method: "fifo", savedUnits: 0, fireDate: "2024-07-01" });
+    assert.equal(f.chain.length, 3);
+    assert.equal(f.burnedUnits, 330);
+  });
+  it("is in the calculator's examples", () => assert.ok(CALC_EXAMPLES.some((x) => x.id === "gabi")));
+});
+
+describe("a given that names a row the year doesn't have", () => {
+  it("is not solved, and doesn't throw", () => {
+    const p: Period = { label: "2026", purchases: [B(undefined, 100, 10)], sales: [S(undefined, 50, 0)] };
+    const us: Unknown[] = [{ id: "p", label: "מחיר", ref: { t: "sale", year: 0, index: 0, field: "unitPrice" } }];
+    for (const metric of ["purchaseDiscount", "purchaseTotal", "saleRevenue", "saleCost"] as const) {
+      const s = solveUnknowns([p], "fifo", us, [{ year: 0, metric, index: 4, value: 100 }]);
+      assert.equal(s.ok, false, metric);
+    }
+  });
+});
+
+describe("reef · one discount rate for both years, and last year's sale price", () => {
+  const rule = [{ kind: "qty-whole" as const, threshold: 200, pct: 0, shared: true }];
+  const b = (date: string, q: number, p: number, freight: number) => B(date, q, p, { discounts: rule.map((r) => ({ ...r })), extras: [{ category: "freight", amount: freight, basis: "per-unit" }] });
+  const periods: Period[] = [
+    { label: "2021", purchases: [b("2021-01-01", 350, 750, 150), b("2021-03-15", 430, 785, 120), b("2021-04-25", 150, 780, 100), b("2021-11-30", 270, 795, 115)], sales: [S(undefined, 1_000, 0)], nrvPerUnit: 1_000 },
+    { label: "2022", purchases: [b("2022-03-30", 285, 820, 140), b("2022-08-01", 320, 845, 125), b("2022-12-31", 150, 810, 110)], sales: [S(undefined, 800, 0)], nrvPerUnit: 900 },
+  ];
+  const us: Unknown[] = [
+    { id: "d", label: "שיעור ההנחה", ref: { t: "discountPct", year: 0, allYears: true }, guess: 0.05 },
+    { id: "p1", label: "מחיר 2021", ref: { t: "sale", year: 0, index: 0, field: "unitPrice" } },
+    { id: "p2", label: "מחיר 2022", ref: { t: "sale", year: 1, index: 0, field: "unitPrice" } },
+  ];
+  const ks: Known[] = [
+    { year: 0, metric: "purchaseDiscount", index: 0, value: 13_125 },
+    { year: 0, metric: "gpPct", value: 0.25 },
+    { year: 1, metric: "salePriceChange", index: 0, value: 0 },
+  ];
+  it("finds 5% from 13,125, the 2021 price from the margin, and the same price in 2022", () => {
+    const s = solveUnknowns(periods, "wa-periodic", us, ks);
+    assert.ok(s.ok, s.error);
+    near(s.values.d, 0.05, 1e-9);
+    near(s.values.p1, 1_156.7944, 1e-4);
+    near(s.values.p2, s.values.p1, 1e-9);
+    // The rate reaches 2022's purchases too.
+    near(purchaseCost(s.periods[1].purchases[0]).total, 261_915);
+    const [a, c] = valuateChain(s.periods, "wa-periodic");
+    near(a.cogs, 867_595.83);
+    near(c.cogs, 730_814.17);
+    near(c.netSales, 925_435.56);
+    const f = historyFire({ periods: s.periods, method: "fifo", savedUnits: 0, terms: { deductible: { kind: "pct", value: 0.15 } }, fireDate: "2023-01-01" });
+    near(f.burned, 142_638.75);
+    near(f.settlement.net, 121_242.94);
   });
 });
