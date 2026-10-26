@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { exchangeErrors, type ExchangeInputs, solveExchange } from "./exchange";
+import katex from "katex";
+import { exchangeErrors, type ExchangeInputs, explainExchange, solveExchange } from "./exchange";
+
+const r2 = (v: number) => Math.round(v * 100) / 100;
 
 // The exchange page's example: a 500,000 machine, ten years, three years old on 1.1.X4,
 // swapped on 1.4.X4 for a new one plus 40,000 cash paid; the old one is worth 360,000.
@@ -76,4 +79,54 @@ describe("learning lab asset exchange", () => {
     assert.ok(exchangeErrors({ ...X, commercial: false, cashPaid: 0, cashReceived: 400_000 }).newCost);
     assert.ok(exchangeErrors({ ...X, newSalvage: 500_000 }).newSalvage);
   });
+});
+
+describe("exchange under any depreciation method, before and after", () => {
+  const Y: ExchangeInputs = { ...X, accumulatedOpening: 0, yearsUsed: 3 };
+
+  it("three years of straight-line use is the same as 150,000 accumulated", () => {
+    const a = solveExchange(X);
+    const b = solveExchange(Y);
+    assert.equal(b.accumulated, a.accumulated);
+    assert.equal(b.bookValue, a.bookValue);
+    assert.equal(b.newDep, a.newDep);
+  });
+
+  it("sum-of-years descending before: 10 + 9 + 8 of 55, then 3 months of the 7", () => {
+    const r = solveExchange({ ...Y, oldMethod: "syd-desc" });
+    assert.equal(r2(r.accumulated - r.depToDate), r2((500_000 * 27) / 55));
+    assert.equal(r2(r.depToDate), r2((((500_000 * 7) / 55) * 3) / 12));
+  });
+
+  it("declining balance after: the first life year on the new cost, 9 months of it", () => {
+    const r = solveExchange({ ...Y, newMethod: "db" });
+    const rate = 1 - Math.pow(40_000 / 400_000, 1 / 5);
+    assert.equal(r2(r.newDep), r2((400_000 * rate * 9) / 12));
+    // Every year after adds up to the new asset's whole depreciable amount.
+    assert.equal(r2(r.newDep + r.later.reduce((s, y) => s + y.charge, 0)), 360_000);
+  });
+
+  it("ascending sum-of-years after: the smallest charge first", () => {
+    const r = solveExchange({ ...Y, newMethod: "syd-asc" });
+    assert.equal(r2(r.newAnnual), r2((360_000 * 1) / 15));
+    assert.ok(r.newYears[4] > r.newYears[0]);
+  });
+
+  it("asks for whole years and a positive salvage where the method needs them", () => {
+    assert.ok(exchangeErrors({ ...Y, yearsUsed: 10 }).yearsUsed);
+    assert.ok(exchangeErrors({ ...Y, oldMethod: "db" }).oldSalvage);
+    assert.ok(exchangeErrors({ ...Y, newLife: 4.5 }).newLife);
+  });
+
+  for (const m of ["sl", "db", "syd-desc", "syd-asc"] as const)
+    for (const month of [1, 4])
+      it(`${m}, exchanged in month ${month}: every step has a reason, and every formula renders`, () => {
+        const x: ExchangeInputs = { ...Y, oldSalvage: m === "db" ? 20_000 : 0, oldMethod: m, newMethod: m, month };
+        const steps = explainExchange(x, solveExchange(x));
+        assert.deepEqual(steps.map((s) => s.id).slice(0, 4), ["date", "old", "measure", "new"]);
+        for (const s of steps) {
+          assert.ok(s.why.length > 20, s.id);
+          for (const c of s.calcs) assert.doesNotThrow(() => katex.renderToString(c.tex, { throwOnError: true, displayMode: true }), c.tex);
+        }
+      });
 });

@@ -1,14 +1,15 @@
 "use client";
 
-import { Hammer, RotateCcw, TriangleAlert } from "lucide-react";
+import { RotateCcw, TriangleAlert } from "lucide-react";
 import { useId, useState } from "react";
 import { DataTable, JournalEntry, Num } from "@/components/study/blocks";
 import { NumberInput, parseNumber as parse, Segmented } from "@/components/study/inputs";
 import { MONTHS, MonthPicker } from "@/components/study/month-picker";
-import { FormulaCard, type FormulaRow, Stat, texNum } from "@/components/study/ui";
+import { Stat } from "@/components/study/ui";
 import { inputClass } from "@/components/ui/form";
-import { METHOD_LABEL, type RenoMethod, type RenovationInputs, type RenovationResult, renovationErrors, solveRenovation } from "@/lib/learn/renovation";
-import { capitaliseLines, catchUpLines, SL_EX, yearEndLines } from "./data";
+import { explainRenovation, type RenoMethod, type RenoStep, type RenovationInputs, type RenovationResult, renovationErrors, solveRenovation } from "@/lib/learn/renovation";
+import { renderTex } from "@/lib/tex";
+import { capitaliseLines, catchUpLines, dateOf, SL_EX, yearEndLines } from "./data";
 
 const str = (v: number) => String(v);
 const DEFAULTS = {
@@ -46,49 +47,7 @@ const METHOD_OPTIONS: [RenoMethod, string, string][] = [
   ["syd-desc", "ספרות השנים — יורד", "הגבוה בשנה הראשונה"],
   ["syd-asc", "ספרות השנים — עולה", "הגבוה בשנה האחרונה"],
 ];
-const pctTex = (v: number) => `${(v * 100).toFixed(2)}\\%`;
 const r2 = (v: number) => Math.round(v * 100) / 100;
-
-function formulaRows(x: RenovationInputs, r: RenovationResult): FormulaRow[] {
-  const rows: FormulaRow[] = [];
-  if (r.monthsBefore > 0)
-    rows.push({
-      label: `שלב 2 — פחת ינואר עד ${MONTHS[r.monthsBefore - 1]} לפי הנתונים המקוריים`,
-      tex: String.raw`${texNum(r.oldYears[x.renoYear - x.firstYear])} \times \frac{${r.monthsBefore}}{12} = ${texNum(r.depToDate)}`,
-    });
-  rows.push(
-    {
-      label: "ערך בספרים ליום השיפוץ",
-      tex: String.raw`\text{עלות מקורית} - \text{פחת נצבר} = ${texNum(x.cost)} - ${texNum(r.accumulatedAtReno)} = ${texNum(r.carryingAtReno)}`,
-    },
-    { label: "שלב 3 — ערך בספרים מותאם", tex: String.raw`${texNum(r.carryingAtReno)} + ${texNum(x.renoCost)} = ${texNum(r.adjusted)}` },
-  );
-  if (x.newMethod === "sl")
-    rows.push({
-      label: "שלב 5 — פחת שנתי חדש",
-      tex: String.raw`\frac{${texNum(r.adjusted)} - ${texNum(x.newSalvage)}}{${x.newLife}} = ${texNum(r.newYears[0])}`,
-    });
-  else if (x.newMethod === "db")
-    rows.push({
-      label: "שלב 5 — שיעור פחת חדש",
-      tex: String.raw`1 - \left(\frac{${texNum(x.newSalvage)}}{${texNum(r.adjusted)}}\right)^{\frac{1}{${x.newLife}}} = ${pctTex(r.newRate!)}`,
-    });
-  else
-    rows.push(
-      { label: "שלב 5 — סכום ספרות השנים החדש", tex: String.raw`\frac{${x.newLife} \times ${x.newLife + 1}}{2} = ${r.newDigits}` },
-      {
-        label: "פחת שנת החיים הראשונה מיום השיפוץ",
-        tex: String.raw`${texNum(r.newBase)} \times \frac{${x.newMethod === "syd-desc" ? x.newLife : 1}}{${r.newDigits}} = ${texNum(r.newYears[0])}`,
-      },
-    );
-  const reno = r.rows.find((row) => row.year === x.renoYear)!;
-  if (r.monthsBefore > 0)
-    rows.push({
-      label: `פחת ${MONTHS[x.renoMonth - 1]} עד דצמבר ${x.renoYear} (${r.monthsAfter} חודשים)`,
-      tex: String.raw`${texNum(r.newYears[0])} \times \frac{${r.monthsAfter}}{12} = ${texNum(reno.after)}`,
-    });
-  return rows;
-}
 
 export function RenovationCalculator() {
   const [f, setF] = useState<Form>(DEFAULTS);
@@ -99,6 +58,7 @@ export function RenovationCalculator() {
   const reno = r?.rows.find((row) => row.year === x.renoYear);
 
   return (
+    <div className="space-y-6">
     <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <div className="min-w-0 space-y-5">
         <div className="card p-5">
@@ -172,16 +132,10 @@ export function RenovationCalculator() {
               <Stat label={`סך הפחת בשנת ${x.renoYear}`} value={<Num v={reno.charge} />} hint={r.monthsBefore > 0 ? "לפני ואחרי השיפוץ" : "לפי הנתונים החדשים"} />
             </div>
 
-            <FormulaCard title={`לוח נוסחאות — שיפוץ (${METHOD_LABEL[x.newMethod]})`} icon={<Hammer className="h-4 w-4" />} rows={formulaRows(x, r)} />
-
-            <div className="card p-5">
-              <p className="text-[17px] font-semibold text-fg">פקודות היומן בשנת השיפוץ</p>
-              <div className="grid gap-3 xl:grid-cols-2">
-                {r.monthsBefore > 0 && <JournalEntry title="1. פחת עד יום השיפוץ" lines={catchUpLines(r)} />}
-                <JournalEntry title={`${r.monthsBefore > 0 ? "2" : "1"}. היוון השיפוץ`} lines={capitaliseLines(x)} />
-                <JournalEntry title={`${r.monthsBefore > 0 ? "3" : "2"}. פחת לסוף השנה`} date={`31.12.${x.renoYear}`} lines={yearEndLines(reno.after)} />
-              </div>
-            </div>
+            <a href="#reno-walk" className="no-print flex items-center justify-between gap-3 rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 text-sm font-semibold text-fg hover:bg-accent-soft/70">
+              איך הגענו לכל מספר? הדרך המלאה, שלב אחר שלב — מתחת למחשבון
+              <span aria-hidden>↓</span>
+            </a>
 
             <DataTable
               caption="לוח פחת לפי שנות כספים"
@@ -203,8 +157,76 @@ export function RenovationCalculator() {
         )}
       </div>
     </div>
+    {r && reno && <RenovationWalk x={x} r={r} />}
+    </div>
   );
 }
+
+/**
+ * The calculator's whole working, in the page's five steps and then the years
+ * after: each step says why it is done, then every operation on its own —
+ * what is computed, the formula in words, the numbers, the result — and the
+ * journal entry it ends with.
+ */
+function RenovationWalk({ x, r }: { x: RenovationInputs; r: RenovationResult }) {
+  const steps = explainRenovation(x, r);
+  const reno = r.rows.find((row) => row.year === x.renoYear)!;
+  const entry = (s: RenoStep) =>
+    s.entry === "catch-up" ? (
+      <JournalEntry title="פקודה: פחת עד יום השיפוץ" date={dayBefore(x.renoMonth, x.renoYear)} lines={catchUpLines(r)} />
+    ) : s.entry === "capitalise" ? (
+      <JournalEntry title="פקודה: היוון השיפוץ — העלות נכנסת לנכס" date={dateOf(x.renoMonth, x.renoYear)} lines={capitaliseLines(x)} />
+    ) : s.entry === "year-end" ? (
+      <JournalEntry title={`פקודה: פחת מיום השיפוץ עד סוף ${x.renoYear}`} date={`31.12.${x.renoYear}`} lines={yearEndLines(reno.after)} />
+    ) : null;
+  return (
+    <section id="reno-walk" aria-labelledby="reno-walk-h" className="scroll-mt-32 space-y-4">
+      <div>
+        <h3 id="reno-walk-h" className="text-xl font-semibold text-fg">
+          הדרך המלאה, שלב אחר שלב
+        </h3>
+        <p className="mt-1 text-[14px] text-muted">כל מספר במחשבון — מאיפה הוא בא. אותם חמישה שלבים כמו בשלבי הפתרון למעלה, ואחריהם השנים הבאות.</p>
+      </div>
+      <ol className="space-y-4">
+        {steps.map((s) => (
+          <li key={s.id} className="card overflow-hidden">
+            <p className="border-b border-line bg-surface-2/50 px-5 py-3 text-[16px] font-semibold text-fg">{s.title}</p>
+            <div className="space-y-3 px-5 py-4">
+              <p className="rounded-lg border-s-4 border-accent/60 bg-accent-soft/40 px-3 py-2 text-[13.5px] leading-relaxed text-fg/90">
+                <span className="font-semibold text-fg">למה? </span>
+                {s.why}
+              </p>
+              {s.text.map((t) => (
+                <p key={t} className="text-[14.5px] leading-relaxed text-fg/90">
+                  {t}
+                </p>
+              ))}
+              {s.calcs.length > 0 && (
+                <ol className="space-y-2">
+                  {s.calcs.map((c, i) => (
+                    <li key={i} className="rounded-lg border border-line bg-surface px-3 py-2.5">
+                      <p className="flex items-start gap-2 text-[14px] font-medium text-fg">
+                        <span className="num mt-0.5 grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-surface-2 px-1 text-[11px] font-bold text-muted">{i + 1}</span>
+                        <span className="min-w-0">{c.label}</span>
+                      </p>
+                      <div dir="ltr" className="mt-1.5 overflow-x-auto rounded-md bg-surface-2/60 px-3 py-1 text-[15px]" dangerouslySetInnerHTML={{ __html: renderTex(c.tex, true) }} />
+                      {c.note && <p className="mt-1.5 text-[12.5px] text-muted">{c.note}</p>}
+                    </li>
+                  ))}
+                </ol>
+              )}
+              {s.table && <DataTable caption="האומדנים — לפני ואחרי" head={s.table.head} rows={s.table.rows} />}
+              {entry(s)}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+/** The last day of the month before: 30.6.2023 for a renovation on 1.7.2023. */
+const dayBefore = (month: number, year: number) => `${new Date(Date.UTC(year, month - 1, 0)).getUTCDate()}.${month - 1}.${year}`;
 
 /** A year: no thousands separators, unlike a money field. */
 function YearInput({ label, value, onChange, error }: { label: string; value: string; onChange: (v: string) => void; error?: string }) {

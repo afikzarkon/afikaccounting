@@ -1,12 +1,13 @@
 "use client";
 
-import { ArrowLeftRight, RotateCcw, TriangleAlert } from "lucide-react";
+import { RotateCcw, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { JournalEntry, Num } from "@/components/study/blocks";
 import { NumberInput, parseNumber as parse, Segmented } from "@/components/study/inputs";
 import { MONTHS, MonthPicker } from "@/components/study/month-picker";
-import { FormulaCard, type FormulaRow, Stat, texNum } from "@/components/study/ui";
-import { exchangeErrors, type ExchangeInputs, type ExchangeResult, solveExchange } from "@/lib/learn/exchange";
+import { Stat } from "@/components/study/ui";
+import { type DepMethod, exchangeErrors, type ExchangeInputs, type ExchangeResult, type ExchangeStep, explainExchange, solveExchange } from "@/lib/learn/exchange";
+import { renderTex } from "@/lib/tex";
 import { cn } from "@/lib/utils";
 import { catchUpLines, EXAMPLE, exchangeLines, yearEndLines } from "./entries";
 
@@ -15,7 +16,10 @@ const DEFAULTS = {
   oldCost: str(EXAMPLE.oldCost),
   oldSalvage: str(EXAMPLE.oldSalvage),
   oldLife: str(EXAMPLE.oldLife),
-  accumulatedOpening: str(EXAMPLE.accumulatedOpening),
+  // The example's 150,000 accumulated by straight-line is three years of use.
+  yearsUsed: str(Math.round(EXAMPLE.accumulatedOpening / ((EXAMPLE.oldCost - EXAMPLE.oldSalvage) / EXAMPLE.oldLife))),
+  oldMethod: "sl" as DepMethod,
+  newMethod: "sl" as DepMethod,
   month: EXAMPLE.month,
   commercial: EXAMPLE.commercial,
   basis: EXAMPLE.basis,
@@ -34,7 +38,10 @@ const toInputs = (f: Form): ExchangeInputs => {
     oldCost: parse(f.oldCost),
     oldSalvage: parse(f.oldSalvage),
     oldLife: parse(f.oldLife),
-    accumulatedOpening: parse(f.accumulatedOpening),
+    accumulatedOpening: 0,
+    yearsUsed: parse(f.yearsUsed),
+    oldMethod: f.oldMethod,
+    newMethod: f.newMethod,
     month: f.month,
     commercial: f.commercial,
     basis: f.basis,
@@ -47,42 +54,12 @@ const toInputs = (f: Form): ExchangeInputs => {
   };
 };
 
-const cashTex = (x: ExchangeInputs) =>
-  x.cashPaid > 0 ? ` + ${texNum(x.cashPaid)}` : x.cashReceived > 0 ? ` - ${texNum(x.cashReceived)}` : "";
-
-function formulaRows(x: ExchangeInputs, r: ExchangeResult): FormulaRow[] {
-  const rows: FormulaRow[] = [
-    {
-      label: `שלב 2 — פחת הנכס הישן מתחילת השנה ועד ההחלפה (${r.monthsBefore} חודשים)`,
-      tex: String.raw`\text{פחת עד ההחלפה} = ${texNum(r.oldAnnual)} \times \frac{${r.monthsBefore}}{12} = ${texNum(r.depToDate)}`,
-    },
-    {
-      label: "ערך בספרים ליום ההחלפה",
-      tex: String.raw`${texNum(x.oldCost)} - (${texNum(x.accumulatedOpening)} + ${texNum(r.depToDate)}) = ${texNum(r.bookValue)}`,
-    },
-  ];
-  if (!x.commercial)
-    rows.push({ label: "שלב 3 — עלות הנכס החדש לפי הערך בספרים (אין רווח או הפסד)", tex: String.raw`${texNum(r.bookValue)}${cashTex(x)} = ${texNum(r.newCost)}` });
-  else if (x.basis === "given")
-    rows.push(
-      { label: "שלב 3 — עלות הנכס החדש לפי השווי ההוגן של הנכס שנמסר", tex: String.raw`${texNum(x.fairValueGiven)}${cashTex(x)} = ${texNum(r.newCost)}` },
-      { label: r.gain >= 0 ? "רווח מהחלפה" : "הפסד מהחלפה", tex: String.raw`${texNum(x.fairValueGiven)} - ${texNum(r.bookValue)} = ${texNum(r.gain)}` },
-    );
-  else
-    rows.push(
-      { label: "שלב 3 — עלות הנכס החדש = השווי ההוגן של הנכס שהתקבל", tex: String.raw`\text{עלות נכס חדש} = ${texNum(r.newCost)}` },
-      {
-        label: "השווי ההוגן של הנכס שנמסר, נגזר מהמתקבל",
-        tex: String.raw`${texNum(x.fairValueReceived)}${x.cashPaid > 0 ? ` - ${texNum(x.cashPaid)}` : x.cashReceived > 0 ? ` + ${texNum(x.cashReceived)}` : ""} = ${texNum(r.fairValueGiven!)}`,
-      },
-      { label: r.gain >= 0 ? "רווח מהחלפה" : "הפסד מהחלפה", tex: String.raw`${texNum(r.fairValueGiven!)} - ${texNum(r.bookValue)} = ${texNum(r.gain)}` },
-    );
-  rows.push({
-    label: `המשך השנה — פחת הנכס החדש (${r.monthsAfter} חודשים)`,
-    tex: String.raw`\frac{${texNum(r.newCost)} - ${texNum(x.newSalvage)}}{${x.newLife}} \times \frac{${r.monthsAfter}}{12} = ${texNum(r.newDep)}`,
-  });
-  return rows;
-}
+const METHOD_OPTIONS: [DepMethod, string, string][] = [
+  ["sl", "קו ישר", "אותו פחת בכל שנה"],
+  ["db", "יתרה פוחתת", "שיעור קבוע על היתרה"],
+  ["syd-desc", "ספרות השנים — יורד", "הגבוה בשנה הראשונה"],
+  ["syd-asc", "ספרות השנים — עולה", "הגבוה בשנה האחרונה"],
+];
 
 export function ExchangeCalculator() {
   const [f, setF] = useState<Form>(DEFAULTS);
@@ -96,6 +73,7 @@ export function ExchangeCalculator() {
   const before = f.month - 1;
 
   return (
+    <div className="space-y-6">
     <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <div className="min-w-0 space-y-5">
         <div className="card p-5">
@@ -114,13 +92,14 @@ export function ExchangeCalculator() {
             <NumberInput label="ערך גרט" suffix="₪" value={f.oldSalvage} onChange={(v) => set("oldSalvage", v)} error={errors.oldSalvage} />
             <NumberInput label="אורך חיים" suffix="שנים" value={f.oldLife} onChange={(v) => set("oldLife", v)} error={errors.oldLife} />
             <NumberInput
-              label="פחת נצבר לתחילת השנה"
-              suffix="₪"
-              value={f.accumulatedOpening}
-              onChange={(v) => set("accumulatedOpening", v)}
-              error={errors.accumulatedOpening}
+              label="שנים מלאות בשימוש לפני שנת ההחלפה"
+              suffix="שנים"
+              value={f.yearsUsed}
+              onChange={(v) => set("yearsUsed", v)}
+              error={errors.yearsUsed}
             />
           </div>
+          <Segmented label="שיטת הפחת של הנכס הישן" value={f.oldMethod} onChange={(v) => set("oldMethod", v as DepMethod)} options={METHOD_OPTIONS} />
           <div className="mt-4">
             <MonthPicker value={f.month} onChange={(m) => set("month", m)} label="חודש ההחלפה (בתחילת החודש)" />
             <p className="mt-2 text-xs text-muted">
@@ -188,7 +167,7 @@ export function ExchangeCalculator() {
             <NumberInput label="אורך חיים" suffix="שנים" value={f.newLife} onChange={(v) => set("newLife", v)} error={errors.newLife} />
             <NumberInput label="ערך גרט" suffix="₪" value={f.newSalvage} onChange={(v) => set("newSalvage", v)} error={errors.newSalvage} />
           </div>
-          <p className="mt-3 text-xs text-muted">שיטת הפחת לשני הנכסים בסימולציה: קו ישר.</p>
+          <Segmented label="שיטת הפחת של הנכס החדש" value={f.newMethod} onChange={(v) => set("newMethod", v as DepMethod)} options={METHOD_OPTIONS} />
         </div>
       </div>
 
@@ -218,51 +197,100 @@ export function ExchangeCalculator() {
               <Stat label="פחת הנכס החדש עד 31.12" value={<Num v={r.newDep} />} hint={`${r.monthsAfter} חודשים`} />
             </div>
 
-            <FormulaCard title="לוח נוסחאות — החלפת נכסים" icon={<ArrowLeftRight className="h-4 w-4" />} rows={formulaRows(x, r)} />
-
-            {r.monthsBefore > 0 && (
-              <div className="card p-5">
-                <p className="text-[17px] font-semibold text-fg">פקודה 1: פחת הנכס הישן עד יום ההחלפה</p>
-                <JournalEntry title="השלמת פחת לנכס הישן" lines={catchUpLines(r)} />
-              </div>
-            )}
-
-            <div className="card p-5">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-[17px] font-semibold text-fg">{r.monthsBefore > 0 ? "פקודה 2" : "פקודה 1"}: ההחלפה</p>
-                <div className="flex gap-1" role="group" aria-label="סוג הפקודה">
-                  {(
-                    [
-                      ["full", "מלאה"],
-                      ["net", "מקוצרת"],
-                    ] as const
-                  ).map(([m, label]) => (
-                    <button
-                      key={m}
-                      type="button"
-                      aria-pressed={mode === m}
-                      onClick={() => setMode(m)}
-                      className={cn("h-8 rounded-lg px-3 text-xs font-semibold transition-colors", mode === m ? "bg-accent text-accent-fg" : "bg-surface-2 text-muted hover:text-fg")}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <JournalEntry title={mode === "full" ? "פקודה מלאה" : "פקודה מקוצרת (נטו)"} lines={exchangeLines(x, r, mode)} />
-            </div>
-
-            <div className="card p-5">
-              <p className="text-[17px] font-semibold text-fg">{r.monthsBefore > 0 ? "פקודה 3" : "פקודה 2"}: פחת הנכס החדש לסוף השנה</p>
-              <JournalEntry title="פחת הנכס החדש" date="31.12" lines={yearEndLines(r)} />
-              <p className="text-sm text-muted">
-                סך הוצאות הפחת בשנת ההחלפה: <Num v={r.depToDate} /> + <Num v={r.newDep} /> = <Num v={r.totalDep} /> · יתרה בספרים של הנכס החדש
-                ליום 31.12: <Num v={r.newBookValue} />.
-              </p>
-            </div>
+            <a href="#exchange-walk" className="no-print flex items-center justify-between gap-3 rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 text-sm font-semibold text-fg hover:bg-accent-soft/70">
+              איך הגענו לכל מספר? הדרך המלאה, שלב אחר שלב — מתחת למחשבון
+              <span aria-hidden>↓</span>
+            </a>
           </>
         )}
       </div>
     </div>
+    {r && <ExchangeWalk x={x} r={r} mode={mode} setMode={setMode} />}
+    </div>
+  );
+}
+
+/**
+ * The whole working: the page's three steps, the new asset to year end and the
+ * years after — each step says why it is done, then every operation on its own,
+ * and the journal entry it ends with.
+ */
+function ExchangeWalk({ x, r, mode, setMode }: { x: ExchangeInputs; r: ExchangeResult; mode: "full" | "net"; setMode: (m: "full" | "net") => void }) {
+  const entry = (s: ExchangeStep) =>
+    s.entry === "catch-up" ? (
+      <JournalEntry title="פקודה: פחת הנכס הישן עד יום ההחלפה" lines={catchUpLines(r)} />
+    ) : s.entry === "exchange" ? (
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm font-semibold text-fg">פקודה: ההחלפה</p>
+          <div className="flex gap-1" role="group" aria-label="סוג הפקודה">
+            {(
+              [
+                ["full", "מלאה"],
+                ["net", "מקוצרת"],
+              ] as const
+            ).map(([m, label]) => (
+              <button
+                key={m}
+                type="button"
+                aria-pressed={mode === m}
+                onClick={() => setMode(m)}
+                className={cn("h-8 rounded-lg px-3 text-xs font-semibold transition-colors", mode === m ? "bg-accent text-accent-fg" : "bg-surface-2 text-muted hover:text-fg")}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <JournalEntry
+          title={mode === "full" ? "פקודה מלאה — העלות והפחת הנצבר של הישן יוצאים כל אחד בנפרד" : "פקודה מקוצרת — הערך בספרים של הישן יוצא בשורה אחת"}
+          lines={exchangeLines(x, r, mode)}
+        />
+      </div>
+    ) : s.entry === "year-end" ? (
+      <JournalEntry title="פקודה: פחת הנכס החדש עד סוף השנה" date="31.12" lines={yearEndLines(r)} />
+    ) : null;
+  return (
+    <section id="exchange-walk" aria-labelledby="exchange-walk-h" className="scroll-mt-32 space-y-4">
+      <div>
+        <h3 id="exchange-walk-h" className="text-xl font-semibold text-fg">
+          הדרך המלאה, שלב אחר שלב
+        </h3>
+        <p className="mt-1 text-[14px] text-muted">כל מספר במחשבון — מאיפה הוא בא. שלושת שלבי הפתרון, הנכס החדש עד סוף השנה, והשנים שאחריה.</p>
+      </div>
+      <ol className="space-y-4">
+        {explainExchange(x, r).map((s) => (
+          <li key={s.id} className="card overflow-hidden">
+            <p className="border-b border-line bg-surface-2/50 px-5 py-3 text-[16px] font-semibold text-fg">{s.title}</p>
+            <div className="space-y-3 px-5 py-4">
+              <p className="rounded-lg border-s-4 border-accent/60 bg-accent-soft/40 px-3 py-2 text-[13.5px] leading-relaxed text-fg/90">
+                <span className="font-semibold text-fg">למה? </span>
+                {s.why}
+              </p>
+              {s.text.map((t) => (
+                <p key={t} className="text-[14.5px] leading-relaxed text-fg/90">
+                  {t}
+                </p>
+              ))}
+              {s.calcs.length > 0 && (
+                <ol className="space-y-2">
+                  {s.calcs.map((c, i) => (
+                    <li key={i} className="rounded-lg border border-line bg-surface px-3 py-2.5">
+                      <p className="flex items-start gap-2 text-[14px] font-medium text-fg">
+                        <span className="num mt-0.5 grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-surface-2 px-1 text-[11px] font-bold text-muted">{i + 1}</span>
+                        <span className="min-w-0">{c.label}</span>
+                      </p>
+                      <div dir="ltr" className="mt-1.5 overflow-x-auto rounded-md bg-surface-2/60 px-3 py-1 text-[15px]" dangerouslySetInnerHTML={{ __html: renderTex(c.tex, true) }} />
+                      {c.note && <p className="mt-1.5 text-[12.5px] text-muted">{c.note}</p>}
+                    </li>
+                  ))}
+                </ol>
+              )}
+              {entry(s)}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }

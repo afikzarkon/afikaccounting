@@ -84,3 +84,19 @@ export const transferLines = (amount: number): EntryLine[] => [
 ];
 
 export const fmtNum = (v: number) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(v);
+
+// Revalued every year: a building with a salvage value, on its own land. Every charge and transfer comes out round,
+// and nothing ever goes to profit or loss, so the surplus is always fair value less the cost-model carrying amount.
+export const YEARLY_EX: RevaluationInputs = {
+  cost: 500_000,
+  salvage: 50_000,
+  life: 10,
+  method: "sl",
+  firstYear: 2020,
+  revaluations: yearly(2020, [491_000, 450_000, 386_000, 344_000]),
+  transfer: "depreciation",
+};
+export const YEARLY_LAND = {
+  cost: 100_000,
+  values: [110_000, 115_000, 105_000, 108_000].map((fairValue, i) => ({ year: 2020 + i, fairValue })),
+};

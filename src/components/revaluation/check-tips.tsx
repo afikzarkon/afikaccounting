@@ -1,8 +1,8 @@
-import { CalendarClock, Layers, Repeat, Search, Store, TriangleAlert } from "lucide-react";
+import { Layers, Repeat, Search, Store, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { DataTable, JournalEntry, Num } from "@/components/study/blocks";
 import { Formula } from "@/components/study/math";
-import { type RevRow, solveRevaluation, type Timing } from "@/lib/learn/revaluation";
+import { type RevRow, solveRevaluation } from "@/lib/learn/revaluation";
 import { side, SL_EX, transferLines } from "./data";
 
 const r2 = (v: number) => Math.round(v * 100) / 100 + 0;
@@ -18,14 +18,6 @@ const gap = (row: RevRow) => r2(row.closing - row.costCarrying);
 const holds = (surplus: number, row: RevRow) => Math.abs(surplus - (row.closing - row.costCarrying)) < 0.01;
 /** The last intermediate year in which the two surpluses differ: the clearest case for the comparison. */
 const SHOWCASE = BY_DEP.rows.find((row) => !holds(disposalRow(row.year).surplus, row))!;
-
-// The same fair value in 2021, at each of the three dates (the central building, revalued that once).
-const TIMING_YEAR = 2021;
-const TIMING_FV = 280_000;
-const TIMINGS = (["start", "mid", "end"] as Timing[]).map((timing) => {
-  const r = solveRevaluation({ ...SL_EX, revaluations: [{ year: TIMING_YEAR, timing, fairValue: TIMING_FV }] });
-  return { timing, ev: r.events[0], dep: r.rows.find((row) => row.year === TIMING_YEAR)!.dep };
-});
 
 // Disposal: the central building sold on 31.12.2021, while it still has a surplus.
 const SALE_YEAR = 2021;
@@ -206,26 +198,6 @@ export function CheckTipsSection() {
           </p>
         </TipCard>
       </div>
-
-      <TipCard icon={<CalendarClock className="h-5 w-5" />} title="מועד ההערכה במהלך השנה משנה את הפחת של אותה שנה">
-        <p>
-          אותו מבנה — הפעם עם הערכה אחת, לשווי הוגן של <Num v={TIMING_FV} /> בשנת {TIMING_YEAR} — בשלושה מועדים שונים:
-        </p>
-        <DataTable
-          head={["מועד ההערכה", "סדר הפעולות", "ערך בספרים לפני", "לקרן", `פחת שנת ${TIMING_YEAR}`]}
-          rows={TIMINGS.map(({ timing, ev, dep }) => [
-            timing === "start" ? `1.1.${TIMING_YEAR}` : timing === "mid" ? `1.7.${TIMING_YEAR}` : `31.12.${TIMING_YEAR}`,
-            timing === "start"
-              ? "שערוך בתחילת השנה, ואז פחת שנתי מלא לפי השווי ההוגן"
-              : timing === "mid"
-                ? "פחת חצי שנה לפי הבסיס הישן, שערוך, ואז חצי שנה לפי השווי ההוגן"
-                : "פחת שנתי מלא לפי הבסיס הישן, ואז שערוך בסוף השנה",
-            r2(ev.before),
-            r2(ev.oci),
-            r2(dep),
-          ])}
-        />
-      </TipCard>
 
       <TipCard icon={<Store className="h-5 w-5" />} title="גריעת נכס שיש לו קרן">
         <p>

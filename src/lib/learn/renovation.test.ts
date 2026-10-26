@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { dbRate, renovationErrors, type RenovationInputs, solveRenovation } from "./renovation";
+import katex from "katex";
+import { dbRate, explainRenovation, renovationErrors, type RenovationInputs, solveRenovation } from "./renovation";
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
@@ -106,5 +107,29 @@ describe("learning lab renovation", () => {
     assert.ok(renovationErrors({ ...SL, renoYear: 2020, renoMonth: 1 }).renoYear);
     assert.ok(renovationErrors({ ...SL, newSalvage: 95_000 }).newSalvage);
     assert.ok(renovationErrors({ ...DB, newSalvage: 0 }).newSalvage);
+  });
+});
+
+describe("the calculator's working, step by step", () => {
+  for (const m of ["sl", "db", "syd-desc", "syd-asc"] as const)
+    for (const month of [1, 7]) {
+      it(`${m}, renovated in month ${month}: every step has a reason, and every formula renders`, () => {
+        const x: RenovationInputs = { ...SL, salvage: m === "db" ? 5_000 : 0, method: m, newMethod: m, renoMonth: month };
+        const steps = explainRenovation(x, solveRenovation(x));
+        assert.deepEqual(steps.map((s) => s.id).slice(0, 5), ["date", "before", "add", "estimates", "after"]);
+        for (const s of steps) {
+          assert.ok(s.why.length > 20, s.id);
+          for (const c of s.calcs) assert.doesNotThrow(() => katex.renderToString(c.tex, { throwOnError: true, displayMode: true }), c.tex);
+        }
+      });
+    }
+
+  it("adds up: the carrying amount on the day, the adjusted amount, and the year's charge", () => {
+    const tex = explainRenovation(SL, solveRenovation(SL)).flatMap((s) => s.calcs.map((c) => c.tex));
+    // 3 years and 6 months at 10,000: 35,000 written off, 65,000 left; + 30,000 renovation = 95,000.
+    assert.ok(tex.some((t) => t.endsWith("= 65{,}000")), "carrying on the day");
+    assert.ok(tex.some((t) => t.endsWith("= 95{,}000")), "adjusted");
+    // 5,000 before + (95,000 − 6,000) ÷ 8 × 6/12 = 5,562.5 after.
+    assert.ok(tex.some((t) => t.endsWith("5{,}000 + 5{,}562.5 = 10{,}562.5")), "the year's charge");
   });
 });

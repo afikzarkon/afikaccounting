@@ -144,9 +144,16 @@ export function RevaluationStepsSection() {
         <Formula
           tex={String.raw`\text{פחת שנתי חדש} = \frac{\text{שווי הוגן} - \text{גרט}}{\text{יתרת אורך החיים}} = \frac{${texNum(EV.fairValue)} - ${texNum(SL_EX.salvage)}}{${EV.monthsLeft / 12}} = ${texNum(NEW_ANNUAL)}`}
         />
+        <Callout kind="warn" title="מה נכנס למונה — ומה לא">
+          <p>
+            הסכום שמפחיתים הוא <strong>הסכום בר-הפחת</strong>: השווי ההוגן <strong>פחות הגרט</strong>. בדוגמה הגרט 0, אבל כשיש גרט חובה להוריד אותו. ואם הנכס
+            כולל <strong>קרקע</strong> — מפרידים אותה: רק השווי של המבנה מופחת, כי קרקע אינה מופחתת (סעיף 58).
+          </p>
+        </Callout>
         <Callout kind="check" title="ומה קורה לקרן?">
           <p>
-            הקרן יכולה לעבור לעודפים בהדרגה — בקצב הפחת — או רק כשהנכס נגרע. שתי החלופות מוסברות בלשונית &quot;קרקע מול מבנה&quot;, ובדוגמאות.
+            הקרן יכולה לעבור לעודפים בהדרגה — בקצב הפחת: בכל שנה <strong>יתרת הקרן ÷ יתרת אורך החיים</strong> — או רק כשהנכס נגרע. שתי החלופות מוסברות
+            ב&quot;קרקע מול מבנה&quot;, ובדוגמאות.
           </p>
         </Callout>
       </StepCard>

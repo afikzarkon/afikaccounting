@@ -279,3 +279,126 @@ export function solveRevaluation(x: RevaluationInputs): RevaluationResult {
   closeYear(x.life - 1);
   return { events, rows };
 }
+
+// ---------------------------------------------------------------------------
+// The calculator's working, year by year, for someone who has never solved one.
+
+/** One operation: what is computed, then the formula with its numbers and the result — as TeX. */
+export type RevCalc = { label: string; tex?: string; note?: string };
+export type RevYearStep = { year: number; title: string; calcs: RevCalc[] };
+
+const nf2 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
+const show2 = (v: number) => nf2.format(Math.round(v * 100) / 100 + 0);
+const t2 = (v: number) => show2(v).replace(/,/g, "{,}");
+const tt = (s: string) => `\\text{${s}}`;
+const yrs = (months: number) => show2(months / 12);
+
+type Block = { from: number; len: number; charge: number; tex: string };
+
+/** A phase's 12-month life years: each one's charge, and the formula that gives it. */
+function blocksOf(method: RevMethod, value: number, salvage: number, months: number, t0: number): Block[] {
+  const base = value - salvage;
+  const n = Math.ceil(months / 12);
+  const len = (i: number) => Math.min(12, months - 12 * i);
+  const out: Block[] = [];
+  // Straight-line is one even charge over the whole phase: the annual figure, times the months over 12.
+  if (method === "sl") return [{ from: t0, len: months, charge: base, tex: `\\frac{${t2(value)} - ${t2(salvage)}}{${yrs(months)}}` }];
+  if (method === "db") {
+    const rate = dbRate(value, salvage, months / 12);
+    let opening = value;
+    for (let i = 0; i < n; i++) {
+      const last = i === n - 1;
+      const charge = last ? opening - salvage : (opening * rate * len(i)) / 12;
+      out.push({ from: t0 + 12 * i, len: len(i), charge, tex: last ? `${t2(opening)} - ${t2(salvage)}` : `${t2(opening)} \\times ${(rate * 100).toFixed(2)}\\%${len(i) < 12 ? ` \\times \\frac{${len(i)}}{12}` : ""}` });
+      opening -= charge;
+    }
+    return out;
+  }
+  const weights = Array.from({ length: n }, (_, i) => (method === "syd-desc" ? months - 12 * i : 12 * i + len(i)) / 12);
+  const total = weights.reduce((s, w) => s + w, 0);
+  weights.forEach((w, i) => out.push({ from: t0 + 12 * i, len: len(i), charge: (base * w) / total, tex: `(${t2(value)} - ${t2(salvage)}) \\times \\frac{${show2(w)}}{${show2(total)}}` }));
+  return out;
+}
+
+export function explainRevaluation(x: RevaluationInputs, r: RevaluationResult): RevYearStep[] {
+  const L = x.life * 12;
+  const phases = [{ t0: 0, value: x.cost, name: "לפי העלות" }, ...r.events.map((e) => ({ t0: e.t, value: e.fairValue, name: `לפי השווי ההוגן מ-${TIMING_LABEL[e.timing]} ${e.year}` }))];
+  return r.rows.map((row, yi) => {
+    const a = yi * 12;
+    const b = a + 12;
+    // In the order things happen: the charge up to a revaluation in the year, the revaluation, the charge after it;
+    // a 31 December revaluation comes last, after the year's transfer, as in the journal.
+    const timed: { at: number; calcs: RevCalc[] }[] = [];
+    const parts: number[] = [];
+    phases.forEach((ph, pi) => {
+      const end = phases[pi + 1]?.t0 ?? L;
+      for (const bl of blocksOf(x.method, ph.value, x.salvage, L - ph.t0, ph.t0)) {
+        const s = Math.max(a, bl.from, ph.t0);
+        const e = Math.min(b, bl.from + bl.len, end);
+        if (e <= s) continue;
+        const share = e - s;
+        const amount = (bl.charge * share) / bl.len;
+        parts.push(amount);
+        const portion = x.method === "sl" ? (share < 12 ? ` \\times \\frac{${share}}{12}` : "") : share < bl.len ? ` \\times \\frac{${share}}{${bl.len}}` : "";
+        timed.push({
+          at: s + 0.5,
+          calcs: [
+            {
+              label: `פחת ${ph.name}${share < 12 ? ` — ${share} חודשים` : ""}`,
+              tex: `${bl.tex}${portion} = ${t2(amount)}`,
+              note: x.method === "sl" ? `(${pi === 0 ? "עלות" : "שווי הוגן"} − גרט) ÷ יתרת אורך החיים ${pi === 0 ? "המקורית" : "מיום ההערכה"} — הגרט תמיד יורד, והקרקע לא נכנסת.` : undefined,
+            },
+          ],
+        });
+      }
+    });
+    const inYear = r.events.filter((ev) => ev.t >= a && ev.t <= b && !(ev.t === a && ev.timing === "end") && !(ev.t === b && ev.timing === "start"));
+    const eventCalcs = (ev: RevEvent): RevCalc[] => [
+      { label: `הערכה מחדש ב-${TIMING_LABEL[ev.timing]} ${ev.year} — ערך בספרים לפני ההערכה`, tex: `${tt("עלות או שווי קודם")} - ${tt("פחת נצבר")} = ${t2(ev.grossBefore)} - ${t2(ev.accEliminated)} = ${t2(ev.before)}` },
+      { label: "הפער", tex: `${tt("שווי הוגן")} - ${tt("ערך בספרים")} = ${t2(ev.fairValue)} - ${t2(ev.before)} = ${t2(ev.diff)}` },
+      {
+        label:
+          ev.diff >= 0
+            ? ev.pl > 0.005
+              ? "עלייה — קודם מבטלת הפסד שנרשם בעבר (לרווח והפסד), והשאר לקרן"
+              : "עלייה — כולה לקרן הערכה מחדש (רווח כולל אחר)"
+            : ev.pl < -0.005
+              ? "ירידה — קודם מאפסת את הקרן, ומה שנשאר הוא הפסד ברווח והפסד"
+              : "ירידה — יש מספיק בקרן, אז היא רק מקטינה אותה",
+        tex: `${tt("לקרן")} = ${t2(ev.oci)}, \\quad ${tt("לרווח והפסד")} = ${t2(ev.pl)}`,
+      },
+      { label: "יתרת הקרן אחרי ההערכה", tex: `${t2(ev.surplusBefore)} ${ev.oci >= 0 ? "+" : "-"} ${t2(Math.abs(ev.oci))} = ${t2(ev.surplusAfter)}` },
+      {
+        label: `מכאן מפחיתים את השווי ההוגן פחות הגרט, על פני ${yrs(ev.monthsLeft)} השנים שנשארו`,
+        tex: `${tt("בסיס הפחת החדש")} = ${t2(ev.fairValue)} - ${t2(x.salvage)} = ${t2(ev.fairValue - x.salvage)}`,
+        note: `הפחת הנצבר (${show2(ev.accEliminated)}) מבוטל כנגד הנכס, והנכס מוצג ב-${show2(ev.fairValue)}.`,
+      },
+    ];
+    for (const ev of inYear.filter((e) => e.timing !== "end")) timed.push({ at: ev.t, calcs: eventCalcs(ev) });
+    const calcs: RevCalc[] = timed.sort((p, q) => p.at - q.at).flatMap((z) => z.calcs);
+    if (parts.length > 1) calcs.push({ label: `סך הפחת בשנת ${row.year}`, tex: `${parts.map(t2).join(" + ")} = ${t2(row.dep)}` });
+
+    if (x.transfer === "depreciation" && row.transfer > 0.005) {
+      const surplusStart = yi > 0 ? r.rows[yi - 1].surplus : 0;
+      const leftYears = (L - a) / 12;
+      const bySurplus = (surplusStart / leftYears) * (12 / 12);
+      calcs.push({ label: "פחת לפי מודל העלות (הלוח \"כאילו לא הייתה הערכה\")", tex: t2(row.costDep) });
+      if (Math.abs(bySurplus - row.transfer) < 0.01)
+        calcs.push({
+          label: "העברה לעודפים — יתרת הקרן בתחילת השנה, חלקי השנים שנשארו",
+          tex: `\\frac{${tt("יתרת הקרן")}}{${tt("יתרת אורך החיים")}} = \\frac{${t2(surplusStart)}}{${show2(leftYears)}} = ${t2(row.transfer)}`,
+          note: `בדיקה בדרך השנייה: פחת לפי השווי ההוגן פחות פחת לפי העלות = ${show2(row.dep)} − ${show2(row.costDep)} = ${show2(row.dep - row.costDep)}.`,
+        });
+      else
+        calcs.push({
+          label: "העברה לעודפים — החלק של הפחת שנובע מההערכה",
+          tex: `${tt("פחת בפועל")} - ${tt("פחת לפי העלות")} = ${t2(row.dep)} - ${t2(row.costDep)} = ${t2(row.transfer)}`,
+          note: "בשיטה הזו הפחת לא שווה בכל שנה, ולכן ההעברה היא הפרש הפחת של השנה.",
+        });
+    }
+
+    for (const ev of inYear.filter((e) => e.timing === "end")) calcs.push(...eventCalcs(ev));
+    calcs.push({ label: `ערך בספרים ב-31.12.${row.year}`, tex: t2(row.closing), note: row.surplus > 0.005 ? `יתרת הקרן: ${show2(row.surplus)}.` : undefined });
+    return { year: row.year, title: `שנת ${row.year}`, calcs };
+  });
+}

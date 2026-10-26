@@ -1,12 +1,13 @@
 "use client";
 
-import { CircleCheck, Minus, Plus, RotateCcw, TriangleAlert } from "lucide-react";
+import { ChevronDown, CircleCheck, Minus, Plus, RotateCcw, TriangleAlert } from "lucide-react";
 import { useId, useState } from "react";
 import { DataTable, JournalEntry, Num } from "@/components/study/blocks";
 import { NumberInput, parseNumber as parse, Segmented } from "@/components/study/inputs";
 import { Stat } from "@/components/study/ui";
 import { inputClass } from "@/components/ui/form";
-import { type RevaluationInputs, type RevMethod, revaluationErrors, solveRevaluation, type Timing, TIMING_LABEL, type Transfer } from "@/lib/learn/revaluation";
+import { explainRevaluation, type RevaluationInputs, type RevaluationResult, type RevMethod, revaluationErrors, solveRevaluation, type Timing, TIMING_LABEL, type Transfer } from "@/lib/learn/revaluation";
+import { renderTex } from "@/lib/tex";
 import { cn } from "@/lib/utils";
 import { nettingLines, proportionalLines, SL_EX } from "./data";
 import { ENRICHMENT_LABEL, EnrichmentBadge } from "./enrichment";
@@ -57,6 +58,7 @@ export function RevaluationCalculator() {
   const checkHolds = r && x.transfer === "depreciation" && !anyLoss && r.rows.every((row) => Math.abs(row.surplus - (row.closing - row.costCarrying)) < 0.02);
 
   return (
+    <div className="space-y-6">
     <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <div className="min-w-0 space-y-5">
         <div className="card p-5">
@@ -119,7 +121,7 @@ export function RevaluationCalculator() {
             value={f.transfer}
             onChange={(v) => set("transfer", v as Transfer)}
             options={[
-              ["depreciation", "בקצב הפחת", "כל שנה: פחת חדש פחות פחת מקורי"],
+              ["depreciation", "בקצב הפחת", "כל שנה: יתרת הקרן ÷ יתרת אורך החיים"],
               ["disposal", "בגריעה בלבד", "הקרן נשארת שלמה עד המכירה"],
             ]}
           />
@@ -213,10 +215,62 @@ export function RevaluationCalculator() {
             </div>
 
             <RevSchedule r={r} caption="לוח שנה אחרי שנה" />
+            <a href="#rev-walk" className="no-print flex items-center justify-between gap-3 rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 text-sm font-semibold text-fg hover:bg-accent-soft/70">
+              איך הגענו לכל מספר? החישוב המלא, שנה אחר שנה — מתחת למחשבון
+              <span aria-hidden>↓</span>
+            </a>
           </>
         )}
       </div>
     </div>
+    {r && <RevaluationWalk x={x} r={r} />}
+    </div>
+  );
+}
+
+/**
+ * The working, year by year: the charge by the basis that applied (cost, then
+ * each fair value — always less salvage), the transfer as the surplus over the
+ * life left, and every revaluation: the carrying amount before it, the gap, where
+ * it goes, the surplus, and the new basis. The first year is open; printing opens all.
+ */
+function RevaluationWalk({ x, r }: { x: RevaluationInputs; r: RevaluationResult }) {
+  return (
+    <section id="rev-walk" aria-labelledby="rev-walk-h" className="scroll-mt-32 space-y-4">
+      <div>
+        <h3 id="rev-walk-h" className="text-xl font-semibold text-fg">
+          החישוב המלא, שנה אחר שנה
+        </h3>
+        <p className="mt-1 text-[14px] text-muted">
+          בכל שנה, לפי הסדר: הפחת (לפי העלות, או לפי השווי ההוגן האחרון — תמיד פחות הגרט), ההעברה לעודפים, וההערכה מחדש אם הייתה. כל שורה: מה מחשבים, הנוסחה עם
+          המספרים, והתוצאה.
+        </p>
+      </div>
+      <ol className="space-y-3">
+        {explainRevaluation(x, r).map((step, i) => (
+          <li key={step.year} className="card overflow-hidden">
+            <details open={i === 0} className="group" data-rev-year>
+              <summary className="flex cursor-pointer list-none items-center gap-2 bg-surface-2/50 px-5 py-3 text-[16px] font-semibold text-fg [&::-webkit-details-marker]:hidden">
+                <span className="flex-1">{step.title}</span>
+                <ChevronDown className="h-4 w-4 text-muted transition-transform group-open:rotate-180" aria-hidden />
+              </summary>
+              <ol className="space-y-2 border-t border-line px-5 py-4">
+                {step.calcs.map((c, j) => (
+                  <li key={j} className="rounded-lg border border-line bg-surface px-3 py-2.5">
+                    <p className="flex items-start gap-2 text-[14px] font-medium text-fg">
+                      <span className="num mt-0.5 grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-surface-2 px-1 text-[11px] font-bold text-muted">{j + 1}</span>
+                      <span className="min-w-0">{c.label}</span>
+                    </p>
+                    {c.tex && <div dir="ltr" className="mt-1.5 overflow-x-auto rounded-md bg-surface-2/60 px-3 py-1 text-[15px]" dangerouslySetInnerHTML={{ __html: renderTex(c.tex, true) }} />}
+                    {c.note && <p className="mt-1.5 text-[12.5px] text-muted">{c.note}</p>}
+                  </li>
+                ))}
+              </ol>
+            </details>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 

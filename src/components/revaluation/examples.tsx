@@ -88,10 +88,12 @@ export function RevaluationExamplesSection() {
         </p>
         <EventsTable r={sl} caption="שתי ההערכות מחדש" />
         <Formula
-          tex={String.raw`\text{פחת אחרי הערכה} = \frac{\text{השווי ההוגן}}{\text{יתרת אורך החיים}} \qquad ${first.year + 1}: \ \frac{${texNum(first.fairValue)}}{${first.monthsLeft / 12}} = ${texNum(first.firstYearCharge)} \qquad ${second.year + 1}: \ \frac{${texNum(second.fairValue)}}{${second.monthsLeft / 12}} = ${texNum(second.firstYearCharge)}`}
+          tex={String.raw`\text{פחת אחרי הערכה} = \frac{\text{השווי ההוגן} - \text{גרט}}{\text{יתרת אורך החיים}} \qquad ${first.year + 1}: \ \frac{${texNum(first.fairValue)} - ${texNum(SL_EX.salvage)}}{${first.monthsLeft / 12}} = ${texNum(first.firstYearCharge)} \qquad ${second.year + 1}: \ \frac{${texNum(second.fairValue)} - ${texNum(SL_EX.salvage)}}{${second.monthsLeft / 12}} = ${texNum(second.firstYearCharge)}`}
+          caption="כאן הגרט 0. כשיש גרט — חובה להוריד אותו; וכשיש קרקע — היא לא נכנסת כלל (דוגמה 4)."
         />
         <Formula
-          tex={String.raw`\text{העברה לעודפים} = \text{פחת לפי השווי ההוגן} - \text{פחת לפי העלות} \qquad ${first.year + 1}: \ ${texNum(firstRow.dep)} - ${texNum(firstRow.costDep)} = ${texNum(firstRow.transfer)}`}
+          tex={String.raw`\text{העברה לעודפים} = \frac{\text{יתרת הקרן}}{\text{יתרת אורך החיים}} = \frac{${texNum(first.surplusAfter)}}{${first.monthsLeft / 12}} = ${texNum(firstRow.transfer)} \qquad \text{או: } ${texNum(firstRow.dep)} - ${texNum(firstRow.costDep)} = ${texNum(firstRow.transfer)}`}
+          caption="יתרת הקרן מחולקת על פני השנים שנשארו — ובקו ישר זה אותו סכום כמו פחת לפי שווי הוגן פחות פחת לפי העלות"
         />
         <p className="!mb-1 font-semibold text-fg">הפקודות — באותו סדר בכל 31.12: פחת ← העברה לעודפים ← הערכה מחדש</p>
         <div className="space-y-4">

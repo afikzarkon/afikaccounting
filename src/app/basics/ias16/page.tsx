@@ -21,6 +21,8 @@ import { RenovationTipsSection } from "@/components/renovation/tips";
 import { RevaluationCalculator } from "@/components/revaluation/calculator";
 import { CheckTipsSection } from "@/components/revaluation/check-tips";
 import { RevaluationExamplesSection } from "@/components/revaluation/examples";
+import { RevaluationStandardSection } from "@/components/revaluation/standard";
+import { YearlyRevaluationSection } from "@/components/revaluation/yearly";
 import { LandBuildingSection } from "@/components/revaluation/land-building";
 import { RevaluationStepsSection } from "@/components/revaluation/steps";
 import { ButtonLink } from "@/components/ui/button";
@@ -115,9 +117,11 @@ const PARTS: Part[] = [
         title: "מודל הערכה מחדש",
         lead: "פחת עד יום ההערכה, פער לשווי ההוגן, וסיווג — קרן הערכה מחדש או רווח והפסד. ואחר כך: קרקע מול מבנה, העברה לעודפים, דוגמאות בכל שיטות הפחת, טיפ בדיקה שתופס כמעט כל טעות — ומחשבון.",
         subs: [
+          { id: "revaluation-standard", label: "מה התקן אומר", content: <RevaluationStandardSection /> },
           { id: "revaluation-steps", label: "דרכים לפתור שאלה", content: <RevaluationStepsSection /> },
           { id: "revaluation-land-building", label: "קרקע מול מבנה", content: <LandBuildingSection /> },
           { id: "revaluation-examples", label: "דוגמאות לפי שיטות", content: <RevaluationExamplesSection /> },
+          { id: "revaluation-yearly", label: "דוגמה 4: הערכה בכל שנה", content: <YearlyRevaluationSection /> },
           { id: "revaluation-check", label: "בדיקה ודגשים", content: <CheckTipsSection /> },
           { id: "revaluation-calculator", label: "מחשבון הערכה מחדש", content: <RevaluationCalculator /> },
         ],
