@@ -33,10 +33,16 @@ export type TraceTable = {
 };
 /** One box of a flow strip: where a number comes from, or where it goes. */
 export type FlowBox = { label: string; value: string; tone?: "accent" };
+/** One operation of the working: what is computed, its formula, the numbers put in, and what comes out. */
+export type Calc = { label: string; formula: string; sub: string; result: string; note?: string };
 export type TraceStep = {
   id: string;
   title: string;
+  /** Why this step is done, in a sentence. */
+  why?: string;
   text: string[];
+  /** The operations of the step, one at a time. */
+  calcs?: Calc[];
   /** The working in order, one line per move. */
   walk?: string[];
   formula?: string[];
@@ -214,7 +220,7 @@ function ledgerTable(r: PeriodResult): TraceTable {
 }
 
 /** The moving average as the course draws it: in, out and balance side by side, one row per event. */
-function stockCard(r: PeriodResult): TraceTable {
+export function stockCard(r: PeriodResult): TraceTable {
   const rows: Cell[][] = [];
   const highlight: number[] = [];
   for (const x of r.ledger) {
@@ -544,7 +550,9 @@ export function stepsToText(steps: TraceStep[]): string {
   const out: string[] = [];
   for (const s of steps) {
     out.push(`■ ${s.title}`);
+    if (s.why) out.push(`למה: ${s.why}`);
     for (const t of s.text) out.push(t);
+    for (const c of s.calcs ?? []) out.push(`  • ${c.label}: ${c.formula} ← ${c.sub} = ${c.result}${c.note ? ` (${c.note})` : ""}`);
     for (const [i, w] of (s.walk ?? []).entries()) out.push(`  ${i + 1}. ${w}`);
     for (const f of s.flow ?? []) out.push(`  ${f.map((b) => `${b.label}${b.value ? ` ${b.value}` : ""}`).join(" ← ")}`);
     for (const f of s.formula ?? []) out.push(`  ${f}`);

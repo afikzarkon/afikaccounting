@@ -4,13 +4,15 @@ import { ChevronDown, ChevronRight, Copy, Printer } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { Stat } from "@/components/study/ui";
 import { compareMethods, entriesFor, historyFire, type Method, METHOD_LABEL, METHODS, type PeriodResult, priceTrend, type System, valuateChain } from "@/lib/learn/inventory";
-import { explainHistoryFire, explainPeriod, explainSolve, m, pc, stepsToText, type TraceStep, u } from "@/lib/learn/inventory-explain";
+import { explainHistoryFire, explainSolve, m, pc, stepsToText, type TraceStep, u } from "@/lib/learn/inventory-explain";
+import { methodWalkthrough, missingStage, type WalkStage, walkToText } from "@/lib/learn/inventory-walkthrough";
 import { solveUnknowns } from "@/lib/learn/inventory-solver";
 import { cn } from "@/lib/utils";
 import { Check, NumField, primaryBtn, smallBtn } from "./inventory-calc-fields";
 import { type Built, type CalcState, claimTerms, optNum } from "./inventory-calc-state";
 import type { Update } from "./inventory-calculator";
 import { FlowStrip, TraceStepView } from "./inventory-trace";
+import { MethodSwitch, Walkthrough } from "./inventory-calc-walk";
 import { EntryView, Money, Scroller } from "./ui";
 
 export type Solution = {
@@ -123,16 +125,24 @@ export function ResultsStep({ st, set, built, solution, method, go }: { st: Calc
   const [sys, setSys] = useState<System | null>(null);
   const [guided, setGuided] = useState(false);
   const [reveal, setReveal] = useState(1);
-  const [showSteps, setShowSteps] = useState(false);
+  const [showSteps, setShowSteps] = useState(true);
   const [copied, setCopied] = useState(false);
   const r = solution.results?.[ay];
   const period = solution.periods?.[ay];
   const claim = useMemo(() => fireClaim(st, built, solution), [st, built, solution]);
-  // A year answered while an unknown is still unsolved shows only its own working.
-  const steps = useMemo(
-    () => [...(solution.error ? [] : solution.solveSteps), ...(r && period ? explainPeriod(period, r) : []), ...(claim && "steps" in claim ? claim.steps : [])],
-    [r, period, solution.solveSteps, solution.error, claim],
-  );
+  const lettered = useMemo(() => built.unknowns.map((x) => ({ ...x, letter: built.letters[x.id] ?? "" })), [built]);
+  const prev = ay > 0 && st.years[ay].fromPrev ? solution.results?.[ay - 1] : undefined;
+  // The working in the chosen method's way; a year answered while an unknown is still unsolved shows only its own.
+  const stages = useMemo((): WalkStage[] => {
+    if (!r || !period) return [];
+    const w = methodWalkthrough({ period, r, year: ay, prev, unknowns: lettered, knowns: built.knowns, solved: solution.error ? undefined : solution.solved });
+    if (claim && "steps" in claim)
+      w.push({ id: "fire", title: "שריפה ושיפוי", why: "השיפוי מחושב לפי בסיס הפוליסה, מכל מה שקרה עד יום השריפה.", steps: claim.steps });
+    return w;
+  }, [r, period, ay, prev, lettered, built.knowns, solution.error, solution.solved, claim]);
+  const steps = stages.flatMap((s) => s.steps);
+  const setMethod = (mm: Method) => set((s) => ({ ...s, method: mm }));
+  const needsDates = st.method === "moving-avg" || (st.method !== "wa-periodic" && st.system === "perpetual");
   const compare = useMemo(
     () => (solution.periods ? compareMethods(solution.periods, { system: st.system, rounding: built.rounding, carryWriteDown: st.carryWriteDown, salesFirstOnTie: st.salesFirst }) : null),
     [solution.periods, st.system, built.rounding, st.carryWriteDown, st.salesFirst],
@@ -169,6 +179,7 @@ export function ResultsStep({ st, set, built, solution, method, go }: { st: Calc
     return (
       <div id="inv-results" className="space-y-3">
         {back}
+        <MethodSwitch method={method} onChange={setMethod} />
         {yearPicker}
         <div className="rounded-xl border border-danger/40 bg-danger/[0.06] px-4 py-3 text-sm text-fg" aria-live="polite">
           {free.length ? (
@@ -179,6 +190,11 @@ export function ResultsStep({ st, set, built, solution, method, go }: { st: Calc
             (solution.error ?? "הזינו לפחות רכישה אחת כדי לראות פתרון.")
           )}
         </div>
+        {built.periods[ay] && (
+          <Walkthrough
+            stages={[missingStage({ period: built.periods[ay], year: ay, method, unknowns: lettered, knowns: built.knowns, needsDates, error: solution.error })]}
+          />
+        )}
         {solution.solveSteps.map((s) => (
           <TraceStepView key={s.id} s={s} />
         ))}
@@ -186,10 +202,9 @@ export function ResultsStep({ st, set, built, solution, method, go }: { st: Calc
     );
   }
 
-  const shownSteps = guided ? steps.slice(0, reveal) : showSteps ? steps : [];
   const trend = priceTrend(period);
   const solved = Object.entries(solution.solved?.ok ? solution.solved.values : {});
-  const text = () => `${st.company ? `${st.company} — ` : ""}${r.label}\n\n${stepsToText(steps)}`;
+  const text = () => `${st.company ? `${st.company} — ` : ""}${r.label} · ${METHOD_LABEL[method]}\n\n${walkToText(stages, stepsToText)}`;
 
   return (
     <div id="inv-results" className="inv-print space-y-4">
@@ -200,6 +215,7 @@ export function ResultsStep({ st, set, built, solution, method, go }: { st: Calc
         </p>
         <Check label="נסו קודם בעצמכם" checked={guided} onChange={(v) => { setGuided(v); setReveal(1); }} />
       </div>
+      <MethodSwitch method={method} onChange={setMethod} />
       {yearPicker}
       {solution.error && <p className="rounded-lg border border-amber-500/40 bg-amber-500/[0.08] px-3 py-2 text-sm text-fg">⚠ לא כל השנים חושבו: {solution.error} השנה הזו לא תלויה בזה.</p>}
       {ay > 0 && st.years[ay].fromPrev && solution.results?.[ay - 1] && (
@@ -218,7 +234,6 @@ export function ResultsStep({ st, set, built, solution, method, go }: { st: Calc
       ) : (
         <>
           <CogsStatement r={r} />
-          <ClosingWorking r={r} />
           {solved.length > 0 && (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {solved.map(([id, v]) => {
@@ -241,27 +256,10 @@ export function ResultsStep({ st, set, built, solution, method, go }: { st: Calc
       {!guided && (
         <button type="button" aria-expanded={showSteps} className={cn(showSteps ? smallBtn : primaryBtn, "no-print w-full")} onClick={() => setShowSteps((x) => !x)}>
           <ChevronDown className={cn("h-4 w-4 transition-transform", showSteps && "rotate-180")} aria-hidden />
-          {showSteps ? "הסתר את דרך הפתרון" : `הצג דרך פתרון מלאה (${steps.length} שלבים${multi ? `, ${r.label}` : ""})`}
+          {showSteps ? "הסתר את דרך הפתרון" : `הצג דרך פתרון מלאה לפי ${METHOD_LABEL[method]} (${steps.length} צעדים${multi ? `, ${r.label}` : ""})`}
         </button>
       )}
-      {shownSteps.length > 0 && (
-        <ol className="space-y-2">
-          {shownSteps.map((s, i) => (
-            <li key={s.id + i}>
-              <details open className="group rounded-xl border border-line bg-surface">
-                <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-2.5 font-semibold text-fg [&::-webkit-details-marker]:hidden">
-                  <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-xs text-accent-fg">{i + 1}</span>
-                  <span className="flex-1">{s.title}</span>
-                  <ChevronDown className="h-4 w-4 text-muted transition-transform group-open:rotate-180" aria-hidden />
-                </summary>
-                <div className="border-t border-line px-4 py-3">
-                  <TraceStepView s={{ ...s, title: "" }} />
-                </div>
-              </details>
-            </li>
-          ))}
-        </ol>
-      )}
+      {(guided || showSteps) && <Walkthrough stages={stages} limit={guided ? reveal : undefined} />}
       {guided && reveal < steps.length && (
         <button type="button" className={primaryBtn} onClick={() => setReveal((x) => x + 1)}>
           הצג צעד הבא ({reveal}/{steps.length})
@@ -424,41 +422,6 @@ function CogsStatement({ r }: { r: PeriodResult }) {
           </tbody>
         </table>
       </Scroller>
-    </section>
-  );
-}
-
-/** Where the closing balance comes from: its units by the movement, its value by the method, then the test against NRV. */
-function ClosingWorking({ r }: { r: PeriodResult }) {
-  // FIFO's layers are kept at the carrying amount; at cost they are scaled back.
-  const toCost = r.closingCarrying > 0 ? r.closingCostBasis / r.closingCarrying : 1;
-  const layers = r.layers.filter((l) => l.units > 1e-9);
-  const value =
-    r.method === "fifo"
-      ? `לפי FIFO נשארו היחידות שנקנו אחרונות: ${layers.map((l) => `${qty(l.units)} × ${u((l.cost * toCost) / l.units)} (${l.source})`).join(" + ") || "0"} = ${m(r.closingCostBasis)} ₪`
-      : r.method === "wa-periodic"
-        ? `ממוצע משוקלל = ${m(r.availableCost)} ÷ ${qty(r.availableUnits)} = ${u(r.avgCost ?? 0)} ₪ ליח׳ ← ${qty(r.closingUnits)} × ${u(r.avgCost ?? 0)} = ${m(r.closingCostBasis)} ₪`
-        : `${qty(r.closingUnits)} × ${u(r.avgCost ?? 0)} (הממוצע הנע אחרי התנועה האחרונה) = ${m(r.closingCostBasis)} ₪`;
-  return (
-    <section aria-label="איך הגענו ליתרת הסגירה" className="space-y-1.5 rounded-xl border border-line bg-surface px-4 py-3 text-sm">
-      <h3 className="font-semibold text-fg">איך הגענו ליתרת הסגירה?</h3>
-      <p className="num text-fg">
-        <span className="font-semibold">כמות:</span> י.פ {qty(r.openingUnits)} + קניות {qty(r.purchasesUnits)} − מכירות {qty(r.soldUnits)}
-        {r.shrinkUnits > 0 ? ` − חוסר ${qty(r.shrinkUnits)}` : ""} = <strong>{qty(r.closingUnits)} יח׳</strong>
-      </p>
-      <p className="num text-fg">
-        <span className="font-semibold">ערך בעלות:</span> {value}
-      </p>
-      {r.nrvTotal !== undefined && (
-        <p className="num text-fg">
-          <span className="font-semibold">שווי מימוש נטו:</span> {m(r.nrvTotal)} ₪{" "}
-          {r.writeDown > 0
-            ? `— נמוך מהעלות ← הורדת ערך ${m(r.writeDown)} ₪, ומלאי הסגירה בספרים ${m(r.closingCarrying)} ₪ (ההפרש נכנס לעלות המכר).`
-            : r.reversal > 0
-              ? `— עלה ← ביטול הורדת ערך ${m(r.reversal)} ₪, ומלאי הסגירה בספרים ${m(r.closingCarrying)} ₪.`
-              : "— לא נמוך מהעלות ← המלאי נשאר בעלות."}
-        </p>
-      )}
     </section>
   );
 }

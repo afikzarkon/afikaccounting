@@ -1,7 +1,7 @@
 import { ArrowLeft, CircleCheck, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { type GrossProfitStatement, type PeriodResult, statement } from "@/lib/learn/inventory";
-import { type FlowBox, statementTable, type TraceStep, type TraceTable } from "@/lib/learn/inventory-explain";
+import { type Calc, type FlowBox, statementTable, type TraceStep, type TraceTable } from "@/lib/learn/inventory-explain";
 import { cn } from "@/lib/utils";
 import { Money, Scroller } from "./ui";
 
@@ -83,11 +83,18 @@ export function TraceStepView({ s, n, children }: { s: TraceStep; n?: number; ch
           </span>
         ))}
       </p>
+      {s.why && (
+        <p className="rounded-lg border-s-4 border-accent/60 bg-accent-soft/40 px-3 py-1.5 text-[13.5px] leading-relaxed text-fg/90">
+          <span className="font-semibold text-fg">למה? </span>
+          {s.why}
+        </p>
+      )}
       {s.text.map((t, i) => (
         <p key={i} className="text-[14.5px] leading-relaxed text-fg/90">
           {t}
         </p>
       ))}
+      {s.calcs && <CalcList calcs={s.calcs} />}
       {s.walk && (
         <ol className="space-y-1.5 rounded-lg border border-line bg-surface px-3 py-2.5">
           {s.walk.map((w, i) => (
@@ -122,6 +129,44 @@ export function TraceStepView({ s, n, children }: { s: TraceStep; n?: number; ch
       )}
       {children}
     </div>
+  );
+}
+
+/** A line of pure math reads left to right; one with Hebrew words follows the page. */
+const MathLine = ({ text, className }: { text: string; className?: string }) => (
+  <span dir={HEBREW.test(text) ? undefined : "ltr"} className={cn("num block", HEBREW.test(text) ? "text-start" : "text-end sm:text-start", className)}>
+    {text}
+  </span>
+);
+
+/** The step's operations one after another: what is computed, the formula, the numbers in it, and the result. */
+function CalcList({ calcs }: { calcs: Calc[] }) {
+  return (
+    <ol className="space-y-2">
+      {calcs.map((c, i) => (
+        <li key={i} className="rounded-lg border border-line bg-surface px-3 py-2.5">
+          <p className="mb-1.5 flex items-start gap-2 text-[14px] font-semibold text-fg">
+            <span className="num mt-0.5 grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-surface-2 px-1 text-[11px] font-bold text-muted">{i + 1}</span>
+            <span className="min-w-0">{c.label}</span>
+          </p>
+          <dl className="grid grid-cols-[4.5rem_1fr] gap-x-2 gap-y-1 text-[13.5px] leading-relaxed">
+            <dt className="text-muted">נוסחה</dt>
+            <dd className="min-w-0 text-fg/90">
+              <MathLine text={c.formula} />
+            </dd>
+            <dt className="text-muted">הצבה</dt>
+            <dd className="min-w-0 text-fg">
+              <MathLine text={c.sub} />
+            </dd>
+            <dt className="text-muted">תוצאה</dt>
+            <dd className="min-w-0">
+              <MathLine text={c.result} className="font-bold text-accent" />
+            </dd>
+          </dl>
+          {c.note && <p className="mt-1.5 text-[12.5px] text-muted">{c.note}</p>}
+        </li>
+      ))}
+    </ol>
   );
 }
 
