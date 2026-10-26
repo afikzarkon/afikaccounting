@@ -431,59 +431,6 @@ export function AllocationDrill({ q }: { q: Question }) {
 }
 
 // ---------------------------------------------------------------------------
-// Chapter 3: is it an asset? Three questions.
-
-export type AssetCase = { item: string; answers: [boolean, boolean, boolean]; why: string };
-const ASSET_QUESTIONS = ["משאב כלכלי בהווה?", "בשליטת הישות?", "כתוצאה מאירוע בעבר?"];
-
-export function AssetChecker({ cases }: { cases: AssetCase[] }) {
-  const [picked, setPicked] = useState<Record<string, boolean>>({});
-  return (
-    <div className="card space-y-3 p-5">
-      <p className="text-[16px] font-semibold text-fg">בודק נכס: שלוש שאלות, כן או לא</p>
-      <ul className="divide-y divide-line">
-        {cases.map((c, ci) => {
-          const all = c.answers.every(Boolean);
-          const answered = c.answers.every((_, qi) => picked[`${ci}:${qi}`] !== undefined);
-          const right = c.answers.every((a, qi) => picked[`${ci}:${qi}`] === a);
-          return (
-            <li key={c.item} className="py-3">
-              <p className="text-[14.5px] font-medium text-fg">{c.item}</p>
-              <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                {ASSET_QUESTIONS.map((question, qi) => (
-                  <div key={question} role="group" aria-label={`${c.item}: ${question}`} className="rounded-lg bg-surface-2/50 px-2.5 py-2">
-                    <p className="text-[12.5px] text-muted">{question}</p>
-                    <div className="mt-1 flex gap-1.5">
-                      {[true, false].map((v) => (
-                        <button
-                          key={String(v)}
-                          type="button"
-                          aria-pressed={picked[`${ci}:${qi}`] === v}
-                          onClick={() => setPicked((p) => ({ ...p, [`${ci}:${qi}`]: v }))}
-                          className={cn(btn, "min-h-8 flex-1 py-1 text-xs", picked[`${ci}:${qi}`] === v && (v === c.answers[qi] ? "bg-success/15 ring-success/50" : "bg-danger/10 ring-danger/50"))}
-                        >
-                          {v ? "כן" : "לא"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {answered && (
-                <p aria-live="polite" className={cn("mt-2 text-[13.5px]", right ? "text-success" : "text-danger")}>
-                  {right ? "✓ " : "✗ לא בדיוק. "}
-                  {all ? "שלוש פעמים כן — זה נכס." : "לפחות תשובה אחת היא לא — זה לא נכס."} <span className="text-fg/85">{c.why}</span>
-                </p>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Chapter 9: the solution, one step at a time, ticking off the balances it handles.
 
 export type RevealStep = { title: string; body: ReactNode; handles: string[] };

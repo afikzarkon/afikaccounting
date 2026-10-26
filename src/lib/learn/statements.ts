@@ -349,3 +349,247 @@ export function splitLoan(amount: number, payments: number, firstWithinYear: boo
   const current = firstWithinYear ? each : 0;
   return { each: r2(each), current: r2(current), long: r2(amount - current) };
 }
+
+// ---------------------------------------------------------------------------
+// Statements as they are presented: the whole statement in its format, and every line with what goes into it.
+
+/** What goes into a line: each part with its sign, so the line reads as a calculation. */
+export type Part = { label: string; amount: number };
+export type DisplayRow =
+  | { kind: "head"; label: string }
+  | {
+      kind: "line";
+      id: string;
+      label: string;
+      /** The note that details the line, when it has parts. */
+      note?: number;
+      amount: number;
+      prior?: number;
+      parts: Part[];
+      explain: string;
+    }
+  | { kind: "total"; id: string; label: string; amount: number; prior?: number; level: "sub" | "grand"; explain?: string; calc?: string };
+export type DisplayStatement = { company: string; title: string; date: string; years: string[]; rows: DisplayRow[] };
+
+/** What each line of the statement of financial position holds, and why it sits where it does. */
+export const SOFP_EXPLAIN: Record<string, string> = {
+  cash: "כסף בקופה ובחשבונות הבנק — הנכס הנזיל ביותר, ולכן ראשון.",
+  deposit: "פיקדון שיתממש בתוך 12 חודשים — נכס שוטף. הריבית שהוא מניב היא קטגוריית השקעה ברווח או הפסד.",
+  receivables: "מה שהלקוחות חייבים, פחות ההפרשה להפסדי אשראי חזויים. מציגים בנטו: את הסכום שבאמת צפוי להיגבות.",
+  inventory: "המלאי שנשאר בסוף השנה, בעלות (או בשווי מימוש נטו אם נמוך יותר).",
+  prepaid: "הוצאה ששולמה מראש על תקופה עתידית — זכות לקבל שירות, ולכן נכס.",
+  debtors: "יתרות חובה קטנות שמאחדים לשורה אחת: מקדמות לספקים, הוצאות מראש, הכנסות לקבל.",
+  vehicles: "רכוש קבוע: עלות פחות פחת נצבר. משמש יותר משנה — בלתי שוטף.",
+  building: "רכוש קבוע: עלות פחות פחת נצבר.",
+  printer: "רכוש קבוע במודל הערכה מחדש — בשווי ההוגן ביום ההערכה.",
+  ppe: "כל הרכוש הקבוע בשורה אחת: עלות (או סכום משוערך) פחות פחת נצבר. הפירוט — בביאור.",
+  bank: "החוב לבנק שנפרע בתוך 12 חודשים: משיכת יתר, וחלויות שוטפות של הלוואות.",
+  suppliers: "החוב לספקים על קניות באשראי.",
+  creditors: "יתרות זכות קטנות שמאחדים לשורה אחת: הוצאות לשלם, מקדמות מלקוחות, הכנסות מראש.",
+  accrued: "הוצאה שכבר שייכת לשנה אבל עוד לא שולמה — התחייבות.",
+  currentLoan: "החלק של ההלוואה שנפרע בתוך 12 חודשים מתאריך המאזן — שוטף.",
+  longLoan: "החלק של ההלוואה שנפרע אחרי 12 חודשים — בלתי שוטף.",
+  capital: "מה שהבעלים השקיעו תמורת מניות.",
+  reserve: "קרן הערכה מחדש: העליות בשווי הרכוש הקבוע שנזקפו לרווח כולל אחר. יושבת בהון.",
+  retained: "הרווחים שנצברו ולא חולקו: עודפי השנה הקודמת ועוד הרווח הנקי של השנה.",
+};
+
+/** What each line of profit or loss holds. */
+export const PL_EXPLAIN: Record<PlLineId, string> = {
+  sales: "המכירות בניכוי הנחות ללקוחות והחזרות מלקוחות. הפעילות העיקרית — קטגוריה תפעולית.",
+  cogs: "עלות הסחורה שנמכרה: מלאי פתיחה + קניות − מלאי סגירה. מוצגת בסוגריים כי היא מקטינה את הרווח.",
+  selling: "כל מה שקשור למכירה ולשיווק: עמלות, פרסום, שכר אנשי המכירות, פחת הנכסים שלהם.",
+  rnd: "הוצאות מחקר ופיתוח: שכר, פחת ציוד, חומרים.",
+  admin: "הוצאות שלא שייכות לקבוצה אחרת: שכר ההנהלה, פחת נכסי ההנהלה, הוצאות הפרשה להפסדי אשראי, משפטיות.",
+  otherIncome: "הכנסות מחוץ לפעילות הרגילה — למשל רווח הון ממכירת רכוש קבוע. עדיין תפעולית.",
+  otherExpense: "הוצאות מחוץ לפעילות הרגילה — למשל הפסד הון. עדיין תפעולית.",
+  investment: "תשואה על נכסים שעומדים בפני עצמם — ריבית מפיקדונות ומהלוואות שניתנו. קטגוריית השקעה.",
+  finance: "עלויות גיוס חוב: ריבית על הלוואות, עמלות בנק ודמי ניהול חשבון. קטגוריית מימון.",
+};
+
+const TOTAL_EXPLAIN: Record<string, string> = {
+  ca: "סכום הנכסים שיתממשו בתוך 12 חודשים.",
+  nca: "סכום הנכסים שישמשו יותר מ-12 חודשים.",
+  assets: "כל הנכסים. חייב להיות שווה לסך ההתחייבויות וההון.",
+  cl: "סכום ההתחייבויות שייפרעו בתוך 12 חודשים.",
+  ncl: "סכום ההתחייבויות שייפרעו אחרי 12 חודשים.",
+  eq: "הזכות השיורית של הבעלים: הנכסים פחות ההתחייבויות.",
+  le: "ההתחייבויות וההון יחד — שווה בדיוק לסך הנכסים.",
+  gross: "הכנסות פחות עלות המכר: כמה מרוויחים על הסחורה עצמה, לפני שאר ההוצאות.",
+  operating: "סיכום ביניים חובה לפי IFRS 18: כל הקטגוריה התפעולית.",
+  beforeFinancing: "סיכום ביניים חובה: הרווח התפעולי ועוד (או פחות) קטגוריית ההשקעה.",
+  beforeTax: "אחרי קטגוריית המימון.",
+  net: "בקורס: שווה לרווח לפני מסים, כי מסים ופעילויות שהופסקו טרם נלמדו.",
+  oci: "פריטים שלא עוברים ברווח או הפסד — כאן הערכה מחדש של רכוש קבוע.",
+  total: "רווח נקי ועוד רווח כולל אחר.",
+};
+
+const SECTIONS: [Section, string][] = [
+  ["ca", "נכסים שוטפים"],
+  ["nca", "נכסים בלתי שוטפים"],
+  ["cl", "התחייבויות שוטפות"],
+  ["ncl", "התחייבויות בלתי שוטפות"],
+  ["eq", "הון"],
+];
+
+type SofpInput = { id: string; label: string; section: Section; parts: Part[]; prior?: number };
+
+/** A statement of financial position from its lines, with totals in their places and notes for the lines that have parts. */
+function sofpStatement(company: string, date: string, years: string[], lines: SofpInput[]): DisplayStatement {
+  const rows: DisplayRow[] = [];
+  let note = 2;
+  const total = (sec: Section, which: "amount" | "prior") => r2(lines.filter((l) => l.section === sec).reduce((s, l) => s + (which === "amount" ? l.parts.reduce((t, p) => t + p.amount, 0) : (l.prior ?? 0)), 0));
+  const hasPrior = years.length > 1;
+  const sum = (secs: Section[], which: "amount" | "prior") => r2(secs.reduce((s, sec) => s + total(sec, which), 0));
+  for (const [sec, title] of SECTIONS) {
+    if (sec === "ca") rows.push({ kind: "head", label: "נכסים" });
+    if (sec === "cl") rows.push({ kind: "head", label: "התחייבויות והון" });
+    rows.push({ kind: "head", label: title });
+    for (const l of lines.filter((x) => x.section === sec)) {
+      const amount = r2(l.parts.reduce((t, p) => t + p.amount, 0));
+      rows.push({ kind: "line", id: l.id, label: l.label, note: l.parts.length > 1 ? note++ : undefined, amount, prior: l.prior, parts: l.parts, explain: SOFP_EXPLAIN[l.id] ?? "" });
+    }
+    rows.push({ kind: "total", id: sec, label: `סה״כ ${title}`, amount: total(sec, "amount"), prior: hasPrior ? total(sec, "prior") : undefined, level: "sub", explain: TOTAL_EXPLAIN[sec] });
+    if (sec === "nca") rows.push({ kind: "total", id: "assets", label: "סה״כ נכסים", amount: sum(["ca", "nca"], "amount"), prior: hasPrior ? sum(["ca", "nca"], "prior") : undefined, level: "grand", explain: TOTAL_EXPLAIN.assets });
+  }
+  rows.push({ kind: "total", id: "le", label: "סה״כ התחייבויות והון", amount: sum(["cl", "ncl", "eq"], "amount"), prior: hasPrior ? sum(["cl", "ncl", "eq"], "prior") : undefined, level: "grand", explain: TOTAL_EXPLAIN.le });
+  return { company, title: "דוח על המצב הכספי", date: `ליום ${date}`, years, rows };
+}
+
+type PlInput = Partial<Record<PlLineId, { parts: Part[]; prior?: number }>> & { oci?: { parts: Part[]; prior?: number } };
+
+/** Profit or loss and OCI from its lines, in the course's order, with the subtotals computed. */
+function plStatement(company: string, period: string, years: string[], x: PlInput): DisplayStatement {
+  const rows: DisplayRow[] = [];
+  const hasPrior = years.length > 1;
+  let note = 20;
+  const val = (id: PlLineId, which: "amount" | "prior") => {
+    const l = x[id];
+    if (!l) return 0;
+    return which === "amount" ? r2(l.parts.reduce((t, p) => t + p.amount, 0)) : (l.prior ?? 0);
+  };
+  const signedVal = (id: PlLineId, which: "amount" | "prior") => PL_LINES.find((l) => l.id === id)!.sign * val(id, which);
+  const line = (id: PlLineId) => {
+    const l = x[id];
+    if (!l) return;
+    const def = PL_LINES.find((d) => d.id === id)!;
+    rows.push({ kind: "line", id, label: def.label, note: l.parts.length > 1 ? note++ : undefined, amount: def.sign * val(id, "amount"), prior: hasPrior ? def.sign * (l.prior ?? 0) : undefined, parts: l.parts, explain: PL_EXPLAIN[id] });
+  };
+  const subtotal = (id: string, label: string, ids: PlLineId[], level: "sub" | "grand" = "sub", calc?: string) => {
+    const of = (which: "amount" | "prior") => r2(ids.reduce((s, i) => s + signedVal(i, which), 0));
+    rows.push({ kind: "total", id, label, amount: of("amount"), prior: hasPrior ? of("prior") : undefined, level, explain: TOTAL_EXPLAIN[id], calc });
+  };
+  const upTo = (...ids: PlLineId[]) => ids;
+  line("sales");
+  line("cogs");
+  subtotal("gross", "רווח גולמי", upTo("sales", "cogs"), "sub", "הכנסות − עלות המכר");
+  for (const id of ["selling", "rnd", "admin", "otherIncome", "otherExpense"] as PlLineId[]) line(id);
+  const operating = upTo("sales", "cogs", "selling", "rnd", "admin", "otherIncome", "otherExpense");
+  subtotal("operating", "רווח (הפסד) תפעולי", operating, "sub", "רווח גולמי − מכירה ושיווק − מו״פ − הנהלה וכלליות ± אחרות");
+  line("investment");
+  subtotal("beforeFinancing", "רווח (הפסד) לפני מימון ומסים על הכנסה", [...operating, "investment"], "sub", "רווח תפעולי ± קטגוריית השקעה");
+  line("finance");
+  const all = [...operating, "investment", "finance"] as PlLineId[];
+  subtotal("beforeTax", "רווח (הפסד) לפני מסים על הכנסה", all, "sub", "רווח לפני מימון ומסים − הוצאות מימון");
+  subtotal("net", "רווח (הפסד) נקי", all, "grand");
+  if (x.oci) {
+    const amount = r2(x.oci.parts.reduce((t, p) => t + p.amount, 0));
+    rows.push({ kind: "head", label: "רווח כולל אחר — פריטים שלא יסווגו מחדש לאחר מכן לרווח או הפסד:" });
+    rows.push({ kind: "line", id: "oci", label: "הערכה מחדש של רכוש קבוע", amount, prior: hasPrior ? (x.oci.prior ?? 0) : undefined, parts: x.oci.parts, explain: "עליית ערך של רכוש קבוע במודל הערכה מחדש. לא עוברת ברווח או הפסד, ולעולם לא תסווג אליו." });
+    rows.push({ kind: "total", id: "oci", label: "סך רווח כולל אחר", amount, prior: hasPrior ? (x.oci.prior ?? 0) : undefined, level: "sub", explain: TOTAL_EXPLAIN.oci });
+    const net = (which: "amount" | "prior") => r2(all.reduce((s, i) => s + signedVal(i, which), 0));
+    rows.push({ kind: "total", id: "total", label: "סה״כ רווח (הפסד) כולל לתקופה", amount: r2(net("amount") + amount), prior: hasPrior ? r2(net("prior") + (x.oci.prior ?? 0)) : undefined, level: "grand", explain: TOTAL_EXPLAIN.total, calc: "רווח נקי + רווח כולל אחר" });
+  }
+  return { company, title: "דוח על הרווח או הפסד ורווח כולל אחר", date: period, years, rows };
+}
+
+/** A question's solved statements, each line traced back to the trial-balance accounts it holds. */
+export function questionStatements(q: Question): { sofp: DisplayStatement; pl: DisplayStatement } {
+  const s = build(q);
+  const sofpLines: SofpInput[] = q.sofp.map((l) => {
+    const parts: Part[] = [];
+    const asset = l.section === "ca" || l.section === "nca";
+    for (const a of q.accounts) {
+      const v = signed(a) * (asset ? 1 : -1);
+      if (a.dest === l.id || (a.dest === NET && a.into === l.id)) parts.push({ label: a.name, amount: v });
+      if (a.dest === SPLIT && a.split?.currentLine === l.id) parts.push({ label: `${a.name} — החלק שנפרע בתוך 12 חודשים`, amount: a.split.current });
+      if (a.dest === SPLIT && a.split?.longLine === l.id) parts.push({ label: `${a.name} — החלק שנפרע אחרי 12 חודשים`, amount: r2(a.amount - a.split.current) });
+    }
+    return { id: l.id, label: l.label, section: l.section, parts };
+  });
+  sofpLines.push({
+    id: "retained",
+    label: "עודפים",
+    section: "eq",
+    parts: [
+      { label: "עודפי פתיחה (מאזן הבוחן: סך החובה פחות סך הזכות, בלי הקרן הכפולה)", amount: s.openingRetained },
+      { label: "הרווח הנקי של השנה", amount: s.netProfit },
+    ],
+  });
+  const pl: PlInput = {};
+  for (const def of PL_LINES) {
+    // Each part in the line's own sense: a cost for an expense line, revenue for an income line.
+    const parts: Part[] = q.accounts
+      .filter((a) => a.dest === def.id || (a.dest === NET && a.into === def.id))
+      .map((a) => ({ label: a.name, amount: def.sign === 1 ? -signed(a) : signed(a) }));
+    for (const row of s.alloc) {
+      if (def.id === "admin" && row.admin) parts.push({ label: `${row.name} × ${Math.round(row.adminPct * 100)}%`, amount: row.admin });
+      if (def.id === "selling" && row.selling) parts.push({ label: `${row.name} × ${Math.round(row.sellingPct * 100)}%`, amount: row.selling });
+    }
+    if (parts.length) pl[def.id] = { parts };
+  }
+  if (s.oci) pl.oci = { parts: q.accounts.filter((a) => a.dest === OCI).map((a) => ({ label: a.name, amount: -signed(a) })) };
+  return {
+    sofp: sofpStatement(q.company, q.date, [q.year], sofpLines),
+    pl: plStatement(q.company, `לשנה שהסתיימה ב-${q.date}`, [q.year], pl),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// The teaching company for chapters 5–6: two years side by side, every line with its parts.
+
+export const NOF = {
+  company: "\"נוף\" תעשיות בע\"מ",
+  sofp: sofpStatement("\"נוף\" תעשיות בע\"מ", "31 בדצמבר", ["2024", "2023"], [
+    { id: "cash", label: "מזומנים ושווי מזומנים", section: "ca", parts: [{ label: "מזומן בקופה ובחשבונות הבנק", amount: 366_000 }], prior: 165_000 },
+    { id: "deposit", label: "פיקדון בבנק לזמן קצר", section: "ca", parts: [{ label: "פיקדון ל-6 חודשים", amount: 200_000 }], prior: 150_000 },
+    { id: "receivables", label: "לקוחות, נטו", section: "ca", parts: [{ label: "לקוחות", amount: 500_000 }, { label: "בניכוי הפרשה להפסדי אשראי חזויים", amount: -30_000 }], prior: 395_000 },
+    { id: "inventory", label: "מלאי", section: "ca", parts: [{ label: "מלאי סגירה", amount: 350_000 }], prior: 300_000 },
+    { id: "debtors", label: "חייבים ויתרות חובה", section: "ca", parts: [{ label: "הוצאות מראש", amount: 20_000 }, { label: "מקדמות לספקים", amount: 15_000 }, { label: "הכנסות ריבית לקבל", amount: 4_000 }], prior: 30_000 },
+    { id: "ppe", label: "רכוש קבוע, נטו", section: "nca", parts: [{ label: "עלות וסכום משוערך", amount: 1_900_000 }, { label: "בניכוי פחת נצבר", amount: -400_000 }], prior: 1_350_000 },
+    { id: "bank", label: "אשראי מתאגידים בנקאיים", section: "cl", parts: [{ label: "משיכת יתר", amount: 30_000 }, { label: "חלויות שוטפות של הלוואות מבנקים", amount: 100_000 }], prior: 100_000 },
+    { id: "suppliers", label: "ספקים ונותני שירותים", section: "cl", parts: [{ label: "ספקים", amount: 260_000 }], prior: 240_000 },
+    { id: "creditors", label: "זכאים ויתרות זכות", section: "cl", parts: [{ label: "הוצאות לשלם", amount: 25_000 }, { label: "מקדמות מלקוחות", amount: 20_000 }, { label: "הכנסות מראש", amount: 10_000 }], prior: 50_000 },
+    { id: "longLoan", label: "הלוואות מבנקים", section: "ncl", parts: [{ label: "הלוואה מהבנק", amount: 500_000 }, { label: "בניכוי חלויות שוטפות", amount: -100_000 }], prior: 500_000 },
+    { id: "capital", label: "הון מניות", section: "eq", parts: [{ label: "הון מניות", amount: 500_000 }], prior: 500_000 },
+    { id: "reserve", label: "קרנות הון", section: "eq", parts: [{ label: "קרן הערכה מחדש", amount: 60_000 }], prior: 0 },
+    { id: "retained", label: "עודפים", section: "eq", parts: [{ label: "עודפים ב-31.12.2023", amount: 1_000_000 }, { label: "הרווח הנקי של 2024", amount: 520_000 }], prior: 1_000_000 },
+  ]),
+  pl: plStatement("\"נוף\" תעשיות בע\"מ", "לשנה שהסתיימה ב-31 בדצמבר", ["2024", "2023"], {
+    sales: { parts: [{ label: "מכירות", amount: 2_450_000 }, { label: "בניכוי החזרות מלקוחות", amount: -50_000 }], prior: 2_100_000 },
+    cogs: { parts: [{ label: "מלאי פתיחה", amount: 300_000 }, { label: "קניות", amount: 1_200_000 }, { label: "בניכוי מלאי סגירה", amount: -350_000 }], prior: 1_000_000 },
+    selling: { parts: [{ label: "שכר אנשי מכירות", amount: 150_000 }, { label: "פרסום", amount: 90_000 }, { label: "פחת כלי רכב של סוכני המכירות", amount: 40_000 }], prior: 250_000 },
+    rnd: { parts: [{ label: "שכר צוות הפיתוח", amount: 70_000 }, { label: "פחת ציוד מעבדה", amount: 20_000 }], prior: 80_000 },
+    admin: { parts: [{ label: "שכר ההנהלה", amount: 220_000 }, { label: "פחת מבנה ההנהלה", amount: 60_000 }, { label: "הוצאות הפרשה להפסדי אשראי", amount: 25_000 }, { label: "משפטיות ומשרד", amount: 35_000 }], prior: 310_000 },
+    otherIncome: { parts: [{ label: "רווח הון ממכירת מכונה", amount: 15_000 }], prior: 0 },
+    investment: { parts: [{ label: "הכנסות ריבית מפיקדון", amount: 12_000 }], prior: 8_000 },
+    finance: { parts: [{ label: "ריבית על הלוואות מבנקים", amount: 40_000 }, { label: "עמלות בנק", amount: 7_000 }], prior: 50_000 },
+    oci: { parts: [{ label: "עליית ערך המבנה בהערכה מחדש", amount: 60_000 }], prior: 0 },
+  }),
+};
+
+// ---------------------------------------------------------------------------
+// Chapter 3: the framework's concepts on a small example of their own.
+
+const carrying = { cost: 90_000, accumulated: 27_000 };
+const disposal = { carrying: 14_000, proceeds: 18_000 };
+const land = { cost: 380_000, fairValue: 410_000 };
+const banks = [18_000, 7_500, 4_500];
+export const CONCEPTS = {
+  company: "\"אורן\" שיווק בע\"מ",
+  vehicle: { ...carrying, net: carrying.cost - carrying.accumulated },
+  disposal: { ...disposal, gain: disposal.proceeds - disposal.carrying },
+  building: 750_000,
+  land: { ...land, uplift: land.fairValue - land.cost },
+  banks: { each: banks, total: banks.reduce((s, v) => s + v, 0) },
+};

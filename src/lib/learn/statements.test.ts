@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { ALLOCATE, ALON, build, credits, debits, destOptions, HAYUVAL, NET, openingRetained, PL_LINES, type Question, solutionOf, splitLoan } from "./statements";
+import { ALLOCATE, ALON, build, CONCEPTS, credits, debits, destOptions, type DisplayRow, type DisplayStatement, HAYUVAL, NET, NOF, openingRetained, PL_LINES, type Question, questionStatements, solutionOf, splitLoan } from "./statements";
 
 const near = (a: number, b: number, msg?: string) => assert.ok(Math.abs(a - b) < 0.005, `${msg ?? ""} expected ${b}, got ${a}`);
 
@@ -105,5 +105,50 @@ describe("Alon Ltd.: the practice question", () => {
     near(s.totals.ca, 350_000 + 300_000 + 592_000 + 210_000 + 65_000);
     near(s.openingRetained, 184_000);
     near(s.retained, 1_232_000);
+  });
+});
+
+describe("statements as presented, line by line", () => {
+  const total = (st: DisplayStatement, id: string) => st.rows.find((r) => r.kind === "total" && r.id === id) as Extract<DisplayRow, { kind: "total" }>;
+  const line = (st: DisplayStatement, id: string) => st.rows.find((r) => r.kind === "line" && r.id === id) as Extract<DisplayRow, { kind: "line" }>;
+
+  it("Nof: balances in both years, and retained earnings grow by the year's net profit", () => {
+    near(total(NOF.sofp, "assets").amount, total(NOF.sofp, "le").amount, "2024");
+    near(total(NOF.sofp, "assets").prior!, total(NOF.sofp, "le").prior!, "2023");
+    near(total(NOF.pl, "net").amount, 520_000);
+    near(total(NOF.pl, "net").prior!, 418_000);
+    near(total(NOF.pl, "operating").amount, 555_000);
+    near(total(NOF.pl, "beforeFinancing").amount, 567_000);
+    near(total(NOF.pl, "total").amount, 580_000);
+    near(line(NOF.sofp, "retained").amount, line(NOF.sofp, "retained").prior! + total(NOF.pl, "net").amount);
+    near(line(NOF.sofp, "reserve").amount - line(NOF.sofp, "reserve").prior!, total(NOF.pl, "oci").amount);
+  });
+
+  it("every line is the sum of its parts, and has an explanation", () => {
+    for (const st of [NOF.sofp, NOF.pl, questionStatements(HAYUVAL).sofp, questionStatements(HAYUVAL).pl])
+      for (const r of st.rows)
+        if (r.kind === "line") {
+          assert.ok(r.explain, r.id);
+          const sum = r.parts.reduce((t, p) => t + p.amount, 0);
+          near(Math.abs(r.amount), Math.abs(sum), `${st.title} ${r.id}`);
+        }
+  });
+
+  it("HaYuval's statements as presented match the course's solution", () => {
+    const { sofp, pl } = questionStatements(HAYUVAL);
+    near(total(sofp, "assets").amount, 4_917_000);
+    near(total(sofp, "le").amount, 4_917_000);
+    near(line(sofp, "retained").amount, 3_720_000);
+    near(line(pl, "cogs").amount, -1_610_000);
+    near(line(pl, "admin").amount, -644_680);
+    near(total(pl, "operating").amount, 1_474_200);
+    near(total(pl, "net").amount, 1_467_400);
+    near(total(pl, "total").amount, 1_497_400);
+  });
+
+  it("chapter 3's example stands on its own numbers", () => {
+    assert.equal(CONCEPTS.vehicle.net, 63_000);
+    assert.equal(CONCEPTS.disposal.gain, 4_000);
+    assert.equal(CONCEPTS.banks.total, 30_000);
   });
 });

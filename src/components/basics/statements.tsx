@@ -1,17 +1,17 @@
 import { ArrowLeft, BookOpenCheck, Calculator, ClipboardList, FileSpreadsheet, Layers, ListChecks, Scale, Split, Table2 } from "lucide-react";
 import Link from "next/link";
 import { Callout, DataTable } from "@/components/study/blocks";
-import { ALON, build, CATEGORY_LABEL, credits, debits, HAYUVAL, NET, PL_LINES } from "@/lib/learn/statements";
+import { ALON, build, CONCEPTS, credits, debits, HAYUVAL, NET, NOF, PL_LINES, questionStatements } from "@/lib/learn/statements";
 import { AnswerCheck, MiniQuiz, SortQuiz } from "./inventory-interactive";
-import { AllocationDrill, AssetChecker, LoanSplitter, PlView, SofpView, StatementsBuilder, StepReveal } from "./statements-builder";
+import { AllocationDrill, LoanSplitter, StatementsBuilder, StepReveal } from "./statements-builder";
+import { StatementWithLines } from "./statements-view";
 import { Card, Chapter, Money, Rule, Term } from "./ui";
 
 const S = build(HAYUVAL);
 const P = build(ALON);
 const amount = (name: string) => HAYUVAL.accounts.find((a) => a.name === name)!.amount;
 const P_ = "fs";
-/** How many lines the statements end up with: the balance sheet's, retained earnings, and every profit-or-loss and OCI line with an amount. */
-const LINES = HAYUVAL.sofp.length + 1 + PL_LINES.filter((l) => S.pl[l.id]).length + (S.oci ? 1 : 0);
+const SOLVED = questionStatements(HAYUVAL);
 const linkClass = "font-medium text-accent hover:underline";
 
 // ---------------------------------------------------------------------------
@@ -157,39 +157,60 @@ function QualitiesChapter() {
 }
 
 function ConceptsChapter() {
+  const c = CONCEPTS;
   return (
-    <Chapter n={3} id="fs-concepts" title="מושגי המסגרת שמופיעים בדוחות" lead="חמישה רעיונות — כל אחד על שורה מהדוחות של היובל">
+    <Chapter n={3} id="fs-concepts" title="מושגי המסגרת שמופיעים בדוחות" lead="חמישה רעיונות, כל אחד על מספר אחד מהדוחות">
       <p>
-        בפרקים הבאים נבנה את הדוחות של <strong>{HAYUVAL.company}</strong>, שמוכרת מוצרים לתעשיית הפלסטיק. (זו חברה אחרת מ&quot;יובל בע&quot;מ&quot; של פרק 10 בחשבונאות
-        מאפס.) הנה המושגים שהמסגרת מגדירה — ואיפה רואים כל אחד בדוחות שלה.
+        כדי לראות את המושגים בעבודה, נשתמש בחברה קטנה: <strong>{c.company}</strong>. בכל מושג — מה הוא אומר, ואיך הוא נראה כשורה בדוח.
       </p>
-      <div className="grid gap-3 md:grid-cols-2">
-        <Card title="עסק חי">
-          <p>
-            הדוחות מוכנים בהנחה שהחברה <Term he="עסק חי" />: תמשיך לפעול בעתיד הנראה לעין, בלי כוונה או צורך להתפרק. לכן הבניין מוצג בעלות פחות פחת ולא במחיר
-            מכירה מהירה. אם יש כוונה או צורך להפסיק — הדוחות מוכנים על בסיס של <Term he="עסק בחיסול" />.
-          </p>
-        </Card>
-        <Card title="הכרה, גריעה וערך בספרים">
-          <p>
-            <Term he="הכרה" /> היא הכללת פריט בדוח, במילים ובסכום. הסכום שבו נכס מוצג הוא <Term he="הערך בספרים" /> — למשל &quot;כלי רכב, נטו&quot;{" "}
-            <Money v={S.sofp.vehicles} />. <Term he="גריעה" /> היא הסרת נכס כשהחברה מאבדת עליו שליטה — ומכאן &quot;רווח הון ממכירת כלי רכב&quot;{" "}
-            <Money v={amount("רווח הון ממכירת כלי רכב")} />.
-          </p>
-        </Card>
-        <Card title="מדידה">
-          <p>
-            <Term he="עלות היסטורית" />: מחיר העסקה. כך נמדדים אצל היובל המבנה וכלי הרכב. <Term he="שווי הוגן" />: המחיר שהיה מתקבל במכירה בעסקה רגילה במועד המדידה —
-            כך נמדדת המדפסת התלת-ממדית (<Money v={S.sofp.printer} />).
-          </p>
-        </Card>
-        <Card title="סיווג וצבירה">
-          <p>
-            <Term he="סיווג" />: מקבצים פריטים דומים ומפרידים שונים. <Term he="צבירה" />: מחברים פריטים מאותו סיווג — בלי פירוט מיותר ובלי לחבר יותר מדי. בדיוק את
-            זה עושים מעכשיו: <span className="num">{HAYUVAL.accounts.length}</span> יתרות יהפכו לכ-<span className="num">{LINES}</span> שורות.
-          </p>
-        </Card>
-      </div>
+      <Card title="1. עסק חי">
+        <p>
+          הדוחות מוכנים בהנחה שהחברה <Term he="עסק חי" />: היא תמשיך לפעול בעתיד הנראה לעין, ואין לה כוונה או צורך להתפרק. לכן הבניין שלה מוצג לפי מה שעלה לה, פחות
+          פחת — ולא לפי כמה היו מקבלים עליו במכירה מהירה. אילו החברה הייתה עומדת להיסגר, הדוחות היו מוכנים על בסיס <Term he="עסק בחיסול" />.
+        </p>
+      </Card>
+      <Card title="2. הכרה וערך בספרים">
+        <p>
+          <Term he="הכרה" /> היא הכללת פריט בדוח, במילים ובסכום. כשהחברה קנתה רכב ב-<Money v={c.vehicle.cost} />, היא הכירה בו כנכס. הסכום שבו הוא מוצג היום הוא{" "}
+          <Term he="הערך בספרים" />:
+        </p>
+        <p className="rounded-lg bg-surface-2/60 px-3 py-2 text-[14.5px]">
+          עלות <Money v={c.vehicle.cost} /> − פחת נצבר <Money v={c.vehicle.accumulated} /> = <strong>כלי רכב, נטו <Money v={c.vehicle.net} /></strong>
+        </p>
+      </Card>
+      <Card title="3. גריעה">
+        <p>
+          <Term he="גריעה" /> היא הוצאת נכס מהדוח, כשהחברה מאבדת עליו שליטה. החברה מכרה מלגזה ישנה בערך בספרים של <Money v={c.disposal.carrying} /> תמורת{" "}
+          <Money v={c.disposal.proceeds} />:
+        </p>
+        <p className="rounded-lg bg-surface-2/60 px-3 py-2 text-[14.5px]">
+          תמורה <Money v={c.disposal.proceeds} /> − ערך בספרים <Money v={c.disposal.carrying} /> = <strong>רווח הון <Money v={c.disposal.gain} /></strong> — שורה
+          בהכנסות התפעוליות האחרות.
+        </p>
+      </Card>
+      <Card title="4. מדידה">
+        <p>
+          כל פריט נמדד לפי <Term he="בסיס מדידה" />. ב<strong>עלות היסטורית</strong> — לפי מחיר העסקה: הבניין של החברה מוצג לפי מה שעלה, <Money v={c.building} />, פחות
+          פחת. ב<strong>שווי הוגן</strong> — לפי המחיר שהיה מתקבל במכירה בעסקה רגילה היום: אילו החברה הייתה מודדת את הקרקע שלה בשווי הוגן, הקרקע שנקנתה ב-
+          <Money v={c.land.cost} /> הייתה מוצגת ב-<Money v={c.land.fairValue} />.
+        </p>
+      </Card>
+      <Card title="5. סיווג וצבירה">
+        <p>
+          <Term he="סיווג" />: מקבצים פריטים דומים ומפרידים שונים. <Term he="צבירה" />: מחברים את הפריטים שבאותו סיווג לשורה אחת — בלי פירוט מיותר, ובלי לחבר יותר
+          מדי. לחברה שלושה חשבונות בנק:
+        </p>
+        <p className="rounded-lg bg-surface-2/60 px-3 py-2 text-[14.5px]">
+          {c.banks.each.map((v, i) => (
+            <span key={i}>
+              {i > 0 && " + "}
+              <Money v={v} plain />
+            </span>
+          ))}{" "}
+          = <strong>מזומנים ושווי מזומנים <Money v={c.banks.total} /></strong> — שורה אחת בדוח.
+        </p>
+        <p>זה כל העבודה של הכנת הדוחות: עשרות יתרות במאזן הבוחן מתקבצות לשורות מעטות וברורות.</p>
+      </Card>
       <Card title="ההגדרות הרשמיות — שורה לכל רכיב">
         <ul className="space-y-1.5 text-[14.5px]">
           <li>
@@ -216,15 +237,6 @@ function ConceptsChapter() {
           .
         </p>
       </Card>
-      <AssetChecker
-        cases={[
-          { item: "מלאי הסחורות במחסן של היובל", answers: [true, true, true], why: "החברה קנתה אותו, הוא בשליטתה, וימכר." },
-          { item: "עובד מוכשר במיוחד", answers: [true, false, true], why: "החברה לא שולטת בעובד — הוא יכול לעזוב מחר." },
-          { item: "חוזה מכירה גדול שייחתם בשנה הבאה", answers: [false, false, false], why: "עוד לא קרה אירוע — אין משאב בהווה." },
-          { item: "שכר דירה ששולם מראש לשנה הבאה", answers: [true, true, true], why: "הזכות להשתמש במבנה שייכת לחברה, והתשלום כבר קרה." },
-          { item: "המוניטין הטוב של החברה בשוק", answers: [true, false, true], why: "לחברה אין שליטה שמאפשרת למכור או להעביר אותו — ומוניטין פנימי אינו מוכר." },
-        ]}
-      />
     </Chapter>
   );
 }
@@ -238,7 +250,7 @@ function SetChapter() {
     ["דוח על רווח או הפסד ורווח כולל אחר", "הכנסות והוצאות לתקופה, ומתחתן פריטים שלא עוברים ברווח או הפסד.", true],
     ["דוח על השינויים בהון", "", false],
     ["דוח על תזרימי המזומנים", "", false],
-    ["ביאורים", "מדיניות חשבונאית מהותית ומידע מסביר — למשל פירוט ההוצאות לפי סוג.", true],
+    ["ביאורים", "מדיניות חשבונאית מהותית ומידע מסביר — למשל פירוט השורות שמורכבות מכמה חלקים.", true],
   ];
   return (
     <Chapter n={4} id="fs-set" title="מערכת שלמה של דוחות כספיים" lead="IFRS 18 — חמישה רכיבים, ונתוני השוואה">
@@ -258,66 +270,27 @@ function SetChapter() {
         ))}
       </ol>
       <Rule>נתוני השוואה: במאזן — גם השנה הקודמת. ברווח או הפסד — לפחות שנה קודמת אחת; בחברות ציבוריות — שתיים.</Rule>
+      <p>
+        בשני הפרקים הבאים נקרא את שני הדוחות של <strong>{NOF.company}</strong> — קודם את הדוח כולו, כמו שהוא מתפרסם, ואחר כך כל שורה בו: מה נכנס אליה, איך
+        מחשבים אותה, ולמה היא יושבת דווקא שם.
+      </p>
     </Chapter>
   );
 }
 
 function SofpChapter() {
-  const structure: [string, string][] = [
-    ["מזומנים ושווי מזומנים", `אצל היובל: מזומן ${HAYUVAL.accounts.find((a) => a.name === "מזומן")!.amount.toLocaleString("en-US")}.`],
-    ["לקוחות, נטו", "לקוחות פחות הפרשה להפסדי אשראי חזויים."],
-    ["מלאי", "בניכוי הורדת ערך, אם יש — הנמוך מבין עלות לשווי מימוש נטו."],
-    ["חייבים ויתרות חובה", "גם מקדמות לספקים, הוצאות מראש והכנסות לקבל."],
-    ["רכוש קבוע, נטו", "עלות (או שווי משוערך) פחות פחת נצבר — בכל מודל."],
-    ["אשראי מתאגידים בנקאיים", "הלוואות לזמן קצר, משיכת יתר, וחלויות שוטפות של הלוואות."],
-    ["ספקים ונותני שירותים", "חובות לספקים."],
-    ["זכאים ויתרות זכות", "גם מקדמות מלקוחות, הוצאות לשלם והכנסות מראש."],
-    ["הלוואות מבנקים (בלתי שוטף)", "החלק שנפרע אחרי 12 חודשים."],
-    ["קרנות הון", "גם קרן הערכה מחדש בגין רכוש קבוע."],
-    ["עודפים / יתרת הפסד", "הרכיב היחיד בקורס שיכול להפוך את ההון לשלילי."],
-  ];
   return (
-    <Chapter n={5} id="fs-sofp" title="הדוח על המצב הכספי" lead="שוטף מול בלתי שוטף, הצגה בנטו, ואיזה חשבון הולך לאיזו שורה">
+    <Chapter n={5} id="fs-sofp" title="הדוח על המצב הכספי" lead="הדוח כולו, ואז כל שורה בו">
       <p>
-        דוח ליום (בקורס: 31/12), עם השנה הקודמת לצידו. <strong>סך הנכסים = סך ההתחייבויות + ההון.</strong> הנכסים מחולקים לשוטפים ולבלתי שוטפים, וכך גם ההתחייבויות.
+        דוח <strong>ליום</strong> מסוים — בקורס 31 בדצמבר — עם השנה הקודמת לצידו. בצד אחד הנכסים, בצד השני ההתחייבויות וההון, ותמיד:{" "}
+        <strong>סך הנכסים = סך ההתחייבויות + ההון.</strong>
       </p>
-      <Rule>שוטף או לא? האם הנכס יתממש — או ההתחייבות תיפרע — בתוך 12 חודשים מתאריך המאזן. כן — שוטף. לא — בלתי שוטף.</Rule>
-      <p>לחצו על שורה כדי לראות מה נכנס אליה:</p>
-      <div className="grid gap-2 md:grid-cols-2">
-        {structure.map(([line, what]) => (
-          <details key={line} className="group rounded-xl border border-line bg-surface">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-2.5 font-medium text-fg [&::-webkit-details-marker]:hidden">
-              {line}
-              <span className="text-xs text-muted group-open:hidden">מה נכנס?</span>
-            </summary>
-            <p className="border-t border-line px-4 py-2 text-[14px] text-fg/90">{what}</p>
-          </details>
-        ))}
-      </div>
-      <Card title="הצגה בנטו — אצל היובל">
-        <ul className="space-y-1 text-[14.5px]">
-          <li>
-            לקוחות <Money v={amount("לקוחות")} /> − הפרשה <Money v={amount("הפרשה להפסדי אשראי חזויים")} /> = <strong>לקוחות, נטו</strong> <Money v={S.sofp.receivables} />
-          </li>
-          <li>
-            כלי רכב <Money v={amount("כלי רכב - עלות")} /> − פחת נצבר <Money v={amount("כלי רכב - פחת נצבר")} /> = <Money v={S.sofp.vehicles} />
-          </li>
-          <li>
-            מבנה <Money v={amount("מבנה – עלות")} /> − פחת נצבר <Money v={amount("מבנה - פחת נצבר")} /> = <Money v={S.sofp.building} />
-          </li>
-        </ul>
-        <p className="text-sm text-muted">
-          ההפרשה והפחת הנצבר אינם שורות בפני עצמן — הם מקטינים את הנכס. איך מחשבים אותם:{" "}
-          <Link href="/basics/credit-losses" className={linkClass}>
-            הפסדי אשראי
-          </Link>
-          ,{" "}
-          <Link href="/basics/ias16" className={linkClass}>
-            רכוש קבוע
-          </Link>
-          .
-        </p>
-      </Card>
+      <Rule>שוטף או בלתי שוטף? האם הנכס יתממש — או ההתחייבות תיפרע — בתוך 12 חודשים מתאריך המאזן. כן — שוטף. לא — בלתי שוטף.</Rule>
+      <p>שלושה דברים לשים לב אליהם בדוח: הסדר (שוטף לפני בלתי שוטף), ההצגה בנטו (לקוחות ורכוש קבוע אחרי מה שמקטין אותם), והצבירה (יתרות קטנות מאוחדות לשורה אחת עם ביאור).</p>
+      <StatementWithLines st={NOF.sofp} anchor="nof-sofp" />
+      <p>
+        הלוואה שנפרעת בתשלומים מתפצלת לשתי שורות: מה שנפרע בתוך 12 חודשים — <Term he="חלויות שוטפות" />, בהתחייבויות השוטפות; השאר — בבלתי שוטפות. נסו:
+      </p>
       <LoanSplitter />
       <SortQuiz
         prefix={P_}
@@ -341,72 +314,33 @@ function SofpChapter() {
 }
 
 function PlChapter() {
-  const S_ = S;
-  const bars: [string, number, string][] = [
-    ["הכנסות", S_.pl.sales, "operating"],
-    ["עלות המכר", -S_.pl.cogs, "operating"],
-    ["רווח גולמי", S_.grossProfit, "sub"],
-    ["מכירה ושיווק", -S_.pl.selling, "operating"],
-    ["הנהלה וכלליות", -S_.pl.admin, "operating"],
-    ["הכנסות תפעוליות אחרות", S_.pl.otherIncome, "operating"],
-    ["רווח תפעולי", S_.operatingProfit, "sub"],
-    ["השקעה", S_.pl.investment, "investing"],
-    ["רווח לפני מימון ומסים", S_.beforeFinancing, "sub"],
-    ["מימון", -S_.pl.finance, "financing"],
-    ["רווח נקי", S_.netProfit, "sub"],
-  ];
-  const max = S_.pl.sales;
-  const color: Record<string, string> = { operating: "bg-accent", investing: "bg-success", financing: "bg-amber-500", sub: "bg-fg/70" };
   return (
-    <Chapter n={6} id="fs-pl" title="דוח רווח או הפסד לפי IFRS 18" lead="שלוש קטגוריות, שני סיכומי ביניים חובה">
+    <Chapter n={6} id="fs-pl" title="דוח רווח או הפסד לפי IFRS 18" lead="הדוח כולו, ואז כל שורה בו — וכל קטגוריה">
       <p>
-        IFRS 18 מחלק את החלק של רווח או הפסד ל<strong>שלוש קטגוריות עיקריות</strong>: <Term he="תפעולית" />, <Term he="השקעה" /> ו<Term he="מימון" />. (יש עוד שתיים —
-        מסים על הכנסה ופעילויות שהופסקו — לא בסמסטר זה.) ושני <strong>סיכומי ביניים חובה</strong>: <Term he="רווח תפעולי" />, ו<Term he="רווח לפני מימון ומסים על הכנסה" />.
+        דוח <strong>לתקופה</strong> — בקורס, השנה שהסתיימה ב-31 בדצמבר — עם שנה קודמת לפחות. IFRS 18 מחלק את החלק של רווח או הפסד ל<strong>שלוש קטגוריות</strong>,
+        ומחייב <strong>שני סיכומי ביניים</strong>:
       </p>
       <div className="grid gap-3 md:grid-cols-3">
         <Card title="תפעולית">
           <p>
-            הקטגוריה <strong>השיורית</strong>: כל מה שלא שייך לאחת האחרות. הפעילות העסקית העיקרית ופעילויות תומכות. רכוש קבוע נשאר כאן — פחת, רווח או הפסד הון מגריעה.
+            הקטגוריה <strong>השיורית</strong>: כל מה שלא שייך לאחרות. הפעילות העיקרית ופעילויות תומכות. רכוש קבוע נשאר כאן — פחת, ורווח או הפסד הון מגריעה.
           </p>
         </Card>
         <Card title="השקעה">
-          <p>תשואה על נכסים שעומדים בפני עצמם: ריבית מפיקדונות ומהלוואות שניתנו, ושינויים בשווי נדל&quot;ן להשקעה. בקורס: &quot;הכנסות מימון&quot; נמצאות כאן.</p>
+          <p>תשואה על נכסים שעומדים בפני עצמם: ריבית מפיקדונות ומהלוואות שניתנו. בקורס &quot;הכנסות מימון&quot; נמצאות כאן.</p>
         </Card>
         <Card title="מימון">
-          <p>הכנסות והוצאות מגיוס חוב והון: ריבית על הלוואות בנקאיות, עמלות בנק ודמי ניהול חשבון.</p>
+          <p>הכנסות והוצאות מגיוס חוב והון: ריבית על הלוואות, עמלות בנק ודמי ניהול חשבון.</p>
         </Card>
       </div>
+      <Rule>שני סיכומי הביניים החובה: רווח תפעולי, ורווח לפני מימון ומסים על הכנסה. מסים על הכנסה ופעילויות שהופסקו — לא בסמסטר זה, ולכן בקורס הרווח הנקי שווה לרווח לפני מסים.</Rule>
+      <StatementWithLines st={NOF.pl} anchor="nof-pl" />
       <Callout title="פעילות עסקית עיקרית מוגדרת — ברמה התיאורטית">
         <p>
           חברה שהפעילות העיקרית שלה היא השקעה או מימון (למשל בנק) מסווגת חלק מאותן הכנסות והוצאות לתפעולית. בקורס עוסקים בחברות שמוכרות מוצרים או שירותים — בלי
           פעילות כזו.
         </p>
       </Callout>
-      <p>
-        הדוח של היובל כ&quot;מפל&quot; — כל פס בצבע הקטגוריה שלו. עלות המכר היא פתיחה + קניות − סגירה (
-        <Link href="/basics/inventory" className={linkClass}>
-          עמוד המלאי
-        </Link>
-        ).
-      </p>
-      <ol className="space-y-1.5" aria-label="דוח רווח או הפסד כמפל">
-        {bars.map(([label, v, cat]) => (
-          <li key={label} className="grid grid-cols-[9.5rem_minmax(0,1fr)_6.5rem] items-center gap-2 text-[13px]">
-            <span className={cat === "sub" ? "font-semibold text-fg" : "text-fg/85"}>{label}</span>
-            <span className="h-3.5 rounded-full bg-surface-2">
-              <span className={`block h-full rounded-full ${color[cat]}`} style={{ width: `${Math.max(1, (Math.abs(v) / max) * 100)}%` }} />
-            </span>
-            <Money v={v} plain className="text-end" />
-          </li>
-        ))}
-      </ol>
-      <p className="flex flex-wrap gap-3 text-xs text-muted">
-        {(["operating", "investing", "financing"] as const).map((c) => (
-          <span key={c} className="flex items-center gap-1.5">
-            <span className={`h-2.5 w-2.5 rounded-full ${color[c]}`} aria-hidden /> {CATEGORY_LABEL[c]}
-          </span>
-        ))}
-      </p>
       <SortQuiz
         prefix={P_}
         id="fs-pl"
@@ -474,6 +408,10 @@ function OciChapter() {
         לרווח או הפסד&quot; — כמו הערכה מחדש של רכוש קבוע — ו&quot;פריטים שייתכן ויסווגו&quot;. ובסוף:
       </p>
       <Rule>סך רווח כולל = רווח נקי + רווח כולל אחר</Rule>
+      <p>
+        ב{NOF.company} זה נראה כך: בדוח רווח או הפסד, מתחת לרווח הנקי, השורה &quot;הערכה מחדש של רכוש קבוע&quot; — תנועת השנה. ובדוח על המצב הכספי, באותו סכום,
+        קרן ההערכה מחדש בתוך &quot;קרנות הון&quot; — היתרה שנצברה. שתי הפנים של אותה עלייה בערך: האחת מספרת מה קרה השנה, השנייה מה יש בהון בסוף השנה.
+      </p>
       <p>
         איך נוצרת ההערכה מחדש עצמה —{" "}
         <Link href="/basics/ias16#revaluation" className={linkClass}>
@@ -652,7 +590,8 @@ function ExamChapter() {
       </ol>
       <p>עכשיו הפתרון — צעד אחר צעד. נסו כל צעד לבד, ורק אז פתחו אותו. משמאל: כל יתרה שכבר טופלה מסומנת ✓.</p>
       <StepReveal q={HAYUVAL} steps={steps} />
-      <SofpView q={HAYUVAL} s={S} notes={{ receivables: `${amount("לקוחות").toLocaleString("en-US")} − ${amount("הפרשה להפסדי אשראי חזויים").toLocaleString("en-US")}` }} />
+      <p className="text-[16px] font-semibold text-fg">הפתרון: שני הדוחות, וכל שורה — מאילו יתרות במאזן הבוחן היא נבנתה</p>
+      <StatementWithLines st={SOLVED.sofp} anchor="hy-sofp" />
       <Callout title="לפי המבנה הכללי של הקורס">
         <p>
           בפתרון של המרצה &quot;הוצאות שכר דירה מראש&quot; ו&quot;הוצאות טלפון לשלם&quot; הן שורות נפרדות. לפי המבנה הכללי הן שייכות לקבוצות: חייבים ויתרות חובה{" "}
@@ -661,7 +600,7 @@ function ExamChapter() {
           הרכוש הקבוע לשורה אחת — רכוש קבוע, נטו <Money v={S.totals.nca} /> — עם פירוט בביאור.
         </p>
       </Callout>
-      <PlView q={HAYUVAL} s={S} />
+      <StatementWithLines st={SOLVED.pl} anchor="hy-pl" />
 
       <div id="fs-builder" className="scroll-mt-32 space-y-3 pt-4">
         <h3 className="flex items-center gap-2 text-xl font-semibold text-fg">
