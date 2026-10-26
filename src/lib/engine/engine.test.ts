@@ -604,7 +604,8 @@ describe("IAS 16", () => {
       const s = solveX("purchasePrice", { targetKind: "carrying", targetDate: "2024-12-31", targetAmount: 87916.67 });
       assert.equal(x(s), 100000);
       // k is the share of the depreciable amount written off by the date: 21 of 72 months.
-      assert.deepEqual(lhs(s), ["k", "יתרה בספרים", "עלות", "X"]);
+      assert.deepEqual(lhs(s), ["k", "עלות", "X"]);
+      assert.ok(s.proof!.steps.some((w) => w.label.startsWith("הדרך קדימה")) && s.proof!.steps.some((w) => w.label.startsWith("אחורה")));
       assert.equal(s.proof!.steps.find((w) => w.equation?.lhs === "k")!.equation!.result, 21 / 72);
       assert.equal(s.proof!.steps.find((w) => w.equation?.lhs === "עלות")!.equation!.result, 120000);
       assert.match(s.proof!.title, /שלב א׳/);
@@ -653,9 +654,18 @@ describe("IAS 16", () => {
     it("sum-of-years: the cost from the share written off, by the weights of the asset years", () => {
       const s = solveX("purchasePrice", { targetKind: "carrying", targetDate: "2024-12-31", targetAmount: 68928.57 }, { method: "sum-of-years" });
       assert.equal(x(s), 100000);
-      assert.deepEqual(lhs(s), ["k", "יתרה בספרים", "עלות", "X"]);
-      assert.match(s.proof!.steps[1].label, /ספרות השנים/);
+      assert.deepEqual(lhs(s), ["k", "עלות", "X"]);
+      assert.match(s.proof!.steps.find((w) => w.equation?.lhs === "k")!.label, /ספרות השנים/);
       assert.match(s.proof!.steps.at(-1)!.formula!, /68,928\.57 ✓/);
+    });
+
+    it("with land: the road forward with X, then back one undone step at a time", () => {
+      const land = { acquisitionDate: "2022-06-01", calcStart: "2022-01-01", calcEnd: "2024-12-31", attributableCosts: 0, residual: 0, hasLand: true, landBasis: "percent", landPercent: 20, method: "sum-of-years" };
+      const s = solveX("purchasePrice", { targetKind: "depreciation", targetYear: 2022, targetAmount: 20000 }, land);
+      assert.equal(x(s), 150000);
+      // 20,000 ÷ k (6 × 7/12 ÷ 21) = 120,000 base = building; ÷ 80% = 150,000.
+      assert.deepEqual(lhs(s), ["k", "בסיס הפחת", "מבנה", "עלות", "X"]);
+      assert.equal(s.proof!.steps.find((w) => w.equation?.lhs === "בסיס הפחת")!.equation!.result, 120000);
     });
 
     it("any other case is found by two trials of X, shown in full", () => {

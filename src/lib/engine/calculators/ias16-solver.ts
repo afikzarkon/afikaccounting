@@ -259,9 +259,9 @@ function algebra(v: Values, values: Values, unknown: string, x: number, target: 
   const name = TARGET_NAME[target.kind];
   const sl = inp.method === "straight-line";
 
-  // Cost or residual, from a result before any event, in any method where the share written off doesn't depend on them.
-  const byShare = kForm(inp, r, unknown, x, target);
-  if (byShare) return byShare;
+  // Cost or residual, from a result before any event: the road forward with X in it, then back.
+  const road = backward(v, inp, r, unknown, x, target);
+  if (road) return road;
 
   // Useful life, from a result before any event. (With land the
   // depreciable base is only the building, so the general line below is used.)
@@ -473,89 +473,136 @@ function linear(v: Values, unknown: string, x: number, target: Target): Working[
 }
 
 /**
- * Cost or residual from a result before any event: the share of the
- * depreciable amount written off by then (k) depends only on time (or units),
- * so the result is cost − (cost − residual) × k, or (cost − residual) × k.
- * Declining balance has no such share (its charge depends on the residual), so it is left to the general case.
+ * Cost or residual from a depreciation result before any event, the way it is
+ * taught: first the usual road from the cost to the known result, written with
+ * X in place of the missing figure; then the same road backwards from the
+ * known result, undoing one operation at a time (a product becomes a division,
+ * a sum a subtraction) until X is alone. Land, by a share or an amount, is one
+ * more stop on the road. Declining balance has no fixed share written off (its
+ * charge depends on the balance), so it is left to the general case.
  */
-function kForm(inp: ReturnType<typeof parseInputs>, r: Run, unknown: string, x: number, target: Target): Working[] | null {
-  if (inp.land || !["purchasePrice", "attributableCosts", "residual"].includes(unknown) || !["carrying", "accumulated", "depreciation"].includes(target.kind)) return null;
+function backward(v: Values, inp: ReturnType<typeof parseInputs>, r: Run, unknown: string, x: number, target: Target): Working[] | null {
+  if (!["purchasePrice", "attributableCosts", "residual"].includes(unknown) || !["carrying", "accumulated", "depreciation"].includes(target.kind)) return null;
   const method = inp.method;
   if (method === "double-declining") return null;
   const isDep = target.kind === "depreciation";
   const end = isDep ? target.year * 12 + 12 : target.t;
   if (r.phases.filter((ph) => ph.t0 < end).length !== 1) return null;
   const ph = r.phases[0];
-  const { cost: C, residual: R, purchasePrice: P, attributableCosts: A } = inp;
-  const D = round2(C - R);
+  const { cost: C, residual: R, purchasePrice: P, attributableCosts: A, buildingCost: B } = inp;
+  const land = inp.land;
+  const L = land?.cost ?? 0;
+  const byShare = !!land && str(v, "landBasis") === "percent";
+  const keep = land ? 1 - land.share : 1;
+  // 80% rather than 80.00%, when the share is whole.
+  const pc = (r: number) => (Number.isInteger(Math.round(r * 1e6) / 1e4) ? `${Math.round(r * 100)}%` : percent(r));
+  const wrap = (e: string) => (/ /.test(e) ? `(${e})` : e);
+  const D = round2(B - R);
   if (D <= 0) return null;
   const from = isDep ? Math.max(target.year * 12, ph.t0) : ph.t0;
   const to = Math.min(end, ph.t0 + ph.months);
   if (to <= from) return null;
   const T = target.amount;
-  const name = TARGET_NAME[target.kind];
-  const kVal = isDep ? sumRange(r.depBy, from, to) / D : r.closing.get(Math.min(Math.max(target.t, r.start), r.stop))!.acc / D;
-  const span = isDep ? `בשנת ${target.year}` : `עד ${target.label.split(" ליום ")[1] ?? "התאריך"}`;
+  const written = isDep ? sumRange(r.depBy, from, to) : r.closing.get(Math.min(Math.max(target.t, r.start), r.stop))!.acc;
+  const k = written / D;
+  const ks = String(Number(k.toFixed(6)));
+  const when = isDep ? `בשנת ${target.year}` : `עד ${target.label.split(" ליום ")[1] ?? "התאריך"}`;
 
-  // What k is, by the method.
+  // k: the share of the depreciable amount written off by then, by the method — it doesn't depend on X.
   let kStep: Working;
   if (method === "straight-line") {
     const n = to - from;
-    kStep = { label: `k — החלק מבסיס הפחת שהופחת ${span} (קו ישר: לפי חודשים)`, equation: eq("k", frac(isDep ? "חודשי שימוש בשנה" : "חודשים שחלפו", "אורך חיים בחודשים"), frac(String(n), String(ph.months)), n / ph.months, "percent") };
+    kStep = {
+      label: `כמה מבסיס הפחת נרשם כפחת ${when}? בקו ישר — לפי החודשים: ${n} חודשים מתוך ${ph.months}. נקרא לחלק הזה k (כמספר עשרוני: ${ks})`,
+      equation: eq("k", frac(isDep ? "חודשי שימוש בשנה" : "חודשים שחלפו", "אורך חיים בחודשים"), frac(String(n), String(ph.months)), n / ph.months, "percent"),
+    };
   } else if (method === "units") {
     const used = round2(sum(ph.units.slice(from - ph.t0, to - ph.t0)));
-    kStep = { label: `k — החלק מבסיס הפחת שהופחת ${span} (לפי יחידות תפוקה)`, equation: eq("k", frac("יחידות שהופקו", "סך היחידות הצפויות"), frac(p(used), p(ph.unitsLeft)), used / ph.unitsLeft, "percent") };
+    kStep = {
+      label: `כמה מבסיס הפחת נרשם כפחת ${when}? ביחידות תפוקה — לפי היחידות שהופקו. נקרא לחלק הזה k (כמספר עשרוני: ${ks})`,
+      equation: eq("k", frac("יחידות שהופקו", "סך היחידות הצפויות"), frac(p(used), p(ph.unitsLeft)), used / ph.unitsLeft, "percent"),
+    };
   } else {
     const parts = ph.blocks.map((bl) => ({ bl, share: overlap(ph.t0 + bl.from, ph.t0 + bl.from + bl.length, from, to) })).filter((z) => z.share > 0);
     const top = parts.map(({ bl, share }) => (share === bl.length ? p(bl.weight!) : `${p(bl.weight!)} × ${share}/${bl.length}`)).join(" + ");
-    const kSyd = sum(parts.map(({ bl, share }) => (bl.weight! * share) / bl.length)) / ph.digits;
     kStep = {
-      label: `k — החלק מבסיס הפחת שהופחת ${span} (ספרות השנים: משקלי שנות הנכס שחלפו, חלקי סכום הספרות)`,
-      equation: eq("k", frac("משקלי שנות הנכס שחלפו", "סכום הספרות"), frac(top, p(ph.digits)), kSyd, "percent"),
+      label: `כמה מבסיס הפחת נרשם כפחת ${when}? בסכום ספרות השנים — המשקל של כל שנת נכס (כפול החלק מהשנה שעבר), חלקי סכום הספרות ${p(ph.digits)}. נקרא לחלק הזה k (כמספר עשרוני: ${ks})`,
+      equation: eq("k", frac("משקלי שנות הנכס", "סכום הספרות"), frac(top, p(ph.digits)), sum(parts.map(({ bl, share }) => (bl.weight! * share) / bl.length)) / ph.digits, "percent"),
     };
   }
-  // The share by the method must be the share in the schedule (to rounding), or this isn't the case it describes.
-  if (Math.abs(kStep.equation!.result - kVal) > 1e-4) return null;
-  const k = kVal;
-  const ks = String(Number(k.toFixed(6)));
-  const costX = unknown === "purchasePrice" ? (A ? `(X + ${p(A)})` : "X") : unknown === "attributableCosts" ? `(${p(P)} + X)` : p(C);
-  const resX = unknown === "residual" ? "X" : p(R);
-  const relation: Working = {
-    label: `הקשר בין ${name} לנעלם`,
-    equation:
-      target.kind === "carrying"
-        ? eq(name, ["עלות", "−", "(עלות − גרט)", "×", "k"], [costX, "−", `(${costX} − ${resX})`, "×", ks], T)
-        : eq(name, ["(עלות − גרט)", "×", "k"], [`(${costX} − ${resX})`, "×", ks], T),
-  };
-  if (unknown === "residual") {
-    const R2 = target.kind === "carrying" ? C - (C - T) / k : C - T / k;
-    if (!close(R2, R)) return null;
-    return [
-      kStep,
-      relation,
-      {
-        label: "בידוד X — ערך השייר",
-        equation:
-          target.kind === "carrying"
-            ? eq("X", ["עלות", "−", frac("עלות − יתרה בספרים", "k")], [p(C), "−", frac(`${p(C)} − ${p(T)}`, ks)], x)
-            : eq("X", ["עלות", "−", frac(name, "k")], [p(C), "−", frac(p(T), ks)], x),
-      },
-    ];
-  }
-  const C2 = target.kind === "carrying" ? (T - R * k) / (1 - k) : T / k + R;
-  if (!close(C2, C)) return null;
-  return [
-    kStep,
-    relation,
+  if (Math.abs(kStep.equation!.result - k) > 1e-4) return null;
+
+  // The road forward, with X in its place.
+  const xCost = unknown === "purchasePrice" ? (A ? `X + ${p(A)}` : "X") : unknown === "attributableCosts" ? `${p(P)} + X` : p(C);
+  const costIsX = unknown !== "residual";
+  const xBuilding = !land ? xCost : costIsX ? (byShare ? `${wrap(xCost)} × ${pc(keep)}` : `${wrap(xCost)} − ${p(L)}`) : p(B);
+  const xResidual = unknown === "residual" ? "X" : p(R);
+  const xBase = xResidual === "0" ? xBuilding : `${land && costIsX ? `(${xBuilding})` : xBuilding} − ${xResidual}`;
+  const name = isDep ? `הפחת של ${target.year}` : target.kind === "accumulated" ? "הפחת שנצבר" : TARGET_NAME[target.kind];
+  const forward: Working[] = [
     {
-      label: "בידוד העלות הכוללת",
-      equation:
-        target.kind === "carrying"
-          ? eq("עלות", frac("יתרה בספרים − גרט × k", "1 − k"), frac(`${p(T)} − ${p(R)} × ${ks}`, `1 − ${ks}`), C)
-          : eq("עלות", [frac(name, "k"), "+", "גרט"], [frac(p(T), ks), "+", p(R)], C),
+      label: "הרעיון: קודם כותבים את הדרך הרגילה — מהעלות ועד הנתון שהשאלה נתנה — ובמקום המספר החסר כותבים X. אחר כך הולכים באותה דרך אחורה, עד ש-X נשאר לבד.",
     },
-    unknown === "purchasePrice"
-      ? { label: "בידוד X", equation: eq("X", ["עלות", "−", "עלויות המיוחסות במישרין"], [p(C), "−", p(A)], x) }
-      : { label: "בידוד X", equation: eq("X", ["עלות", "−", "עלות ראשונית"], [p(C), "−", p(P)], x) },
+    { label: "הדרך קדימה — שלב 1: עלות הנכס = מחיר רכישה + עלויות המיוחסות במישרין", formula: `עלות = ${xCost}` },
+    ...(land
+      ? [
+          {
+            label: `הדרך קדימה — שלב 2: מפרידים את הקרקע, כי קרקע לא מופחתת. ${byShare ? `הקרקע היא ${pc(land.share)} מהעלות, אז המבנה הוא ${pc(keep)} ממנה` : `הקרקע עולה ${p(L)}`}`,
+            formula: `מבנה = ${byShare ? `עלות × ${pc(keep)}` : "עלות − קרקע"} = ${xBuilding}`,
+          },
+        ]
+      : []),
+    { label: `הדרך קדימה — שלב ${land ? 3 : 2}: בסיס הפחת = ${land ? "מבנה" : "עלות"} − ערך גרט`, formula: `בסיס הפחת = ${xBase}` },
+    kStep,
+    {
+      label: `הדרך קדימה — הנתון שבשאלה: ${isDep ? `הפחת של ${target.year} הוא החלק k מבסיס הפחת` : target.kind === "accumulated" ? "הפחת שנצבר הוא החלק k מבסיס הפחת" : "היתרה בספרים היא העלות פחות הפחת שנצבר, והפחת שנצבר הוא החלק k מבסיס הפחת"}`,
+      formula:
+        target.kind === "carrying"
+          ? `${p(T)} = ${xCost} − ${wrap(xBase)} × ${ks}`
+          : `${p(T)} = ${wrap(xBase)} × ${ks}`,
+    },
+    { label: "עכשיו אחורה: מתחילים מהנתון הידוע ומבטלים פעולה אחת בכל שלב — כפל הופך לחילוק, חיבור לחיסור." },
   ];
+
+  const back: Working[] = [];
+  const step = (label: string, lhs: string, abstract: MathExpr, numeric: MathExpr, result: number) => back.push({ label, equation: eq(lhs, abstract, numeric, result) });
+  if (target.kind === "carrying" && costIsX) {
+    // The cost shows up twice — in the balance and inside the base — so both sides are gathered into one.
+    const C2 = byShare ? (T - k * R) / (1 - k * keep) : (T - k * (L + R)) / (1 - k);
+    if (!close(C2, C)) return null;
+    back.push({
+      label: "אחורה — שלב 1: העלות מופיעה פעמיים — לבד, וגם בתוך בסיס הפחת. פותחים סוגריים ומקבצים את שתי ההופעות שלה יחד",
+      formula: byShare
+        ? `${p(T)} = עלות − עלות × ${pc(keep)} × ${ks}${R ? ` + ${p(R)} × ${ks}` : ""} = עלות × (1 − ${pc(keep)} × ${ks})${R ? ` + ${p(round2(R * k))}` : ""}`
+        : `${p(T)} = עלות − עלות × ${ks}${L + R ? ` + ${p(L + R)} × ${ks}` : ""} = עלות × (1 − ${ks})${L + R ? ` + ${p(round2((L + R) * k))}` : ""}`,
+    });
+    step(
+      "אחורה — שלב 2: מעבירים את המספר הידוע לצד השני, ומחלקים במה שמוכפל בעלות",
+      "עלות",
+      frac(byShare ? "יתרה בספרים − k × גרט" : `יתרה בספרים − k × (${land ? "קרקע + " : ""}גרט)`, byShare ? "1 − k × חלק המבנה" : "1 − k"),
+      frac(byShare ? `${p(T)} − ${ks} × ${p(R)}` : `${p(T)} − ${ks} × ${land ? `(${p(L)} + ${p(R)})` : p(R)}`, byShare ? `1 − ${ks} × ${pc(keep)}` : `1 − ${ks}`),
+      C,
+    );
+  } else {
+    if (target.kind === "carrying") {
+      step("אחורה — שלב 1: הפחת שנצבר הוא מה שירד מהעלות עד היום", "פחת שנצבר", ["עלות", "−", "יתרה בספרים"], [p(C), "−", p(T)], round2(C - T));
+      step("אחורה — שלב 2: הפחת שנצבר הוא k מבסיס הפחת, אז מחלקים ב-k", "בסיס הפחת", frac("פחת שנצבר", "k"), frac(p(round2(C - T)), ks), D);
+    } else step(`אחורה — שלב 1: ${name} הוא החלק k מבסיס הפחת, אז מחלקים ב-k`, "בסיס הפחת", frac(name, "k"), frac(p(T), ks), D);
+    if (!close((target.kind === "carrying" ? C - T : T) / k, D)) return null;
+    if (!costIsX) {
+      step("אחורה — שלב אחרון: בסיס הפחת = מבנה − גרט, אז הגרט הוא מה שחסר עד המבנה", "X", [land ? "מבנה" : "עלות", "−", "בסיס הפחת"], [p(B), "−", p(D)], x);
+      return [...forward, ...back];
+    }
+    step(`אחורה — שלב 2: בסיס הפחת = ${land ? "מבנה" : "עלות"} − גרט, אז מוסיפים את הגרט בחזרה`, land ? "מבנה" : "עלות", ["בסיס הפחת", "+", "גרט"], [p(D), "+", p(R)], B);
+    if (land && byShare) step(`אחורה — שלב 3: המבנה הוא ${pc(keep)} מהעלות, אז מחלקים ב-${pc(keep)}`, "עלות", frac("מבנה", "חלק המבנה"), frac(p(B), pc(keep)), C);
+    else if (land) step("אחורה — שלב 3: מוסיפים את הקרקע בחזרה", "עלות", ["מבנה", "+", "קרקע"], [p(B), "+", p(L)], C);
+  }
+  step(
+    "אחורה — שלב אחרון: העלות היא מחיר הרכישה ועוד העלויות הישירות, אז מורידים את החלק הידוע — ומה שנשאר הוא X",
+    "X",
+    ["עלות", "−", unknown === "purchasePrice" ? "עלויות המיוחסות במישרין" : "מחיר רכישה"],
+    [p(C), "−", p(unknown === "purchasePrice" ? A : P)],
+    x,
+  );
+  return [...forward, ...back];
 }
