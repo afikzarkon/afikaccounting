@@ -1,4 +1,5 @@
 import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import { Callout, DataTable } from "@/components/study/blocks";
 import { balancesOf, carryForward, CREDIT, type Entry, isBalanceSheet, ledger, statements, trialBalance, YUVAL } from "@/lib/learn/basics";
 import { ClassifyExercise } from "./classify";
@@ -216,6 +217,19 @@ export function BooksChapters() {
           head={["חשבון", "סוג", "יתרה ב-31.12.2020", "פתיחה ב-1.1.2021"]}
           rows={Object.entries(YUVAL.tb2020).map(([a, v]) => [a, isBalanceSheet(a) ? "מאזני" : "תוצאתי", Math.abs(v), isBalanceSheet(a) ? Math.abs(v) : 0])}
         />
+        <Link
+          href="/basics/statements"
+          className="group flex items-center gap-4 rounded-xl border-2 border-accent bg-accent-soft px-5 py-4 transition-colors hover:bg-accent-soft/70"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block text-[17px] font-bold text-fg">רוצים לראות איך זה נראה בדוחות אמיתיים לפי IFRS 18?</span>
+            <span className="mt-0.5 block text-sm text-fg/85">
+              שוטף ובלתי שוטף, שלוש קטגוריות ברווח או הפסד, סיווג הוצאות לפי מאפיין פעילות ורווח כולל אחר — ושאלה מלאה ממאזן בוחן ועד שני הדוחות.
+            </span>
+            <span className="mt-1.5 block text-sm font-semibold text-accent">להכנת דוחות כספיים ←</span>
+          </span>
+          <ArrowLeft className="h-5 w-5 shrink-0 text-accent transition-transform group-hover:-translate-x-1" aria-hidden />
+        </Link>
       </Chapter>
     </>
   );

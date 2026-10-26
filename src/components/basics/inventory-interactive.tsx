@@ -36,14 +36,15 @@ export function TryInCalc({ id, label = "נסו במחשבון" }: { id: string;
 
 export type QuizItem = { q: string; options: string[]; answer: number; why: string };
 
-export function MiniQuiz({ chapter, items }: { chapter: string; items: QuizItem[] }) {
+/** `prefix` keeps each page's saved answers apart; the inventory page keeps its original "inv". */
+export function MiniQuiz({ chapter, items, prefix = "inv" }: { chapter: string; items: QuizItem[]; prefix?: string }) {
   const progress = useProgress();
   return (
     <div className="card p-5">
       <p className="text-[16px] font-semibold text-fg">בדקו את עצמכם</p>
       <ol className="mt-3 space-y-4">
         {items.map((it, i) => {
-          const key = `inv:${chapter}:${i + 1}`;
+          const key = `${prefix}:${chapter}:${i + 1}`;
           const saved = progress.answers[key];
           const picked = saved ? Number(saved.value) : null;
           return (
@@ -301,10 +302,10 @@ export function TableFill({ data }: { data: FillData }) {
 
 export type SortItem = { text: string; answer: string; why: string; ref?: string };
 
-export function SortQuiz({ id, items, options, title }: { id: string; items: SortItem[]; options: [string, string][]; title?: string }) {
+export function SortQuiz({ id, items, options, title, prefix = "inv" }: { id: string; items: SortItem[]; options: [string, string][]; title?: string; prefix?: string }) {
   const progress = useProgress();
-  const done = items.filter((_, i) => progress.answers[`inv:${id}:${i + 1}`]).length;
-  const right = items.filter((_, i) => progress.answers[`inv:${id}:${i + 1}`]?.correct).length;
+  const done = items.filter((_, i) => progress.answers[`${prefix}:${id}:${i + 1}`]).length;
+  const right = items.filter((_, i) => progress.answers[`${prefix}:${id}:${i + 1}`]?.correct).length;
   return (
     <div className="card p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -315,7 +316,7 @@ export function SortQuiz({ id, items, options, title }: { id: string; items: Sor
       </div>
       <ul className="mt-3 divide-y divide-line">
         {items.map((it, i) => {
-          const key = `inv:${id}:${i + 1}`;
+          const key = `${prefix}:${id}:${i + 1}`;
           const saved = progress.answers[key];
           return (
             <li key={key} className="py-3">
