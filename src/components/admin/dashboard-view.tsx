@@ -25,7 +25,8 @@ const MODULES: Record<string, string> = {
   content: "מרכז התוכן",
   // The guide page was removed; the label stays for its past page views.
   "ias16-guide": "מדריך IAS 16 (הוסר)",
-  "ias16-lab": "לימוד תקנים — IAS 16",
+  // IAS 16 moved to /basics/ias16; the label stays for its past page views.
+  "ias16-lab": "IAS 16 (כתובת קודמת)",
   dashboard: "לוח אישי",
   about: "אודות",
   profile: "פרופיל",

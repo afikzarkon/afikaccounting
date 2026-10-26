@@ -45,7 +45,7 @@ export default function InventoryPage() {
           <ArrowRight className="h-4 w-4" aria-hidden /> חזרה לחשבונאות מאפס
         </Link>
         <div className="mt-4">
-          <Breadcrumbs trail={[{ label: "שלב 2 · העמקה" }, { label: "מלאי (IAS 2)" }]} />
+          <Breadcrumbs trail={[{ label: "שלב 1 · יסודות" }, { label: "מלאי (IAS 2)" }]} />
         </div>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
           מלאי <span className="text-gradient">מאפס ועד מבחן</span>

@@ -25,13 +25,17 @@ export type Topic = {
 
 export type Stage = { id: string; step: number; title: string; lead: string; topics: Topic[] };
 
-/** The learning path: foundations first, then the topics built on them, then the standards. */
+/**
+ * The learning path. Every guide sits in the foundations, one page each — the
+ * course from zero, then inventory, credit losses and property, plant and
+ * equipment — so each is one entry in the menu.
+ */
 export const LEARNING_PATH: Stage[] = [
   {
     id: "foundations",
     step: 1,
     title: "יסודות",
-    lead: "למי שמתחיל מאפס: חובה וזכות, פקודות יומן ודוחות כספיים",
+    lead: "מחובה וזכות ועד הנושאים שמופיעים כמעט בכל שאלת מבחן — כל נושא בעמוד מלא אחד",
     topics: [
       {
         id: "basics",
@@ -44,14 +48,6 @@ export const LEARNING_PATH: Stage[] = [
           { href: "/basics#practice", label: "15 שאלות תרגול" },
         ],
       },
-    ],
-  },
-  {
-    id: "topics",
-    step: 2,
-    title: "העמקה",
-    lead: "נושאים שמופיעים כמעט בכל שאלת מבחן — כל אחד במדריך מלא",
-    topics: [
       {
         id: "inventory",
         title: "מלאי",
@@ -69,33 +65,18 @@ export const LEARNING_PATH: Stage[] = [
         covers: ["לקוחות ברוטו ונטו", "הפרשה ספציפית וכללית", "חוב אבוד", "חוב שחזר"],
         tools: [{ href: "/basics/credit-losses#cl-tools", label: "מחשבון הפסדי אשראי" }],
       },
-    ],
-  },
-  {
-    id: "standards",
-    step: 3,
-    title: "תקנים",
-    lead: "תקן אחר תקן, מהקל לקשה — עם הדרך לפתור כל סוג שאלה",
-    topics: [
       {
         id: "ias16",
         title: "רכוש קבוע",
         standard: "IAS 16",
-        href: "/ias16-lab",
-        description: "כל התקן בדף אחד: מהו רכוש קבוע, מושגי יסוד, ואז הסוגיות מהפשוטה למורכבת.",
-        covers: ["מהו רכוש קבוע", "מושגי יסוד", "שיטות פחת", "שאלה מלאה", "שיפוצים", "החלפה", "הערכה מחדש"],
-        pages: [
-          { href: "/ias16-lab", label: "מהבסיס ומושגי יסוד", description: "מהו רכוש קבוע, ההגדרה, המושגים וגישת הרכיבים" },
-          { href: "/ias16-lab#method", label: "שאלה מלאה — תשעה שלבים", description: "שיטות הפחת ודרך הפתרון על שאלה אחת" },
-          { href: "/ias16-lab#renovation", label: "שיפוצים ואירועים עוקבים", description: "נכנס לנכס או הוצאה, ובכל שיטות הפחת" },
-          { href: "/ias16-lab#exchange", label: "החלפת נכסים", description: "שלושה שלבים, פקודות יומן והמשך השנה" },
-          { href: "/ias16-lab#revaluation", label: "מודל הערכה מחדש", description: "קרן הערכה מחדש, קרקע מול מבנה וטיפ הזהב" },
-        ],
+        href: "/basics/ias16",
+        description: "מהו רכוש קבוע, מושגי יסוד, ואז הסוגיות מהפשוטה למורכבת: פחת, שאלה מלאה, שיפוצים, החלפה והערכה מחדש.",
+        covers: ["מהו רכוש קבוע", "שיטות פחת", "שאלה מלאה", "שיפוצים", "החלפה", "הערכה מחדש"],
         tools: [
-          { href: "/ias16-lab#depreciation", label: "סימולטור פחת" },
-          { href: "/ias16-lab#renovation-calculator", label: "מחשבון שיפוץ" },
-          { href: "/ias16-lab#exchange-calculator", label: "מחשבון החלפה" },
-          { href: "/ias16-lab#revaluation-calculator", label: "מחשבון הערכה מחדש" },
+          { href: "/basics/ias16#depreciation", label: "סימולטור פחת" },
+          { href: "/basics/ias16#renovation-calculator", label: "מחשבון שיפוץ" },
+          { href: "/basics/ias16#exchange-calculator", label: "מחשבון החלפה" },
+          { href: "/basics/ias16#revaluation-calculator", label: "מחשבון הערכה מחדש" },
         ],
       },
     ],

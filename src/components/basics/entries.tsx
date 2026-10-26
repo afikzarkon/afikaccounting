@@ -1,4 +1,5 @@
-import { Laptop, Receipt } from "lucide-react";
+import { ArrowLeft, Laptop, Receipt } from "lucide-react";
+import Link from "next/link";
 import { Callout } from "@/components/study/blocks";
 import type { Entry } from "@/lib/learn/basics";
 import { ActionFinder } from "./action-finder";
@@ -74,6 +75,19 @@ export function EntriesChapters() {
           </Card>
         </div>
         <Rule>השאלה לבדיקה: האם העסק ייהנה מזה יותר משנה, ויוכל למכור את זה? כן — השקעה (נכס). לא — הוצאה.</Rule>
+        <Link
+          href="/basics/ias16"
+          className="group flex items-center gap-4 rounded-xl border-2 border-accent bg-accent-soft px-5 py-4 transition-colors hover:bg-accent-soft/70"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block text-[17px] font-bold text-fg">המדריך המלא לרכוש קבוע (IAS 16) נמצא בעמוד נפרד</span>
+            <span className="mt-0.5 block text-sm text-fg/85">
+              שם הנושא נלמד מההתחלה, צעד אחר צעד: מהו רכוש קבוע, מושגי יסוד, שיטות הפחת, שאלה מלאה, שיפוצים, החלפת נכסים והערכה מחדש — עם מחשבון לכל סוגיה.
+            </span>
+            <span className="mt-1.5 block text-sm font-semibold text-accent">למדריך המלא ←</span>
+          </span>
+          <ArrowLeft className="h-5 w-5 shrink-0 text-accent transition-transform group-hover:-translate-x-1" aria-hidden />
+        </Link>
         <p className="text-sm text-muted">
           ומה עם קניית סחורה למכירה? בקורס היא נרשמת בחשבון <Term he="קניות" /> — סוג של הוצאה, והגדולה מכולן. את מה שלא נמכר עד סוף השנה
           מתקנים במלאי הסגירה (פרק 13).

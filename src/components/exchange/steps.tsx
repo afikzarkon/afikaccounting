@@ -21,7 +21,7 @@ export function ExchangeStepsSection() {
         <p className="text-xs font-semibold text-accent">דרכים לפתור שאלת החלפה — במבט אחד</p>
         <p className="mt-1 text-[15px] text-fg/90">
           כל שאלת החלפת נכסים נפתרת באותם שלושה שלבים, באותו הסדר. לאורך הדרך נמשיך את השאלה המרכזית של הפרק (
-          <a href="/ias16-lab#method" className="font-medium text-accent hover:underline">
+          <a href="#method" className="font-medium text-accent hover:underline">
             דרכים לפתור שאלה
           </a>
           ): המכונה של {MACHINE.company} נכנסה לשימוש ב-<Dt>{MACHINE.readyDate}</Dt> בעלות <Num v={EXAMPLE.oldCost} /> ₪, לאורך חיים של{" "}

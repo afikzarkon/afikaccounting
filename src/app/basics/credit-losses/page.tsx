@@ -33,7 +33,7 @@ export default function CreditLossesPage() {
           <ArrowRight className="h-4 w-4" aria-hidden /> חזרה לחשבונאות מאפס
         </Link>
         <div className="mt-4">
-          <Breadcrumbs trail={[{ label: "שלב 2 · העמקה" }, { label: "הפסדי אשראי" }]} />
+          <Breadcrumbs trail={[{ label: "שלב 1 · יסודות" }, { label: "הפסדי אשראי" }]} />
         </div>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
           הפסדי <span className="text-gradient">אשראי</span>

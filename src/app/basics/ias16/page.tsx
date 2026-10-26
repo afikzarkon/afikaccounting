@@ -1,6 +1,8 @@
-import { ArrowLeft, Calculator } from "lucide-react";
+import { ArrowLeft, ArrowRight, Calculator } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import type { ReactNode } from "react";
+import { type ChapterLink, ChapterNav } from "@/components/basics/chapter-nav";
 import { ExchangeCalculator } from "@/components/exchange/calculator";
 import { ExchangeJournalSection } from "@/components/exchange/journal";
 import { NewAssetSection } from "@/components/exchange/new-asset";
@@ -8,7 +10,6 @@ import { ExchangeStepsSection } from "@/components/exchange/steps";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { ExamTipsSection } from "@/components/learn/exam-tips";
 import { FundamentalsSection } from "@/components/learn/fundamentals";
-import { Ias16Nav, type NavPart } from "@/components/learn/ias16-nav";
 import { MethodologySection } from "@/components/learn/methodology";
 import { DepreciationSimulator } from "@/components/learn/simulator";
 import { WhatIsPpeSection } from "@/components/learn/what-is-ppe";
@@ -126,151 +127,133 @@ const PARTS: Part[] = [
   },
 ];
 
-const NAV: NavPart[] = [...PARTS.flatMap((p) => p.topics.map((t) => ({ id: t.id, label: t.label }))), { id: "full-calculator", label: "המחשבון המלא" }];
-/** Topics are numbered straight through the page. */
+/** The sidebar's chapters: every topic, straight through the page, then the full calculator. */
+const CHAPTERS: ChapterLink[] = [...PARTS.flatMap((p) => p.topics.map((t) => ({ id: t.id, title: t.label }))), { id: "full-calculator", title: "המחשבון המלא" }];
 const NUM = new Map(PARTS.flatMap((p) => p.topics).map((t, i) => [t.id, i + 1]));
 /** The tabs of the former page, so their old links still land on the right topic. */
 const ALIASES: Record<string, string> = { depreciation: "simulator", concepts: "basics" };
 
-export default function Ias16LabPage() {
+const ROADMAP: [string, string, string][] = [
+  ["#what", "אני רוצה ללמוד מהיסוד", "מהו רכוש קבוע, ואז מושגי היסוד"],
+  ["#method", "אני רוצה לפתור שאלת מבחן", "תשעה שלבים על שאלה אחת מלאה"],
+  ["#full-calculator", "אני רוצה מחשבון", "שאלה שלמה, עם כל הדרך"],
+];
+
+export default function Ias16Page() {
   return (
     <div className="relative">
       <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
-      <Container className="relative pt-10 pb-12 sm:pt-14">
-        <Breadcrumbs trail={[{ label: "שלב 3 · תקנים" }, { label: "IAS 16 · רכוש קבוע" }]} />
+      <Container className="relative pt-10 pb-16 sm:pt-14">
+        <Link href="/basics#expense" className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline">
+          <ArrowRight className="h-4 w-4" aria-hidden /> חזרה לחשבונאות מאפס
+        </Link>
+        <div className="mt-4">
+          <Breadcrumbs trail={[{ label: "שלב 1 · יסודות" }, { label: "רכוש קבוע (IAS 16)" }]} />
+        </div>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
           תקן IAS 16 רכוש קבוע <span className="text-gradient">מהקל לקשה</span>
         </h1>
-        <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-          <p className="max-w-2xl text-[15px] leading-relaxed text-muted">
-            הכול בדף אחד, לפי הסדר: מהו רכוש קבוע, מושגי היסוד, ואז הסוגיות מהפשוטה למורכבת — שיטות הפחת, שאלה מלאה, שיפוצים, החלפת נכסים והערכה מחדש. בכל
-            סוגיה: דרכי פעולה, דוגמאות מלאות ומחשבון, ובסוף צ׳ק-ליסט שמוודא שלא פספסתם כלום.
-          </p>
-          <ButtonLink href="/engine?calc=ias-16-property-plant-equipment" variant="secondary" className="no-print">
-            פתרון שאלה במחשבון המלא <ArrowLeft className="h-4 w-4" />
-          </ButtonLink>
+        <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted">
+          הכול בדף אחד, לפי הסדר: מהו רכוש קבוע, מושגי היסוד, ואז הסוגיות מהפשוטה למורכבת — שיטות הפחת, שאלה מלאה, שיפוצים, החלפת נכסים והערכה מחדש. בכל סוגיה:
+          דרכי פעולה, דוגמאות מלאות ומחשבון, ובסוף צ׳ק-ליסט שמוודא שלא פספסתם כלום.
+        </p>
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          {ROADMAP.map(([href, title, hint]) => (
+            <a key={href} href={href} className="group flex items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3 transition-colors hover:border-accent/60 hover:bg-accent-soft">
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold text-fg">{title}</span>
+                <span className="block text-xs text-muted">{hint}</span>
+              </span>
+              <ArrowLeft className="h-4 w-4 shrink-0 text-accent transition-transform group-hover:-translate-x-1" aria-hidden />
+            </a>
+          ))}
         </div>
+        <p className="mt-3 text-sm text-muted">
+          מה צריך לדעת מראש: הוצאה מול השקעה, ופקודת יומן בסיסית — חובה וזכות.{" "}
+          <Link href="/basics#expense" className="font-medium text-accent hover:underline">
+            לחשבונאות מאפס
+          </Link>
+        </p>
 
-        <TableOfContents />
-
-        <div className="mt-6">
-          <Ias16Nav parts={NAV} />
-        </div>
-
-        {PARTS.map((part) => (
-          <section key={part.id} id={part.id} aria-labelledby={`${part.id}-h`} className="mt-12 scroll-mt-32">
-            <header className="border-b-2 border-accent/40 pb-3">
-              <p className="text-xs font-semibold text-accent">חלק {part.n}</p>
-              <h2 id={`${part.id}-h`} className="mt-0.5 text-2xl font-semibold tracking-tight text-fg">
-                {part.title}
-              </h2>
-              <p className="mt-1 max-w-3xl text-[14.5px] leading-relaxed text-muted">{part.lead}</p>
-            </header>
-            {part.topics.map((t) => {
-              const n = NUM.get(t.id)!;
-              return (
-                <section key={t.id} id={t.id} aria-labelledby={`${t.id}-h`} className="mt-8 scroll-mt-32">
-                  {ALIASES[t.id] && <span id={ALIASES[t.id]} className="block scroll-mt-32" aria-hidden />}
-                  <div className="flex items-start gap-3">
-                    <span className="num mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-accent-fg">{n}</span>
-                    <div className="min-w-0">
-                      <h3 id={`${t.id}-h`} className="text-xl font-semibold text-fg">
-                        {t.title}
-                      </h3>
-                      <p className="mt-1 max-w-3xl text-[14.5px] leading-relaxed text-muted">{t.lead}</p>
-                    </div>
-                  </div>
-                  {t.subs && (
-                    <ul className="no-print mt-3 flex flex-wrap gap-1.5 ps-12" aria-label={`בתוך ${t.label}`}>
-                      {t.subs.map((s) => (
-                        <li key={s.id}>
-                          <a href={`#${s.id}`} className="inline-flex min-h-8 items-center rounded-full border border-line px-3 py-1 text-[12.5px] font-medium text-fg hover:border-accent hover:bg-accent-soft/50">
+        <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
+          <aside className="contents lg:block lg:min-w-0">
+            <ChapterNav chapters={CHAPTERS} />
+          </aside>
+          <div className="min-w-0">
+            {PARTS.map((part, pi) => (
+              <section key={part.id} id={part.id} aria-labelledby={`${part.id}-h`} className={pi > 0 ? "mt-16" : undefined}>
+                <header className="border-b-2 border-accent/40 pb-3">
+                  <p className="text-xs font-semibold text-accent">חלק {part.n}</p>
+                  <h2 id={`${part.id}-h`} className="mt-0.5 text-2xl font-semibold tracking-tight text-fg">
+                    {part.title}
+                  </h2>
+                  <p className="mt-1 max-w-3xl text-[14.5px] leading-relaxed text-muted">{part.lead}</p>
+                </header>
+                {part.topics.map((t) => {
+                  const n = NUM.get(t.id)!;
+                  return (
+                    <section key={t.id} id={t.id} data-chapter={t.id} aria-labelledby={`${t.id}-h`} className="mt-10 scroll-mt-32 lg:scroll-mt-24">
+                      {ALIASES[t.id] && <span id={ALIASES[t.id]} className="block scroll-mt-32" aria-hidden />}
+                      <div className="flex items-start gap-3">
+                        <span className="num mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-accent-fg">{n}</span>
+                        <div className="min-w-0">
+                          <h3 id={`${t.id}-h`} className="text-xl font-semibold text-fg">
+                            {t.title}
+                          </h3>
+                          <p className="mt-1 max-w-3xl text-[14.5px] leading-relaxed text-muted">{t.lead}</p>
+                        </div>
+                      </div>
+                      {t.subs && (
+                        <ul className="no-print mt-3 flex flex-wrap gap-1.5 ps-12" aria-label={`בתוך ${t.label}`}>
+                          {t.subs.map((s) => (
+                            <li key={s.id}>
+                              <a href={`#${s.id}`} className="inline-flex min-h-8 items-center rounded-full border border-line px-3 py-1 text-[12.5px] font-medium text-fg hover:border-accent hover:bg-accent-soft/50">
+                                {s.label}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {t.content && <div className="mt-5 space-y-4">{t.content}</div>}
+                      {t.subs?.map((s, i) => (
+                        <section key={s.id} id={s.id} aria-labelledby={`${s.id}-h`} className="mt-8 scroll-mt-32 lg:scroll-mt-24">
+                          <h4 id={`${s.id}-h`} className="flex items-center gap-2 text-[17px] font-semibold text-fg">
+                            <span className="num rounded-md bg-accent-soft px-1.5 py-0.5 text-xs font-bold text-accent">
+                              {n}.{i + 1}
+                            </span>
                             {s.label}
-                          </a>
-                        </li>
+                          </h4>
+                          <div className="mt-4 space-y-4">{s.content}</div>
+                        </section>
                       ))}
-                    </ul>
-                  )}
-                  {t.content && <div className="mt-5 space-y-4">{t.content}</div>}
-                  {t.subs?.map((s, i) => (
-                    <section key={s.id} id={s.id} aria-labelledby={`${s.id}-h`} className="mt-8 scroll-mt-32">
-                      <h4 id={`${s.id}-h`} className="flex items-center gap-2 text-[17px] font-semibold text-fg">
-                        <span className="num rounded-md bg-accent-soft px-1.5 py-0.5 text-xs font-bold text-accent">
-                          {n}.{i + 1}
-                        </span>
-                        {s.label}
-                      </h4>
-                      <div className="mt-4 space-y-4">{s.content}</div>
                     </section>
-                  ))}
-                </section>
-              );
-            })}
-          </section>
-        ))}
+                  );
+                })}
+              </section>
+            ))}
 
-        <section id="full-calculator" aria-labelledby="full-calculator-h" className="mt-14 scroll-mt-32">
-          <div className="card flex flex-wrap items-center gap-4 border-accent/40 p-6">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-accent-soft text-accent">
-              <Calculator className="h-6 w-6" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <h2 id="full-calculator-h" className="text-lg font-semibold text-fg">
-                שאלה שלמה? המחשבון המלא פותר אותה
-              </h2>
-              <p className="mt-1 text-[14px] leading-relaxed text-muted">
-                מחשבון אחד לכל סוגי השאלות: עלות, כל שיטות הפחת, שיפוץ, הערכה מחדש והחלפה — ואם חסר נתון, מסמנים אותו X. הפתרון מראה את רישום הנתונים, מציאת
-                הנעלם, כל שלבי החישוב, פקודות היומן, מאזן ורווח והפסד לכל שנה, והמעבר משנה לשנה.
-              </p>
-            </div>
-            <ButtonLink href="/engine?calc=ias-16-property-plant-equipment">
-              למחשבון <ArrowLeft className="h-4 w-4" />
-            </ButtonLink>
+            <section id="full-calculator" data-chapter="full-calculator" aria-labelledby="full-calculator-h" className="mt-14 scroll-mt-32 lg:scroll-mt-24">
+              <div className="card flex flex-wrap items-center gap-4 border-accent/40 p-6">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-accent-soft text-accent">
+                  <Calculator className="h-6 w-6" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h2 id="full-calculator-h" className="text-lg font-semibold text-fg">
+                    שאלה שלמה? המחשבון המלא פותר אותה
+                  </h2>
+                  <p className="mt-1 text-[14px] leading-relaxed text-muted">
+                    מחשבון אחד לכל סוגי השאלות: עלות, כל שיטות הפחת, שיפוץ, הערכה מחדש והחלפה — ואם חסר נתון, מסמנים אותו X. הפתרון מראה את רישום הנתונים, מציאת
+                    הנעלם, כל שלבי החישוב, פקודות היומן, מאזן ורווח והפסד לכל שנה, והמעבר משנה לשנה.
+                  </p>
+                </div>
+                <ButtonLink href="/engine?calc=ias-16-property-plant-equipment">
+                  למחשבון <ArrowLeft className="h-4 w-4" />
+                </ButtonLink>
+              </div>
+            </section>
           </div>
-        </section>
+        </div>
       </Container>
     </div>
-  );
-}
-
-/** Every part, topic and sub-topic at a glance, each a link to its place. */
-function TableOfContents() {
-  return (
-    <nav aria-label="תוכן העניינים" className="card mt-8 p-5">
-      <p className="text-sm font-semibold text-fg">תוכן העניינים</p>
-      <ol className="mt-3 grid gap-4 md:grid-cols-3">
-        {PARTS.map((part) => (
-          <li key={part.id}>
-            <a href={`#${part.id}`} className="text-[13px] font-semibold text-accent hover:underline">
-              חלק {part.n} · {part.title}
-            </a>
-            <ol className="mt-1.5 space-y-1">
-              {part.topics.map((t) => {
-                const n = NUM.get(t.id)!;
-                return (
-                  <li key={t.id}>
-                    <a href={`#${t.id}`} className="flex items-baseline gap-1.5 text-[14px] text-fg hover:text-accent">
-                      <span className="num text-xs font-bold text-muted">{n}.</span>
-                      {t.title}
-                    </a>
-                    {t.subs && (
-                      <ol className="mt-0.5 ms-5 space-y-0.5">
-                        {t.subs.map((s) => (
-                          <li key={s.id}>
-                            <a href={`#${s.id}`} className="text-[12.5px] text-muted hover:text-accent">
-                              {s.label}
-                            </a>
-                          </li>
-                        ))}
-                      </ol>
-                    )}
-                  </li>
-                );
-              })}
-            </ol>
-          </li>
-        ))}
-      </ol>
-    </nav>
   );
 }
