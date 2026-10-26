@@ -25,14 +25,18 @@ import { bool, datedValues, num, series, str } from "../validate";
  * asset received, from its new cost, useful life and residual value.
  */
 
-export type PpeMethod = "straight-line" | "double-declining" | "sum-of-years" | "units";
+export type PpeMethod = "straight-line" | "double-declining" | "sum-of-years" | "sum-of-years-asc" | "units";
 
 export const METHOD_LABEL: Record<PpeMethod, string> = {
   "straight-line": "הקו הישר",
   "double-declining": "היתרה הפוחתת הכפולה",
-  "sum-of-years": "סכום ספרות השנים",
+  "sum-of-years": "סכום ספרות השנים (יורד)",
+  "sum-of-years-asc": "סכום ספרות השנים (עולה)",
   units: "יחידות התפוקה",
 };
+
+/** Both directions of sum-of-the-years'-digits. */
+export const isSyd = (m: PpeMethod) => m === "sum-of-years" || m === "sum-of-years-asc";
 
 const CURRENCY = "ILS";
 const fmt = (n: number) => money(n, CURRENCY);
@@ -55,6 +59,9 @@ export const overlap = (from: number, to: number, start: number, end: number) =>
 
 /** Remaining life, in years, at the start of each 12-month block: 6, 5, …, 1 or 5.75, 4.75, …, 0.75. */
 export const sydWeights = (months: number) => Array.from({ length: Math.ceil(months / 12) }, (_, i) => (months - 12 * i) / 12);
+/** Ascending: the life elapsed at the end of each 12-month block — 1, 2, …, 6, or 1, 2, …, 5, 5.75. */
+export const sydWeightsAsc = (months: number) => Array.from({ length: Math.ceil(months / 12) }, (_, i) => Math.min(months, 12 * (i + 1)) / 12);
+export const weightsOf = (method: PpeMethod, months: number) => (method === "sum-of-years-asc" ? sydWeightsAsc(months) : sydWeights(months));
 
 type Renovation = { at: number; date: string; cost: number; extension: number; residual: number; extraUnits: number };
 /** `land`: the land's part of this fair value, when given for the date (as a share or an amount). */
@@ -264,8 +271,8 @@ function monthlyCharges(
   if (method === "straight-line") {
     for (let k = 0; k < months; k++) charges.push(depreciable / months);
     blocks.push({ from: 0, length: months, amount: depreciable });
-  } else if (method === "sum-of-years") {
-    const weights = sydWeights(months);
+  } else if (isSyd(method)) {
+    const weights = weightsOf(method, months);
     const digits = sum(weights);
     weights.forEach((w, i) => {
       const length = Math.min(12, months - 12 * i);
@@ -369,7 +376,7 @@ export function run(inp: Inputs) {
       depreciable,
       surplus,
       ddbRate,
-      digits: sum(sydWeights(months)),
+      digits: sum(weightsOf(method, months)),
       unitsLeft,
       blocks,
       cum,
@@ -1054,7 +1061,7 @@ export function solveTimeline(v: Values): Solution {
           const share = overlap(bs, be, s, e);
           if (!share) continue;
           const equation: Equation =
-            ph.method === "sum-of-years"
+            isSyd(ph.method)
               ? {
                   lhs: "פחת תקופתי",
                   abstract: ["(עלות בספרים − ערך גרט)", "×", frac("משקל שנת הנכס", "סכום הספרות"), "×", frac("חודשי שימוש", "חודשי שנת הנכס")],
@@ -1279,7 +1286,7 @@ export function solveTimeline(v: Values): Solution {
   });
 
   // ---- method comparison ---------------------------------------------------
-  const methods: PpeMethod[] = ["straight-line", "sum-of-years", "double-declining", ...(method === "units" ? (["units"] as const) : [])];
+  const methods: PpeMethod[] = ["straight-line", "sum-of-years", "sum-of-years-asc", "double-declining", ...(method === "units" ? (["units"] as const) : [])];
   const runs = new Map(methods.map((m) => [m, m === method ? r : run({ ...inp, method: m })]));
   const comparison: ScheduleRow[] = periods.map((p) => ({
     period: p.label,
@@ -1308,9 +1315,9 @@ export function solveTimeline(v: Values): Solution {
       { label: "יתרה בספרים לאחר היוון השיפוץ", value: ren.newBase, format: "currency" },
       { label: "יתרת אורך חיים מעודכנת (שנים)", value: round2(ren.remainingMonths / 12), format: "number" },
     );
-    if (method === "sum-of-years") {
+    if (isSyd(method)) {
       metrics.push(
-        { label: "סכום הספרות המעודכן", value: round2(sum(sydWeights(ren.remainingMonths))), format: "number", hint: sydWeights(ren.remainingMonths).join(" + ") },
+        { label: "סכום הספרות המעודכן", value: round2(sum(weightsOf(method, ren.remainingMonths))), format: "number", hint: weightsOf(method, ren.remainingMonths).join(" + ") },
         { label: "פחת ב-12 החודשים שלאחר השיפוץ", value: firstYearAfter, format: "currency" },
       );
     } else if (method === "double-declining") {
@@ -1332,8 +1339,8 @@ export function solveTimeline(v: Values): Solution {
   const methodBasis =
     method === "straight-line"
       ? `${fmt(round2(depreciable / (inp.lifeMonths / 12)))} לשנה`
-      : method === "sum-of-years"
-        ? `סכום ספרות ${plain(round2(sum(sydWeights(inp.lifeMonths))))}`
+      : isSyd(method)
+        ? `סכום ספרות ${plain(round2(sum(weightsOf(method, inp.lifeMonths))))}`
         : method === "double-declining"
           ? `שיעור ${percent(24 / inp.lifeMonths)} מהיתרה בספרים`
           : `${fmt(round2(depreciable / Math.max(1, inp.totalUnits)))} ליחידה (${plain(inp.totalUnits)} יחידות)`;
@@ -1541,10 +1548,11 @@ export function solveTimeline(v: Values): Solution {
     assumptions: [
       "הסכומים בשקלים. שנת הכספים מסתיימת ב-31/12; פקודות הפחת נרשמות בסוף כל תקופה ובמועד כל אירוע.",
       "הפחת מחושב לפי חודשים שלמים; מועד שחל אחרי ה-15 בחודש מעוגל לתחילת החודש הבא.",
-      ...(method === "sum-of-years" || method === "double-declining"
-        ? ["בשיטות המואצות, שנות הנכס נמדדות מתחילת כל שלב (זמינות לשימוש או אירוע) והפחת של כל שנת נכס מתפזר באופן שווה על חודשיה."]
+      ...(isSyd(method) || method === "double-declining"
+        ? ["בשיטות ספרות השנים והיתרה הפוחתת, שנות הנכס נמדדות מתחילת כל שלב (זמינות לשימוש או אירוע) והפחת של כל שנת נכס מתפזר באופן שווה על חודשיה."]
         : []),
       ...(method === "sum-of-years" ? ["כשיתרת החיים אינה שנים שלמות, משקל כל שנה הוא יתרת החיים בתחילתה (למשל 5.75, 4.75 … 0.75)."] : []),
+      ...(method === "sum-of-years-asc" ? ["בשיטה העולה משקל כל שנת נכס הוא מספרה (1, 2, … n); כשיתרת החיים אינה שנים שלמות, לשנה האחרונה החלקית משקל של החיים שחלפו בסופה (למשל 5.75)."] : []),
       ...(method === "double-declining" ? ["שיעור היתרה הפוחתת הכפולה הוא 2 חלקי אורך החיים בשנים; לאחר שיפוץ הוא מחושב מחדש לפי יתרת החיים."] : []),
       ...(method === "units" ? ["יחידות התפוקה של כל שנת כספים מתפזרות באופן שווה על חודשי השימוש בה; לשנים ללא נתון מחולקות היחידות שנותרו באופן שווה."] : []),
       ...(hasRevaluation ? ["השפעות מס נדחה על קרן ההערכה מחדש אינן מחושבות."] : []),
@@ -1576,6 +1584,7 @@ const CAUSE_REFERENCE: Record<Cause, string> = {
 const COMPARE_KEY: Record<PpeMethod, string> = {
   "straight-line": "slDep",
   "sum-of-years": "sydDep",
+  "sum-of-years-asc": "sydAscDep",
   "double-declining": "ddbDep",
   units: "unitsDep",
 };
@@ -1584,6 +1593,8 @@ const METHOD_TEXT: Record<PpeMethod, string> = {
   "straight-line": "הוצאה שווה בכל חודש: הסכום בר-הפחת מחולק במספר חודשי החיים שנותרו. מתאים כשההטבות נצרכות באופן אחיד לאורך הזמן.",
   "sum-of-years":
     "שיטה מואצת: לכל שנת נכס משקל השווה ליתרת החיים בתחילתה, והפחת השנתי הוא החלק היחסי של המשקל מסכום הספרות. שנות הנכס נמדדות ממועד הזמינות לשימוש, ושנת כספים שחלה על פני שתי שנות נכס מקבלת חלק יחסי מכל אחת.",
+  "sum-of-years-asc":
+    "שיטה מואטת: המשקלים הפוכים — לשנת הנכס הראשונה המשקל הקטן (1) ולאחרונה הגדול (n). הפחת השנתי הוא החלק היחסי של המשקל מסכום הספרות, ולכן הוא גדל משנה לשנה. מתאים כשההטבות מהנכס גדלות עם הזמן. שנת כספים שחלה על פני שתי שנות נכס מקבלת חלק יחסי מכל אחת.",
   "double-declining":
     "שיטה מואצת: שיעור קבוע (2 חלקי אורך החיים) מוחל על היתרה בספרים בתחילת כל שנת נכס. כשהפחת בקו ישר על היתרה גבוה יותר עוברים אליו, והנכס אינו מופחת מתחת לערך השייר.",
   units: "הפחת נגזר מהשימוש בפועל: הסכום בר-הפחת מחולק בסך יחידות התפוקה הצפויות, ומוכפל ביחידות שהופקו בכל תקופה.",

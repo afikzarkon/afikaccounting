@@ -23,8 +23,8 @@ type FieldBase = {
   /** Heading of the group this field opens or belongs to within its wizard step. */
   section?: string;
   /**
-   * Can be marked as the unknown X when the calculator's `mode` field is
-   * "solve"; the marked field's id is held in the `unknown` field.
+   * Can be marked as the unknown X; the marked field's id is held in the
+   * `unknown` field, and the calculator then finds it from a known result.
    */
   solvable?: boolean;
   /** Seconds into the calculator's explainer video that cover this field. */
@@ -134,7 +134,24 @@ export type Solution = {
   years?: YearSection[];
   /** How an unknown input was recovered from a known result, shown before everything else. */
   proof?: { title: string; steps: Working[] };
+  /** The whole solution as stages in reading order; when present it replaces the year-by-year view. */
+  walk?: SolutionStage[];
 };
+
+/** One step of a stage: why it is done, then whatever shows it — words, workings, entries, tables or statements. */
+export type StageStep = {
+  id: string;
+  title: string;
+  why?: string;
+  text?: string[];
+  workings?: Working[];
+  journal?: JournalEntry[];
+  tables?: ScheduleTable[];
+  statements?: { title: string; lines: StatementLine[] }[];
+  /** Shown folded, open or closed — for the one-per-year steps of a long solution. */
+  fold?: "open" | "closed";
+};
+export type SolutionStage = { id: string; title: string; why: string; steps: StageStep[] };
 
 /**
  * A formula as a tree, so the UI can typeset fractions: text, a sequence, or
@@ -143,7 +160,7 @@ export type Solution = {
 export type MathExpr = string | MathExpr[] | { over: [MathExpr, MathExpr] };
 
 /** "lhs = abstract" in words, then "lhs = numeric = result" with the figures. */
-export type Equation = { lhs: string; abstract: MathExpr; numeric: MathExpr; result: number; unit?: "currency" | "number" };
+export type Equation = { lhs: string; abstract: MathExpr; numeric: MathExpr; result: number; unit?: "currency" | "number" | "percent" };
 
 /** One line of a worked calculation: what is computed, how, and the result. */
 export type Working = { label: string; formula?: string; amount?: number; equation?: Equation };

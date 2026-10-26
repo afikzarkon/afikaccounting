@@ -18,13 +18,12 @@ export function isDisabled(field: Field, values: Values) {
   return !!field.disabledIf && field.disabledIf.every((cond) => cond.in.includes(values[cond.field]));
 }
 
-/** Conventions for solving for an unknown: the mode field and the field that names the unknown. */
-export const SOLVE_MODE = "mode";
+/** The field that names the unknown X; empty when every input is known. */
 export const UNKNOWN = "unknown";
 
 /** The field is the unknown X: it is computed, so it is neither entered nor validated. */
 export function isUnknown(field: Field, values: Values) {
-  return !!field.solvable && values[SOLVE_MODE] === "solve" && values[UNKNOWN] === field.id;
+  return !!field.solvable && values[UNKNOWN] === field.id;
 }
 
 export function defaults(c: CalculatorSchema): Values {
@@ -122,7 +121,8 @@ export function validateValues(
   for (const field of fields) {
     if (!isVisible(field, values) || isDisabled(field, values) || isUnknown(field, values)) continue;
     const message = checkField(field, values[field.id]);
-    if (message) errors[field.id] = message;
+    // A figure the question doesn't give may be the one it asks for.
+    if (message) errors[field.id] = field.solvable && message === "שדה חובה." ? "שדה חובה — ואם זה הנתון שהשאלה מבקשת למצוא, לחצו X שליד השדה." : message;
   }
   if (scope !== "scenario" && Object.keys(errors).length === 0 && calc.validate) {
     Object.assign(errors, calc.validate(values));

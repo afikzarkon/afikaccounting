@@ -151,7 +151,7 @@ export function MethodologySection() {
             </ol>
             <p className="text-sm text-muted">
               והמשך הסיפור: ב-<Dt>{MACHINE_EXCHANGE_DATE.label}</Dt> החברה מחליפה את אותה מכונה במכונה חדשה — זו הדוגמה המרכזית בעמוד{" "}
-              <a href="/ias16-lab/exchange" className="font-medium text-accent hover:underline">
+              <a href="#exchange" className="font-medium text-accent hover:underline">
                 החלפת נכסים
               </a>
               .
@@ -296,7 +296,7 @@ export function MethodologySection() {
             מחשבים פחת עד מועד האירוע לפי הנתונים הישנים, מטפלים באירוע עצמו (רישום, רווח או הפסד), ורק אז ממשיכים עם הנתונים החדשים על
             יתרת החיים. בשאלה שלנו אין שינויים עד <Dt>{MACHINE_EXCHANGE_DATE.label}</Dt>, ולכן הלוח רציף; ביום הזה המכונה מוחלפת — וזו בדיוק
             החלוקה של ציר הזמן שמתוארת בעמוד{" "}
-            <a href="/ias16-lab/exchange" className="font-medium text-accent hover:underline">
+            <a href="#exchange" className="font-medium text-accent hover:underline">
               החלפת נכסים
             </a>
             .

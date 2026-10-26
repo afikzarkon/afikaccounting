@@ -26,7 +26,7 @@ import { track } from "@/lib/analytics/track";
 import type { Preset } from "@/lib/data/presets";
 import { CALCULATORS, getCalculator } from "@/lib/engine/registry";
 import type { Calculator, FieldValue, Solution, Values } from "@/lib/engine/types";
-import { conditionsHold, defaults, isDisabled, isUnknown, isVisible, sanitize, SOLVE_MODE, UNKNOWN, validateValues } from "@/lib/engine/validate";
+import { conditionsHold, defaults, isDisabled, isUnknown, isVisible, sanitize, UNKNOWN, validateValues } from "@/lib/engine/validate";
 import { cn } from "@/lib/utils";
 import { ACCENTS, CalculatorIcon, SectionIcon } from "./calculator-visuals";
 import { FieldControl } from "./field-control";
@@ -61,7 +61,7 @@ function solveTimed(calc: Calculator, values: Values): RunResult {
   }
 }
 
-const modeOf = (v: Values) => (v[SOLVE_MODE] === "solve" ? "solve" : "regular");
+const modeOf = (v: Values) => (v[UNKNOWN] ? "solve" : "regular");
 
 /** Keep the address bar shareable without a navigation (Next syncs useSearchParams with it). */
 function setQuery(params: Record<string, string>) {
@@ -471,7 +471,7 @@ function FieldsStep({
                   disabled={isDisabled(f, values) || (isUnknown(f, values) && f.kind !== "dated-values")}
                   showNote={f.kind === "dated-values" && !!f.note && conditionsHold(f.note.showIf, values)}
                   unknown={
-                    f.solvable && values[SOLVE_MODE] === "solve"
+                    f.solvable
                       ? { active: isUnknown(f, values), onToggle: () => onChange(UNKNOWN, isUnknown(f, values) ? "" : f.id) }
                       : undefined
                   }

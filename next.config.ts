@@ -3,9 +3,14 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
-  // The general IAS 16 guide was removed; its old links land on the IAS 16 page.
+  // IAS 16 is one page now: the removed guide and the former topic pages land on their place in it.
   async redirects() {
-    return [{ source: "/ias16-guide", destination: "/ias16-lab", permanent: true }];
+    return [
+      { source: "/ias16-guide", destination: "/ias16-lab", permanent: true },
+      { source: "/ias16-lab/exchange", destination: "/ias16-lab#exchange", permanent: true },
+      { source: "/ias16-lab/renovation", destination: "/ias16-lab#renovation", permanent: true },
+      { source: "/ias16-lab/revaluation", destination: "/ias16-lab#revaluation", permanent: true },
+    ];
   },
   partialPrefetching: true,
   turbopack: {

@@ -1,15 +1,16 @@
 import { money, plain } from "../format";
 import { round2 } from "../math";
 import type { Calculator, Condition, Values } from "../types";
-import { isIsoDate, isVisible, parseDatedValues, SOLVE_MODE, UNKNOWN } from "../validate";
+import { isIsoDate, isVisible, parseDatedValues, str, UNKNOWN } from "../validate";
 import { DATED_TARGETS, SOLVABLE_LABEL, solveForX, YEAR_TARGETS } from "./ias16-solver";
 import { solveTimeline, timelineErrors } from "./ias16-timeline";
+import { withWalk } from "./ias16-walk";
 
 const events = (...more: Condition[]) => [{ field: "hasEvents", in: [true] }, ...more];
-const solving: Condition[] = [{ field: SOLVE_MODE, in: ["solve"] }];
-const TARGET = "נתוני עזר לשחזור X";
+// The known result is asked for once a field is marked X: any field can be the unknown, with no separate mode.
+const solving: Condition[] = [{ field: UNKNOWN, in: Object.keys(SOLVABLE_LABEL) }];
+const TARGET = "נעלם (X) ונתון ידוע";
 
-const MODE = "סוג השאלה";
 const EVENTS = "זיהוי אירועים";
 const RANGE = "תאריכים וטווח החישוב";
 const COST = "עלות הנכס";
@@ -24,15 +25,14 @@ export const ias16Ppe: Calculator = {
   slug: "ias-16-property-plant-equipment",
   standard: "IAS 16",
   title: "רכוש קבוע",
-  tagline: "הנחות בסיס, אירועים במהלך התקופה, ופתרון מלא שנה אחר שנה.",
+  tagline: "מחשבון אחד לכל שאלה: הנחות בסיס, אירועים, נעלם אם יש — ופתרון מלא שנה אחר שנה.",
   description:
-    "מזינים הנחות בסיס, מסמנים אירועים (שיפוץ, הערכה מחדש, החלפת נכס), ומקבלים לכל שנה: פקודות יומן, דרך החישוב בנוסחאות, מאזן, רווח והפסד — והנחיה איך ממשיכים לשנה הבאה.",
+    "מזינים הנחות בסיס, מסמנים אירועים (שיפוץ, הערכה מחדש, החלפת נכס), ואם בשאלה חסר נתון — מסמנים אותו X ומזינים את התוצאה הידועה. הפתרון: רישום הנתונים, מציאת הנעלם, כל שלבי החישוב, פקודות יומן, מאזן ורווח והפסד לכל שנה, והמעבר משנה לשנה.",
   category: "נכסים לא שוטפים",
   icon: "Factory",
   accent: "amber",
   explainerSlug: "ias-16-components-and-replacements",
   sectionIcons: {
-    [MODE]: "CircleHelp",
     [RANGE]: "CalendarRange",
     [COST]: "Coins",
     [LAND]: "LandPlot",
@@ -47,27 +47,15 @@ export const ias16Ppe: Calculator = {
     scenario: {
       title: "שלב 1 — הנחות בסיס",
       short: "הנחות בסיס",
-      intro: "תאריך הפעלה, טווח החישוב, עלות, ערך שייר, אורך חיים, שיטת הפחת ומודל המדידה.",
+      intro: "תאריך הפעלה, טווח החישוב, עלות, ערך שייר, אורך חיים, שיטת הפחת ומודל המדידה. נתון שחסר בשאלה? לחצו X שליד השדה — המחשבון ימצא אותו.",
     },
     metrics: {
       title: "שלב 2 — אירועים במהלך התקופה",
       short: "אירועים",
-      intro: "האם במהלך טווח השנים שנבחר התרחש אירוע חשבונאי הדורש עדכון? סמנו כל אירוע והזינו את נתוניו.",
+      intro: "האם במהלך טווח השנים שנבחר התרחש אירוע חשבונאי הדורש עדכון? סמנו כל אירוע והזינו את נתוניו. אם סימנתם נעלם (X) — הזינו בסוף את הנתון הידוע שממנו נמצא אותו.",
     },
   },
   scenario: [
-    {
-      kind: "radio",
-      id: SOLVE_MODE,
-      label: "בחרו את סוג החישוב",
-      options: [
-        { value: "regular", label: "חישוב רגיל", description: "כל הנתונים ידועים." },
-        { value: "solve", label: "חישוב עם נעלם (Solve for X)", description: "שחזור נתון חסר מתוך תוצאה ידועה: סמנו X ליד השדה החסר." },
-      ],
-      default: "regular",
-      display: "segmented",
-      section: MODE,
-    },
     {
       kind: "date",
       id: "acquisitionDate",
@@ -157,7 +145,8 @@ export const ias16Ppe: Calculator = {
       label: "שיטת הפחת",
       options: [
         { value: "straight-line", label: "קו ישר", description: "הוצאה שווה בכל חודש." },
-        { value: "sum-of-years", label: "סכום ספרות השנים (יורד)", description: "מואצת, פוחתת באופן ליניארי." },
+        { value: "sum-of-years", label: "סכום ספרות השנים (יורד)", description: "מואצת: הפחת הגבוה בשנה הראשונה." },
+        { value: "sum-of-years-asc", label: "סכום ספרות השנים (עולה)", description: "מואטת: הפחת הגבוה בשנה האחרונה." },
         { value: "double-declining", label: "יתרה פוחתת כפולה", description: "שיעור קבוע על היתרה, עם מעבר לקו ישר." },
         { value: "units", label: "יחידות תפוקה", description: "לפי השימוש בפועל בכל שנה." },
       ],
@@ -390,17 +379,17 @@ export const ias16Ppe: Calculator = {
     {
       kind: "select",
       id: UNKNOWN,
-      label: "הנעלם (X)",
-      help: "אפשר גם לסמן X בכפתור שליד השדה עצמו. בשווי הוגן — השורה שהשארתם בלי סכום.",
-      options: [{ value: "", label: "— בחרו —" }, ...Object.entries(SOLVABLE_LABEL).map(([value, label]) => ({ value, label }))],
+      label: "נעלם בשאלה (X)",
+      help: "נתון שהשאלה לא נותנת ומבקשת למצוא. אפשר גם ללחוץ X שליד השדה עצמו. בשווי הוגן — השורה שהשארתם בלי סכום.",
+      options: [{ value: "", label: "אין נעלם — כל הנתונים ידועים" }, ...Object.entries(SOLVABLE_LABEL).map(([value, label]) => ({ value, label }))],
       default: "",
-      showIf: solving,
       section: TARGET,
     },
     {
       kind: "radio",
       id: "targetKind",
-      label: "הנתון הידוע בשאלה",
+      label: "הנתון הידוע שממנו נמצא את X",
+      help: "תוצאה שהשאלה נותנת — למשל היתרה בספרים בתאריך מסוים. המחשבון בונה אותה מ-X ומבודד את X.",
       options: [
         { value: "carrying", label: "יתרה בספרים בתאריך" },
         { value: "depreciation", label: "הוצאות פחת בשנה" },
@@ -449,7 +438,7 @@ export const ias16Ppe: Calculator = {
   ],
 
   validate(v) {
-    if (v[SOLVE_MODE] === "solve") {
+    if (str(v, UNKNOWN)) {
       const rowsError = unknownFairValueRows(v);
       if (rowsError) return { fairValues: rowsError };
       const field = [...ias16Ppe.scenario, ...ias16Ppe.metrics].find((f) => f.id === v[UNKNOWN]);
@@ -462,10 +451,10 @@ export const ias16Ppe: Calculator = {
   },
 
   solve(v) {
-    if (v[SOLVE_MODE] !== "solve") return solveTimeline(v);
+    if (!str(v, UNKNOWN)) return withWalk(v, solveTimeline(v));
     const solved = solveForX(v);
     if (!solved.ok) throw new Error(solved.error);
-    const s = solveTimeline(solved.values);
+    const s = withWalk(solved.values, solveTimeline(solved.values), solved);
     const shown = solved.years ? `${plain(round2(solved.x))} שנים` : money(solved.x, "ILS");
     return {
       ...s,

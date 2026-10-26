@@ -1,5 +1,5 @@
 import { money, percent, plain } from "../format";
-import { round2 } from "../math";
+import { round2, sum } from "../math";
 import type { Equation, MathExpr, Values, Working } from "../types";
 import { num, parseDatedValues, str, UNKNOWN } from "../validate";
 import { fmtDate, frac, monthIndex, overlap, parseInputs, parseLandPart, run, sumRange, type Run } from "./ias16-timeline";
@@ -44,9 +44,9 @@ const TARGET_NAME: Record<TargetKind, string> = {
   landSurplus: "קרן הערכה מחדש — קרקע",
 };
 
-type Target = { kind: TargetKind; t: number; year: number; label: string; amount: number };
+export type Target = { kind: TargetKind; t: number; year: number; label: string; amount: number };
 
-function readTarget(v: Values): Target {
+export function readTarget(v: Values): Target {
   const kind = str(v, "targetKind") as TargetKind;
   const date = str(v, "targetDate");
   const year = num(v, "targetYear");
@@ -100,44 +100,94 @@ const evaluate = (v: Values, unknown: string, x: number, target: Target) => {
   }
 };
 
+type Found = { x: number } | { error: "flat" | "none" | "many"; xs?: number[] };
+
 /**
- * Bracket the root on a widening grid, then bisect, then take the nearest
- * cent. Robust where the result is flat over part of the range — a fair value
- * below the carrying amount creates no surplus at all.
+ * Scan a fine widening grid for every sign change, bisect each, and keep the
+ * roots that fit to the cent. Robust where the result is flat over part of the
+ * range — a fair value below the carrying amount creates no surplus at all —
+ * and it tells "no X fits" apart from "the result doesn't depend on X" and
+ * from "more than one X fits".
  */
-function solveAmount(f: (x: number) => number): number | null {
-  let lo = 0;
-  let fLo = f(lo);
-  let bracket: number | null = null;
-  for (let x = 1; x <= 1e10 && bracket === null; x *= 1.5) {
-    const fx = f(x);
-    if (Number.isFinite(fLo) && Number.isFinite(fx) && (fx === 0 || Math.sign(fx) !== Math.sign(fLo))) bracket = x;
-    else [lo, fLo] = [x, fx];
+function solveAmount(f: (x: number) => number): Found {
+  const xs = [0];
+  for (let x = 0.01; x <= 1e10; x *= 1.2) xs.push(x);
+  const ys = xs.map(f);
+  const finite = ys.filter(Number.isFinite);
+  if (finite.length && Math.max(...finite) - Math.min(...finite) < 0.005) return { error: "flat" };
+  const roots: number[] = [];
+  for (let i = 1; i < xs.length; i++) {
+    const fa = ys[i - 1];
+    const fb = ys[i];
+    if (!Number.isFinite(fa) || !Number.isFinite(fb)) continue;
+    if (fa === 0) {
+      roots.push(xs[i - 1]);
+      continue;
+    }
+    if (fb === 0 || Math.sign(fb) === Math.sign(fa)) continue;
+    let lo = xs[i - 1];
+    let hi = xs[i];
+    let fLo = fa;
+    for (let k = 0; k < 200 && hi - lo > 1e-7; k++) {
+      const mid = (lo + hi) / 2;
+      const fm = f(mid);
+      if (fm === 0 || Math.sign(fm) !== Math.sign(fLo)) hi = mid;
+      else [lo, fLo] = [mid, fm];
+    }
+    roots.push(hi);
   }
-  if (bracket === null) return null;
-  let hi: number = bracket;
-  for (let i = 0; i < 200 && hi - lo > 1e-7; i++) {
-    const mid: number = (lo + hi) / 2;
-    const fm = f(mid);
-    if (fm === 0 || Math.sign(fm) !== Math.sign(fLo)) hi = mid;
-    else [lo, fLo] = [mid, fm];
-  }
-  const x1 = hi;
+  if (Number.isFinite(ys.at(-1)!) && ys.at(-1) === 0) roots.push(xs.at(-1)!);
   // Results are rounded to the cent, so neighbouring cents can fit equally well: prefer a whole number.
-  const nearest = [Math.round(x1), ...[-0.01, 0, 0.01].map((d) => round2(x1 + d))];
-  const best = nearest.reduce((a, b) => (Math.abs(f(b)) < Math.abs(f(a)) ? b : a));
-  return Number.isFinite(f(best)) && Math.abs(f(best)) <= 0.02 ? best : null;
+  const fits = roots.flatMap((x1) => {
+    const nearest = [Math.round(x1), ...[-0.01, 0, 0.01].map((d) => round2(x1 + d))];
+    const best = nearest.reduce((a, b) => (Math.abs(f(b)) < Math.abs(f(a)) ? b : a));
+    return Number.isFinite(f(best)) && Math.abs(f(best)) <= 0.02 ? [best] : [];
+  });
+  const distinct = fits.filter((x, i) => fits.findIndex((y) => Math.abs(y - x) <= Math.max(1, Math.abs(x) * 1e-6)) === i);
+  if (!distinct.length) return { error: "none" };
+  if (distinct.length > 1) return { error: "many", xs: distinct };
+  return { x: distinct[0] };
 }
 
 /** Whole months between `lo` and `hi`, closest first. */
-function solveMonths(f: (months: number) => number, lo: number, hi: number, target: number): number | null {
+function solveMonths(f: (months: number) => number, lo: number, hi: number, target: number): Found {
   let best: number | null = null;
   let bestGap = Infinity;
+  const seen: number[] = [];
   for (let m = lo; m <= hi; m++) {
-    const gap = Math.abs(f(m));
+    const y = f(m);
+    if (Number.isFinite(y)) seen.push(y);
+    const gap = Math.abs(y);
     if (Number.isFinite(gap) && gap < bestGap) [best, bestGap] = [m, gap];
   }
-  return best !== null && bestGap <= Math.max(0.05, Math.abs(target) * 0.001) ? best : null;
+  if (seen.length && Math.max(...seen) - Math.min(...seen) < 0.005) return { error: "flat" };
+  return best !== null && bestGap <= Math.max(0.05, Math.abs(target) * 0.001) ? { x: best } : { error: "none" };
+}
+
+/** When the event an unknown belongs to happens: a known result from before it can't depend on it. */
+function eventAt(v: Values, unknown: string, inp: ReturnType<typeof parseInputs>): { t: number; what: string } | null {
+  if (["revisionCost", "lifeExtension", "revisedResidual"].includes(unknown) && inp.renovation) return { t: inp.renovation.at, what: `השיפוץ (${fmtDate(inp.renovation.date)})` };
+  if ((unknown === "fvGiven" || unknown === "fvReceived") && inp.exchange) return { t: inp.exchange.at, what: `ההחלפה (${fmtDate(inp.exchange.date)})` };
+  if (unknown === "fairValues") {
+    const { rows, i } = unknownRow(v);
+    const d = rows[i]?.date;
+    if (d) return { t: monthIndex(d), what: `ההערכה מחדש (${fmtDate(d)})` };
+  }
+  return null;
+}
+
+/** Why no X was found, in words that point at what to change. */
+function notFound(err: "flat" | "none" | "many", v: Values, unknown: string, target: Target, xs?: number[]): Solved {
+  const label = SOLVABLE_LABEL[unknown];
+  if (err === "many") return { ok: false, field: "targetAmount", error: `יותר מערך אחד של ${label} מתאים לנתון (${xs!.map((x) => p(round2(x))).join(", ")}). הוסיפו נתון אחר שמבחין ביניהם.` };
+  if (err === "none") return { ok: false, field: "targetAmount", error: `אין ערך של ${label} שנותן ${target.label} של ${fmt(target.amount)}. בדקו את הסכום ואת התאריך של הנתון הידוע.` };
+  const ev = eventAt(v, unknown, parseInputs(withX(v, unknown, 0)));
+  const end = DATED_TARGETS.includes(target.kind) ? target.t : target.year * 12 + 12;
+  if (ev && end <= ev.t) {
+    const field = DATED_TARGETS.includes(target.kind) ? "targetDate" : "targetYear";
+    return { ok: false, field, error: `הנתון הידוע (${target.label}) הוא מלפני ${ev.what}, ולכן ${label} אינו משפיע עליו. בחרו נתון מתאריך שאחרי ${ev.what}.` };
+  }
+  return { ok: false, field: "targetKind", error: `${target.label} אינו מושפע מ${label} — כל ערך של X נותן אותה תוצאה. בחרו נתון ידוע שתלוי בנעלם.` };
 }
 
 export type Solved =
@@ -161,16 +211,14 @@ export function solveForX(v: Values): Solved {
   }
 
   const f = (x: number) => evaluate(v, unknown, x, target) - target.amount;
-  let x: number | null;
+  let found: Found;
   if (IN_MONTHS.has(unknown)) {
     const lo = unknown === "usefulLife" ? 1 : base.renovation ? -(base.start + base.lifeMonths - base.renovation.at - 1) : 0;
     const months = solveMonths((m) => f(m / 12), lo, 1200, target.amount);
-    x = months === null ? null : months / 12;
-  } else {
-    x = solveAmount(f);
-    if (x !== null && x < 0) return { ok: false, field: "targetAmount", error: `הנעלם יצא שלילי (${plain(x)}); בדקו את נתון העזר.` };
-  }
-  if (x === null) return { ok: false, field: "targetAmount", error: "לא נמצא ערך של X שמתאים לנתון העזר. בדקו את הנתונים." };
+    found = "x" in months ? { x: months.x / 12 } : months;
+  } else found = solveAmount(f);
+  if (!("x" in found)) return notFound(found.error, v, unknown, target, found.xs);
+  const x = found.x;
 
   const values = withX(v, unknown, x);
   const label = SOLVABLE_LABEL[unknown];
@@ -211,26 +259,27 @@ function algebra(v: Values, values: Values, unknown: string, x: number, target: 
   const name = TARGET_NAME[target.kind];
   const sl = inp.method === "straight-line";
 
-  // Cost, residual or useful life, from a result before any event. (With land the
+  // Cost or residual, from a result before any event, in any method where the share written off doesn't depend on them.
+  const byShare = kForm(inp, r, unknown, x, target);
+  if (byShare) return byShare;
+
+  // Useful life, from a result before any event. (With land the
   // depreciable base is only the building, so the general line below is used.)
-  if (sl && !inp.land && ["purchasePrice", "attributableCosts", "residual", "usefulLife"].includes(unknown) && ["carrying", "accumulated", "depreciation"].includes(target.kind)) {
-    const { cost: C, residual: R, lifeMonths: L, start, purchasePrice: P, attributableCosts: A } = inp;
+  if (sl && !inp.land && unknown === "usefulLife" && ["carrying", "accumulated", "depreciation"].includes(target.kind)) {
+    const { cost: C, residual: R, lifeMonths: L, start } = inp;
     const isDep = target.kind === "depreciation";
     const n = isDep ? overlap(start, start + L, target.year * 12, target.year * 12 + 12) : Math.min(target.t, start + L) - start;
     const nWords = isDep ? "חודשי שימוש בשנה" : "חודשים שחלפו";
-    const costX = unknown === "purchasePrice" ? (A ? `(X + ${p(A)})` : "X") : unknown === "attributableCosts" ? `(${p(P)} + X)` : p(C);
-    const resX = unknown === "residual" ? "X" : p(R);
-    const lifeX = unknown === "usefulLife" ? "X" : String(L);
     const relation: Working = {
       label: `הקשר בין ${name} לנעלם (קו ישר)`,
       equation:
         target.kind === "carrying"
-          ? eq(name, ["עלות", "−", frac(`(עלות − גרט) × ${nWords}`, "אורך חיים בחודשים")], [costX, "−", frac(`(${costX} − ${resX}) × ${n}`, lifeX)], T)
-          : eq(name, frac(`(עלות − גרט) × ${nWords}`, "אורך חיים בחודשים"), frac(`(${costX} − ${resX}) × ${n}`, lifeX), T),
+          ? eq(name, ["עלות", "−", frac(`(עלות − גרט) × ${nWords}`, "אורך חיים בחודשים")], [p(C), "−", frac(`(${p(C)} − ${p(R)}) × ${n}`, "X")], T)
+          : eq(name, frac(`(עלות − גרט) × ${nWords}`, "אורך חיים בחודשים"), frac(`(${p(C)} − ${p(R)}) × ${n}`, "X"), T),
     };
     if (n <= 0) return null;
 
-    if (unknown === "usefulLife") {
+    {
       const months = target.kind === "carrying" ? ((C - R) * n) / (C - T) : ((C - R) * n) / T;
       if (!close(months, L, 0.5)) return null;
       return [
@@ -245,35 +294,7 @@ function algebra(v: Values, values: Values, unknown: string, x: number, target: 
         { label: "בשנים", equation: eq("אורך חיים שימושיים", frac("אורך חיים בחודשים", "12"), frac(String(L), "12"), round2(L / 12), "number") },
       ];
     }
-    if (unknown === "residual") {
-      const R2 = target.kind === "carrying" ? C - ((C - T) * L) / n : C - (T * L) / n;
-      if (!close(R2, R)) return null;
-      return [
-        relation,
-        {
-          label: "בידוד X — ערך השייר",
-          equation:
-            target.kind === "carrying"
-              ? eq("X", ["עלות", "−", frac("(עלות − יתרה בספרים) × אורך חיים", nWords)], [p(C), "−", frac(`(${p(C)} − ${p(T)}) × ${L}`, String(n))], x)
-              : eq("X", ["עלות", "−", frac(`${name} × אורך חיים`, nWords)], [p(C), "−", frac(`${p(T)} × ${L}`, String(n))], x),
-        },
-      ];
-    }
-    // Cost: isolate the total cost first, then the unknown component.
-    const C2 = target.kind === "carrying" ? (T - (R * n) / L) / (1 - n / L) : (T * L) / n + R;
-    if (!close(C2, C)) return null;
-    const costStep: Working = {
-      label: "בידוד העלות הכוללת",
-      equation:
-        target.kind === "carrying"
-          ? eq("עלות", frac(`יתרה בספרים − גרט × ${nWords} ÷ אורך חיים`, `1 − ${nWords} ÷ אורך חיים`), frac(`${p(T)} − ${p(R)} × ${n} ÷ ${L}`, `1 − ${n} ÷ ${L}`), C)
-          : eq("עלות", [frac(`${name} × אורך חיים`, nWords), "+", "גרט"], [frac(`${p(T)} × ${L}`, String(n)), "+", p(R)], C),
-    };
-    const component: Working =
-      unknown === "purchasePrice"
-        ? { label: "בידוד X", equation: eq("X", ["עלות", "−", "עלויות המיוחסות במישרין"], [p(C), "−", p(A)], x) }
-        : { label: "בידוד X", equation: eq("X", ["עלות", "−", "עלות ראשונית"], [p(C), "−", p(P)], x) };
-    return [relation, costStep, component];
+    return null;
   }
 
   // Renovation cost, from a result after the renovation.
@@ -406,27 +427,135 @@ function algebra(v: Values, values: Values, unknown: string, x: number, target: 
 
 const invert = (xs: MathExpr[]) => xs.map((s) => (s === "+" ? "−" : s === "−" ? "+" : s));
 
-/** Any other case: the full calculation is linear in X around the answer, so show that line and solve it. */
+/**
+ * Any other case. A life is searched month by month, shown as the months
+ * around the answer; an amount moves the result by the same sum for every
+ * shekel near the answer, so two trial values of X are enough to isolate it.
+ */
 function linear(v: Values, unknown: string, x: number, target: Target): Working[] {
   const name = TARGET_NAME[target.kind];
   if (IN_MONTHS.has(unknown)) {
     const months = Math.round(x * 12);
+    const tries = [months - 12, months - 1, months, months + 1, months + 12].filter((n, i, a) => (unknown !== "usefulLife" || n >= 1) && a.indexOf(n) === i);
     return [
+      { label: "אורך החיים מופיע במכנה ובחלוקה לשנות נכס, ולכן אין נוסחה פשוטה שמבודדת אותו. מחפשים: מציבים אורכי חיים שונים בחישוב המלא, עד שמתקבל בדיוק הנתון הידוע" },
+      ...tries.map((n) => {
+        const got = evaluate(v, unknown, n / 12, target);
+        return { label: `X = ${n} חודשים (${p(round2(n / 12))} שנים)${n === months ? " ← מתאים" : ""}`, formula: `${target.label} = ${fmt(got)}${n === months ? " ✓" : ` (צריך ${fmt(target.amount)})`}` };
+      }),
+      { label: "התוצאה", formula: `X = ${months} חודשים = ${p(round2(x))} שנים` },
+    ];
+  }
+  const trial = (d: number) => {
+    const x1 = Math.max(0, round2(x === 0 ? d * 1000 : x * (1 - d)));
+    const x2 = round2(x === 0 ? d * 2000 : x * (1 + d));
+    const v1 = evaluate(v, unknown, x1, target);
+    const v2 = evaluate(v, unknown, x2, target);
+    const a = (v2 - v1) / (x2 - x1);
+    return { x1, x2, v1, v2, a, est: x1 + (target.amount - v1) / a };
+  };
+  // Wide trials read best; narrower ones when the wide pair straddles a kink in the schedule.
+  const t = [0.1, 0.01, 0.001].map(trial).find((c) => Number.isFinite(c.est) && Math.abs(c.est - x) <= 0.05) ?? trial(0.001);
+  const as = String(Number(t.a.toFixed(6)));
+  return [
+    { label: `${name} נגזר מלוח הפחת המלא (השיטה והאירועים). בסביבת הפתרון כל שקל ב-X משנה אותו באותו סכום — ולכן שני ניסיונות מספיקים כדי למצוא את X` },
+    { label: `ניסיון 1: מציבים X = ${p(t.x1)} בחישוב המלא`, formula: `${target.label} = ${fmt(t.v1)}` },
+    { label: `ניסיון 2: מציבים X = ${p(t.x2)} בחישוב המלא`, formula: `${target.label} = ${fmt(t.v2)}` },
+    {
+      label: "כמה משתנה הנתון לכל שקל ב-X",
+      equation: eq("a", frac("נתון בניסיון 2 − נתון בניסיון 1", "X בניסיון 2 − X בניסיון 1"), frac(`${p(t.v2)} − ${p(t.v1)}`, `${p(t.x2)} − ${p(t.x1)}`), Number(t.a.toFixed(6)), "number"),
+    },
+    {
+      label: "בידוד X: מתחילים מניסיון 1 ומוסיפים את מה שחסר עד הנתון הידוע",
+      equation: eq("X", ["X בניסיון 1", "+", frac(`${name} הידוע − נתון בניסיון 1`, "a")], [p(t.x1), "+", frac(`${p(target.amount)} − ${p(t.v1)}`, as)], x),
+    },
+  ];
+}
+
+/**
+ * Cost or residual from a result before any event: the share of the
+ * depreciable amount written off by then (k) depends only on time (or units),
+ * so the result is cost − (cost − residual) × k, or (cost − residual) × k.
+ * Declining balance has no such share (its charge depends on the residual), so it is left to the general case.
+ */
+function kForm(inp: ReturnType<typeof parseInputs>, r: Run, unknown: string, x: number, target: Target): Working[] | null {
+  if (inp.land || !["purchasePrice", "attributableCosts", "residual"].includes(unknown) || !["carrying", "accumulated", "depreciation"].includes(target.kind)) return null;
+  const method = inp.method;
+  if (method === "double-declining") return null;
+  const isDep = target.kind === "depreciation";
+  const end = isDep ? target.year * 12 + 12 : target.t;
+  if (r.phases.filter((ph) => ph.t0 < end).length !== 1) return null;
+  const ph = r.phases[0];
+  const { cost: C, residual: R, purchasePrice: P, attributableCosts: A } = inp;
+  const D = round2(C - R);
+  if (D <= 0) return null;
+  const from = isDep ? Math.max(target.year * 12, ph.t0) : ph.t0;
+  const to = Math.min(end, ph.t0 + ph.months);
+  if (to <= from) return null;
+  const T = target.amount;
+  const name = TARGET_NAME[target.kind];
+  const kVal = isDep ? sumRange(r.depBy, from, to) / D : r.closing.get(Math.min(Math.max(target.t, r.start), r.stop))!.acc / D;
+  const span = isDep ? `בשנת ${target.year}` : `עד ${target.label.split(" ליום ")[1] ?? "התאריך"}`;
+
+  // What k is, by the method.
+  let kStep: Working;
+  if (method === "straight-line") {
+    const n = to - from;
+    kStep = { label: `k — החלק מבסיס הפחת שהופחת ${span} (קו ישר: לפי חודשים)`, equation: eq("k", frac(isDep ? "חודשי שימוש בשנה" : "חודשים שחלפו", "אורך חיים בחודשים"), frac(String(n), String(ph.months)), n / ph.months, "percent") };
+  } else if (method === "units") {
+    const used = round2(sum(ph.units.slice(from - ph.t0, to - ph.t0)));
+    kStep = { label: `k — החלק מבסיס הפחת שהופחת ${span} (לפי יחידות תפוקה)`, equation: eq("k", frac("יחידות שהופקו", "סך היחידות הצפויות"), frac(p(used), p(ph.unitsLeft)), used / ph.unitsLeft, "percent") };
+  } else {
+    const parts = ph.blocks.map((bl) => ({ bl, share: overlap(ph.t0 + bl.from, ph.t0 + bl.from + bl.length, from, to) })).filter((z) => z.share > 0);
+    const top = parts.map(({ bl, share }) => (share === bl.length ? p(bl.weight!) : `${p(bl.weight!)} × ${share}/${bl.length}`)).join(" + ");
+    const kSyd = sum(parts.map(({ bl, share }) => (bl.weight! * share) / bl.length)) / ph.digits;
+    kStep = {
+      label: `k — החלק מבסיס הפחת שהופחת ${span} (ספרות השנים: משקלי שנות הנכס שחלפו, חלקי סכום הספרות)`,
+      equation: eq("k", frac("משקלי שנות הנכס שחלפו", "סכום הספרות"), frac(top, p(ph.digits)), kSyd, "percent"),
+    };
+  }
+  // The share by the method must be the share in the schedule (to rounding), or this isn't the case it describes.
+  if (Math.abs(kStep.equation!.result - kVal) > 1e-4) return null;
+  const k = kVal;
+  const ks = String(Number(k.toFixed(6)));
+  const costX = unknown === "purchasePrice" ? (A ? `(X + ${p(A)})` : "X") : unknown === "attributableCosts" ? `(${p(P)} + X)` : p(C);
+  const resX = unknown === "residual" ? "X" : p(R);
+  const relation: Working = {
+    label: `הקשר בין ${name} לנעלם`,
+    equation:
+      target.kind === "carrying"
+        ? eq(name, ["עלות", "−", "(עלות − גרט)", "×", "k"], [costX, "−", `(${costX} − ${resX})`, "×", ks], T)
+        : eq(name, ["(עלות − גרט)", "×", "k"], [`(${costX} − ${resX})`, "×", ks], T),
+  };
+  if (unknown === "residual") {
+    const R2 = target.kind === "carrying" ? C - (C - T) / k : C - T / k;
+    if (!close(R2, R)) return null;
+    return [
+      kStep,
+      relation,
       {
-        label: "הקשר בין הנעלם לנתון אינו ליניארי (אורך החיים מופיע במכנה ובחלוקה לשנות נכס), ולכן X נמצא בחיפוש: החודש שבו החישוב המלא מחזיר בדיוק את הנתון הידוע",
-        formula: `X = ${months} חודשים = ${p(round2(x))} שנים`,
+        label: "בידוד X — ערך השייר",
+        equation:
+          target.kind === "carrying"
+            ? eq("X", ["עלות", "−", frac("עלות − יתרה בספרים", "k")], [p(C), "−", frac(`${p(C)} − ${p(T)}`, ks)], x)
+            : eq("X", ["עלות", "−", frac(name, "k")], [p(C), "−", frac(p(T), ks)], x),
       },
     ];
   }
-  const d = Math.max(1, Math.abs(x) * 0.01);
-  const a = (evaluate(v, unknown, x + d, target) - evaluate(v, unknown, x - d, target)) / (2 * d);
-  const b = round2(target.amount - a * x);
-  const as = String(Number(a.toFixed(6)));
+  const C2 = target.kind === "carrying" ? (T - R * k) / (1 - k) : T / k + R;
+  if (!close(C2, C)) return null;
   return [
+    kStep,
+    relation,
     {
-      label: "הנתון נגזר מלוח הפחת המלא (השיטה והאירועים), ובסביבת הפתרון הוא תלוי ב-X באופן ליניארי: a הוא השינוי בנתון לכל שקל ב-X",
-      equation: eq(name, ["a", "×", "X", "+", "b"], [as, "×", "X", "+", p(b)], target.amount),
+      label: "בידוד העלות הכוללת",
+      equation:
+        target.kind === "carrying"
+          ? eq("עלות", frac("יתרה בספרים − גרט × k", "1 − k"), frac(`${p(T)} − ${p(R)} × ${ks}`, `1 − ${ks}`), C)
+          : eq("עלות", [frac(name, "k"), "+", "גרט"], [frac(p(T), ks), "+", p(R)], C),
     },
-    { label: "בידוד X", equation: eq("X", frac(`${name} − b`, "a"), frac(`${p(target.amount)} − ${p(b)}`, as), x) },
+    unknown === "purchasePrice"
+      ? { label: "בידוד X", equation: eq("X", ["עלות", "−", "עלויות המיוחסות במישרין"], [p(C), "−", p(A)], x) }
+      : { label: "בידוד X", equation: eq("X", ["עלות", "−", "עלות ראשונית"], [p(C), "−", p(P)], x) },
   ];
 }

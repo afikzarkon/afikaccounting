@@ -19,12 +19,12 @@ import {
 } from "lucide-react";
 import "katex/dist/katex.min.css";
 import { motion, type Variants } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/primitives";
 import { amount, formatCell, money, percent, plain } from "@/lib/engine/format";
 import { round2, sum } from "@/lib/engine/math";
-import type { Equation, JournalEntry, Metric, ScheduleTable, Solution, StatementLine, Working, YearSection } from "@/lib/engine/types";
+import type { Equation, JournalEntry, Metric, ScheduleTable, Solution, SolutionStage, StageStep, StatementLine, Working, YearSection } from "@/lib/engine/types";
 import { exprToTex, renderTex } from "@/lib/tex";
 import { cn } from "@/lib/utils";
 import { downloadCsv, fileSlug, journalToCsv, tableToCsv } from "./export";
@@ -54,6 +54,10 @@ export function SolutionView({
 }) {
   const outcome = OUTCOME[solution.outcome];
   const base = fileSlug(`${standard} ${title}`);
+  // With a walk-through, its stages carry the cost table and the statements; the rest follow as appendices.
+  const walk = solution.walk;
+  const inWalk = new Set(walk ? ["cost", "balance-sheet", "profit-or-loss"] : []);
+  const tables = solution.tables.filter((t) => !inWalk.has(t.id));
 
   return (
     <div className="space-y-6">
@@ -75,13 +79,21 @@ export function SolutionView({
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-6">
-          {solution.proof && (
+          {walk && (
+            <motion.div variants={fadeUp} initial="hidden" animate="show" custom={1}>
+              <WalkView stages={walk} onExport={() => downloadCsv(`${base}-journal`, journalToCsv(solution.journal))} />
+            </motion.div>
+          )}
+
+          {walk && tables.length > 0 && <p className="pt-2 text-sm font-semibold text-muted">נספחים: לוח הפחת המלא, השוואת שיטות ובאור</p>}
+
+          {!walk && solution.proof && (
             <motion.div variants={fadeUp} initial="hidden" animate="show" custom={1}>
               <ProofCard proof={solution.proof} />
             </motion.div>
           )}
 
-          {solution.years && solution.years.length > 0 && (
+          {!walk && solution.years && solution.years.length > 0 && (
             <motion.div variants={fadeUp} initial="hidden" animate="show" custom={1}>
               <YearBreakdown
                 title={solution.proof ? "שלב ב׳: פתרון שנה אחר שנה, עם X במקומו" : "פתרון שנה אחר שנה"}
@@ -111,13 +123,13 @@ export function SolutionView({
             </motion.section>
           )}
 
-          {solution.tables.map((t, i) => (
+          {tables.map((t, i) => (
             <motion.div key={t.id} variants={fadeUp} initial="hidden" animate="show" custom={2 + i}>
               <ScheduleCard table={t} fileBase={`${base}-${t.id}`} />
             </motion.div>
           ))}
 
-          <motion.div variants={fadeUp} initial="hidden" animate="show" custom={2 + solution.tables.length}>
+          <motion.div variants={fadeUp} initial="hidden" animate="show" custom={2 + tables.length}>
             <DisclosureCard text={solution.disclosure} />
           </motion.div>
         </div>
@@ -412,6 +424,156 @@ function GuidanceBox({ guidance }: { guidance: Solution["guidance"] }) {
   );
 }
 
+/**
+ * The solution stage by stage, in reading order: each stage says why it comes,
+ * each step why it is done, then shows it. One-per-year steps fold, the first
+ * open; printing opens them all.
+ */
+function WalkView({ stages, onExport }: { stages: SolutionStage[]; onExport: () => void }) {
+  useEffect(() => {
+    const open = () => document.querySelectorAll<HTMLDetailsElement>("details[data-walk]").forEach((d) => (d.open = true));
+    window.addEventListener("beforeprint", open);
+    return () => window.removeEventListener("beforeprint", open);
+  }, []);
+  return (
+    <div className="space-y-5">
+      <nav aria-label="שלבי הפתרון" className="no-print card p-3">
+        <p className="mb-2 px-1 text-xs font-semibold text-muted">דרך הפתרון — {stages.length} שלבים</p>
+        <ol className="flex flex-wrap gap-1.5">
+          {stages.map((st, i) => (
+            <li key={st.id}>
+              <a
+                href={`#stage-${st.id}`}
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-line px-3 py-1 text-[13px] font-medium text-fg transition-colors hover:border-accent hover:bg-accent-soft/60"
+              >
+                <span className="num grid h-5 w-5 place-items-center rounded-full bg-accent text-[11px] font-bold text-accent-fg">{i + 1}</span>
+                {st.title}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+      {stages.map((st, i) => (
+        <section key={st.id} id={`stage-${st.id}`} aria-labelledby={`stage-${st.id}-h`} className="card scroll-mt-24 overflow-hidden">
+          <header className="flex items-start gap-3 border-b border-line bg-gradient-to-l from-accent-soft/70 to-transparent px-5 py-4">
+            <span className="num grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-accent-fg">{i + 1}</span>
+            <div className="min-w-0 flex-1">
+              <h2 id={`stage-${st.id}-h`} className="text-base font-semibold text-fg">
+                {st.title}
+              </h2>
+              <p className="mt-0.5 text-[13px] leading-relaxed text-muted">{st.why}</p>
+            </div>
+            {st.id === "journal" && (
+              <Button variant="secondary" size="sm" className="no-print" onClick={onExport} title="כל פקודות היומן">
+                <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+              </Button>
+            )}
+          </header>
+          <ol className="divide-y divide-line">
+            {st.steps.map((step, j) => (
+              <li key={step.id} className="px-5 py-4">
+                <StageStepView step={step} n={`${i + 1}.${j + 1}`} />
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function StageStepView({ step, n }: { step: StageStep; n: string }) {
+  const head = (
+    <span className="flex min-w-0 flex-1 items-center gap-2 text-[14.5px] font-semibold text-fg">
+      <span className="num rounded-md bg-accent-soft px-1.5 py-0.5 font-mono text-xs font-bold text-accent">{n}</span>
+      <span className="min-w-0 flex-1">{step.title}</span>
+    </span>
+  );
+  const body = (
+    <div className="mt-3 space-y-3">
+      {step.why && (
+        <p className="rounded-lg border-s-4 border-accent/60 bg-accent-soft/40 px-3 py-2 text-[13px] leading-relaxed text-fg/90">
+          <span className="font-semibold text-fg">למה? </span>
+          {step.why}
+        </p>
+      )}
+      {step.text?.map((t, i) => (
+        <p key={i} className="text-[14px] leading-relaxed text-fg/90">
+          {t}
+        </p>
+      ))}
+      {step.workings && step.workings.length > 0 && <WorkingsList workings={step.workings} numbered />}
+      {step.journal && step.journal.length > 0 && (
+        <div className="overflow-hidden rounded-xl border border-line">
+          <JournalTable journal={step.journal} />
+        </div>
+      )}
+      {step.statements && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {step.statements.map((s) => (
+            <div key={s.title}>
+              <p className="mb-2 text-[13px] font-semibold text-fg">{s.title}</p>
+              <Statement lines={s.lines} />
+            </div>
+          ))}
+        </div>
+      )}
+      {step.tables?.map((t) => <WalkTable key={t.id} table={t} />)}
+    </div>
+  );
+  if (!step.fold)
+    return (
+      <>
+        {head}
+        {body}
+      </>
+    );
+  return (
+    <details data-walk open={step.fold === "open"} className="group">
+      <summary className="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
+        {head}
+        <ChevronDown className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden />
+      </summary>
+      {body}
+    </details>
+  );
+}
+
+/** A plain table inside a step: no export buttons, wrapping text columns. */
+function WalkTable({ table }: { table: ScheduleTable }) {
+  return (
+    <div className="overflow-x-auto rounded-xl border border-line">
+      <table className="w-full text-[13px]">
+        <caption className="border-b border-line bg-surface-2/50 px-3 py-2 text-start text-[12.5px] font-semibold text-fg">{table.title}</caption>
+        <thead>
+          <tr className="border-b border-line">
+            {table.columns.map((c, i) => (
+              <th key={c.key} className={cn("px-3 py-2 text-[11.5px] font-medium whitespace-nowrap text-subtle", i === 0 || c.format === "text" ? "text-start" : "text-end")}>
+                {c.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {table.rows.map((row, r) => (
+            <tr key={r} className={cn("border-b border-line/60 last:border-b-0", row._emphasis ? EMPHASIS[row._emphasis] : "text-fg/90")}>
+              {table.columns.map((c, i) => {
+                const v = row[c.key];
+                const isX = typeof v === "string" && v.includes("X");
+                return (
+                  <td key={c.key} className={cn("px-3 py-2 align-top", c.format === "text" || i === 0 ? "text-start" : "num text-end font-mono whitespace-nowrap", i === 0 && "font-medium text-fg", isX && "font-semibold text-accent")}>
+                    {formatCell(v, c.format)}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function YearBreakdown({ title, years, onExport }: { title: string; years: YearSection[]; onExport: () => void }) {
   const [index, setIndex] = useState(0);
 
@@ -561,7 +723,7 @@ function ProofCard({ proof }: { proof: NonNullable<Solution["proof"]> }) {
  * term is a \text{} run isolated from the operators around it (see globals.css).
  */
 function EquationView({ eq }: { eq: Equation }) {
-  const result = eq.unit === "number" ? plain(eq.result) : `${amount(eq.result)} ש״ח`;
+  const result = eq.unit === "number" ? plain(eq.result) : eq.unit === "percent" ? percent(eq.result) : `${amount(eq.result)} ש״ח`;
   const lhs = exprToTex(eq.lhs);
   return (
     <div dir="ltr" className="mt-2 space-y-2 overflow-x-auto rounded-lg bg-surface-2/50 px-3 py-3 text-[14px]">

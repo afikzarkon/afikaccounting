@@ -552,9 +552,49 @@ describe("IAS 16", () => {
     });
   });
 
+  describe("every method can be chosen and writes off the whole depreciable amount", () => {
+    const field = getCalculator(PPE)!.scenario.find((f) => f.id === "method")!;
+    const options = field.kind === "radio" ? field.options.map((o) => o.value) : [];
+    it("lists sum-of-years ascending", () => assert.ok(options.includes("sum-of-years-asc")));
+    for (const m of options) {
+      it(m, () => {
+        const s = solve(PPE, { ...base, method: m, ...(m === "units" ? { totalUnits: 1000 } : {}) });
+        assert.equal(round2(sum(table(s, "depreciation").rows.map((r) => Number(r.total)))), 110000);
+      });
+    }
+    it("ascending sum-of-years: weights 1 … 6 over 21, smallest first", () => {
+      const s = solve(PPE, { ...base, acquisitionDate: "2023-01-01", calcStart: "2023-01-01", method: "sum-of-years-asc" });
+      assert.equal(year(s, 2023).total, round2((110000 * 1) / 21));
+      assert.equal(year(s, 2028).total, round2((110000 * 6) / 21));
+    });
+  });
+
+  describe("the solution, stage by stage", () => {
+    it("has the six stages in order, every year in each, and a reason for every step", () => {
+      const s = solve(PPE, { ...base, ...renovation });
+      assert.deepEqual(s.walk!.map((x) => x.id), ["data", "unknown", "calc", "journal", "statements", "next"]);
+      const n = s.years!.length;
+      assert.equal(s.walk![2].steps.length, n + 1);
+      assert.equal(s.walk![3].steps.length, n);
+      assert.equal(s.walk![5].steps.length, n);
+      for (const st of s.walk!) for (const step of st.steps) assert.ok(step.why, `${st.id}/${step.id}`);
+    });
+    it("names the unknown and the given that finds it", () => {
+      const s = solve(PPE, { ...base, unknown: "purchasePrice", purchasePrice: "", targetKind: "carrying", targetDate: "2024-12-31", targetAmount: 87916.67 });
+      const st = s.walk!.find((x) => x.id === "unknown")!;
+      assert.deepEqual(st.steps.slice(0, 4).map((x) => x.id), ["x-missing", "x-given", "x-solve", "x-result"]);
+      assert.equal(s.walk![0].steps[0].tables![0].rows.find((r) => r.item === "מחיר רכישה")!.value, "X — הנעלם");
+    });
+    it("carries each year's closing balance into the next", () => {
+      const s = solve(PPE, base);
+      const first = s.walk!.find((x) => x.id === "next")!.steps[0].workings!;
+      assert.equal(first.find((w) => w.label.startsWith("יתרה בספרים"))!.amount, year(s, 2023).carrying);
+    });
+  });
+
   describe("solving for an unknown (X)", () => {
     const solveX = (unknown: string, target: Values, extra: Values = {}) => {
-      const values: Values = { ...base, mode: "solve", unknown, [unknown]: "", ...extra, ...target };
+      const values: Values = { ...base, unknown, [unknown]: "", ...extra, ...target };
       return solve(PPE, values);
     };
     const x = (s: ReturnType<typeof solve>) => s.metrics[0].value;
@@ -563,7 +603,9 @@ describe("IAS 16", () => {
     it("initial cost from the carrying amount: isolates the total cost, then the purchase price", () => {
       const s = solveX("purchasePrice", { targetKind: "carrying", targetDate: "2024-12-31", targetAmount: 87916.67 });
       assert.equal(x(s), 100000);
-      assert.deepEqual(lhs(s), ["יתרה בספרים", "עלות", "X"]);
+      // k is the share of the depreciable amount written off by the date: 21 of 72 months.
+      assert.deepEqual(lhs(s), ["k", "יתרה בספרים", "עלות", "X"]);
+      assert.equal(s.proof!.steps.find((w) => w.equation?.lhs === "k")!.equation!.result, 21 / 72);
       assert.equal(s.proof!.steps.find((w) => w.equation?.lhs === "עלות")!.equation!.result, 120000);
       assert.match(s.proof!.title, /שלב א׳/);
       // … and the rest of the solution uses X.
@@ -608,17 +650,34 @@ describe("IAS 16", () => {
       assert.equal(x(s), 50000);
     });
 
-    it("any other case is solved exactly, shown as a line in X", () => {
+    it("sum-of-years: the cost from the share written off, by the weights of the asset years", () => {
       const s = solveX("purchasePrice", { targetKind: "carrying", targetDate: "2024-12-31", targetAmount: 68928.57 }, { method: "sum-of-years" });
       assert.equal(x(s), 100000);
-      assert.ok(s.proof!.steps.some((w) => w.equation?.abstract.toString().includes("a")));
+      assert.deepEqual(lhs(s), ["k", "יתרה בספרים", "עלות", "X"]);
+      assert.match(s.proof!.steps[1].label, /ספרות השנים/);
       assert.match(s.proof!.steps.at(-1)!.formula!, /68,928\.57 ✓/);
     });
 
-    it("asks for an unknown, and rejects a result that no X can produce", () => {
+    it("any other case is found by two trials of X, shown in full", () => {
+      const carrying = year(solve(PPE, { ...base, method: "double-declining" }), 2024).carrying as number;
+      const s = solveX("purchasePrice", { targetKind: "carrying", targetDate: "2024-12-31", targetAmount: carrying }, { method: "double-declining" });
+      assert.equal(x(s), 100000);
+      assert.ok(s.proof!.steps.some((w) => w.label.startsWith("ניסיון 1")));
+      assert.deepEqual(lhs(s), ["a", "X"]);
+    });
+
+    it("says when the known result can't depend on X: a carrying amount from before the renovation", () => {
       const calc = getCalculator(PPE)!;
-      const values = { ...defaults(calc), ...base, mode: "solve", targetKind: "carrying", targetDate: "2024-12-31", targetAmount: 87916.67 };
-      assert.ok(validateValues(calc, values).unknown);
+      const values = { ...defaults(calc), ...base, ...renovation, unknown: "revisionCost", revisionCost: "", targetKind: "carrying", targetDate: "2024-12-31", targetAmount: 87916.67 };
+      assert.match(validateValues(calc, values).targetDate, /מלפני השיפוץ/);
+    });
+
+    it("one calculator: no X is a regular question; with one, it rejects a result that no X can produce", () => {
+      const calc = getCalculator(PPE)!;
+      const values = { ...defaults(calc), ...base, targetKind: "carrying", targetDate: "2024-12-31", targetAmount: 87916.67 };
+      assert.ok(![...calc.scenario, ...calc.metrics].some((f) => f.id === "mode"));
+      assert.deepEqual(validateValues(calc, values), {});
+      assert.match(validateValues(calc, { ...values, purchasePrice: "" }).purchasePrice, /X/);
       assert.ok(validateValues(calc, { ...values, unknown: "purchasePrice", purchasePrice: "", targetDate: "2023-01-31" }).targetDate);
       assert.ok(validateValues(calc, { ...values, unknown: "usefulLife", usefulLife: "", targetAmount: 120000 }).targetAmount);
     });

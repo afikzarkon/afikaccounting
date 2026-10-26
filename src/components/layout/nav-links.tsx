@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 const isActive = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`));
 /** A link to a spot inside a page (#tab) or a preset (?calc) is never "the page you're on". */
 const plain = (href: string) => !/[?#]/.test(href);
-// Pages inside a category can nest (/ias16-lab and /ias16-lab/exchange), so each one is active only on its own path.
+// Pages inside a category can nest (/basics and /basics/inventory), so each one is active only on its own path.
 const isItemActive = (pathname: string, href: string) => plain(href) && pathname === href;
 const groupActive = (pathname: string, group: NavGroup) => isActive(pathname, group.hub.href) || group.items.some((i) => plain(i.href) && isActive(pathname, i.href));
 
