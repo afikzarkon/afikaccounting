@@ -1,7 +1,9 @@
+import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { AdjustChapters } from "@/components/basics/adjust";
 import { BooksChapters } from "@/components/basics/books";
-import { type ChapterLink, ChapterNav } from "@/components/basics/chapter-nav";
+import { ChapterNav } from "@/components/basics/chapter-nav";
+import { CHAPTERS } from "@/components/basics/chapters";
 import { EntriesChapters } from "@/components/basics/entries";
 import { FinalChapters } from "@/components/basics/final";
 import { IntroChapters } from "@/components/basics/intro";
@@ -12,27 +14,15 @@ import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 export const metadata: Metadata = {
   title: "חשבונאות בסיסית מאפס",
   description:
-    "קורס קצר בעברית למי שמעולם לא למד חשבונאות: חובה וזכות, פקודות יומן, כרטיסי T, מאזן בוחן, דוחות כספיים, חשבונות חתך, מלאי סגירה והפסדי אשראי — עם מעבדה אינטראקטיבית ותרגול.",
+    "קורס קצר בעברית, צעד אחר צעד: חובה וזכות, פקודות יומן וכרטיסי T, מאזן בוחן ועודפים, התאמות סוף שנה, מלאי סגירה והפסדי אשראי — עם מעבדה אינטראקטיבית ותרגול.",
 };
 
-const CHAPTERS: ChapterLink[] = [
-  { id: "what", title: "מהי חשבונאות" },
-  { id: "entity", title: "ישות נפרדת" },
-  { id: "types", title: "חמשת סוגי החשבונות" },
-  { id: "equation", title: "הזהות החשבונאית" },
-  { id: "expense", title: "הוצאה מול השקעה" },
-  { id: "double", title: "רישום כפול ופקודת יומן" },
-  { id: "lab", title: "פקודות יומן לפי סוגיהן" },
-  { id: "credit", title: "עסקאות באשראי" },
-  { id: "taccounts", title: "כרטיסי T" },
-  { id: "trial", title: "מאזן בוחן" },
-  { id: "reports", title: "מאזני, תוצאתי ודוחות" },
-  { id: "accrual", title: "בסיס מצטבר והתאמות" },
-  { id: "inventory", title: "מלאי סגירה" },
-  { id: "creditloss", title: "הפסדי אשראי" },
-  { id: "worksheet", title: "גיליון רב-טורי" },
-  { id: "practice", title: "תרגול" },
-  { id: "summary", title: "סיכום וכלי עזר" },
+// The four stages of the books: the road this page walks, in order.
+const ROADMAP: [string, string][] = [
+  ["פקודת יומן", "lab"],
+  ["כרטיסי T", "taccounts"],
+  ["מאזן בוחן", "trial"],
+  ["דוחות כספיים", "reports"],
 ];
 
 export default function BasicsPage() {
@@ -44,10 +34,20 @@ export default function BasicsPage() {
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
           חשבונאות בסיסית <span className="text-gradient">מאפס</span>
         </h1>
-        <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted">
-          למי שמעולם לא שמע את המילים &quot;חובה&quot; ו&quot;זכות&quot;. 17 פרקים קצרים, מהשאלה &quot;מה זה בכלל חשבונאות&quot; ועד גיליון רב-טורי עם התאמות סוף
-          שנה — עם מעבדה שבה רושמים עסקאות בעצמכם, ו-15 שאלות תרגול.
+        <p className="mt-2 text-[15px] text-muted">
+          <span className="num">{CHAPTERS.length}</span> פרקים קצרים, צעד אחר צעד.
         </p>
+        <ol className="mt-4 flex flex-wrap items-center gap-1.5" aria-label="ארבעת שלבי הרישום">
+          {ROADMAP.map(([t, id], i) => (
+            <li key={t} className="flex items-center gap-1.5">
+              <a href={`#${id}`} className="flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-sm font-medium text-fg hover:border-accent/50">
+                <span className="num grid h-5 w-5 place-items-center rounded-full bg-accent text-[10px] font-bold text-accent-fg">{i + 1}</span>
+                {t}
+              </a>
+              {i < ROADMAP.length - 1 && <ArrowLeft className="h-3.5 w-3.5 text-subtle" aria-hidden />}
+            </li>
+          ))}
+        </ol>
 
         <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
           {/* On narrow screens the aside dissolves, so its chip bar stays sticky along the whole page. */}

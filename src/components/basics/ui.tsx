@@ -1,5 +1,7 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
 import { JournalEntry } from "@/components/study/blocks";
+import { CHAPTERS, chapterIndex } from "./chapters";
 import { type Entry, isBalanced, isBalanceSheet, normalSide, round2, type Statements, type TAccount, type TrialBalance, typeOf, TYPE_LABEL } from "@/lib/learn/basics";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +25,9 @@ export function Term({ he }: { he: string }) {
   return <strong className="font-semibold text-fg">{he}</strong>;
 }
 
-/** One chapter of the page. */
+export { type Step, Stepper } from "./stepper";
+
+/** One chapter of a guide page. */
 export function Chapter({ n, id, title, lead, children }: { n: number; id: string; title: string; lead: string; children: ReactNode }) {
   return (
     <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-32 lg:scroll-mt-24" data-chapter={id}>
@@ -40,6 +44,163 @@ export function Chapter({ n, id, title, lead, children }: { n: number; id: strin
       </div>
       <div className="mt-5 space-y-4 text-[15.5px] leading-relaxed text-fg/90 [&>p]:max-w-3xl">{children}</div>
     </section>
+  );
+}
+
+/**
+ * One chapter of the basics page: its number and title (both from CHAPTERS),
+ * the one principle it teaches, the content, and links to the chapters on either side.
+ */
+export function Lesson({ id, lead, children }: { id: string; lead: ReactNode; children: ReactNode }) {
+  const i = chapterIndex(id);
+  const { title } = CHAPTERS[i];
+  return (
+    <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-32 lg:scroll-mt-24" data-chapter={id}>
+      <div className="flex items-center gap-3.5">
+        <span className="num grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent text-lg font-bold text-accent-fg shadow-[0_8px_20px_-10px_var(--accent)]">
+          {i + 1}
+        </span>
+        <h2 id={`${id}-title`} className="min-w-0 text-2xl font-semibold tracking-tight text-fg">
+          {title}
+        </h2>
+      </div>
+      <p className="mt-4 rounded-2xl border border-accent/25 bg-accent-soft px-4 py-3.5 text-[16.5px] font-semibold leading-relaxed text-fg sm:px-5">{lead}</p>
+      <div className="mt-5 space-y-4 text-[15.5px] leading-relaxed text-fg/90 [&>p]:max-w-3xl">{children}</div>
+      <ChapterFooter i={i} />
+    </section>
+  );
+}
+
+/** Previous and next chapter, and where this one sits in the page. */
+function ChapterFooter({ i }: { i: number }) {
+  const prev = CHAPTERS[i - 1];
+  const next = CHAPTERS[i + 1];
+  const link = (c: (typeof CHAPTERS)[number], n: number, dir: "prev" | "next") => (
+    <a
+      href={`#${c.id}`}
+      className={cn(
+        "group flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2.5 transition-colors hover:border-accent/50 hover:bg-accent-soft/50 sm:max-w-[46%]",
+        dir === "next" && "ms-auto flex-row-reverse text-end",
+      )}
+    >
+      {dir === "prev" ? <ChevronRight className="h-4 w-4 shrink-0 text-subtle" aria-hidden /> : <ChevronLeft className="h-4 w-4 shrink-0 text-accent" aria-hidden />}
+      <span className="min-w-0">
+        <span className="block text-[11px] text-muted">{dir === "prev" ? "לפרק הקודם" : "לפרק הבא"}</span>
+        <span className={cn("block truncate text-sm font-semibold", dir === "next" ? "text-accent" : "text-fg")}>
+          <span className="num">{n}</span>. {c.title}
+        </span>
+      </span>
+    </a>
+  );
+  return (
+    <nav aria-label="מעבר בין פרקים" className="no-print mt-8 border-t border-line pt-4">
+      <div className="flex flex-wrap items-stretch gap-2">
+        {prev && link(prev, i, "prev")}
+        {next && link(next, i + 2, "next")}
+      </div>
+      <div className="mt-3 flex items-center gap-3">
+        <div className="h-1 flex-1 overflow-hidden rounded-full bg-surface-2" aria-hidden>
+          <div className="h-full rounded-full bg-accent" style={{ width: `${((i + 1) / CHAPTERS.length) * 100}%` }} />
+        </div>
+        <p className="num shrink-0 text-xs text-muted">
+          פרק {i + 1} מתוך {CHAPTERS.length}
+        </p>
+      </div>
+    </nav>
+  );
+}
+
+/** A link to another chapter by its number. */
+export function ChRef({ id }: { id: string }) {
+  return (
+    <a href={`#${id}`} className="font-medium text-accent hover:underline">
+      פרק <span className="num">{chapterIndex(id) + 1}</span>
+    </a>
+  );
+}
+
+/** A highlighted statement that stands on its own: the one sentence to remember. */
+export function KeyCard({ icon, children, className }: { icon?: ReactNode; children: ReactNode; className?: string }) {
+  return (
+    <div className={cn("flex items-center gap-3 rounded-2xl border-2 border-accent bg-surface px-4 py-4 shadow-[0_10px_30px_-18px_var(--accent)] sm:px-5", className)}>
+      {icon && <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent text-accent-fg">{icon}</span>}
+      <p className="min-w-0 text-[17px] font-bold leading-snug text-fg">{children}</p>
+    </div>
+  );
+}
+
+/** "ח׳" or "ז׳" as a coloured tag, the same everywhere on the page. */
+export function SideChip({ side, className }: { side: "dr" | "cr"; className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-grid h-6 min-w-6 shrink-0 place-items-center rounded-md px-1 text-[12px] font-bold text-surface",
+        side === "dr" ? "bg-debit" : "bg-credit",
+        className,
+      )}
+    >
+      {side === "dr" ? "ח׳" : "ז׳"}
+    </span>
+  );
+}
+
+/**
+ * A journal entry: one row per line, debits first and credits indented under
+ * them, each in its side's colour; at most one line of explanation. With `hl`,
+ * the lines of other accounts fade, to point at part of a compound entry.
+ */
+export function JE({ entry, title, note, hl, className }: { entry: Entry; title?: ReactNode; note?: ReactNode | null; hl?: string[]; className?: string }) {
+  if (!isBalanced(entry)) throw new Error(`Unbalanced entry ${entry.id}`);
+  const text = note === null ? null : (note ?? entry.why);
+  const total = entry.lines.reduce((s, l) => s + (l.dr ?? 0), 0);
+  const lines = [...entry.lines.filter((l) => l.dr), ...entry.lines.filter((l) => l.cr)];
+  return (
+    <figure className={cn("min-w-0 overflow-hidden rounded-xl border border-line bg-surface", className)}>
+      <figcaption className="flex items-start gap-2 border-b border-line bg-surface-2/60 px-3 py-2">
+        <span className="num mt-px grid h-6 min-w-6 shrink-0 place-items-center rounded-full bg-fg px-1.5 text-[11px] font-bold text-surface">{entry.id}</span>
+        <span className="min-w-0 flex-1 text-[14px] font-semibold leading-snug text-fg">{title ?? entry.text}</span>
+        {entry.date && <span className="num shrink-0 pt-0.5 text-[11px] text-muted">{entry.date}</span>}
+      </figcaption>
+      <ul className="space-y-1 p-2">
+        {lines.map((l, k) => {
+          const side = l.dr ? "dr" : "cr";
+          return (
+            <li
+              key={k}
+              className={cn(
+                "flex items-center gap-2 rounded-lg border-s-[3px] px-2 py-1.5 text-[14.5px] transition-opacity",
+                side === "dr" ? "border-debit bg-debit/[0.07]" : "ms-5 border-credit bg-credit/[0.07] sm:ms-8",
+                hl && !hl.includes(l.account) && "opacity-40",
+              )}
+            >
+              <SideChip side={side} />
+              <span className="min-w-0 flex-1 font-medium text-fg">{l.account}</span>
+              <Money v={(l.dr ?? l.cr)!} plain className={cn("font-semibold", side === "dr" ? "text-debit" : "text-credit")} />
+            </li>
+          );
+        })}
+      </ul>
+      <p className="flex items-center gap-1.5 px-3 pb-2 text-[11px] text-subtle">
+        <span className="text-success">✓</span> סך החובה = סך הזכות = <Money v={total} plain />
+      </p>
+      {text && <p className="border-t border-line px-3 py-2 text-[13.5px] leading-snug text-muted">{text}</p>}
+    </figure>
+  );
+}
+
+/** One sum written out: the parts and the result, as a single block. */
+export function Calc({ children, result, className }: { children: ReactNode; result?: ReactNode; className?: string }) {
+  return (
+    <p className={cn("rounded-xl bg-surface-2/80 px-3.5 py-2.5 text-[15px] text-fg ring-1 ring-line", className)}>
+      <span className="me-1.5 text-xs font-bold text-accent">חישוב</span>
+      {children}
+      {result !== undefined && (
+        <>
+          {" "}
+          = <strong className="font-bold text-fg">{result}</strong>
+        </>
+      )}
+    </p>
   );
 }
 

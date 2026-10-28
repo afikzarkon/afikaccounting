@@ -1,13 +1,15 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  ACCRUAL,
   allEntries,
   balancesOf,
   carryForward,
+  closingEntry,
   costOfSales,
+  CREDIT,
   creditLoss,
   creditLossEntries,
-  CUTOFF,
   identityHolds,
   isBalanced,
   TZAAD,
@@ -94,11 +96,64 @@ describe("Yuval Ltd", () => {
   });
 });
 
+describe("credit stories and the loan", () => {
+  it("credit and advances end with every receivable, payable and advance at zero", () => {
+    for (const run of [CREDIT.credit, CREDIT.advances]) {
+      const b = balancesOf(ledger(run));
+      for (const a of ["לקוחות", "ספקים", "מקדמות מלקוחות", "מקדמות לספקים"]) assert.equal(b[a] ?? 0, 0, a);
+      assert.equal(b["מזומן"], 400);
+      assert.equal(b["מכירות"], -1_000);
+      assert.equal(b["קניות"], 600);
+    }
+  });
+
+  it("loan: 50,000 still owed, 5,000 interest is the only expense, 45,000 in cash", () => {
+    const b = balancesOf(ledger(CREDIT.loan));
+    assert.equal(b["הלוואה"], -50_000);
+    assert.equal(b["הוצאות ריבית"], 5_000);
+    assert.equal(b["מזומן"], 45_000);
+    assert.equal(statements(b).profit, -5_000);
+  });
+});
+
+describe("closing entry", () => {
+  it("Yuval 2020: Dr each income, Cr each expense, Cr retained earnings 346,300", () => {
+    const close = closingEntry(YUVAL.tb2020, "סגירה", "31.12.2020");
+    assert.ok(isBalanced(close));
+    assert.deepEqual(close.lines.find((l) => l.account === "מכירות"), { account: "מכירות", dr: 1_000_000 });
+    assert.deepEqual(close.lines.find((l) => l.account === "הכנסות משכר דירה"), { account: "הכנסות משכר דירה", dr: 15_300 });
+    assert.deepEqual(close.lines.find((l) => l.account === "קניות"), { account: "קניות", cr: 500_000 });
+    assert.deepEqual(close.lines.at(-1), { account: "עודפים", cr: 346_300 });
+    const after = balancesOf(ledger([close], YUVAL.tb2020));
+    for (const [a, v] of Object.entries(after)) if (["income", "expense"].includes(typeOf(a))) assert.equal(v, 0, a);
+    assert.equal(after["עודפים"], -346_300);
+    // After closing, the balance sheet balances on its own.
+    assert.equal(statements(after).profit, 0);
+    assert.ok(identityHolds(statements(after)));
+  });
+
+  it("Yuval 2021, a loss: Dr retained earnings 30,000, ending at 316,300 credit", () => {
+    const b = balancesOf(ledger(YUVAL.entries2021, carryForward(YUVAL.tb2020)));
+    const close = closingEntry(b, "סגירה", "31.12.2021");
+    assert.ok(isBalanced(close));
+    assert.deepEqual(close.lines.find((l) => l.account === "עודפים"), { account: "עודפים", dr: 30_000 });
+    const after = balancesOf(ledger([close], b));
+    assert.equal(after["עודפים"], -316_300);
+    assert.equal(after["מכירות"], 0);
+    assert.equal(after["הוצאות שכר"], 0);
+  });
+});
+
 describe("cut-off accounts", () => {
-  it("the short examples", () => {
-    assert.equal(CUTOFF.accruedSalary.lines[0].dr, 10_000);
-    assert.equal(CUTOFF.unearned.lines[1].cr, 40_000);
-    assert.equal(CUTOFF.accruedInterest.lines[0].dr, 10_000);
+  it("the four small cases: 900 prepaid, 10,000 accrued, 4,000 unearned, 5,000 receivable", () => {
+    assert.deepEqual(ACCRUAL.results, { prepaid: 900, accrued: 10_000, unearned: 4_000, receivable: 5_000 });
+    const ins = balancesOf(ledger(ACCRUAL.entries.prepaid));
+    assert.equal(ins["הוצאות ביטוח"], 300);
+    assert.equal(ins["הוצאות ביטוח מראש"], 900);
+    assert.equal(balancesOf(ledger(ACCRUAL.entries.accrued))["הוצאות שכר"], 120_000);
+    const rent = balancesOf(ledger(ACCRUAL.entries.unearned));
+    assert.equal(rent["הכנסות שכירות"], -2_000);
+    assert.equal(rent["הכנסות שכירות מראש"], -4_000);
   });
 
   it("Ronen: 27,000 advertising + 9,000 prepaid; 48,000 insurance; 30,000 interest; 144,000 consulting + 96,000 unearned; 24,000 rent receivable", () => {

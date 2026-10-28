@@ -1,10 +1,8 @@
-"use client";
-
-import { ChevronLeft, ChevronRight, CircleCheck, TriangleAlert } from "lucide-react";
-import { useState } from "react";
-import { balancesOf, type Entry, identityHolds, isBalanceSheet, KITS, ledger, statements, trialBalance } from "@/lib/learn/basics";
+import { CircleCheck, TriangleAlert } from "lucide-react";
+import { balancesOf, type Entry, isBalanceSheet, KITS, ledger, round2, type Statements, statements } from "@/lib/learn/basics";
 import { cn } from "@/lib/utils";
-import { BalanceSheetT, EntryView, Money, TBTable } from "./ui";
+import { Posted } from "./t-accounts";
+import { BalanceSheetT, Money, type Step, Stepper } from "./ui";
 
 const STEPS = [...KITS.entries, KITS.closing];
 const FINAL_BEFORE = statements(balancesOf(ledger(KITS.entries)));
@@ -12,116 +10,101 @@ const FINAL_AFTER = statements(balancesOf(ledger(STEPS)));
 const FINAL_BALANCES = balancesOf(ledger(STEPS));
 const INVESTED = KITS.entries[0].lines[0].dr!;
 const WITHDRAWN = KITS.entries.find((x) => x.lines[0].account === "הון בעלים")!.lines[0].dr!;
+const CLOSING = KITS.closing.lines[0].dr!;
 
 /** What kind of entry this is: does it only move balance-sheet accounts, or does it reach profit or loss? */
 function entryKind(entry: Entry) {
   const sheet = entry.lines.filter((l) => isBalanceSheet(l.account)).length;
-  if (sheet === entry.lines.length) return { label: "מאזני מול מאזני", hint: "משנה רק את המאזן — לא משפיעה על הרווח" };
+  if (sheet === entry.lines.length) return { label: "מאזני מול מאזני", hint: "משנה רק את המאזן" };
   if (sheet === 0) return { label: "תוצאתי מול תוצאתי", hint: "משנה רק את רווח והפסד" };
-  return { label: "מאזני מול תוצאתי", hint: "משנה את המאזן וגם את רווח והפסד" };
+  return { label: "מאזני מול תוצאתי", hint: "משנה את המאזן וגם את הרווח" };
+}
+
+/** The equation after a step, each part with how much it moved. */
+function Identity({ s, prev }: { s: Statements; prev: Statements }) {
+  const part = (name: string, v: number, was: number) => {
+    const d = round2(v - was);
+    return (
+      <span className="min-w-0 flex-1 rounded-xl bg-surface px-2 py-2 text-center ring-1 ring-line">
+        <span className="block text-[11px] font-semibold text-muted">{name}</span>
+        <Money v={v} plain className="block text-[15px] font-bold text-fg" />
+        <span className={cn("block h-4 text-[11px] font-semibold", d > 0 ? "text-success" : "text-danger")}>
+          {d !== 0 && (
+            <>
+              {d > 0 ? "▲" : "▼"} <Money v={Math.abs(d)} plain />
+            </>
+          )}
+        </span>
+      </span>
+    );
+  };
+  return (
+    <div className="flex items-center gap-1.5 rounded-2xl bg-surface-2/70 p-2" aria-label="הזהות החשבונאית אחרי הפעולה">
+      {part("נכסים", s.totalAssets, prev.totalAssets)}
+      <span className="font-bold text-muted" aria-hidden>
+        =
+      </span>
+      {part("התחייבויות", s.totalLiabilities, prev.totalLiabilities)}
+      <span className="font-bold text-muted" aria-hidden>
+        +
+      </span>
+      {part("הון", s.totalEquity, prev.totalEquity)}
+    </div>
+  );
 }
 
 export function TransactionLab() {
-  const [step, setStep] = useState(1);
-  const entry = STEPS[step - 1];
-  const accounts = ledger(STEPS.slice(0, step));
-  const prev = balancesOf(ledger(STEPS.slice(0, step - 1)));
-  const balances = balancesOf(accounts);
-  const s = statements(balances);
-  const prevS = statements(prev);
-  const changed = new Set(accounts.filter((t) => (prev[t.account] ?? 0) !== t.balance).map((t) => t.account));
-  const isClosing = step === STEPS.length;
-  const cash = accounts.find((t) => t.account === "מזומן")?.balance ?? 0;
-
-  return (
-    <div className="card overflow-hidden">
-      <div className="flex flex-wrap items-center gap-2 border-b border-line bg-surface-2/50 px-4 py-3">
-        <button
-          type="button"
-          onClick={() => setStep((x) => Math.max(1, x - 1))}
-          disabled={step === 1}
-          className="inline-flex h-9 items-center gap-1 rounded-lg px-3 text-sm font-medium text-muted ring-1 ring-line hover:text-fg disabled:opacity-40"
-        >
-          <ChevronRight className="h-4 w-4" /> הקודם
-        </button>
-        <p className="num mx-auto text-sm font-semibold text-fg" aria-live="polite">
-          {isClosing ? "סוף השנה: ספירת מלאי" : `פעולה ${step} מתוך ${KITS.entries.length}`}
-        </p>
-        <button
-          type="button"
-          onClick={() => setStep((x) => Math.min(STEPS.length, x + 1))}
-          disabled={step === STEPS.length}
-          className="inline-flex h-9 items-center gap-1 rounded-lg bg-accent px-3 text-sm font-medium text-accent-fg disabled:opacity-40"
-        >
-          הבא <ChevronLeft className="h-4 w-4" />
-        </button>
-      </div>
-      <div className="h-1.5 bg-surface-2" aria-hidden>
-        <div className="h-full bg-accent transition-all" style={{ width: `${(step / STEPS.length) * 100}%` }} />
-      </div>
-
-      <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <div className="min-w-0">
-          <p className="mb-1.5 flex flex-wrap items-center gap-2 text-xs">
-            <span className="rounded-md bg-fg px-2 py-0.5 font-bold text-surface">סוג הפקודה: {entryKind(entry).label}</span>
-            <span className="text-muted">{entryKind(entry).hint}</span>
+  const steps: Step[] = STEPS.map((entry, i) => {
+    const s = statements(balancesOf(ledger(STEPS.slice(0, i + 1))));
+    const prev = statements(balancesOf(ledger(STEPS.slice(0, i))));
+    const closing = i === STEPS.length - 1;
+    const kind = entryKind(entry);
+    return {
+      title: closing ? `סוף השנה: ${entry.text}` : entry.text,
+      body: (
+        <>
+          <p className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="rounded-md bg-fg px-2 py-0.5 font-bold text-surface">{kind.label}</span>
+            <span className="text-muted">{kind.hint}</span>
           </p>
-          <p className="text-[15px] font-semibold text-fg">{entry.text}</p>
-          {entry.why && <p className="mt-1 text-sm text-muted">{entry.why}</p>}
-          <EntryView entry={entry} title={`פקודת יומן ${entry.id}`} note={isClosing ? "המלאי הוא נכס (מאזני). צדו השני מקטין את עלות הקניות ברווח והפסד." : undefined} />
-        </div>
-
-        <div className="min-w-0">
-          <TBTable tb={trialBalance(balances)} caption="יתרות אחרי הפעולה — מאזן בוחן" kind changed={changed} />
-          <p className="mt-1 text-sm text-muted">
-            השורות המודגשות השתנו בפעולה הזו. מזומן בקופה: <Money v={cash} className="font-semibold text-fg" />
-          </p>
-        </div>
-      </div>
-
-      <div className="border-t border-line px-4 pb-4">
-        <BalanceSheetT s={s} prev={prevS} title={isClosing ? "המאזן בסוף השנה" : `המאזן אחרי פעולה ${entry.id}`} />
-        <p className={cn("flex flex-wrap items-center gap-1.5 text-sm font-medium", identityHolds(s) ? "text-success" : "text-danger")}>
-          <CircleCheck className="h-4 w-4 shrink-0" /> נכסים <Money v={s.totalAssets} /> = התחייבויות <Money v={s.totalLiabilities} /> + הון{" "}
-          <Money v={s.totalEquity} />
-        </p>
-      </div>
-
-      {step >= KITS.entries.length && (
-        <div className="grid gap-3 border-t border-line p-4 md:grid-cols-2">
-          <div className="rounded-xl border border-danger/30 bg-danger/[0.05] p-4">
-            <p className="flex items-center gap-2 text-sm font-semibold text-danger">
-              <TriangleAlert className="h-4 w-4" /> בלי מלאי סגירה
-            </p>
-            <p className="mt-1 text-[15px] text-fg">
-              הכנסות <Money v={FINAL_BEFORE.totalIncome} /> פחות הוצאות <Money v={FINAL_BEFORE.totalExpenses} /> — העסק נראה כאילו{" "}
-              <strong>הפסיד <Money v={-FINAL_BEFORE.profit} /></strong>.
-            </p>
-            <p className="mt-1 text-sm text-muted">אבל זה לא נכון: רוב הערכות עדיין במחסן. קנינו 10,000 ומכרנו רק 1,000.</p>
-          </div>
-          <div className={cn("rounded-xl border p-4", isClosing ? "border-success/40 bg-success/[0.06]" : "border-line bg-surface-2/40")}>
-            <p className="flex items-center gap-2 text-sm font-semibold text-success">
-              <CircleCheck className="h-4 w-4" /> עם מלאי סגירה
-            </p>
-            <p className="mt-1 text-[15px] text-fg">
-              {KITS.closingUnits.toLocaleString("he-IL")} ערכות × <Money v={KITS.unitCost} /> = <Money v={KITS.closing.lines[0].dr!} /> חוזרים מההוצאות לנכסים.
-              הרווח האמיתי: <strong className="text-success">{<Money v={FINAL_AFTER.profit} />}</strong>.
-            </p>
-            {!isClosing && (
-              <button type="button" onClick={() => setStep(STEPS.length)} className="mt-2 text-sm font-medium text-accent hover:underline">
-                הציגו את פקודת מלאי הסגירה ←
-              </button>
-            )}
-          </div>
-          {isClosing && (
-            <p className="rounded-xl bg-surface-2/70 px-4 py-3 text-sm text-fg md:col-span-2">
-              <strong>בדיקה:</strong> נכסים — מזומן <Money v={cash} /> + מלאי <Money v={KITS.closing.lines[0].dr!} /> + לפטופ <Money v={FINAL_BALANCES["לפטופ"]} /> ={" "}
-              <Money v={FINAL_AFTER.totalAssets} />. הון — השקעה <Money v={INVESTED} /> − משיכה <Money v={WITHDRAWN} /> + רווח <Money v={FINAL_AFTER.profit} /> ={" "}
-              <Money v={FINAL_AFTER.totalEquity} />. שווה.
+          <Posted
+            entries={STEPS}
+            at={i}
+            title={closing ? "פקודת מלאי הסגירה" : "פקודת היומן"}
+            note={closing ? `${KITS.closingUnits.toLocaleString("he-IL")} ערכות × ${KITS.unitCost} ₪ חוזרות מההוצאות לנכסים.` : undefined}
+          />
+          <Identity s={s} prev={prev} />
+          {i === KITS.entries.length - 1 && (
+            <p className="flex items-start gap-2 rounded-xl border border-danger/30 bg-danger/[0.05] px-3 py-2.5 text-[15px]">
+              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-danger" aria-hidden />
+              <span>
+                בלי ספירת מלאי העסק נראה <strong>מפסיד <Money v={-FINAL_BEFORE.profit} /></strong>. אבל רוב הערכות עדיין במחסן — הצעד הבא מתקן את זה.
+              </span>
             </p>
           )}
-        </div>
-      )}
-    </div>
-  );
+          {closing && (
+            <div className="space-y-2 rounded-xl border border-success/40 bg-success/[0.06] px-3 py-2.5 text-[15px]">
+              <p className="flex items-center gap-2 font-semibold text-success">
+                <CircleCheck className="h-4 w-4" aria-hidden /> הרווח האמיתי: <Money v={FINAL_AFTER.profit} />
+              </p>
+              <p className="text-sm text-fg/90">
+                נכסים: מזומן <Money v={FINAL_BALANCES["מזומן"]} /> + מלאי <Money v={CLOSING} /> + לפטופ <Money v={FINAL_BALANCES["לפטופ"]} /> ={" "}
+                <Money v={FINAL_AFTER.totalAssets} />. הון: <Money v={INVESTED} /> − משיכה <Money v={WITHDRAWN} /> + רווח <Money v={FINAL_AFTER.profit} /> ={" "}
+                <Money v={FINAL_AFTER.totalEquity} />.
+              </p>
+            </div>
+          )}
+          <details className="group rounded-xl border border-line">
+            <summary className="cursor-pointer list-none px-3 py-2 text-sm font-medium text-accent [&::-webkit-details-marker]:hidden">
+              <span className="me-1 inline-block transition-transform group-open:-rotate-90">‹</span> המאזן המלא אחרי הפעולה
+            </summary>
+            <div className="px-2 pb-2">
+              <BalanceSheetT s={s} prev={prev} title={closing ? "המאזן בסוף השנה" : `המאזן אחרי פעולה ${entry.id}`} />
+            </div>
+          </details>
+        </>
+      ),
+    };
+  });
+  return <Stepper label="עסק לערכות מדע · 2023" steps={steps} />;
 }

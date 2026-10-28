@@ -1,46 +1,29 @@
-import { ArrowLeft, Banknote, Gift, HandCoins, NotebookPen, Ticket } from "lucide-react";
-import Link from "next/link";
-import { DataTable } from "@/components/study/blocks";
-import {
-  balancesOf,
-  costOfSales,
-  creditLoss,
-  creditLossEntries,
-  CUTOFF,
-  type Entry,
-  ledger,
-  MIA,
-  RONEN,
-  round2,
-  statements,
-  trialBalance,
-  TZAAD,
-} from "@/lib/learn/basics";
+import { Banknote } from "lucide-react";
+import { ACCRUAL, balancesOf, costOfSales, creditLoss, creditLossEntries, type Entry, ledger, MIA, RONEN, round2, statements, trialBalance, TZAAD } from "@/lib/learn/basics";
 import { cn } from "@/lib/utils";
-import { Card, Chapter, EntryView, Money, Rule, StatementsView, TBTable, TCard, Term } from "./ui";
+import { Posted, TBox } from "./t-accounts";
+import { Calc, KeyCard, Lesson, Money, Rule, StatementsView, type Step, Stepper, TBTable } from "./ui";
 
 const RONEN_FINAL = balancesOf(ledger(RONEN.adjustments, RONEN.preliminary));
 const RONEN_S = statements(RONEN_FINAL);
 const TZAAD_C = creditLoss(TZAAD);
 const TZAAD_ENTRIES = creditLossEntries(TZAAD);
-const TZAAD_LEDGER = ledger(TZAAD_ENTRIES, { לקוחות: TZAAD.openingCustomers, "הפרשה להפסדי אשראי חזויים": -TZAAD.openingAllowance });
+const TZAAD_OPEN = { לקוחות: TZAAD.openingCustomers, "הפרשה להפסדי אשראי חזויים": -TZAAD.openingAllowance };
+const tzaadCard = (account: string, upto: number) => ledger(TZAAD_ENTRIES.slice(0, upto), TZAAD_OPEN).find((t) => t.account === account)!;
 const f = (v: number) => v.toLocaleString("he-IL");
-// An illustrative net realisable value for Mia's closing stock, below its cost.
-const MIA_NRV = 300_000;
 const pct = (r: number) => `${round2(r * 100)}%`;
-
-/** One numbered step of the worked example. */
-function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-xl border border-line bg-surface p-4">
-      <p className="flex items-center gap-2 font-semibold text-fg">
-        <span className="num grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent text-xs text-accent-fg">{n}</span>
-        {title}
-      </p>
-      <div className="mt-2 space-y-3 text-[15px] leading-relaxed text-fg/90">{children}</div>
-    </div>
-  );
-}
+// Two illustrative net realisable values for Mia's closing stock: one above its cost, one below.
+const MIA_NRV_HIGH = 330_000;
+const MIA_NRV_LOW = 300_000;
+const MIA_ENTRY: Entry = {
+  id: "מלאי",
+  date: "31.12.2020",
+  text: "רישום מלאי הסגירה",
+  lines: [
+    { account: "מלאי סגירה מאזני", dr: Math.min(MIA.closing, MIA_NRV_HIGH) },
+    { account: "מלאי סגירה רווח או הפסד", cr: Math.min(MIA.closing, MIA_NRV_HIGH) },
+  ],
+};
 
 type Segment = { months: number; label: string; year: "this" | "next" };
 
@@ -48,7 +31,7 @@ type Segment = { months: number; label: string; year: "this" | "next" };
 function Timeline({ segments, cash, cashAt }: { segments: Segment[]; cash: string; cashAt: "start" | "end" }) {
   const total = segments.reduce((s, x) => s + x.months, 0);
   return (
-    <div className="my-2" aria-label={`ציר זמן: ${segments.map((s) => `${s.label} ${s.months} חודשים`).join(", ")}; ${cash}`}>
+    <div aria-label={`ציר זמן: ${segments.map((s) => `${s.label} ${s.months} חודשים`).join(", ")}; ${cash}`}>
       <div className={cn("mb-1 flex items-center gap-1 text-xs font-medium text-accent", cashAt === "end" && "justify-end")}>
         <Banknote className="h-3.5 w-3.5" aria-hidden /> {cash}
       </div>
@@ -70,349 +53,359 @@ function Timeline({ segments, cash, cashAt }: { segments: Segment[]; cash: strin
   );
 }
 
-const MATRIX: [string, string, string][] = [
-  ["צד ההוצאות", "הוצאות מראש — נכס", "הוצאות לשלם — התחייבות"],
-  ["צד ההכנסות", "הכנסות לקבל — נכס", "הכנסות מראש — התחייבות"],
-];
-
-/** An everyday picture of a cut-off account, before its numbers. */
-function Analogy({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-3 rounded-xl border border-accent/30 bg-accent-soft/60 p-3">
-      <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent text-accent-fg" aria-hidden>
-        {icon}
-      </span>
-      <div className="min-w-0 text-[14.5px]">
-        <p className="font-semibold text-fg">{title}</p>
-        <p className="mt-0.5 text-fg/90">{children}</p>
-      </div>
-    </div>
-  );
-}
-
-function CutoffCard({
-  title,
-  kind,
-  plain,
-  analogy,
-  timeline,
-  entry,
-  why,
-}: {
-  title: string;
-  kind: string;
-  plain: string;
-  analogy: React.ReactNode;
-  timeline: React.ReactNode;
-  entry: Entry;
-  why: string;
-}) {
-  return (
-    <Card
-      title={
-        <span className="flex flex-wrap items-baseline gap-x-2">
-          <Term he={title} />
-          <span className="text-xs font-normal text-muted">{kind}</span>
-        </span>
-      }
-    >
-      {analogy}
-      <p>{plain}</p>
-      {timeline}
-      <EntryView entry={entry} title={entry.text} note={why} />
-    </Card>
-  );
-}
-
-export function AdjustChapters() {
+/** One cut-off case: how it differs from the one before, the story, the sum written out, and the adjustment with its cards. */
+function CutoffStep({ diff, story, timeline, calc, entries }: { diff: React.ReactNode; story: React.ReactNode; timeline: React.ReactNode; calc: React.ReactNode; entries: Entry[] }) {
   return (
     <>
-      <Chapter n={12} id="accrual" title="בסיס מצטבר והתאמות סוף שנה" lead="כל הכנסה והוצאה — לשנה שבה באמת נהנו ממנה">
-        <p>
-          הדוחות מוכנים ל<Term he="תקופה חשבונאית" /> — בדרך כלל שנה. לפי <Term he="עיקרון ההקבלה" />, בכל
-          שנה רושמים רק את ההכנסות וההוצאות ששייכות לה, וההוצאות נרשמות יחד עם ההכנסות שבגללן הוצאו. אבל הכסף לא תמיד זז באותה שנה: לפעמים משלמים
-          מראש, לפעמים באיחור. בסוף השנה מתקנים את זה בעזרת ארבעה <Term he="חשבונות חתך" /> — כולם מאזניים:
-        </p>
-        <DataTable head={["", "שילמנו / קיבלנו מראש", "עוד לא שילמנו / קיבלנו"]} rows={MATRIX} />
-        <p>
-          הפקודה שמוסיפה את מה שחסר נקראת <Term he="פקודת התאמה" />. אם נרשמה פקודה שגויה, רושמים{" "}
-          <Term he="פקודת תיקון" /> שמגשרת בין מה שנרשם למה שהיה צריך להירשם.
-        </p>
-        <div className="grid gap-4 xl:grid-cols-2">
-          <CutoffCard
-            title="הוצאות מראש"
-            kind="נכס"
-            analogy={
-              <Analogy icon={<Gift className="h-4 w-4" />} title="כמו גיפט קארד שקנינו">
-                קנינו גיפט קארד ומשתמשים בו בכל פעם שרוצים. הוא שווה כסף, כמו מזומן — רק שאת הכסף כבר העברנו מראש, ולכן בכל קנייה לא מוציאים שוב מזומן אלא מקזזים
-                מהכרטיס. מה שנשאר בכרטיס הוא <strong>נכס</strong>: ערך שעוד נקבל.
-              </Analogy>
-            }
-            plain="שילמנו עכשיו על משהו שנקבל גם בשנים הבאות. החלק של השנים הבאות הוא נכס."
-            timeline={<Timeline cash="תשלום 120,000 ב-1.1.2020" cashAt="start" segments={[{ months: 12, label: "2020 — הוצאה", year: "this" }, { months: 12, label: "2021 — מראש", year: "next" }]} />}
-            entry={CUTOFF.prepaid}
-            why="שנה אחת מתוך שתיים שייכת ל-2020; השנייה עוד לפנינו."
-          />
-          <CutoffCard
-            title="הוצאות לשלם"
-            kind="התחייבות"
-            analogy={
-              <Analogy icon={<NotebookPen className="h-4 w-4" />} title='כמו "רשום בפנקס" אצל בעל המכולת'>
-                פעם היו לוקחים מצרכים מהמכולת ואומרים &quot;תרשום לי&quot;. החוב לבעל המכולת הולך ומצטבר, אבל מהקופה עוד לא יצא שקל — ונשלם רק כשהוא יבקש. עד אז
-                זו <strong>התחייבות שוטפת</strong>: כבר נהנינו, ועוד חייבים.
-              </Analogy>
-            }
-            plain="קיבלנו משהו השנה ועוד לא שילמנו עליו — למשל שכר דצמבר שישולם בינואר, או חשמל שהחשבונית שלו עוד לא הגיעה."
-            timeline={<Timeline cash="תשלום ב-5.1.2021" cashAt="end" segments={[{ months: 11, label: "ינואר–נובמבר — נרשם", year: "this" }, { months: 1, label: "דצמבר", year: "this" }]} />}
-            entry={CUTOFF.accruedSalary}
-            why="העובדים עבדו בדצמבר — ההוצאה של 2020, גם אם הכסף ייצא ב-2021."
-          />
-          <CutoffCard
-            title="הכנסות מראש"
-            kind="התחייבות"
-            analogy={
-              <Analogy icon={<Ticket className="h-4 w-4" />} title="כמו גיפט קארד שמכרנו">
-                התמונה ההפוכה: לקוח קנה <strong>מאיתנו</strong> גיפט קארד. בעתיד הוא יבוא, ישתמש בשירות שלנו ולא יביא איתו כסף — כי כבר שילם. עד שנספק לו את
-                השירות אנחנו <strong>חייבים</strong> לו אותו, ולכן זו התחייבות.
-              </Analogy>
-            }
-            plain="קיבלנו כסף עכשיו על משהו שניתן גם בשנים הבאות. עד שניתן אותו — אנחנו חייבים אותו."
-            timeline={<Timeline cash="תקבול 120,000 ב-1.1.2019" cashAt="start" segments={[{ months: 12, label: "2019 — הכנסה", year: "this" }, { months: 24, label: "2020–2021 — מראש", year: "next" }]} />}
-            entry={CUTOFF.unearned}
-            why="שנה אחת מתוך שלוש שייכת ל-2019 — 40,000 לשנה."
-          />
-          <CutoffCard
-            title="הכנסות לקבל"
-            kind="נכס"
-            analogy={
-              <Analogy icon={<HandCoins className="h-4 w-4" />} title="כמו להיות בעל המכולת עם הפנקס">
-                עכשיו אנחנו בצד של בעל המכולת: נותנים שירות ורושמים ללקוח חוב שגדל והולך, ובסוף התקופה הוא ישלם לנו במזומן. בינתיים מגיע לנו כסף שחייבים לנו —
-                ולכן זה <strong>נכס</strong>.
-              </Analogy>
-            }
-            plain="נתנו משהו השנה ועוד לא קיבלנו עליו כסף — למשל ריבית על הלוואה שנתנו, שתשולם רק בשנה הבאה."
-            timeline={<Timeline cash="ריבית תתקבל ב-1.1.2021" cashAt="end" segments={[{ months: 12, label: "2020 — הריבית הורווחה", year: "this" }]} />}
-            entry={CUTOFF.accruedInterest}
-            why="100,000 × 10% = 10,000 שהורווחו ב-2020, גם אם יתקבלו רק ב-2021."
-          />
+      <p className="rounded-lg bg-fg/[0.04] px-3 py-2 text-[14px] text-fg">
+        <span className="me-1.5 rounded-md bg-fg px-1.5 py-0.5 text-[11px] font-bold text-surface">במה שונה</span>
+        {diff}
+      </p>
+      <p>{story}</p>
+      {timeline}
+      {calc}
+      <Posted entries={entries} at={entries.length - 1} title="פקודת ההתאמה" />
+    </>
+  );
+}
+
+const MATRIX: { row: string; cells: [string, string, "נכס" | "התחייבות"][] }[] = [
+  { row: "הוצאות", cells: [["מראש", "הוצאות מראש", "נכס"], ["עוד לא", "הוצאות לשלם", "התחייבות"]] },
+  { row: "הכנסות", cells: [["מראש", "הכנסות מראש", "התחייבות"], ["עוד לא", "הכנסות לקבל", "נכס"]] },
+];
+
+export function AdjustChapters() {
+  const A = ACCRUAL;
+  const R = A.results;
+  const cutoff: Step[] = [
+    {
+      title: "1. הוצאות מראש — נכס",
+      body: (
+        <CutoffStep
+          diff="הראשון: הכסף יצא לפני שנהנינו."
+          story={
+            <>
+              ב-1.10 שילמנו <Money v={A.prepaid.paid} /> על ביטוח לשנה, ורשמנו הכול כהוצאה. אבל רק חלק מהשנה הזו עבר.
+            </>
+          }
+          timeline={<Timeline cash="תשלום ב-1.10" cashAt="start" segments={[{ months: 3, label: "השנה", year: "this" }, { months: 9, label: "שנה הבאה", year: "next" }]} />}
+          calc={
+            <>
+              <Calc>
+                השנה עברו 3 חודשים: 3/12 × <Money v={A.prepaid.paid} /> = <strong><Money v={A.prepaid.paid - R.prepaid} /></strong> הוצאה השנה. 9/12 × <Money v={A.prepaid.paid} /> ={" "}
+                <strong><Money v={R.prepaid} /></strong> הוצאה מראש לשנה הבאה.
+              </Calc>
+              <p className="rounded-lg border border-amber-500/40 bg-amber-500/[0.08] px-3 py-2 text-[13.5px]">
+                <strong>הכול תלוי בנתונים:</strong> אילו התשלום נרשם מלכתחילה כהוצאה מראש, הפקודה הייתה הפוכה — מעבירים 300 להוצאה. תמיד בודקים קודם מה כבר נרשם.
+              </p>
+            </>
+          }
+          entries={A.entries.prepaid}
+        />
+      ),
+    },
+    {
+      title: "2. הוצאות לשלם — התחייבות",
+      body: (
+        <CutoffStep
+          diff="ההפך מהקודם: כבר נהנינו, והכסף עוד לא יצא."
+          story={
+            <>
+              העובדים עבדו כל השנה. שכר ינואר עד נובמבר, <Money v={A.accrued.recorded} />, שולם ונרשם. שכר דצמבר ישולם רק ב-5 בינואר — ולא נרשם.
+            </>
+          }
+          timeline={<Timeline cash="תשלום דצמבר ב-5.1" cashAt="end" segments={[{ months: 11, label: "ינואר–נובמבר · נרשם", year: "this" }, { months: 1, label: "דצמבר · חסר", year: "next" }]} />}
+          calc={
+            <Calc result={<Money v={R.accrued} />}>
+              שכר לחודש: <Money v={A.accrued.recorded} /> ÷ 11 = <Money v={A.accrued.recorded / 11} />. חסר חודש אחד (דצמבר): <Money v={A.accrued.recorded / 11} /> × 1
+            </Calc>
+          }
+          entries={A.entries.accrued}
+        />
+      ),
+    },
+    {
+      title: "3. הכנסות מראש — התחייבות",
+      body: (
+        <CutoffStep
+          diff="המראה של הוצאות מראש, בצד ההכנסות: הכסף נכנס לפני שנתנו את השירות."
+          story={
+            <>
+              ב-1.11 קיבלנו <Money v={A.unearned.received} /> שכירות מחסן לחצי שנה, ורשמנו הכול כהכנסה. עד שנספק את החודשים הנותרים — אנחנו חייבים אותם לשוכר.
+            </>
+          }
+          timeline={<Timeline cash="תקבול ב-1.11" cashAt="start" segments={[{ months: 2, label: "השנה", year: "this" }, { months: 4, label: "שנה הבאה", year: "next" }]} />}
+          calc={
+            <Calc>
+              השנה עברו 2 חודשים: 2/6 × <Money v={A.unearned.received} /> = <strong><Money v={A.unearned.received - R.unearned} /></strong> הכנסה השנה. 4/6 ×{" "}
+              <Money v={A.unearned.received} /> = <strong><Money v={R.unearned} /></strong> הכנסה מראש.
+            </Calc>
+          }
+          entries={A.entries.unearned}
+        />
+      ),
+    },
+    {
+      title: "4. הכנסות לקבל — נכס",
+      body: (
+        <CutoffStep
+          diff="המראה של הוצאות לשלם: כבר הרווחנו, והכסף עוד לא נכנס."
+          story={
+            <>
+              ב-1.7 הלווינו לעובד <Money v={A.receivable.loan} /> בריבית שנתית של {pct(A.receivable.rate)}. הריבית תשולם רק ב-30.6 בשנה הבאה, ולא נרשם דבר.
+            </>
+          }
+          timeline={<Timeline cash="ריבית תתקבל ב-30.6" cashAt="end" segments={[{ months: 6, label: "השנה · הורווחה", year: "this" }, { months: 6, label: "שנה הבאה", year: "next" }]} />}
+          calc={
+            <Calc result={<Money v={R.receivable} />}>
+              <Money v={A.receivable.loan} /> × {pct(A.receivable.rate)} × 6/12
+            </Calc>
+          }
+          entries={A.entries.receivable}
+        />
+      ),
+    },
+  ];
+
+  const ronen: Step[] = [
+    {
+      title: "הנתונים: מאזן בוחן ראשוני ליום 31.12.2017",
+      body: (
+        <>
+          <TBTable tb={trialBalance(RONEN.preliminary)} />
+          <p className="text-[14.5px] text-muted">
+            העודפים בחובה: הפסדים צבורים של <Money v={RONEN.preliminary["עודפים"]} /> — היתרה של 1.1.2017. לכל סעיף שואלים: מה נרשם, ומה היה צריך להירשם?
+          </p>
+        </>
+      ),
+    },
+    ...RONEN.items.map((it, i) => ({
+      title: `${it.entry.id}. ${it.title}`,
+      body: (
+        <>
+          <p>{it.story}</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <p className="rounded-lg border border-line bg-surface px-3 py-2 text-[14px]">
+              <span className="mb-0.5 block text-[11px] font-bold text-muted">מה נרשם</span>
+              {it.recorded}
+            </p>
+            <p className="rounded-lg border border-accent/30 bg-accent-soft/60 px-3 py-2 text-[14px]">
+              <span className="mb-0.5 block text-[11px] font-bold text-accent">מה צריך להיות</span>
+              {it.should}
+            </p>
+          </div>
+          <Posted entries={RONEN.adjustments} at={i} opening={RONEN.preliminary} openingLabel="יתרה" />
+        </>
+      ),
+    })),
+    {
+      title: "התוצאה: מאזן בוחן מתוקן ודוחות",
+      body: (
+        <>
+          <TBTable tb={trialBalance(RONEN_FINAL)} caption="מאזן בוחן מתוקן ליום 31.12.2017" kind />
+          <StatementsView s={RONEN_S} year="2017" />
+          <Rule>
+            רווח 2017: <Money v={RONEN_S.profit} />. העודפים: מהפסדים צבורים של <Money v={RONEN.preliminary["עודפים"]} /> ל-
+            <Money v={-RONEN_S.equity.find(([a]) => a === "עודפים")![1]} /> (חובה).
+          </Rule>
+        </>
+      ),
+    },
+  ];
+
+  const tzaad: Step[] = [
+    {
+      title: "הנתונים — ומה מחפשים",
+      body: (
+        <>
+          <ul className="grid gap-1.5 sm:grid-cols-2">
+            {(
+              [
+                ["לקוחות ב-1.1.2025", TZAAD.openingCustomers],
+                ["הפרשה ב-1.1.2025", TZAAD.openingAllowance],
+                ["מכירות באשראי בשנה", TZAAD.creditSales],
+                ["גבייה מלקוחות", TZAAD.collections],
+                ["חוב אבוד (לקוח שנעלם)", TZAAD.badDebt],
+              ] as [string, number][]
+            ).map(([t, v]) => (
+              <li key={t} className="flex justify-between gap-2 rounded-lg bg-surface-2/70 px-3 py-1.5 text-[14.5px]">
+                <span>{t}</span>
+                <Money v={v} className="font-semibold" />
+              </li>
+            ))}
+            <li className="flex justify-between gap-2 rounded-lg bg-surface-2/70 px-3 py-1.5 text-[14.5px]">
+              <span>שיעור הלקוחות שלא ישלמו</span>
+              <span className="font-semibold">{pct(TZAAD.rate)}</span>
+            </li>
+          </ul>
+          <KeyCard>מחפשים: כמה הוצאות הפסדי אשראי תרשום החנות ב-2025?</KeyCard>
+        </>
+      ),
+    },
+    ...TZAAD_ENTRIES.slice(0, 3).map((x, i) => ({
+      title: `${x.id}. ${x.text}${i === 2 ? " — בלי הוצאה" : ""}`,
+      body: (
+        <>
+          <p className="text-[14px] text-muted">
+            <strong className="text-fg">מאיפה: </strong>
+            {["\"מכרה בהקפה\" — הלקוחות גדלים.", "\"גבתה מהלקוחות\" — הלקוחות קטנים, המזומן גדל.", "ההפסד כבר נחזה בהפרשה, ולכן מוחקים את החוב כנגדה — לא כנגד הוצאה."][i]}
+          </p>
+          <Posted entries={TZAAD_ENTRIES} at={i} opening={TZAAD_OPEN} title="פקודת היומן" note={null} />
+        </>
+      ),
+    })),
+    {
+      title: "יתרת הלקוחות בסוף השנה — מתוך הכרטיס",
+      body: (
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] sm:items-start">
+          <TBox t={tzaadCard("לקוחות", 3)} totals />
+          <div className="space-y-2">
+            <Calc result={<Money v={TZAAD_C.customers} />}>
+              {f(TZAAD.openingCustomers)} + {f(TZAAD.creditSales)} − {f(TZAAD.collections)} − {f(TZAAD.badDebt)}
+            </Calc>
+            <p className="text-[14.5px]">היתרה היא הנעלם שסוגר את הכרטיס: הפרש שני הצדדים.</p>
+          </div>
         </div>
-        <EntryView entry={CUTOFF.accruedPower} title={CUTOFF.accruedPower.text} note="גם בלי חשבונית יודעים שהחשמל נצרך בדצמבר — רושמים את ההוצאה לפי הסכום הידוע או אומדן." />
-
-        <h3 className="pt-2 text-lg font-semibold text-fg">דוגמה מלאה: חברת רונן בע&quot;מ, 31.12.2017</h3>
-        <p>
-          רונן הוקמה ב-2016. זה מאזן הבוחן <strong>הראשוני</strong> שלה — לפני ההתאמות. העודפים (יתרת הפתיחה של 2017) הם בחובה: הפסדים צבורים של{" "}
-          <Money v={RONEN.preliminary["עודפים"]} />.
-        </p>
-        <TBTable tb={trialBalance(RONEN.preliminary)} caption="מאזן בוחן ראשוני ליום 31.12.2017" />
-        <p>לכל סעיף שואלים שלוש שאלות: מה קרה? מה נרשם? ומה היה צריך להירשם? הפער — זו פקודת ההתאמה או התיקון.</p>
-        <div className="space-y-3">
-          {RONEN.items.map((it) => (
-            <details key={it.title} className="group card overflow-hidden" open={it.title === "פרסום"}>
-              <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 font-semibold text-fg hover:bg-surface-2/50 [&::-webkit-details-marker]:hidden">
-                <span className="num grid h-7 w-7 place-items-center rounded-full bg-accent-soft text-xs text-accent">{it.entry.id}</span>
-                {it.title}
-                <span className="ms-auto text-xs font-normal text-muted group-open:hidden">פתחו</span>
-              </summary>
-              <div className="space-y-2 border-t border-line px-5 py-4 text-[15px]">
-                <p>{it.story}</p>
-                <p>
-                  <strong className="text-muted">מה נרשם: </strong>
-                  {it.recorded}
-                </p>
-                <p>
-                  <strong className="text-muted">מה צריך להיות: </strong>
-                  {it.should}
-                </p>
-                <EntryView entry={it.entry} title={it.entry.text} />
-              </div>
-            </details>
-          ))}
+      ),
+    },
+    {
+      title: "כמה הפרשה צריכה להיות ב-31.12?",
+      body: (
+        <>
+          <Calc result={<Money v={TZAAD_C.required} />}>
+            לקוחות <Money v={TZAAD_C.customers} /> (מהצעד הקודם) × {pct(TZAAD.rate)}
+          </Calc>
+          <p className="text-[14.5px]">זו יתרת הסגירה שחייבת להיות בכרטיס ההפרשה.</p>
+        </>
+      ),
+    },
+    {
+      title: "מה כבר יש בהפרשה — ומה חסר?",
+      body: (
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] sm:items-start">
+          <TBox t={tzaadCard("הפרשה להפסדי אשראי חזויים", 3)} totals />
+          <div className="space-y-2">
+            <Calc result={<Money v={TZAAD_C.before} />}>
+              יש: פתיחה {f(TZAAD.openingAllowance)} − חוב אבוד {f(TZAAD.badDebt)}
+            </Calc>
+            <Calc result={<Money v={TZAAD_C.expense} />}>
+              חסר: נדרש {f(TZAAD_C.required)} − יש {f(TZAAD_C.before)}
+            </Calc>
+            <p className="text-[14.5px]">מה שחסר — זו ההוצאה של השנה.</p>
+          </div>
         </div>
-        <TBTable tb={trialBalance(RONEN_FINAL)} caption="מאזן בוחן מתוקן ליום 31.12.2017" kind />
-        <StatementsView s={RONEN_S} year="2017" />
-        <Rule>
-          רווח 2017: <Money v={RONEN_S.profit} />. העודפים: מהפסדים צבורים של <Money v={RONEN.preliminary["עודפים"]} /> (חובה) ל-
-          <Money v={-RONEN_S.equity.find(([a]) => a === "עודפים")![1]} /> (חובה) — ההפסד המצטבר קטן ברווח השנה.
-        </Rule>
-      </Chapter>
+      ),
+    },
+    {
+      title: `${TZAAD_ENTRIES[3].id}. ${TZAAD_ENTRIES[3].text}`,
+      body: <Posted entries={TZAAD_ENTRIES} at={3} opening={TZAAD_OPEN} title="פקודת ההתאמה" note={`עכשיו בהפרשה ${f(TZAAD_C.required)} — בדיוק הנדרש.`} />,
+    },
+    {
+      title: "במאזן: לקוחות נטו",
+      body: (
+        <>
+          <Calc result={<Money v={TZAAD_C.net} />}>
+            לקוחות <Money v={TZAAD_C.customers} /> − הפרשה <Money v={TZAAD_C.required} />
+          </Calc>
+          <Rule>
+            הוצאה = ההפרשה הנדרשת − מה שכבר יש בה. כאן: {f(TZAAD_C.required)} − {f(TZAAD_C.before)} = {f(TZAAD_C.expense)}.
+          </Rule>
+        </>
+      ),
+    },
+  ];
 
-      <Chapter n={13} id="inventory" title="מלאי סגירה" lead="מה שלא נמכר — לא הוצאה של השנה">
-        <p>
-          בשיטה של הקורס, כל קנייה של סחורה נרשמת בחשבון קניות. אבל לא כל מה שנקנה נמכר. בסוף השנה סופרים את מה שנשאר במחסן — זה{" "}
-          <Term he="מלאי הסגירה" /> — ומוציאים אותו מההוצאות. מה שנשאר בהוצאות הוא <Term he="עלות המכר" />: העלות של
-          מה שבאמת נמכר.
-        </p>
-        <Rule>עלות המכר = מלאי פתיחה + קניות − מלאי סגירה</Rule>
-        <Card title='חברת מיה בע"מ, 2020'>
-          <DataTable
-            head={["", "סכום"]}
-            rows={[
-              ["מלאי פתיחה (מה שנשאר מ-2019)", MIA.opening],
-              ["ועוד קניות השנה (אחרי תיקון מקדמה שנרשמה בטעות כקנייה)", MIA.purchases],
-              ["פחות מלאי סגירה (ספירה ב-31.12.2020)", -MIA.closing],
-            ]}
-            foot={["עלות המכר", costOfSales(MIA)]}
-          />
-          <EntryView
-            entry={{
-              id: "מלאי",
-              date: "31.12.2020",
-              text: "רישום מלאי הסגירה",
-              lines: [
-                { account: "מלאי סגירה מאזני", dr: MIA.closing },
-                { account: "מלאי סגירה רווח או הפסד", cr: MIA.closing },
-              ],
-            }}
-            note="שני חשבונות באותו סכום: אחד מאזני (הנכס שבמחסן), ואחד תוצאתי (שמקטין את עלות הקניות). בשנה הבאה, המלאי הזה יהיה מלאי הפתיחה."
-          />
-        </Card>
-        <Card title="מלאי בשאלות מאזן בוחן: מה באמת צריך לדעת">
-          <p>
-            בשאלות מאזן בוחן אין בדרך כלל חישוב מורכב של המלאי הפיזי — כמות הסגירה ועלותה ניתנות בשאלה. הכלל המרכזי הוא אחד: המלאי נרשם לפי{" "}
-            <strong>הנמוך מבין העלות בספרים לבין שווי המימוש נטו</strong> — הסכום שנקבל עליו במכירה, פחות מה שיעלה למכור אותו.
-          </p>
-          <p className="rounded-lg bg-surface-2/70 px-3 py-2 text-sm">
-            למשל במיה: עלות המלאי בספרים <Money v={MIA.closing} />. אם שווי המימוש נטו שלו היה רק <Money v={MIA_NRV} />, רושמים{" "}
-            <strong>
-              <Money v={Math.min(MIA.closing, MIA_NRV)} />
-            </strong>{" "}
-            — כי אי אפשר להציג נכס ביותר ממה שיביא.
-          </p>
-          <EntryView
-            entry={{
-              id: "התאמה",
-              date: "31.12",
-              text: "פקודת התאמה תקופתית — מלאי סגירה",
-              lines: [
-                { account: "מלאי (מאזני)", dr: Math.min(MIA.closing, MIA_NRV) },
-                { account: "שינוי מלאי (רווח והפסד)", cr: Math.min(MIA.closing, MIA_NRV) },
-              ],
-            }}
-            note="זו פקודת התאמה תקופתית: מבצעים אותה פעם אחת, בסוף התקופה, אחרי ספירת המלאי — ולא במהלך השנה. בחלק מהשאלות החשבונות נקראים מלאי סגירה מאזני ומלאי סגירה רווח או הפסד; זו אותה פקודה."
-          />
-        </Card>
-        <Link
-          href="/basics/inventory"
-          className="group flex items-center gap-4 rounded-xl border-2 border-accent bg-accent-soft px-5 py-4 transition-colors hover:bg-accent-soft/70"
-        >
-          <span className="min-w-0 flex-1">
-            <span className="block text-[17px] font-bold text-fg">המדריך המלא למלאי נמצא בעמוד נפרד</span>
-            <span className="mt-0.5 block text-sm text-fg/85">
-              שם הנושא נלמד מההתחלה, צעד אחר צעד: רישום תקופתי ותמידי, FIFO וממוצעים, שווי מימוש נטו, חילוץ נעלמים — ומחשבון שמראה את כל הדרך.
-            </span>
-            <span className="mt-1.5 block text-sm font-semibold text-accent">למדריך המלא ←</span>
-          </span>
-          <ArrowLeft className="h-5 w-5 shrink-0 text-accent transition-transform group-hover:-translate-x-1" aria-hidden />
-        </Link>
-        <p className="rounded-xl border border-amber-500/40 bg-amber-500/[0.08] px-4 py-3 text-[15px] text-fg">
-          <strong>שימו לב:</strong> הדוגמה כאן היא דוגמה קצרה לחזרה — למי שכבר עבר על המדריך. אם זו הפעם הראשונה שאתם פוגשים מלאי, התחילו במדריך וחזרו לכאן אחר
-          כך.
-        </p>
-      </Chapter>
-
-      <Chapter n={14} id="creditloss" title="הפסדי אשראי" lead="לא כל לקוח ישלם — וצריך לומר זאת מראש">
-        <p>
-          כשמוכרים באשראי, חלק מהלקוחות לא ישלמו. כדי שהלקוחות לא יוצגו ביותר ממה שבאמת ייגבה, מעריכים את ההפסד מראש ורושמים{" "}
-          <Term he="הפרשה להפסדי אשראי חזויים" /> — חשבון שמקטין את הלקוחות במאזן. שלושה מצבים:
-        </p>
-        <ul className="list-inside list-disc space-y-1">
-          <li>
-            <strong>הפרשה ספציפית</strong> — ללקוח מסוים שיש סיבה לחשוש לגביו (למשל 80% מהחוב שלו).
-          </li>
-          <li>
-            <strong>הפרשה כללית</strong> — אחוז קבוע מכל שאר הלקוחות.
-          </li>
-          <li>
-            <Term he="חוב אבוד" /> — כשברור שהלקוח לא ישלם (למשל פשט רגל): מוחקים את החוב מהלקוחות כנגד ההפרשה.
-          </li>
-        </ul>
-        <Link
-          href="/basics/credit-losses"
-          className="group flex items-center gap-4 rounded-xl border-2 border-accent bg-accent-soft px-5 py-4 transition-colors hover:bg-accent-soft/70"
-        >
-          <span className="min-w-0 flex-1">
-            <span className="block text-[17px] font-bold text-fg">המדריך המלא להפסדי אשראי נמצא בעמוד נפרד</span>
-            <span className="mt-0.5 block text-sm text-fg/85">
-              שם הנושא נלמד מההתחלה, צעד אחר צעד: הרעיון, מתווה 3 הכללים, שני כרטיסי T, חילוץ נעלמים, הפרשה ספציפית ושאלה ברמת בחינה.
-            </span>
-            <span className="mt-1.5 block text-sm font-semibold text-accent">למדריך המלא ←</span>
-          </span>
-          <ArrowLeft className="h-5 w-5 shrink-0 text-accent transition-transform group-hover:-translate-x-1" aria-hidden />
-        </Link>
-        <p className="rounded-xl border border-amber-500/40 bg-amber-500/[0.08] px-4 py-3 text-[15px] text-fg">
-          <strong>שימו לב:</strong> הדוגמה כאן היא דוגמה קצרה לחזרה — למי שכבר עבר על המדריך. אם זו הפעם הראשונה שאתם פוגשים הפסדי אשראי, התחילו במדריך וחזרו
-          לכאן אחר כך.
-        </p>
-
-        <Card title='דוגמה לחזרה: חנות הנעליים "צעד", 2025'>
-          <p>
-            ב-1.1.2025 הלקוחות של החנות חייבים לה <Money v={TZAAD.openingCustomers} />, ובהפרשה יש <Money v={TZAAD.openingAllowance} />. במהלך השנה החנות מכרה
-            בהקפה ב-<Money v={TZAAD.creditSales} />, גבתה מהלקוחות <Money v={TZAAD.collections} />, ולקוח אחד שחייב <Money v={TZAAD.badDebt} /> נעלם — החוב
-            אבוד. בסוף השנה החנות מעריכה ש-{pct(TZAAD.rate)} מהלקוחות לא ישלמו. כמה הוצאות הפסדי אשראי תרשום?
-          </p>
-
-          <Step n={1} title="רושמים את מה שקרה במהלך השנה">
-            <p>שלוש פקודות רגילות. שימו לב לשלישית: מחיקת החוב האבוד לא יוצרת הוצאה — ההפסד הזה כבר נחזה בהפרשה, ולכן מורידים אותו מהלקוחות ומההפרשה יחד.</p>
-            <div className="grid gap-3 xl:grid-cols-3">
-              {TZAAD_ENTRIES.slice(0, 3).map((x) => (
-                <EntryView key={x.id} entry={x} title={`${x.id}. ${x.text}`} />
+  return (
+    <>
+      <Lesson id="accrual" lead="הכנסה או הוצאה שייכות לשנה שבה נהנו מהן, לא לשנה שבה זז הכסף. כשהכסף זז בשנה אחרת, מתקנים בסוף השנה — ונוצרים חשבונות שממשיכים איתנו לשנה הבאה.">
+        <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+          <div className="grid grid-cols-[4.5rem_minmax(0,1fr)_minmax(0,1fr)] text-center text-[12px] font-bold text-muted">
+            <span className="bg-surface-2/70 py-2" />
+            <span className="bg-surface-2/70 py-2">הכסף זז מראש</span>
+            <span className="bg-surface-2/70 py-2">הכסף עוד לא זז</span>
+          </div>
+          {MATRIX.map((m) => (
+            <div key={m.row} className="grid grid-cols-[4.5rem_minmax(0,1fr)_minmax(0,1fr)] border-t border-line">
+              <span className="grid place-items-center bg-surface-2/40 text-[13px] font-bold text-fg">{m.row}</span>
+              {m.cells.map(([, name, kind]) => (
+                <span key={name} className="border-s border-line px-2 py-2.5 text-center">
+                  <span className="block text-[14.5px] font-bold text-fg">{name}</span>
+                  <span className={cn("mt-0.5 inline-block rounded-full px-2 py-px text-[11px] font-semibold", kind === "נכס" ? "bg-debit/10 text-debit" : "bg-credit/10 text-credit")}>{kind}</span>
+                </span>
               ))}
             </div>
-          </Step>
+          ))}
+        </div>
+        <Stepper label="ארבעת חשבונות החתך" steps={cutoff} />
+        <h3 className="pt-2 text-lg font-semibold text-fg">דוגמה מלאה: חברת רונן בע&quot;מ, 31.12.2017</h3>
+        <Stepper label="רונן · 31.12.2017" steps={ronen} />
+      </Lesson>
 
-          <Step n={2} title="כמה הלקוחות חייבים בסוף השנה?">
-            <p>
-              מה שהיה, ועוד מה שנמכר בהקפה, פחות מה שנגבה ופחות מה שנמחק: {f(TZAAD.openingCustomers)} + {f(TZAAD.creditSales)} − {f(TZAAD.collections)} −{" "}
-              {f(TZAAD.badDebt)} ={" "}
-              <strong>
-                <Money v={TZAAD_C.customers} />
-              </strong>
-              .
+      <Lesson id="inventory" lead="מה שלא נמכר עד סוף השנה אינו הוצאה של השנה: סופרים אותו, מוציאים אותו מהעלות, ורושמים אותו כנכס.">
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+          <div className="rounded-2xl border-2 border-accent/40 bg-surface p-4" role="math" aria-label="עלות המכר שווה מלאי פתיחה ועוד קניות פחות מלאי סגירה">
+            <p className="text-[18px] font-extrabold text-fg">עלות המכר =</p>
+            <ul className="mt-2 space-y-1.5 text-[15.5px]">
+              {(
+                [
+                  ["", "יתרת פתיחה מלאי", MIA.opening],
+                  ["+", "קניות השנה", MIA.purchases],
+                  ["−", "מלאי סגירה", MIA.closing],
+                ] as [string, string, number][]
+              ).map(([op, t, v]) => (
+                <li key={t} className="flex items-center gap-2">
+                  <span className="w-5 text-center text-lg font-bold text-accent">{op}</span>
+                  <span className="flex-1 font-medium text-fg">{t}</span>
+                  <Money v={v} plain className="text-muted" />
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 flex items-center gap-2 border-t-2 border-fg/70 pt-2 font-bold">
+              <span className="w-5" />
+              <span className="flex-1">עלות המכר במיה, 2020</span>
+              <Money v={costOfSales(MIA)} plain />
             </p>
-          </Step>
-
-          <Step n={3} title="כמה הפרשה צריכה להיות בסוף השנה?">
-            <p>
-              {pct(TZAAD.rate)} מהלקוחות לא צפויים לשלם: {f(TZAAD_C.customers)} × {pct(TZAAD.rate)} ={" "}
-              <strong>
-                <Money v={TZAAD_C.required} />
-              </strong>
-              . זו יתרת הסגירה של ההפרשה — הסכום שחייב להיות בה ב-31.12.
-            </p>
-          </Step>
-
-          <Step n={4} title="כמה כבר יש בהפרשה — ומה חסר?">
-            <p>
-              ההפרשה נפתחה ב-{f(TZAAD.openingAllowance)}, ומחיקת החוב השתמשה ב-{f(TZAAD.badDebt)} ממנה: נשארו <Money v={TZAAD_C.before} />. צריך{" "}
-              {f(TZAAD_C.required)}, ולכן משלימים רק את מה שחסר: {f(TZAAD_C.required)} − {f(TZAAD_C.before)} ={" "}
-              <strong>
-                <Money v={TZAAD_C.expense} />
-              </strong>{" "}
-              — אלה הוצאות הפסדי האשראי של השנה.
-            </p>
-            <EntryView entry={TZAAD_ENTRIES[3]} title={`${TZAAD_ENTRIES[3].id}. ${TZAAD_ENTRIES[3].text}`} />
-          </Step>
-
-          <p className="text-sm font-semibold text-fg">כך נראים שני הכרטיסים בסוף השנה (י.פ = יתרת פתיחה):</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {TZAAD_LEDGER.filter((t) => t.account === "לקוחות" || t.account === "הפרשה להפסדי אשראי חזויים").map((t) => (
-              <TCard key={t.account} t={t} />
-            ))}
           </div>
-          <DataTable
-            caption="במאזן ליום 31.12.2025 — סעיף הלקוחות"
-            head={["", "סכום"]}
-            rows={[
-              ["לקוחות", TZAAD_C.customers],
-              ["בניכוי: הפרשה להפסדי אשראי חזויים", -TZAAD_C.required],
-            ]}
-            foot={["לקוחות, נטו — מה שהחנות באמת מצפה לגבות", TZAAD_C.net]}
-          />
-          <Rule>
-            בקיצור: הוצאה = ההפרשה הנדרשת בסוף השנה פחות מה שכבר יש בה. כאן: {f(TZAAD_C.required)} − {f(TZAAD_C.before)} = {f(TZAAD_C.expense)}.
-          </Rule>
-        </Card>
-      </Chapter>
+          <div className="space-y-2">
+            <KeyCard>מלאי הסגירה נמדד לפי הנמוך מבין העלות לבין שווי המימוש נטו.</KeyCard>
+            <p className="text-[14.5px]">
+              שווי מימוש נטו = מה שנקבל במכירה, פחות מה שיעלה למכור. במיה העלות <Money v={MIA.closing} />:
+            </p>
+            <ul className="space-y-1 text-[14px]">
+              <li className="rounded-lg bg-surface-2/70 px-3 py-1.5">
+                שווי מימוש <Money v={MIA_NRV_HIGH} /> ← רושמים <strong><Money v={Math.min(MIA.closing, MIA_NRV_HIGH)} /></strong> (העלות)
+              </li>
+              <li className="rounded-lg bg-surface-2/70 px-3 py-1.5">
+                אילו היה <Money v={MIA_NRV_LOW} /> ← היינו רושמים <strong><Money v={Math.min(MIA.closing, MIA_NRV_LOW)} /></strong>, ועלות המכר הייתה עולה ב-
+                <Money v={MIA.closing - MIA_NRV_LOW} />
+              </li>
+            </ul>
+          </div>
+        </div>
+        <Posted entries={[MIA_ENTRY]} at={0} note="שני חשבונות באותו סכום: הנכס שבמחסן, והקטנת העלות ברווח והפסד. בשנה הבאה זה מלאי הפתיחה." />
+      </Lesson>
+
+      <Lesson id="creditloss" lead="חלק מהלקוחות לא ישלמו. כדי שהמאזן לא יציג חוב שלא ייגבה, מפרישים מראש: הוצאה השנה, וחשבון הפרשה שמקטין את הלקוחות.">
+        <div className="grid gap-2 md:grid-cols-3">
+          {(
+            [
+              ["ההפרשה הנדרשת", "שיעור × יתרת הלקוחות בסוף השנה"],
+              ["ההוצאה", "ההפרשה הנדרשת − מה שכבר יש בה"],
+              ["חוב אבוד", "נמחק כנגד ההפרשה (ח׳ הפרשה / ז׳ לקוחות) — בלי הוצאה"],
+            ] as [string, string][]
+          ).map(([t, d]) => (
+            <div key={t} className="rounded-xl border border-line bg-surface p-3">
+              <p className="text-sm font-bold text-accent">{t}</p>
+              <p className="mt-0.5 text-[14.5px] text-fg">{d}</p>
+            </div>
+          ))}
+        </div>
+        <p className="rounded-xl bg-surface-2/70 px-4 py-3 text-[15px]">
+          <strong>איך זה מופיע בשאלה:</strong> נותנים יתרות פתיחה, מכירות באשראי, גבייה, חוב אבוד ושיעור. הנעלמים — יתרת הלקוחות בסוף השנה וההוצאה. מוצאים אותם מכרטיסי ה-T: הנעלם
+          הוא המספר שסוגר את הכרטיס.
+        </p>
+        <Stepper label='חנות הנעליים "צעד" · 2025' steps={tzaad} />
+      </Lesson>
     </>
   );
 }

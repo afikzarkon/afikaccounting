@@ -192,6 +192,21 @@ export function carryForward(b: Balances): Balances {
   return out;
 }
 
+/**
+ * The year-end closing entry: every income account is debited by its balance,
+ * every expense credited by its own, and the difference — the year's profit or
+ * loss — goes to retained earnings: a credit for a profit, a debit for a loss.
+ */
+export function closingEntry(b: Balances, id: string, date: string): Entry {
+  const pl = Object.entries(b).filter(([a, v]) => !isBalanceSheet(a) && Math.abs(v) > EPS);
+  const profit = statements(b).profit;
+  const dr: Line[] = pl.filter(([, v]) => v < 0).map(([account, v]) => ({ account, dr: -v }));
+  const cr: Line[] = pl.filter(([, v]) => v > 0).map(([account, v]) => ({ account, cr: v }));
+  if (profit < -EPS) dr.push({ account: "עודפים", dr: -profit });
+  if (profit > EPS) cr.push({ account: "עודפים", cr: profit });
+  return { id, date, text: profit >= 0 ? "סגירת החשבונות התוצאתיים: הרווח עובר לעודפים" : "סגירת החשבונות התוצאתיים: ההפסד יורד מהעודפים", lines: [...dr, ...cr] };
+}
+
 // ---------------------------------------------------------------------------
 // The examples. Amounts are as given; every total is computed from them.
 
@@ -225,38 +240,28 @@ export const KITS = {
   },
 };
 
-/** Chapter 8: credit, advances and a loan. */
+/** Chapters 8–9: a credit story, an advances story and a loan, each a short run of entries posted one after another. */
 export const CREDIT = {
-  pairs: [
-    {
-      title: "מכירה באשראי ללקוח",
-      first: e("א", "", "מכרת סחורה ב-1,000 ₪, הלקוח ישלם בעוד שבוע (או נתן צ'ק דחוי)", [{ account: "לקוחות", dr: 1_000 }, { account: "מכירות", cr: 1_000 }]),
-      then: e("ב", "", "הלקוח שילם את החוב במזומן", [{ account: "מזומן", dr: 1_000 }, { account: "לקוחות", cr: 1_000 }]),
-    },
-    {
-      title: "קנייה באשראי מספק",
-      first: e("א", "", "קנית סחורה ב-1,000 ₪, תשלם לספק בעוד שבוע (או נתת צ'ק דחוי)", [{ account: "קניות", dr: 1_000 }, { account: "ספקים", cr: 1_000 }]),
-      then: e("ב", "", "שילמת לספק את החוב במזומן", [{ account: "ספקים", dr: 1_000 }, { account: "מזומן", cr: 1_000 }]),
-    },
-    {
-      title: "מקדמה מלקוח",
-      first: e("א", "", "לקוח שילם 1,000 ₪ מראש על מוצר שיקבל בעוד חודש", [{ account: "מזומן", dr: 1_000 }, { account: "מקדמות מלקוחות", cr: 1_000 }]),
-      then: e("ב", "", "סיפקת ללקוח את המוצר", [{ account: "מקדמות מלקוחות", dr: 1_000 }, { account: "מכירות", cr: 1_000 }]),
-    },
-    {
-      title: "מקדמה לספק",
-      first: e("א", "", "שילמת לספק 1,000 ₪ מראש על סחורה שתגיע בעוד חודש", [{ account: "מקדמות לספקים", dr: 1_000 }, { account: "מזומן", cr: 1_000 }]),
-      then: e("ב", "", "הספק סיפק לך את הסחורה", [{ account: "קניות", dr: 1_000 }, { account: "מקדמות לספקים", cr: 1_000 }]),
-    },
-  ],
+  credit: [
+    e("1", "", "מכרת סחורה ב-1,000 ₪ באשראי: הלקוח ישלם בעוד שבוע", [{ account: "לקוחות", dr: 1_000 }, { account: "מכירות", cr: 1_000 }], "המכירה קרתה היום, ולכן נרשמת היום. במקום מזומן נכנס חוב של הלקוח."),
+    e("2", "", "הלקוח שילם את החוב במזומן", [{ account: "מזומן", dr: 1_000 }, { account: "לקוחות", cr: 1_000 }], "אין הכנסה חדשה: החוב של הלקוח הופך למזומן."),
+    e("3", "", "קנית סחורה ב-600 ₪ באשראי: תשלם לספק בעוד שבוע", [{ account: "קניות", dr: 600 }, { account: "ספקים", cr: 600 }], "הסחורה הגיעה היום. במקום מזומן נוצר חוב לספק."),
+    e("4", "", "שילמת לספק את החוב במזומן", [{ account: "ספקים", dr: 600 }, { account: "מזומן", cr: 600 }], "אין הוצאה חדשה: החוב לספק נסגר והמזומן יוצא."),
+  ] as Entry[],
+  advances: [
+    e("1", "", "לקוח שילם 1,000 ₪ מראש על מוצר שיקבל בעוד חודש", [{ account: "מזומן", dr: 1_000 }, { account: "מקדמות מלקוחות", cr: 1_000 }], "עוד לא מכרנו כלום: אנחנו חייבים ללקוח מוצר. זו התחייבות, לא הכנסה."),
+    e("2", "", "סיפקת ללקוח את המוצר", [{ account: "מקדמות מלקוחות", dr: 1_000 }, { account: "מכירות", cr: 1_000 }], "החוב ללקוח נסגר, ורק עכשיו נרשמת ההכנסה."),
+    e("3", "", "שילמת לספק 600 ₪ מראש על סחורה שתגיע בעוד חודש", [{ account: "מקדמות לספקים", dr: 600 }, { account: "מזומן", cr: 600 }], "הספק חייב לנו סחורה. זה נכס, עוד לא קנייה."),
+    e("4", "", "הספק סיפק את הסחורה", [{ account: "קניות", dr: 600 }, { account: "מקדמות לספקים", cr: 600 }], "המקדמה נסגרת, ורק עכשיו נרשמת הקנייה."),
+  ] as Entry[],
   loan: [
-    e("1", "1.1.2023", "החברה לקחה הלוואה של 100,000 ₪ מהבנק", [{ account: "מזומן", dr: 100_000 }, { account: "הלוואה", cr: 100_000 }]),
-    e("2", "31.12.2023", "החברה פרעה מחצית מההלוואה במזומן", [{ account: "הלוואה", dr: 50_000 }, { account: "מזומן", cr: 50_000 }]),
-    e("3", "31.12.2023", "החברה שילמה ריבית של 5,000 ₪ במזומן", [{ account: "הוצאות ריבית", dr: 5_000 }, { account: "מזומן", cr: 5_000 }]),
-  ],
+    e("1", "1.1.2023", "החברה לקחה הלוואה של 100,000 ₪ מהבנק", [{ account: "מזומן", dr: 100_000 }, { account: "הלוואה", cr: 100_000 }], "הכסף נכנס, והחברה חייבת אותו לבנק. זו התחייבות, לא הכנסה."),
+    e("2", "31.12.2023", "החברה שילמה ריבית של 5,000 ₪ במזומן (5% לשנה)", [{ account: "הוצאות ריבית", dr: 5_000 }, { account: "מזומן", cr: 5_000 }], "ריבית היא המחיר על השימוש בכסף, ולכן היא הוצאה."),
+    e("3", "31.12.2023", "החברה פרעה מחצית מההלוואה במזומן: 50,000 ₪", [{ account: "הלוואה", dr: 50_000 }, { account: "מזומן", cr: 50_000 }], "החזר הקרן אינו הוצאה: הוא רק מקטין את החוב."),
+  ] as Entry[],
 };
 
-/** Chapters 10–11: Yuval Ltd, set up on 1.1.2020. Its trial balance for 2020 is given as balances. */
+/** Chapters 11–13: Yuval Ltd, set up on 1.1.2020. Its trial balance for 2020 is given as balances. */
 export const YUVAL = {
   tb2020: {
     לקוחות: 655_300,
@@ -282,33 +287,45 @@ export const YUVAL = {
   ] as Entry[],
 };
 
-/** Chapter 12: the short cut-off examples. */
-export const CUTOFF = {
-  prepaid: e("1", "31.12.2020", "1.1.2020: שולמה שכירות לשנתיים מראש, 120,000 ₪", [
-    { account: "הוצאות שכירות", dr: 60_000 },
-    { account: "הוצאות שכירות מראש", dr: 60_000 },
-    { account: "מזומן", cr: 120_000 },
-  ]),
-  accruedSalary: e("2", "31.12.2020", "שכר דצמבר טרם נרשם: 110,000 ₪ ל-11 חודשים, כלומר 10,000 ₪ לחודש", [
-    { account: "הוצאות שכר", dr: 110_000 / 11 },
-    { account: "הוצאות שכר לשלם", cr: 110_000 / 11 },
-  ]),
-  accruedPower: e("3", "31.12.2020", "חשבונית החשמל לדצמבר, 1,000 ₪, תגיע רק בינואר", [
-    { account: "הוצאות חשמל", dr: 1_000 },
-    { account: "הוצאות חשמל לשלם", cr: 1_000 },
-  ]),
-  unearned: e("4", "31.12.2019", "1.1.2019: התקבלה שכירות ל-3 שנים מראש, 120,000 ₪", [
-    { account: "מזומן", dr: 120_000 },
-    { account: "הכנסות שכירות", cr: 120_000 / 3 },
-    { account: "הכנסות שכירות מראש", cr: (120_000 * 2) / 3 },
-  ]),
-  accruedInterest: e("5", "31.12.2020", "הלוואה של 100,000 ₪ שניתנה לעובד ב-1.1.2020, ריבית 10% שתשולם ב-1.1.2021", [
-    { account: "הכנסות ריבית לקבל", dr: 100_000 * 0.1 },
-    { account: "הכנסות ריבית", cr: 100_000 * 0.1 },
-  ]),
+/**
+ * Chapter 14: the four cut-off accounts, one small case each — what was
+ * recorded during the year, then the year-end adjustment.
+ */
+const AC = {
+  prepaid: { paid: 1_200, months: 12, monthsThisYear: 3 },
+  accrued: { recorded: 110_000, monthsRecorded: 11, monthsMissing: 1 },
+  unearned: { received: 6_000, months: 6, monthsThisYear: 2 },
+  receivable: { loan: 100_000, rate: 0.1, monthsThisYear: 6 },
+};
+const acPrepaid = round2((AC.prepaid.paid * (AC.prepaid.months - AC.prepaid.monthsThisYear)) / AC.prepaid.months);
+const acMissing = round2((AC.accrued.recorded / AC.accrued.monthsRecorded) * AC.accrued.monthsMissing);
+const acUnearned = round2((AC.unearned.received * (AC.unearned.months - AC.unearned.monthsThisYear)) / AC.unearned.months);
+const acInterest = round2(AC.receivable.loan * AC.receivable.rate * (AC.receivable.monthsThisYear / 12));
+
+export const ACCRUAL = {
+  ...AC,
+  results: { prepaid: acPrepaid, accrued: acMissing, unearned: acUnearned, receivable: acInterest },
+  entries: {
+    prepaid: [
+      e("1", "1.10", "שולם ביטוח לשנה, 1,200 ₪, ונרשם כולו כהוצאה", [{ account: "הוצאות ביטוח", dr: AC.prepaid.paid }, { account: "מזומן", cr: AC.prepaid.paid }]),
+      e("2", "31.12", "התאמה: החלק של השנה הבאה עובר להוצאות מראש", [{ account: "הוצאות ביטוח מראש", dr: acPrepaid }, { account: "הוצאות ביטוח", cr: acPrepaid }]),
+    ],
+    accrued: [
+      e("1", "1–11", "שכר ינואר עד נובמבר שולם ונרשם", [{ account: "הוצאות שכר", dr: AC.accrued.recorded }, { account: "מזומן", cr: AC.accrued.recorded }]),
+      e("2", "31.12", "התאמה: שכר דצמבר, שישולם רק בינואר", [{ account: "הוצאות שכר", dr: acMissing }, { account: "הוצאות שכר לשלם", cr: acMissing }]),
+    ],
+    unearned: [
+      e("1", "1.11", "התקבלו 6,000 ₪ שכירות מחסן לחצי שנה, ונרשמו כולם כהכנסה", [{ account: "מזומן", dr: AC.unearned.received }, { account: "הכנסות שכירות", cr: AC.unearned.received }]),
+      e("2", "31.12", "התאמה: החלק של השנה הבאה עובר להכנסות מראש", [{ account: "הכנסות שכירות", dr: acUnearned }, { account: "הכנסות שכירות מראש", cr: acUnearned }]),
+    ],
+    receivable: [
+      e("1", "1.7", "החברה הלוותה לעובד 100,000 ₪; הריבית תשולם ב-30.6 בשנה הבאה", [{ account: "הלוואה לעובד", dr: AC.receivable.loan }, { account: "מזומן", cr: AC.receivable.loan }]),
+      e("2", "31.12", "התאמה: ריבית חצי השנה שכבר הורווחה", [{ account: "הכנסות ריבית לקבל", dr: acInterest }, { account: "הכנסות ריבית", cr: acInterest }]),
+    ],
+  } satisfies Record<keyof typeof AC, Entry[]>,
 };
 
-/** Chapters 12 and 15: Ronen Ltd, set up on 1.1.2016; the preliminary trial balance for 31.12.2017. */
+/** Chapters 14 and 17: Ronen Ltd, set up on 1.1.2016; the preliminary trial balance for 31.12.2017. */
 export const RONEN = {
   preliminary: {
     מזומן: 548_500,
@@ -363,11 +380,11 @@ export const RONEN = {
   },
 };
 
-/** Chapter 13: Mia Ltd's cost of sales, with purchases after the course's correction (500,000 less a 150,000 advance). */
+/** Chapter 15: Mia Ltd's cost of sales, with purchases after the course's correction (500,000 less a 150,000 advance). */
 export const MIA = { opening: 280_000, purchases: 500_000 - 150_000, closing: 315_000 };
 export const costOfSales = (m: { opening: number; purchases: number; closing: number }) => m.opening + m.purchases - m.closing;
 
-/** Chapter 14: Tzaad, a shoe shop, in 2025 — the simple case (a general allowance only); the full guide has the rest. */
+/** Chapter 16: Tzaad, a shoe shop, in 2025 — the simple case (a general allowance only); the full guide has the rest. */
 export const TZAAD = { openingCustomers: 200_000, openingAllowance: 10_000, creditSales: 500_000, collections: 456_000, badDebt: 4_000, rate: 0.05 };
 
 export function creditLoss(k: typeof TZAAD) {
@@ -604,10 +621,12 @@ export function allEntries(): Entry[] {
   return [
     ...KITS.entries,
     KITS.closing,
-    ...CREDIT.pairs.flatMap((p) => [p.first, p.then]),
+    ...CREDIT.credit,
+    ...CREDIT.advances,
     ...CREDIT.loan,
     ...YUVAL.entries2021,
-    ...Object.values(CUTOFF),
+    closingEntry(YUVAL.tb2020, "סגירה", "31.12.2020"),
+    ...Object.values(ACCRUAL.entries).flat(),
     ...RONEN.adjustments,
     ...creditLossEntries(TZAAD),
   ];

@@ -149,6 +149,40 @@
     font-family: var(--font-sans);
     font-size: 0.86em;
   }
+  /* The basics page: a step slides in; a fresh posting in a T-account lights up, then settles. */
+  .anim-step-in {
+    animation: step-in 0.28s ease-out both;
+  }
+  .anim-post {
+    animation: post-in 0.9s ease-out both;
+  }
+}
+
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes post-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  45% {
+    opacity: 1;
+    transform: none;
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
 }
 
 @media print {
