@@ -1,6 +1,8 @@
-import { Building2, Check, X } from "lucide-react";
+import { Building2, Check, Globe, Languages, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { KeyCard, Lesson, Money, SideChip } from "./ui";
+import type { ScreenContent } from "@/components/study-mode/shell";
+import { GrammarWidget, TranslatorWidget } from "./language-widgets";
+import { KeyCard, Money, Rule, SideChip, Term } from "./ui";
 
 // Shula, from the neighbourhood: a household described the way a business is. Illustrative figures; income and expenses are for a whole year.
 const SHULA = {
@@ -29,10 +31,117 @@ const CREDIT_KINDS: Kind[] = [
   { name: "הכנסות", plain: "מה שהעסק הרוויח מהפעילות שלו", example: "מכירות, הכנסות מייעוץ, הכנסות משכירות", report: "רווח והפסד" },
 ];
 
-export function IntroChapters() {
-  return (
-    <>
-      <Lesson id="what" lead={<>חשבונאות היא &quot;שפת העסקים&quot;: היא מתרגמת את מה שקורה בעסק למספרים שכולם מבינים.</>}>
+// The language, side by side with accounting: each part of a language has its twin.
+const PARTS: { language: string; accounting: string; example: string }[] = [
+  { language: "מילים", accounting: "חשבונות", example: "מזומן, ספקים, מכירות, שכר דירה" },
+  { language: "דקדוק", accounting: "תקני חשבונאות", example: "הכללים שקובעים איך רושמים כל דבר" },
+  { language: "משפט", accounting: "רישום של אירוע אחד", example: "״מכרנו עוגה ב-1,200 ₪ במזומן״" },
+  { language: "סיפור שלם", accounting: "הדוחות הכספיים", example: "מה קרה בעסק השנה, ומה מצבו היום" },
+];
+
+// Who speaks this language with a business, and what each of them wants to know.
+const READERS: { who: string; asks: string }[] = [
+  { who: "הבנק", asks: "אם אתן לעסק הלוואה — הוא יוכל להחזיר אותה?" },
+  { who: "משקיעים", asks: "העסק מרוויח? שווה לשים בו את הכסף שלי?" },
+  { who: "רשות המסים", asks: "כמה הרווחתם? הדוחות הם נקודת המוצא לחישוב המס." },
+  { who: "אתם", asks: "אני בכלל מרוויח? על מה הולך הכסף?" },
+];
+
+export const INTRO_SCREENS: Record<string, ScreenContent> = {
+  language: {
+    lead: "ברוכים הבאים! חשבונאות היא שפה — שפת העסקים. כמו כל שפה זרה, לומדים אותה מאפס, מילה אחרי מילה, ואחרי זה היא נשמעת טבעית.",
+    body: (
+      <>
+        <p>
+          דמיינו שפתחתם מאפייה קטנה. כל יום קורים בה דברים: מוכרים עוגות, משלמים שכר דירה, קונים קמח. כל זה קורה &quot;בשפה של בני אדם&quot; — סיפורים, קבלות,
+          שיחות. אבל ברגע שתרצו הלוואה מהבנק, שותף שישקיע, או לדווח למס — תצטרכו לספר את הסיפור הזה <strong>בשפה שכולם מבינים</strong>. זו החשבונאות.
+        </p>
+        <div className="overflow-hidden rounded-2xl border border-line">
+          <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1.4fr)] bg-surface-2 px-3 py-2 text-[12.5px] font-bold text-muted">
+            <span>בשפה רגילה</span>
+            <span>בחשבונאות</span>
+            <span className="max-sm:hidden">למשל</span>
+          </div>
+          {PARTS.map((p) => (
+            <div key={p.language} className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1.4fr)] items-baseline gap-x-2 border-t border-line bg-surface px-3 py-2.5">
+              <span className="text-[15px] text-muted">{p.language}</span>
+              <span className="text-[15px] font-bold text-accent">{p.accounting}</span>
+              <span className="text-[13.5px] text-fg/80 max-sm:col-span-3 max-sm:mt-0.5">{p.example}</span>
+            </div>
+          ))}
+        </div>
+        <p className="font-semibold text-fg">ועם מי מדברים בשפה הזו? עם כל מי שרוצה להבין את העסק:</p>
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {READERS.map((r) => (
+            <li key={r.who} className="rounded-xl border border-line bg-surface px-3 py-2.5">
+              <p className="text-[15px] font-bold text-fg">{r.who}</p>
+              <p className="text-[14px] text-muted">{r.asks}</p>
+            </li>
+          ))}
+        </ul>
+        <KeyCard icon={<Languages className="h-5 w-5" />}>מי שמדבר את השפה הזו שוטף — מבין כל עסק, ויכול לספר על כל עסק.</KeyCard>
+      </>
+    ),
+  },
+
+  grammar: {
+    lead: "בלי דקדוק, כל אחד היה מדבר איך שבא לו — ואף אחד לא היה מבין אף אחד. בחשבונאות, הדקדוק הוא תקני החשבונאות.",
+    body: (
+      <>
+        <p>
+          <strong>תקן חשבונאות</strong> הוא כלל כתוב שאומר איך רושמים ואיך מציגים סוג מסוים של אירוע. הוא לא מחליט מה קרה בעסק — רק <em>איך מספרים</em> את
+          מה שקרה. כך לכל עסק יש אותו דקדוק, ואפשר לסמוך על הדוחות ולהשוות ביניהם.
+        </p>
+        <GrammarWidget />
+        <div className="space-y-2 rounded-2xl border border-line bg-surface p-4">
+          <p className="flex items-center gap-2 text-[15px] font-bold text-fg">
+            <Globe className="h-4.5 w-4.5 text-accent" aria-hidden /> הדקדוק הבינלאומי: IFRS
+          </p>
+          <p className="text-[14.5px]">
+            את <Term he="IFRS" /> כותבת הוועדה לתקני חשבונאות בינלאומיים (IASB), והוא מחייב חברות ביותר מ-140 מדינות. כל תקן עוסק בנושא אחד — למשל{" "}
+            <span dir="ltr">IAS 2</span> במלאי ו-<span dir="ltr">IAS 16</span> ברכוש קבוע, כמו המחשב של המאפיות.
+          </p>
+          <p className="text-[14.5px]">
+            <strong>ובישראל?</strong> חברות ציבוריות (שהמניות שלהן נסחרות בבורסה) מדווחות לפי IFRS. חברות פרטיות יכולות לדווח גם לפי התקנים הישראליים. בארה״ב
+            יש דקדוק משלהם: US GAAP. בקורס הזה לומדים לפי IFRS.
+          </p>
+        </div>
+        <Rule>תקני החשבונאות קובעים איך מודדים ומציגים. כמה מס משלמים — את זה קובעים חוקי המס.</Rule>
+      </>
+    ),
+  },
+
+  landscape: {
+    lead: "וזו כל העבודה, במשפט אחד: לוקחים את מה שקורה בעסק — מבולגן, אנושי, יום-יומי — ומתרגמים אותו לדוחות מסודרים שכל אחד יכול לקרוא.",
+    body: (
+      <>
+        <ol className="grid gap-2 sm:grid-cols-3">
+          {[
+            ["אירוע", "קורה משהו בעסק: מכירה, תשלום, הלוואה."],
+            ["רישום", "מתרגמים אותו: אילו חשבונות השתנו, ובכמה."],
+            ["דוחות", "בסוף התקופה מחברים את כל הרישומים לשני דוחות."],
+          ].map(([t, d], i) => (
+            <li key={t} className="rounded-xl border border-line bg-surface px-3 py-2.5">
+              <p className="flex items-center gap-2 text-[15px] font-bold text-fg">
+                <span className="num grid h-6 w-6 place-items-center rounded-full bg-accent text-[12px] text-accent-fg">{i + 1}</span>
+                {t}
+              </p>
+              <p className="mt-0.5 text-[14px] text-muted">{d}</p>
+            </li>
+          ))}
+        </ol>
+        <TranslatorWidget />
+        <p className="text-[15px] text-muted">
+          שימו לב להלוואה: נכנס כסף, אבל הרווח לא זז. זה ההבדל הראשון בין מי שמדבר את השפה למי שלא — ועוד נחזור אליו הרבה.
+        </p>
+      </>
+    ),
+  },
+
+  what: {
+    lead: "לאן כל התרגום מוביל? לשני דוחות — שני ״סיפורים״ שכל עסק מספר. אפשר להכיר אותם עוד לפני שיש עסק: גם משק בית מספר אותם.",
+    body: (
+      <>
         <p>
           <strong>דוגמה: שולה מהשכונה.</strong> שולה רוצה להבין את מצבה הכספי. שני דפים עונים לה, ושניהם הם בדיוק שני הדוחות של כל עסק:
         </p>
@@ -71,9 +180,14 @@ export function IntroChapters() {
             }
           />
         </div>
-      </Lesson>
+      </>
+    ),
+  },
 
-      <Lesson id="entity" lead="את העסק מודדים בנפרד מבעליו: בספרי העסק נרשם רק מה שקורה לעסק עצמו.">
+  entity: {
+    lead: "בכל סיפור צריך לדעת מי מספר. בחשבונאות, הדובר הוא העסק עצמו — לא הבעלים. בספרי העסק נרשם רק מה שקורה לעסק.",
+    body: (
+      <>
         <div className="grid gap-2 sm:grid-cols-2">
           <p className="flex items-center gap-2 rounded-xl border border-success/30 bg-success/[0.06] px-3 py-2.5 text-[15px]">
             <Check className="h-5 w-5 shrink-0 text-success" aria-hidden /> שכירות המשרד של העסק — נרשמת
@@ -84,17 +198,19 @@ export function IntroChapters() {
         </div>
         <KeyCard icon={<Building2 className="h-5 w-5" />}>כשבעלים משקיע כסף בעסק — זה הון.</KeyCard>
         <p className="text-[15px] text-muted">מבחינת העסק הבעלים הוא צד אחר: העסק קיבל ממנו כסף, ו&quot;חייב&quot; לו אותו.</p>
-      </Lesson>
+      </>
+    ),
+  },
 
-      <Lesson
-        id="types"
-        lead={
+  types: {
+    lead: (
           <>
-            כל חשבון שייך לאחד מחמישה סוגים, והסוג קובע באיזה צד הוא גדל: <span className="text-debit">נכסים והוצאות — בחובה</span>;{" "}
+            המילים הראשונות שלכם: כל חשבון שייך לאחד מחמישה סוגים, והסוג קובע באיזה צד הוא גדל: <span className="text-debit">נכסים והוצאות — בחובה</span>;{" "}
             <span className="text-credit">התחייבויות, הון והכנסות — בזכות</span>.
           </>
-        }
-      >
+    ),
+    body: (
+      <>
         <p className="text-[15px]">
           לכל חשבון שני צדדים: <SideChip side="dr" className="align-middle" /> חובה מימין, ו-<SideChip side="cr" className="align-middle" /> זכות משמאל. בצד שבו הוא גדל
           נמצאת גם היתרה שלו; בצד השני הוא קטן.
@@ -103,10 +219,10 @@ export function IntroChapters() {
           <SideColumn side="dr" kinds={DEBIT_KINDS} />
           <SideColumn side="cr" kinds={CREDIT_KINDS} />
         </div>
-      </Lesson>
-    </>
-  );
-}
+      </>
+    ),
+  },
+};
 
 /** One side of the five kinds: the kinds that grow on it, with their everyday examples. */
 function SideColumn({ side, kinds }: { side: "dr" | "cr"; kinds: Kind[] }) {

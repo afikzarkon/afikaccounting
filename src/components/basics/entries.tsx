@@ -1,26 +1,11 @@
 import { Laptop, Receipt } from "lucide-react";
-import type { Entry } from "@/lib/learn/basics";
+import type { ScreenContent } from "@/components/study-mode/shell";
+import { ScreenLink } from "@/components/study-mode/screen-link";
+import { COMPOUND, SIMPLE } from "@/lib/study/basics/shared";
 import { ActionFinder } from "./action-finder";
+import { EquationWidget } from "./equation-widget";
 import { Posted } from "./t-accounts";
-import { Card, ChRef, Lesson, Money, Stepper, Term } from "./ui";
-
-const SIMPLE: Entry = {
-  id: "1",
-  text: "העסק שילם 2,000 ₪ שכירות במזומן",
-  lines: [
-    { account: "הוצאות שכירות", dr: 2_000 },
-    { account: "מזומן", cr: 2_000 },
-  ],
-};
-const COMPOUND: Entry = {
-  id: "2",
-  text: "העסק קנה ציוד ב-50,000 ₪: 20,000 במזומן והשאר באשראי",
-  lines: [
-    { account: "ציוד", dr: 50_000 },
-    { account: "מזומן", cr: 20_000 },
-    { account: "זכאים", cr: 30_000 },
-  ],
-};
+import { Card, Money, Stepper, Term } from "./ui";
 
 const TERMS: [string, string][] = [
   ["ספקים", "מי שהעסק חייב לו על סחורה"],
@@ -30,10 +15,11 @@ const TERMS: [string, string][] = [
   ["צ'ק דחוי", "ייפרע בתאריך מאוחר; עד אז — חוב"],
 ];
 
-export function EntriesChapters() {
-  return (
-    <>
-      <Lesson id="equation" lead="נכסים = התחייבויות + הון. כל מה שיש לעסק הגיע ממישהו: מאחרים (התחייבויות) או מהבעלים (הון).">
+export const ENTRIES_SCREENS: Record<string, ScreenContent> = {
+  equation: {
+    lead: "נכסים = התחייבויות + הון. כל מה שיש לעסק הגיע ממישהו: מאחרים (התחייבויות) או מהבעלים (הון).",
+    body: (
+      <>
         <div className="flex flex-wrap items-stretch justify-center gap-2 rounded-2xl bg-surface-2/70 p-4 text-center sm:gap-3" role="math" aria-label="נכסים שווה התחייבויות ועוד הון">
           <IdentityPart name="נכסים" hint="מה יש לעסק" />
           <span className="self-center text-2xl font-bold text-muted" aria-hidden>
@@ -46,11 +32,17 @@ export function EntriesChapters() {
           <IdentityPart name="הון" hint="מה ששייך לבעלים" />
         </div>
         <p>
-          כל פעולה משנה את המשוואה בשני מקומות לפחות, והיא תמיד נשארת מאוזנת. תראו את זה פעולה אחר פעולה ב<ChRef id="lab" />.
+          כל פעולה משנה את המשוואה בשני מקומות לפחות, והיא תמיד נשארת מאוזנת. נסו כאן, ותראו את זה בפירוט, עם כרטיסי ה-T, ב<ScreenLink id="lab" />.
         </p>
-      </Lesson>
+        <EquationWidget />
+      </>
+    ),
+  },
 
-      <Lesson id="expense" lead="השאלה לבדיקה: העסק ייהנה מזה יותר משנה, ויוכל למכור את זה? כן — השקעה (נכס). לא — הוצאה.">
+  expense: {
+    lead: "השאלה לבדיקה: העסק ייהנה מזה יותר משנה, ויוכל למכור את זה? כן — השקעה (נכס). לא — הוצאה.",
+    body: (
+      <>
         <div className="grid gap-3 md:grid-cols-2">
           <Card
             title={
@@ -73,17 +65,19 @@ export function EntriesChapters() {
             </p>
           </Card>
         </div>
-      </Lesson>
+      </>
+    ),
+  },
 
-      <Lesson
-        id="double"
-        lead={
+  double: {
+    lead: (
           <>
             כל אירוע נרשם פעמיים: <span className="text-debit">ערך שנכנס (מקבל) — חובה</span>, <span className="text-credit">ערך שיוצא (נותן) — זכות</span>. סך החובה תמיד שווה
             לסך הזכות.
           </>
-        }
-      >
+    ),
+    body: (
+      <>
         <p>
           הרישום נקרא <Term he="פקודת יומן" />: קודם שורות החובה (ח׳), ומתחתן, מוזחות פנימה, שורות הזכות (ז׳). מכל פקודה כל שורה עוברת לכרטיס של החשבון שלה:
         </p>
@@ -109,10 +103,10 @@ export function EntriesChapters() {
           ))}
         </dl>
         <ActionFinder />
-      </Lesson>
-    </>
-  );
-}
+      </>
+    ),
+  },
+};
 
 function IdentityPart({ name, hint }: { name: string; hint: string }) {
   return (

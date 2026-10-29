@@ -1,6 +1,7 @@
 import { ArrowLeft, ArrowRight, Calculator } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { screenHref } from "@/lib/study/basics";
 import type { ReactNode } from "react";
 import { type ChapterLink, ChapterNav } from "@/components/basics/chapter-nav";
 import { ExchangeCalculator } from "@/components/exchange/calculator";
@@ -148,7 +149,7 @@ export default function Ias16Page() {
     <div className="relative">
       <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-16 sm:pt-14">
-        <Link href="/basics#expense" className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline">
+        <Link href="/basics" className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline">
           <ArrowRight className="h-4 w-4" aria-hidden /> חזרה לחשבונאות מאפס
         </Link>
         <div className="mt-4">
@@ -174,8 +175,8 @@ export default function Ias16Page() {
         </div>
         <p className="mt-3 text-sm text-muted">
           מה צריך לדעת מראש: הוצאה מול השקעה, ופקודת יומן בסיסית — חובה וזכות.{" "}
-          <Link href="/basics#expense" className="font-medium text-accent hover:underline">
-            לחשבונאות מאפס
+          <Link href={screenHref("expense")} className="font-medium text-accent hover:underline">
+            לשיעור ״הוצאה מול השקעה״
           </Link>
         </p>
 

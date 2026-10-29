@@ -37,7 +37,7 @@ export default function StatementsPage() {
     <div className="relative">
       <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-16 sm:pt-14">
-        <Link href="/basics#reports" className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline">
+        <Link href="/basics" className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline">
           <ArrowRight className="h-4 w-4" aria-hidden /> חזרה לחשבונאות מאפס
         </Link>
         <div className="mt-4">

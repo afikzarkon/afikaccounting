@@ -1,4 +1,4 @@
-import { ArrowLeft, Calculator, FileText } from "lucide-react";
+import { ArrowLeft, Calculator, FileText, Play } from "lucide-react";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge } from "@/components/ui/primitives";
@@ -118,10 +118,15 @@ function TopicCard({ topic }: { topic: Topic }) {
           </div>
         </div>
       )}
-      <div className="mt-auto pt-5">
+      <div className="mt-auto flex flex-wrap gap-2 pt-5">
         <ButtonLink href={topic.href} variant="secondary" className="w-full sm:w-auto">
           {topic.pages ? "להתחיל מהדף הראשון" : "למדריך"} <ArrowLeft className="h-4 w-4" />
         </ButtonLink>
+        {topic.lesson && (
+          <ButtonLink href={topic.lesson} className="w-full sm:w-auto">
+            <Play className="h-4 w-4" aria-hidden /> שיעור אינטראקטיבי
+          </ButtonLink>
+        )}
       </div>
     </article>
   );

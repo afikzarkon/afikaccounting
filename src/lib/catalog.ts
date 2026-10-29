@@ -21,6 +21,8 @@ export type Topic = {
   /** Sub-pages, when the topic spans several. */
   pages?: CatalogLink[];
   tools: CatalogLink[];
+  /** The topic's interactive lesson, when it is a single lesson (/study/[slug]); a course of lessons is its own page. */
+  lesson?: string;
 };
 
 export type Stage = { id: string; step: number; title: string; lead: string; topics: Topic[] };
@@ -41,11 +43,11 @@ export const LEARNING_PATH: Stage[] = [
         id: "basics",
         title: "חשבונאות מאפס",
         href: "/basics",
-        description: "17 פרקים קצרים, מ״מה זה בכלל חשבונאות״ ועד גיליון רב-טורי עם התאמות סוף שנה.",
+        description: "6 שיעורים אינטראקטיביים, מ״מה זה בכלל חשבונאות״ ועד גיליון רב-טורי עם התאמות סוף שנה — עם תרגול ומלכודות מבחן בכל שיעור.",
         covers: ["חובה וזכות", "פקודות יומן", "כרטיסי T", "מאזן בוחן", "דוחות כספיים", "התאמות סוף שנה"],
         tools: [
-          { href: "/basics#lab", label: "פקודות יומן לפי סוגיהן" },
-          { href: "/basics#practice", label: "15 שאלות תרגול" },
+          { href: "/study/basics-journal?screen=lab", label: "פקודות יומן לפי סוגיהן" },
+          { href: "/study/basics-final?step=2", label: "תרגול מסכם" },
         ],
       },
       {
@@ -102,7 +104,7 @@ export const ENGINE_TOOLS: (CatalogLink & { slug: string; standard: string })[] 
 
 /** Every calculator inside a learning page, in learning-path order. */
 export const LEARNING_TOOLS: (CatalogLink & { topic: string })[] = LEARNING_PATH.flatMap((s) =>
-  s.topics.flatMap((t) => t.tools.filter((x) => !x.href.startsWith("/basics#")).map((x) => ({ ...x, topic: t.standard ? `${t.standard} · ${t.title}` : t.title }))),
+  s.topics.flatMap((t) => t.tools.filter((x) => !x.href.startsWith("/study/")).map((x) => ({ ...x, topic: t.standard ? `${t.standard} · ${t.title}` : t.title }))),
 );
 
 export const LEARN_HUB = { href: "/learn", label: "מפת הלימוד" };

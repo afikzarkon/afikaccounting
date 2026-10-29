@@ -1,10 +1,11 @@
 import { Layers, Printer } from "lucide-react";
 import { creditLoss, TZAAD } from "@/lib/learn/basics";
 import { Glossary } from "./glossary";
+import type { ScreenContent } from "@/components/study-mode/shell";
+import { ScreenLink } from "@/components/study-mode/screen-link";
 import { PrintButton } from "./print-button";
-import { Practice } from "./practice";
 import { Tabs } from "./tabs";
-import { ChRef, KeyCard, Lesson, Rule } from "./ui";
+import { KeyCard, Rule } from "./ui";
 import { Worksheet } from "./worksheet";
 
 const MISTAKES: [string, string][] = [
@@ -28,24 +29,27 @@ const FAQ: [string, string][] = [
   ["למה הוצאות מראש הן נכס?", "כי שילמתם על משהו שעוד תקבלו — חודשי ביטוח או שימוש. זה ערך שיש לעסק."],
 ];
 
-export function FinalChapters() {
-  const tzaad = creditLoss(TZAAD);
-  return (
-    <>
-      <Lesson id="worksheet" lead="גיליון רב-טורי מוביל, בטבלה אחת, ממאזן הבוחן לפני ההתאמות ועד הרווח ויתרת העודפים בסוף השנה.">
+const tzaad = creditLoss(TZAAD);
+
+export const FINAL_SCREENS: Record<string, ScreenContent> = {
+  worksheet: {
+    lead: "גיליון רב-טורי מוביל, בטבלה אחת, ממאזן הבוחן לפני ההתאמות ועד הרווח ויתרת העודפים בסוף השנה.",
+    body: (
+      <>
         <KeyCard icon={<Layers className="h-5 w-5" />}>כל מה שלמדנו עד עכשיו נועד להגיע לרגע הזה: מרכזים הכול בגיליון אחד.</KeyCard>
         <p>
-          <strong>העמודה הראשונה היא נקודת הפתיחה:</strong> מאזן הבוחן לפני ההתאמות, כפי שמקבלים אותו בשאלה. כל עמודה אחריה נבנית על הקודמת. הנה הגיליון של רונן מ<ChRef id="accrual" />:
+          <strong>העמודה הראשונה היא נקודת הפתיחה:</strong> מאזן הבוחן לפני ההתאמות, כפי שמקבלים אותו בשאלה. כל עמודה אחריה נבנית על הקודמת. הנה הגיליון של רונן, מ<ScreenLink id="ronen">הדוגמה המלאה בשיעור ההתאמות</ScreenLink>:
         </p>
         <Worksheet />
         <Rule>עודפי סגירה = עודפי פתיחה + רווח השנה (או פחות הפסד השנה).</Rule>
-      </Lesson>
+      </>
+    ),
+  },
+};
 
-      <Lesson id="practice" lead="15 שאלות, אחת בכל פעם. משוב מיידי — והפתרון המלא אחרי שעניתם נכון, או כשתבקשו.">
-        <Practice />
-      </Lesson>
-
-      <Lesson id="summary" lead="כל מה שצריך לחזרה, במקום אחד.">
+/** The course's reference: a one-page cheat sheet (printable), the glossary, common mistakes and questions. */
+export function BasicsReference() {
+  return (
         <Tabs
           label="כלי עזר"
           tabs={[
@@ -113,8 +117,6 @@ export function FinalChapters() {
             },
           ]}
         />
-      </Lesson>
-    </>
   );
 }
 

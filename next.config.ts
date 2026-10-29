@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
       { source: "/ias16-lab/exchange", destination: "/basics/ias16#exchange", permanent: true },
       { source: "/ias16-lab/renovation", destination: "/basics/ias16#renovation", permanent: true },
       { source: "/ias16-lab/revaluation", destination: "/basics/ias16#revaluation", permanent: true },
+      // The pilot lesson grew into the six-lesson basics course.
+      { source: "/study/basics", destination: "/basics", permanent: false },
     ];
   },
   partialPrefetching: true,

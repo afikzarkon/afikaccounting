@@ -1,7 +1,5 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
 import { JournalEntry } from "@/components/study/blocks";
-import { CHAPTERS, chapterIndex } from "./chapters";
 import { type Entry, isBalanced, isBalanceSheet, normalSide, round2, type Statements, type TAccount, type TrialBalance, typeOf, TYPE_LABEL } from "@/lib/learn/basics";
 import { cn } from "@/lib/utils";
 
@@ -44,78 +42,6 @@ export function Chapter({ n, id, title, lead, children }: { n: number; id: strin
       </div>
       <div className="mt-5 space-y-4 text-[15.5px] leading-relaxed text-fg/90 [&>p]:max-w-3xl">{children}</div>
     </section>
-  );
-}
-
-/**
- * One chapter of the basics page: its number and title (both from CHAPTERS),
- * the one principle it teaches, the content, and links to the chapters on either side.
- */
-export function Lesson({ id, lead, children }: { id: string; lead: ReactNode; children: ReactNode }) {
-  const i = chapterIndex(id);
-  const { title } = CHAPTERS[i];
-  return (
-    <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-32 lg:scroll-mt-24" data-chapter={id}>
-      <div className="flex items-center gap-3.5">
-        <span className="num grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent text-lg font-bold text-accent-fg shadow-[0_8px_20px_-10px_var(--accent)]">
-          {i + 1}
-        </span>
-        <h2 id={`${id}-title`} className="min-w-0 text-2xl font-semibold tracking-tight text-fg">
-          {title}
-        </h2>
-      </div>
-      <p className="mt-4 rounded-2xl border border-accent/25 bg-accent-soft px-4 py-3.5 text-[16.5px] font-semibold leading-relaxed text-fg sm:px-5">{lead}</p>
-      <div className="mt-5 space-y-4 text-[15.5px] leading-relaxed text-fg/90 [&>p]:max-w-3xl">{children}</div>
-      <ChapterFooter i={i} />
-    </section>
-  );
-}
-
-/** Previous and next chapter, and where this one sits in the page. */
-function ChapterFooter({ i }: { i: number }) {
-  const prev = CHAPTERS[i - 1];
-  const next = CHAPTERS[i + 1];
-  const link = (c: (typeof CHAPTERS)[number], n: number, dir: "prev" | "next") => (
-    <a
-      href={`#${c.id}`}
-      className={cn(
-        "group flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2.5 transition-colors hover:border-accent/50 hover:bg-accent-soft/50 sm:max-w-[46%]",
-        dir === "next" && "ms-auto flex-row-reverse text-end",
-      )}
-    >
-      {dir === "prev" ? <ChevronRight className="h-4 w-4 shrink-0 text-subtle" aria-hidden /> : <ChevronLeft className="h-4 w-4 shrink-0 text-accent" aria-hidden />}
-      <span className="min-w-0">
-        <span className="block text-[11px] text-muted">{dir === "prev" ? "לפרק הקודם" : "לפרק הבא"}</span>
-        <span className={cn("block truncate text-sm font-semibold", dir === "next" ? "text-accent" : "text-fg")}>
-          <span className="num">{n}</span>. {c.title}
-        </span>
-      </span>
-    </a>
-  );
-  return (
-    <nav aria-label="מעבר בין פרקים" className="no-print mt-8 border-t border-line pt-4">
-      <div className="flex flex-wrap items-stretch gap-2">
-        {prev && link(prev, i, "prev")}
-        {next && link(next, i + 2, "next")}
-      </div>
-      <div className="mt-3 flex items-center gap-3">
-        <div className="h-1 flex-1 overflow-hidden rounded-full bg-surface-2" aria-hidden>
-          <div className="h-full rounded-full bg-accent" style={{ width: `${((i + 1) / CHAPTERS.length) * 100}%` }} />
-        </div>
-        <p className="num shrink-0 text-xs text-muted">
-          פרק {i + 1} מתוך {CHAPTERS.length}
-        </p>
-      </div>
-    </nav>
-  );
-}
-
-/** A link to another chapter by its number. */
-export function ChRef({ id }: { id: string }) {
-  return (
-    <a href={`#${id}`} className="font-medium text-accent hover:underline">
-      פרק <span className="num">{chapterIndex(id) + 1}</span>
-    </a>
   );
 }
 

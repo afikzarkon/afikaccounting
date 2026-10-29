@@ -5,12 +5,17 @@ import { describe, it } from "node:test";
 import { ENGINE_TOOLS, LEARNING_PATH, LEARNING_TOOLS } from "./catalog";
 import { CALCULATORS } from "./engine/registry";
 import { site } from "./site";
+import { STUDY_MODULES, studyHref } from "./study";
 
 const APP = join(process.cwd(), "src", "app");
 const SRC = join(process.cwd(), "src");
 
-/** The route a path maps to, ignoring route groups like (auth). */
-const routeExists = (path: string) => existsSync(join(APP, ...path.split("/").filter(Boolean), "page.tsx"));
+/** The route a path maps to, ignoring route groups like (auth). A lesson (/study/<slug>) exists when its module does. */
+const routeExists = (path: string) => {
+  const lesson = path.match(/^\/study\/([^/]+)$/);
+  if (lesson) return lesson[1] in STUDY_MODULES;
+  return existsSync(join(APP, ...path.split("/").filter(Boolean), "page.tsx"));
+};
 
 function allSource(dir: string): string {
   let out = "";
@@ -52,6 +57,23 @@ describe("the site map", () => {
     assert.ok(learn && "items" in learn);
     const hrefs = new Set(learn.items.map((i) => i.href));
     for (const s of LEARNING_PATH) for (const t of s.topics) for (const p of t.pages ?? [{ href: t.href }]) assert.ok(hrefs.has(p.href), p.href);
+  });
+  it("every lesson link opens a real screen or step", () => {
+    for (const l of links) {
+      const [path, query] = l.href.split("#")[0].split("?");
+      if (!path.startsWith("/study/")) continue;
+      const m = STUDY_MODULES[path.slice("/study/".length)];
+      const params = new URLSearchParams(query);
+      const screen = params.get("screen");
+      const step = params.get("step");
+      if (screen) assert.ok(m.screens.some((s) => s.id === screen), `no screen ${screen} in ${l.href}`);
+      if (step) assert.ok(Number(step) >= 1 && Number(step) <= 4, `no step ${step} in ${l.href}`);
+    }
+  });
+  it("every lesson belongs to a topic on the learning path, and every lesson link has its lesson", () => {
+    const topics = LEARNING_PATH.flatMap((s) => s.topics);
+    for (const m of Object.values(STUDY_MODULES)) assert.ok(topics.some((t) => t.href === m.backHref), `lesson ${m.slug}: no topic at ${m.backHref}`);
+    for (const t of topics.filter((x) => x.lesson)) assert.ok(Object.values(STUDY_MODULES).some((m) => studyHref(m.slug) === t.lesson && m.backHref === t.href), `${t.id}: no lesson ${t.lesson}`);
   });
   it("every learning calculator is in the calculators menu", () => {
     const tools = site.nav.find((i) => "items" in i && i.label === "מחשבונים");

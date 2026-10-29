@@ -1,10 +1,12 @@
 import { ArrowLeft, CalendarClock, RotateCcw } from "lucide-react";
 import { balancesOf, carryForward, closingEntry, CREDIT, type Entry, isBalanceSheet, KITS, ledger, statements, trialBalance, YUVAL } from "@/lib/learn/basics";
+import type { ScreenContent } from "@/components/study-mode/shell";
+import { ScreenLink } from "@/components/study-mode/screen-link";
 import { cn } from "@/lib/utils";
 import { ClassifyExercise } from "./classify";
 import { RetainedSolver } from "./retained";
 import { EntryCards, Posted, TBox } from "./t-accounts";
-import { Calc, ChRef, JE, KeyCard, Lesson, Money, SideChip, StatementsView, type Step, Stepper, TBTable } from "./ui";
+import { Calc, JE, KeyCard, Money, SideChip, StatementsView, type Step, Stepper, TBTable } from "./ui";
 
 const Y20 = statements(YUVAL.tb2020);
 const OPENING_21 = carryForward(YUVAL.tb2020);
@@ -48,25 +50,37 @@ const TB_STAGES: [string, string][] = [
 const run = (entries: Entry[], opts?: { opening?: Record<string, number> }): Step[] =>
   entries.map((x, i) => ({ title: x.text, body: <Posted entries={entries} at={i} opening={opts?.opening} title="פקודת היומן" /> }));
 
-export function BooksChapters() {
-  const loanEnd = balancesOf(ledger(CREDIT.loan));
-  const cash = ledger(KITS.entries).find((t) => t.account === "מזומן")!;
-  const cashDr = cash.dr.reduce((s, p) => s + p.amount, 0);
-  const cashCr = cash.cr.reduce((s, p) => s + p.amount, 0);
-  const retained20 = Y20.equity.find(([a]) => a === "עודפים")![1];
-  const retained21 = Y21.equity.find(([a]) => a === "עודפים")![1];
+// Figures the screens quote, computed once.
+const loanEnd = balancesOf(ledger(CREDIT.loan));
+const cash = ledger(KITS.entries).find((t) => t.account === "מזומן")!;
+const cashDr = cash.dr.reduce((s, p) => s + p.amount, 0);
+const cashCr = cash.cr.reduce((s, p) => s + p.amount, 0);
+const retained20 = Y20.equity.find(([a]) => a === "עודפים")![1];
+const retained21 = Y21.equity.find(([a]) => a === "עודפים")![1];
 
-  return (
-    <>
-      <Lesson id="credit" lead="עסקה נרשמת כשהיא קורית, לא כשהכסף עובר. אם הכסף יעבור אחר כך — בינתיים יש חוב, וביום התשלום החוב נסגר.">
+export const BOOKS_SCREENS: Record<string, ScreenContent> = {
+  credit: {
+    lead: "עסקה נרשמת כשהיא קורית, לא כשהכסף עובר. אם הכסף יעבור אחר כך — בינתיים יש חוב, וביום התשלום החוב נסגר.",
+    body: (
+      <>
         <Stepper label="מכירה באשראי ← הלקוח משלם · קנייה באשראי ← משלמים לספק" steps={run(CREDIT.credit)} />
-        <p>
-          <strong>מקדמה</strong> היא המקרה ההפוך: הכסף עובר <strong>לפני</strong> העסקה. עד האספקה זה חוב — שלנו ללקוח, או של הספק לנו:
-        </p>
-        <Stepper label="מקדמה מלקוח ← אספקה · מקדמה לספק ← אספקה" steps={run(CREDIT.advances)} />
-      </Lesson>
+      </>
+    ),
+  },
 
-      <Lesson id="loan" lead="הלוואה היא התחייבות. רק הריבית — המחיר על הכסף — היא הוצאה; החזר הקרן רק מקטין את החוב.">
+  advances: {
+    lead: (
+      <>
+        <strong>מקדמה</strong> היא המקרה ההפוך: הכסף עובר <strong>לפני</strong> העסקה. עד האספקה זה חוב — שלנו ללקוח, או של הספק לנו.
+      </>
+    ),
+    body: <Stepper label="מקדמה מלקוח ← אספקה · מקדמה לספק ← אספקה" steps={run(CREDIT.advances)} />,
+  },
+
+  loan: {
+    lead: "הלוואה היא התחייבות. רק הריבית — המחיר על הכסף — היא הוצאה; החזר הקרן רק מקטין את החוב.",
+    body: (
+      <>
         <Stepper
           label="קבלת ההלוואה ← תשלום ריבית ← פירעון"
           steps={CREDIT.loan.map((x, i) => ({
@@ -83,9 +97,14 @@ export function BooksChapters() {
             ),
           }))}
         />
-      </Lesson>
+      </>
+    ),
+  },
 
-      <Lesson id="taccounts" lead="לכל חשבון כרטיס T: חובה מימין, זכות משמאל. היתרה היא ההפרש בין שני הצדדים, והיא יושבת בצד הגדול.">
+  taccounts: {
+    lead: "לכל חשבון כרטיס T: חובה מימין, זכות משמאל. היתרה היא ההפרש בין שני הצדדים, והיא יושבת בצד הגדול.",
+    body: (
+      <>
         <ol className="flex flex-wrap items-center gap-2 text-sm">
           {["יתרת פתיחה (בעסק חדש: 0)", "תנועות — כל סכום בצד שלו, עם מספר הפקודה", "יתרת סגירה — ההפרש"].map((t, i) => (
             <li key={t} className="flex items-center gap-2">
@@ -95,7 +114,7 @@ export function BooksChapters() {
           ))}
         </ol>
         <p>
-          בונים את כרטיס המזומן של עסק הערכות מ<ChRef id="lab" />, תנועה אחר תנועה:
+          בונים את כרטיס המזומן של עסק הערכות מ<ScreenLink id="lab" />, תנועה אחר תנועה:
         </p>
         <Stepper
           label="בונים כרטיס T: מזומן"
@@ -119,9 +138,14 @@ export function BooksChapters() {
             },
           ]}
         />
-      </Lesson>
+      </>
+    ),
+  },
 
-      <Lesson id="trial" lead="מאזן בוחן מרכז את כל היתרות בטבלה אחת. המטרה: לדעת איפה כל חשבון יושב — חובה או זכות — ולוודא שסך החובה שווה לסך הזכות.">
+  trial: {
+    lead: "מאזן בוחן מרכז את כל היתרות בטבלה אחת. המטרה: לדעת איפה כל חשבון יושב — חובה או זכות — ולוודא שסך החובה שווה לסך הזכות.",
+    body: (
+      <>
         <p>
           חברת יובל בע&quot;מ הוקמה ב-1.1.2020. אלה היתרות שלה ב-31.12.2020. שבצו כל אחת בצד שלה:
         </p>
@@ -141,9 +165,14 @@ export function BooksChapters() {
         <p className="rounded-xl border border-amber-500/40 bg-amber-500/[0.08] px-4 py-2.5 text-[15px]">
           בשאלה מקבלים בדרך כלל את שלב 1. דוחות שנבנים ישר ממנו — שגויים: קודם התאמות.
         </p>
-      </Lesson>
+      </>
+    ),
+  },
 
-      <Lesson id="retained" lead="עודפים הם הרווחים שהחברה צברה מאז שקמה, ולא חילקה לבעלים. הם חלק מההון.">
+  retained: {
+    lead: "עודפים הם הרווחים שהחברה צברה מאז שקמה, ולא חילקה לבעלים. הם חלק מההון.",
+    body: (
+      <>
         <div className="grid gap-2 md:grid-cols-3">
           <Fact icon={<CalendarClock className="h-4 w-4" />} title="חברה שנפתחה השנה">
             אין לה עודפים לתחילת השנה: הם 0.
@@ -163,9 +192,14 @@ export function BooksChapters() {
           opening={0}
           profit={Y20.profit}
         />
-      </Lesson>
+      </>
+    ),
+  },
 
-      <Lesson id="reports" lead="תוצאתי מתאפס, מאזני ממשיך: בסוף כל שנה הרווח עובר לעודפים, וב-1.1 הכנסות והוצאות מתחילות מאפס.">
+  reports: {
+    lead: "תוצאתי מתאפס, מאזני ממשיך: בסוף כל שנה הרווח עובר לעודפים, וב-1.1 הכנסות והוצאות מתחילות מאפס.",
+    body: (
+      <>
         <div className="grid gap-3 md:grid-cols-2">
           <div className="rounded-2xl border-2 border-fg/15 bg-surface p-4">
             <p className="text-[17px] font-bold text-fg">תוצאתי · רווח והפסד</p>
@@ -182,12 +216,19 @@ export function BooksChapters() {
           ביובל 2020: הכנסות <Money v={Y20.totalIncome} /> פחות הוצאות <Money v={Y20.totalExpenses} /> = רווח <Money v={Y20.profit} />, שעובר לעודפים:
         </p>
         <StatementsView s={Y20} year="2020" />
+      </>
+    ),
+  },
 
-        <h3 className="pt-2 text-lg font-semibold text-fg">פקודת הסגירה: הרווח עובר לעודפים</h3>
-        <p className="text-[15px]">
-          כל חשבון תוצאתי נסגר ביתרה שלו, בצד ההפוך: הכנסה בחובה, הוצאה בזכות. ההפרש הוא הרווח — <SideChip side="cr" className="align-middle" /> עודפים. בהפסד ההפרש
-          בצד השני — <SideChip side="dr" className="align-middle" /> עודפים.
-        </p>
+  closing: {
+    lead: (
+      <>
+        כל חשבון תוצאתי נסגר ביתרה שלו, בצד ההפוך: הכנסה בחובה, הוצאה בזכות. ההפרש הוא הרווח — <SideChip side="cr" className="align-middle" /> עודפים. בהפסד ההפרש
+        בצד השני — <SideChip side="dr" className="align-middle" /> עודפים.
+      </>
+    ),
+    body: (
+      <>
         <Stepper
           label="סגירת 2020 · יובל"
           steps={[
@@ -231,8 +272,14 @@ export function BooksChapters() {
             },
           ]}
         />
+      </>
+    ),
+  },
 
-        <h3 className="pt-2 text-lg font-semibold text-fg">מעבר משנה לשנה: יובל ב-2021</h3>
+  carry: {
+    lead: "ב-1.1 החשבונות המאזניים ממשיכים עם יתרת הסגירה שלהם, והתוצאתיים מתחילים מאפס. כך עוברת יובל מ-2020 ל-2021 — שנה שמסתיימת בהפסד.",
+    body: (
+      <>
         <Stepper
           label="מ-31.12.2020 ל-2021 · יובל"
           steps={[
@@ -281,10 +328,10 @@ export function BooksChapters() {
           ]}
         />
         <KeyCard>בהמשך תלמדו גם לבנות דוח כספי מלא. כרגע זה לימוד מקדים.</KeyCard>
-      </Lesson>
-    </>
-  );
-}
+      </>
+    ),
+  },
+};
 
 function Fact({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (

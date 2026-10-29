@@ -1,68 +1,88 @@
-import { ArrowLeft } from "lucide-react";
+import { BookOpenText, ClipboardPen, Library, TriangleAlert } from "lucide-react";
 import type { Metadata } from "next";
-import { AdjustChapters } from "@/components/basics/adjust";
-import { BooksChapters } from "@/components/basics/books";
-import { ChapterNav } from "@/components/basics/chapter-nav";
-import { CHAPTERS } from "@/components/basics/chapters";
-import { EntriesChapters } from "@/components/basics/entries";
-import { FinalChapters } from "@/components/basics/final";
-import { IntroChapters } from "@/components/basics/intro";
-import { TransactionLabChapter } from "@/components/basics/lab-chapter";
-import { Container } from "@/components/ui/primitives";
+import { BasicsReference } from "@/components/basics/final";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { CourseProgress, LegacyHashRedirect, LessonAction } from "@/components/study-mode/course";
+import { Container } from "@/components/ui/primitives";
+import { BASICS_LESSONS } from "@/lib/study/basics";
 
 export const metadata: Metadata = {
   title: "חשבונאות בסיסית מאפס",
   description:
-    "קורס קצר בעברית, צעד אחר צעד: חובה וזכות, פקודות יומן וכרטיסי T, מאזן בוחן ועודפים, התאמות סוף שנה, מלאי סגירה והפסדי אשראי — עם מעבדה אינטראקטיבית ותרגול.",
+    "קורס אינטראקטיבי בעברית, שיעור אחר שיעור: חובה וזכות, פקודות יומן וכרטיסי T, מאזן בוחן ועודפים, התאמות סוף שנה, מלאי סגירה והפסדי אשראי — עם סימולטור פקודות יומן, תרגול ומלכודות מבחן.",
 };
 
-// The four stages of the books: the road this page walks, in order.
-const ROADMAP: [string, string][] = [
-  ["פקודת יומן", "lab"],
-  ["כרטיסי T", "taccounts"],
-  ["מאזן בוחן", "trial"],
-  ["דוחות כספיים", "reports"],
-];
-
+/**
+ * The basics course: six interactive lessons, each with its concept screens,
+ * a practice section and exam traps; progress on top, and the course's
+ * reference (cheat sheet, glossary, mistakes, questions) at the bottom.
+ */
 export default function BasicsPage() {
   return (
     <div className="relative">
+      <LegacyHashRedirect />
       <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-16 sm:pt-14">
         <Breadcrumbs trail={[{ label: "שלב 1 · יסודות" }, { label: "חשבונאות מאפס" }]} />
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
           חשבונאות בסיסית <span className="text-gradient">מאפס</span>
         </h1>
-        <p className="mt-2 text-[15px] text-muted">
-          <span className="num">{CHAPTERS.length}</span> פרקים קצרים, צעד אחר צעד.
+        <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted">
+          <span className="num">{BASICS_LESSONS.length}</span> שיעורים אינטראקטיביים, צעד אחר צעד. בכל שיעור: מושגים עם דוגמאות חיות, תרגול עם משוב מיידי, ומלכודות מבחן — ובסוף, טיפים
+          זהב.
         </p>
-        <ol className="mt-4 flex flex-wrap items-center gap-1.5" aria-label="ארבעת שלבי הרישום">
-          {ROADMAP.map(([t, id], i) => (
-            <li key={t} className="flex items-center gap-1.5">
-              <a href={`#${id}`} className="flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-sm font-medium text-fg hover:border-accent/50">
-                <span className="num grid h-5 w-5 place-items-center rounded-full bg-accent text-[10px] font-bold text-accent-fg">{i + 1}</span>
-                {t}
-              </a>
-              {i < ROADMAP.length - 1 && <ArrowLeft className="h-3.5 w-3.5 text-subtle" aria-hidden />}
+
+        <div className="mt-6">
+          <CourseProgress />
+        </div>
+
+        <ol className="mt-8 grid gap-4 md:grid-cols-2" aria-label="שיעורי הקורס">
+          {BASICS_LESSONS.map((m) => (
+            <li key={m.slug} className="card flex min-w-0 flex-col p-5" aria-labelledby={`lesson-${m.slug}`}>
+              <div className="flex items-start gap-3">
+                <span className="num grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent text-lg font-bold text-accent-fg shadow-[0_8px_20px_-10px_var(--accent)]">{m.n}</span>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-accent">שיעור {m.n}</p>
+                  <h2 id={`lesson-${m.slug}`} className="text-lg font-semibold text-fg">
+                    {m.title}
+                  </h2>
+                </div>
+              </div>
+              <p className="mt-2 text-[14px] leading-relaxed text-fg/85">{m.description}</p>
+              <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="המושגים בשיעור">
+                {m.screens.map((s) => (
+                  <li key={s.id} className="rounded-md bg-surface-2 px-2 py-0.5 text-xs text-muted">
+                    {s.title}
+                  </li>
+                ))}
+              </ul>
+              <p className="num mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-muted">
+                <span className="flex items-center gap-1">
+                  <BookOpenText className="h-3.5 w-3.5" aria-hidden /> {m.screens.length} מושגים
+                </span>
+                <span className="flex items-center gap-1">
+                  <ClipboardPen className="h-3.5 w-3.5" aria-hidden /> {m.exercises.length} תרגילים
+                </span>
+                <span className="flex items-center gap-1">
+                  <TriangleAlert className="h-3.5 w-3.5" aria-hidden /> {m.traps.length} מלכודות מבחן
+                </span>
+              </p>
+              <LessonAction module={m} />
             </li>
           ))}
         </ol>
 
-        <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
-          {/* On narrow screens the aside dissolves, so its chip bar stays sticky along the whole page. */}
-          <aside className="contents lg:block lg:min-w-0">
-            <ChapterNav chapters={CHAPTERS} />
-          </aside>
-          <div className="min-w-0 space-y-14">
-            <IntroChapters />
-            <EntriesChapters />
-            <TransactionLabChapter />
-            <BooksChapters />
-            <AdjustChapters />
-            <FinalChapters />
+        <section id="reference" aria-labelledby="reference-title" className="mt-14 scroll-mt-24">
+          {/* The former page's "summary" chapter lived here; its anchor still lands on it. */}
+          <span id="summary" className="block scroll-mt-24" aria-hidden />
+          <h2 id="reference-title" className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-fg">
+            <Library className="h-6 w-6 text-accent" aria-hidden /> כלי עזר
+          </h2>
+          <p className="mt-1 text-[15px] text-muted">כל מה שצריך לחזרה, במקום אחד: גיליון עזר להדפסה, מילון, טעויות נפוצות ושאלות נפוצות.</p>
+          <div className="mt-4">
+            <BasicsReference />
           </div>
-        </div>
+        </section>
       </Container>
     </div>
   );

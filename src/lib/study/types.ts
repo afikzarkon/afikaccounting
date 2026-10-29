@@ -1,0 +1,47 @@
+import type { Choice, Entry, EntryQ, NumberQ, Question } from "@/lib/learn/basics";
+
+/**
+ * One interactive lesson, in four steps: concept screens, practice, exam traps
+ * and a summary. Plain data, so it can be tested and handed to the client shell;
+ * the concept screens' content (JSX) is looked up by screen id on the server.
+ */
+export type StudyModule = {
+  slug: string;
+  /** The course this lesson belongs to, as the header shows it. */
+  course: string;
+  /** The lesson's number in its course. */
+  n: number;
+  title: string;
+  /** One line on what the lesson covers, for the course page. */
+  description: string;
+  /** The course page this lesson belongs to, and where "exit" goes. */
+  backHref: string;
+  /** The concept screens, in order. The first screen of a former chapter keeps its id. */
+  screens: { id: string; title: string }[];
+  /** The practice at the end of the lesson. */
+  exercises: Exercise[];
+  traps: Trap[];
+  /** The golden tips on the summary card. */
+  tips: string[];
+};
+
+/** Build a whole journal entry for a transaction, from the accounts offered (the answer's, plus distractors). */
+export type JournalExercise = { kind: "journal"; id: string; skill: string; entry: Entry; accounts: string[] };
+
+/** A question with one right answer, in the practice set's shape (choice, number, pick debit and credit), without its level. */
+export type QuestionExercise = Pick<Question, "id" | "skill" | "prompt" | "steps"> & (Choice | NumberQ | EntryQ);
+
+/** A practice item: a question, or a full journal entry. */
+export type Exercise = QuestionExercise | JournalExercise;
+
+/** A multiple-choice exam trap: for each wrong option, why it is tempting and why it is wrong. */
+export type Trap = {
+  id: string;
+  prompt: string;
+  options: string[];
+  answer: number;
+  /** Why the right answer is right. */
+  why: string;
+  /** One per option; the right option's is empty. */
+  traps: string[];
+};

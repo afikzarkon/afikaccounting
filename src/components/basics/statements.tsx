@@ -1,5 +1,6 @@
 import { ArrowLeft, BookOpenCheck, Calculator, ClipboardList, FileSpreadsheet, Layers, ListChecks, Scale, Split, Table2 } from "lucide-react";
 import Link from "next/link";
+import { screenHref } from "@/lib/study/basics";
 import { Callout, DataTable } from "@/components/study/blocks";
 import { ALON, build, CONCEPTS, credits, debits, HAYUVAL, NET, NOF, PL_LINES, questionStatements } from "@/lib/learn/statements";
 import { AnswerCheck, MiniQuiz, SortQuiz } from "./inventory-interactive";
@@ -231,7 +232,7 @@ function ConceptsChapter() {
         </ul>
         <p className="text-sm text-muted">
           את חמשת הסוגים עצמם כבר הכרתם —{" "}
-          <Link href="/basics#types" className={linkClass}>
+          <Link href={screenHref("types")} className={linkClass}>
             חמשת סוגי החשבונות
           </Link>
           .
@@ -544,7 +545,7 @@ function ExamChapter() {
           </p>
           <p>
             כמו שלמדתם, העודפים הם הנעלם (
-            <Link href="/basics#trial" className={linkClass}>
+            <Link href={screenHref("trial")} className={linkClass}>
               מאזן בוחן
             </Link>
             ). כאן: סה&quot;כ נכסים <Money v={S.totalAssets} /> − שוטפות <Money v={S.totals.cl} /> − בלתי שוטפות <Money v={S.totals.ncl} /> − הון מניות{" "}
@@ -703,11 +704,11 @@ function SummaryChapter() {
       </Card>
       <DataTable caption="טעויות נפוצות בהרכבת דוחות" head={["✗ הטעות", "✓ הנכון"]} rows={mistakes} />
       <Link
-        href="/basics#reports"
+        href={screenHref("reports")}
         className="group flex items-center gap-4 rounded-xl border-2 border-accent bg-accent-soft px-5 py-4 transition-colors hover:bg-accent-soft/70"
       >
         <BookOpenCheck className="h-6 w-6 shrink-0 text-accent" aria-hidden />
-        <span className="min-w-0 flex-1 text-[15px] font-semibold text-fg">חזרה לחשבונאות מאפס — מאזני מול תוצאתי, והדוחות</span>
+        <span className="min-w-0 flex-1 text-[15px] font-semibold text-fg">לשיעור בחשבונאות מאפס — מאזני מול תוצאתי, והדוחות</span>
         <ArrowLeft className="h-5 w-5 shrink-0 text-accent transition-transform group-hover:-translate-x-1" aria-hidden />
       </Link>
     </Chapter>
