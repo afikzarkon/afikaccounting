@@ -16,11 +16,11 @@ const feesUnearned = round2((FEES.received * (FEES.months - FEES.monthsThisYear)
 
 const NET = { customers: 300_000, rate: 0.03 };
 
-/** Lesson 6: the multi-column worksheet, and a mixed review of the whole course. */
+/** Lesson 5: the multi-column worksheet, and a mixed review of the whole course. */
 export const FINAL: StudyModule = {
   slug: "basics-final",
   course: COURSE,
-  n: 6,
+  n: 5,
   title: "גיליון רב-טורי ותרגול מסכם",
   description: "כל מה שלמדנו בטבלה אחת — ממאזן הבוחן הראשוני ועד הרווח והעודפים — ותרגול מסכם על כל הקורס.",
   backHref: COURSE_HREF,

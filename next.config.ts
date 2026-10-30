@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
       { source: "/ias16-lab/revaluation", destination: "/basics/ias16#revaluation", permanent: true },
       // The pilot lesson grew into the six-lesson basics course.
       { source: "/study/basics", destination: "/basics", permanent: false },
+      // Lesson 3 (credit, advances, loans) became the second half of lesson 2.
+      { source: "/study/basics-journal", destination: "/study/basics-double-entry", permanent: true },
     ];
   },
   partialPrefetching: true,

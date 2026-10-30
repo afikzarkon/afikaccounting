@@ -1,12 +1,12 @@
 import { Laptop, Receipt } from "lucide-react";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { ScreenLink } from "@/components/study-mode/screen-link";
-import { COMPOUND, SIMPLE } from "@/lib/study/basics/shared";
+import { SIMPLE } from "@/lib/study/basics/shared";
 import { ActionFinder } from "./action-finder";
 import { EquationWidget } from "./equation-widget";
 import { ExpenseSorter } from "./expense-sorter";
 import { EntryFlow } from "./entry-flow";
-import { Posted, TIntro } from "./t-accounts";
+import { TIntro } from "./t-accounts";
 import { Card, Money, Term } from "./ui";
 
 // Expense or investment, row by row: what it is, where it is reported, what it does to profit on the day it is paid.
@@ -42,7 +42,7 @@ export const ENTRIES_SCREENS: Record<string, ScreenContent> = {
           <IdentityPart name="הון" hint="מה ששייך לבעלים" />
         </div>
         <p>
-          כל פעולה משנה את המשוואה בשני מקומות לפחות, והיא תמיד נשארת מאוזנת. נסו כאן על ארבע הפעולות הראשונות של עסק קטן. את העסק כולו, עם כרטיסי ה-T, תראו בסוף השיעור — ב<ScreenLink id="lab" />.
+          כל פעולה משנה את המשוואה בשני מקומות לפחות, והיא תמיד נשארת מאוזנת. נסו כאן על ארבע הפעולות הראשונות של עסק קטן. את העסק כולו, עם כרטיסי ה-T, תראו בהמשך השיעור — ב<ScreenLink id="lab" />.
         </p>
         <EquationWidget count={4} />
       </>
@@ -110,18 +110,6 @@ export const ENTRIES_SCREENS: Record<string, ScreenContent> = {
           הנה <strong>פקודה פשוטה</strong> — חשבון אחד בכל צד. והחיצים מראים לאן עוברת כל שורה שלה:
         </p>
         <EntryFlow entry={SIMPLE} note="העסק קיבל חודש שימוש במבנה (חובה) ונתן מזומן (זכות)." aside={<TIntro />} />
-      </>
-    ),
-  },
-  compound: {
-    lead: "בפקודה מורכבת יש כמה חשבונות באותו צד — ועדיין סך החובה שווה לסך הזכות.",
-    body: (
-      <>
-        <p>
-          לפעמים העסק נותן או מקבל יותר מדבר אחד באותו אירוע. כאן הוא קיבל ציוד, ונתן שני דברים: מזומן, והבטחה לשלם את השאר — ולכן בצד הזכות יש שתי שורות. את
-          ההבטחה רושמים כ<strong>זכאים</strong>: מי שהעסק חייב לו כסף, לא על סחורה.
-        </p>
-        <Posted entries={[COMPOUND]} at={0} note="חובה: ציוד 50,000. זכות: מזומן 20,000 + זכאים 30,000 = 50,000." />
       </>
     ),
   },

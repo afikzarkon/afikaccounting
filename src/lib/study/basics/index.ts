@@ -3,10 +3,9 @@ import { BOOKS } from "./books";
 import { DOUBLE_ENTRY } from "./double-entry";
 import { FINAL } from "./final";
 import { INTRO } from "./intro";
-import { JOURNAL } from "./journal";
 
 /** The basics course: six lessons, in order. */
-export const BASICS_LESSONS = [INTRO, DOUBLE_ENTRY, JOURNAL, BOOKS, ADJUST, FINAL];
+export const BASICS_LESSONS = [INTRO, DOUBLE_ENTRY, BOOKS, ADJUST, FINAL];
 
 /** A lesson's address; with a screen id, the address that opens that concept screen. */
 export const lessonHref = (slug: string, screen?: string) => `/study/${slug}${screen ? `?screen=${screen}` : ""}`;

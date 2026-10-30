@@ -9,11 +9,11 @@ const RET = { opening: 40_000, profit: 25_000, dividend: 10_000 };
 const YEAR = { income: 300_000, expenses: 260_000 };
 const yearProfit = round2(YEAR.income - YEAR.expenses);
 
-/** Lesson 4: from T-accounts to the statements — the trial balance, retained earnings, and closing the year. */
+/** Lesson 3: from T-accounts to the statements — the trial balance, retained earnings, and closing the year. */
 export const BOOKS: StudyModule = {
   slug: "basics-books",
   course: COURSE,
-  n: 4,
+  n: 3,
   title: "מכרטיסי T ועד הדוחות",
   description: "כרטיסי T ויתרות, מאזן בוחן, עודפים, ופקודת הסגירה שמעבירה את הרווח לעודפים ומאפסת את התוצאתי.",
   backHref: COURSE_HREF,

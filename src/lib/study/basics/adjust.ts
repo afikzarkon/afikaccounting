@@ -8,11 +8,11 @@ const NRV = { cost: 80_000, nrv: 72_000 };
 const P = ACCRUAL.prepaid;
 const prepaidUsed = (P.paid * P.monthsThisYear) / P.months;
 
-/** Lesson 5: year-end adjustments — the accrual basis, closing inventory, and credit losses. */
+/** Lesson 4: year-end adjustments — the accrual basis, closing inventory, and credit losses. */
 export const ADJUST: StudyModule = {
   slug: "basics-adjust",
   course: COURSE,
-  n: 5,
+  n: 4,
   title: "התאמות סוף שנה",
   description: "בסיס מצטבר וארבעת חשבונות החתך, דוגמה מלאה של פקודות התאמה, מלאי סגירה, והפרשה להפסדי אשראי.",
   backHref: COURSE_HREF,

@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { ClassifyExercise } from "./classify";
 import { RetainedSolver } from "./retained";
 import { EntryCards, Posted, TBox, THead } from "./t-accounts";
-import { Calc, JE, KeyCard, Money, SideChip, StatementsView, type Step, Stepper, TBTable } from "./ui";
+import { Calc, JE, KeyCard, Money, SideChip, StatementsView, type Step, Stepper, TBTable, Term } from "./ui";
 
 const Y20 = statements(YUVAL.tb2020);
 const OPENING_21 = carryForward(YUVAL.tb2020);
@@ -50,6 +50,37 @@ const TB_STAGES: [string, string][] = [
 const run = (entries: Entry[], opts?: { opening?: Record<string, number> }): Step[] =>
   entries.map((x, i) => ({ title: x.text, body: <Posted entries={entries} at={i} opening={opts?.opening} title="פקודת היומן" /> }));
 
+// Credit, with a compound entry after each pair: a sale, its collection, a sale part in cash; a purchase, its payment, a purchase part in cash.
+const [creditSale, collect, creditBuy, paySupplier] = CREDIT.credit;
+const CREDIT_RUN: Entry[] = [
+  creditSale,
+  collect,
+  {
+    id: "3",
+    date: "",
+    text: "פקודה מורכבת: מכרת סחורה ב-2,500 ₪ — 1,000 התקבלו במזומן, ואת השאר הלקוח ישלם בחודש הבא",
+    lines: [
+      { account: "מזומן", dr: 1_000 },
+      { account: "לקוחות", dr: 1_500 },
+      { account: "מכירות", cr: 2_500 },
+    ],
+    why: "קיבלנו שני דברים — מזומן, וזכות לגבות את השאר — ולכן שתי שורות בחובה. בזכות שורה אחת: המכירה כולה. 1,000 + 1,500 = 2,500.",
+  },
+  { ...creditBuy, id: "4" },
+  { ...paySupplier, id: "5" },
+  {
+    id: "6",
+    date: "",
+    text: "פקודה מורכבת: קנית סחורה ב-1,800 ₪ — 800 שילמת במזומן, ואת השאר תשלם לספק בעוד חודש",
+    lines: [
+      { account: "קניות", dr: 1_800 },
+      { account: "מזומן", cr: 800 },
+      { account: "ספקים", cr: 1_000 },
+    ],
+    why: "קיבלנו סחורה — שורה אחת בחובה. נתנו שני דברים — מזומן, והבטחה לשלם לספק — ולכן שתי שורות בזכות. 800 + 1,000 = 1,800.",
+  },
+];
+
 // Figures the screens quote, computed once.
 const loanEnd = balancesOf(ledger(CREDIT.loan));
 const cash = ledger(KITS.entries).find((t) => t.account === "מזומן")!;
@@ -63,7 +94,11 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
     lead: "עסקה נרשמת כשהיא קורית, לא כשהכסף עובר. אם הכסף יעבור אחר כך — בינתיים יש חוב, וביום התשלום החוב נסגר.",
     body: (
       <>
-        <Stepper label="מכירה באשראי ← הלקוח משלם · קנייה באשראי ← משלמים לספק" steps={run(CREDIT.credit)} />
+        <p>
+          לפעמים משלמים רק חלק עכשיו, ואת השאר באשראי. אז באותו צד של הפקודה יש יותר מחשבון אחד — זו <Term he="פקודה מורכבת" />, ועדיין סך החובה שווה לסך
+          הזכות. בדוגמה: צעד 3 הוא מכירה כזו, וצעד 6 — קנייה כזו.
+        </p>
+        <Stepper label="מכירה באשראי ← גבייה ← מכירה מורכבת · קנייה באשראי ← תשלום לספק ← קנייה מורכבת" steps={run(CREDIT_RUN)} />
       </>
     ),
   },

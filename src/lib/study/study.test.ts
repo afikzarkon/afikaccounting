@@ -358,20 +358,23 @@ describe("interactive lessons: trying the missed questions again", () => {
 });
 
 describe("interactive lessons: what each lesson practises", () => {
-  // Lesson 2 records events settled on the spot; credit, advances and loans — money that moves at another time — are lesson 3's.
-  const LATER = ["לקוחות", "ספקים", "מקדמות מלקוחות", "מקדמות לספקים", "הלוואה"];
-  const answerAccounts = (slug: string) =>
-    STUDY_MODULES[slug].exercises.flatMap((x) => (x.kind === "journal" ? x.entry.lines.map((l) => l.account) : x.kind === "entry" ? [x.dr, x.cr] : []));
+  const answerAccounts = (slug: string) => STUDY_MODULES[slug].exercises.flatMap((x) => (x.kind === "journal" ? x.entry.lines.map((l) => l.account) : []));
 
-  it("lesson 2 practises no credit, advance or loan entries; lesson 3 does", () => {
+  it("lesson 2 records the events settled on the spot and those whose money moves at another time: credit, advances, a loan", () => {
     const two = answerAccounts("basics-double-entry");
-    for (const a of LATER) assert.ok(!two.includes(a), `lesson 2 practises ${a}, which lesson 3 teaches`);
-    const three = answerAccounts("basics-journal");
-    for (const a of ["לקוחות", "ספקים", "מקדמות מלקוחות", "הלוואה"]) assert.ok(three.includes(a), `lesson 3 never practises ${a}`);
+    for (const a of ["הון בעלים", "לקוחות", "ספקים", "מקדמות מלקוחות", "הלוואה"]) assert.ok(two.includes(a), `lesson 2 never practises ${a}`);
   });
 
-  it("the whole-business lab closes lesson 2, and the common entries close lesson 3", () => {
-    assert.equal(STUDY_MODULES["basics-double-entry"].screens.at(-1)!.id, "lab");
-    assert.equal(STUDY_MODULES["basics-journal"].screens.at(-1)!.id, "actions");
+  it("lesson 2 is mostly writing entries: no more than four multiple-choice questions", () => {
+    const m = STUDY_MODULES["basics-double-entry"];
+    const choice = m.exercises.filter((x) => x.kind === "choice").length + m.traps.length;
+    assert.ok(choice <= 4, `${choice} multiple-choice questions`);
+    assert.ok(m.exercises.filter((x) => x.kind === "journal").length >= 10);
+  });
+
+  it("the whole cash business comes before credit, and the common entries close the lesson", () => {
+    const ids = STUDY_MODULES["basics-double-entry"].screens.map((s) => s.id);
+    assert.ok(ids.indexOf("lab") < ids.indexOf("credit"));
+    assert.equal(ids.at(-1), "actions");
   });
 });

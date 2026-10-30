@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpenText, ClipboardPen, Flag } from "lucide-react";
+import { BookOpenText, ClipboardPen, Flag, Sparkles } from "lucide-react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type ReactNode, Suspense, useCallback, useEffect, useRef, useState } from "react";
@@ -24,6 +24,7 @@ import type { StudyModule } from "@/lib/study/types";
 import { BottomBar } from "./bottom-bar";
 import { StudyHeader } from "./header";
 import { JournalSimulator } from "./journal-simulator";
+import { LessonOpening } from "./lesson-opening";
 import { PracticeIntro } from "./practice-intro";
 import { resetTopic, updateTopic, useTopic } from "./progress-store";
 import { QuestionExercise } from "./question-exercise";
@@ -77,7 +78,17 @@ export function StudyShell({ module: m, screens, next }: { module: StudyModule; 
   const last = at === total;
   const [dir, setDir] = useState<1 | -1>(1);
   const [moved, setMoved] = useState(false);
-  const markMoved = useCallback(() => setMoved(true), []);
+  // The opening gate shows on every arrival, unless the address asked for a place in the lesson.
+  const [opening, setOpening] = useState(true);
+  const arrived = useCallback(() => {
+    setMoved(true);
+    setOpening(false);
+  }, []);
+  const enter = () => {
+    setDir(1);
+    setMoved(true);
+    setOpening(false);
+  };
   const heading = useRef<HTMLHeadingElement>(null);
   const body = useRef<HTMLDivElement>(null);
   const first = useRef(true);
@@ -97,13 +108,21 @@ export function StudyShell({ module: m, screens, next }: { module: StudyModule; 
   // Trying the missed questions again: "next" goes from one to the next of them, then back to the summary.
   const retry = STEPS[step].id === "practice" ? p.retry : undefined;
   const nextScreen = () => {
+    if (opening) return enter();
     if (!retry?.length) return go(move(m, place, 1), 1);
     const upcoming = Array.from({ length: subCount(m, step) - 1 }, (_, i) => i + 1).find((sub) => sub > place.sub && retry.includes(practiceId(practiceAt(m, sub)!)));
     if (upcoming) return go({ step, sub: upcoming }, 1);
     updateTopic(slug, (q) => ({ ...q, retry: undefined }));
     go({ step: STEPS.length - 1, sub: 0 }, 1);
   };
-  const prevScreen = () => go(move(m, place, -1), -1);
+  const prevScreen = () => {
+    // Back from the lesson's first screen is back to its opening.
+    if (at === 1) {
+      setDir(-1);
+      return setOpening(true);
+    }
+    go(move(m, place, -1), -1);
+  };
   const tryMissedAgain = () => {
     const first = missedOf(m, p)[0];
     if (!first) return;
@@ -141,7 +160,7 @@ export function StudyShell({ module: m, screens, next }: { module: StudyModule; 
     body.current?.scrollTo({ top: 0 });
     if (first.current) first.current = false;
     else heading.current?.focus({ preventScroll: true });
-  }, [place.step, place.sub]);
+  }, [place.step, place.sub, opening]);
 
   const keys = useRef<(e: KeyboardEvent) => void>(undefined);
   const forwarding = useRef(false);
@@ -158,8 +177,8 @@ export function StudyShell({ module: m, screens, next }: { module: StudyModule; 
         forwarding.current = false;
         if (taken) return e.preventDefault();
       }
-      if (e.key === "ArrowLeft" && !last) nextScreen();
-      else if (e.key === "ArrowRight" && at > 1) prevScreen();
+      if (e.key === "ArrowLeft" && (opening || !last)) nextScreen();
+      else if (e.key === "ArrowRight" && !opening) prevScreen();
       else return;
       e.preventDefault();
     };
@@ -172,7 +191,23 @@ export function StudyShell({ module: m, screens, next }: { module: StudyModule; 
 
   const id = STEPS[step].id;
   let card: { icon: ReactNode; title: string; count?: string; content: ReactNode };
-  if (id === "learn") {
+  if (opening) {
+    card = {
+      icon: <Sparkles className="h-5 w-5" />,
+      title: "על השיעור",
+      content: (
+        <LessonOpening
+          module={m}
+          progress={p}
+          onStart={enter}
+          onRestart={() => {
+            restart();
+            setOpening(false);
+          }}
+        />
+      ),
+    };
+  } else if (id === "learn") {
     const s = screens[place.sub];
     card = {
       icon: <BookOpenText className="h-5 w-5" />,
@@ -247,13 +282,14 @@ export function StudyShell({ module: m, screens, next }: { module: StudyModule; 
     };
   }
 
-  const resumable = !moved && (p.step > 0 || p.sub > 0);
+  // The opening already offers to resume or restart; the reminder is for an arrival that skipped it.
+  const resumable = !opening && !moved && (p.step > 0 || p.sub > 0);
 
   return (
     <MotionConfig reducedMotion="user">
       {/* Its own boundary: reading the address must not keep the lesson itself from prerendering. */}
       <Suspense fallback={null}>
-        <AddressPlace module={m} onApply={markMoved} />
+        <AddressPlace module={m} onApply={arrived} />
       </Suspense>
       <LessonContext value={{ slug, jump }}>
         <div className="fixed inset-0 z-50 flex h-dvh flex-col overflow-hidden bg-canvas" aria-label={`שיעור אינטראקטיבי: ${m.title}`} role="region">
@@ -289,7 +325,7 @@ export function StudyShell({ module: m, screens, next }: { module: StudyModule; 
               <div ref={body} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div
-                    key={`${place.step}-${place.sub}`}
+                    key={opening ? "opening" : `${place.step}-${place.sub}`}
                     initial={{ opacity: 0, x: -28 * dir }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 28 * dir }}
@@ -303,7 +339,7 @@ export function StudyShell({ module: m, screens, next }: { module: StudyModule; 
             </div>
           </div>
 
-          <BottomBar step={step} first={at === 1} last={last} onPrev={prevScreen} onNext={nextScreen} onJump={(i) => i !== step && go({ step: i, sub: 0 }, i > step ? 1 : -1)} />
+          <BottomBar step={step} first={opening} last={last && !opening} onPrev={prevScreen} onNext={nextScreen} onJump={(i) => i !== step && go({ step: i, sub: 0 }, i > step ? 1 : -1)} />
         </div>
       </LessonContext>
     </MotionConfig>
