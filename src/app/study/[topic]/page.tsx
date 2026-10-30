@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { orphanScreens, screensFor } from "@/components/basics/screens";
 import { StudyShell } from "@/components/study-mode/shell";
+import { Skeleton } from "@/components/ui/primitives";
 import { LEARNING_PATH } from "@/lib/catalog";
 import { STUDY_MODULES, studyHref } from "@/lib/study";
 
@@ -29,9 +31,27 @@ function nextOf(slug: string) {
   return t && { href: t.lesson ?? t.href, label: `לנושא הבא: ${t.title}` };
 }
 
-/** One interactive lesson, full screen. */
-export default async function StudyPage({ params }: PageProps<"/study/[topic]">) {
+/** One interactive lesson, full screen. The lesson is read from the URL, so it streams in behind a boundary and the route's shell stays shared. */
+export default function StudyPage({ params }: PageProps<"/study/[topic]">) {
+  return (
+    <Suspense fallback={<LessonSkeleton />}>
+      <Lesson params={params} />
+    </Suspense>
+  );
+}
+
+async function Lesson({ params }: Pick<PageProps<"/study/[topic]">, "params">) {
   const m = STUDY_MODULES[(await params).topic];
   if (!m) notFound();
   return <StudyShell module={m} screens={screensFor(m)} next={nextOf(m.slug)} />;
+}
+
+/** The lesson screen's frame, full screen like the shell, until the lesson arrives. */
+function LessonSkeleton() {
+  return (
+    <div className="fixed inset-0 z-50 flex h-dvh flex-col gap-4 bg-canvas px-3 py-3 sm:px-4 sm:py-5" aria-busy="true" aria-label="טוען שיעור">
+      <Skeleton className="h-12" />
+      <Skeleton className="min-h-0 flex-1 rounded-2xl" />
+    </div>
+  );
 }
