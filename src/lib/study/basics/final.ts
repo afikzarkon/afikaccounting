@@ -1,14 +1,10 @@
-import { balancesOf, closingEntry, ledger, RONEN, round2, statements } from "@/lib/learn/basics";
+import { balancesOf, ledger, RONEN, round2, statements } from "@/lib/learn/basics";
 import type { StudyModule } from "../types";
 import { COURSE, COURSE_HREF, fmt } from "./shared";
 
 // Ronen's year after the adjustments: the profit the worksheet arrives at.
 const RONEN_S = statements(balancesOf(ledger(RONEN.adjustments, RONEN.preliminary)));
 const list = (rows: [string, number][]) => rows.map(([a, v]) => `${a} ${fmt(v)}`).join(" + ");
-
-// A small closing entry, built by the same function the course uses.
-const CLOSE_TB = { מכירות: -90_000, "הוצאות שכר": 50_000, קניות: 25_000 };
-const CLOSE = closingEntry(CLOSE_TB, "סגירה", "31.12");
 
 // Service fees received in advance on 1.12 for three months, all recorded as income.
 const FEES = { received: 9_000, months: 3, monthsThisYear: 1 };
@@ -46,17 +42,6 @@ export const FINAL: StudyModule = {
         `הוצאות אחרי ההתאמות: ${list(RONEN_S.expenses)} = ${fmt(RONEN_S.totalExpenses)}.`,
         `רווח = ${fmt(RONEN_S.totalIncome)} − ${fmt(RONEN_S.totalExpenses)} = ${fmt(RONEN_S.profit)}.`,
       ],
-    },
-    {
-      kind: "journal",
-      id: "close-year",
-      skill: "פקודת הסגירה",
-      entry: {
-        ...CLOSE,
-        text: `סוף השנה. היתרות התוצאתיות: מכירות ${fmt(-CLOSE_TB.מכירות)} (ז׳), הוצאות שכר ${fmt(CLOSE_TB["הוצאות שכר"])} (ח׳), קניות ${fmt(CLOSE_TB.קניות)} (ח׳). רשמו את פקודת הסגירה.`,
-        why: "כל חשבון תוצאתי נסגר ביתרה שלו בצד ההפוך: הכנסה בחובה, הוצאה בזכות. ההפרש — הרווח — לזכות העודפים.",
-      },
-      accounts: ["מכירות", "הוצאות שכר", "קניות", "עודפים", "הון בעלים", "מזומן"],
     },
     {
       kind: "journal",

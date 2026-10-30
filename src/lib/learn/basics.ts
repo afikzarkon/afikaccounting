@@ -427,6 +427,8 @@ const Q = {
   q14: { opening: 40_000, purchases: 150_000, closing: 35_000 },
   q15: { customers: 500_000, specificDebt: 20_000, specificRate: 0.5, generalRate: 0.04, allowance: 15_000 },
 };
+/** The trial balance of q8 without its cash line: for a practice that completes the table itself. */
+export const Q8_TB = Q.q8.others;
 const q8Cash = -Object.values(Q.q8.others).reduce((s, v) => s + v, 0);
 const q8Dr = Object.values(Q.q8.others).filter((v) => v > 0);
 const q8Cr = Object.values(Q.q8.others).filter((v) => v < 0).map((v) => -v);

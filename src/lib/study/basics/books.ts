@@ -1,4 +1,4 @@
-import { round2 } from "@/lib/learn/basics";
+import { Q8_TB, round2 } from "@/lib/learn/basics";
 import type { StudyModule } from "../types";
 import { COURSE, COURSE_HREF, fmt, practice } from "./shared";
 
@@ -15,18 +15,33 @@ export const BOOKS: StudyModule = {
   course: COURSE,
   n: 3,
   title: "מכרטיסי T ועד הדוחות",
-  description: "כרטיסי T ויתרות, מאזן בוחן, עודפים, ופקודת הסגירה שמעבירה את הרווח לעודפים ומאפסת את התוצאתי.",
+  description: "כרטיסי T ויתרות, מאזן בוחן, עודפים, ומהיתרות לדוחות — ומה עובר לשנה הבאה ומה מתאפס.",
   backHref: COURSE_HREF,
   screens: [
-    { id: "taccounts", title: "סוגרים כרטיס T: יתרת סגירה" },
-    { id: "trial", title: "מאזן בוחן" },
+    { id: "taccounts", title: "כרטיסי T: כל חשבון בכרטיס משלו" },
+    { id: "trial", title: "מאזן בוחן: כל היתרות בטבלה אחת" },
+    { id: "trialCheck", title: "תרגול הבנה: חובה או זכות?" },
     { id: "retained", title: "עודפים" },
     { id: "reports", title: "מהיתרות לדוחות" },
-    { id: "closing", title: "פקודת הסגירה: הרווח עובר לעודפים" },
     { id: "carry", title: "מעבר משנה לשנה" },
   ],
   exercises: [
-    practice("q10"),
+    {
+      ...practice("q10"),
+      prompt: "בנו את כרטיס המזומן של מוסך ״גלגל״ לחודש מרץ: גררו כל תנועה לצד שלה בכרטיס — חובה או זכות. אחר כך מצאו את יתרת הסגירה ואת הצד שלה.",
+      // The same amounts as the practice set's question, each with what happened, so the side has to be worked out.
+      table: {
+        kind: "card",
+        account: "מזומן",
+        items: [
+          { label: "יתרת פתיחה: מזומן בקופה ב-1.3", amount: 7_000, side: "dr" },
+          { label: "לקוח שילם על תיקון", amount: 12_000, side: "dr" },
+          { label: "מכירת חלקים במזומן", amount: 4_500, side: "dr" },
+          { label: "תשלום לספק החלקים", amount: 9_800, side: "cr" },
+          { label: "תשלום חשבון החשמל", amount: 2_200, side: "cr" },
+        ],
+      },
+    },
     {
       kind: "choice",
       id: "suppliers-card",
@@ -40,7 +55,11 @@ export const BOOKS: StudyModule = {
         `הזכות גדולה יותר, ולכן היתרה בזכות: ${fmt(SUPPLIERS.opening + SUPPLIERS.purchases)} − ${fmt(SUPPLIERS.paid)} = ${fmt(suppliersClose)}.`,
       ],
     },
-    practice("q8"),
+    {
+      ...practice("q8"),
+      prompt: "בנו את מאזן הבוחן של המשתלה של שירן: גררו כל חשבון לצד שלו — חובה או זכות. יתרת המזומן חסרה — מצאו אותה, כך שמאזן הבוחן יתאזן.",
+      table: { kind: "trial", balances: Q8_TB, missing: "מזומן" },
+    },
     {
       kind: "number",
       id: "retained-close",
@@ -50,16 +69,15 @@ export const BOOKS: StudyModule = {
       steps: ["עודפי סגירה = עודפי פתיחה + רווח השנה − מה שחולק.", `${fmt(RET.opening)} + ${fmt(RET.profit)} − ${fmt(RET.dividend)} = ${fmt(RET.opening + RET.profit - RET.dividend)}.`],
     },
     {
-      kind: "choice",
-      id: "closing-retained",
-      skill: "פקודת הסגירה",
-      prompt: `בסוף השנה: סך ההכנסות ${fmt(YEAR.income)} ₪ וסך ההוצאות ${fmt(YEAR.expenses)} ₪. איך מופיעים העודפים בפקודת הסגירה?`,
-      options: [`ז׳ עודפים ${fmt(yearProfit)}`, `ח׳ עודפים ${fmt(yearProfit)}`, `ז׳ עודפים ${fmt(YEAR.income)}`, "העודפים לא משתתפים בפקודת הסגירה"],
-      answer: 0,
+      kind: "number",
+      id: "profit-to-retained",
+      skill: "הרווח עובר לעודפים",
+      prompt: `בסוף השנה: סך ההכנסות ${fmt(YEAR.income)} ₪ וסך ההוצאות ${fmt(YEAR.expenses)} ₪. בכמה גדלים העודפים של החברה?`,
+      answer: yearProfit,
       steps: [
         `רווח השנה: ${fmt(YEAR.income)} − ${fmt(YEAR.expenses)} = ${fmt(yearProfit)}.`,
-        "בפקודת הסגירה: ח׳ כל הכנסה, ז׳ כל הוצאה, וההפרש — הרווח — עובר לעודפים.",
-        `רווח מגדיל את העודפים, ולכן ז׳ עודפים ${fmt(yearProfit)}. בהפסד — ח׳ עודפים.`,
+        "בסוף השנה הרווח עובר לעודפים — הרווחים שהחברה צברה ולא חילקה — והכנסות והוצאות מתחילות את השנה הבאה מאפס.",
+        `לכן העודפים גדלים ב-${fmt(yearProfit)}. בהפסד הם היו קטנים.`,
       ],
     },
   ],
@@ -95,11 +113,11 @@ export const BOOKS: StudyModule = {
       prompt: "ב-31.12 יתרת ״מכירות״ היא 500,000 ₪. מה היתרה שלה ב-1.1 בשנה הבאה?",
       options: ["0 ₪", "500,000 ₪", "500,000 ₪ בחובה", "היא עוברת להון בעלים"],
       answer: 0,
-      why: "מכירות הן חשבון תוצאתי: בפקודת הסגירה הוא מתאפס, והרווח עובר לעודפים. כל שנה מתחילה מאפס.",
+      why: "מכירות הן חשבון תוצאתי: בסוף השנה הוא מתאפס, והרווח עובר לעודפים. כל שנה מתחילה מאפס.",
       traps: [
         "",
         "המלכודת: רק חשבונות מאזניים ממשיכים. אילו המכירות היו ממשיכות, היינו סופרים אותן גם בשנה הבאה.",
-        "בפקודת הסגירה רושמים מכירות בחובה כדי לאפס אותה — לא כדי להעביר את היתרה לצד השני.",
+        "היתרה לא עוברת לצד השני — היא מתאפסת. מה שנשאר מהשנה הוא הרווח, והוא עובר לעודפים.",
         "הרווח עובר לעודפים, לא להון הבעלים — והמכירות עצמן מתאפסות.",
       ],
     },
@@ -121,6 +139,6 @@ export const BOOKS: StudyModule = {
     "יתרת כרטיס: סך חובה מול סך זכות — היתרה בצד הגדול, בגובה ההפרש. אל תשכחו את יתרת הפתיחה.",
     "חסרה יתרה במאזן בוחן? היא ההפרש: סך החובה חייב להיות שווה לסך הזכות.",
     "עודפי סגירה = פתיחה + רווח (− הפסד) − חלוקה. חברה חדשה: פתיחה 0.",
-    "מאזני ממשיך, תוצאתי מתאפס. פקודת הסגירה: ח׳ הכנסות / ז׳ הוצאות / ז׳ עודפים ברווח.",
+    "מאזני ממשיך, תוצאתי מתאפס: בסוף השנה הרווח עובר לעודפים, והכנסות והוצאות מתחילות מאפס.",
   ],
 };

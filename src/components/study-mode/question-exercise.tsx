@@ -8,6 +8,7 @@ import { inputClass } from "@/components/ui/form";
 import { type ExResult, numberRight, triesFor, XP } from "@/lib/study/score";
 import type { QuestionExercise } from "@/lib/study/types";
 import { cn } from "@/lib/utils";
+import { BalanceGapBoard } from "./balance-gap";
 import { Feedback, Gain } from "./journal-simulator";
 import { typedAmount } from "@/lib/amount";
 
@@ -79,7 +80,9 @@ export function QuestionExercise({ q, result, onCheck }: { q: Question; result?:
         </div>
       )}
 
-      {q.kind === "number" && !done && (
+      {q.kind === "number" && q.table && <BalanceGapBoard gap={q.table} answer={q.answer} done={done} onCheck={onCheck} />}
+
+      {q.kind === "number" && !q.table && !done && (
         <div className="flex flex-wrap items-end gap-2">
           <label className="min-w-0 flex-1 text-[12.5px] text-muted">
             התשובה בשקלים

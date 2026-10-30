@@ -121,7 +121,7 @@ describe("interactive lessons: the accounting in the new questions", () => {
     assert.equal(answerOf(ex("basics-double-entry", "liabilities-gap")), 230_000);
     assert.equal(answerOf(ex("basics-books", "suppliers-card")), "14,000 בזכות");
     assert.equal(answerOf(ex("basics-books", "retained-close")), 55_000);
-    assert.equal(answerOf(ex("basics-books", "closing-retained")), "ז׳ עודפים 40,000");
+    assert.equal(answerOf(ex("basics-books", "profit-to-retained")), 40_000);
     assert.equal(answerOf(ex("basics-adjust", "lower-of")), "72,000");
     assert.equal(answerOf(ex("basics-final", "net-customers")), 291_000);
     // Ronen after the adjustments: income 144,000 + 110,000 + 24,000; expenses 27,000 + 48,000 + 30,000.
@@ -138,18 +138,6 @@ describe("interactive lessons: the accounting in the new questions", () => {
     const profitMove = (id: string) =>
       TRANSLATIONS.find((t) => t.id === id)!.changes.reduce((s, c) => s + (typeOf(c.account) === "income" ? c.by : typeOf(c.account) === "expense" ? -c.by : 0), 0);
     assert.deepEqual(["sale", "rent", "loan", "chat"].map(profitMove), [1_200, -4_000, 0, 0]);
-  });
-
-  it("the closing entry closes every result account and credits the profit to retained earnings", () => {
-    const close = ex("basics-final", "close-year");
-    assert.equal(close.kind, "journal");
-    if (close.kind !== "journal") return;
-    assert.deepEqual(close.entry.lines, [
-      { account: "מכירות", dr: 90_000 },
-      { account: "הוצאות שכר", cr: 50_000 },
-      { account: "קניות", cr: 25_000 },
-      { account: "עודפים", cr: 15_000 },
-    ]);
   });
 
   it("year-end adjustments: the amounts and the sides", () => {
@@ -376,5 +364,25 @@ describe("interactive lessons: what each lesson practises", () => {
     const ids = STUDY_MODULES["basics-double-entry"].screens.map((s) => s.id);
     assert.ok(ids.indexOf("lab") < ids.indexOf("credit"));
     assert.equal(ids.at(-1), "actions");
+  });
+});
+
+describe("interactive lessons: amounts sorted by hand", () => {
+  it("a trial balance to complete balances with its answer on the missing line; a T-account's closing balance is its sides' difference", () => {
+    let seen = 0;
+    for (const m of modules)
+      for (const x of m.exercises) {
+        if (x.kind !== "number" || !x.table) continue;
+        seen++;
+        if (x.table.kind === "trial") {
+          assert.ok(!(x.table.missing in x.table.balances), `${m.slug}: ${x.id} gives the missing line`);
+          const sum = Object.values(x.table.balances).reduce((s, v) => s + v, 0) + x.answer;
+          assert.ok(Math.abs(sum) < 0.005, `${m.slug}: ${x.id} does not balance (${sum})`);
+        } else {
+          const net = x.table.items.reduce((s, i) => s + (i.side === "dr" ? i.amount : -i.amount), 0);
+          assert.equal(net, x.answer, `${m.slug}: ${x.id}`);
+        }
+      }
+    assert.ok(seen >= 2, "both boards are in the course");
   });
 });

@@ -297,7 +297,7 @@ export function StudyShell({ module: m, screens, next }: { module: StudyModule; 
           <StudyHeader course={m.course} title={`שיעור ${m.n}: ${m.title}`} backHref={m.backHref} step={step} at={at} total={total} streak={p.streak} xp={xpOf(m, p)} />
 
           <div className="relative min-h-0 flex-1 px-3 py-3 sm:px-4 sm:py-5">
-            <div className="card mx-auto flex h-full max-w-4xl flex-col overflow-hidden">
+            <div className="card mx-auto flex h-full max-w-6xl flex-col overflow-hidden 2xl:max-w-7xl">
               <div className="flex shrink-0 items-center gap-2.5 border-b border-line px-4 py-3 sm:px-5">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent" aria-hidden>
                   {card.icon}

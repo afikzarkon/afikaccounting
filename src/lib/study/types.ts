@@ -29,7 +29,20 @@ export type StudyModule = {
 export type JournalExercise = { kind: "journal"; id: string; skill: string; entry: Entry; accounts: string[] };
 
 /** A question with one right answer, in the practice set's shape (choice, number, pick debit and credit), without its level. */
-export type QuestionExercise = Pick<Question, "id" | "skill" | "prompt" | "steps"> & (Choice | NumberQ | EntryQ);
+/**
+ * Amounts the learner sorts to debit or credit, and one thing left to find:
+ * a trial balance with one account's balance missing (debit positive, credit
+ * negative), or a T-account's movements, whose closing balance is the answer.
+ */
+export type BalanceGap =
+  | { kind: "trial"; balances: Record<string, number>; missing: string }
+  | { kind: "card"; account: string; items: { label: string; amount: number; side: "dr" | "cr" }[] };
+
+export type QuestionExercise = Pick<Question, "id" | "skill" | "prompt" | "steps"> &
+  (Choice | NumberQ | EntryQ) & {
+    /** A number question answered by completing this trial balance, rather than in a bare field. */
+    table?: BalanceGap;
+  };
 
 /** A practice item: a question, or a full journal entry. */
 export type Exercise = QuestionExercise | JournalExercise;

@@ -12,7 +12,9 @@ export const fmt = (v: number) => v.toLocaleString("en-US");
 export function practice(id: string): QuestionExercise {
   const q = PRACTICE.find((x) => x.id === id);
   if (!q) throw new Error(`No practice question ${id}`);
-  return Object.fromEntries(Object.entries(q).filter(([k]) => k !== "level")) as QuestionExercise;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- the level is the practice page's, not the lesson's
+  const { level, ...exercise } = q;
+  return exercise;
 }
 
 /** The two worked entries of "double entry": one account on each side, and several on one side. */

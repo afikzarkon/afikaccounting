@@ -13,7 +13,7 @@ export function StudyHeader({ course, title, backHref, step, at, total, streak, 
   const sound = useSound();
   return (
     <header className="glass shrink-0 border-x-0 border-t-0">
-      <div className="mx-auto flex h-14 max-w-3xl items-center gap-2 px-4 sm:gap-3">
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4 sm:gap-3 2xl:max-w-7xl">
         <Link href={backHref} aria-label="יציאה מהשיעור" className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted hover:bg-surface-2 hover:text-fg">
           <X className="h-5 w-5" />
         </Link>

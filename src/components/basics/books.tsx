@@ -1,28 +1,17 @@
-import { ArrowLeft, CalendarClock, RotateCcw } from "lucide-react";
-import { balancesOf, carryForward, closingEntry, CREDIT, type Entry, isBalanceSheet, KITS, ledger, statements, trialBalance, YUVAL } from "@/lib/learn/basics";
+import { ArrowLeft, CalendarClock, Check, RotateCcw } from "lucide-react";
+import { balancesOf, carryForward, CREDIT, type Entry, isBalanceSheet, KITS, ledger, statements, trialBalance, YUVAL } from "@/lib/learn/basics";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { ScreenLink } from "@/components/study-mode/screen-link";
 import { cn } from "@/lib/utils";
 import { ClassifyExercise } from "./classify";
 import { RetainedSolver } from "./retained";
-import { EntryCards, Posted, TBox, THead } from "./t-accounts";
+import { Posted, TBox, THead } from "./t-accounts";
 import { Calc, JE, KeyCard, Money, SideChip, StatementsView, type Step, Stepper, TBTable, Term } from "./ui";
 
 const Y20 = statements(YUVAL.tb2020);
 const OPENING_21 = carryForward(YUVAL.tb2020);
 const B21 = balancesOf(ledger(YUVAL.entries2021, OPENING_21));
 const Y21 = statements(B21);
-const CLOSE_20 = closingEntry(YUVAL.tb2020, "סגירה", "31.12.2020");
-const CLOSE_21 = closingEntry(B21, "סגירה", "31.12.2021");
-const RUN_21 = [...YUVAL.entries2021, CLOSE_21];
-
-// 2020's profit-or-loss accounts, and the closing entry split into what it does to each group.
-const PL_20 = Object.fromEntries(Object.entries(YUVAL.tb2020).filter(([a]) => !isBalanceSheet(a)));
-const INCOME_20 = CLOSE_20.lines.filter((l) => l.dr).map((l) => l.account);
-const EXPENSE_20 = CLOSE_20.lines.filter((l) => l.cr && l.account !== "עודפים").map((l) => l.account);
-const part = (accounts: string[]): Entry => ({ ...CLOSE_20, lines: CLOSE_20.lines.filter((l) => accounts.includes(l.account)) });
-const cardsAfter = (accounts: string[], posted: string[]) =>
-  ledger([part(posted)], { ...PL_20, עודפים: 0 }).filter((t) => accounts.includes(t.account));
 
 // Why each of Yuval's balances sits where it does, for the trial-balance exercise.
 const EXPLAIN: Record<string, string> = {
@@ -81,6 +70,55 @@ const CREDIT_RUN: Entry[] = [
   },
 ];
 
+// The lesson's road, from the entries to the statements: where each screen stands on it.
+const ROUTE: [string, string][] = [
+  ["פקודות יומן", "כל אירוע נרשם בפקודה"],
+  ["כרטיסי T", "כל חשבון בכרטיס משלו; בסוף השנה — יתרה"],
+  ["מאזן בוחן", "כל היתרות בטבלה אחת"],
+  ["דוחות", "רווח והפסד, ומאזן"],
+];
+
+/** The road from the entries to the statements, with the stop this screen is at. */
+function Route({ at }: { at: number }) {
+  return (
+    <ol className="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="הדרך מהפקודות לדוחות">
+      {ROUTE.map(([t, d], i) => (
+        <li
+          key={t}
+          aria-current={i === at ? "step" : undefined}
+          className={cn(
+            "relative rounded-xl border px-3 py-2.5",
+            i === at ? "border-accent bg-accent-soft ring-2 ring-accent/30" : i < at ? "border-line bg-surface" : "border-dashed border-line-strong bg-surface",
+          )}
+        >
+          <span className="flex items-center gap-1.5">
+            <span
+              className={cn(
+                "num grid h-5 w-5 shrink-0 place-items-center rounded-full text-[11px] font-bold",
+                i === at ? "bg-accent text-accent-fg" : i < at ? "bg-success text-canvas" : "bg-surface-2 text-muted",
+              )}
+            >
+              {i < at ? <Check className="h-3 w-3" strokeWidth={3} aria-hidden /> : i + 1}
+            </span>
+            <span className={cn("text-[14px] font-bold", i > at ? "text-muted" : "text-fg")}>{t}</span>
+            {i === at && <span className="ms-auto rounded-full bg-accent px-2 py-0.5 text-[10.5px] font-bold text-accent-fg">אתם כאן</span>}
+          </span>
+          <span className="mt-1 block text-[12.5px] leading-snug text-muted">{d}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+// What a trial balance is, before one is built.
+const TB_WHAT: [string, string][] = [
+  ["מה יש בו", "כל החשבונות של העסק, כל אחד עם יתרת הסגירה של הכרטיס שלו — בעמודת החובה או בעמודת הזכות."],
+  ["למה ״בוחן״", "כל פקודה נרשמה עם חובה = זכות, ולכן גם כשמחברים את כל היתרות, סך החובה חייב להיות שווה לסך הזכות. זו הבדיקה."],
+  ["בשביל מה", "ממנו בונים את הדוחות: החשבונות התוצאתיים לרווח והפסד, והמאזניים — למאזן."],
+  ["מה הוא לא מוכיח", "מאזן מאוזן לא אומר שאין טעויות: טעות שנרשמה באותו סכום בשני הצדדים עדיין מאוזנת."],
+];
+const kitsTb = trialBalance(balancesOf(ledger(KITS.entries)));
+
 // Figures the screens quote, computed once.
 const loanEnd = balancesOf(ledger(CREDIT.loan));
 const cash = ledger(KITS.entries).find((t) => t.account === "מזומן")!;
@@ -137,9 +175,10 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
   },
 
   taccounts: {
-    lead: "את כרטיסי ה-T כבר פגשתם. עכשיו סוגרים כרטיס: מחברים כל צד — כולל יתרת הפתיחה — והיתרה היא ההפרש, בצד הגדול.",
+    lead: "כל פקודות היומן של השנה מצטברות בכרטיסי T — לכל חשבון כרטיס משלו. בסוף השנה סוגרים כל כרטיס: מחברים כל צד, והיתרה היא ההפרש, בצד הגדול.",
     body: (
       <>
+        <Route at={1} />
         <ol className="flex flex-wrap items-center gap-2 text-sm">
           {["יתרת פתיחה (בעסק חדש: 0)", "תנועות — כל סכום בצד שלו, עם מספר הפקודה", "יתרת סגירה — ההפרש"].map((t, i) => (
             <li key={t} className="flex items-center gap-2">
@@ -149,12 +188,14 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
           ))}
         </ol>
         <p>
-          בונים את כרטיס המזומן של עסק הערכות מ<ScreenLink id="lab" />, תנועה אחר תנועה:
+          איך מגיעים ליתרת הסגירה? נראה את זה על כרטיס אחד: כרטיס המזומן של עסק הערכות מ<ScreenLink id="lab" />. נעבור על הפקודות של השנה אחת אחת, ונראה איך
+          כל פקודה מוסיפה שורה לכרטיס. בצעד האחרון נסגור את הכרטיס ונמצא את היתרה שלו:
         </p>
         <Stepper
           label="בונים כרטיס T: מזומן"
           steps={[
-            ...KITS.entries.map((x, i) => ({ title: x.text, body: <Posted entries={KITS.entries} at={i} title={`פקודה ${x.id}`} /> })),
+            // Only the cash card: the one being built here. An entry that does not touch cash leaves it as it was.
+            ...KITS.entries.map((x, i) => ({ title: x.text, body: <Posted entries={KITS.entries} at={i} accounts={["מזומן"]} title={`פקודה ${x.id}`} /> })),
             {
               title: "סוגרים את הכרטיס: מה היתרה?",
               body: (
@@ -181,13 +222,24 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
   },
 
   trial: {
-    lead: "מאזן בוחן מרכז את כל היתרות בטבלה אחת. המטרה: לדעת איפה כל חשבון יושב — חובה או זכות — ולוודא שסך החובה שווה לסך הזכות.",
+    lead: "בסוף השנה לוקחים את היתרה של כל כרטיס T, ומרכזים את כולן בטבלה אחת: מאזן בוחן.",
     body: (
       <>
+        <Route at={2} />
+        <h3 className="text-lg font-semibold text-fg">מה זה מאזן בוחן?</h3>
+        <dl className="grid gap-2 sm:grid-cols-2">
+          {TB_WHAT.map(([t, d]) => (
+            <div key={t} className="rounded-xl border border-line bg-surface px-3.5 py-2.5">
+              <dt className="text-[14px] font-bold text-fg">{t}</dt>
+              <dd className="text-[14px] leading-relaxed text-fg/85">{d}</dd>
+            </div>
+          ))}
+        </dl>
         <p>
-          חברת יובל בע&quot;מ הוקמה ב-1.1.2020. אלה היתרות שלה ב-31.12.2020. שבצו כל אחת בצד שלה:
+          כך נראה מאזן הבוחן של עסק הערכות, מאותם כרטיסים שבנינו במסך הקודם. יתרת המזומן, <Money v={cash.balance} />, היא היתרה שחישבנו בכרטיס:
         </p>
-        <ClassifyExercise balances={YUVAL.tb2020} explain={EXPLAIN} solution={<TBTable tb={trialBalance(YUVAL.tb2020)} caption="הפתרון: מאזן הבוחן של יובל ליום 31.12.2020" kind />} />
+        <TBTable tb={kitsTb} caption="מאזן בוחן · עסק הערכות" kind />
+
         <h3 className="pt-2 text-lg font-semibold text-fg">מ-1.1 ועד מאזן נכון ל-31.12</h3>
         <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {TB_STAGES.map(([t, d], i) => (
@@ -203,6 +255,19 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
         <p className="rounded-xl border border-amber-500/40 bg-amber-500/[0.08] px-4 py-2.5 text-[15px]">
           בשאלה מקבלים בדרך כלל את שלב 1. דוחות שנבנים ישר ממנו — שגויים: קודם התאמות.
         </p>
+      </>
+    ),
+  },
+
+  trialCheck: {
+    lead: "לפני שממשיכים לתרגול של השיעור — בודקים שההבנה יושבת: יודעים באיזה צד נמצא כל חשבון במאזן הבוחן.",
+    body: (
+      <>
+        <Route at={2} />
+        <p>
+          לפניכם היתרות של חברת יובל בע&quot;מ ב-31.12.2020. שבצו כל יתרה בצד שלה — חובה או זכות. כל בחירה מקבלת הסבר מיד, ובסוף מתקבל מאזן הבוחן המלא.
+        </p>
+        <ClassifyExercise balances={YUVAL.tb2020} explain={EXPLAIN} solution={<TBTable tb={trialBalance(YUVAL.tb2020)} caption="הפתרון: מאזן הבוחן של יובל ליום 31.12.2020" kind />} />
       </>
     ),
   },
@@ -238,6 +303,7 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
     lead: "מהיתרות בונים את שני הדוחות: החשבונות התוצאתיים — הכנסות והוצאות — נכנסים לדוח רווח והפסד. החשבונות המאזניים — נכסים, התחייבויות והון — נכנסים למאזן.",
     body: (
       <>
+        <Route at={3} />
         <div className="grid gap-3 md:grid-cols-2">
           <div className="rounded-2xl border-2 border-fg/15 bg-surface p-4">
             <p className="text-[17px] font-bold text-fg">תוצאתי · רווח והפסד</p>
@@ -254,63 +320,6 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
           ביובל 2020: הכנסות <Money v={Y20.totalIncome} /> פחות הוצאות <Money v={Y20.totalExpenses} /> = רווח <Money v={Y20.profit} />, שעובר לעודפים:
         </p>
         <StatementsView s={Y20} year="2020" />
-      </>
-    ),
-  },
-
-  closing: {
-    lead: (
-      <>
-        כל חשבון תוצאתי נסגר ביתרה שלו, בצד ההפוך: הכנסה בחובה, הוצאה בזכות. ההפרש הוא הרווח — <SideChip side="cr" className="align-middle" /> עודפים. בהפסד ההפרש
-        בצד השני — <SideChip side="dr" className="align-middle" /> עודפים.
-      </>
-    ),
-    body: (
-      <>
-        <Stepper
-          label="סגירת 2020 · יובל"
-          steps={[
-            {
-              title: "לפני הסגירה: החשבונות התוצאתיים ב-31.12.2020",
-              body: (
-                <>
-                  <THead n={ledger([], PL_20).length} />
-                  <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-                    {ledger([], PL_20).map((t) => (
-                      <TBox key={t.account} t={t} openingLabel="יתרה" />
-                    ))}
-                  </div>
-                  <Calc result={<Money v={Y20.profit} />}>
-                    הכנסות <Money v={Y20.totalIncome} /> − הוצאות <Money v={Y20.totalExpenses} />
-                  </Calc>
-                </>
-              ),
-            },
-            {
-              title: "ח׳ כל הכנסה, ביתרה שלה",
-              body: <EntryCards entry={<JE entry={CLOSE_20} hl={INCOME_20} note="הכנסה יושבת בזכות; רישום בחובה באותו סכום מאפס אותה." />} cards={cardsAfter(INCOME_20, INCOME_20)} fresh="סגירה" openingLabel="יתרה" />,
-            },
-            {
-              title: "ז׳ כל הוצאה, ביתרה שלה",
-              body: <EntryCards entry={<JE entry={CLOSE_20} hl={EXPENSE_20} note="הוצאה יושבת בחובה; רישום בזכות מאפס אותה." />} cards={cardsAfter(EXPENSE_20, EXPENSE_20)} fresh="סגירה" openingLabel="יתרה" />,
-            },
-            {
-              title: "ההפרש — הרווח — לזכות העודפים",
-              body: (
-                <>
-                  <EntryCards
-                    entry={<JE entry={CLOSE_20} hl={["עודפים"]} note="החובה: כל ההכנסות. הזכות: כל ההוצאות ועוד הרווח. הפקודה מאוזנת." />}
-                    cards={cardsAfter(["עודפים"], CLOSE_20.lines.map((l) => l.account))}
-                    fresh="סגירה"
-                  />
-                  <Calc result={<Money v={Y20.totalIncome} />}>
-                    הוצאות <Money v={Y20.totalExpenses} /> + עודפים <Money v={Y20.profit} />
-                  </Calc>
-                </>
-              ),
-            },
-          ]}
-        />
       </>
     ),
   },
@@ -333,15 +342,8 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
                 </>
               ),
             },
-            ...YUVAL.entries2021.map((x, i) => ({
-              title: `2021 · ${x.text}`,
-              body: (
-                <>
-                  {i === 0 && <p className="text-[13.5px] text-muted">י.פ = יתרת הפתיחה — יתרת הסגירה של 31.12.2020.</p>}
-                  <Posted entries={RUN_21} at={i} opening={OPENING_21} title="פקודת היומן" />
-                </>
-              ),
-            })),
+            // The year's entries on their own: this screen is about what carries over, not about the cards.
+            ...YUVAL.entries2021.map((x) => ({ title: `2021 · ${x.text}`, body: <JE entry={x} title="פקודת היומן" /> })),
             {
               title: "סוף 2021: מאזן הבוחן והתוצאה",
               body: (
@@ -350,14 +352,7 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
                   <Calc result={<span className="text-danger">הפסד <Money v={-Y21.profit} /></span>}>
                     הכנסות <Money v={Y21.totalIncome} /> − הוצאות <Money v={Y21.totalExpenses} />
                   </Calc>
-                </>
-              ),
-            },
-            {
-              title: "סגירת 2021: הפסד — ח׳ עודפים",
-              body: (
-                <>
-                  <Posted entries={RUN_21} at={RUN_21.length - 1} opening={OPENING_21} note="הפסד: ההוצאות גדולות מההכנסות, ולכן העודפים בצד החובה ויורדים." />
+                  <p className="text-[15px]">ההפסד מקטין את העודפים — הרווחים שנצברו עד עכשיו:</p>
                   <Calc result={<Money v={retained21} />}>
                     עודפים <Money v={-OPENING_21["עודפים"]} /> − הפסד <Money v={-Y21.profit} />
                   </Calc>

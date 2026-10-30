@@ -17,7 +17,11 @@ export const ADJUST: StudyModule = {
   description: "בסיס מצטבר וארבעת חשבונות החתך, דוגמה מלאה של פקודות התאמה, מלאי סגירה, והפרשה להפסדי אשראי.",
   backHref: COURSE_HREF,
   screens: [
-    { id: "accrual", title: "בסיס מצטבר והתאמות" },
+    { id: "accrual", title: "חשבונות חתך: שם של הוצאה, מקום במאזן" },
+    { id: "prepaid", title: "הוצאות מראש — נכס" },
+    { id: "accrued", title: "הוצאות לשלם — התחייבות" },
+    { id: "unearned", title: "הכנסות מראש — התחייבות" },
+    { id: "receivable", title: "הכנסות לקבל — נכס" },
     { id: "ronen", title: "דוגמה מלאה: רונן בע״מ" },
     { id: "inventory", title: "מלאי סגירה" },
     { id: "creditloss", title: "הפסדי אשראי" },
