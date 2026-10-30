@@ -1,9 +1,9 @@
 "use client";
 
-import { useId, useState } from "react";
-import { n } from "@/components/study/blocks";
+import { useId } from "react";
 import { inputClass } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
+import { groupDigits, typedAmount, ungroup } from "@/lib/amount";
 
 /** A typed number: thousands separators stripped; NaN when empty. */
 export const parseNumber = (s: string) => {
@@ -11,12 +11,9 @@ export const parseNumber = (s: string) => {
   return t === "" ? NaN : Number(t);
 };
 
-/** A money or count field: thousands separators while idle, the raw number while typing. */
+/** A money or count field: thousands separators shown as the number is typed; the value reported without them. */
 export function NumberInput({ label, value, onChange, error, suffix }: { label: string; value: string; onChange: (v: string) => void; error?: string; suffix?: string }) {
   const id = useId();
-  const [focused, setFocused] = useState(false);
-  const v = parseNumber(value);
-  const shown = focused || !Number.isFinite(v) ? value : n(v);
   return (
     <div className="min-w-0">
       <label htmlFor={id} className="mb-1.5 block text-[13px] font-medium text-fg">
@@ -28,10 +25,8 @@ export function NumberInput({ label, value, onChange, error, suffix }: { label: 
           id={id}
           dir="ltr"
           inputMode="decimal"
-          value={shown}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          onChange={(e) => onChange(e.target.value.replace(/,/g, ""))}
+          value={groupDigits(value)}
+          onChange={(e) => onChange(ungroup(typedAmount(e)))}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${id}-error` : undefined}
           className={cn(inputClass, "num text-start font-mono", suffix && "pe-14")}

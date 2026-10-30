@@ -5,6 +5,7 @@ import { useId, useState } from "react";
 import { inputClass } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 import { Money } from "./ui";
+import { typedAmount } from "@/lib/amount";
 
 type Rows = [string, number][];
 const sum = (xs: Rows) => xs.reduce((s, [, v]) => s + v, 0);
@@ -74,7 +75,7 @@ export function RetainedSolver({ assets, liabilities, equity, answer, opening, p
               inputMode="decimal"
               value={value}
               onChange={(e) => {
-                setValue(e.target.value);
+                setValue(typedAmount(e));
                 setChecked(null);
               }}
               onKeyDown={(e) => e.key === "Enter" && value && check()}

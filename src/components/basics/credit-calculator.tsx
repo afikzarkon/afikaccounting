@@ -6,6 +6,7 @@ import { round2 } from "@/lib/learn/basics";
 import { adjustment } from "@/lib/learn/credit-losses";
 import { cn } from "@/lib/utils";
 import { EntryView, Money } from "./ui";
+import { typedAmount } from "@/lib/amount";
 
 const FIELDS = [
   ["opening", "יתרת פתיחה של ההפרשה", 30_000],
@@ -51,7 +52,10 @@ export function CreditLossCalculator() {
               inputMode="decimal"
               dir="ltr"
               value={v[k]}
-              onChange={(e) => setV((s) => ({ ...s, [k]: e.target.value }))}
+              onChange={(e) => {
+                const t = typedAmount(e);
+                setV((s) => ({ ...s, [k]: t }));
+              }}
               className={cn(inputClass, "mt-1 text-end")}
             />
           </label>

@@ -23,6 +23,8 @@ import {
   type YearForm,
 } from "./inventory-calc-state";
 import { Money } from "./ui";
+import { typedAmount } from "@/lib/amount";
+import { parseNumber } from "@/components/study/inputs";
 
 type Update = (fn: (s: CalcState) => CalcState) => void;
 type Row = { t: number; kind: "buy" | "sell"; i: number; id: string };
@@ -228,11 +230,11 @@ export function QuickEntry({
   const balance = new Map<string, number>();
   let units = 0;
   years.forEach((y, t) => {
-    if (t === 0 || !y.fromPrev) units = (t === 0 && y.founded) || y.openUnits.unknown ? 0 : Number(y.openUnits.v) || 0;
+    if (t === 0 || !y.fromPrev) units = (t === 0 && y.founded) || y.openUnits.unknown ? 0 : parseNumber(y.openUnits.v) || 0;
     rowsOf(y, t)
       .map((row, n) => {
         const f = row.kind === "buy" ? y.purchases[row.i] : y.sales[row.i];
-        return { row, n, date: f.date, qty: f.qty.unknown ? NaN : Number(f.qty.v) || 0 };
+        return { row, n, date: f.date, qty: f.qty.unknown ? NaN : parseNumber(f.qty.v) || 0 };
       })
       .sort((a, b) => (a.date && b.date ? a.date.localeCompare(b.date) || (a.row.kind === b.row.kind ? a.n - b.n : a.row.kind === "buy" ? -1 : 1) : a.date ? -1 : b.date ? 1 : a.n - b.n))
       .forEach((x) => {
@@ -307,8 +309,8 @@ export function QuickEntry({
                   const key = (s: string) => `y${t}.${buy ? "p" : "s"}${row.i}.${s}`;
                   const engine = buy ? built.periods[t]?.purchases[row.i] : undefined;
                   const cost = buy && engine && !f.qty.unknown && !f.price.unknown && engine.qty > 0 ? purchaseCost(engine) : null;
-                  const q = Number(f.qty.v);
-                  const pr = Number(f.price.v);
+                  const q = parseNumber(f.qty.v);
+                  const pr = parseNumber(f.price.v);
                   const revenue = !buy && !f.qty.unknown && !f.price.unknown && f.qty.v && f.price.v && Number.isFinite(q * pr) ? q * pr : null;
                   const bal = balance.get(row.id);
                   const p = buy ? (f as PurchaseForm) : null;
@@ -465,8 +467,8 @@ function NumCell({ cellProps, label, f, letter, bad, onChange }: { cellProps: Ce
       inputMode="decimal"
       value={f.unknown ? "?" : f.v}
       onChange={(e) => {
-        const v = e.target.value;
-        onChange(v.trim() === "?" ? { v: "", unknown: true } : { v: v.replace("?", ""), unknown: false });
+        // "?" alone marks the unknown; anything else is an amount, grouped as it is typed.
+        onChange(e.target.value.trim() === "?" ? { v: "", unknown: true } : { v: typedAmount(e), unknown: false });
       }}
       title={f.unknown ? `נעלם ${letter ?? ""} — מחקו את ה-? כדי להזין מספר` : undefined}
       className={cn(cell, "num font-mono", f.unknown && "border-accent bg-accent-soft text-center font-sans font-bold text-accent", bad && "border-danger")}

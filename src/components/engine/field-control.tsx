@@ -8,6 +8,7 @@ import { duration } from "@/lib/engine/format";
 import type { DatedValuesField, Field, FieldValue, NumberField } from "@/lib/engine/types";
 import { parseDatedValues } from "@/lib/engine/validate";
 import { cn } from "@/lib/utils";
+import { groupDigits, typedAmount, ungroup } from "@/lib/amount";
 
 type Props<F extends Field = Field> = {
   field: F;
@@ -358,9 +359,9 @@ function DatedValuesInput({
             dir="ltr"
             inputMode="decimal"
             autoComplete="off"
-            value={r.value}
+            value={groupDigits(r.value)}
             onChange={(e) => {
-              const raw = e.target.value.replace(/,/g, "");
+              const raw = ungroup(typedAmount(e));
               if (/^\d*\.?\d*$/.test(raw)) set(i, { value: raw });
             }}
             aria-label={`${field.valueLabel} — שורה ${i + 1}`}
@@ -434,9 +435,9 @@ function NumberInput({
         type="text"
         inputMode="decimal"
         autoComplete="off"
-        value={text}
+        value={groupDigits(text)}
         onChange={(e) => {
-          const raw = e.target.value.replace(/,/g, "");
+          const raw = ungroup(typedAmount(e));
           if (!/^-?\d*\.?\d*$/.test(raw)) return;
           setText(raw);
           const n = Number(raw);

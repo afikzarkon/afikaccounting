@@ -27,6 +27,7 @@ import {
 import { cn } from "@/lib/utils";
 import { FormulaCard, type FormulaRow, InlineTex, Stat, texNum } from "@/components/study/ui";
 import { monthSpan } from "./widgets";
+import { groupDigits, typedAmount, ungroup } from "@/lib/amount";
 
 type Method = "sl" | "db" | "syd" | "uop";
 
@@ -614,8 +615,11 @@ function UnitsEditor({ units, total, error, onChange }: { units: string[]; total
               dir="ltr"
               inputMode="decimal"
               aria-label={`יחידות בשנה ${fy(i + 1)}`}
-              value={u}
-              onChange={(e) => onChange(units.map((x, j) => (j === i ? e.target.value.replace(/,/g, "") : x)))}
+              value={groupDigits(u)}
+              onChange={(e) => {
+                const t = ungroup(typedAmount(e));
+                onChange(units.map((x, j) => (j === i ? t : x)));
+              }}
               className={cn(inputClass, "num h-10 ps-10 font-mono")}
             />
           </label>

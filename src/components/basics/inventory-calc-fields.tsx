@@ -4,6 +4,7 @@ import { useId } from "react";
 import { inputClass } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 import type { F } from "./inventory-calc-state";
+import { typedAmount } from "@/lib/amount";
 
 export const smallBtn =
   "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium ring-1 ring-line transition-colors hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-[var(--ring)] disabled:opacity-40";
@@ -51,7 +52,7 @@ export function NumField({
             value={f.unknown ? "" : f.v}
             disabled={f.unknown}
             placeholder={f.unknown ? `נעלם ${letter ?? ""}` : placeholder}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => onChange(typedAmount(e))}
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? `${id}-e` : undefined}
             className={cn(inputClass, "num h-10 font-mono", suffix && "pe-10", f.unknown && "border-accent/60 bg-accent-soft placeholder:font-sans placeholder:font-semibold placeholder:text-accent")}

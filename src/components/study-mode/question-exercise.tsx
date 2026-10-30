@@ -9,6 +9,7 @@ import { type ExResult, numberRight, triesFor, XP } from "@/lib/study/score";
 import type { QuestionExercise } from "@/lib/study/types";
 import { cn } from "@/lib/utils";
 import { Feedback, Gain } from "./journal-simulator";
+import { typedAmount } from "@/lib/amount";
 
 type Question = QuestionExercise;
 
@@ -86,7 +87,7 @@ export function QuestionExercise({ q, result, onCheck }: { q: Question; result?:
               dir="ltr"
               inputMode="decimal"
               value={value}
-              onChange={(e) => setValue(e.target.value)}
+              onChange={(e) => setValue(typedAmount(e))}
               onKeyDown={(e) => e.key === "Enter" && canCheck && check()}
               aria-describedby={`${id}-q`}
               className={cn(inputClass, "num mt-1 text-start")}
