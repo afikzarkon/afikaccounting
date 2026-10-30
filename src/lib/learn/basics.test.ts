@@ -167,14 +167,18 @@ describe("cut-off accounts", () => {
     assert.equal(b["הכנסות מייעוץ"], -144_000);
     assert.equal(b["הכנסות ייעוץ מראש"], -96_000);
     assert.equal(b['הכנסות שכ"ד לקבל'], 24_000);
+    // The stock counted at year end, at the lower of cost (20,000) and net realisable value (26,000).
+    assert.equal(b["מלאי סגירה מאזני"], 20_000);
+    assert.equal(b["מלאי סגירה רווח או הפסד"], -20_000);
   });
 
-  it("Ronen: profit 173,000; retained earnings from 643,500 to 470,500 debit", () => {
+  it("Ronen: profit 113,000; retained earnings from 643,500 to 530,500 debit", () => {
     const b = balancesOf(ledger(RONEN.adjustments, RONEN.preliminary));
     const s = statements(b);
-    assert.equal(s.profit, 173_000);
+    // Income 144,000 + 110,000 + 24,000 + closing stock 20,000 = 298,000; expenses 27,000 + 48,000 + 30,000 + purchases 80,000 = 185,000.
+    assert.equal(s.profit, 113_000);
     assert.equal(RONEN.preliminary["עודפים"], 643_500);
-    assert.equal(s.equity.find(([a]) => a === "עודפים")![1], -470_500);
+    assert.equal(s.equity.find(([a]) => a === "עודפים")![1], -530_500);
     assert.ok(identityHolds(s));
     assert.ok(tbBalanced(trialBalance(b)));
   });

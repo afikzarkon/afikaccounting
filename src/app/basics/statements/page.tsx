@@ -67,7 +67,7 @@ export default function StatementsPage() {
             חשבונאות מאפס
           </Link>
           ), הפרשה להפסדי אשראי (
-          <Link href="/basics/credit-losses" className="font-medium text-accent hover:underline">
+          <Link href="/study/basics-credit" className="font-medium text-accent hover:underline">
             הפסדי אשראי
           </Link>
           ), ופחת והערכה מחדש (

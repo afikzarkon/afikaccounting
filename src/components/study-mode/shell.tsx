@@ -58,7 +58,7 @@ function AddressPlace({ module: m, onApply }: { module: StudyModule; onApply: ()
 }
 
 /** A concept screen's content, rendered on the server: the one principle it teaches, and the rest. */
-export type ScreenContent = { lead: ReactNode; body: ReactNode };
+export type ScreenContent = { lead?: ReactNode; body: ReactNode };
 
 /**
  * The lesson, full screen: a fixed header and bottom bar, and between them one
@@ -215,7 +215,7 @@ export function StudyShell({ module: m, screens, next }: { module: StudyModule; 
       count: m.screens.length > 1 ? `מושג ${place.sub + 1} מתוך ${m.screens.length}` : undefined,
       content: (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-accent/25 bg-accent-soft px-4 py-3.5 text-[16px] font-semibold leading-relaxed text-fg sm:px-5">{s.lead}</div>
+          {s.lead && <div className="rounded-2xl border border-accent/25 bg-accent-soft px-4 py-3.5 text-[16px] font-semibold leading-relaxed text-fg sm:px-5">{s.lead}</div>}
           {/* On a wide screen the screen's blocks flow into two columns, each block whole, so the width fills instead of stretching the lines;
               a wide widget (a walkthrough, the entry-to-cards arrows) spans both. */}
           <div className="space-y-4 text-[15.5px] leading-relaxed text-fg/90 xl:columns-2 xl:gap-x-6 xl:space-y-0 xl:[&>*]:mb-4 xl:[&>*]:break-inside-avoid">{s.body}</div>

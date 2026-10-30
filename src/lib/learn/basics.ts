@@ -325,10 +325,11 @@ export const ACCRUAL = {
   } satisfies Record<keyof typeof AC, Entry[]>,
 };
 
-/** Chapters 14 and 17: Ronen Ltd, set up on 1.1.2016; the preliminary trial balance for 31.12.2017. */
+/** Chapters 14 and 17: Ronen Ltd, set up on 1.1.2016; the preliminary trial balance for 31.12.2017. Ronen sells goods too: its purchases, paid in cash, and the stock counted at year end. */
 export const RONEN = {
   preliminary: {
-    מזומן: 548_500,
+    מזומן: 468_500,
+    קניות: 80_000,
     לקוחות: 50_000,
     "הוצאות פרסום": 36_000,
     "הוצאות ביטוח מראש": 72_000,
@@ -373,6 +374,13 @@ export const RONEN = {
       recorded: "לא נרשם דבר.",
       should: "חודשיים של שכירות שייכים ל-2017 וטרם התקבלו: 12,000 × 2 = 24,000.",
       entry: e("ה", "31.12.2017", "פקודת התאמה — שכירות", [{ account: 'הכנסות שכ"ד לקבל', dr: 12_000 * 2 }, { account: 'הכנסות שכ"ד', cr: 12_000 * 2 }]),
+    },
+    {
+      title: "מלאי",
+      story: "במהלך 2017 קנתה החברה סחורה ב-80,000 ₪. ב-31.12.2017 נספרו במחסן סחורות שלא נמכרו, בעלות 20,000 ₪. שווי המימוש נטו שלהן — 26,000 ₪.",
+      recorded: "נרשמו רק הקניות: ח' קניות / ז' מזומן 80,000. מלאי הסגירה לא נרשם — כל הקניות נראות כהוצאה של השנה.",
+      should: "מלאי סגירה לפי הנמוך מבין עלות (20,000) לשווי מימוש נטו (26,000): 20,000 — נכס במאזן, ומקטין את עלות המכר.",
+      entry: e("ו", "31.12.2017", "פקודת מלאי סגירה", [{ account: "מלאי סגירה מאזני", dr: Math.min(20_000, 26_000) }, { account: "מלאי סגירה רווח או הפסד", cr: Math.min(20_000, 26_000) }]),
     },
   ],
   get adjustments(): Entry[] {

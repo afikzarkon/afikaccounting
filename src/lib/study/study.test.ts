@@ -45,7 +45,7 @@ describe("interactive lessons: the content", () => {
     for (const m of modules) {
       assert.ok(m.screens.length > 0, `${m.slug}: no screens`);
       assert.ok(m.exercises.length >= 5, `${m.slug}: practice too short`);
-      assert.ok(m.traps.length >= 4, `${m.slug}: too few traps`);
+      assert.ok(m.traps.length >= 2, `${m.slug}: too few traps`);
       assert.ok(m.tips.length >= 3, `${m.slug}: too few tips`);
     }
   });
@@ -122,10 +122,8 @@ describe("interactive lessons: the accounting in the new questions", () => {
     assert.equal(answerOf(ex("basics-books", "suppliers-card")), "14,000 בזכות");
     assert.equal(answerOf(ex("basics-books", "retained-close")), 55_000);
     assert.equal(answerOf(ex("basics-books", "profit-to-retained")), 40_000);
-    assert.equal(answerOf(ex("basics-adjust", "lower-of")), "72,000");
-    assert.equal(answerOf(ex("basics-final", "net-customers")), 291_000);
     // Ronen after the adjustments: income 144,000 + 110,000 + 24,000; expenses 27,000 + 48,000 + 30,000.
-    assert.equal(answerOf(ex("basics-final", "ronen-profit")), 173_000);
+    assert.equal(answerOf(ex("basics-final", "ronen-profit")), 113_000);
   });
 
   it("the translator keeps the books in balance, and only income and expenses move the profit", () => {
@@ -141,19 +139,59 @@ describe("interactive lessons: the accounting in the new questions", () => {
   });
 
   it("year-end adjustments: the amounts and the sides", () => {
-    const fees = ex("basics-final", "fees-unearned");
-    const interest = ex("basics-adjust", "interest-accrual");
-    const writeOff = ex("basics-adjust", "write-off");
-    assert.ok(fees.kind === "journal" && interest.kind === "journal" && writeOff.kind === "journal");
-    assert.deepEqual(fees.entry.lines, [{ account: "הכנסות משירותים", dr: 6_000 }, { account: "הכנסות משירותים מראש", cr: 6_000 }]);
+    const lines = (slug: string, id: string) => {
+      const x = ex(slug, id);
+      assert.equal(x.kind, "journal", id);
+      return x.kind === "journal" ? x.entry.lines : [];
+    };
+    assert.deepEqual(lines("basics-final", "fees-unearned"), [{ account: "הכנסות משירותים", dr: 6_000 }, { account: "הכנסות משירותים מראש", cr: 6_000 }]);
     assert.equal(typeOf("הכנסות משירותים מראש"), "liability");
-    assert.deepEqual(interest.entry.lines, [{ account: "הוצאות ריבית", dr: 30_000 }, { account: "הוצאות ריבית לשלם", cr: 30_000 }]);
-    assert.deepEqual(writeOff.entry.lines, [{ account: "הפרשה להפסדי אשראי חזויים", dr: 4_000 }, { account: "לקוחות", cr: 4_000 }]);
+    // Prepaid recorded as an asset: only the used months move to expense.
+    assert.deepEqual(lines("basics-adjust", "prepaid-used"), [{ account: "הוצאות שכירות", dr: 2_000 }, { account: "הוצאות שכירות מראש", cr: 2_000 }]);
+    // Recorded as an expense: next year's part moves out of it.
+    assert.deepEqual(lines("basics-adjust", "prepaid-from-expense"), [{ account: "הוצאות פרסום מראש", dr: 6_000 }, { account: "הוצאות פרסום", cr: 6_000 }]);
+    assert.deepEqual(lines("basics-adjust", "accrued-interest"), [{ account: "הוצאות ריבית", dr: 3_000 }, { account: "הוצאות ריבית לשלם", cr: 3_000 }]);
+    assert.deepEqual(lines("basics-adjust", "closing-stock"), [{ account: "מלאי סגירה מאזני", dr: 72_000 }, { account: "מלאי סגירה רווח או הפסד", cr: 72_000 }]);
   });
 
-  it("the prepaid trap moves only the used months to expense", () => {
-    const t = STUDY_MODULES["basics-adjust"].traps.find((x) => x.id === "check-recorded")!;
-    assert.equal(t.options[t.answer], "ח׳ הוצאות ביטוח / ז׳ הוצאות ביטוח מראש 300");
+  it("lesson 4 is practised mostly by writing entries, and credit losses have a lesson of their own", () => {
+    const m = STUDY_MODULES["basics-adjust"];
+    const entries = m.exercises.filter((x) => x.kind === "journal").length;
+    const choice = m.exercises.filter((x) => x.kind === "choice").length + m.traps.length;
+    assert.ok(entries >= 10 && choice <= 2, `${entries} entries, ${choice} multiple-choice`);
+    assert.ok(!m.screens.some((s) => s.id === "creditloss"));
+    for (const mod of modules.filter((x) => x.slug !== "basics-credit"))
+      for (const x of mod.exercises)
+        if (x.kind === "journal") for (const l of x.entry.lines) assert.ok(!l.account.includes("הפרשה"), `${mod.slug}: ${x.id}`);
+  });
+
+  it("credit losses: lesson 5, practised mostly by writing entries, with the amounts worked out by hand", () => {
+    const m = STUDY_MODULES["basics-credit"];
+    assert.equal(m.n, 5);
+    const entries = m.exercises.filter((x) => x.kind === "journal").length;
+    const choice = m.exercises.filter((x) => x.kind === "choice").length + m.traps.length;
+    assert.ok(entries >= 6 && choice <= 2, `${entries} entries, ${choice} multiple-choice`);
+    const lines = (id: string) => {
+      const x = ex("basics-credit", id);
+      return x.kind === "journal" ? x.entry.lines : [];
+    };
+    const ALLOW = "הפרשה להפסדי אשראי חזויים";
+    const EXPENSE = "הוצאות הפסדי אשראי";
+    assert.deepEqual(lines("first-allowance"), [{ account: EXPENSE, dr: 12_000 }, { account: ALLOW, cr: 12_000 }]);
+    assert.deepEqual(lines("write-off"), [{ account: ALLOW, dr: 7_000 }, { account: "לקוחות", cr: 7_000 }]);
+    // 5% of 800,000 required; the write-offs left the allowance 6,000 in debit.
+    assert.deepEqual(lines("top-up"), [{ account: EXPENSE, dr: 46_000 }, { account: ALLOW, cr: 46_000 }]);
+    // Customers 700,000: 20,000 specific + 5% of 660,000 = 53,000 required, 20,000 there.
+    assert.deepEqual(lines("specific"), [{ account: EXPENSE, dr: 33_000 }, { account: ALLOW, cr: 33_000 }]);
+    // 50,500 required, 60,000 there: 9,500 reversed.
+    assert.deepEqual(lines("reversal"), [{ account: ALLOW, dr: 9_500 }, { account: EXPENSE, cr: 9_500 }]);
+    // Customers 410,000 → 16,400 required; 16,000 − 10,000 + 2,000 = 8,000 there.
+    assert.deepEqual(lines("with-recovery"), [{ account: EXPENSE, dr: 8_400 }, { account: ALLOW, cr: 8_400 }]);
+    assert.equal(answerOf(ex("basics-credit", "closing-gross")), 800_000);
+    assert.equal(answerOf(ex("basics-credit", "net-customers")), 291_000);
+    assert.equal(answerOf(ex("basics-credit", "gross-from-net")), 500_000);
+    assert.equal(answerOf(ex("basics-credit", "collections")), 944_000);
+    assert.equal(answerOf(ex("basics-credit", "opening-allowance")), 43_000);
   });
 });
 

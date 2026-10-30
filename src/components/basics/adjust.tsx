@@ -1,19 +1,15 @@
-import { Banknote } from "lucide-react";
-import { ACCRUAL, balancesOf, costOfSales, creditLoss, creditLossEntries, type Entry, ledger, MIA, RONEN, round2, statements, trialBalance, TZAAD } from "@/lib/learn/basics";
+import { Banknote, ClipboardList } from "lucide-react";
+import { ACCRUAL, balancesOf, costOfSales, type Entry, ledger, MIA, RONEN, round2, statements, trialBalance } from "@/lib/learn/basics";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { cn } from "@/lib/utils";
+import { AdjustedTrialBalance, type Move } from "./adjusted-tb";
 import { EntryViews } from "./entry-views";
 import { TCardsDialog } from "./t-dialog";
-import { Posted, TBox, THead } from "./t-accounts";
+import { Posted } from "./t-accounts";
 import { Calc, JE, KeyCard, Money, Rule, StatementsView, type Step, Stepper, TBTable } from "./ui";
 
 const RONEN_FINAL = balancesOf(ledger(RONEN.adjustments, RONEN.preliminary));
 const RONEN_S = statements(RONEN_FINAL);
-const TZAAD_C = creditLoss(TZAAD);
-const TZAAD_ENTRIES = creditLossEntries(TZAAD);
-const TZAAD_OPEN = { לקוחות: TZAAD.openingCustomers, "הפרשה להפסדי אשראי חזויים": -TZAAD.openingAllowance };
-const tzaadCard = (account: string, upto: number) => ledger(TZAAD_ENTRIES.slice(0, upto), TZAAD_OPEN).find((t) => t.account === account)!;
-const f = (v: number) => v.toLocaleString("he-IL");
 const pct = (r: number) => `${round2(r * 100)}%`;
 // Two illustrative net realisable values for Mia's closing stock: one above its cost, one below.
 const MIA_NRV_HIGH = 330_000;
@@ -99,7 +95,7 @@ const RENT = { paid: 12_000, thisYear: 3 };
 const rentThisYear = (RENT.paid * RENT.thisYear) / 12;
 const rentNextYear = RENT.paid - rentThisYear;
 
-// The four cut-off accounts (a screen each), Ronen at year end, and Tzaad's credit losses.
+// The four cut-off accounts (a screen each), and Ronen at year end.
 const A = ACCRUAL;
 const R = A.results;
 // Each cut-off account first as an everyday picture: three entries, the account's card, and how its balance moves.
@@ -376,7 +372,18 @@ const RONEN_WRONG: Record<string, string> = {
   ריבית: "השתמשנו בכסף של הבנק חצי שנה ב-2017, ולכן הריבית על התקופה הזו היא הוצאה של 2017 — גם אם עוד לא שילמנו אותה.",
   ייעוץ: "אי אפשר להכיר בכל ההכנסה ב-2017: השירות לא ניתן לאורך כל התקופה השנה. מכירים בהכנסה רק על החלק שסופק השנה — 9 חודשים. את השאר עוד חייבים ללקוח.",
   שכירות: "השוכר השתמש במחסן חודשיים ב-2017 — ההכנסה הורווחה השנה, גם אם הכסף עוד לא הגיע. לכן היא שייכת ל-2017.",
+  מלאי: "מה שלא נמכר עד סוף השנה אינו הוצאה של השנה. בלי מלאי סגירה עלות המכר גבוהה ב-20,000 — והרווח נמוך באותו סכום.",
 };
+
+// Where each of Ronen's adjustments took an amount from: an account that had a balance and went down, to the other account of the entry.
+const RONEN_MOVES: Move[] = RONEN.adjustments.flatMap((x) =>
+  x.lines.flatMap((l) => {
+    const had = RONEN.preliminary[l.account];
+    const reduces = had !== undefined && (had > 0 ? !!l.cr : !!l.dr);
+    const other = x.lines.find((o) => o.account !== l.account);
+    return reduces && other ? [{ from: l.account, to: other.account }] : [];
+  }),
+);
 
 const ronen: Step[] = [
   {
@@ -416,10 +423,14 @@ const ronen: Step[] = [
     ),
   })),
   {
-    title: "התוצאה: מאזן בוחן מתוקן ודוחות",
+    title: "התוצאה: מאזן בוחן לאחר פקודות התאמה וחתך",
     body: (
       <>
-        <TBTable tb={trialBalance(RONEN_FINAL)} caption="מאזן בוחן מתוקן ליום 31.12.2017" kind />
+        <p className="text-[14.5px] text-fg">
+          <strong>השורות המודגשות</strong> הן החשבונות שפקודות ההתאמה והחתך שינו: ליד חשבון שהשתנה — הסכום הקודם, מחוק, והסכום החדש; ליד חשבון שנפתח — ״חדש״. החצים
+          מצביעים מחשבון שירד אל החשבון שאליו עבר הסכום.
+        </p>
+        <AdjustedTrialBalance before={RONEN.preliminary} after={RONEN_FINAL} moves={RONEN_MOVES} caption="מאזן בוחן ליום 31.12.2017 — לאחר פקודות התאמה וחתך" />
         <StatementsView s={RONEN_S} year="2017" />
         <Rule>
           רווח 2017: <Money v={RONEN_S.profit} />. העודפים: מהפסדים צבורים של <Money v={RONEN.preliminary["עודפים"]} /> ל-
@@ -430,113 +441,6 @@ const ronen: Step[] = [
   },
 ];
 
-const tzaad: Step[] = [
-  {
-    title: "הנתונים — ומה מחפשים",
-    body: (
-      <>
-        <ul className="grid gap-1.5 sm:grid-cols-2">
-          {(
-            [
-              ["לקוחות ב-1.1.2025", TZAAD.openingCustomers],
-              ["הפרשה ב-1.1.2025", TZAAD.openingAllowance],
-              ["מכירות באשראי בשנה", TZAAD.creditSales],
-              ["גבייה מלקוחות", TZAAD.collections],
-              ["חוב אבוד (לקוח שנעלם)", TZAAD.badDebt],
-            ] as [string, number][]
-          ).map(([t, v]) => (
-            <li key={t} className="flex justify-between gap-2 rounded-lg bg-surface-2/70 px-3 py-1.5 text-[14.5px]">
-              <span>{t}</span>
-              <Money v={v} className="font-semibold" />
-            </li>
-          ))}
-          <li className="flex justify-between gap-2 rounded-lg bg-surface-2/70 px-3 py-1.5 text-[14.5px]">
-            <span>שיעור הלקוחות שלא ישלמו</span>
-            <span className="font-semibold">{pct(TZAAD.rate)}</span>
-          </li>
-        </ul>
-        <KeyCard>מחפשים: כמה הוצאות הפסדי אשראי תרשום החנות ב-2025?</KeyCard>
-      </>
-    ),
-  },
-  ...TZAAD_ENTRIES.slice(0, 3).map((x, i) => ({
-    title: `${x.id}. ${x.text}${i === 2 ? " — בלי הוצאה" : ""}`,
-    body: (
-      <>
-        <p className="text-[14px] text-muted">
-          <strong className="text-fg">מאיפה: </strong>
-          {["\"מכרה בהקפה\" — הלקוחות גדלים.", "\"גבתה מהלקוחות\" — הלקוחות קטנים, המזומן גדל.", "ההפסד כבר נחזה בהפרשה, ולכן מוחקים את החוב כנגדה — לא כנגד הוצאה."][i]}
-        </p>
-        <Posted entries={TZAAD_ENTRIES} at={i} opening={TZAAD_OPEN} title="פקודת היומן" note={null} />
-      </>
-    ),
-  })),
-  {
-    title: "יתרת הלקוחות בסוף השנה — מתוך הכרטיס",
-    body: (
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] sm:items-start">
-        <div>
-          <THead />
-          <TBox t={tzaadCard("לקוחות", 3)} totals />
-        </div>
-        <div className="space-y-2">
-          <Calc result={<Money v={TZAAD_C.customers} />}>
-            {f(TZAAD.openingCustomers)} + {f(TZAAD.creditSales)} − {f(TZAAD.collections)} − {f(TZAAD.badDebt)}
-          </Calc>
-          <p className="text-[14.5px]">היתרה היא הנעלם שסוגר את הכרטיס: הפרש שני הצדדים.</p>
-        </div>
-      </div>
-    ),
-  },
-  {
-    title: "כמה הפרשה צריכה להיות ב-31.12?",
-    body: (
-      <>
-        <Calc result={<Money v={TZAAD_C.required} />}>
-          לקוחות <Money v={TZAAD_C.customers} /> (מהצעד הקודם) × {pct(TZAAD.rate)}
-        </Calc>
-        <p className="text-[14.5px]">זו יתרת הסגירה שחייבת להיות בכרטיס ההפרשה.</p>
-      </>
-    ),
-  },
-  {
-    title: "מה כבר יש בהפרשה — ומה חסר?",
-    body: (
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] sm:items-start">
-        <div>
-          <THead />
-          <TBox t={tzaadCard("הפרשה להפסדי אשראי חזויים", 3)} totals />
-        </div>
-        <div className="space-y-2">
-          <Calc result={<Money v={TZAAD_C.before} />}>
-            יש: פתיחה {f(TZAAD.openingAllowance)} − חוב אבוד {f(TZAAD.badDebt)}
-          </Calc>
-          <Calc result={<Money v={TZAAD_C.expense} />}>
-            חסר: נדרש {f(TZAAD_C.required)} − יש {f(TZAAD_C.before)}
-          </Calc>
-          <p className="text-[14.5px]">מה שחסר — זו ההוצאה של השנה.</p>
-        </div>
-      </div>
-    ),
-  },
-  {
-    title: `${TZAAD_ENTRIES[3].id}. ${TZAAD_ENTRIES[3].text}`,
-    body: <Posted entries={TZAAD_ENTRIES} at={3} opening={TZAAD_OPEN} title="פקודת ההתאמה" note={`עכשיו בהפרשה ${f(TZAAD_C.required)} — בדיוק הנדרש.`} />,
-  },
-  {
-    title: "במאזן: לקוחות נטו",
-    body: (
-      <>
-        <Calc result={<Money v={TZAAD_C.net} />}>
-          לקוחות <Money v={TZAAD_C.customers} /> − הפרשה <Money v={TZAAD_C.required} />
-        </Calc>
-        <Rule>
-          הוצאה = ההפרשה הנדרשת − מה שכבר יש בה. כאן: {f(TZAAD_C.required)} − {f(TZAAD_C.before)} = {f(TZAAD_C.expense)}.
-        </Rule>
-      </>
-    ),
-  },
-];
 
 export const ADJUST_SCREENS: Record<string, ScreenContent> = {
   accrual: {
@@ -615,8 +519,25 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
   },
 
   ronen: {
-    lead: "דוגמה מלאה: חברת רונן בע״מ, 31.12.2017. מקבלים מאזן בוחן ראשוני, ולכל סעיף שואלים: מה נרשם, ומה היה צריך להירשם? ההפרש — זו פקודת ההתאמה.",
-    body: <Stepper label="רונן · 31.12.2017" steps={ronen} />,
+    body: (
+      <>
+        {/* What the example starts from, and why it needs fixing — before the walkthrough. Spans both columns on a wide screen. */}
+        <div className="space-y-2 rounded-2xl border-2 border-amber-500/50 bg-amber-500/[0.08] px-4 py-3.5 [column-span:all]">
+          <p className="flex items-center gap-2 text-[16px] font-bold text-fg">
+            <ClipboardList className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden /> מה נתון, ומה עושים
+          </p>
+          <p className="text-[15px] leading-relaxed text-fg">
+            <strong>נתון: מאזן בוחן ליום 31.12, לפני פקודות התאמה וחתך.</strong> במהלך השנה הנהלת החשבונות רשמה פקודות יומן שלא לפי הכללים של חשבונות החתך —
+            כאילו כל תשלום וכל תקבול שייכים כולם לשנה הנוכחית, אף שחלקם משמשים גם שנים אחרות.
+          </p>
+          <p className="text-[15px] leading-relaxed text-fg">
+            <strong>מה עושים:</strong> בדוגמה שלפניכם נתקן את החשבונות הרשומים — לכל סעיף נבצע פקודת התאמה וחתך, כך שכל שנה תישא רק את מה ששייך לה. ובסוף —
+            נרשום את מלאי הסגירה שנספר במחסן.
+          </p>
+        </div>
+        <Stepper label="רונן · 31.12.2017" steps={ronen} />
+      </>
+    ),
   },
 
   inventory: {
@@ -664,33 +585,6 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
           </div>
         </div>
         <Posted entries={[MIA_ENTRY]} at={0} note="שני חשבונות באותו סכום: הנכס שבמחסן, והקטנת העלות ברווח והפסד. בשנה הבאה זה מלאי הפתיחה." />
-      </>
-    ),
-  },
-
-  creditloss: {
-    lead: "חלק מהלקוחות לא ישלמו. כדי שהמאזן לא יציג חוב שלא ייגבה, מפרישים מראש: הוצאה השנה, וחשבון הפרשה שמקטין את הלקוחות.",
-    body: (
-      <>
-        <div className="grid gap-2 md:grid-cols-3">
-          {(
-            [
-              ["ההפרשה הנדרשת", "שיעור × יתרת הלקוחות בסוף השנה"],
-              ["ההוצאה", "ההפרשה הנדרשת − מה שכבר יש בה"],
-              ["חוב אבוד", "נמחק כנגד ההפרשה (ח׳ הפרשה / ז׳ לקוחות) — בלי הוצאה"],
-            ] as [string, string][]
-          ).map(([t, d]) => (
-            <div key={t} className="rounded-xl border border-line bg-surface p-3">
-              <p className="text-sm font-bold text-accent">{t}</p>
-              <p className="mt-0.5 text-[14.5px] text-fg">{d}</p>
-            </div>
-          ))}
-        </div>
-        <p className="rounded-xl bg-surface-2/70 px-4 py-3 text-[15px]">
-          <strong>איך זה מופיע בשאלה:</strong> נותנים יתרות פתיחה, מכירות באשראי, גבייה, חוב אבוד ושיעור. הנעלמים — יתרת הלקוחות בסוף השנה וההוצאה. מוצאים אותם מכרטיסי ה-T: הנעלם
-          הוא המספר שסוגר את הכרטיס.
-        </p>
-        <Stepper label='חנות הנעליים "צעד" · 2025' steps={tzaad} />
       </>
     ),
   },

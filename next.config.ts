@@ -15,6 +15,8 @@ const nextConfig: NextConfig = {
       { source: "/study/basics", destination: "/basics", permanent: false },
       // Lesson 3 (credit, advances, loans) became the second half of lesson 2.
       { source: "/study/basics-journal", destination: "/study/basics-double-entry", permanent: true },
+      // The credit-losses page became lesson 5 of the course.
+      { source: "/basics/credit-losses", destination: "/study/basics-credit", permanent: true },
     ];
   },
   partialPrefetching: true,

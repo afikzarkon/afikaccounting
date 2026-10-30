@@ -21,6 +21,7 @@ export function Stepper({
   className,
   step: controlled,
   onStep,
+  tool,
 }: {
   steps: Step[];
   label: string;
@@ -28,6 +29,8 @@ export function Stepper({
   className?: string;
   step?: number;
   onStep?: (i: number) => void;
+  /** Something to keep at hand through every step — a button in the pinned header, between the step buttons. */
+  tool?: ReactNode;
 }) {
   const [own, setOwn] = useState(0);
   const i = Math.min(controlled ?? own, steps.length - 1);
@@ -69,7 +72,7 @@ export function Stepper({
       >
         <ChevronRight className="h-4 w-4" aria-hidden /> לצעד הקודם
       </button>
-      <span className="mx-auto hidden text-[11px] text-subtle sm:inline">אפשר גם עם החיצים במקלדת</span>
+      {tool ? <span className="mx-auto">{tool}</span> : <span className="mx-auto hidden text-[11px] text-subtle sm:inline">אפשר גם עם החיצים במקלדת</span>}
       {i < last ? (
         <button
           type="button"

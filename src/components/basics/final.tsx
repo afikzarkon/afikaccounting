@@ -1,5 +1,4 @@
 import { Layers, Printer } from "lucide-react";
-import { creditLoss, TZAAD } from "@/lib/learn/basics";
 import { Glossary } from "./glossary";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { ScreenLink } from "@/components/study-mode/screen-link";
@@ -17,7 +16,6 @@ const MISTAKES: [string, string][] = [
   ["שוכחים מלאי סגירה", "בלי מלאי סגירה כל הקניות נראות כהוצאה, והרווח יוצא נמוך מדי."],
   ["מעבירים חשבון תוצאתי לשנה הבאה", "הכנסות והוצאות מתחילות כל שנה מאפס; רק התוצאה עוברת לעודפים."],
   ["רושמים הוצאה של השנה רק כשמשלמים", "בסיס מצטבר: שכר דצמבר שייך לדצמבר גם אם ישולם בינואר."],
-  ["רושמים חוב אבוד כהוצאה", "החוב נמחק כנגד ההפרשה (ח׳ הפרשה / ז׳ לקוחות). ההוצאה נקבעת רק בהשלמת ההפרשה."],
 ];
 
 const FAQ: [string, string][] = [
@@ -28,8 +26,6 @@ const FAQ: [string, string][] = [
   ["אם מאזן הבוחן מאוזן — אין טעויות?", "לא בהכרח. פקודה שלמה בחשבון הלא נכון, או פקודה שנשכחה, לא יפריעו לאיזון. האיזון תופס רק טעויות חד-צדדיות."],
   ["למה הוצאות מראש הן נכס?", "כי שילמתם על משהו שעוד תקבלו — חודשי ביטוח או שימוש. זה ערך שיש לעסק."],
 ];
-
-const tzaad = creditLoss(TZAAD);
 
 export const FINAL_SCREENS: Record<string, ScreenContent> = {
   worksheet: {
@@ -75,10 +71,6 @@ export function BasicsReference() {
                     <Sheet title="עודפים">פתיחה + רווח (− הפסד) = סגירה. חברה חדשה: פתיחה 0. יתרה בחובה = הפסדים צבורים.</Sheet>
                     <Sheet title="חשבונות חתך">הוצאות מראש והכנסות לקבל — נכסים. הוצאות לשלם והכנסות מראש — התחייבויות.</Sheet>
                     <Sheet title="עלות המכר">מלאי פתיחה + קניות − מלאי סגירה. המלאי — בנמוך מבין עלות לשווי מימוש נטו.</Sheet>
-                    <Sheet title="הפסדי אשראי">
-                      הוצאה = הפרשה נדרשת − מה שיש בה. בדוגמה: {tzaad.required.toLocaleString("he-IL")} − {tzaad.before.toLocaleString("he-IL")} ={" "}
-                      {tzaad.expense.toLocaleString("he-IL")}.
-                    </Sheet>
                   </div>
                 </section>
               ),

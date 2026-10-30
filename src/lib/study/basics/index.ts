@@ -1,11 +1,12 @@
 import { ADJUST } from "./adjust";
 import { BOOKS } from "./books";
+import { CREDIT } from "./credit";
 import { DOUBLE_ENTRY } from "./double-entry";
 import { FINAL } from "./final";
 import { INTRO } from "./intro";
 
 /** The basics course: six lessons, in order. */
-export const BASICS_LESSONS = [INTRO, DOUBLE_ENTRY, BOOKS, ADJUST, FINAL];
+export const BASICS_LESSONS = [INTRO, DOUBLE_ENTRY, BOOKS, ADJUST, CREDIT, FINAL];
 
 /** A lesson's address; with a screen id, the address that opens that concept screen. */
 export const lessonHref = (slug: string, screen?: string) => `/study/${slug}${screen ? `?screen=${screen}` : ""}`;
@@ -33,7 +34,7 @@ export function screenHref(id: string) {
  */
 export const LEGACY_CHAPTERS = [
   "what", "entity", "types", "equation", "expense", "double", "lab", "credit", "loan", "taccounts",
-  "trial", "retained", "reports", "accrual", "inventory", "creditloss", "worksheet", "practice", "summary",
+  "trial", "retained", "reports", "accrual", "inventory", "worksheet", "practice", "summary",
 ] as const;
 
 export function legacyHref(id: string): string | undefined {

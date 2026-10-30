@@ -10,13 +10,12 @@ const list = (rows: [string, number][]) => rows.map(([a, v]) => `${a} ${fmt(v)}`
 const FEES = { received: 9_000, months: 3, monthsThisYear: 1 };
 const feesUnearned = round2((FEES.received * (FEES.months - FEES.monthsThisYear)) / FEES.months);
 
-const NET = { customers: 300_000, rate: 0.03 };
 
-/** Lesson 5: the multi-column worksheet, and a mixed review of the whole course. */
+/** Lesson 6: the multi-column worksheet, and a mixed review of the whole course. */
 export const FINAL: StudyModule = {
   slug: "basics-final",
   course: COURSE,
-  n: 5,
+  n: 6,
   title: "גיליון רב-טורי ותרגול מסכם",
   description: "כל מה שלמדנו בטבלה אחת — ממאזן הבוחן הראשוני ועד הרווח והעודפים — ותרגול מסכם על כל הקורס.",
   backHref: COURSE_HREF,
@@ -35,7 +34,7 @@ export const FINAL: StudyModule = {
       kind: "number",
       id: "ronen-profit",
       skill: "רווח השנה",
-      prompt: "בגיליון של רונן ל-2017, אחרי חמש פקודות ההתאמה: מה רווח השנה?",
+      prompt: "בגיליון של רונן ל-2017, אחרי פקודות ההתאמה ומלאי הסגירה: מה רווח השנה?",
       answer: RONEN_S.profit,
       steps: [
         `הכנסות אחרי ההתאמות: ${list(RONEN_S.income)} = ${fmt(RONEN_S.totalIncome)}.`,
@@ -63,17 +62,24 @@ export const FINAL: StudyModule = {
       id: "not-profit",
       skill: "מה משפיע על הרווח",
       prompt: "איזו מהפעולות הבאות אינה משפיעה על רווח השנה?",
-      options: ["פירעון קרן של הלוואה", "תשלום שכר לעובדים", "השלמת ההפרשה להפסדי אשראי", "ריבית על הלוואה"],
+      options: ["פירעון קרן של הלוואה", "תשלום שכר לעובדים", "שכר דצמבר שירשם כהוצאות שכר לשלם", "ריבית על הלוואה"],
       answer: 0,
-      steps: ["שכר, הפסדי אשראי וריבית הם הוצאות — הם מקטינים את הרווח.", "פירעון קרן: ח׳ הלוואה / ז׳ מזומן — נכס והתחייבות קטנים, בלי הכנסה או הוצאה.", "לכן: פירעון הקרן."],
+      steps: ["שכר — גם זה שעוד לא שולם — וריבית הם הוצאות: הם מקטינים את הרווח.", "פירעון קרן: ח׳ הלוואה / ז׳ מזומן — נכס והתחייבות קטנים, בלי הכנסה או הוצאה.", "לכן: פירעון הקרן."],
     },
     {
-      kind: "number",
-      id: "net-customers",
-      skill: "לקוחות נטו",
-      prompt: `יתרת הלקוחות בסוף השנה ${fmt(NET.customers)} ₪, וההפרשה הנדרשת היא ${NET.rate * 100}% מהיתרה. מה סכום הלקוחות נטו במאזן?`,
-      answer: round2(NET.customers - NET.customers * NET.rate),
-      steps: [`ההפרשה הנדרשת: ${fmt(NET.customers)} × ${NET.rate * 100}% = ${fmt(round2(NET.customers * NET.rate))}.`, `לקוחות נטו = לקוחות − הפרשה: ${fmt(NET.customers)} − ${fmt(round2(NET.customers * NET.rate))} = ${fmt(round2(NET.customers - NET.customers * NET.rate))}.`],
+      kind: "journal",
+      id: "review-accrued",
+      skill: "הוצאות לשלם",
+      entry: {
+        id: "1",
+        text: "שכירות המשרד לדצמבר, 12,000 ₪, תשולם רק ב-5 בינואר. רשמו את פקודת ההתאמה ב-31.12.",
+        lines: [
+          { account: "הוצאות שכירות", dr: 12_000 },
+          { account: "הוצאות שכירות לשלם", cr: 12_000 },
+        ],
+        why: "את דצמבר כבר ניצלנו — ההוצאה שייכת השנה. הכסף עוד לא יצא, ולכן נוצר חוב: הוצאות לשלם, התחייבות.",
+      },
+      accounts: ["הוצאות שכירות", "הוצאות שכירות לשלם", "הוצאות שכירות מראש", "מזומן"],
     },
   ],
   traps: [
@@ -114,19 +120,6 @@ export const FINAL: StudyModule = {
         "המלכודת: ״מראש״ מזכיר ״הוצאות מראש״ שהן נכס. אבל כאן הכסף נכנס — ואנחנו החייבים.",
         "הצד נכון, אבל הסוג לא: החלק הזה שייך לשנה הבאה, ולכן אינו הכנסה של השנה.",
         "זה חשבון מאזני שממשיך לשנה הבאה — הוא מופיע במאזן הבוחן ובמאזן.",
-      ],
-    },
-    {
-      id: "write-off-net",
-      prompt: "חוב אבוד של 5,000 ₪ נמחק כנגד ההפרשה להפסדי אשראי. מה קורה ללקוחות נטו במאזן?",
-      options: ["לא משתנים", "קטנים ב-5,000 ₪", "גדלים ב-5,000 ₪", "קטנים ב-10,000 ₪"],
-      answer: 0,
-      why: "ח׳ הפרשה / ז׳ לקוחות: הלקוחות (ברוטו) קטנים ב-5,000, וגם ההפרשה שמנוכה מהם קטנה ב-5,000. הנטו לא זז.",
-      traps: [
-        "",
-        "המלכודת: מסתכלים רק על הלקוחות ברוטו. גם ההפרשה שמנוכה מהם קטנה — באותו סכום.",
-        "שום דבר לא גדל — שני החשבונות קטנים.",
-        "הלקוחות קטנים ב-5,000 וההפרשה קטנה ב-5,000 — הם מקזזים זה את זה, לא מצטברים.",
       ],
     },
   ],
