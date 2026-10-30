@@ -1,14 +1,30 @@
 "use client";
 
-import { BookOpenText, ClipboardPen, Flag, TriangleAlert } from "lucide-react";
+import { BookOpenText, ClipboardPen, Flag } from "lucide-react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type ReactNode, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { clampPlace, markSeen, move, type Place, position, recordExercise, recordTrap, STEPS, xpOf } from "@/lib/study/score";
+import {
+  clampPlace,
+  markSeen,
+  missedOf,
+  move,
+  type Place,
+  position,
+  practiceAt,
+  practiceId,
+  recordExercise,
+  recordTrap,
+  retryMissed,
+  STEPS,
+  subCount,
+  xpOf,
+} from "@/lib/study/score";
 import type { StudyModule } from "@/lib/study/types";
 import { BottomBar } from "./bottom-bar";
 import { StudyHeader } from "./header";
 import { JournalSimulator } from "./journal-simulator";
+import { PracticeIntro } from "./practice-intro";
 import { resetTopic, updateTopic, useTopic } from "./progress-store";
 import { QuestionExercise } from "./question-exercise";
 import { LessonContext } from "./screen-link";
@@ -78,8 +94,22 @@ export function StudyShell({ module: m, screens, next }: { module: StudyModule; 
     // The address follows the reader's moves (never on arrival, while a navigation may still be under way).
     window.history.replaceState(window.history.state, "", `${pathname}?step=${to.step + 1}`);
   };
-  const nextScreen = () => go(move(m, place, 1), 1);
+  // Trying the missed questions again: "next" goes from one to the next of them, then back to the summary.
+  const retry = STEPS[step].id === "practice" ? p.retry : undefined;
+  const nextScreen = () => {
+    if (!retry?.length) return go(move(m, place, 1), 1);
+    const upcoming = Array.from({ length: subCount(m, step) - 1 }, (_, i) => i + 1).find((sub) => sub > place.sub && retry.includes(practiceId(practiceAt(m, sub)!)));
+    if (upcoming) return go({ step, sub: upcoming }, 1);
+    updateTopic(slug, (q) => ({ ...q, retry: undefined }));
+    go({ step: STEPS.length - 1, sub: 0 }, 1);
+  };
   const prevScreen = () => go(move(m, place, -1), -1);
+  const tryMissedAgain = () => {
+    const first = missedOf(m, p)[0];
+    if (!first) return;
+    updateTopic(slug, (q) => retryMissed(m, q));
+    go({ step: STEPS.findIndex((s) => s.id === "practice"), sub: first.sub }, -1);
+  };
   const restart = () => {
     resetTopic(slug);
     setDir(-1);
@@ -90,6 +120,11 @@ export function StudyShell({ module: m, screens, next }: { module: StudyModule; 
     const i = m.screens.findIndex((s) => s.id === screen);
     if (i >= 0) go({ step: 0, sub: i }, step > 0 || i > place.sub ? 1 : -1);
   };
+
+  // A lesson skipped on the course path is taken back once it is opened.
+  useEffect(() => {
+    if (p.skipped) updateTopic(slug, (q) => ({ ...q, skipped: false }));
+  }, [slug, p.skipped]);
 
   // The page behind stays still while the lesson is open.
   useEffect(() => {
@@ -109,11 +144,20 @@ export function StudyShell({ module: m, screens, next }: { module: StudyModule; 
   }, [place.step, place.sub]);
 
   const keys = useRef<(e: KeyboardEvent) => void>(undefined);
+  const forwarding = useRef(false);
   useEffect(() => {
     keys.current = (e) => {
-      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (forwarding.current || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
       if (e.key === "Escape") return router.push(m.backHref);
       if ((e.target as HTMLElement).closest("input, select, textarea, [contenteditable], [role=tablist], [role=radiogroup]")) return;
+      // A step-by-step walkthrough on the screen takes the arrows first, wherever the focus is; past its ends they move the lesson.
+      const walkthrough = body.current?.querySelector<HTMLElement>('[aria-roledescription="צעד אחר צעד"]');
+      if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && walkthrough && !walkthrough.contains(e.target as Node)) {
+        forwarding.current = true;
+        const taken = !walkthrough.dispatchEvent(new KeyboardEvent("keydown", { key: e.key, bubbles: true, cancelable: true }));
+        forwarding.current = false;
+        if (taken) return e.preventDefault();
+      }
       if (e.key === "ArrowLeft" && !last) nextScreen();
       else if (e.key === "ArrowRight" && at > 1) prevScreen();
       else return;
@@ -141,41 +185,52 @@ export function StudyShell({ module: m, screens, next }: { module: StudyModule; 
         </div>
       ),
     };
-  } else if (id === "practice") {
-    const ex = m.exercises[place.sub];
-    const onCheck = (ok: boolean) => {
-      updateTopic(slug, (q) => recordExercise(q, ex, ok));
-      cue(ok ? "ok" : "bad");
-    };
+  } else if (id === "practice" && !practiceAt(m, place.sub)) {
     card = {
       icon: <ClipboardPen className="h-5 w-5" />,
-      title: ex.kind === "journal" ? `פקודת יומן · ${ex.skill}` : ex.skill,
-      count: `תרגיל ${place.sub + 1} מתוך ${m.exercises.length}`,
-      content:
-        ex.kind === "journal" ? (
-          <JournalSimulator key={ex.id} ex={ex} result={p.exercises[ex.id]} onCheck={onCheck} />
-        ) : (
-          <QuestionExercise key={ex.id} q={ex} result={p.exercises[ex.id]} onCheck={onCheck} />
+      title: "עוברים לתרגול",
+      content: <PracticeIntro module={m} onStart={nextScreen} />,
+    };
+  } else if (id === "practice") {
+    const it = practiceAt(m, place.sub)!;
+    const again = retry?.indexOf(practiceId(it)) ?? -1;
+    const count = again >= 0 ? `חזרה · ${again + 1} מתוך ${retry!.length}` : `שאלה ${place.sub} מתוך ${subCount(m, step) - 1}`;
+    if (it.kind === "exercise") {
+      const ex = it.ex;
+      const onCheck = (ok: boolean) => {
+        updateTopic(slug, (q) => recordExercise(q, ex, ok));
+        cue(ok ? "ok" : "bad");
+      };
+      card = {
+        icon: <ClipboardPen className="h-5 w-5" />,
+        title: `${it.group.label} · ${ex.skill}`,
+        count,
+        content:
+          ex.kind === "journal" ? (
+            <JournalSimulator key={ex.id} ex={ex} result={p.exercises[ex.id]} onCheck={onCheck} />
+          ) : (
+            <QuestionExercise key={ex.id} q={ex} result={p.exercises[ex.id]} onCheck={onCheck} />
+          ),
+      };
+    } else {
+      const t = it.trap;
+      card = {
+        icon: <ClipboardPen className="h-5 w-5" />,
+        title: it.group.label,
+        count,
+        content: (
+          <TrapQuiz
+            key={t.id}
+            trap={t}
+            answered={p.traps[t.id]}
+            onAnswer={(choice) => {
+              updateTopic(slug, (q) => recordTrap(q, t.id, choice, choice === t.answer));
+              cue(choice === t.answer ? "ok" : "bad");
+            }}
+          />
         ),
-    };
-  } else if (id === "traps") {
-    const t = m.traps[place.sub];
-    card = {
-      icon: <TriangleAlert className="h-5 w-5" />,
-      title: "מלכודת מבחן",
-      count: `שאלה ${place.sub + 1} מתוך ${m.traps.length}`,
-      content: (
-        <TrapQuiz
-          key={t.id}
-          trap={t}
-          answered={p.traps[t.id]}
-          onAnswer={(choice) => {
-            updateTopic(slug, (q) => recordTrap(q, t.id, choice, choice === t.answer));
-            cue(choice === t.answer ? "ok" : "bad");
-          }}
-        />
-      ),
-    };
+      };
+    }
   } else {
     card = {
       icon: <Flag className="h-5 w-5" />,
@@ -186,6 +241,7 @@ export function StudyShell({ module: m, screens, next }: { module: StudyModule; 
           progress={p}
           next={next}
           onRestart={restart}
+          onRetry={tryMissedAgain}
         />
       ),
     };

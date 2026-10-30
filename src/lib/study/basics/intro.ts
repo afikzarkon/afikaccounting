@@ -54,7 +54,9 @@ export const TRANSLATIONS: Translation[] = [
  */
 export const TWINS = { sales: 50_000, other: 30_000, computer: 12_000, years: 3 };
 export const twinProfit = (computerExpense: number) => TWINS.sales - TWINS.other - computerExpense;
-const perYear = TWINS.computer / TWINS.years;
+// A year at the bakery, with money in that is not income: a loan, and the owner's investment.
+const YEAR = { sales: 80_000, rent: 24_000, ingredients: 20_000, loan: 30_000, invested: 10_000 };
+const yearProfit = YEAR.sales - YEAR.rent - YEAR.ingredients;
 
 /** Lesson 1: accounting as the language of business — its grammar, what it translates, and its first words. */
 export const INTRO: StudyModule = {
@@ -93,33 +95,34 @@ export const INTRO: StudyModule = {
     },
     {
       kind: "number",
-      id: "twins-profit",
-      skill: "למה צריך דקדוק",
-      prompt: `מאפייה מכרה השנה ב-${fmt(TWINS.sales)} ₪, הוציאה ${fmt(TWINS.other)} ₪ על כל השאר, וקנתה מחשב ב-${fmt(TWINS.computer)} ₪ שישמש אותה ${TWINS.years} שנים. לפי התקן, עלות המחשב מתחלקת שווה על שנות השימוש. כמה הרווח השנה?`,
-      answer: twinProfit(perYear),
+      id: "year-profit",
+      skill: "רווח השנה",
+      prompt: `במהלך השנה המאפייה מכרה עוגות ב-${fmt(YEAR.sales)} ₪, שילמה שכר דירה ${fmt(YEAR.rent)} ₪ וקנתה חומרי גלם ב-${fmt(YEAR.ingredients)} ₪. בנוסף, היא קיבלה הלוואה מהבנק של ${fmt(YEAR.loan)} ₪, והבעלים השקיע בה ${fmt(YEAR.invested)} ₪ מכספו. כמה הרווח של המאפייה השנה?`,
+      answer: yearProfit,
       steps: [
-        `המחשב משרת ${TWINS.years} שנים, ולכן כל שנה נושאת חלק שווה מעלותו: ${fmt(TWINS.computer)} ÷ ${TWINS.years} = ${fmt(perYear)}.`,
-        `רווח = ${fmt(TWINS.sales)} − ${fmt(TWINS.other)} − ${fmt(perYear)} = ${fmt(twinProfit(perYear))}.`,
-        `מי שהיה רושם את כל ${fmt(TWINS.computer)} כהוצאה השנה היה מראה רווח של ${fmt(twinProfit(TWINS.computer))} בלבד — על אותה שנה בדיוק.`,
+        "רווח = הכנסות − הוצאות. סופרים רק מה שהעסק הרוויח מהפעילות שלו ומה שהוציא כדי לפעול.",
+        `הכנסות: המכירות, ${fmt(YEAR.sales)} ₪. הוצאות: שכר דירה וחומרי גלם, ${fmt(YEAR.rent)} + ${fmt(YEAR.ingredients)} = ${fmt(YEAR.rent + YEAR.ingredients)} ₪.`,
+        `ההלוואה (${fmt(YEAR.loan)}) היא חוב שצריך להחזיר — התחייבות, לא הכנסה. ההשקעה של הבעלים (${fmt(YEAR.invested)}) היא הון — לא הכנסה. שתיהן מכניסות כסף לקופה, אבל לא משנות את הרווח.`,
+        `רווח = ${fmt(YEAR.sales)} − ${fmt(YEAR.rent + YEAR.ingredients)} = ${fmt(yearProfit)} ₪.`,
       ],
     },
     {
       kind: "choice",
-      id: "not-recorded",
+      id: "recorded-event",
       skill: "מה מתרגמים",
-      prompt: "איזה מהאירועים הבאים לא נרשם בספרי העסק?",
-      options: ["מכירה במזומן", "תשלום שכר דירה", "קבלת הלוואה מהבנק", "שיחת טלפון עם לקוח שאולי יזמין בעתיד"],
-      answer: 3,
-      steps: ["רושמים אירוע שמשנה משהו בעסק: כסף, רכוש, חובות, הכנסות או הוצאות.", "בשיחה לא נמכר דבר, לא שולם דבר, ואף אחד לא חייב לאף אחד.", "לכן אין מה לתרגם — היא לא נרשמת."],
-    },
-    {
-      kind: "choice",
-      id: "loan-profit",
-      skill: "מה מתרגמים",
-      prompt: "העסק קיבל הלוואה של 50,000 ₪ מהבנק. מה קורה לרווח של העסק?",
-      options: ["גדל ב-50,000 ₪", "קטן ב-50,000 ₪", "לא משתנה", "גדל רק כשמחזירים את ההלוואה"],
-      answer: 2,
-      steps: ["המזומן גדל ב-50,000, אבל גם החוב לבנק גדל ב-50,000.", "הלוואה היא כסף שצריך להחזיר — התחייבות, לא הכנסה.", "לכן הרווח לא משתנה."],
+      prompt: "איזה מהאירועים הבאים נרשם בספרי המאפייה כבר היום?",
+      options: [
+        "לקוח הזמין עוגת חתונה לחודש הבא, ועוד לא שילם",
+        "המאפייה קנתה קמח מספק ב-3,000 ₪, והתשלום ייעשה בחודש הבא",
+        "המאפייה חתמה על חוזה לספק לחמניות לבית קפה החל מהשנה הבאה",
+        "המאפייה שלחה לחברת הייטק הצעת מחיר על מגשי אירוח, והחברה עוד לא ענתה",
+      ],
+      answer: 1,
+      steps: [
+        "רושמים אירוע ששינה כבר עכשיו משהו בעסק: כסף, רכוש, חובות, הכנסות או הוצאות.",
+        "הקמח כבר במאפייה, והמאפייה חייבת לספק 3,000 ₪ — נוסף רכוש ונוסף חוב. זה נרשם היום, גם בלי שעבר כסף.",
+        "ההזמנה, החוזה והצעת המחיר הם הבטחות או הצעות לעתיד: עוד לא סופק דבר ואף אחד לא חייב כלום — אין מה לרשום. הם יירשמו כשיקרו.",
+      ],
     },
     practice("q1"),
     practice("q2"),
@@ -134,19 +137,6 @@ export const INTRO: StudyModule = {
     },
   ],
   traps: [
-    {
-      id: "standards-tax",
-      prompt: "מי קובע כמה מס הכנסה העסק משלם?",
-      options: ["תקני החשבונאות (IFRS)", "חוקי המס", "רואה החשבון של העסק", "הבנק"],
-      answer: 1,
-      why: "המס נקבע בחוקי המס. הדוחות לפי תקני החשבונאות הם נקודת המוצא, ומהם מתאימים את הרווח לכללי המס.",
-      traps: [
-        "המלכודת: תקני החשבונאות קובעים איך מודדים ומציגים — לא כמה מס משלמים. לכללי המס יש חוקים משלהם.",
-        "",
-        "רואה החשבון מכין ובודק לפי הכללים, אבל הוא לא קובע אותם.",
-        "הבנק קורא את הדוחות כדי להחליט על אשראי. למס אין לו קשר.",
-      ],
-    },
     {
       id: "cash-is-income",
       prompt: "השנה נכנסו לקופת העסק 80,000 ₪. מה בטוח נכון?",

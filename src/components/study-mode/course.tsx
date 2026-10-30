@@ -1,30 +1,31 @@
 "use client";
 
-import { ArrowLeft, Check, CircleCheck, RotateCcw, Star } from "lucide-react";
+import { ArrowLeft, Check, ChevronsLeft, CircleCheck, RotateCcw, Star } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { maxXp, statusOf, type TopicProgress, xpOf } from "@/lib/study/score";
+import { maxXp, pathStatus, type TopicProgress, xpOf } from "@/lib/study/score";
 import type { StudyModule } from "@/lib/study/types";
 import { BASICS_LESSONS, legacyHref } from "@/lib/study/basics";
 import { studyHref } from "@/lib/study";
 import { cn } from "@/lib/utils";
-import { useTopics } from "./progress-store";
+import { updateTopic, useTopics } from "./progress-store";
 
 const SLUGS = BASICS_LESSONS.map((m) => m.slug);
 
 /**
  * The course as a path: progress on top, then one step per lesson down a line.
  * The lesson to do next opens as a spotlight panel with its concepts; the rest
- * are one row each, done lessons quieter than the ones ahead.
+ * are one row each, done lessons quieter than the ones ahead. A lesson can be
+ * skipped: the spotlight moves on, and the lesson waits on the path.
  */
 export function CoursePath() {
   const topics = useTopics(SLUGS);
-  const rows = BASICS_LESSONS.map((m) => ({ m, p: topics[m.slug], status: statusOf(m, topics[m.slug]) }));
+  const rows = BASICS_LESSONS.map((m) => ({ m, p: topics[m.slug], status: pathStatus(m, topics[m.slug]) }));
   const done = rows.filter((r) => r.status === "done").length;
   const xp = rows.reduce((s, r) => s + xpOf(r.m, r.p), 0);
   const max = rows.reduce((s, r) => s + maxXp(r.m), 0);
-  const next = rows.find((r) => r.status !== "done");
+  const next = rows.find((r) => r.status === "new" || r.status === "started");
   return (
     <>
       <div className="card flex flex-wrap items-center justify-between gap-x-6 gap-y-3 p-4 sm:px-5">
@@ -47,10 +48,12 @@ export function CoursePath() {
               </span>
             ))}
           </div>
-        ) : (
+        ) : done === rows.length ? (
           <p className="flex items-center gap-2 font-semibold text-success">
             <CircleCheck className="h-5 w-5" aria-hidden /> סיימתם את כל הקורס!
           </p>
+        ) : (
+          <p className="text-sm text-muted">דילגתם על השיעורים שנותרו — אפשר לחזור לכל אחד מהם מתי שתרצו.</p>
         )}
       </div>
 
@@ -58,6 +61,7 @@ export function CoursePath() {
         {rows.map((r, i) => {
           const spotlight = r === next;
           const isDone = r.status === "done";
+          const skipped = r.status === "skipped";
           return (
             <li key={r.m.slug} className="flex gap-3 sm:gap-5">
               <div className="flex w-10 shrink-0 flex-col items-center sm:w-12" aria-hidden>
@@ -65,7 +69,11 @@ export function CoursePath() {
                 <span
                   className={cn(
                     "num grid h-10 w-10 shrink-0 place-items-center rounded-full text-base font-bold sm:h-12 sm:w-12 sm:text-lg",
-                    isDone ? "bg-success text-canvas" : spotlight ? "bg-accent text-accent-fg ring-[6px] ring-accent/20" : "border-2 border-line-strong bg-surface text-muted",
+                    isDone
+                      ? "bg-success text-canvas"
+                      : spotlight
+                        ? "bg-accent text-accent-fg ring-[6px] ring-accent/20"
+                        : cn("border-2 border-line-strong bg-surface text-muted", skipped && "border-dashed text-subtle"),
                   )}
                 >
                   {isDone ? <Check className="h-5 w-5" strokeWidth={3} /> : r.m.n}
@@ -103,6 +111,13 @@ function Spotlight({ module: m, progress: p, started, total }: { module: StudyMo
           <Link href={studyHref(m.slug)} prefetch className="inline-flex h-12 items-center gap-2.5 rounded-xl bg-[#4f8bff] px-6 text-[15px] font-bold text-[#04112b] transition hover:brightness-110">
             {started ? "להמשיך מאיפה שעצרתי" : "להתחיל את השיעור"} <ArrowLeft className="h-4 w-4" aria-hidden />
           </Link>
+          <button
+            type="button"
+            onClick={() => updateTopic(m.slug, (q) => ({ ...q, skipped: true }))}
+            className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[#93b4ff]/60 bg-white/[0.06] px-5 text-[15px] font-bold text-[#e8eef8] transition hover:border-[#93b4ff] hover:bg-white/[0.12]"
+          >
+            דלג על השיעור <ChevronsLeft className="h-4 w-4" aria-hidden />
+          </button>
           <span className="num text-sm text-[#a9b7d1]">
             {xpOf(m, p)}/{maxXp(m)} XP
           </span>
@@ -124,7 +139,7 @@ function Spotlight({ module: m, progress: p, started, total }: { module: StudyMo
           })}
           <li className="num flex items-center gap-3 text-[15px] text-[#a9b7d1]">
             <span className="h-6 w-6 shrink-0 rounded-full border-2 border-dashed border-[#5b6a88]" aria-hidden />
-            {m.exercises.length} תרגילים · {m.traps.length} מלכודות מבחן · סיכום
+            {m.exercises.length + m.traps.length} שאלות תרגול · סיכום
           </li>
         </ul>
       </div>
@@ -132,8 +147,8 @@ function Spotlight({ module: m, progress: p, started, total }: { module: StudyMo
   );
 }
 
-/** Any other lesson: one row, the whole of it a link in. */
-function LessonRow({ module: m, progress: p, status }: { module: StudyModule; progress: TopicProgress; status: "new" | "started" | "done" }) {
+/** Any other lesson: one row, the whole of it a link in. A skipped lesson waits here, dashed; opening it takes it back. */
+function LessonRow({ module: m, progress: p, status }: { module: StudyModule; progress: TopicProgress; status: "new" | "started" | "done" | "skipped" }) {
   const done = status === "done";
   return (
     <Link
@@ -141,7 +156,7 @@ function LessonRow({ module: m, progress: p, status }: { module: StudyModule; pr
       prefetch
       className={cn(
         "group flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-2xl px-4 py-3.5 transition sm:px-5",
-        done ? "hover:bg-surface" : "border border-line bg-surface shadow-card hover:border-accent/40",
+        done ? "hover:bg-surface" : status === "skipped" ? "border border-dashed border-line-strong hover:border-accent/40 hover:bg-surface" : "border border-line bg-surface shadow-card hover:border-accent/40",
       )}
     >
       <div className="min-w-0 flex-[1_1_18rem]">
@@ -149,11 +164,20 @@ function LessonRow({ module: m, progress: p, status }: { module: StudyModule; pr
           {m.title}
         </h2>
         <p className="num mt-0.5 text-sm text-muted">
-          {m.screens.length} מושגים · {m.exercises.length} תרגילים · {m.traps.length} מלכודות מבחן
+          {m.screens.length} מושגים · {m.exercises.length + m.traps.length} שאלות תרגול
         </p>
       </div>
-      <span className={cn("num flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold", done ? "bg-success/10 text-success" : "bg-accent-soft text-accent")}>
-        {done ? (
+      <span
+        className={cn(
+          "num flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold",
+          done ? "bg-success/10 text-success" : status === "skipped" ? "bg-surface-2 text-muted" : "bg-accent-soft text-accent",
+        )}
+      >
+        {status === "skipped" ? (
+          <>
+            דילגתם · לחזור לשיעור <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+          </>
+        ) : done ? (
           <>
             <RotateCcw className="h-3.5 w-3.5" aria-hidden /> הושלם · חזרה
           </>

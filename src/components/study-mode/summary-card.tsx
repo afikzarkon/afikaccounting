@@ -1,21 +1,32 @@
 "use client";
 
-import { ArrowLeft, BookOpen, Flame, RotateCcw, Sparkles, Star, Trophy } from "lucide-react";
+import { ArrowLeft, BookOpen, Flame, Repeat, RotateCcw, Sparkles, Star, Trophy } from "lucide-react";
 import { motion } from "motion/react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { maxXp, scoreOf, statusOf, type TopicProgress, xpOf } from "@/lib/study/score";
+import { maxXp, missedOf, scoreOf, statusOf, type TopicProgress, xpOf } from "@/lib/study/score";
 import type { StudyModule } from "@/lib/study/types";
 import { cn } from "@/lib/utils";
 
-/** The last step: the score by step, XP and the best streak, the golden tips, and where to go next. */
-export function SummaryCard({ module: m, progress: p, next, onRestart }: { module: StudyModule; progress: TopicProgress; next?: { href: string; label: string }; onRestart: () => void }) {
+/** The last step: the score by step, XP and the best streak, a way back to the questions not solved yet, the golden tips, and where to go next. */
+export function SummaryCard({
+  module: m,
+  progress: p,
+  next,
+  onRestart,
+  onRetry,
+}: {
+  module: StudyModule;
+  progress: TopicProgress;
+  next?: { href: string; label: string };
+  onRestart: () => void;
+  onRetry: () => void;
+}) {
   const score = scoreOf(m, p);
   const done = statusOf(m, p) === "done";
-  const open = m.exercises.filter((ex) => !p.exercises[ex.id]?.done).length + m.traps.filter((t) => !p.traps[t.id]).length;
+  const missed = missedOf(m, p).length;
   const rows: [string, number, number][] = [
     ["מושגים", score.learn.ok, score.learn.total],
     ["תרגול", score.practice.ok, score.practice.total],
-    ["מלכודות מבחן", score.traps.ok, score.traps.total],
   ];
   return (
     <div className="space-y-4">
@@ -25,11 +36,6 @@ export function SummaryCard({ module: m, progress: p, next, onRestart }: { modul
         </motion.span>
         <div className="min-w-0 flex-1">
           <p className="text-[18px] font-bold text-fg">{done ? "סיימתם את השיעור!" : "סיכום השיעור"}</p>
-          {!done && (
-            <p className="num text-[13px] text-muted">
-              נשארו {open} שאלות בלי מענה — אפשר לחזור אליהן בנקודות שלמטה.
-            </p>
-          )}
           <p className="num flex flex-wrap items-center gap-x-3 text-[13.5px] text-muted">
             <span className="flex items-center gap-1">
               <Star className="h-3.5 w-3.5 fill-[#eda100] text-[#eda100]" aria-hidden /> {xpOf(m, p)} מתוך {maxXp(m)} XP
@@ -40,6 +46,17 @@ export function SummaryCard({ module: m, progress: p, next, onRestart }: { modul
           </p>
         </div>
       </div>
+
+      {missed > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-accent/30 bg-accent-soft px-4 py-3.5">
+          <p className="num min-w-0 flex-1 text-[14.5px] text-fg">
+            <strong>{missed} שאלות</strong> עוד לא נפתרו — לא עניתם עליהן, או שהתשובה לא הייתה נכונה.
+          </p>
+          <Button onClick={onRetry}>
+            <Repeat className="h-4 w-4" aria-hidden /> לתרגל אותן שוב
+          </Button>
+        </div>
+      )}
 
       <ul className="space-y-2.5 rounded-2xl border border-line bg-surface p-4">
         {rows.map(([label, ok, total]) => (

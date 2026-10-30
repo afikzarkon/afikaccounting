@@ -1,5 +1,5 @@
 import { type Entry, type Line, round2 } from "@/lib/learn/basics";
-import type { Exercise, StudyModule } from "./types";
+import type { Exercise, StudyModule, Trap } from "./types";
 
 /**
  * The lesson's rules, kept apart from the screen: how answers are checked, how
@@ -10,9 +10,35 @@ import type { Exercise, StudyModule } from "./types";
 export const STEPS = [
   { id: "learn", label: "מושגים" },
   { id: "practice", label: "תרגול" },
-  { id: "traps", label: "מלכודות מבחן" },
   { id: "summary", label: "סיכום" },
 ] as const;
+
+/**
+ * The practice, by the kind of question: journal entries (a whole entry, or
+ * picking its debit and credit), multiple choice (with the questions that
+ * explain why each wrong option tempts), then calculations.
+ */
+export const PRACTICE_GROUPS = [
+  { id: "journal", label: "פקודות יומן" },
+  { id: "choice", label: "שאלות אמריקאיות" },
+  { id: "number", label: "שאלות חישוב" },
+] as const;
+
+export type PracticeGroup = (typeof PRACTICE_GROUPS)[number];
+
+/** One question of the practice: an exercise, or a multiple-choice question that explains each wrong option. */
+export type PracticeItem = { group: PracticeGroup } & ({ kind: "exercise"; ex: Exercise } | { kind: "trap"; trap: Trap });
+
+const groupOf = (ex: Exercise) => PRACTICE_GROUPS.find((g) => g.id === (ex.kind === "entry" ? "journal" : ex.kind))!;
+
+/** The lesson's practice in order: group by group, each in the lesson's own order. */
+export function practiceOf(m: StudyModule): PracticeItem[] {
+  const items: PracticeItem[] = [
+    ...m.exercises.map((ex) => ({ kind: "exercise" as const, ex, group: groupOf(ex) })),
+    ...m.traps.map((trap) => ({ kind: "trap" as const, trap, group: PRACTICE_GROUPS[1] })),
+  ];
+  return PRACTICE_GROUPS.flatMap((g) => items.filter((it) => it.group === g));
+}
 
 export const XP = { screen: 5, first: 10, second: 5, trap: 10 };
 
@@ -31,6 +57,10 @@ export type TopicProgress = {
   /** Right answers in a row, and the best run so far. */
   streak: number;
   best: number;
+  /** Passed over on the course path, for now: opening the lesson takes it back. */
+  skipped?: boolean;
+  /** The practice questions being tried again, by id: "next" goes from one to the next, then to the summary. */
+  retry?: string[];
 };
 
 export const EMPTY_TOPIC: TopicProgress = { step: 0, sub: 0, seen: [], exercises: {}, traps: {}, streak: 0, best: 0 };
@@ -92,8 +122,10 @@ export const maxXp = (m: StudyModule) => m.screens.length * XP.screen + m.exerci
 export function scoreOf(m: StudyModule, p: TopicProgress) {
   return {
     learn: { ok: m.screens.filter((_, i) => p.seen.includes(i)).length, total: m.screens.length },
-    practice: { ok: m.exercises.filter((ex) => p.exercises[ex.id]?.ok).length, total: m.exercises.length },
-    traps: { ok: m.traps.filter((t) => p.traps[t.id]?.correct).length, total: m.traps.length },
+    practice: {
+      ok: m.exercises.filter((ex) => p.exercises[ex.id]?.ok).length + m.traps.filter((t) => p.traps[t.id]?.correct).length,
+      total: m.exercises.length + m.traps.length,
+    },
   };
 }
 
@@ -105,11 +137,37 @@ export function statusOf(m: StudyModule, p: TopicProgress): "new" | "started" | 
   return touched ? "started" : "new";
 }
 
-/** Screens inside a step: the concept screens, the exercises, the traps, and one summary. */
+/** Where a lesson stands on the course path: as statusOf, except that a lesson skipped and not done is passed over. */
+export function pathStatus(m: StudyModule, p: TopicProgress): "new" | "started" | "done" | "skipped" {
+  const status = statusOf(m, p);
+  return p.skipped && status !== "done" ? "skipped" : status;
+}
+
+/** Screens inside a step: the concept screens, the practice (a screen marking the move from learning to practice, then every question), and one summary. */
 export function subCount(m: StudyModule, step: number) {
   const id = STEPS[step].id;
-  return id === "learn" ? m.screens.length : id === "practice" ? m.exercises.length : id === "traps" ? m.traps.length : 1;
+  return id === "learn" ? m.screens.length : id === "practice" ? practiceOf(m).length + 1 : 1;
 }
+
+export const practiceId = (it: PracticeItem) => (it.kind === "exercise" ? it.ex.id : it.trap.id);
+
+/** The practice questions not solved yet: never answered, or answered wrong. Each with its screen in the practice step. */
+export function missedOf(m: StudyModule, p: TopicProgress) {
+  return practiceOf(m)
+    .map((it, i) => ({ id: practiceId(it), sub: i + 1, ok: it.kind === "exercise" ? !!p.exercises[it.ex.id]?.ok : !!p.traps[it.trap.id]?.correct }))
+    .filter((x) => !x.ok)
+    .map(({ id, sub }) => ({ id, sub }));
+}
+
+/** Try the missed questions again: their answers cleared (the solved ones, and their XP, untouched), and the list of them kept for "next". */
+export function retryMissed(m: StudyModule, p: TopicProgress): TopicProgress {
+  const ids = missedOf(m, p).map((x) => x.id);
+  const drop = <T,>(r: Record<string, T>) => Object.fromEntries(Object.entries(r).filter(([k]) => !ids.includes(k)));
+  return { ...p, retry: ids, exercises: drop(p.exercises), traps: drop(p.traps) };
+}
+
+/** The question on a screen of the practice step; none on its first screen, which opens the practice. */
+export const practiceAt = (m: StudyModule, sub: number): PracticeItem | undefined => (sub > 0 ? practiceOf(m)[sub - 1] : undefined);
 
 export type Place = { step: number; sub: number };
 

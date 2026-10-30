@@ -5,7 +5,7 @@ import { ScreenLink } from "@/components/study-mode/screen-link";
 import { cn } from "@/lib/utils";
 import { ClassifyExercise } from "./classify";
 import { RetainedSolver } from "./retained";
-import { EntryCards, Posted, TBox } from "./t-accounts";
+import { EntryCards, Posted, TBox, THead } from "./t-accounts";
 import { Calc, JE, KeyCard, Money, SideChip, StatementsView, type Step, Stepper, TBTable } from "./ui";
 
 const Y20 = statements(YUVAL.tb2020);
@@ -102,7 +102,7 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
   },
 
   taccounts: {
-    lead: "לכל חשבון כרטיס T: חובה מימין, זכות משמאל. היתרה היא ההפרש בין שני הצדדים, והיא יושבת בצד הגדול.",
+    lead: "את כרטיסי ה-T כבר פגשתם. עכשיו סוגרים כרטיס: מחברים כל צד — כולל יתרת הפתיחה — והיתרה היא ההפרש, בצד הגדול.",
     body: (
       <>
         <ol className="flex flex-wrap items-center gap-2 text-sm">
@@ -124,7 +124,10 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
               title: "סוגרים את הכרטיס: מה היתרה?",
               body: (
                 <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] sm:items-start">
-                  <TBox t={cash} totals />
+                  <div>
+                    <THead />
+                    <TBox t={cash} totals />
+                  </div>
                   <div className="space-y-2">
                     <Calc result={<Money v={cash.balance} />}>
                       חובה <Money v={cashDr} /> − זכות <Money v={cashCr} />
@@ -197,19 +200,19 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
   },
 
   reports: {
-    lead: "תוצאתי מתאפס, מאזני ממשיך: בסוף כל שנה הרווח עובר לעודפים, וב-1.1 הכנסות והוצאות מתחילות מאפס.",
+    lead: "מהיתרות בונים את שני הדוחות: החשבונות התוצאתיים — הכנסות והוצאות — נכנסים לדוח רווח והפסד. החשבונות המאזניים — נכסים, התחייבויות והון — נכנסים למאזן.",
     body: (
       <>
         <div className="grid gap-3 md:grid-cols-2">
           <div className="rounded-2xl border-2 border-fg/15 bg-surface p-4">
             <p className="text-[17px] font-bold text-fg">תוצאתי · רווח והפסד</p>
             <p className="mt-1 text-[14.5px] text-fg/90">הכנסות והוצאות. מודדים מה קרה בשנה אחת.</p>
-            <p className="mt-2 inline-block rounded-lg bg-fg px-2.5 py-1 text-[13px] font-bold text-surface">מתאפסים בכל 1.1</p>
+            <p className="mt-2 inline-block rounded-lg bg-fg px-2.5 py-1 text-[13px] font-bold text-surface">נכנסים לדוח רווח והפסד</p>
           </div>
           <div className="rounded-2xl border-2 border-accent/40 bg-surface p-4">
             <p className="text-[17px] font-bold text-fg">מאזני · המאזן</p>
             <p className="mt-1 text-[14.5px] text-fg/90">נכסים, התחייבויות והון. מתארים מצב ביום מסוים.</p>
-            <p className="mt-2 inline-block rounded-lg bg-accent px-2.5 py-1 text-[13px] font-bold text-accent-fg">ממשיכים: יתרת סגירה = יתרת הפתיחה הבאה</p>
+            <p className="mt-2 inline-block rounded-lg bg-accent px-2.5 py-1 text-[13px] font-bold text-accent-fg">נכנסים למאזן</p>
           </div>
         </div>
         <p>
@@ -236,6 +239,7 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
               title: "לפני הסגירה: החשבונות התוצאתיים ב-31.12.2020",
               body: (
                 <>
+                  <THead n={ledger([], PL_20).length} />
                   <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                     {ledger([], PL_20).map((t) => (
                       <TBox key={t.account} t={t} openingLabel="יתרה" />

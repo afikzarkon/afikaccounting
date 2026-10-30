@@ -1,8 +1,8 @@
 import type { Choice, Entry, EntryQ, NumberQ, Question } from "@/lib/learn/basics";
 
 /**
- * One interactive lesson, in four steps: concept screens, practice, exam traps
- * and a summary. Plain data, so it can be tested and handed to the client shell;
+ * One interactive lesson, in three steps: concept screens, practice (its
+ * exercises and traps together, by kind of question) and a summary. Plain data, so it can be tested and handed to the client shell;
  * the concept screens' content (JSX) is looked up by screen id on the server.
  */
 export type StudyModule = {
@@ -34,7 +34,7 @@ export type QuestionExercise = Pick<Question, "id" | "skill" | "prompt" | "steps
 /** A practice item: a question, or a full journal entry. */
 export type Exercise = QuestionExercise | JournalExercise;
 
-/** A multiple-choice exam trap: for each wrong option, why it is tempting and why it is wrong. */
+/** A multiple-choice question that explains each wrong option: why it is tempting and why it is wrong. Practised with the other multiple-choice questions. */
 export type Trap = {
   id: string;
   prompt: string;

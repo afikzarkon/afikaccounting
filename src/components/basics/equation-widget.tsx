@@ -8,11 +8,12 @@ import { Money, SideChip } from "./ui";
 
 /**
  * The accounting equation, entry by entry: the science-kits business, with a
- * slider through its entries. Assets, liabilities and equity are computed from
- * the T-accounts after each one — and always balance.
+ * slider through its first `count` entries (all of them when not given).
+ * Assets, liabilities and equity are computed from the T-accounts after each
+ * one — and always balance.
  */
-export function EquationWidget() {
-  const entries = KITS.entries;
+export function EquationWidget({ count }: { count?: number } = {}) {
+  const entries = KITS.entries.slice(0, count);
   const [k, setK] = useState(1);
   const entry = entries[k - 1];
   const s = statements(balancesOf(ledger(entries.slice(0, k))));

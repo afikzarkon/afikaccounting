@@ -2,7 +2,7 @@ import { Banknote } from "lucide-react";
 import { ACCRUAL, balancesOf, costOfSales, creditLoss, creditLossEntries, type Entry, ledger, MIA, RONEN, round2, statements, trialBalance, TZAAD } from "@/lib/learn/basics";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { cn } from "@/lib/utils";
-import { Posted, TBox } from "./t-accounts";
+import { Posted, TBox, THead } from "./t-accounts";
 import { Calc, KeyCard, Money, Rule, StatementsView, type Step, Stepper, TBTable } from "./ui";
 
 const RONEN_FINAL = balancesOf(ledger(RONEN.adjustments, RONEN.preliminary));
@@ -259,7 +259,10 @@ const tzaad: Step[] = [
     title: "יתרת הלקוחות בסוף השנה — מתוך הכרטיס",
     body: (
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] sm:items-start">
-        <TBox t={tzaadCard("לקוחות", 3)} totals />
+        <div>
+          <THead />
+          <TBox t={tzaadCard("לקוחות", 3)} totals />
+        </div>
         <div className="space-y-2">
           <Calc result={<Money v={TZAAD_C.customers} />}>
             {f(TZAAD.openingCustomers)} + {f(TZAAD.creditSales)} − {f(TZAAD.collections)} − {f(TZAAD.badDebt)}
@@ -284,7 +287,10 @@ const tzaad: Step[] = [
     title: "מה כבר יש בהפרשה — ומה חסר?",
     body: (
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] sm:items-start">
-        <TBox t={tzaadCard("הפרשה להפסדי אשראי חזויים", 3)} totals />
+        <div>
+          <THead />
+          <TBox t={tzaadCard("הפרשה להפסדי אשראי חזויים", 3)} totals />
+        </div>
         <div className="space-y-2">
           <Calc result={<Money v={TZAAD_C.before} />}>
             יש: פתיחה {f(TZAAD.openingAllowance)} − חוב אבוד {f(TZAAD.badDebt)}

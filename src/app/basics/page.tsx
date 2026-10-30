@@ -9,12 +9,12 @@ import { BASICS_LESSONS } from "@/lib/study/basics";
 export const metadata: Metadata = {
   title: "חשבונאות בסיסית מאפס",
   description:
-    "קורס אינטראקטיבי בעברית, שיעור אחר שיעור: חובה וזכות, פקודות יומן וכרטיסי T, מאזן בוחן ועודפים, התאמות סוף שנה, מלאי סגירה והפסדי אשראי — עם סימולטור פקודות יומן, תרגול ומלכודות מבחן.",
+    "קורס אינטראקטיבי בעברית, שיעור אחר שיעור: חובה וזכות, פקודות יומן וכרטיסי T, מאזן בוחן ועודפים, התאמות סוף שנה, מלאי סגירה והפסדי אשראי — עם סימולטור פקודות יומן ותרגול בכל שיעור.",
 };
 
 /**
  * The basics course: six interactive lessons, each with its concept screens,
- * a practice section and exam traps; progress on top, and the course's
+ * a practice section by kind of question; progress on top, and the course's
  * reference (cheat sheet, glossary, mistakes, questions) at the bottom.
  */
 export default function BasicsPage() {
@@ -28,7 +28,7 @@ export default function BasicsPage() {
           חשבונאות בסיסית <span className="text-gradient">מאפס</span>
         </h1>
         <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted">
-          <span className="num">{BASICS_LESSONS.length}</span> שיעורים אינטראקטיביים, צעד אחר צעד. בכל שיעור: מושגים עם דוגמאות חיות, תרגול עם משוב מיידי, ומלכודות מבחן — ובסוף, טיפים
+          <span className="num">{BASICS_LESSONS.length}</span> שיעורים אינטראקטיביים, צעד אחר צעד. בכל שיעור: מושגים עם דוגמאות חיות, ואחריהם תרגול עם משוב מיידי — פקודות יומן, שאלות אמריקאיות ושאלות חישוב. ובסוף, טיפים
           זהב.
         </p>
 

@@ -1,12 +1,77 @@
+import { ChevronDown, CircleHelp } from "lucide-react";
 import type { ReactNode } from "react";
 import { type Balances, type Entry, ledger, type Posting, type TAccount, typeOf, TYPE_LABEL } from "@/lib/learn/basics";
 import { cn } from "@/lib/utils";
 import { JE, Money } from "./ui";
 
+/** The first T-account of the course, in full: what it is, and how a journal entry reaches it. */
+const T_INTRO: ReactNode[] = [
+  <>כרטיס T הוא הדף של חשבון אחד (מזומן, ספקים, שכירות…). הצורה — קו לרוחב עם שם החשבון, וקו באמצע — נראית כמו האות T.</>,
+  <>פקודת היומן מתארת אירוע אחד. כרטיס ה-T אוסף את כל הפקודות שנגעו בחשבון שלו.</>,
+  <>
+    כל שורה בפקודה עוברת לכרטיס של החשבון שלה, באותו סכום ועם מספר הפקודה: <strong className="text-debit">שורת ח׳ — לצד ימין</strong>,{" "}
+    <strong className="text-credit">שורת ז׳ — לצד שמאל</strong>.
+  </>,
+  <>פקודה אחת מעדכנת כמה כרטיסים — כרטיס לכל שורה. והיתרה בתחתית הכרטיס מראה מה מצב החשבון אחרי כל הפקודות.</>,
+];
+
+/** The reminder after that: what a T-account is, short. */
+const T_SHORT: ReactNode[] = [
+  <>הדף של חשבון אחד: כל הסכומים שנרשמו בחשבון הזה, במקום אחד.</>,
+  <>
+    <strong className="text-debit">צד ימין — חובה</strong>, <strong className="text-credit">צד שמאל — זכות</strong>. ליד כל סכום — מספר הפקודה שממנה הגיע.
+  </>,
+  <>בתחתית — היתרה: ההפרש בין שני הצדדים, כלומר מצב החשבון עכשיו.</>,
+];
+
+const Lines = ({ lines }: { lines: ReactNode[] }) => (
+  <ul className="list-disc space-y-1 ps-5 marker:text-subtle">
+    {lines.map((r, i) => (
+      <li key={i}>{r}</li>
+    ))}
+  </ul>
+);
+
+/** The first T-account of the course: the full explanation, before it is shown. */
+export function TIntro() {
+  return (
+    <div className="rounded-2xl border border-line bg-surface-2 px-4 py-3.5 text-[15px] leading-relaxed text-fg/90">
+      <p className="mb-1.5 font-bold text-fg">הכירו: כרטיס T</p>
+      <Lines lines={T_INTRO} />
+    </div>
+  );
+}
+
+/** A reminder wherever T-accounts are shown after the first: a small button that opens what a T-account is, short. */
+function TExplainer() {
+  return (
+    <details className="group text-[13.5px]">
+      <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-full border border-accent/30 bg-accent-soft px-3 py-1 font-semibold text-accent transition hover:border-accent/60 [&::-webkit-details-marker]:hidden">
+        <CircleHelp className="h-3.5 w-3.5" aria-hidden /> תזכורת למונח כרטיס T
+        <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />
+      </summary>
+      <div className="mt-2 rounded-xl border border-line bg-surface-2 px-3.5 py-3 leading-relaxed text-fg/90">
+        <Lines lines={T_SHORT} />
+      </div>
+    </details>
+  );
+}
+
+/** The heading over T-accounts — "כרטיס T" or "כרטיסי T" — with the reminder beside it, unless the screen has just explained them (`help={false}`). */
+export function THead({ n = 1, help = true }: { n?: number; help?: boolean }) {
+  return (
+    <div className="mb-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+      <p className="text-[13px] font-bold text-fg">{n > 1 ? "כרטיסי T" : "כרטיס T"}</p>
+      {help && <TExplainer />}
+    </div>
+  );
+}
+
 /**
  * A T-account as it is drawn by hand: debits on the right, credits on the left,
  * each posting with the number of its entry, and the balance underneath. The
  * postings of entry `fresh` light up as they land; `totals` adds each side's sum.
+ * Each posting is marked (data-account, data-side, data-ref) for arrows to find.
  */
 export function TBox({ t, fresh, openingLabel = "י.פ", totals, className }: { t: TAccount; fresh?: string; openingLabel?: string; totals?: boolean; className?: string }) {
   const open = (side: "dr" | "cr"): Posting[] => ((side === "dr" ? t.opening > 0 : t.opening < 0) ? [{ ref: openingLabel, amount: Math.abs(t.opening) }] : []);
@@ -14,12 +79,13 @@ export function TBox({ t, fresh, openingLabel = "י.פ", totals, className }: { 
   const cr = [...open("cr"), ...t.cr];
   const sum = (xs: Posting[]) => xs.reduce((s, p) => s + p.amount, 0);
   const col = (xs: Posting[], side: "dr" | "cr") => (
-    <div className={cn("min-h-[4.25rem] min-w-0 pt-1", side === "dr" ? "border-e-2 border-fg/75 pe-1" : "ps-1")}>
+    <div data-side={side} className={cn("min-h-[4.25rem] min-w-0 pt-1", side === "dr" ? "border-e-2 border-fg/75 pe-1" : "ps-1")}>
       <p className={cn("px-1 text-[10.5px] font-bold", side === "dr" ? "text-debit" : "text-credit")}>{side === "dr" ? "חובה" : "זכות"}</p>
       <ul>
         {xs.map((p, k) => (
           <li
             key={k}
+            data-ref={p.ref}
             className={cn(
               "flex items-baseline justify-between gap-1 rounded-md px-1 py-0.5 text-[13px]",
               p.ref === fresh && "anim-post bg-accent-soft font-bold text-fg",
@@ -35,7 +101,7 @@ export function TBox({ t, fresh, openingLabel = "י.פ", totals, className }: { 
   );
   const b = t.balance;
   return (
-    <figure className={cn("min-w-0 rounded-xl border border-line bg-surface pb-2", className)}>
+    <figure data-account={t.account} className={cn("min-w-0 rounded-xl border border-line bg-surface pb-2", className)}>
       <figcaption className="flex flex-wrap items-baseline justify-center gap-x-1.5 px-2 pb-1.5 pt-2 text-center">
         <span className="text-[14px] font-bold text-fg">{t.account}</span>
         <span className="text-[10.5px] text-subtle">{TYPE_LABEL[typeOf(t.account)]}</span>
@@ -54,17 +120,20 @@ export function TBox({ t, fresh, openingLabel = "י.פ", totals, className }: { 
           </p>
         </div>
       )}
-      <p
-        className={cn(
-          "mx-2 mt-1.5 flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-[12.5px] font-bold",
-          b > 0 ? "bg-debit/10 text-debit" : b < 0 ? "bg-credit/10 text-credit" : "bg-surface-2 text-muted",
-        )}
-      >
-        <span>יתרה</span>
-        <span>
-          {b === 0 ? "0 · מאופס" : <Money v={Math.abs(b)} plain />} {b > 0 ? "ח׳" : b < 0 ? "ז׳" : ""}
-        </span>
-      </p>
+      {/* The balance under the side it sits on: a debit balance under חובה (right), a credit balance under זכות (left); a zero balance across both. */}
+      <div className="mx-2 mt-1.5 grid grid-cols-2 gap-1">
+        <p
+          className={cn(
+            "flex flex-col items-center rounded-lg px-1.5 py-1 text-center leading-tight",
+            b > 0 ? "col-start-1 bg-debit/10 text-debit" : b < 0 ? "col-start-2 bg-credit/10 text-credit" : "col-span-2 bg-surface-2 text-muted",
+          )}
+        >
+          <span className="text-[10.5px] font-semibold">יתרה</span>
+          <span className="text-[12.5px] font-bold whitespace-nowrap">
+            {b === 0 ? "0 · מאופס" : <Money v={Math.abs(b)} plain />} {b > 0 ? "ח׳" : b < 0 ? "ז׳" : ""}
+          </span>
+        </p>
+      </div>
     </figure>
   );
 }
@@ -83,6 +152,7 @@ export function Posted({
   title,
   note,
   hl,
+  help,
 }: {
   entries: Entry[];
   at: number;
@@ -92,20 +162,22 @@ export function Posted({
   title?: ReactNode;
   note?: ReactNode | null;
   hl?: string[];
+  /** The reminder of how entry and cards meet; off where the screen has just explained it. */
+  help?: boolean;
 }) {
   const entry = entries[at];
   const book = ledger(entries.slice(0, at + 1), opening);
   const shown = (accounts ?? [...new Set(entry.lines.map((l) => l.account))]).map((a) => book.find((t) => t.account === a)!);
-  return <EntryCards entry={<JE entry={entry} title={title} note={note} hl={hl} />} cards={shown} fresh={entry.id} openingLabel={openingLabel} />;
+  return <EntryCards entry={<JE entry={entry} title={title} note={note} hl={hl} />} cards={shown} fresh={entry.id} openingLabel={openingLabel} help={help} />;
 }
 
 /** The layout of a posting: the entry on one side, the cards it moved on the other (stacked on narrow screens). */
-export function EntryCards({ entry, cards, fresh, openingLabel }: { entry: ReactNode; cards: TAccount[]; fresh?: string; openingLabel?: string }) {
+export function EntryCards({ entry, cards, fresh, openingLabel, help = true }: { entry: ReactNode; cards: TAccount[]; fresh?: string; openingLabel?: string; help?: boolean }) {
   return (
     <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       {entry}
       <div className="min-w-0">
-        <p className="mb-1.5 text-[11px] font-semibold text-muted lg:hidden">ובכרטיסי ה-T:</p>
+        <THead n={cards.length} help={help} />
         <div className={cn("grid content-start gap-2.5", cards.length > 1 && "grid-cols-2")}>
           {cards.map((t) => (
             <TBox key={t.account} t={t} fresh={fresh} openingLabel={openingLabel} />

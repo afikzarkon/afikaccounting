@@ -11,6 +11,7 @@ import { type Entry, type Line, ledger, round2, typeOf, TYPE_LABEL } from "@/lib
 import { checkEntry, type ExResult, parseAmount, triesFor, XP } from "@/lib/study/score";
 import type { JournalExercise } from "@/lib/study/types";
 import { cn } from "@/lib/utils";
+import { typedAmount } from "@/lib/amount";
 
 type Draft = { account: string; side: "dr" | "cr"; amount: string };
 
@@ -63,7 +64,8 @@ export function JournalSimulator({ ex, result, onCheck }: { ex: JournalExercise;
                     dir="ltr"
                     inputMode="decimal"
                     value={r.amount}
-                    onChange={(e) => edit(r.account, e.target.value)}
+                    onChange={(e) => edit(r.account, typedAmount(e))}
+                    onKeyDown={(e) => e.key === "Enter" && balanced && check()}
                     placeholder="סכום"
                     aria-label={`סכום ל${r.account}`}
                     className={cn(inputClass, "num h-8 w-24 px-2 text-[13.5px]")}
@@ -113,17 +115,7 @@ export function JournalSimulator({ ex, result, onCheck }: { ex: JournalExercise;
         חובה <Money v={dr} plain /> {balanced ? "=" : "≠"} זכות <Money v={cr} plain /> {balanced && "✓"}
       </p>
 
-      {lines.length > 0 && (
-        <div>
-          <p className="mb-1.5 text-[12.5px] font-semibold text-muted">ובכרטיסי ה-T:</p>
-          <div className={cn("grid gap-2", lines.length > 1 && "grid-cols-2")}>
-            {ledger([shown]).map((t) => (
-              <TBox key={t.account} t={t} fresh="1" />
-            ))}
-          </div>
-        </div>
-      )}
-
+      {/* The check right under the entry being built, where the eye already is; the T-accounts follow. */}
       {done ? (
         <Feedback ok={result!.ok} title={result!.ok ? <Gain xp={result!.tries === 1 ? XP.first : XP.second} /> : "זו הפקודה הנכונה"} text={answer.why} />
       ) : (
@@ -139,6 +131,17 @@ export function JournalSimulator({ ex, result, onCheck }: { ex: JournalExercise;
             בדיקה
           </Button>
           {!balanced && drafts.length > 0 && <p className="text-[12px] text-muted">כדי לבדוק, סך החובה צריך להיות שווה לסך הזכות.</p>}
+        </div>
+      )}
+
+      {lines.length > 0 && (
+        <div>
+          <p className="mb-1.5 text-[12.5px] font-semibold text-muted">ובכרטיסי ה-T:</p>
+          <div className={cn("grid gap-2", lines.length > 1 && "grid-cols-2")}>
+            {ledger([shown]).map((t) => (
+              <TBox key={t.account} t={t} fresh="1" />
+            ))}
+          </div>
         </div>
       )}
     </div>

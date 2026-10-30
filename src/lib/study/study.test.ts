@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { groupDigits, ungroup } from "@/lib/amount";
 import { isBalanced, typeOf, type AccountType } from "@/lib/learn/basics";
 import { BASICS_LESSONS, findScreen, LEGACY_CHAPTERS, legacyHref, screenHref } from "./basics";
 import { TRANSLATIONS, twinProfit } from "./basics/intro";
@@ -9,17 +10,24 @@ import {
   clampPlace,
   EMPTY_TOPIC,
   markSeen,
+  missedOf,
   maxXp,
   move,
   numberRight,
+  PRACTICE_GROUPS,
+  practiceAt,
+  practiceOf,
   parseAmount,
+  pathStatus,
   position,
   recordExercise,
   recordTrap,
+  retryMissed,
   statusOf,
   STEPS,
   subCount,
   triesFor,
+  type TopicProgress,
   XP,
   xpOf,
 } from "./score";
@@ -106,10 +114,10 @@ describe("interactive lessons: the accounting in the new questions", () => {
   const answerOf = (x: Exercise) => (x.kind === "number" ? x.answer : x.kind === "choice" ? x.options[x.answer] : undefined);
 
   it("figures computed by hand agree with the lesson data", () => {
-    // The bakery: 50,000 sales − 30,000 other − a 12,000 computer over 3 years (4,000 a year).
-    assert.equal(answerOf(ex("basics-intro", "twins-profit")), 16_000);
+    // The bakery's year: 80,000 sales − 24,000 rent − 20,000 ingredients; the 30,000 loan and the owner's 10,000 are not income.
+    assert.equal(answerOf(ex("basics-intro", "year-profit")), 36_000);
+    // The two bakeries on the grammar screen: one expenses the whole 12,000 computer.
     assert.equal(twinProfit(12_000), 8_000);
-    assert.equal(answerOf(ex("basics-intro", "loan-profit")), "לא משתנה");
     assert.equal(answerOf(ex("basics-double-entry", "liabilities-gap")), 230_000);
     assert.equal(answerOf(ex("basics-books", "suppliers-card")), "14,000 בזכות");
     assert.equal(answerOf(ex("basics-books", "retained-close")), 55_000);
@@ -163,8 +171,9 @@ describe("interactive lessons: the accounting in the new questions", () => {
 
 describe("interactive lessons: the rules", () => {
   const m = STUDY_MODULES["basics-double-entry"];
-  const journal = m.exercises.find((x) => x.id === "compound")!;
-  const binary = m.exercises.find((x) => x.id === "barber-chair")!;
+  // A compound entry of the lesson, and a two-way question (the rule is the point, not the content).
+  const journal = m.exercises.find((x) => x.id === "furniture")!;
+  const binary: Exercise = { kind: "choice", id: "two-way", skill: "", prompt: "", options: ["השקעה", "הוצאה"], answer: 0, steps: [] };
 
   it("checks an entry by account and side, whatever the order of the lines", () => {
     assert.equal(journal.kind, "journal");
@@ -232,14 +241,137 @@ describe("interactive lessons: the rules", () => {
         at = move(mod, at, 1);
       }
       assert.deepEqual(at, { step: STEPS.length - 1, sub: 0 });
-      assert.deepEqual(move(mod, { step: 2, sub: 0 }, -1), { step: 1, sub: mod.exercises.length - 1 });
+      assert.deepEqual(move(mod, { step: 2, sub: 0 }, -1), { step: 1, sub: mod.exercises.length + mod.traps.length });
       assert.deepEqual(move(mod, { step: 0, sub: 0 }, -1), { step: 0, sub: 0 });
     }
   });
 
   it("a stored place outside the lesson is pulled back inside it", () => {
-    assert.deepEqual(clampPlace(m, { step: 9, sub: 9 }), { step: 3, sub: 0 });
-    assert.deepEqual(clampPlace(m, { step: 1, sub: 99 }), { step: 1, sub: m.exercises.length - 1 });
+    assert.deepEqual(clampPlace(m, { step: 9, sub: 9 }), { step: 2, sub: 0 });
+    assert.deepEqual(clampPlace(m, { step: 1, sub: 99 }), { step: 1, sub: m.exercises.length + m.traps.length });
     assert.deepEqual(clampPlace(m, { step: -1, sub: -1 }), { step: 0, sub: 0 });
+  });
+
+  it("the practice opens on a screen of its own, between the last concept and the first exercise — in every lesson", () => {
+    for (const mod of modules) {
+      const lastConcept = { step: 0, sub: mod.screens.length - 1 };
+      const opening = move(mod, lastConcept, 1);
+      assert.deepEqual(opening, { step: 1, sub: 0 }, mod.slug);
+      assert.equal(practiceAt(mod, opening.sub), undefined, mod.slug);
+      assert.deepEqual(practiceAt(mod, move(mod, opening, 1).sub), practiceOf(mod)[0], mod.slug);
+    }
+  });
+
+  it("the practice holds every exercise and every multiple-choice question that explains its options, each once, grouped by kind — in every lesson", () => {
+    for (const mod of modules) {
+      const items = Array.from({ length: subCount(mod, 1) }, (_, sub) => practiceAt(mod, sub)).filter((x) => x !== undefined);
+      const ids = items.map((it) => (it.kind === "exercise" ? it.ex.id : it.trap.id));
+      assert.deepEqual([...ids].sort(), [...mod.exercises.map((x) => x.id), ...mod.traps.map((t) => t.id)].sort(), mod.slug);
+      // One run per group, in the groups' order.
+      const runs = items.map((it) => PRACTICE_GROUPS.indexOf(it.group)).filter((g, i, a) => i === 0 || a[i - 1] !== g);
+      assert.deepEqual(runs, [...runs].sort((a, b) => a - b), mod.slug);
+      assert.equal(new Set(runs).size, runs.length, mod.slug);
+      for (const it of items) {
+        if (it.kind === "trap") assert.equal(it.group.id, "choice", mod.slug);
+        else if (it.ex.kind === "journal" || it.ex.kind === "entry") assert.equal(it.group.id, "journal", `${mod.slug}: ${it.ex.id}`);
+        else assert.equal(it.group.id, it.ex.kind, `${mod.slug}: ${it.ex.id}`);
+      }
+    }
+  });
+
+  it("there is no separate traps step: the lesson is concepts, practice, summary", () => {
+    assert.deepEqual(
+      STEPS.map((s) => s.id),
+      ["learn", "practice", "summary"],
+    );
+  });
+});
+
+describe("interactive lessons: skipping a lesson on the course path", () => {
+  const m = STUDY_MODULES["basics-intro"];
+
+  it("a skipped lesson is passed over until it is done, and a done lesson stays done", () => {
+    assert.equal(pathStatus(m, EMPTY_TOPIC), "new");
+    assert.equal(pathStatus(m, { ...EMPTY_TOPIC, skipped: true }), "skipped");
+    assert.equal(pathStatus(m, { ...EMPTY_TOPIC, step: 1, skipped: true }), "skipped");
+    assert.equal(pathStatus(m, { ...EMPTY_TOPIC, step: 1, skipped: false }), "started");
+    let p: TopicProgress = { ...EMPTY_TOPIC, skipped: true };
+    for (const ex of m.exercises) p = recordExercise(recordExercise(p, ex, false), ex, false);
+    for (const t of m.traps) p = recordTrap(p, t.id, 0, t.answer === 0);
+    assert.equal(pathStatus(m, p), "done");
+  });
+
+  it("skipping touches nothing else: no XP and no progress are lost or gained", () => {
+    assert.equal(statusOf(m, { ...EMPTY_TOPIC, skipped: true }), "new");
+    assert.equal(xpOf(m, { ...EMPTY_TOPIC, skipped: true }), 0);
+  });
+});
+
+describe("amount fields: thousands separators as you type", () => {
+  it("groups the whole part, keeps a point and a minus, and drops anything else", () => {
+    assert.equal(groupDigits("1000"), "1,000");
+    assert.equal(groupDigits("1234567.5"), "1,234,567.5");
+    assert.equal(groupDigits("12,0000"), "120,000");
+    assert.equal(groupDigits("-2500"), "-2,500");
+    assert.equal(groupDigits("4."), "4.");
+    assert.equal(groupDigits("₪ 30 000"), "30,000");
+    assert.equal(groupDigits(""), "");
+    assert.equal(ungroup("1,234,567.5"), "1234567.5");
+  });
+
+  it("what is shown still reads back as the same number", () => {
+    for (const v of ["1000", "999", "1234567.25", "-45000"]) assert.equal(parseAmount(groupDigits(v)), Number(v));
+  });
+});
+
+describe("interactive lessons: trying the missed questions again", () => {
+  const m = STUDY_MODULES["basics-double-entry"];
+  const items = practiceOf(m);
+  const first = items[0];
+  const second = items[1];
+
+  it("missed means never answered or answered wrong; a right answer is not missed", () => {
+    assert.equal(missedOf(m, EMPTY_TOPIC).length, items.length);
+    let p: TopicProgress = EMPTY_TOPIC;
+    assert.equal(first.kind, "exercise");
+    assert.equal(second.kind, "exercise");
+    if (first.kind !== "exercise" || second.kind !== "exercise") return;
+    p = recordExercise(p, first.ex, true);
+    p = recordExercise(recordExercise(p, second.ex, false), second.ex, false);
+    const missed = missedOf(m, p).map((x) => x.id);
+    assert.ok(!missed.includes(first.ex.id));
+    assert.ok(missed.includes(second.ex.id));
+    assert.deepEqual(missedOf(m, p)[0], { id: second.ex.id, sub: 2 });
+  });
+
+  it("trying again clears only the missed answers: the solved ones and their XP stay", () => {
+    if (first.kind !== "exercise" || second.kind !== "exercise") return;
+    let p: TopicProgress = recordExercise(EMPTY_TOPIC, first.ex, true);
+    p = recordExercise(recordExercise(p, second.ex, false), second.ex, false);
+    const xp = xpOf(m, p);
+    const again = retryMissed(m, p);
+    assert.deepEqual(again.retry, missedOf(m, p).map((x) => x.id));
+    assert.equal(again.exercises[second.ex.id], undefined);
+    assert.deepEqual(again.exercises[first.ex.id], p.exercises[first.ex.id]);
+    assert.equal(xpOf(m, again), xp);
+  });
+});
+
+describe("interactive lessons: what each lesson practises", () => {
+  // Lesson 2 records events settled on the spot; credit, advances and loans — money that moves at another time — are lesson 3's.
+  const LATER = ["לקוחות", "ספקים", "מקדמות מלקוחות", "מקדמות לספקים", "הלוואה"];
+  const answerAccounts = (slug: string) =>
+    STUDY_MODULES[slug].exercises.flatMap((x) => (x.kind === "journal" ? x.entry.lines.map((l) => l.account) : x.kind === "entry" ? [x.dr, x.cr] : []));
+
+  it("lesson 2 practises no credit, advance or loan entries; lesson 3 does", () => {
+    const two = answerAccounts("basics-double-entry");
+    for (const a of LATER) assert.ok(!two.includes(a), `lesson 2 practises ${a}, which lesson 3 teaches`);
+    const three = answerAccounts("basics-journal");
+    for (const a of ["לקוחות", "ספקים", "מקדמות מלקוחות", "הלוואה"]) assert.ok(three.includes(a), `lesson 3 never practises ${a}`);
+  });
+
+  it("the whole-business lab closes lesson 2, and the common entries close lesson 3", () => {
+    assert.equal(STUDY_MODULES["basics-double-entry"].screens.at(-1)!.id, "lab");
+    assert.equal(STUDY_MODULES["basics-journal"].screens.at(-1)!.id, "actions");
   });
 });
