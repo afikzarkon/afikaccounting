@@ -1,8 +1,8 @@
-import { BookOpenText, ClipboardPen, Library, TriangleAlert } from "lucide-react";
+import { Library } from "lucide-react";
 import type { Metadata } from "next";
 import { BasicsReference } from "@/components/basics/final";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
-import { CourseProgress, LegacyHashRedirect, LessonAction } from "@/components/study-mode/course";
+import { CoursePath, LegacyHashRedirect } from "@/components/study-mode/course";
 import { Container } from "@/components/ui/primitives";
 import { BASICS_LESSONS } from "@/lib/study/basics";
 
@@ -33,44 +33,8 @@ export default function BasicsPage() {
         </p>
 
         <div className="mt-6">
-          <CourseProgress />
+          <CoursePath />
         </div>
-
-        <ol className="mt-8 grid gap-4 md:grid-cols-2" aria-label="שיעורי הקורס">
-          {BASICS_LESSONS.map((m) => (
-            <li key={m.slug} className="card flex min-w-0 flex-col p-5" aria-labelledby={`lesson-${m.slug}`}>
-              <div className="flex items-start gap-3">
-                <span className="num grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent text-lg font-bold text-accent-fg shadow-[0_8px_20px_-10px_var(--accent)]">{m.n}</span>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-accent">שיעור {m.n}</p>
-                  <h2 id={`lesson-${m.slug}`} className="text-lg font-semibold text-fg">
-                    {m.title}
-                  </h2>
-                </div>
-              </div>
-              <p className="mt-2 text-[14px] leading-relaxed text-fg/85">{m.description}</p>
-              <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="המושגים בשיעור">
-                {m.screens.map((s) => (
-                  <li key={s.id} className="rounded-md bg-surface-2 px-2 py-0.5 text-xs text-muted">
-                    {s.title}
-                  </li>
-                ))}
-              </ul>
-              <p className="num mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-muted">
-                <span className="flex items-center gap-1">
-                  <BookOpenText className="h-3.5 w-3.5" aria-hidden /> {m.screens.length} מושגים
-                </span>
-                <span className="flex items-center gap-1">
-                  <ClipboardPen className="h-3.5 w-3.5" aria-hidden /> {m.exercises.length} תרגילים
-                </span>
-                <span className="flex items-center gap-1">
-                  <TriangleAlert className="h-3.5 w-3.5" aria-hidden /> {m.traps.length} מלכודות מבחן
-                </span>
-              </p>
-              <LessonAction module={m} />
-            </li>
-          ))}
-        </ol>
 
         <section id="reference" aria-labelledby="reference-title" className="mt-14 scroll-mt-24">
           {/* The former page's "summary" chapter lived here; its anchor still lands on it. */}
