@@ -60,7 +60,7 @@ export function EntryFlow({ entry, note, aside }: { entry: Entry; note?: ReactNo
   }, [entry]);
 
   return (
-    <div ref={wrap} className="relative grid gap-4 lg:grid-cols-2 lg:gap-x-6 lg:gap-y-14">
+    <div ref={wrap} className="relative grid gap-4 [column-span:all] lg:grid-cols-2 lg:gap-x-6 lg:gap-y-14">
       <div data-entry className="min-w-0">
         <JE entry={entry} note={note} />
       </div>

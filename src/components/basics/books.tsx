@@ -195,7 +195,7 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
           label="בונים כרטיס T: מזומן"
           steps={[
             // Only the cash card: the one being built here. An entry that does not touch cash leaves it as it was.
-            ...KITS.entries.map((x, i) => ({ title: x.text, body: <Posted entries={KITS.entries} at={i} accounts={["מזומן"]} title={`פקודה ${x.id}`} /> })),
+            ...KITS.entries.map((x, i) => ({ title: x.text, body: <Posted entries={KITS.entries} at={i} accounts={["מזומן"]} title={`פקודה ${x.id}`} inline /> })),
             {
               title: "סוגרים את הכרטיס: מה היתרה?",
               body: (

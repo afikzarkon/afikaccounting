@@ -3,6 +3,7 @@ import { ACCRUAL, balancesOf, costOfSales, creditLoss, creditLossEntries, type E
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { cn } from "@/lib/utils";
 import { EntryViews } from "./entry-views";
+import { TCardsDialog } from "./t-dialog";
 import { Posted, TBox, THead } from "./t-accounts";
 import { Calc, JE, KeyCard, Money, Rule, StatementsView, type Step, Stepper, TBTable } from "./ui";
 
@@ -166,8 +167,7 @@ function Analogy({ title, story, account, entries, rule }: Picture) {
     <section className="space-y-3 rounded-2xl border-2 border-accent/30 bg-accent-soft/40 p-4">
       <p className="text-[16px] font-bold text-fg">דמיינו: {title}</p>
       <p className="text-[15px]">{story}</p>
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] sm:items-start">
-        <ol className="space-y-1.5">
+      <ol className="space-y-1.5">
           {entries.map((x) => (
             <li key={x.id} className="rounded-lg bg-surface px-3 py-2 text-[14px]">
               <span className="num me-1.5 font-bold text-muted">{x.id}.</span>
@@ -177,12 +177,8 @@ function Analogy({ title, story, account, entries, rule }: Picture) {
               </span>
             </li>
           ))}
-        </ol>
-        <div>
-          <THead help={false} />
-          <TBox t={card} />
-        </div>
-      </div>
+      </ol>
+      <TCardsDialog cards={[card]} help={false} />
       <p className="num flex flex-wrap items-center gap-1.5 text-[14px]">
         <span className="font-semibold text-fg">היתרה אחרי כל שלב:</span>
         {after.map((b, i) => (

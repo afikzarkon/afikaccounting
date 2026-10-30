@@ -3,7 +3,7 @@
 import { CircleCheck, CircleX, Plus, X } from "lucide-react";
 import { motion } from "motion/react";
 import { type ReactNode, useState } from "react";
-import { TBox } from "@/components/basics/t-accounts";
+import { TCardsDialog } from "@/components/basics/t-dialog";
 import { Money } from "@/components/basics/ui";
 import { Button } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/form";
@@ -134,16 +134,7 @@ export function JournalSimulator({ ex, result, onCheck }: { ex: JournalExercise;
         </div>
       )}
 
-      {lines.length > 0 && (
-        <div>
-          <p className="mb-1.5 text-[12.5px] font-semibold text-muted">ובכרטיסי ה-T:</p>
-          <div className={cn("grid gap-2", lines.length > 1 && "grid-cols-2")}>
-            {ledger([shown]).map((t) => (
-              <TBox key={t.account} t={t} fresh="1" />
-            ))}
-          </div>
-        </div>
-      )}
+      {lines.length > 0 && <TCardsDialog cards={ledger([shown])} fresh="1" />}
     </div>
   );
 }

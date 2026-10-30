@@ -92,7 +92,7 @@ export function Stepper({
 
   return (
     // overflow-clip, not hidden: a hidden overflow would make the section a scroll box, and the header could not stay pinned.
-    <section ref={box} aria-label={label} aria-roledescription="צעד אחר צעד" onKeyDown={onKey} className={cn("card overflow-clip", className)}>
+    <section ref={box} aria-label={label} aria-roledescription="צעד אחר צעד" onKeyDown={onKey} className={cn("card overflow-clip [column-span:all]", className)}>
       <div ref={head} className="sticky top-0 z-10 space-y-2.5 border-b border-line bg-surface-2 px-3 py-3 sm:px-4">
         <div className="flex items-center gap-2">
           <p className="min-w-0 flex-1 truncate text-xs font-semibold text-muted">{label}</p>

@@ -1,7 +1,7 @@
-import { ChevronDown, CircleHelp } from "lucide-react";
 import type { ReactNode } from "react";
 import { type Balances, type Entry, ledger, type Posting, type TAccount, typeOf, TYPE_LABEL } from "@/lib/learn/basics";
 import { cn } from "@/lib/utils";
+import { TCardsDialog } from "./t-dialog";
 import { JE, Money } from "./ui";
 
 /** The first T-account of the course, in full: what it is, and how a journal entry reaches it. */
@@ -42,27 +42,25 @@ export function TIntro() {
   );
 }
 
-/** A reminder wherever T-accounts are shown after the first: a small button that opens what a T-account is, short. */
-function TExplainer() {
-  return (
-    <details className="group text-[13.5px]">
-      <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-full border border-accent/30 bg-accent-soft px-3 py-1 font-semibold text-accent transition hover:border-accent/60 [&::-webkit-details-marker]:hidden">
-        <CircleHelp className="h-3.5 w-3.5" aria-hidden /> תזכורת למונח כרטיס T
-        <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />
-      </summary>
-      <div className="mt-2 rounded-xl border border-line bg-surface-2 px-3.5 py-3 leading-relaxed text-fg/90">
-        <Lines lines={T_SHORT} />
-      </div>
-    </details>
-  );
-}
-
-/** The heading over T-accounts — "כרטיס T" or "כרטיסי T" — with the reminder beside it, unless the screen has just explained them (`help={false}`). */
+/**
+ * The heading over T-accounts — "כרטיס T" or "כרטיסי T". As a reminder, the term itself opens what a T-account is, short:
+ * on hover, on keyboard focus, or a tap — unless the screen has just explained it (`help={false}`).
+ */
 export function THead({ n = 1, help = true }: { n?: number; help?: boolean }) {
+  const term = n > 1 ? "כרטיסי T" : "כרטיס T";
+  if (!help) return <p className="mb-1.5 text-[13px] font-bold text-fg">{term}</p>;
   return (
-    <div className="mb-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-      <p className="text-[13px] font-bold text-fg">{n > 1 ? "כרטיסי T" : "כרטיס T"}</p>
-      {help && <TExplainer />}
+    <div className="mb-1.5">
+      <div tabIndex={0} className="group relative inline-block cursor-help rounded text-[13px] font-bold text-fg outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]">
+        <span className="border-b-2 border-dotted border-accent/70">{term}</span>
+        <div
+          role="tooltip"
+          className="invisible absolute start-0 top-full z-20 mt-1.5 w-72 max-w-[80vw] rounded-xl border border-line bg-surface px-3.5 py-3 text-[13.5px] font-normal leading-relaxed text-fg/90 opacity-0 shadow-xl transition-opacity group-hover:visible group-hover:opacity-100 group-focus:visible group-focus:opacity-100"
+        >
+          <span className="mb-1 block font-bold text-fg">מה זה כרטיס T?</span>
+          <Lines lines={T_SHORT} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -153,6 +151,7 @@ export function Posted({
   note,
   hl,
   help,
+  inline,
 }: {
   entries: Entry[];
   at: number;
@@ -164,15 +163,41 @@ export function Posted({
   hl?: string[];
   /** The reminder of how entry and cards meet; off where the screen has just explained it. */
   help?: boolean;
+  /** The cards on the page, not behind a button: where they are what the screen is about. */
+  inline?: boolean;
 }) {
   const entry = entries[at];
   const book = ledger(entries.slice(0, at + 1), opening);
   const shown = (accounts ?? [...new Set(entry.lines.map((l) => l.account))]).map((a) => book.find((t) => t.account === a)!);
-  return <EntryCards entry={<JE entry={entry} title={title} note={note} hl={hl} />} cards={shown} fresh={entry.id} openingLabel={openingLabel} help={help} />;
+  return <EntryCards entry={<JE entry={entry} title={title} note={note} hl={hl} />} cards={shown} fresh={entry.id} openingLabel={openingLabel} help={help} inline={inline} />;
 }
 
-/** The layout of a posting: the entry on one side, the cards it moved on the other (stacked on narrow screens). */
-export function EntryCards({ entry, cards, fresh, openingLabel, help = true }: { entry: ReactNode; cards: TAccount[]; fresh?: string; openingLabel?: string; help?: boolean }) {
+/**
+ * The layout of a posting: the entry, and the cards it moved behind a button that opens them in a window. `inline` keeps
+ * the cards on the page beside the entry (stacked on narrow screens), where the cards are the point.
+ */
+export function EntryCards({
+  entry,
+  cards,
+  fresh,
+  openingLabel,
+  help = true,
+  inline,
+}: {
+  entry: ReactNode;
+  cards: TAccount[];
+  fresh?: string;
+  openingLabel?: string;
+  help?: boolean;
+  inline?: boolean;
+}) {
+  if (!inline)
+    return (
+      <div className="space-y-2">
+        {entry}
+        <TCardsDialog cards={cards} fresh={fresh} openingLabel={openingLabel} help={help} />
+      </div>
+    );
   return (
     <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       {entry}

@@ -68,6 +68,7 @@ export function TransactionLab() {
             <span className="text-muted">{kind.hint}</span>
           </p>
           <Posted
+            inline
             entries={STEPS}
             at={i}
             title={closing ? "פקודת מלאי הסגירה" : "פקודת היומן"}

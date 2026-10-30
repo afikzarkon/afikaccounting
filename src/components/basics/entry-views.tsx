@@ -3,7 +3,7 @@
 import { Split } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { type Entry, ledger } from "@/lib/learn/basics";
-import { TBox, THead } from "./t-accounts";
+import { TCardsDialog } from "./t-dialog";
 import { JE } from "./ui";
 
 /**
@@ -28,21 +28,12 @@ export function EntryViews({ title, compound, split, note }: { title: ReactNode;
           <Split className="h-4 w-4" aria-hidden /> {apart ? "להציג כפקודה אחת" : `להציג כ${split.length === 2 ? "שתי" : split.length} פקודות נפרדות`}
         </button>
       </div>
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <div className="min-w-0 space-y-2">
-          {shown.map((x) => (
-            <JE key={x.id} entry={x} note={null} />
-          ))}
-        </div>
-        <div className="min-w-0">
-          <THead n={cards.length} />
-          <div className="grid grid-cols-2 gap-2.5">
-            {cards.map((t) => (
-              <TBox key={t.account} t={t} />
-            ))}
-          </div>
-        </div>
+      <div className={apart ? "grid gap-2 lg:grid-cols-2" : "space-y-2"}>
+        {shown.map((x) => (
+          <JE key={x.id} entry={x} note={null} />
+        ))}
       </div>
+      <TCardsDialog cards={cards} />
       {note && !apart && <p className="rounded-lg bg-surface px-3 py-2 text-[14.5px] text-fg">{note}</p>}
     </section>
   );
