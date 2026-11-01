@@ -5,7 +5,7 @@ import { type ReactNode, useId, useState } from "react";
 import { inputClass } from "@/components/ui/form";
 import { typedAmount } from "@/lib/amount";
 import { round2 } from "@/lib/learn/basics";
-import { ALLOW, ALON, EXPENSE, GILBOA } from "@/lib/learn/credit-losses";
+import { ALLOW, EREZ, EXPENSE, CARMEL } from "@/lib/learn/credit-losses";
 import { CREDIT_LABEL, type CreditKey, type CreditValues, missingFor, RATE_KEYS, solveCredit, stepsFor } from "@/lib/learn/credit-solver";
 import { cn } from "@/lib/utils";
 import { JE, Money } from "./ui";
@@ -36,32 +36,32 @@ const n = (v: number) => v.toLocaleString("en-US");
 /** The lesson's own questions, to start from. */
 const EXAMPLES: { name: string; setup: Setup }[] = [
   {
-    name: "אלון",
+    name: "ארז",
     setup: {
       target: "expense",
       recovered: false,
       specific: false,
       sameRate: false,
-      form: { openingGross: n(ALON.openingAR), openingAllowance: n(ALON.openingAllowance), creditSales: n(ALON.creditSales!), collections: n(ALON.collections!), writeOffs: n(ALON.writeOffs!), generalRate: "5" },
+      form: { openingGross: n(EREZ.openingAR), openingAllowance: n(EREZ.openingAllowance), creditSales: n(EREZ.creditSales!), collections: n(EREZ.collections!), writeOffs: n(EREZ.writeOffs!), generalRate: "5" },
     },
   },
   {
-    name: "גלבוע (שאלת הבחינה)",
+    name: "כרמל (שאלת הבחינה)",
     setup: {
       target: "expense",
       recovered: true,
       specific: true,
       sameRate: false,
       form: {
-        openingNet: n(GILBOA.openingNet),
-        openingRate: String(GILBOA.openingRate * 100),
-        creditSales: n(GILBOA.creditSales),
-        collections: n(GILBOA.collections),
-        writeOffs: n(GILBOA.bankruptDebt),
-        recovered: n(GILBOA.recovered),
-        specificDebt: n(GILBOA.specificDebt),
-        specificRate: String(GILBOA.specificRate * 100),
-        generalRate: String(GILBOA.generalRate * 100),
+        openingNet: n(CARMEL.openingNet),
+        openingRate: String(CARMEL.openingRate * 100),
+        creditSales: n(CARMEL.creditSales),
+        collections: n(CARMEL.collections),
+        writeOffs: n(CARMEL.bankruptDebt),
+        recovered: n(CARMEL.recovered),
+        specificDebt: n(CARMEL.specificDebt),
+        specificRate: String(CARMEL.specificRate * 100),
+        generalRate: String(CARMEL.generalRate * 100),
       },
     },
   },

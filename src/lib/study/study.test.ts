@@ -178,21 +178,21 @@ describe("interactive lessons: the accounting in the new questions", () => {
     };
     const ALLOW = "הפרשה להפסדי אשראי חזויים";
     const EXPENSE = "הוצאות הפסדי אשראי";
-    assert.deepEqual(lines("first-allowance"), [{ account: EXPENSE, dr: 12_000 }, { account: ALLOW, cr: 12_000 }]);
-    assert.deepEqual(lines("write-off"), [{ account: ALLOW, dr: 7_000 }, { account: "לקוחות", cr: 7_000 }]);
-    // 5% of 800,000 required; the write-offs left the allowance 6,000 in debit.
-    assert.deepEqual(lines("top-up"), [{ account: EXPENSE, dr: 46_000 }, { account: ALLOW, cr: 46_000 }]);
-    // Customers 700,000: 20,000 specific + 5% of 660,000 = 53,000 required, 20,000 there.
-    assert.deepEqual(lines("specific"), [{ account: EXPENSE, dr: 33_000 }, { account: ALLOW, cr: 33_000 }]);
-    // 50,500 required, 60,000 there: 9,500 reversed.
-    assert.deepEqual(lines("reversal"), [{ account: ALLOW, dr: 9_500 }, { account: EXPENSE, cr: 9_500 }]);
-    // Customers 410,000 → 16,400 required; 16,000 − 10,000 + 2,000 = 8,000 there.
-    assert.deepEqual(lines("with-recovery"), [{ account: EXPENSE, dr: 8_400 }, { account: ALLOW, cr: 8_400 }]);
-    assert.equal(answerOf(ex("basics-credit", "closing-gross")), 800_000);
-    assert.equal(answerOf(ex("basics-credit", "net-customers")), 291_000);
-    assert.equal(answerOf(ex("basics-credit", "gross-from-net")), 500_000);
-    assert.equal(answerOf(ex("basics-credit", "collections")), 944_000);
-    assert.equal(answerOf(ex("basics-credit", "opening-allowance")), 43_000);
+    assert.deepEqual(lines("first-allowance"), [{ account: EXPENSE, dr: 13_000 }, { account: ALLOW, cr: 13_000 }]);
+    assert.deepEqual(lines("write-off"), [{ account: ALLOW, dr: 5_500 }, { account: "לקוחות", cr: 5_500 }]);
+    // 5% of 708,000 required; the write-offs left the allowance 5,000 in debit.
+    assert.deepEqual(lines("top-up"), [{ account: EXPENSE, dr: 40_400 }, { account: ALLOW, cr: 40_400 }]);
+    // Customers 630,000: 21,000 specific + 4% of 595,000 = 44,800 required, 18,000 there.
+    assert.deepEqual(lines("specific"), [{ account: EXPENSE, dr: 26_800 }, { account: ALLOW, cr: 26_800 }]);
+    // 42,300 required, 55,000 there: 12,700 reversed.
+    assert.deepEqual(lines("reversal"), [{ account: ALLOW, dr: 12_700 }, { account: EXPENSE, cr: 12_700 }]);
+    // Customers 372,000 → 18,600 required; 14,000 − 8,000 + 1,500 = 7,500 there.
+    assert.deepEqual(lines("with-recovery"), [{ account: EXPENSE, dr: 11_100 }, { account: ALLOW, cr: 11_100 }]);
+    assert.equal(answerOf(ex("basics-credit", "closing-gross")), 708_000);
+    assert.equal(answerOf(ex("basics-credit", "net-customers")), 268_800);
+    assert.equal(answerOf(ex("basics-credit", "gross-from-net")), 475_000);
+    assert.equal(answerOf(ex("basics-credit", "collections")), 905_000);
+    assert.equal(answerOf(ex("basics-credit", "opening-allowance")), 39_000);
   });
 
   it("lesson 6's practice is multiple choice only — the worksheet itself is practised in its games", () => {

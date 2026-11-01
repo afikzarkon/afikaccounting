@@ -1,7 +1,7 @@
 import { ArrowLeft, Layers, Printer } from "lucide-react";
 import { balancesOf, ledger, statements, trialBalance } from "@/lib/learn/basics";
 import { ALMOG } from "@/lib/learn/basics-exam";
-import { GEFEN, SHAKED, TAMAR } from "@/lib/learn/worksheet";
+import { ZAYIT, RIMON, SIGAL } from "@/lib/learn/worksheet";
 import { Given } from "./credit";
 import { Glossary } from "./glossary";
 import type { ScreenContent } from "@/components/study-mode/shell";
@@ -81,13 +81,13 @@ export const FINAL_SCREENS: Record<string, ScreenContent> = {
 
   "ws-question": {
     body: (
-      <Given title={`נתון: ${SHAKED.name} — מאזן בוחן ליום ${SHAKED.date}, לפני פקודות התאמה`} asks={<>גיליון רב-טורי ליום {SHAKED.date}, רווח השנה ועודפי הסגירה.</>}>
+      <Given title={`נתון: ${RIMON.name} — מאזן בוחן ליום ${RIMON.date}, לפני פקודות התאמה`} asks={<>גיליון רב-טורי ליום {RIMON.date}, רווח השנה ועודפי הסגירה.</>}>
         <div className="grid gap-4 lg:grid-cols-2">
-          <TBTable tb={trialBalance(SHAKED.preliminary)} caption="מאזן בוחן לפני התאמות" />
+          <TBTable tb={trialBalance(RIMON.preliminary)} caption="מאזן בוחן לפני התאמות" />
           <div>
             <p className="mb-1.5 font-bold">מידע נוסף לסוף השנה:</p>
             <ol className="space-y-1.5">
-              {SHAKED.items.map((it) => (
+              {RIMON.items.map((it) => (
                 <li key={it.entry.id} className="flex gap-2 rounded-lg bg-surface px-3 py-2 text-[14.5px]">
                   <span className="font-bold text-amber-700 dark:text-amber-400">{it.entry.id}.</span>
                   <span>{it.story}</span>
@@ -101,24 +101,24 @@ export const FINAL_SCREENS: Record<string, ScreenContent> = {
   },
 
   "ws-solve": {
-    lead: `פותרים את השאלה של ${SHAKED.name}: קודם מעתיקים את מאזן הבוחן, אחר כך פקודת התאמה אחת בכל צעד — ובסוף מפצלים ומגיעים לרווח.`,
-    body: <WorksheetWalk c={SHAKED} />,
+    lead: `פותרים את השאלה של ${RIMON.name}: קודם מעתיקים את מאזן הבוחן, אחר כך פקודת התאמה אחת בכל צעד — ובסוף מפצלים ומגיעים לרווח.`,
+    body: <WorksheetWalk c={RIMON} />,
   },
 
   "ws-game": {
-    lead: `עכשיו תורכם, עם חברה חדשה — ${TAMAR.name}. ממיינים את המאזן הראשוני (אפשר נגד השעון), רושמים ומשבצים כל פקודת התאמה, ומגיעים לרווח השנה.`,
+    lead: `עכשיו תורכם, עם חברה חדשה — ${SIGAL.name}. ממיינים את המאזן הראשוני (אפשר נגד השעון), רושמים ומשבצים כל פקודת התאמה, ומגיעים לרווח השנה.`,
     body: (
       <div className="[column-span:all]">
-        <WorksheetGame c={TAMAR} />
+        <WorksheetGame c={SIGAL} />
       </div>
     ),
   },
 
   "ws-game-hard": {
-    lead: `אותו משחק, ברמה של בחינה — ${GEFEN.name}: יתרה אחת במאזן לא נתונה, פקודה מורכבת, פקודת תיקון, ונתונים שצריך לחשב לפני שרושמים. ובסוף — גם רווח השנה וגם עודפי הסגירה.`,
+    lead: `אותו משחק, ברמה של בחינה — ${ZAYIT.name}: יתרה אחת במאזן לא נתונה, פקודה מורכבת, פקודת תיקון, ונתונים שצריך לחשב לפני שרושמים. ובסוף — גם רווח השנה וגם עודפי הסגירה.`,
     body: (
       <div className="[column-span:all]">
-        <WorksheetGame c={GEFEN} />
+        <WorksheetGame c={ZAYIT} />
       </div>
     ),
   },

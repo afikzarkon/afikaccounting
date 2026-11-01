@@ -1,7 +1,7 @@
 /**
  * The multi-column worksheet, from a whole question: a company's trial balance
  * before the year-end adjustments, the facts behind each adjustment, and the
- * adjustments themselves. Shaked Ltd is the lesson's worked question; Tamar
+ * adjustments themselves. Rimon Ltd is the lesson's worked question; Sigal
  * Ltd is the practice game's, with more accounts and a trap or two among them.
  * Every balance is computed from these, as on the rest of the course.
  */
@@ -38,266 +38,261 @@ const e = (id: string, text: string, dr: string, cr: string, amount: number, why
 });
 
 // ---------------------------------------------------------------------------
-// The worked question: Shaked Ltd, a trading company, 31.12.2025.
+// The worked question: Rimon Ltd, 31.12.2025.
 
-const SH = { rent: 48_000, rentMonthsNext: 9, salary: 15_000, loan: 200_000, loanRate: 0.06, loanMonths: 6, commissionsNext: 10_000, deposit: 100_000, depositRate: 0.04, depositMonths: 9, stockCost: 52_000, stockNrv: 60_000 };
+const RM = { rent: 54_000, rentMonthsNext: 10, salary: 17_000, loan: 240_000, loanRate: 0.05, loanMonths: 5, commissionsNext: 8_000, deposit: 90_000, depositRate: 0.04, depositMonths: 8, stockCost: 58_000, stockNrv: 63_000 };
+const f = (v: number) => v.toLocaleString("en-US");
 
-export const SHAKED: WorksheetCase = {
-  name: "שקד בע״מ",
+export const RIMON: WorksheetCase = {
+  name: "רימון בע״מ",
   date: "31.12.2025",
   preliminary: {
-    מזומן: 187_000,
-    לקוחות: 150_000,
-    "פיקדונות בבנק": SH.deposit,
-    ציוד: 240_000,
-    "מלאי פתיחה": 45_000,
-    קניות: 310_000,
-    "הוצאות שכר": 165_000,
-    "הוצאות שכירות": SH.rent,
-    "הוצאות ביטוח": 18_000,
-    "הוצאות פרסום": 12_000,
-    ספקים: -95_000,
-    "הלוואה שהתקבלה": -SH.loan,
-    "הון מניות": -250_000,
-    עודפים: -70_000,
-    מכירות: -620_000,
-    "הכנסות מעמלות": -40_000,
+    מזומן: 283_000,
+    לקוחות: 136_000,
+    "פיקדונות בבנק": RM.deposit,
+    ציוד: 260_000,
+    "מלאי פתיחה": 51_000,
+    קניות: 344_000,
+    "הוצאות שכר": 187_000,
+    "הוצאות שכירות": RM.rent,
+    "הוצאות ביטוח": 21_000,
+    "הוצאות פרסום": 15_000,
+    ספקים: -104_000,
+    "הלוואה שהתקבלה": -RM.loan,
+    "הון מניות": -280_000,
+    עודפים: -82_000,
+    מכירות: -690_000,
+    "הכנסות מעמלות": -45_000,
   },
   items: [
     {
       title: "שכירות",
-      story: `ב-1.10.2025 שולמו ${SH.rent.toLocaleString("en-US")} ₪ שכירות לשנה, ונרשמו כולם כהוצאה.`,
-      entry: e("א", "שכירות ששולמה מראש", "הוצאות שכירות מראש", "הוצאות שכירות", (SH.rent * SH.rentMonthsNext) / 12, `${SH.rentMonthsNext} מתוך 12 החודשים שייכים ל-2026: ${SH.rent.toLocaleString("en-US")} × ${SH.rentMonthsNext}/12. יוצאים מההוצאה ועוברים להוצאות מראש — נכס.`),
+      story: `ב-1.11.2025 שולמו ${f(RM.rent)} ₪ שכירות לשנה, ונרשמו כולם כהוצאה.`,
+      entry: e("א", "שכירות ששולמה מראש", "הוצאות שכירות מראש", "הוצאות שכירות", (RM.rent * RM.rentMonthsNext) / 12, `${RM.rentMonthsNext} מתוך 12 החודשים שייכים ל-2026: ${f(RM.rent)} × ${RM.rentMonthsNext}/12. יוצאים מההוצאה ועוברים להוצאות מראש — נכס.`),
       accounts: ["הוצאות שכירות מראש", "הוצאות שכירות", "מזומן", "הוצאות שכירות לשלם"],
     },
     {
       title: "שכר דצמבר",
-      story: `שכר דצמבר, ${SH.salary.toLocaleString("en-US")} ₪, ישולם ב-9.1.2026 ולא נרשם.`,
-      entry: e("ב", "שכר דצמבר שטרם שולם", "הוצאות שכר", "הוצאות שכר לשלם", SH.salary, "העובדים עבדו בדצמבר — הוצאה של 2025. הכסף עוד לא יצא: הוצאות לשלם, התחייבות."),
+      story: `שכר דצמבר, ${f(RM.salary)} ₪, ישולם ב-9.1.2026 ולא נרשם.`,
+      entry: e("ב", "שכר דצמבר שטרם שולם", "הוצאות שכר", "הוצאות שכר לשלם", RM.salary, "העובדים עבדו בדצמבר — הוצאה של 2025. הכסף עוד לא יצא: הוצאות לשלם, התחייבות."),
       accounts: ["הוצאות שכר", "הוצאות שכר לשלם", "מזומן", "הוצאות שכר מראש"],
     },
     {
       title: "ריבית על ההלוואה",
-      story: `ההלוואה (${SH.loan.toLocaleString("en-US")} ₪) נלקחה ב-1.7.2025 בריבית שנתית של ${SH.loanRate * 100}%. הריבית משולמת פעם בשנה, ב-30.6, ולא נרשמה.`,
-      entry: e("ג", "ריבית שנצברה וטרם שולמה", "הוצאות ריבית", "הוצאות ריבית לשלם", SH.loan * SH.loanRate * (SH.loanMonths / 12), `${SH.loanMonths} חודשים של 2025: ${SH.loan.toLocaleString("en-US")} × ${SH.loanRate * 100}% × ${SH.loanMonths}/12. הוצאה של השנה, שעוד לא שולמה.`),
+      story: `ההלוואה (${f(RM.loan)} ₪) נלקחה ב-1.8.2025 בריבית שנתית של ${RM.loanRate * 100}%. הריבית משולמת פעם בשנה, ב-31.7, ולא נרשמה.`,
+      entry: e("ג", "ריבית שנצברה וטרם שולמה", "הוצאות ריבית", "הוצאות ריבית לשלם", round2(RM.loan * RM.loanRate * (RM.loanMonths / 12)), `${RM.loanMonths} חודשים של 2025: ${f(RM.loan)} × ${RM.loanRate * 100}% × ${RM.loanMonths}/12. הוצאה של השנה, שעוד לא שולמה.`),
       accounts: ["הוצאות ריבית", "הוצאות ריבית לשלם", "הלוואה שהתקבלה", "מזומן"],
     },
     {
       title: "עמלות",
-      story: `בהכנסות מעמלות כלולים ${SH.commissionsNext.toLocaleString("en-US")} ₪ שהתקבלו בדצמבר על שירות שיינתן בינואר–פברואר 2026.`,
-      entry: e("ד", "עמלות שהתקבלו מראש", "הכנסות מעמלות", "הכנסות מעמלות מראש", SH.commissionsNext, "השירות עוד לא ניתן — זו לא הכנסה של 2025. יוצא מההכנסה ועובר להכנסות מראש — התחייבות."),
+      story: `בהכנסות מעמלות כלולים ${f(RM.commissionsNext)} ₪ שהתקבלו בדצמבר על שירות שיינתן בינואר–פברואר 2026.`,
+      entry: e("ד", "עמלות שהתקבלו מראש", "הכנסות מעמלות", "הכנסות מעמלות מראש", RM.commissionsNext, "השירות עוד לא ניתן — זו לא הכנסה של 2025. יוצא מההכנסה ועובר להכנסות מראש — התחייבות."),
       accounts: ["הכנסות מעמלות", "הכנסות מעמלות מראש", "מזומן", "הכנסות מעמלות לקבל"],
     },
     {
       title: "ריבית על הפיקדון",
-      story: `הפיקדון (${SH.deposit.toLocaleString("en-US")} ₪) הופקד ב-1.4.2025 בריבית שנתית של ${SH.depositRate * 100}%. הריבית תתקבל עם הקרן ב-31.3.2026, ולא נרשמה.`,
-      entry: e("ה", "ריבית שהורווחה וטרם התקבלה", "הכנסות ריבית לקבל", "הכנסות ריבית", SH.deposit * SH.depositRate * (SH.depositMonths / 12), `${SH.depositMonths} חודשים של 2025: ${SH.deposit.toLocaleString("en-US")} × ${SH.depositRate * 100}% × ${SH.depositMonths}/12. הכנסה של השנה, שעוד לא התקבלה — הכנסות לקבל, נכס.`),
+      story: `הפיקדון (${f(RM.deposit)} ₪) הופקד ב-1.5.2025 בריבית שנתית של ${RM.depositRate * 100}%. הריבית תתקבל עם הקרן ב-30.4.2026, ולא נרשמה.`,
+      entry: e("ה", "ריבית שהורווחה וטרם התקבלה", "הכנסות ריבית לקבל", "הכנסות ריבית", round2(RM.deposit * RM.depositRate * (RM.depositMonths / 12)), `${RM.depositMonths} חודשים של 2025: ${f(RM.deposit)} × ${RM.depositRate * 100}% × ${RM.depositMonths}/12. הכנסה של השנה, שעוד לא התקבלה — הכנסות לקבל, נכס.`),
       accounts: ["הכנסות ריבית לקבל", "הכנסות ריבית", "פיקדונות בבנק", "מזומן"],
     },
     {
       title: "מלאי סגירה",
-      story: `ב-31.12.2025 נספר מלאי בעלות ${SH.stockCost.toLocaleString("en-US")} ₪. שווי המימוש נטו שלו — ${SH.stockNrv.toLocaleString("en-US")} ₪.`,
-      entry: e("ו", "רישום מלאי הסגירה", "מלאי סגירה מאזני", "מלאי סגירה רווח או הפסד", Math.min(SH.stockCost, SH.stockNrv), "הנמוך מבין העלות לשווי המימוש נטו. נכס במאזן, ומקטין את עלות המכר ברווח והפסד."),
+      story: `ב-31.12.2025 נספר מלאי בעלות ${f(RM.stockCost)} ₪. שווי המימוש נטו שלו — ${f(RM.stockNrv)} ₪.`,
+      entry: e("ו", "רישום מלאי הסגירה", "מלאי סגירה מאזני", "מלאי סגירה רווח או הפסד", Math.min(RM.stockCost, RM.stockNrv), "הנמוך מבין העלות לשווי המימוש נטו. נכס במאזן, ומקטין את עלות המכר ברווח והפסד."),
       accounts: ["מלאי סגירה מאזני", "מלאי סגירה רווח או הפסד", "קניות", "מלאי פתיחה"],
     },
   ],
 };
 
 // ---------------------------------------------------------------------------
-// The practice game: Tamar Marketing Ltd, 31.12.2025 — more accounts, and the ones that catch people out.
+// The game: Sigal Marketing Ltd, 31.12.2025 — more accounts, accumulated losses, and credit losses among the adjustments.
 
-const TM = { insurance: 24_000, electricity: 2_000, rent: 36_000, rentMonthsNext: 9, interest: 3_000, customers: 210_000, allowance: 10_500, rate: 0.06, stockCost: 75_000, stockNrv: 90_000 };
-const tamarAllowanceUp = round2(TM.customers * TM.rate - TM.allowance);
+const SG = { insurance: 30_000, insuranceMonthsUsed: 8, electricity: 2_600, rent: 48_000, rentMonthsNext: 8, interest: 3_600, customers: 240_000, allowance: 9_000, rate: 0.05, stockCost: 82_000, stockNrv: 96_000 };
+const sigalAllowanceUp = round2(SG.customers * SG.rate - SG.allowance);
 
-export const TAMAR: WorksheetCase = {
-  name: "תמר שיווק בע״מ",
+export const SIGAL: WorksheetCase = {
+  name: "סיגל שיווק בע״מ",
   date: "31.12.2025",
   preliminary: {
-    מזומן: 173_500,
-    לקוחות: TM.customers,
-    "הפרשה להפסדי אשראי חזויים": -TM.allowance,
-    "מקדמות לספקים": 15_000,
-    "מלאי פתיחה": 60_000,
-    "כלי רכב": 180_000,
-    ציוד: 95_000,
-    "הוצאות ביטוח מראש": TM.insurance,
-    ספקים: -130_000,
-    "מקדמות מלקוחות": -20_000,
-    "הלוואה שהתקבלה": -150_000,
-    "הון מניות": -300_000,
-    // Accumulated losses: retained earnings in debit.
-    עודפים: 40_000,
-    מכירות: -880_000,
-    "הכנסות משכירות": -TM.rent,
-    קניות: 420_000,
-    "הוצאות שכר": 230_000,
-    "הוצאות חשמל": 18_000,
-    "הוצאות אחזקת רכב": 22_000,
-    "הוצאות פרסום": 30_000,
-    "הוצאות ריבית": 9_000,
+    מזומן: 209_200,
+    לקוחות: SG.customers,
+    "הפרשה להפסדי אשראי חזויים": -SG.allowance,
+    "מקדמות לספקים": 18_000,
+    "מלאי פתיחה": 66_000,
+    "כלי רכב": 150_000,
+    ציוד: 110_000,
+    "הוצאות ביטוח מראש": SG.insurance,
+    ספקים: -142_000,
+    "מקדמות מלקוחות": -24_000,
+    "הלוואה שהתקבלה": -170_000,
+    "הון מניות": -320_000,
+    עודפים: 35_000,
+    מכירות: -940_000,
+    "הכנסות משכירות": -SG.rent,
+    קניות: 455_000,
+    "הוצאות שכר": 248_000,
+    "הוצאות חשמל": 21_000,
+    "הוצאות אחזקת רכב": 26_000,
+    "הוצאות פרסום": 34_000,
+    "הוצאות ריבית": 10_800,
   },
   notes: { עודפים: "הפסדים צבורים" },
   items: [
     {
       title: "ביטוח",
-      story: `ב-1.7.2025 שולמו ${TM.insurance.toLocaleString("en-US")} ₪ ביטוח לשנה, ונרשמו כולם כהוצאות ביטוח מראש. רשמו את פקודת ההתאמה ב-31.12.`,
-      entry: e("1", "החלק של הביטוח שנוצל השנה", "הוצאות ביטוח", "הוצאות ביטוח מראש", TM.insurance / 2, "חצי שנה נוצלה ב-2025: 24,000 × 6/12 = 12,000. החלק הזה עובר מהנכס להוצאה."),
+      story: `ב-1.5.2025 שולמו ${f(SG.insurance)} ₪ ביטוח לשנה, ונרשמו כולם כהוצאות ביטוח מראש. רשמו את פקודת ההתאמה ב-31.12.`,
+      entry: e("1", "החלק של הביטוח שנוצל השנה", "הוצאות ביטוח", "הוצאות ביטוח מראש", (SG.insurance * SG.insuranceMonthsUsed) / 12, `${SG.insuranceMonthsUsed} חודשים נוצלו ב-2025: ${f(SG.insurance)} × ${SG.insuranceMonthsUsed}/12 = ${f((SG.insurance * SG.insuranceMonthsUsed) / 12)}. החלק הזה עובר מהנכס להוצאה.`),
       accounts: ["הוצאות ביטוח", "הוצאות ביטוח מראש", "מזומן", "הוצאות ביטוח לשלם"],
     },
     {
       title: "חשמל",
-      story: `חשבון החשמל של דצמבר, ${TM.electricity.toLocaleString("en-US")} ₪, יגיע וישולם בינואר. רשמו את פקודת ההתאמה.`,
-      entry: e("2", "חשמל דצמבר שטרם שולם", "הוצאות חשמל", "הוצאות חשמל לשלם", TM.electricity, "את החשמל של דצמבר צרכנו השנה — הוצאה של 2025, שעוד לא שולמה: הוצאות לשלם."),
+      story: `חשבון החשמל של דצמבר, ${f(SG.electricity)} ₪, יגיע וישולם בינואר. רשמו את פקודת ההתאמה.`,
+      entry: e("2", "חשמל דצמבר שטרם שולם", "הוצאות חשמל", "הוצאות חשמל לשלם", SG.electricity, "את החשמל של דצמבר צרכנו השנה — הוצאה של 2025, שעוד לא שולמה: הוצאות לשלם."),
       accounts: ["הוצאות חשמל", "הוצאות חשמל לשלם", "מזומן", "ספקים"],
     },
     {
       title: "שכירות שהתקבלה",
-      story: `ב-1.10.2025 התקבלו ${TM.rent.toLocaleString("en-US")} ₪ על השכרת מחסן לשנה, ונרשמו כולם כהכנסה. רשמו את פקודת ההתאמה.`,
-      entry: e("3", "שכירות שהתקבלה מראש", "הכנסות משכירות", "הכנסות משכירות מראש", (TM.rent * TM.rentMonthsNext) / 12, "9 חודשים שייכים ל-2026: 36,000 × 9/12 = 27,000. עד שנספק אותם — אנחנו חייבים: הכנסות מראש, התחייבות."),
+      story: `ב-1.9.2025 התקבלו ${f(SG.rent)} ₪ על השכרת מחסן לשנה, ונרשמו כולם כהכנסה. רשמו את פקודת ההתאמה.`,
+      entry: e("3", "שכירות שהתקבלה מראש", "הכנסות משכירות", "הכנסות משכירות מראש", (SG.rent * SG.rentMonthsNext) / 12, `${SG.rentMonthsNext} חודשים שייכים ל-2026: ${f(SG.rent)} × ${SG.rentMonthsNext}/12 = ${f((SG.rent * SG.rentMonthsNext) / 12)}. עד שנספק אותם — אנחנו חייבים: הכנסות מראש, התחייבות.`),
       accounts: ["הכנסות משכירות", "הכנסות משכירות מראש", "מזומן", "הכנסות משכירות לקבל"],
     },
     {
       title: "ריבית",
-      story: `הריבית על ההלוואה לרבעון האחרון, ${TM.interest.toLocaleString("en-US")} ₪, תשולם בינואר ולא נרשמה. רשמו את פקודת ההתאמה.`,
-      entry: e("4", "ריבית שטרם שולמה", "הוצאות ריבית", "הוצאות ריבית לשלם", TM.interest, "השתמשנו בכסף של הבנק ברבעון האחרון — הוצאה של 2025, שעוד לא שולמה."),
+      story: `הריבית על ההלוואה לרבעון האחרון, ${f(SG.interest)} ₪, תשולם בינואר ולא נרשמה. רשמו את פקודת ההתאמה.`,
+      entry: e("4", "ריבית שטרם שולמה", "הוצאות ריבית", "הוצאות ריבית לשלם", SG.interest, "השתמשנו בכסף של הבנק ברבעון האחרון — הוצאה של 2025, שעוד לא שולמה."),
       accounts: ["הוצאות ריבית", "הוצאות ריבית לשלם", "הלוואה שהתקבלה", "מזומן"],
     },
     {
       title: "הפסדי אשראי",
-      story: `ההפרשה הנדרשת בסוף השנה: ${TM.rate * 100}% מהלקוחות (${TM.customers.toLocaleString("en-US")} ₪). בכרטיס ההפרשה יש ${TM.allowance.toLocaleString("en-US")} ₪. רשמו את פקודת ההתאמה.`,
-      entry: e("5", "השלמת ההפרשה להפסדי אשראי", "הוצאות הפסדי אשראי", "הפרשה להפסדי אשראי חזויים", tamarAllowanceUp, `נדרשת ${TM.customers.toLocaleString("en-US")} × ${TM.rate * 100}% = ${(TM.customers * TM.rate).toLocaleString("en-US")}. יש ${TM.allowance.toLocaleString("en-US")} — חסרים ${tamarAllowanceUp.toLocaleString("en-US")} בזכות.`),
+      story: `ההפרשה הנדרשת בסוף השנה: ${SG.rate * 100}% מהלקוחות (${f(SG.customers)} ₪). בכרטיס ההפרשה יש ${f(SG.allowance)} ₪. רשמו את פקודת ההתאמה.`,
+      entry: e("5", "השלמת ההפרשה להפסדי אשראי", "הוצאות הפסדי אשראי", "הפרשה להפסדי אשראי חזויים", sigalAllowanceUp, `נדרשת ${f(SG.customers)} × ${SG.rate * 100}% = ${f(SG.customers * SG.rate)}. יש ${f(SG.allowance)} — חסרים ${f(sigalAllowanceUp)} בזכות.`),
       accounts: ["הוצאות הפסדי אשראי", "הפרשה להפסדי אשראי חזויים", "לקוחות", "מזומן"],
     },
     {
       title: "מלאי סגירה",
-      story: `ב-31.12.2025 נספר מלאי בעלות ${TM.stockCost.toLocaleString("en-US")} ₪, ששווי המימוש נטו שלו ${TM.stockNrv.toLocaleString("en-US")} ₪. רשמו את מלאי הסגירה.`,
-      entry: e("6", "רישום מלאי הסגירה", "מלאי סגירה מאזני", "מלאי סגירה רווח או הפסד", Math.min(TM.stockCost, TM.stockNrv), "הנמוך מבין העלות לשווי המימוש נטו: 75,000. נכס במאזן, ומקטין את עלות המכר."),
+      story: `ב-31.12.2025 נספר מלאי בעלות ${f(SG.stockCost)} ₪, ששווי המימוש נטו שלו ${f(SG.stockNrv)} ₪. רשמו את מלאי הסגירה.`,
+      entry: e("6", "רישום מלאי הסגירה", "מלאי סגירה מאזני", "מלאי סגירה רווח או הפסד", Math.min(SG.stockCost, SG.stockNrv), `הנמוך מבין העלות לשווי המימוש נטו: ${f(Math.min(SG.stockCost, SG.stockNrv))}. נכס במאזן, ומקטין את עלות המכר.`),
       accounts: ["מלאי סגירה מאזני", "מלאי סגירה רווח או הפסד", "קניות", "מלאי פתיחה"],
     },
   ],
 };
 
 // ---------------------------------------------------------------------------
-// The harder game: Gefen Industries Ltd — an unknown balance, compound and corrective entries, and figures to work out first.
+// The harder game: Zayit Industries Ltd — retained earnings left out, a compound entry, a correction, and figures to work out first.
 
-const GF = {
-  rentPaid: 36_000,
-  rentMonthsNext: 9,
-  insurance: 30_000,
+const ZY = {
+  rentPaid: 42_000,
+  rentMonthsNext: 10,
+  insurance: 36_000,
   insuranceMonths: 18,
-  insuranceMonthsNext: 9,
-  feesAdvance: 8_000,
-  feesMonthly: 4_000,
-  loan: 300_000,
-  loanRate: 0.08,
-  loanMonths: 8,
-  interestPaid: 12_000,
-  bankrupt: 6_000,
-  customers: 240_000,
-  allowance: 9_000,
-  rate: 0.05,
-  stockCost: 110_000,
-  stockNrv: 104_000,
-  machine: 16_000,
+  insuranceMonthsNext: 12,
+  feesAdvance: 9_000,
+  feesMonthly: 4_500,
+  loan: 360_000,
+  loanRate: 0.06,
+  loanMonths: 9,
+  interestPaid: 10_000,
+  bankrupt: 7_500,
+  customers: 280_000,
+  allowance: 11_000,
+  rate: 0.04,
+  stockCost: 125_000,
+  stockNrv: 118_000,
+  machine: 19_000,
 };
-const gfInterest = round2((GF.loan * GF.loanRate * GF.loanMonths) / 12 - GF.interestPaid);
-const gfRequired = round2((GF.customers - GF.bankrupt) * GF.rate);
-const gfTopUp = round2(gfRequired - (GF.allowance - GF.bankrupt));
-const f = (v: number) => v.toLocaleString("en-US");
+const zyInterest = round2((ZY.loan * ZY.loanRate * ZY.loanMonths) / 12 - ZY.interestPaid);
+const zyRequired = round2((ZY.customers - ZY.bankrupt) * ZY.rate);
+const zyTopUp = round2(zyRequired - (ZY.allowance - ZY.bankrupt));
 
-export const GEFEN: WorksheetCase = {
-  name: "גפן תעשיות בע״מ",
+export const ZAYIT: WorksheetCase = {
+  name: "זית תעשיות בע״מ",
   date: "31.12.2025",
   unknown: "עודפים",
   askRetained: true,
   preliminary: {
-    מזומן: 192_000,
-    לקוחות: GF.customers,
-    "הפרשה להפסדי אשראי חזויים": -GF.allowance,
-    "פיקדונות בבנק": 120_000,
-    "מלאי פתיחה": 85_000,
-    מכונות: 400_000,
-    "כלי רכב": 160_000,
-    ספקים: -145_000,
-    "מקדמות מלקוחות": -30_000,
-    "הלוואה שהתקבלה": -GF.loan,
-    "הון מניות": -400_000,
-    // The question leaves this one out: the sorting finds its side and amount.
-    עודפים: -95_000,
-    מכירות: -1_350_000,
-    "הכנסות מדמי ניהול": -48_000,
-    קניות: 690_000,
-    "הוצאות שכר": 310_000,
-    "הוצאות שכירות": 72_000,
-    "הוצאות ביטוח": GF.insurance,
-    "הוצאות אחזקה": 26_000,
-    "הוצאות ריבית": GF.interestPaid,
-    "הוצאות פרסום": 40_000,
+    מזומן: 214_000,
+    לקוחות: ZY.customers,
+    "הפרשה להפסדי אשראי חזויים": -ZY.allowance,
+    "פיקדונות בבנק": 140_000,
+    "מלאי פתיחה": 92_000,
+    מכונות: 450_000,
+    "כלי רכב": 175_000,
+    ספקים: -162_000,
+    "מקדמות מלקוחות": -36_000,
+    "הלוואה שהתקבלה": -ZY.loan,
+    "הון מניות": -450_000,
+    עודפים: -99_000,
+    מכירות: -1_480_000,
+    "הכנסות מדמי ניהול": -54_000,
+    קניות: 760_000,
+    "הוצאות שכר": 342_000,
+    "הוצאות שכירות": 78_000,
+    "הוצאות ביטוח": ZY.insurance,
+    "הוצאות אחזקה": 31_000,
+    "הוצאות ריבית": ZY.interestPaid,
+    "הוצאות פרסום": 44_000,
   },
   items: [
     {
       title: "שכירות",
-      story: `בהוצאות השכירות (72,000 ₪) כלול תשלום של ${f(GF.rentPaid)} ₪ ששולם ב-1.10.2025 על שנה — עד 30.9.2026. רשמו את פקודת ההתאמה.`,
-      entry: e("1", "החלק של השכירות ששייך ל-2026", "הוצאות שכירות מראש", "הוצאות שכירות", (GF.rentPaid * GF.rentMonthsNext) / 12, `רק התשלום של 1.10 נוגע לשנה הבאה — לא כל 72,000. ${GF.rentMonthsNext} מתוך 12 חודשיו שייכים ל-2026: ${f(GF.rentPaid)} × ${GF.rentMonthsNext}/12.`),
+      story: `בהוצאות השכירות (78,000 ₪) כלול תשלום של ${f(ZY.rentPaid)} ₪ ששולם ב-1.11.2025 על שנה — עד 31.10.2026. רשמו את פקודת ההתאמה.`,
+      entry: e("1", "החלק של השכירות ששייך ל-2026", "הוצאות שכירות מראש", "הוצאות שכירות", (ZY.rentPaid * ZY.rentMonthsNext) / 12, `רק התשלום של 1.11 נוגע לשנה הבאה — לא כל 78,000. ${ZY.rentMonthsNext} מתוך 12 חודשיו שייכים ל-2026: ${f(ZY.rentPaid)} × ${ZY.rentMonthsNext}/12.`),
       accounts: ["הוצאות שכירות מראש", "הוצאות שכירות", "מזומן", "הוצאות שכירות לשלם"],
     },
     {
       title: "ביטוח ל-18 חודשים",
-      story: `הוצאות הביטוח (${f(GF.insurance)} ₪) שולמו ב-1.4.2025 על 18 חודשים — עד 30.9.2026. רשמו את פקודת ההתאמה.`,
-      entry: e("2", "החלק של הביטוח ששייך ל-2026", "הוצאות ביטוח מראש", "הוצאות ביטוח", (GF.insurance * GF.insuranceMonthsNext) / GF.insuranceMonths, `התקופה 18 חודשים, לא 12: ${GF.insuranceMonthsNext} חודשים (ינואר–ספטמבר 2026) שייכים לשנה הבאה: ${f(GF.insurance)} × ${GF.insuranceMonthsNext}/${GF.insuranceMonths}.`),
+      story: `הוצאות הביטוח (${f(ZY.insurance)} ₪) שולמו ב-1.7.2025 על 18 חודשים — עד 31.12.2026. רשמו את פקודת ההתאמה.`,
+      entry: e("2", "החלק של הביטוח ששייך ל-2026", "הוצאות ביטוח מראש", "הוצאות ביטוח", (ZY.insurance * ZY.insuranceMonthsNext) / ZY.insuranceMonths, `התקופה 18 חודשים, לא 12: ${ZY.insuranceMonthsNext} חודשים (כל 2026) שייכים לשנה הבאה: ${f(ZY.insurance)} × ${ZY.insuranceMonthsNext}/${ZY.insuranceMonths}.`),
       accounts: ["הוצאות ביטוח מראש", "הוצאות ביטוח", "מזומן", "הוצאות ביטוח לשלם"],
     },
     {
       title: "דמי ניהול — פקודה מורכבת",
-      story: `לקוח משלם ${f(GF.feesMonthly)} ₪ דמי ניהול לחודש. בהכנסות (48,000 ₪) כלולים ${f(GF.feesAdvance)} ₪ ששולמו מראש על ינואר–פברואר 2026, ודמי דצמבר טרם התקבלו ולא נרשמו. רשמו את שני התיקונים בפקודה אחת.`,
+      story: `לקוח משלם ${f(ZY.feesMonthly)} ₪ דמי ניהול לחודש. בהכנסות (54,000 ₪) כלולים ${f(ZY.feesAdvance)} ₪ ששולמו מראש על ינואר–פברואר 2026, ודמי דצמבר טרם התקבלו ולא נרשמו. רשמו את שני התיקונים בפקודה אחת.`,
       entry: {
         id: "3",
         date: "31.12",
         text: "דמי ניהול: מה ששייך ל-2026, ומה שמגיע על דצמבר",
         lines: [
-          { account: "הכנסות מדמי ניהול לקבל", dr: GF.feesMonthly },
-          { account: "הכנסות מדמי ניהול", dr: GF.feesAdvance - GF.feesMonthly },
-          { account: "הכנסות מדמי ניהול מראש", cr: GF.feesAdvance },
+          { account: "הכנסות מדמי ניהול לקבל", dr: ZY.feesMonthly },
+          { account: "הכנסות מדמי ניהול", dr: ZY.feesAdvance - ZY.feesMonthly },
+          { account: "הכנסות מדמי ניהול מראש", cr: ZY.feesAdvance },
         ],
-        why: `שני תיקונים על אותה הכנסה: ${f(GF.feesAdvance)} יוצאים ממנה להכנסות מראש (זכות), ו-${f(GF.feesMonthly)} של דצמבר נכנסים אליה מול הכנסות לקבל (חובה). בפקודה אחת ההכנסה נטו קטנה ב-${f(GF.feesAdvance - GF.feesMonthly)}.`,
+        why: `שני תיקונים על אותה הכנסה: ${f(ZY.feesAdvance)} יוצאים ממנה להכנסות מראש (זכות), ו-${f(ZY.feesMonthly)} של דצמבר נכנסים אליה מול הכנסות לקבל (חובה). בפקודה אחת ההכנסה נטו קטנה ב-${f(ZY.feesAdvance - ZY.feesMonthly)}.`,
       },
       accounts: ["הכנסות מדמי ניהול לקבל", "הכנסות מדמי ניהול", "הכנסות מדמי ניהול מראש", "מזומן", "לקוחות"],
     },
     {
       title: "ריבית — חלק כבר שולם",
-      story: `ההלוואה (${f(GF.loan)} ₪) נלקחה ב-1.5.2025 בריבית שנתית של ${GF.loanRate * 100}%. עד 31.12 שולמה ונרשמה ריבית של ${f(GF.interestPaid)} ₪. רשמו את פקודת ההתאמה.`,
-      entry: e("4", "ריבית שנצברה וטרם שולמה", "הוצאות ריבית", "הוצאות ריבית לשלם", gfInterest, `ריבית השנה: ${f(GF.loan)} × ${GF.loanRate * 100}% × ${GF.loanMonths}/12 = ${f(GF.interestPaid + gfInterest)}. כבר נרשמו ${f(GF.interestPaid)} — חסרים ${f(gfInterest)}.`),
+      story: `ההלוואה (${f(ZY.loan)} ₪) נלקחה ב-1.4.2025 בריבית שנתית של ${ZY.loanRate * 100}%. עד 31.12 שולמה ונרשמה ריבית של ${f(ZY.interestPaid)} ₪. רשמו את פקודת ההתאמה.`,
+      entry: e("4", "ריבית שנצברה וטרם שולמה", "הוצאות ריבית", "הוצאות ריבית לשלם", zyInterest, `ריבית השנה: ${f(ZY.loan)} × ${ZY.loanRate * 100}% × ${ZY.loanMonths}/12 = ${f(ZY.interestPaid + zyInterest)}. כבר נרשמו ${f(ZY.interestPaid)} — חסרים ${f(zyInterest)}.`),
       accounts: ["הוצאות ריבית", "הוצאות ריבית לשלם", "הלוואה שהתקבלה", "מזומן"],
     },
     {
       title: "לקוח שפשט רגל",
-      story: `ב-31.12 התברר שלקוח שחייב ${f(GF.bankrupt)} ₪ פשט רגל. החוב טרם נמחק. רשמו את מחיקת החוב.`,
-      entry: e("5", "מחיקת חוב אבוד", "הפרשה להפסדי אשראי חזויים", "לקוחות", GF.bankrupt, "המחיקה כנגד ההפרשה — בלי הוצאה. הלקוחות וההפרשה קטנים יחד."),
+      story: `ב-31.12 התברר שלקוח שחייב ${f(ZY.bankrupt)} ₪ פשט רגל. החוב טרם נמחק. רשמו את מחיקת החוב.`,
+      entry: e("5", "מחיקת חוב אבוד", "הפרשה להפסדי אשראי חזויים", "לקוחות", ZY.bankrupt, "המחיקה כנגד ההפרשה — בלי הוצאה. הלקוחות וההפרשה קטנים יחד."),
       accounts: ["הפרשה להפסדי אשראי חזויים", "לקוחות", "הוצאות הפסדי אשראי", "מזומן"],
     },
     {
       title: "השלמת ההפרשה",
-      story: `ההפרשה הנדרשת: ${GF.rate * 100}% מיתרת הלקוחות — אחרי המחיקה. רשמו את פקודת ההתאמה.`,
-      entry: e("6", "השלמת ההפרשה להפסדי אשראי", "הוצאות הפסדי אשראי", "הפרשה להפסדי אשראי חזויים", gfTopUp, `לקוחות אחרי המחיקה: ${f(GF.customers)} − ${f(GF.bankrupt)} = ${f(GF.customers - GF.bankrupt)}; נדרשת ${f(gfRequired)}. בכרטיס ההפרשה אחרי המחיקה: ${f(GF.allowance)} − ${f(GF.bankrupt)} = ${f(GF.allowance - GF.bankrupt)}. חסרים ${f(gfTopUp)}.`),
+      story: `ההפרשה הנדרשת: ${ZY.rate * 100}% מיתרת הלקוחות — אחרי המחיקה. רשמו את פקודת ההתאמה.`,
+      entry: e("6", "השלמת ההפרשה להפסדי אשראי", "הוצאות הפסדי אשראי", "הפרשה להפסדי אשראי חזויים", zyTopUp, `לקוחות אחרי המחיקה: ${f(ZY.customers)} − ${f(ZY.bankrupt)} = ${f(ZY.customers - ZY.bankrupt)}; נדרשת ${f(zyRequired)}. בכרטיס ההפרשה אחרי המחיקה: ${f(ZY.allowance)} − ${f(ZY.bankrupt)} = ${f(ZY.allowance - ZY.bankrupt)}. חסרים ${f(zyTopUp)}.`),
       accounts: ["הוצאות הפסדי אשראי", "הפרשה להפסדי אשראי חזויים", "לקוחות", "מזומן"],
     },
     {
       title: "מלאי סגירה — שווי מימוש נמוך",
-      story: `ב-31.12 נספר מלאי בעלות ${f(GF.stockCost)} ₪. בגלל פגם בחלק מהסחורה, שווי המימוש נטו שלו ${f(GF.stockNrv)} ₪. רשמו את מלאי הסגירה.`,
-      entry: e("7", "רישום מלאי הסגירה", "מלאי סגירה מאזני", "מלאי סגירה רווח או הפסד", Math.min(GF.stockCost, GF.stockNrv), `הנמוך מבין העלות (${f(GF.stockCost)}) לשווי המימוש נטו (${f(GF.stockNrv)}): ${f(Math.min(GF.stockCost, GF.stockNrv))}.`),
+      story: `ב-31.12 נספר מלאי בעלות ${f(ZY.stockCost)} ₪. בגלל פגם בחלק מהסחורה, שווי המימוש נטו שלו ${f(ZY.stockNrv)} ₪. רשמו את מלאי הסגירה.`,
+      entry: e("7", "רישום מלאי הסגירה", "מלאי סגירה מאזני", "מלאי סגירה רווח או הפסד", Math.min(ZY.stockCost, ZY.stockNrv), `הנמוך מבין העלות (${f(ZY.stockCost)}) לשווי המימוש נטו (${f(ZY.stockNrv)}): ${f(Math.min(ZY.stockCost, ZY.stockNrv))}.`),
       accounts: ["מלאי סגירה מאזני", "מלאי סגירה רווח או הפסד", "קניות", "מלאי פתיחה"],
     },
     {
       title: "פקודת תיקון — מכונה",
-      story: `בהוצאות האחזקה כלולים ${f(GF.machine)} ₪ ששולמו ב-31.12 על רכישת מכונה חדשה. רשמו את פקודת התיקון.`,
-      entry: e("8", "תיקון: מכונה שנרשמה כהוצאה", "מכונות", "הוצאות אחזקה", GF.machine, "מכונה שתשמש שנים היא נכס, לא הוצאה. מוציאים את הסכום מהוצאות האחזקה ומעבירים לנכס."),
+      story: `בהוצאות האחזקה כלולים ${f(ZY.machine)} ₪ ששולמו ב-31.12 על רכישת מכונה חדשה. רשמו את פקודת התיקון.`,
+      entry: e("8", "תיקון: מכונה שנרשמה כהוצאה", "מכונות", "הוצאות אחזקה", ZY.machine, "מכונה שתשמש שנים היא נכס, לא הוצאה. מוציאים את הסכום מהוצאות האחזקה ומעבירים לנכס."),
       accounts: ["מכונות", "הוצאות אחזקה", "מזומן", "ספקים"],
     },
   ],
 };
-
-// ---------------------------------------------------------------------------
-// The sheet itself.
 
 export const adjustmentsOf = (c: WorksheetCase) => c.items.map((i) => i.entry);
 
