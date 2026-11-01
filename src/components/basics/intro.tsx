@@ -57,9 +57,9 @@ const CREDIT_KINDS: Kind[] = [
 
 // The language, side by side with accounting: each part of a language has its twin.
 const PARTS: { language: string; accounting: string; example: string }[] = [
-  { language: "מילים", accounting: "חשבונות", example: "מזומן, ספקים, מכירות, שכר דירה" },
+  { language: "מילים", accounting: "חשבונות", example: "מזומן, ספקים, מכירות, שכירות" },
   { language: "דקדוק", accounting: "תקני חשבונאות", example: "הכללים שקובעים איך רושמים כל דבר" },
-  { language: "משפט", accounting: "רישום של אירוע אחד", example: "״מכרנו עוגה ב-1,200 ₪ במזומן״" },
+  { language: "משפט", accounting: "רישום של אירוע אחד", example: "״מכרנו סט צלחות ב-1,350 ₪ במזומן״" },
   { language: "סיפור שלם", accounting: "הדוחות הכספיים", example: "מה קרה בעסק השנה, ומה מצבו היום" },
 ];
 
@@ -73,12 +73,13 @@ const READERS: { who: string; asks: string }[] = [
 
 export const INTRO_SCREENS: Record<string, ScreenContent> = {
   language: {
-    lead: "ברוכים הבאים! חשבונאות היא שפה — שפת העסקים. כמו כל שפה זרה, לומדים אותה מאפס, מילה אחרי מילה, ואחרי זה היא נשמעת טבעית.",
+    lead: "ברוכים הבאים! חשבונאות היא הדרך שבה עסק מספר מה קרה לו — במספרים, ולפי כללים שכולם מכירים. הכי קל ללמוד אותה כמו שפה: מילה אחרי מילה, עד שהיא נשמעת טבעית.",
     body: (
       <>
         <p>
-          דמיינו שפתחתם מאפייה קטנה. כל יום קורים בה דברים: מוכרים עוגות, משלמים שכר דירה, קונים קמח. כל זה קורה &quot;בשפה של בני אדם&quot; — סיפורים, קבלות,
-          שיחות. אבל ברגע שתרצו הלוואה מהבנק, שותף שישקיע, או לדווח למס — תצטרכו לספר את הסיפור הזה <strong>בשפה שכולם מבינים</strong>. זו החשבונאות.
+          דמיינו שפתחתם את ״אדמה״, סטודיו קטן לקרמיקה. כל יום קורים בו דברים: מוכרים קערות, משלמים שכירות, קונים חימר וזיגוג. כל זה קורה ״בשפה של בני אדם״ —
+          הודעות, קבלות, שיחות. אבל ברגע שתרצו הלוואה מהבנק, שותפה שתשקיע, או לדווח למס — תצטרכו לספר את הסיפור הזה <strong>בשפה שכולם מבינים</strong>. זו
+          החשבונאות.
         </p>
         <div className="overflow-hidden rounded-2xl border border-line">
           <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1.4fr)] bg-surface-2 px-3 py-2 text-[12.5px] font-bold text-muted">
@@ -123,7 +124,7 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
           </p>
           <p className="text-[14.5px]">
             את <Term he="IFRS" /> כותבת הוועדה לתקני חשבונאות בינלאומיים (IASB), והוא מחייב חברות ביותר מ-140 מדינות. כל תקן עוסק בנושא אחד — למשל{" "}
-            <span dir="ltr">IAS 2</span> במלאי ו-<span dir="ltr">IAS 16</span> ברכוש קבוע, כמו המחשב של המאפיות.
+            <span dir="ltr">IAS 2</span> במלאי ו-<span dir="ltr">IAS 16</span> ברכוש קבוע, כמו תנור השריפה של שני הסטודיואים.
           </p>
           <p className="text-[14.5px]">
             <strong>ובישראל?</strong> חברות ציבוריות (שהמניות שלהן נסחרות בבורסה) מדווחות לפי IFRS. חברות פרטיות יכולות לדווח גם לפי התקנים הישראליים. בארה״ב
@@ -249,10 +250,10 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
       <>
         <div className="grid gap-2 sm:grid-cols-2">
           <p className="flex items-center gap-2 rounded-xl border border-success/30 bg-success/[0.06] px-3 py-2.5 text-[15px]">
-            <Check className="h-5 w-5 shrink-0 text-success" aria-hidden /> שכירות המשרד של העסק — נרשמת
+            <Check className="h-5 w-5 shrink-0 text-success" aria-hidden /> השכירות של הסטודיו — נרשמת
           </p>
           <p className="flex items-center gap-2 rounded-xl border border-danger/30 bg-danger/[0.05] px-3 py-2.5 text-[15px]">
-            <X className="h-5 w-5 shrink-0 text-danger" aria-hidden /> הקפה שהבעלים קנתה לבית — לא נרשמת
+            <X className="h-5 w-5 shrink-0 text-danger" aria-hidden /> ארוחת הערב שהבעלים הזמינה הביתה — לא נרשמת
           </p>
         </div>
         <KeyCard icon={<Building2 className="h-5 w-5" />}>כשבעלים משקיע כסף בעסק — זה הון.</KeyCard>
@@ -319,6 +320,24 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
           <SideColumn side="dr" kinds={DEBIT_KINDS} />
           <SideColumn side="cr" kinds={CREDIT_KINDS} />
         </div>
+        <MiniQuiz
+          prefix="basics"
+          chapter="types"
+          items={[
+            {
+              q: "הסטודיו חייב 2,600 ₪ לספק החימר. מאיזה סוג החשבון ״ספקים״, ובאיזה צד הוא גדל?",
+              options: ["התחייבות — גדל בזכות", "נכס — גדל בחובה", "הוצאה — גדל בחובה", "הכנסה — גדל בזכות"],
+              answer: 0,
+              why: "הסטודיו חייב כסף לאחרים — התחייבות. התחייבויות גדלות בזכות.",
+            },
+            {
+              q: "״הכנסות מסדנאות״ — באיזה צד תהיה היתרה, ובאיזה דוח החשבון יופיע?",
+              options: ["זכות · רווח והפסד", "חובה · רווח והפסד", "זכות · מאזן", "חובה · מאזן"],
+              answer: 0,
+              why: "הכנסה גדלה בזכות, ומודדת את התקופה — לכן היא בדוח רווח והפסד.",
+            },
+          ]}
+        />
       </>
     ),
   },

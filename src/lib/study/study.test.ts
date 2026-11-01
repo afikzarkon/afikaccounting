@@ -118,10 +118,10 @@ describe("interactive lessons: the accounting in the new questions", () => {
   const answerOf = (x: Exercise) => (x.kind === "number" ? x.answer : x.kind === "choice" ? x.options[x.answer] : undefined);
 
   it("figures computed by hand agree with the lesson data", () => {
-    // The bakery's year: 80,000 sales − 24,000 rent − 20,000 ingredients; the 30,000 loan and the owner's 10,000 are not income.
-    assert.equal(answerOf(ex("basics-intro", "year-profit")), 36_000);
-    // The two bakeries on the grammar screen: one expenses the whole 12,000 computer.
-    assert.equal(twinProfit(12_000), 8_000);
+    // The studio's year: 96,000 sales − 30,000 rent − 18,000 materials; the 40,000 loan and the owner's 15,000 are not income.
+    assert.equal(answerOf(ex("basics-intro", "year-profit")), 48_000);
+    // The two studios on the grammar screen: one expenses the whole 15,000 kiln.
+    assert.equal(twinProfit(15_000), 9_000);
     assert.equal(answerOf(ex("basics-double-entry", "liabilities-gap")), 147_000);
     assert.equal(answerOf(ex("basics-books", "suppliers-card")), "14,000 בזכות");
     assert.equal(answerOf(ex("basics-books", "retained-close")), 55_000);
@@ -138,7 +138,7 @@ describe("interactive lessons: the accounting in the new questions", () => {
     }
     const profitMove = (id: string) =>
       TRANSLATIONS.find((t) => t.id === id)!.changes.reduce((s, c) => s + (typeOf(c.account) === "income" ? c.by : typeOf(c.account) === "expense" ? -c.by : 0), 0);
-    assert.deepEqual(["sale", "rent", "loan", "chat"].map(profitMove), [1_200, -4_000, 0, 0]);
+    assert.deepEqual(["sale", "rent", "loan", "chat"].map(profitMove), [1_350, -4_800, 0, 0]);
   });
 
   it("year-end adjustments: the amounts and the sides", () => {

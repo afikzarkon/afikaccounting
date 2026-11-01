@@ -93,25 +93,25 @@ function Layer({ n, title, children }: { n: number; title: string; children: Rea
 }
 
 /**
- * Why grammar matters: two bakeries with the very same year. Without a rule each
- * records its computer its own way, and their profits disagree; with the standard
+ * Why grammar matters: two ceramics studios with the very same year. Without a rule each
+ * records its kiln its own way, and their profits disagree; with the standard
  * both spread its cost over the years it serves — and the reports agree.
  */
 export function GrammarWidget() {
   const [rules, setRules] = useState(false);
-  const perYear = TWINS.computer / TWINS.years;
+  const perYear = TWINS.kiln / TWINS.years;
   const bakeries = [
-    { name: "מאפיית אורן", expense: rules ? perYear : TWINS.computer, how: rules ? "לפי התקן: חלק שנה אחת מתוך שלוש" : "רשמה את כל המחשב כהוצאה השנה" },
-    { name: "מאפיית ליה", expense: perYear, how: rules ? "לפי התקן: חלק שנה אחת מתוך שלוש" : "פרסה את המחשב על שלוש שנים" },
+    { name: "סטודיו אדמה", expense: rules ? perYear : TWINS.kiln, how: rules ? "לפי התקן: חלק של שנה אחת מתוך חמש" : "רשם את כל התנור כהוצאה השנה" },
+    { name: "סטודיו חומר", expense: perYear, how: rules ? "לפי התקן: חלק של שנה אחת מתוך חמש" : "פרס את התנור על חמש שנים" },
   ];
   const head = useId();
   return (
     <section aria-labelledby={head} className="rounded-2xl border border-line bg-surface-2/50 p-4">
       <p id={head} className="flex items-center gap-2 text-[15px] font-semibold text-fg">
-        <BookCheck className="h-4.5 w-4.5 text-accent" aria-hidden /> אותה שנה, שתי מאפיות
+        <BookCheck className="h-4.5 w-4.5 text-accent" aria-hidden /> אותה שנה, שני סטודיואים
       </p>
       <p className="mt-1 text-[14px] text-muted">
-        כל אחת מכרה ב-<Money v={TWINS.sales} />, הוציאה <Money v={TWINS.other} /> על כל השאר, וקנתה מחשב ב-<Money v={TWINS.computer} /> שישמש אותה {TWINS.years} שנים.
+        כל אחד מכר ב-<Money v={TWINS.sales} />, הוציא <Money v={TWINS.other} /> על כל השאר, וקנה תנור שריפה ב-<Money v={TWINS.kiln} /> שיעבוד {TWINS.years} שנים.
       </p>
       <button
         type="button"
@@ -123,7 +123,7 @@ export function GrammarWidget() {
         <span className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors", rules ? "bg-success" : "bg-line-strong")}>
           <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all", rules ? "start-[22px]" : "start-0.5")} />
         </span>
-        {rules ? "עם דקדוק: שתיהן רושמות לפי התקן" : "בלי דקדוק: כל אחת רושמת איך שבא לה"}
+        {rules ? "עם דקדוק: שניהם רושמים לפי התקן" : "בלי דקדוק: כל אחד רושם איך שבא לו"}
       </button>
       <div className="mt-3 grid grid-cols-2 gap-2">
         {bakeries.map((b) => (
@@ -131,7 +131,7 @@ export function GrammarWidget() {
             <p className="text-[14.5px] font-bold text-fg">{b.name}</p>
             <p className="mt-0.5 min-h-10 text-[12.5px] text-muted">{b.how}</p>
             <p className="mt-1 flex justify-between gap-2 text-[13px]">
-              <span>הוצאת המחשב</span>
+              <span>הוצאת התנור</span>
               <Money v={b.expense} plain />
             </p>
             <p className="mt-1 flex justify-between gap-2 border-t border-line pt-1 text-[14px] font-bold text-fg">
@@ -142,7 +142,7 @@ export function GrammarWidget() {
         ))}
       </div>
       <p className={cn("mt-2 text-center text-[13.5px] font-semibold", rules ? "text-success" : "text-danger")}>
-        {rules ? "✓ אותה שנה — אותו רווח. עכשיו אפשר להשוות." : "✗ אותה שנה בדיוק, ופי שניים רווח לאחת מהן. את מי להאמין?"}
+        {rules ? "✓ אותה שנה — אותו רווח. עכשיו אפשר להשוות." : "✗ אותה שנה בדיוק, ורווח שונה לגמרי. למי להאמין?"}
       </p>
     </section>
   );
