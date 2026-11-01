@@ -148,11 +148,11 @@ describe("interactive lessons: the accounting in the new questions", () => {
       return x.kind === "journal" ? x.entry.lines : [];
     };
     // Prepaid recorded as an asset: only the used months move to expense.
-    assert.deepEqual(lines("basics-adjust", "prepaid-used"), [{ account: "הוצאות שכירות", dr: 2_000 }, { account: "הוצאות שכירות מראש", cr: 2_000 }]);
+    assert.deepEqual(lines("basics-adjust", "prepaid-used"), [{ account: "הוצאות שכירות", dr: 4_000 }, { account: "הוצאות שכירות מראש", cr: 4_000 }]);
     // Recorded as an expense: next year's part moves out of it.
-    assert.deepEqual(lines("basics-adjust", "prepaid-from-expense"), [{ account: "הוצאות פרסום מראש", dr: 6_000 }, { account: "הוצאות פרסום", cr: 6_000 }]);
-    assert.deepEqual(lines("basics-adjust", "accrued-interest"), [{ account: "הוצאות ריבית", dr: 3_000 }, { account: "הוצאות ריבית לשלם", cr: 3_000 }]);
-    assert.deepEqual(lines("basics-adjust", "closing-stock"), [{ account: "מלאי סגירה מאזני", dr: 72_000 }, { account: "מלאי סגירה רווח או הפסד", cr: 72_000 }]);
+    assert.deepEqual(lines("basics-adjust", "prepaid-from-expense"), [{ account: "הוצאות אחסון מראש", dr: 3_600 }, { account: "הוצאות אחסון", cr: 3_600 }]);
+    assert.deepEqual(lines("basics-adjust", "accrued-interest"), [{ account: "הוצאות ריבית", dr: 2_500 }, { account: "הוצאות ריבית לשלם", cr: 2_500 }]);
+    assert.deepEqual(lines("basics-adjust", "closing-stock"), [{ account: "מלאי סגירה מאזני", dr: 59_500 }, { account: "מלאי סגירה רווח או הפסד", cr: 59_500 }]);
   });
 
   it("lesson 4 is practised mostly by writing entries, and credit losses have a lesson of their own", () => {

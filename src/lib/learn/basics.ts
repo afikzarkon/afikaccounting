@@ -341,35 +341,35 @@ export const TCHELET = {
  * recorded during the year, then the year-end adjustment.
  */
 const AC = {
-  prepaid: { paid: 1_200, months: 12, monthsThisYear: 3 },
-  accrued: { recorded: 99_000, monthsRecorded: 11, monthsMissing: 1 },
-  unearned: { received: 6_000, months: 6, monthsThisYear: 2 },
-  receivable: { loan: 60_000, rate: 0.08, monthsThisYear: 6 },
+  prepaid: { paid: 2_400, months: 12, monthsThisYear: 4 },
+  accrued: { quarterly: 7_500, quartersRecorded: 3, monthsMissing: 3 },
+  unearned: { received: 8_000, months: 8, monthsThisYear: 2 },
+  receivable: { monthly: 400, monthsThisYear: 6 },
 };
 const acPrepaid = round2((AC.prepaid.paid * (AC.prepaid.months - AC.prepaid.monthsThisYear)) / AC.prepaid.months);
-const acMissing = round2((AC.accrued.recorded / AC.accrued.monthsRecorded) * AC.accrued.monthsMissing);
+const acRecorded = AC.accrued.quarterly * AC.accrued.quartersRecorded;
+const acMissing = AC.accrued.quarterly;
 const acUnearned = round2((AC.unearned.received * (AC.unearned.months - AC.unearned.monthsThisYear)) / AC.unearned.months);
-const acInterest = round2(AC.receivable.loan * AC.receivable.rate * (AC.receivable.monthsThisYear / 12));
+const acRoyalty = AC.receivable.monthly * AC.receivable.monthsThisYear;
 
 export const ACCRUAL = {
   ...AC,
-  results: { prepaid: acPrepaid, accrued: acMissing, unearned: acUnearned, receivable: acInterest },
+  results: { prepaid: acPrepaid, accrued: acMissing, unearned: acUnearned, receivable: acRoyalty, recorded: acRecorded },
   entries: {
     prepaid: [
-      e("1", "1.10", "שולם ביטוח לשנה, 1,200 ₪, ונרשם כולו כהוצאה", [{ account: "הוצאות ביטוח", dr: AC.prepaid.paid }, { account: "מזומן", cr: AC.prepaid.paid }]),
+      e("1", "1.9", "שולם ביטוח לשנה, 2,400 ₪, ונרשם כולו כהוצאה", [{ account: "הוצאות ביטוח", dr: AC.prepaid.paid }, { account: "מזומן", cr: AC.prepaid.paid }]),
       e("2", "31.12", "התאמה: החלק של השנה הבאה עובר להוצאות מראש", [{ account: "הוצאות ביטוח מראש", dr: acPrepaid }, { account: "הוצאות ביטוח", cr: acPrepaid }]),
     ],
     accrued: [
-      e("1", "1–11", "שכר ינואר עד נובמבר שולם ונרשם", [{ account: "הוצאות שכר", dr: AC.accrued.recorded }, { account: "מזומן", cr: AC.accrued.recorded }]),
-      e("2", "31.12", "התאמה: שכר דצמבר, שישולם רק בינואר", [{ account: "הוצאות שכר", dr: acMissing }, { account: "הוצאות שכר לשלם", cr: acMissing }]),
+      e("1", "1–9", "הניקיון של ינואר עד ספטמבר חויב ושולם — שלושה רבעונים", [{ account: "הוצאות ניקיון", dr: acRecorded }, { account: "מזומן", cr: acRecorded }]),
+      e("2", "31.12", "התאמה: ניקיון אוקטובר–דצמבר, שהחשבון עליו יגיע בינואר", [{ account: "הוצאות ניקיון", dr: acMissing }, { account: "הוצאות ניקיון לשלם", cr: acMissing }]),
     ],
     unearned: [
-      e("1", "1.11", "התקבלו 6,000 ₪ שכירות מחסן לחצי שנה, ונרשמו כולם כהכנסה", [{ account: "מזומן", dr: AC.unearned.received }, { account: "הכנסות שכירות", cr: AC.unearned.received }]),
+      e("1", "1.11", "התקבלו 8,000 ₪ על השכרת חניה ל-8 חודשים, ונרשמו כולם כהכנסה", [{ account: "מזומן", dr: AC.unearned.received }, { account: "הכנסות שכירות", cr: AC.unearned.received }]),
       e("2", "31.12", "התאמה: החלק של השנה הבאה עובר להכנסות מראש", [{ account: "הכנסות שכירות", dr: acUnearned }, { account: "הכנסות שכירות מראש", cr: acUnearned }]),
     ],
     receivable: [
-      e("1", "1.7", "החברה הלוותה לעובד 60,000 ₪; הריבית תשולם ב-30.6 בשנה הבאה", [{ account: "הלוואה לעובד", dr: AC.receivable.loan }, { account: "מזומן", cr: AC.receivable.loan }]),
-      e("2", "31.12", "התאמה: ריבית חצי השנה שכבר הורווחה", [{ account: "הכנסות ריבית לקבל", dr: acInterest }, { account: "הכנסות ריבית", cr: acInterest }]),
+      e("1", "31.12", "התאמה: תמלוגים של יולי–דצמבר, שיתקבלו ב-30.6", [{ account: "הכנסות מתמלוגים לקבל", dr: acRoyalty }, { account: "הכנסות מתמלוגים", cr: acRoyalty }]),
     ],
   } satisfies Record<keyof typeof AC, Entry[]>,
 };

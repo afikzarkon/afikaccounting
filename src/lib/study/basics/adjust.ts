@@ -12,23 +12,24 @@ const journal = (id: string, skill: string, text: string, lines: Entry["lines"],
 });
 
 // Every figure below is computed here, from the event's own numbers.
-const RENT = { paid: 6_000, monthsUsed: 4 }; // paid 1.9 for a year, recorded as prepaid
+const RENT = { paid: 9_600, monthsUsed: 5 }; // storage paid 1.8 for a year, recorded as prepaid
 const rentUsed = (RENT.paid * RENT.monthsUsed) / 12;
-const INSURANCE = { paid: 2_400, monthsUsed: 2 }; // paid 1.11 for a year, in one entry
-const insuranceUsed = (INSURANCE.paid * INSURANCE.monthsUsed) / 12;
-const ADS = { paid: 12_000, monthsNext: 6 }; // paid 1.7 for a year, recorded as expense
-const adsNext = (ADS.paid * ADS.monthsNext) / 12;
-const POWER = 1_500; // December's electricity, paid in January
-const SALARY = { december: 8_000, paid: 5_000 };
-const LOAN = { amount: 200_000, rate: 0.06, months: 3 }; // taken 1.10, interest paid yearly
+const SOFTWARE = { paid: 3_600, monthsUsed: 1 }; // paid 1.12 for a year, in one entry
+const softwareUsed = (SOFTWARE.paid * SOFTWARE.monthsUsed) / 12;
+const HOSTING = { paid: 14_400, monthsNext: 3 }; // paid 1.4 for a year, recorded as expense
+const hostingNext = (HOSTING.paid * HOSTING.monthsNext) / 12;
+const LIFT = 2_300; // December's lift maintenance, invoiced in February
+const GARDEN = { december: 6_500, paid: 4_000 };
+const LOAN = { amount: 150_000, rate: 0.04, months: 5 }; // taken 1.8, interest paid yearly
 const loanInterest = (LOAN.amount * LOAN.rate * LOAN.months) / 12;
-const SUBSCRIPTION = { received: 9_000, monthsEarned: 3 }; // received 1.10 for a year, recorded as unearned
-const subscriptionEarned = (SUBSCRIPTION.received * SUBSCRIPTION.monthsEarned) / 12;
-const STORE = { received: 3_000, months: 3, monthsEarned: 1 }; // received 1.12 for three months, in one entry
-const storeEarned = (STORE.received * STORE.monthsEarned) / STORE.months;
-const DEPOSIT = { amount: 50_000, rate: 0.06, months: 6 }; // from 1.7, interest paid 30.6
+const TRAINING = { received: 6_000, monthsEarned: 2 }; // received 1.11 for a year, recorded as unearned
+const trainingEarned = (TRAINING.received * TRAINING.monthsEarned) / 12;
+const PARKING = { received: 4_800, months: 6, monthsEarned: 3 }; // received 1.10 for six months, in one entry
+const parkingEarned = (PARKING.received * PARKING.monthsEarned) / PARKING.months;
+const DEPOSIT = { amount: 80_000, rate: 0.05, months: 9 }; // from 1.4, interest paid 31.3
 const depositInterest = (DEPOSIT.amount * DEPOSIT.rate * DEPOSIT.months) / 12;
-const STOCK = { cost: 80_000, nrv: 72_000 };
+const depositYear = DEPOSIT.amount * DEPOSIT.rate;
+const STOCK = { cost: 64_000, nrv: 59_500 };
 const stock = Math.min(STOCK.cost, STOCK.nrv);
 
 /** Lesson 4: year-end adjustments — the accrual basis, the four cut-off accounts, a full example, and closing inventory. */
@@ -55,7 +56,7 @@ export const ADJUST: StudyModule = {
     journal(
       "prepaid-used",
       "הוצאות מראש",
-      `ב-1.9 שולמו ${fmt(RENT.paid)} ₪ שכירות לשנה, ונרשמו כ״הוצאות שכירות מראש״. רשמו את פקודת ההתאמה ב-31.12.`,
+      `ב-1.8 שולמו ${fmt(RENT.paid)} ₪ על שכירות מחסן לשנה, ונרשמו כ״הוצאות שכירות מראש״. רשמו את פקודת ההתאמה ב-31.12.`,
       [
         { account: "הוצאות שכירות", dr: rentUsed },
         { account: "הוצאות שכירות מראש", cr: rentUsed },
@@ -66,65 +67,65 @@ export const ADJUST: StudyModule = {
     journal(
       "prepaid-one",
       "הוצאות מראש — פקודה אחת",
-      `ב-1.11 שילמנו במזומן ${fmt(INSURANCE.paid)} ₪ ביטוח לשנה. רשמו בפקודה אחת את התשלום, כך שב-31.12 הוא כבר מחולק נכון בין השנה הזו לשנה הבאה.`,
+      `ב-1.12 שילמנו ${fmt(SOFTWARE.paid)} ₪ על מנוי שנתי לתוכנת הנהלת חשבונות. רשמו בפקודה אחת את התשלום, כך שב-31.12 הוא כבר מחולק נכון בין השנה הזו לשנה הבאה.`,
       [
-        { account: "הוצאות ביטוח", dr: insuranceUsed },
-        { account: "הוצאות ביטוח מראש", dr: INSURANCE.paid - insuranceUsed },
-        { account: "מזומן", cr: INSURANCE.paid },
+        { account: "הוצאות תוכנה", dr: softwareUsed },
+        { account: "הוצאות תוכנה מראש", dr: SOFTWARE.paid - softwareUsed },
+        { account: "מזומן", cr: SOFTWARE.paid },
       ],
-      `${INSURANCE.monthsUsed} חודשים נוצלו השנה: ${fmt(insuranceUsed)} — הוצאה. השאר, ${fmt(INSURANCE.paid - insuranceUsed)}, שייך לשנה הבאה — הוצאה מראש. בזכות: כל המזומן ששולם.`,
-      ["הוצאות ביטוח", "הוצאות ביטוח מראש", "מזומן", "הוצאות ביטוח לשלם", "ספקים"],
+      `חודש אחד נוצל השנה: ${fmt(softwareUsed)} — הוצאה. השאר, ${fmt(SOFTWARE.paid - softwareUsed)}, שייך לשנה הבאה — הוצאה מראש. בזכות: כל הכסף ששולם.`,
+      ["הוצאות תוכנה", "הוצאות תוכנה מראש", "מזומן", "הוצאות תוכנה לשלם", "ספקים"],
     ),
     journal(
       "prepaid-from-expense",
       "הוצאות מראש — כשנרשם כהוצאה",
-      `ב-1.7 שולמו ${fmt(ADS.paid)} ₪ על פרסום לשנה, ונרשמו כולם כ״הוצאות פרסום״. רשמו את פקודת ההתאמה ב-31.12.`,
+      `ב-1.4 שולמו ${fmt(HOSTING.paid)} ₪ על אחסון האתר לשנה, ונרשמו כולם כ״הוצאות אחסון״. רשמו את פקודת ההתאמה ב-31.12.`,
       [
-        { account: "הוצאות פרסום מראש", dr: adsNext },
-        { account: "הוצאות פרסום", cr: adsNext },
+        { account: "הוצאות אחסון מראש", dr: hostingNext },
+        { account: "הוצאות אחסון", cr: hostingNext },
       ],
-      `הכול נרשם כהוצאה, אבל ${ADS.monthsNext} חודשים שייכים לשנה הבאה: ${fmt(adsNext)}. הם יוצאים מההוצאה ועוברים להוצאות מראש — נכס. בודקים תמיד קודם מה כבר נרשם.`,
-      ["הוצאות פרסום מראש", "הוצאות פרסום", "מזומן", "הוצאות פרסום לשלם"],
+      `הכול נרשם כהוצאה, אבל ${HOSTING.monthsNext} חודשים (ינואר–מרץ) שייכים לשנה הבאה: ${fmt(hostingNext)}. הם יוצאים מההוצאה ועוברים להוצאות מראש — נכס. בודקים תמיד קודם מה כבר נרשם.`,
+      ["הוצאות אחסון מראש", "הוצאות אחסון", "מזומן", "הוצאות אחסון לשלם"],
     ),
     // Accrued expenses.
     journal(
-      "accrued-power",
+      "accrued-lift",
       "הוצאות לשלם",
-      `חשבון החשמל של דצמבר, ${fmt(POWER)} ₪, יגיע וישולם רק בינואר. רשמו את פקודת ההתאמה ב-31.12.`,
+      `טכנאי המעליות טיפל במעלית של הבניין בדצמבר. החשבונית, ${fmt(LIFT)} ₪, תגיע רק בפברואר. רשמו את פקודת ההתאמה ב-31.12.`,
       [
-        { account: "הוצאות חשמל", dr: POWER },
-        { account: "הוצאות חשמל לשלם", cr: POWER },
+        { account: "הוצאות אחזקה", dr: LIFT },
+        { account: "הוצאות אחזקה לשלם", cr: LIFT },
       ],
-      "את החשמל של דצמבר צרכנו השנה — הוצאה של השנה. הכסף עוד לא יצא, ולכן נוצר חוב: הוצאות לשלם, התחייבות.",
-      ["הוצאות חשמל", "הוצאות חשמל לשלם", "מזומן", "הוצאות חשמל מראש"],
+      "הטיפול נעשה השנה — הוצאה של השנה. הכסף עוד לא יצא, ולכן נוצר חוב: הוצאות לשלם, התחייבות.",
+      ["הוצאות אחזקה", "הוצאות אחזקה לשלם", "מזומן", "הוצאות אחזקה מראש"],
     ),
     journal(
       "accrued-paid",
       "הוצאות לשלם — התשלום",
-      `ב-10.1 שולם במזומן חשבון החשמל של דצמבר, ${fmt(POWER)} ₪, שנרשם ב-31.12 כ״הוצאות חשמל לשלם״.`,
+      `ב-14.2 שולמה החשבונית של טכנאי המעליות, ${fmt(LIFT)} ₪, שנרשמה ב-31.12 כ״הוצאות אחזקה לשלם״.`,
       [
-        { account: "הוצאות חשמל לשלם", dr: POWER },
-        { account: "מזומן", cr: POWER },
+        { account: "הוצאות אחזקה לשלם", dr: LIFT },
+        { account: "מזומן", cr: LIFT },
       ],
       "ההוצאה כבר נרשמה בשנה הקודמת. עכשיו רק נסגר החוב: הוצאות לשלם בחובה, ומזומן בזכות. אין הוצאה חדשה.",
-      ["הוצאות חשמל לשלם", "מזומן", "הוצאות חשמל", "הוצאות חשמל מראש"],
+      ["הוצאות אחזקה לשלם", "מזומן", "הוצאות אחזקה", "הוצאות אחזקה מראש"],
     ),
     journal(
       "accrued-one",
       "הוצאות לשלם — פקודה אחת",
-      `שכר דצמבר הוא ${fmt(SALARY.december)} ₪. ב-31.12 שולמו ${fmt(SALARY.paid)} ₪ במזומן, ואת השאר נשלם בינואר. רשמו בפקודה אחת.`,
+      `עבודות הגינון של דצמבר עלו ${fmt(GARDEN.december)} ₪. ב-31.12 שולמו לגנן ${fmt(GARDEN.paid)} ₪, ואת השאר נשלם בינואר. רשמו בפקודה אחת.`,
       [
-        { account: "הוצאות שכר", dr: SALARY.december },
-        { account: "מזומן", cr: SALARY.paid },
-        { account: "הוצאות שכר לשלם", cr: SALARY.december - SALARY.paid },
+        { account: "הוצאות גינון", dr: GARDEN.december },
+        { account: "מזומן", cr: GARDEN.paid },
+        { account: "הוצאות גינון לשלם", cr: GARDEN.december - GARDEN.paid },
       ],
-      `כל שכר דצמבר הוא הוצאה של השנה: ${fmt(SALARY.december)}. בזכות — מה ששולם (מזומן ${fmt(SALARY.paid)}) ומה שעוד חייבים (הוצאות שכר לשלם ${fmt(SALARY.december - SALARY.paid)}).`,
-      ["הוצאות שכר", "מזומן", "הוצאות שכר לשלם", "הוצאות שכר מראש"],
+      `כל הגינון של דצמבר הוא הוצאה של השנה: ${fmt(GARDEN.december)}. בזכות — מה ששולם (${fmt(GARDEN.paid)}) ומה שעוד חייבים (הוצאות לשלם ${fmt(GARDEN.december - GARDEN.paid)}).`,
+      ["הוצאות גינון", "מזומן", "הוצאות גינון לשלם", "הוצאות גינון מראש"],
     ),
     journal(
       "accrued-interest",
       "הוצאות לשלם — ריבית",
-      `ב-1.10 נלקחה הלוואה של ${fmt(LOAN.amount)} ₪ בריבית שנתית של ${LOAN.rate * 100}%. הריבית משולמת פעם בשנה, ב-30.9. רשמו את פקודת ההתאמה ב-31.12.`,
+      `ב-1.8 נלקחה הלוואה של ${fmt(LOAN.amount)} ₪ בריבית שנתית של ${LOAN.rate * 100}%. הריבית משולמת פעם בשנה, ב-31.7. רשמו את פקודת ההתאמה ב-31.12.`,
       [
         { account: "הוצאות ריבית", dr: loanInterest },
         { account: "הוצאות ריבית לשלם", cr: loanInterest },
@@ -136,31 +137,31 @@ export const ADJUST: StudyModule = {
     journal(
       "unearned-earned",
       "הכנסות מראש",
-      `ב-1.10 קיבלנו ${fmt(SUBSCRIPTION.received)} ₪ על מנוי לשנה, ורשמנו אותם כ״הכנסות מנויים מראש״. רשמו את פקודת ההתאמה ב-31.12.`,
+      `ב-1.11 קיבל מאמן כושר ${fmt(TRAINING.received)} ₪ על חבילת אימונים לשנה, ורשם אותם כ״הכנסות אימונים מראש״. רשמו את פקודת ההתאמה ב-31.12.`,
       [
-        { account: "הכנסות מנויים מראש", dr: subscriptionEarned },
-        { account: "הכנסות מנויים", cr: subscriptionEarned },
+        { account: "הכנסות אימונים מראש", dr: trainingEarned },
+        { account: "הכנסות אימונים", cr: trainingEarned },
       ],
-      `הכול נרשם כהתחייבות, ועד 31.12 סיפקנו ${SUBSCRIPTION.monthsEarned} חודשים: ${fmt(SUBSCRIPTION.received)} × ${SUBSCRIPTION.monthsEarned}/12 = ${fmt(subscriptionEarned)}. החלק שהורווח עובר מההכנסה מראש להכנסה.`,
-      ["הכנסות מנויים מראש", "הכנסות מנויים", "מזומן", "הכנסות מנויים לקבל"],
+      `הכול נרשם כהתחייבות, ועד 31.12 ניתנו ${TRAINING.monthsEarned} חודשי אימונים: ${fmt(TRAINING.received)} × ${TRAINING.monthsEarned}/12 = ${fmt(trainingEarned)}. החלק שהורווח עובר מההכנסה מראש להכנסה.`,
+      ["הכנסות אימונים מראש", "הכנסות אימונים", "מזומן", "הכנסות אימונים לקבל"],
     ),
     journal(
       "unearned-one",
       "הכנסות מראש — פקודה אחת",
-      `ב-1.12 קיבלנו במזומן ${fmt(STORE.received)} ₪ על השכרת מחסן ל-${STORE.months} חודשים. רשמו בפקודה אחת, כך שב-31.12 הסכום כבר מחולק נכון.`,
+      `ב-1.10 קיבלנו ${fmt(PARKING.received)} ₪ על השכרת מקום חניה ל-${PARKING.months} חודשים. רשמו בפקודה אחת, כך שב-31.12 הסכום כבר מחולק נכון.`,
       [
-        { account: "מזומן", dr: STORE.received },
-        { account: "הכנסות שכירות", cr: storeEarned },
-        { account: "הכנסות שכירות מראש", cr: STORE.received - storeEarned },
+        { account: "מזומן", dr: PARKING.received },
+        { account: "הכנסות שכירות", cr: parkingEarned },
+        { account: "הכנסות שכירות מראש", cr: PARKING.received - parkingEarned },
       ],
-      `חודש אחד הורווח השנה: ${fmt(storeEarned)} — הכנסה. ${STORE.months - STORE.monthsEarned} החודשים הבאים עוד חייבים לשוכר: ${fmt(STORE.received - storeEarned)} — הכנסות מראש. בחובה: כל המזומן שהתקבל.`,
+      `${PARKING.monthsEarned} חודשים הורווחו השנה: ${fmt(parkingEarned)} — הכנסה. ${PARKING.months - PARKING.monthsEarned} החודשים הבאים עוד חייבים לשוכר: ${fmt(PARKING.received - parkingEarned)} — הכנסות מראש. בחובה: כל הכסף שהתקבל.`,
       ["מזומן", "הכנסות שכירות", "הכנסות שכירות מראש", "הכנסות שכירות לקבל"],
     ),
     // Accrued income.
     journal(
       "receivable-interest",
       "הכנסות לקבל",
-      `ב-1.7 הפקדנו ${fmt(DEPOSIT.amount)} ₪ בפיקדון בריבית שנתית של ${DEPOSIT.rate * 100}%. הריבית תתקבל ב-30.6 בשנה הבאה. רשמו את פקודת ההתאמה ב-31.12.`,
+      `ב-1.4 הפקדנו ${fmt(DEPOSIT.amount)} ₪ בפיקדון בריבית שנתית של ${DEPOSIT.rate * 100}%. הריבית תתקבל ב-31.3 בשנה הבאה. רשמו את פקודת ההתאמה ב-31.12.`,
       [
         { account: "הכנסות ריבית לקבל", dr: depositInterest },
         { account: "הכנסות ריבית", cr: depositInterest },
@@ -171,20 +172,20 @@ export const ADJUST: StudyModule = {
     journal(
       "receivable-received",
       "הכנסות לקבל — התקבול",
-      `ב-30.6 התקבלה במזומן ריבית של שנה שלמה על הפיקדון: ${fmt(depositInterest * 2)} ₪. ב-31.12 נרשמו ממנה ${fmt(depositInterest)} ₪ כ״הכנסות ריבית לקבל״.`,
+      `ב-31.3 התקבלה ריבית של שנה שלמה על הפיקדון: ${fmt(depositYear)} ₪. ב-31.12 נרשמו ממנה ${fmt(depositInterest)} ₪ כ״הכנסות ריבית לקבל״.`,
       [
-        { account: "מזומן", dr: depositInterest * 2 },
+        { account: "מזומן", dr: depositYear },
         { account: "הכנסות ריבית לקבל", cr: depositInterest },
-        { account: "הכנסות ריבית", cr: depositInterest },
+        { account: "הכנסות ריבית", cr: depositYear - depositInterest },
       ],
-      `החצי של השנה הקודמת כבר נרשם כהכנסה — הוא רק סוגר את ההכנסות לקבל. החצי של השנה הזו הוא הכנסה שלה. בחובה: כל המזומן שהתקבל.`,
+      `תשעת החודשים של השנה הקודמת כבר נרשמו כהכנסה — הם רק סוגרים את ההכנסות לקבל. שלושת החודשים של השנה הזו (${fmt(depositYear - depositInterest)}) הם הכנסה שלה. בחובה: כל הכסף שהתקבל.`,
       ["מזומן", "הכנסות ריבית לקבל", "הכנסות ריבית", "הכנסות ריבית מראש"],
     ),
     // Closing inventory.
     journal(
       "closing-stock",
       "מלאי סגירה",
-      `ב-31.12 נספר מלאי שעלותו ${fmt(STOCK.cost)} ₪. שווי המימוש נטו שלו — ${fmt(STOCK.nrv)} ₪. רשמו את מלאי הסגירה.`,
+      `ב-31.12 נספר מלאי שעלותו ${fmt(STOCK.cost)} ₪. חלק מהסחורה יצא מהאופנה, ושווי המימוש נטו של המלאי — ${fmt(STOCK.nrv)} ₪. רשמו את מלאי הסגירה.`,
       [
         { account: "מלאי סגירה מאזני", dr: stock },
         { account: "מלאי סגירה רווח או הפסד", cr: stock },
@@ -260,15 +261,15 @@ export const ADJUST: StudyModule = {
   traps: [
     {
       id: "forgot-inventory",
-      prompt: "שכחו לרשום מלאי סגירה של 50,000 ₪. מה קורה לרווח השנה?",
-      options: ["נמוך מדי ב-50,000 ₪", "גבוה מדי ב-50,000 ₪", "לא משתנה", "נמוך מדי ב-100,000 ₪"],
+      prompt: "שכחו לרשום מלאי סגירה של 37,000 ₪. מה קורה לרווח השנה?",
+      options: ["נמוך מדי ב-37,000 ₪", "גבוה מדי ב-37,000 ₪", "לא משתנה", "נמוך מדי ב-74,000 ₪"],
       answer: 0,
-      why: "עלות המכר = מלאי פתיחה + קניות − מלאי סגירה. בלי מלאי הסגירה עלות המכר גבוהה ב-50,000, והרווח נמוך באותו סכום.",
+      why: "עלות המכר = מלאי פתיחה + קניות − מלאי סגירה. בלי מלאי הסגירה עלות המכר גבוהה ב-37,000, והרווח נמוך באותו סכום.",
       traps: [
         "",
         "הפוך: מלאי סגירה מקטין את עלות המכר. בלעדיו העלות גבוהה מדי, והרווח נמוך מדי.",
         "המלכודת: מלאי סגירה הוא לא רק נכס במאזן — הוא גם מקטין את העלות ברווח והפסד.",
-        "הטעות היא בסכום אחד: 50,000 בעלות המכר, ולכן 50,000 ברווח.",
+        "הטעות היא בסכום אחד: 37,000 בעלות המכר, ולכן 37,000 ברווח.",
       ],
     },
     {

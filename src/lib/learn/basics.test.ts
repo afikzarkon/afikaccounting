@@ -149,15 +149,17 @@ describe("closing entry", () => {
 });
 
 describe("cut-off accounts", () => {
-  it("the four small cases: 900 prepaid, 9,000 accrued, 4,000 unearned, 2,400 receivable", () => {
-    assert.deepEqual(ACCRUAL.results, { prepaid: 900, accrued: 9_000, unearned: 4_000, receivable: 2_400 });
+  it("the four small cases: 1,600 prepaid, 7,500 accrued, 6,000 unearned, 2,400 receivable", () => {
+    const { recorded, ...results } = ACCRUAL.results;
+    assert.deepEqual(results, { prepaid: 1_600, accrued: 7_500, unearned: 6_000, receivable: 2_400 });
+    assert.equal(recorded, 22_500);
     const ins = balancesOf(ledger(ACCRUAL.entries.prepaid));
-    assert.equal(ins["הוצאות ביטוח"], 300);
-    assert.equal(ins["הוצאות ביטוח מראש"], 900);
-    assert.equal(balancesOf(ledger(ACCRUAL.entries.accrued))["הוצאות שכר"], 108_000);
+    assert.equal(ins["הוצאות ביטוח"], 800);
+    assert.equal(ins["הוצאות ביטוח מראש"], 1_600);
+    assert.equal(balancesOf(ledger(ACCRUAL.entries.accrued))["הוצאות ניקיון"], 30_000);
     const rent = balancesOf(ledger(ACCRUAL.entries.unearned));
     assert.equal(rent["הכנסות שכירות"], -2_000);
-    assert.equal(rent["הכנסות שכירות מראש"], -4_000);
+    assert.equal(rent["הכנסות שכירות מראש"], -6_000);
   });
 
   it("Shachar: 10,000 advertising + 14,000 prepaid; 36,000 insurance + 27,000 prepaid; 10,000 interest; 105,000 consulting + 75,000 unearned; 9,000 rent receivable", () => {
