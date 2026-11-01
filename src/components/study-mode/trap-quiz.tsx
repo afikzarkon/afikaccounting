@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import { useId } from "react";
+import { stableOrder } from "@/lib/shuffle";
 import { XP } from "@/lib/study/score";
 import type { Trap } from "@/lib/study/types";
 import { cn } from "@/lib/utils";
@@ -16,7 +17,8 @@ export function TrapQuiz({ trap, answered, onAnswer }: { trap: Trap; answered?: 
       <fieldset disabled={!!answered}>
         <legend className={promptClass}>{trap.prompt}</legend>
         <div className="mt-5 grid gap-2.5">
-          {trap.options.map((o, i) => {
+          {stableOrder(`${trap.id}:${trap.prompt}`, trap.options.length).map((i, k) => {
+            const o = trap.options[i];
             const right = answered && i === trap.answer;
             const chosenWrong = answered && i === answered.choice && !answered.correct;
             const state = right ? "right" : chosenWrong ? "wrong" : answered ? "past" : "open";
@@ -27,7 +29,7 @@ export function TrapQuiz({ trap, answered, onAnswer }: { trap: Trap; answered?: 
                 className={cn(optionClass(state), "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--ring)]")}
               >
                 <input type="radio" name={name} value={i} checked={answered?.choice === i} onChange={() => onAnswer(i)} className="sr-only" />
-                <OptionMark state={state} letter={"אבגד"[i]} />
+                <OptionMark state={state} letter={"אבגדהו"[k]} />
                 <span className="min-w-0">{o}</span>
               </motion.label>
             );

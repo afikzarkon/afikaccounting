@@ -9,6 +9,7 @@ import { type Entry, ledger } from "@/lib/learn/basics";
 import { compareMethods, METHOD_LABEL, priceTrend, valuatePeriod } from "@/lib/learn/inventory";
 import { lehavaWith, tzlilWith } from "@/lib/learn/inventory-examples";
 import { INVENTORY_CALC, inventoryScreenHref } from "@/lib/study/inventory";
+import { stableOrder } from "@/lib/shuffle";
 import { cn } from "@/lib/utils";
 import { FlowStrip } from "./inventory-trace";
 import { updateProgress, useProgress } from "./store";
@@ -78,7 +79,9 @@ export function MiniQuiz({ chapter, items, prefix = "inv", bare }: { chapter: st
                   {it.q}
                 </legend>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                  {it.options.map((o, j) => (
+                  {stableOrder(`${key}:${it.q}`, it.options.length).map((j) => {
+                    const o = it.options[j];
+                    return (
                     <button
                       key={j}
                       type="button"
@@ -92,7 +95,8 @@ export function MiniQuiz({ chapter, items, prefix = "inv", bare }: { chapter: st
                       {picked === j && <span aria-hidden>{j === it.answer ? "✓ " : "✗ "}</span>}
                       {o}
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
                 <p aria-live="polite" className="mt-2 text-sm">
                   {picked !== null && (

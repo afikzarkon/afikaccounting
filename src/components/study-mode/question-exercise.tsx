@@ -11,6 +11,7 @@ import { BalanceGapBoard } from "./balance-gap";
 import { OptionMark, optionClass, promptClass } from "./choice";
 import { Feedback, Gain } from "./journal-simulator";
 import { typedAmount } from "@/lib/amount";
+import { stableOrder, stableShuffle } from "@/lib/shuffle";
 
 type Question = QuestionExercise;
 
@@ -48,7 +49,8 @@ export function QuestionExercise({ q, result, onCheck }: { q: Question; result?:
 
       {q.kind === "choice" && (
         <div role="radiogroup" aria-labelledby={`${id}-q`} className="grid gap-2.5">
-          {q.options.map((o, i) => {
+          {stableOrder(`${q.id}:${q.prompt}`, q.options.length).map((i, k) => {
+            const o = q.options[i];
             const right = done && i === q.answer;
             const wrong = missed.includes(i);
             const state = right ? "right" : wrong ? "wrong" : done ? "past" : "open";
@@ -62,7 +64,7 @@ export function QuestionExercise({ q, result, onCheck }: { q: Question; result?:
                 onClick={() => pick(i)}
                 className={optionClass(state)}
               >
-                <OptionMark state={state} letter={"אבגדהו"[i]} />
+                <OptionMark state={state} letter={"אבגדהו"[k]} />
                 <span className="min-w-0">{o}</span>
               </button>
             );
@@ -104,7 +106,7 @@ export function QuestionExercise({ q, result, onCheck }: { q: Question; result?:
               {label}
               <select value={v} onChange={(e) => set(e.target.value)} className={cn(inputClass, "mt-1")}>
                 <option value="">בחרו חשבון</option>
-                {q.accounts.map((a) => (
+                {stableShuffle(`${q.id}:${q.prompt}`, q.accounts).map((a) => (
                   <option key={a} value={a}>
                     {a}
                   </option>

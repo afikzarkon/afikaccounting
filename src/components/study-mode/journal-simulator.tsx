@@ -10,6 +10,7 @@ import { inputClass } from "@/components/ui/form";
 import { type Entry, type Line, ledger, round2, typeOf, TYPE_LABEL } from "@/lib/learn/basics";
 import { checkEntry, type ExResult, parseAmount, triesFor, XP } from "@/lib/study/score";
 import type { JournalExercise } from "@/lib/study/types";
+import { stableShuffle } from "@/lib/shuffle";
 import { cn } from "@/lib/utils";
 import { typedAmount } from "@/lib/amount";
 
@@ -94,7 +95,7 @@ export function JournalSimulator({ ex, result, onCheck, noXp }: { ex: JournalExe
         <div>
           <p className="mb-1.5 text-[12.5px] font-semibold text-muted">החשבונות — הוסיפו כל חשבון לצד שלו:</p>
           <ul className="flex flex-wrap gap-1.5">
-            {ex.accounts.map((a) => (
+            {stableShuffle(`${ex.id}:${answer.text}`, ex.accounts).map((a) => (
               <li key={a} className={cn("flex items-center overflow-hidden rounded-full border border-line-strong bg-surface text-[13.5px]", used.has(a) && "opacity-40")}>
                 <SideButton side="dr" account={a} disabled={used.has(a)} onClick={() => add(a, "dr")} />
                 <span className="px-2 font-medium text-fg" title={TYPE_LABEL[typeOf(a)]}>
