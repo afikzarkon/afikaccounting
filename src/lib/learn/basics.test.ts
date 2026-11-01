@@ -225,13 +225,13 @@ describe("practice", () => {
       const q = PRACTICE.find((x) => x.id === id)!;
       return q.kind === "number" ? q.answer : NaN;
     };
-    assert.equal(answer("q8"), 38_000);
-    assert.equal(answer("q10"), 11_500);
-    assert.equal(answer("q11"), 18_000);
-    assert.equal(answer("q12"), 12_000);
-    assert.equal(answer("q13"), 24_000);
-    assert.equal(answer("q14"), 155_000);
-    assert.equal(answer("q15"), 14_200);
+    assert.equal(answer("q8"), 39_000);
+    assert.equal(answer("q10"), 9_100);
+    assert.equal(answer("q11"), 15_000);
+    assert.equal(answer("q12"), 12_600);
+    assert.equal(answer("q13"), 25_000);
+    assert.equal(answer("q14"), 141_000);
+    assert.equal(answer("q15"), 14_300);
   });
 });
 

@@ -123,9 +123,9 @@ describe("interactive lessons: the accounting in the new questions", () => {
     // The two studios on the grammar screen: one expenses the whole 15,000 kiln.
     assert.equal(twinProfit(15_000), 9_000);
     assert.equal(answerOf(ex("basics-double-entry", "liabilities-gap")), 147_000);
-    assert.equal(answerOf(ex("basics-books", "suppliers-card")), "14,000 בזכות");
-    assert.equal(answerOf(ex("basics-books", "retained-close")), 55_000);
-    assert.equal(answerOf(ex("basics-books", "profit-to-retained")), 40_000);
+    assert.equal(answerOf(ex("basics-books", "suppliers-card")), "18,500 בזכות");
+    assert.equal(answerOf(ex("basics-books", "retained-close")), 86_000);
+    assert.equal(answerOf(ex("basics-books", "profit-to-retained")), 53_000);
     // Ronen after the adjustments: income 144,000 + 110,000 + 24,000; expenses 27,000 + 48,000 + 30,000.
   });
 

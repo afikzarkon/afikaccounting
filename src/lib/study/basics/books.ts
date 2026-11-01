@@ -3,9 +3,9 @@ import type { StudyModule } from "../types";
 import { COURSE, COURSE_HREF, fmt, practice } from "./shared";
 
 // Fresh figures for this lesson's own questions; every answer below is computed from them.
-const SUPPLIERS = { opening: 20_000, purchases: 35_000, paid: 41_000 };
+const SUPPLIERS = { opening: 14_000, purchases: 52_000, paid: 47_500 };
 const suppliersClose = SUPPLIERS.opening + SUPPLIERS.purchases - SUPPLIERS.paid;
-const RET = { opening: 40_000, profit: 25_000, dividend: 10_000 };
+const RET = { opening: 63_000, profit: 38_000, dividend: 15_000 };
 // A trial balance with accounts the lesson has not met in a card yet; cash is the line to find.
 const SPORT: Record<string, number> = {
   לקוחות: 46_000,
@@ -24,7 +24,7 @@ const SPORT: Record<string, number> = {
   "הוצאות שכירות": 24_000,
 };
 const sportCash = -Object.values(SPORT).reduce((s, v) => s + v, 0);
-const YEAR = { income: 300_000, expenses: 260_000 };
+const YEAR = { income: 415_000, expenses: 362_000 };
 const yearProfit = round2(YEAR.income - YEAR.expenses);
 
 /** Lesson 3: from T-accounts to the statements — the trial balance, retained earnings, and closing the year. */
@@ -46,17 +46,17 @@ export const BOOKS: StudyModule = {
   exercises: [
     {
       ...practice("q10"),
-      prompt: "בנו את כרטיס המזומן של מוסך ״גלגל״ לחודש מרץ: גררו כל תנועה לצד שלה בכרטיס — חובה או זכות. אחר כך מצאו את יתרת הסגירה ואת הצד שלה.",
+      prompt: "בנו את כרטיס המזומן של מספרת ״תלתלים״ לחודש מאי: גררו כל תנועה לצד שלה בכרטיס — חובה או זכות. אחר כך מצאו את יתרת הסגירה ואת הצד שלה.",
       // The same amounts as the practice set's question, each with what happened, so the side has to be worked out.
       table: {
         kind: "card",
         account: "מזומן",
         items: [
-          { label: "יתרת פתיחה: מזומן בקופה ב-1.3", amount: 7_000, side: "dr" },
-          { label: "לקוח שילם על תיקון", amount: 12_000, side: "dr" },
-          { label: "מכירת חלקים במזומן", amount: 4_500, side: "dr" },
-          { label: "תשלום לספק החלקים", amount: 9_800, side: "cr" },
-          { label: "תשלום חשבון החשמל", amount: 2_200, side: "cr" },
+          { label: "יתרת פתיחה: כסף בחשבון ב-1.5", amount: 5_500, side: "dr" },
+          { label: "לקוחות שילמו על תספורות", amount: 9_300, side: "dr" },
+          { label: "מכירת מוצרי שיער", amount: 3_800, side: "dr" },
+          { label: "תשלום לספק המוצרים", amount: 7_600, side: "cr" },
+          { label: "תשלום חשבון המים", amount: 1_900, side: "cr" },
         ],
       },
     },
@@ -75,7 +75,7 @@ export const BOOKS: StudyModule = {
     },
     {
       ...practice("q8"),
-      prompt: "בנו את מאזן הבוחן של המשתלה של שירן: גררו כל חשבון לצד שלו — חובה או זכות. יתרת המזומן חסרה — מצאו אותה, כך שמאזן הבוחן יתאזן.",
+      prompt: "בנו את מאזן הבוחן של חנות האופניים של נדב: גררו כל חשבון לצד שלו — חובה או זכות. יתרת המזומן חסרה — מצאו אותה, כך שמאזן הבוחן יתאזן.",
       table: { kind: "trial", balances: Q8_TB, missing: "מזומן" },
     },
     {
@@ -128,7 +128,7 @@ export const BOOKS: StudyModule = {
     },
     {
       id: "tb-balanced",
-      prompt: "מאזן הבוחן מאוזן: סך החובה שווה לסך הזכות. האם זה אומר שאין בספרים טעויות?",
+      prompt: "סיימתם מאזן בוחן, ושתי העמודות יוצאות שוות. אפשר להיות בטוחים שהספרים בלי טעויות?",
       options: ["לא בהכרח", "כן, תמיד", "כן, אם אין חשבונות חדשים", "רק אם העודפים בזכות"],
       answer: 0,
       why: "פקודה שלמה שנרשמה לחשבון הלא נכון, או פקודה שנשכחה לגמרי, לא יפריעו לאיזון. האיזון תופס רק טעויות חד-צדדיות.",
@@ -141,21 +141,21 @@ export const BOOKS: StudyModule = {
     },
     {
       id: "new-company-retained",
-      prompt: "חברה הוקמה ב-1.1 השנה, ובסוף השנה הרוויחה 30,000 ₪. מהם עודפי הפתיחה שלה?",
-      options: ["0 ₪", "30,000 ₪", "אי אפשר לדעת", "כמו הון הבעלים"],
+      prompt: "חברה נפתחה ב-1.1 השנה, ובסוף השנה הרוויחה 46,000 ₪. מהם עודפי הפתיחה שלה?",
+      options: ["0 ₪", "46,000 ₪", "אי אפשר לדעת", "כמו הון הבעלים"],
       answer: 0,
-      why: "לחברה שנפתחה השנה אין רווחים מהעבר: העודפים לתחילת השנה הם 0. הרווח של 30,000 הוא עודפי הסגירה.",
+      why: "לחברה שנפתחה השנה אין רווחים מהעבר: העודפים לתחילת השנה הם 0. הרווח של 46,000 הוא עודפי הסגירה.",
       traps: [
         "",
-        "המלכודת: 30,000 הם עודפי הסגירה — אחרי שהרווח עבר לעודפים. בפתיחה עוד לא היה רווח.",
+        "המלכודת: 46,000 הם עודפי הסגירה — אחרי שהרווח עבר לעודפים. בפתיחה עוד לא היה רווח.",
         "חברה חדשה — אין לה עבר, ולכן אפשר לדעת: 0.",
         "הון הבעלים הוא ההשקעה, לא רווחים שנצברו.",
       ],
     },
     {
       id: "income-next-year",
-      prompt: "ב-31.12 יתרת ״מכירות״ היא 500,000 ₪. מה היתרה שלה ב-1.1 בשנה הבאה?",
-      options: ["0 ₪", "500,000 ₪", "500,000 ₪ בחובה", "היא עוברת להון בעלים"],
+      prompt: "ב-31.12 יתרת ״מכירות״ היא 730,000 ₪. מה היתרה שלה ב-1.1 בשנה הבאה?",
+      options: ["0 ₪", "730,000 ₪", "730,000 ₪ בחובה", "היא עוברת להון בעלים"],
       answer: 0,
       why: "מכירות הן חשבון תוצאתי: בסוף השנה הוא מתאפס, והרווח עובר לעודפים. כל שנה מתחילה מאפס.",
       traps: [
@@ -167,7 +167,7 @@ export const BOOKS: StudyModule = {
     },
     {
       id: "retained-debit",
-      prompt: "במאזן הבוחן העודפים ביתרת חובה. מה זה אומר?",
+      prompt: "במאזן הבוחן של חברה ותיקה, העודפים ביתרת חובה. מה זה אומר?",
       options: ["הפסדים צבורים", "רווחים צבורים", "יש טעות ברישום", "החברה חילקה דיבידנד"],
       answer: 0,
       why: "כשהעסק הפסיד לאורך השנים יותר משהרוויח, יתרת העודפים עוברת לחובה — הפסדים צבורים.",
