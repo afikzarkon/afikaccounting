@@ -2,10 +2,10 @@ import { Library } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { InventoryReference } from "@/components/basics/inventory-exam";
-import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { ExamsSection } from "@/components/pricing/exams-teaser";
 import { GatedCoursePath } from "@/components/pricing/gated-course";
 import { LegacyHashRedirect } from "@/components/study-mode/course";
+import { CourseHeader } from "@/components/study-mode/course-header";
 import { Container } from "@/components/ui/primitives";
 import { INVENTORY_LEGACY_CHAPTERS, INVENTORY_LESSONS, inventoryLegacyHref } from "@/lib/study/inventory";
 
@@ -30,27 +30,33 @@ export default function InventoryPage() {
       <LegacyHashRedirect redirects={REDIRECTS} />
       <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-16 sm:pt-14">
-        <Breadcrumbs trail={[{ label: "שלב 2 · קורסים מתקדמים" }, { label: "מלאי (IAS 2)" }]} />
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
-          מלאי <span className="text-gradient">מאפס ועד מבחן</span>
-        </h1>
-        <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted">
-          <span className="num">{INVENTORY_LESSONS.length}</span> שיעורים אינטראקטיביים, צעד אחר צעד. בכל שיעור: מושגים עם דוגמאות חיות, ואחריהם תרגול עם משוב מיידי — פקודות
-          יומן, שאלות אמריקאיות ושאלות חישוב. ובסוף, מחשבון שמראה את כל הדרך.
-        </p>
-        <p className="mt-2 text-sm text-muted">
-          מה צריך לדעת מראש: פקודת יומן בסיסית — חובה וזכות.{" "}
-          <Link href="/basics" className="font-medium text-accent hover:underline">
-            לחשבונאות מאפס
-          </Link>
-        </p>
+        <CourseHeader
+          trail={[{ label: "שלב 2 · קורסים מתקדמים" }, { label: "מלאי (IAS 2)" }]}
+          title={
+            <>
+              מלאי <span className="text-gradient">מאפס ועד מבחן</span>
+            </>
+          }
+          lessons={INVENTORY_LESSONS}
+        >
+          <p>
+            שיעורים אינטראקטיביים, צעד אחר צעד. בכל שיעור: מושגים עם דוגמאות חיות, ואחריהם תרגול עם משוב מיידי — פקודות יומן, שאלות אמריקאיות ושאלות חישוב. ובסוף, מחשבון שמראה
+            את כל הדרך.
+          </p>
+          <p className="text-sm">
+            מה צריך לדעת מראש: פקודת יומן בסיסית — חובה וזכות.{" "}
+            <Link href="/basics" className="font-medium text-accent hover:underline">
+              לחשבונאות מאפס
+            </Link>
+          </p>
+        </CourseHeader>
 
-        <div className="mt-6">
+        <div className="mt-8">
           <GatedCoursePath lessons={INVENTORY_LESSONS} />
         </div>
 
-        <section id="reference" aria-labelledby="reference-title" className="mt-14 scroll-mt-24">
-          <h2 id="reference-title" className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-fg">
+        <section id="reference" aria-labelledby="reference-title" className="mt-16 scroll-mt-24">
+          <h2 id="reference-title" className="flex items-center gap-2 text-[1.75rem] font-bold tracking-tight text-fg">
             <Library className="h-6 w-6 text-accent" aria-hidden /> כלי עזר
           </h2>
           <p className="mt-1 text-[15px] text-muted">כל מה שצריך לחזרה, במקום אחד: דף סיכום להדפסה, ארגז המלכודות, בנק נכון / לא נכון, ושאלות ברמת בחינה לתרגול עצמי.</p>

@@ -1,9 +1,9 @@
 import { Library } from "lucide-react";
 import type { Metadata } from "next";
 import { BasicsReference } from "@/components/basics/final";
-import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { ExamsSection } from "@/components/pricing/exams-teaser";
 import { CoursePath, LegacyHashRedirect } from "@/components/study-mode/course";
+import { CourseHeader } from "@/components/study-mode/course-header";
 import { Container } from "@/components/ui/primitives";
 import { BASICS_LESSONS, LEGACY_CHAPTERS, legacyHref } from "@/lib/study/basics";
 
@@ -27,23 +27,16 @@ export default function BasicsPage() {
       <LegacyHashRedirect redirects={REDIRECTS} />
       <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-16 sm:pt-14">
-        <Breadcrumbs trail={[{ label: "שלב 1 · חינם" }, { label: "חשבונאות מאפס" }]} />
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
-          חשבונאות בסיסית <span className="text-gradient">מאפס</span>
-        </h1>
-        <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted">
-          <span className="num">{BASICS_LESSONS.length}</span> שיעורים אינטראקטיביים, צעד אחר צעד. בכל שיעור: מושגים עם דוגמאות חיות, ואחריהם תרגול עם משוב מיידי — פקודות יומן, שאלות אמריקאיות ושאלות חישוב. ובסוף, טיפים
-          זהב.
-        </p>
+        <CoursePageHead />
 
-        <div className="mt-6">
+        <div className="mt-8">
           <CoursePath lessons={BASICS_LESSONS} />
         </div>
 
-        <section id="reference" aria-labelledby="reference-title" className="mt-14 scroll-mt-24">
+        <section id="reference" aria-labelledby="reference-title" className="mt-16 scroll-mt-24">
           {/* The former page's "summary" chapter lived here; its anchor still lands on it. */}
           <span id="summary" className="block scroll-mt-24" aria-hidden />
-          <h2 id="reference-title" className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-fg">
+          <h2 id="reference-title" className="flex items-center gap-2 text-[1.75rem] font-bold tracking-tight text-fg">
             <Library className="h-6 w-6 text-accent" aria-hidden /> כלי עזר
           </h2>
           <p className="mt-1 text-[15px] text-muted">כל מה שצריך לחזרה, במקום אחד: גיליון עזר להדפסה, מילון, טעויות נפוצות ושאלות נפוצות.</p>
@@ -55,5 +48,21 @@ export default function BasicsPage() {
         <ExamsSection topic="basics" />
       </Container>
     </div>
+  );
+}
+
+function CoursePageHead() {
+  return (
+    <CourseHeader
+      trail={[{ label: "שלב 1 · חינם" }, { label: "חשבונאות מאפס" }]}
+      title={
+        <>
+          חשבונאות בסיסית <span className="text-gradient">מאפס</span>
+        </>
+      }
+      lessons={BASICS_LESSONS}
+    >
+      <p>שיעורים אינטראקטיביים, צעד אחר צעד. בכל שיעור: מושגים עם דוגמאות חיות, ואחריהם תרגול עם משוב מיידי — פקודות יומן, שאלות אמריקאיות ושאלות חישוב. ובסוף, טיפים זהב.</p>
+    </CourseHeader>
   );
 }

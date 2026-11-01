@@ -13,6 +13,7 @@ import { studyHref } from "@/lib/study";
 import { lessonHref } from "@/lib/study/paths";
 import { cn } from "@/lib/utils";
 import { clock } from "./lesson-opening";
+import { XpRing } from "./ring";
 import { updateTopic, useTopics } from "./progress-store";
 
 /**
@@ -41,10 +42,11 @@ export function CoursePath({ lessons, locked = [], previews = [] }: { lessons: S
   const next = rows.find((r) => r.status === "new" || r.status === "started");
   return (
     <>
-      <div className="card flex flex-wrap items-center justify-between gap-x-6 gap-y-3 p-4 sm:px-5">
-        <div>
-          <p className="font-semibold text-fg">המסלול שלך</p>
-          <p className="num flex flex-wrap items-center gap-x-3 text-sm text-muted">
+      <div className="card flex flex-wrap items-center gap-x-6 gap-y-4 p-5 sm:px-6">
+        <XpRing xp={xp} max={max} className="h-24 w-24" />
+        <div className="min-w-0 flex-[1_1_12rem]">
+          <p className="text-[18px] font-bold text-fg">המסלול שלך</p>
+          <p className="num mt-1 flex flex-wrap items-center gap-x-3 text-[14.5px] text-muted">
             <span>
               <strong className="text-fg">{done}</strong> מתוך {rows.length} שיעורים הושלמו
             </span>
@@ -54,7 +56,7 @@ export function CoursePath({ lessons, locked = [], previews = [] }: { lessons: S
           </p>
         </div>
         {next ? (
-          <div className="flex min-w-[12rem] flex-[0_1_20rem] gap-1.5" role="progressbar" aria-label="התקדמות בקורס" aria-valuemin={0} aria-valuemax={max} aria-valuenow={xp}>
+          <div className="flex min-w-[12rem] flex-[1_1_20rem] gap-1.5" role="progressbar" aria-label="התקדמות בקורס" aria-valuemin={0} aria-valuemax={max} aria-valuenow={xp}>
             {rows.map(({ m, p, status }) => (
               <span key={m.slug} className="h-2 flex-1 overflow-hidden rounded-full bg-surface-2">
                 <span className={cn("block h-full rounded-full transition-[width] duration-500", status === "done" ? "bg-success" : "bg-accent")} style={{ width: `${(xpOf(m, p) / maxXp(m)) * 100}%` }} />
@@ -175,9 +177,10 @@ function Spotlight({
   return (
     <section
       aria-labelledby={`lesson-${m.slug}`}
-      className="flex flex-wrap gap-6 rounded-3xl bg-[#0b1a3a] p-5 text-[#e8eef8] shadow-[0_20px_40px_-24px_rgb(11_26_58/0.7)] sm:p-7 dark:bg-surface-2 dark:ring-1 dark:ring-accent/40"
+      className="relative flex flex-wrap gap-6 overflow-hidden rounded-3xl bg-gradient-to-br from-[#0b1a3a] via-[#0e2350] to-[#0b1a3a] p-5 text-[#e8eef8] shadow-[0_24px_50px_-26px_rgb(11_26_58/0.8)] ring-1 ring-[#4f8bff]/30 sm:p-8"
     >
-      <div className="flex min-w-0 flex-[1_1_20rem] flex-col gap-3">
+      <div aria-hidden className="pointer-events-none absolute -end-24 -top-24 h-72 w-72 rounded-full bg-[#4f8bff]/25 blur-3xl" />
+      <div className="relative flex min-w-0 flex-[1_1_20rem] flex-col gap-3">
         <p className="num text-sm font-semibold text-[#93b4ff]">
           {started ? "אתם כאן" : "השיעור הבא"} · שיעור {m.n} מתוך {total}
         </p>
@@ -218,7 +221,7 @@ function Spotlight({
         </div>
         <Tools module={m} spotlight gate={gate} />
       </div>
-      <div className="flex min-w-0 flex-[1_1_15rem] flex-col gap-2.5 rounded-2xl bg-white/[0.06] p-4 sm:p-5">
+      <div className="relative flex min-w-0 flex-[1_1_15rem] flex-col gap-2.5 rounded-2xl bg-white/[0.06] p-4 ring-1 ring-white/10 backdrop-blur sm:p-5">
         <p className="text-[13px] font-semibold text-[#a9b7d1]">מה יש בשיעור</p>
         <ul className="flex flex-col gap-2.5" aria-label="המושגים בשיעור">
           {m.screens.map((s, i) => {

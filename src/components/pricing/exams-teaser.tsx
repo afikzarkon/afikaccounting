@@ -44,10 +44,7 @@ async function TopicExams({ topic }: { topic: string }) {
     return (
       <div className="card flex flex-wrap items-center gap-3 p-5">
         <FileCheck2 className="h-5 w-5 text-amber-600 dark:text-amber-300" aria-hidden />
-        <p className="min-w-0 flex-1 text-sm text-muted">המבחנים בנושא הזה יעלו בקרוב. בינתיים — מבחנים בנושאים אחרים כבר מחכים.</p>
-        <Link href={EXAMS_HUB.href} className="text-sm font-semibold text-accent hover:underline">
-          לכל המבחנים
-        </Link>
+        <p className="min-w-0 flex-1 text-sm text-muted">המבחנים בנושא הזה בדרך: מבחנים ברמת מבחן, עם פתרון מלא שלב אחר שלב.</p>
       </div>
     );
   return (
@@ -80,7 +77,13 @@ async function HomeExamsWithAccess() {
 async function HomeExamsView({ access }: { access: Awaited<ReturnType<typeof getAccess>> }) {
   const exams = (await listExams()).slice(0, 3);
   const sample = exams.find((e) => e.isSample);
-  if (!exams.length) return null;
+  if (!exams.length)
+    return (
+      <div className="card mt-8 flex items-center gap-3 p-5">
+        <FileCheck2 className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-300" aria-hidden />
+        <p className="text-sm text-muted">מתחם המבחנים בדרך: מבחנים ברמת מבחן, עם פתרון מלא שלב אחר שלב.</p>
+      </div>
+    );
   return (
     <>
       <ExamGrid exams={exams} access={access} blur={!tierAllows(access.tier, "exams")} className="mt-8" />

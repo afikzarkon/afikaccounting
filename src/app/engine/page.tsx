@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import type { PlayableItem } from "@/components/video/video-player";
 import { Wizard, type WizardStart } from "@/components/engine/wizard";
 import { Container, Skeleton } from "@/components/ui/primitives";
 import { getCurrentUser } from "@/lib/auth/dal";
-import { getContent } from "@/lib/data/content";
 import { listPublishedPresets } from "@/lib/data/presets";
 import { getSavedSolution } from "@/lib/data/user";
-import { CALCULATORS, getCalculator } from "@/lib/engine/registry";
+import { getCalculator } from "@/lib/engine/registry";
 import { defaults, sanitize, validateValues } from "@/lib/engine/validate";
 
 export const metadata: Metadata = {
@@ -22,7 +20,7 @@ export default function EnginePage({ searchParams }: PageProps<"/engine">) {
       <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-6 sm:pt-14">
         <p className="text-xs font-semibold text-accent">מנוע הפתרונות החשבונאי החכם</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">מתרחיש לפתרון מלא</h1>
+        <h1 className="mt-2 text-[2.2rem] leading-tight font-bold tracking-tight text-fg sm:text-5xl">מתרחיש לפתרון מלא</h1>
         <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted">
           בוחרים תקן, מתארים את העובדות, מזינים את המספרים — ומקבלים פקודות יומן מאוזנות, לוחות, באור וההנמקה
           שמאחוריהם.
@@ -41,8 +39,8 @@ const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v
 
 async function EngineLoader({ searchParams }: { searchParams: PageProps<"/engine">["searchParams"] }) {
   const sp = await searchParams;
-  const [user, explainers, presets] = await Promise.all([getCurrentUser(), loadExplainers(), listPublishedPresets()]);
-  return <Wizard key={JSON.stringify(sp)} start={await resolveStart(sp)} explainers={explainers} presets={presets} signedIn={!!user} />;
+  const [user, presets] = await Promise.all([getCurrentUser(), listPublishedPresets()]);
+  return <Wizard key={JSON.stringify(sp)} start={await resolveStart(sp)} presets={presets} signedIn={!!user} />;
 }
 
 /**
@@ -73,16 +71,6 @@ async function resolveStart(sp: Record<string, string | string[] | undefined>): 
     }
   }
   return { slug: calc.slug, values: defaults(calc), step: 1 };
-}
-
-async function loadExplainers(): Promise<Record<string, PlayableItem>> {
-  const slugs = CALCULATORS.map((c) => c.explainerSlug).filter((s): s is string => !!s);
-  const items = await Promise.all(slugs.map((s) => getContent(s)));
-  return Object.fromEntries(
-    items
-      .filter((i) => i !== null)
-      .map((i) => [i.slug, { slug: i.slug, title: i.title, videoUrl: i.videoUrl, durationSeconds: i.durationSeconds, chapters: i.chapters }]),
-  );
 }
 
 function WizardSkeleton() {

@@ -21,16 +21,6 @@ const COLUMNS = [
     ],
   },
   {
-    title: "וידאו ומאמרים",
-    links: [
-      { href: "/content", label: "כל התכנים" },
-      { href: "/content?kind=video", label: "שיעורי וידאו" },
-      { href: "/content?kind=article", label: "מאמרים" },
-      { href: "/content?level=beginner", label: "למתחילים" },
-      { href: "/content?level=advanced", label: "נושאים מתקדמים" },
-    ],
-  },
-  {
     title: "הפלטפורמה",
     links: [
       { href: FIRST_LESSON, label: "שיעור 1 — מתחילים כאן" },

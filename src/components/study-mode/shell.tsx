@@ -20,6 +20,7 @@ import {
   recordExercise,
   recordTrap,
   retryMissed,
+  statusOf,
   STEPS,
   subCount,
   xpOf,
@@ -31,6 +32,7 @@ import { type CourseInfo, CourseOutline } from "./course-outline";
 import { JournalSimulator } from "./journal-simulator";
 import { clock, LessonOpening } from "./lesson-opening";
 import { LessonNav } from "./lesson-nav";
+import { LessonRail } from "./lesson-rail";
 import { LessonStats } from "./lesson-stats";
 import { PracticeIntro } from "./practice-intro";
 import { resetTopic, setLast, updateTopic, useTopic } from "./progress-store";
@@ -238,11 +240,13 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
   }, []);
 
   const id = STEPS[step].id;
-  let card: { icon: ReactNode; title: string; count?: string; content: ReactNode; clip?: { part: number; at: number } };
+  // `eyebrow` is the line above the title: where in the lesson this is.
+  let card: { icon: ReactNode; eyebrow: string; title: string; content: ReactNode; clip?: { part: number; at: number } };
   if (opening) {
     card = {
-      icon: <Sparkles className="h-5 w-5" />,
-      title: "על השיעור",
+      icon: <Sparkles className="h-4 w-4" />,
+      eyebrow: `${m.course} · שיעור ${m.n} מתוך ${course.lessons.length}`,
+      title: m.title,
       content: (
         <LessonOpening
           module={m}
@@ -260,22 +264,29 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
   } else if (id === "learn") {
     const s = screens[place.sub];
     card = {
-      icon: <BookOpenText className="h-5 w-5" />,
+      icon: <BookOpenText className="h-4 w-4" />,
+      eyebrow: m.screens.length > 1 ? `מושג ${place.sub + 1} מתוך ${m.screens.length}` : "מושג",
       title: m.screens[place.sub].title,
-      count: m.screens.length > 1 ? `מושג ${place.sub + 1} מתוך ${m.screens.length}` : undefined,
       clip: videoAt(m.videos, m.screens[place.sub].id),
       content: (
         <div className="space-y-4">
-          {s.lead && <div className="rounded-2xl border border-accent/25 bg-accent-soft px-4 py-3.5 text-[16px] font-semibold leading-relaxed text-fg sm:px-5">{s.lead}</div>}
+          {s.lead && (
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-l from-accent-soft via-accent-soft/40 to-transparent py-4 ps-5 pe-4 ring-1 ring-accent/20 sm:py-5 sm:ps-6">
+              <span className="absolute inset-y-0 start-0 w-1 bg-accent" aria-hidden />
+              <p className="text-[12px] font-bold text-accent">העיקרון</p>
+              <div className="mt-1 text-[18px] leading-snug font-semibold text-fg sm:text-[20px]">{s.lead}</div>
+            </div>
+          )}
           {/* On a wide screen the screen's blocks flow into two columns, each block whole, so the width fills instead of stretching the lines;
               a wide widget (a walkthrough, the entry-to-cards arrows) spans both. */}
-          <div className="space-y-4 text-[15.5px] leading-relaxed text-fg/90 xl:columns-2 xl:gap-x-6 xl:space-y-0 xl:[&>*]:mb-4 xl:[&>*]:break-inside-avoid">{s.body}</div>
+          <div className="space-y-4 text-[16px] leading-[1.75] text-fg/90 [&>p]:max-w-[70ch] xl:columns-2 xl:gap-x-6 xl:space-y-0 xl:[&>*]:mb-4 xl:[&>*]:break-inside-avoid">{s.body}</div>
         </div>
       ),
     };
   } else if (id === "practice" && !practiceAt(m, place.sub)) {
     card = {
-      icon: <ClipboardPen className="h-5 w-5" />,
+      icon: <ClipboardPen className="h-4 w-4" />,
+      eyebrow: "תרגול",
       title: "עוברים לתרגול",
       content: <PracticeIntro module={m} onStart={nextScreen} />,
     };
@@ -290,9 +301,9 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
         cue(ok ? "ok" : "bad");
       };
       card = {
-        icon: <ClipboardPen className="h-5 w-5" />,
-        title: `${it.group.label} · ${ex.skill}`,
-        count,
+        icon: <ClipboardPen className="h-4 w-4" />,
+        eyebrow: `${count} · ${it.group.label}`,
+        title: ex.skill,
         content:
           ex.kind === "journal" ? (
             <JournalSimulator key={ex.id} ex={ex} result={p.exercises[ex.id]} onCheck={onCheck} />
@@ -303,9 +314,9 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
     } else {
       const t = it.trap;
       card = {
-        icon: <ClipboardPen className="h-5 w-5" />,
+        icon: <ClipboardPen className="h-4 w-4" />,
+        eyebrow: count,
         title: it.group.label,
-        count,
         content: (
           <TrapQuiz
             key={t.id}
@@ -321,8 +332,9 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
     }
   } else {
     card = {
-      icon: <Flag className="h-5 w-5" />,
-      title: "סיכום",
+      icon: <Flag className="h-4 w-4" />,
+      eyebrow: "סיכום",
+      title: statusOf(m, p) === "done" ? "סיימתם את השיעור!" : "סיכום השיעור",
       content: (
         <SummaryCard
           module={m}
@@ -343,7 +355,7 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
   // "Previous" and "next", named. Trying missed questions again, "next" goes to the next of them.
   const around = neighbours(m, place, opening);
   const nextLabel = retry?.length ? (retry.some((id) => practiceOf(m).findIndex((it) => practiceId(it) === id) + 1 > place.sub) ? "השאלה הבאה לחזרה" : "לסיכום") : around.next?.label;
-  const where = opening ? "על השיעור" : id === "learn" ? `מושג ${place.sub + 1} מתוך ${m.screens.length}` : id === "practice" ? (card.count ?? "תרגול") : "סיכום";
+  const where = opening ? "על השיעור" : id === "learn" ? `מושג ${place.sub + 1} מתוך ${m.screens.length}` : id === "practice" ? card.eyebrow : "סיכום";
   const outline = <CourseOutline course={course} current={m} progress={p} place={place} opening={opening} onGo={goTo} />;
 
   return (
@@ -379,29 +391,35 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
             </aside>
 
             <div ref={top} className="min-w-0 scroll-mt-32 lg:scroll-mt-20 lg:px-8 lg:pt-6 2xl:px-12" role="region" aria-label={`שיעור אינטראקטיבי: ${m.title}`}>
-              <Breadcrumbs trail={[{ label: course.title, href: course.href }, { label: `שיעור ${m.n}: ${m.title}` }]} />
-              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent" aria-hidden>
-                  {card.icon}
-                </span>
-                <h1 ref={heading} tabIndex={-1} className="min-w-0 flex-[1_1_16rem] text-2xl font-semibold tracking-tight text-fg outline-none sm:text-[28px]">
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <Breadcrumbs trail={[{ label: course.title, href: course.href }, { label: `שיעור ${m.n}: ${m.title}` }]} />
+                </div>
+                <LessonStats streak={p.streak} xp={xpOf(m, p)} />
+              </div>
+              <LessonRail module={m} progress={p} place={place} opening={opening} onGo={goTo} className="no-print mt-3 hidden lg:flex" />
+
+              <div className="mt-6 sm:mt-8">
+                <p className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] font-semibold text-accent">
+                  <span className="inline-flex items-center gap-1.5">
+                    {card.icon}
+                    <span className="num">{card.eyebrow}</span>
+                  </span>
+                  {clip !== undefined && (
+                    <button
+                      type="button"
+                      onClick={() => watch(clip.part, clip.at)}
+                      className="inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2.5 py-0.5 text-[12.5px] font-bold text-amber-700 ring-1 ring-amber-400/35 transition hover:bg-amber-400/25 dark:text-amber-300"
+                      title="הקטע בסרטון שמסביר את המושג הזה"
+                    >
+                      <PlayCircle className="h-3.5 w-3.5" aria-hidden />
+                      בסרטון{m.videos!.length > 1 && ` · ${m.videos![clip.part].part ?? ""}`} · <span className="num">{clock(clip.at)}</span>
+                    </button>
+                  )}
+                </p>
+                <h1 ref={heading} tabIndex={-1} className="mt-2 text-[26px] leading-tight font-bold tracking-tight text-fg outline-none sm:text-[34px]">
                   {card.title}
                 </h1>
-                {card.count && <span className="num shrink-0 rounded-md bg-surface-2 px-2 py-0.5 text-[12px] font-semibold text-muted">{card.count}</span>}
-                {clip !== undefined && (
-                  <button
-                    type="button"
-                    onClick={() => watch(clip.part, clip.at)}
-                    className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-[#fbbf24] px-2.5 text-[13px] font-bold text-[#3b2600] transition hover:brightness-105"
-                    title="הקטע בסרטון שמסביר את המושג הזה"
-                  >
-                    <PlayCircle className="h-4 w-4" aria-hidden />
-                    בסרטון ·{m.videos!.length > 1 && ` ${m.videos![clip.part].part ?? ""} ·`} <span className="num">{clock(clip.at)}</span>
-                  </button>
-                )}
-                <div className="ms-auto">
-                  <LessonStats streak={p.streak} xp={xpOf(m, p)} />
-                </div>
               </div>
 
               {resumable && (
@@ -416,7 +434,7 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
                 </div>
               )}
 
-              <div ref={body} className="card mt-4 overflow-hidden">
+              <div ref={body} className="mt-6">
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div
                     key={opening ? "opening" : `${place.step}-${place.sub}`}
@@ -424,7 +442,6 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 28 * dir }}
                     transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="p-4 sm:p-6"
                   >
                     {card.content}
                   </motion.div>
@@ -433,7 +450,8 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
 
               {/* A direct child of the lesson's column, so it sticks to the bottom of the screen all the way down the screen. */}
               <LessonNav
-                className="mt-6"
+                className="mt-8"
+                position={opening ? undefined : `${at} מתוך ${total}`}
                 prev={around.prev ? { label: around.prev.label, onClick: prevScreen } : undefined}
                 next={(opening || !last) && nextLabel ? { label: nextLabel, onClick: nextScreen } : undefined}
               />
@@ -455,7 +473,6 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
             open={video.open}
             onClose={() => setVideo((v) => ({ ...v, open: false }))}
             label={m.videos[video.part].part ? `סרטון השיעור · ${m.videos[video.part].part}` : "סרטון השיעור"}
-            fullLesson={false}
           />,
           document.body,
         )}

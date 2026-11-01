@@ -1,13 +1,4 @@
-import {
-  Activity,
-  BookmarkCheck,
-  CheckCircle2,
-  Clock,
-  FileText,
-  PlayCircle,
-  Plus,
-  Sparkles,
-} from "lucide-react";
+import { Activity, Plus, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -22,8 +13,7 @@ import { getAccess } from "@/lib/auth/access";
 import { getProfile, requireUser } from "@/lib/auth/dal";
 import { topicByHref } from "@/lib/catalog";
 import { outlineOf } from "@/lib/study/paths";
-import { listActivity, listSavedSolutions, listWatchHistory, type WatchEntry } from "@/lib/data/user";
-import { duration } from "@/lib/engine/format";
+import { listActivity, listSavedSolutions } from "@/lib/data/user";
 import { CALCULATORS } from "@/lib/engine/registry";
 import { BASICS_LESSONS } from "@/lib/study/basics";
 import { INVENTORY_LESSONS } from "@/lib/study/inventory";
@@ -49,25 +39,22 @@ const COURSES = [BASICS_LESSONS, INVENTORY_LESSONS].map((lessons) => {
 
 async function Dashboard({ searchParams }: Pick<PageProps<"/dashboard">, "searchParams">) {
   const user = await requireUser("/dashboard");
-  const [profile, solutions, history, activity, access, sp] = await Promise.all([
+  const [profile, solutions, activity, access, sp] = await Promise.all([
     getProfile(),
     listSavedSolutions(),
-    listWatchHistory(),
     listActivity(),
     getAccess(),
     searchParams,
   ]);
   const locked = COURSES.flatMap((c) => lockedOf(access, c.topic, c.lessons.map((m) => m.slug)));
   const name = profile?.fullName?.split(" ")[0] || user.email.split("@")[0];
-  const completed = history.filter((h) => h.completed).length;
-  const inProgress = history.filter((h) => !h.completed);
 
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-semibold text-accent">לוח אישי</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg">שלום, {name}</h1>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-fg">שלום, {name}</h1>
           <p className="mt-1 text-sm text-muted">השיעור הבא שלכם, התרחישים השמורים והפעילות האחרונה.</p>
         </div>
         <ButtonLink href="/engine" variant="secondary">
@@ -82,11 +69,6 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/dashboard">, "search
         <NextLesson courses={COURSES.map(({ title, href, lessons }) => ({ title, href, lessons: lessons.map(outlineOf) }))} locked={locked} upgrade={access.tier === "free"} />
       </div>
 
-      <dl className="mt-8 grid gap-4 sm:grid-cols-3">
-        <Stat icon={<BookmarkCheck className="h-5 w-5" />} label="פתרונות שמורים" value={solutions.length} />
-        <Stat icon={<PlayCircle className="h-5 w-5" />} label="שיעורים בתהליך" value={inProgress.length} />
-        <Stat icon={<CheckCircle2 className="h-5 w-5" />} label="שיעורים שהושלמו" value={completed} />
-      </dl>
 
       <div className="mt-10 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 space-y-10">
@@ -102,28 +84,6 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/dashboard">, "search
                 action={
                   <ButtonLink href="/engine" size="sm">
                     הפעלת המנוע
-                  </ButtonLink>
-                }
-              />
-            )}
-          </section>
-
-          <section>
-            <h2 className="mb-4 text-lg font-semibold tracking-tight text-fg">היסטוריית צפייה</h2>
-            {history.length ? (
-              <ul className="grid gap-3 sm:grid-cols-2">
-                {history.map((h) => (
-                  <WatchCard key={h.contentId} entry={h} />
-                ))}
-              </ul>
-            ) : (
-              <EmptyState
-                icon={<PlayCircle className="h-5 w-5" />}
-                title="עדיין לא נצפו שיעורים"
-                description="שיעורים שתתחילו יופיעו כאן כדי שתוכלו להמשיך מאותה נקודה."
-                action={
-                  <ButtonLink href="/content" variant="secondary" size="sm">
-                    לעיון בתכנים
                   </ButtonLink>
                 }
               />
@@ -179,51 +139,6 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/dashboard">, "search
         </aside>
       </div>
     </>
-  );
-}
-
-function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
-  return (
-    <div className="card flex items-center gap-4 p-5">
-      <span className="grid h-11 w-11 place-items-center rounded-xl bg-accent-soft text-accent">{icon}</span>
-      <div>
-        <dt className="text-xs text-muted">{label}</dt>
-        <dd className="num text-2xl font-semibold tracking-tight text-fg">{value}</dd>
-      </div>
-    </div>
-  );
-}
-
-function WatchCard({ entry: h }: { entry: WatchEntry }) {
-  const pct = h.completed ? 100 : h.durationSeconds ? Math.round((h.progressSeconds / h.durationSeconds) * 100) : 0;
-  const video = h.kind === "video";
-  return (
-    <li>
-      <Link href={`/content/${h.slug}`} className="card group block p-4 transition-all hover:-translate-y-0.5 hover:border-accent/40">
-        <div className="flex items-start gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-surface-2 text-muted group-hover:text-accent">
-            {video ? <PlayCircle className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="line-clamp-2 text-sm leading-snug font-medium text-fg">{h.title}</p>
-            <p className="mt-1 flex items-center gap-1.5 text-xs text-subtle">
-              {h.standard} · <Clock className="h-3 w-3" /> {relativeTime(h.lastViewedAt)}
-            </p>
-          </div>
-        </div>
-        <div className="mt-3 flex items-center gap-3">
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
-            <div
-              className={h.completed ? "h-full rounded-full bg-success" : "h-full rounded-full bg-gradient-to-l from-accent to-cyan-400"}
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-          <span className="num text-[11px] text-muted">
-            {h.completed ? "הושלם" : video ? `${duration(h.progressSeconds)} / ${duration(h.durationSeconds)}` : "התחלת"}
-          </span>
-        </div>
-      </Link>
-    </li>
   );
 }
 

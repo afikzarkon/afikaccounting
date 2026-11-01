@@ -22,7 +22,6 @@ export const ifrs16Leases: Calculator = {
   category: "חכירות",
   icon: "Building2",
   accent: "sky",
-  explainerSlug: "ifrs-16-lessee-accounting-masterclass",
   scenario: [
     { kind: "select", id: "currency", label: "מטבע הדיווח", options: CURRENCIES, default: "ILS" },
     {
@@ -45,7 +44,6 @@ export const ifrs16Leases: Calculator = {
         { value: "advance", label: "בתחילת תקופה", description: "התשלום הראשון משולם במועד ההתחלה." },
       ],
       default: "arrears",
-      videoAt: 312,
     },
     {
       kind: "radio",
@@ -57,7 +55,6 @@ export const ifrs16Leases: Calculator = {
         { value: "cpi", label: "צמוד מדד", description: "צמוד למדד המחירים לצרכן." },
       ],
       default: "fixed",
-      videoAt: 548,
     },
     {
       kind: "toggle",
@@ -65,7 +62,6 @@ export const ifrs16Leases: Calculator = {
       label: "החכירה כוללת אופציית הארכה",
       help: "אופציה של החוכר להאריך את החכירה מעבר לתקופה שאינה ניתנת לביטול.",
       default: false,
-      videoAt: 735,
     },
     {
       kind: "radio",

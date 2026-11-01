@@ -4,7 +4,6 @@ import { type Access, canOpenExam } from "@/lib/access";
 import { getAccess } from "@/lib/auth/access";
 import { isSupabaseConfigured } from "@/lib/env";
 import { parseBlocks, parseSteps, parseSubjects } from "@/lib/exams/parse";
-import { SEED_EXAMS } from "@/lib/exams/seed";
 import { type ExamContent, type ExamFilters, type ExamMeta, examOrder, matchesExam } from "@/lib/exams/types";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
@@ -34,25 +33,13 @@ const fromRow = (r: MetaRow): ExamMeta => ({
   published: r.published,
 });
 
-const metaOf = (e: (typeof SEED_EXAMS)[number]): ExamMeta => ({
-  id: e.id,
-  topic: e.topic,
-  year: e.year,
-  session: e.session,
-  title: e.title,
-  description: e.description,
-  subjects: e.subjects,
-  hasPaper: e.hasPaper,
-  isSample: e.isSample,
-  published: e.published,
-});
-
 /** Every published exam, samples first, then newest. */
 export async function listExams(filters: ExamFilters = {}): Promise<ExamMeta[]> {
   "use cache";
   cacheTag("exams");
   cacheLife("hours");
-  if (!isSupabaseConfigured) return SEED_EXAMS.map(metaOf).filter((e) => e.published && matchesExam(e, filters)).sort(examOrder);
+  // Demo mode has no exams: they are written in the admin area and live in the database.
+  if (!isSupabaseConfigured) return [];
   const { data, error } = await createPublicClient().from("exams").select(META).eq("published", true).limit(500);
   // Before the exams migration runs, the area is simply empty.
   if (error) return [];
@@ -64,10 +51,7 @@ export async function getExam(id: string): Promise<ExamMeta | null> {
   cacheTag("exams", `exam:${id}`);
   cacheLife("hours");
   if (!UUID.test(id)) return null;
-  if (!isSupabaseConfigured) {
-    const e = SEED_EXAMS.find((x) => x.id === id);
-    return e?.published ? metaOf(e) : null;
-  }
+  if (!isSupabaseConfigured) return null;
   const { data } = await createPublicClient().from("exams").select(META).eq("id", id).eq("published", true).maybeSingle();
   return data ? fromRow(data as MetaRow) : null;
 }
@@ -89,7 +73,7 @@ export async function examFacets() {
  */
 export async function getExamContent(exam: ExamMeta, access?: Access): Promise<ExamContent | null> {
   if (!canOpenExam(access ?? (await getAccess()), exam)) return null;
-  if (!isSupabaseConfigured) return SEED_EXAMS.find((e) => e.id === exam.id)?.content ?? null;
+  if (!isSupabaseConfigured) return null;
   const supabase = await createClient();
   const { data } = await supabase.from("exam_solutions").select("question, steps, video, video_seconds, solution_path").eq("exam_id", exam.id).maybeSingle();
   // Allowed, and no solution written yet: an empty one (the paper may still be there).

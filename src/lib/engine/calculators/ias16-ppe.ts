@@ -31,7 +31,6 @@ export const ias16Ppe: Calculator = {
   category: "נכסים לא שוטפים",
   icon: "Factory",
   accent: "amber",
-  explainerSlug: "ias-16-components-and-replacements",
   sectionIcons: {
     [RANGE]: "CalendarRange",
     [COST]: "Coins",
@@ -151,7 +150,6 @@ export const ias16Ppe: Calculator = {
         { value: "units", label: "יחידות תפוקה", description: "לפי השימוש בפועל בכל שנה." },
       ],
       default: "",
-      videoAt: 402,
       section: DEPRECIATION,
     },
     {

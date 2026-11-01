@@ -96,11 +96,11 @@ export function Stepper({
   return (
     // overflow-clip, not hidden: a hidden overflow would make the section a scroll box, and the header could not stay pinned.
     <section ref={box} aria-label={label} aria-roledescription="צעד אחר צעד" onKeyDown={onKey} className={cn("card overflow-clip [column-span:all]", className)}>
-      <div ref={head} className="sticky top-0 z-10 space-y-2.5 border-b border-line bg-surface-2 px-3 py-3 sm:px-4">
+      <div ref={head} className="sticky top-0 z-10 space-y-2.5 border-b border-line bg-surface-2/95 px-3 py-3 backdrop-blur sm:px-5">
         <div className="flex items-center gap-2">
-          <p className="min-w-0 flex-1 truncate text-xs font-semibold text-muted">{label}</p>
-          <p className="num shrink-0 rounded-full bg-surface px-2.5 py-0.5 text-xs font-bold text-fg ring-1 ring-line" aria-hidden>
-            {i + 1} / {steps.length}
+          <p className="min-w-0 flex-1 truncate text-[12.5px] font-bold text-muted">{label}</p>
+          <p className="num shrink-0 rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-bold text-accent" aria-hidden>
+            צעד {i + 1} מתוך {steps.length}
           </p>
         </div>
         <ol className="flex gap-1" aria-label="התקדמות">
@@ -126,8 +126,8 @@ export function Stepper({
         </ol>
         {nav}
       </div>
-      <div key={i} className="anim-step-in space-y-3 p-3 sm:p-4" aria-live="polite">
-        <h4 className="text-[16px] font-semibold leading-snug text-fg">
+      <div key={i} className="anim-step-in space-y-3 p-4 sm:p-5" aria-live="polite">
+        <h4 className="text-[17px] font-bold leading-snug text-fg">
           <span className="sr-only">
             צעד {i + 1} מתוך {steps.length}:{" "}
           </span>

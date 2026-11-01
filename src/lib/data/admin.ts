@@ -1,5 +1,4 @@
 import "server-only";
-import type { ArticleSection, Chapter, ContentKind, Level, Resource } from "@/lib/content/types";
 import type { Values } from "@/lib/engine/types";
 import { effectiveTier } from "@/lib/access";
 import { parseBlocks, parseSteps } from "@/lib/exams/parse";
@@ -97,100 +96,6 @@ export async function listMedia(): Promise<MediaAsset[]> {
     tags: r.tags ?? [],
     createdAt: r.created_at,
   }));
-}
-
-// ---- content -------------------------------------------------------------------
-
-export type AdminContentRow = {
-  id: string;
-  slug: string;
-  kind: ContentKind;
-  title: string;
-  standard: string;
-  category: string;
-  level: Level;
-  isPublished: boolean;
-  updatedAt: string;
-};
-export type AdminContent = AdminContentRow & {
-  summary: string;
-  durationSeconds: number;
-  videoUrl: string | null;
-  body: ArticleSection[];
-  chapters: Chapter[];
-  resources: Resource[];
-  tags: string[];
-};
-
-export async function listContentAdmin(): Promise<AdminContentRow[]> {
-  const supabase = await createClient();
-  const rows = check(
-    await supabase
-      .from("content")
-      .select("id, slug, kind, title, standard, category, level, is_published, updated_at")
-      .order("updated_at", { ascending: false })
-      .limit(1000),
-  );
-  return rows.map((r) => ({
-    id: r.id,
-    slug: r.slug,
-    kind: r.kind,
-    title: r.title,
-    standard: r.standard,
-    category: r.category,
-    level: r.level,
-    isPublished: r.is_published,
-    updatedAt: r.updated_at,
-  }));
-}
-
-type ContentRow = {
-  id: string;
-  slug: string;
-  kind: ContentKind;
-  title: string;
-  summary: string;
-  standard: string;
-  category: string;
-  level: Level;
-  duration_seconds: number;
-  video_url: string | null;
-  body: ArticleSection[] | null;
-  chapters: Chapter[] | null;
-  resources: Resource[] | null;
-  tags: string[] | null;
-  is_published: boolean;
-  updated_at: string;
-};
-
-export async function getContentAdmin(id: string): Promise<AdminContent | null> {
-  const supabase = await createClient();
-  const r = check<ContentRow | null>(
-    await supabase
-      .from("content")
-      .select("id, slug, kind, title, summary, standard, category, level, duration_seconds, video_url, body, chapters, resources, tags, is_published, updated_at")
-      .eq("id", id)
-      .maybeSingle(),
-  );
-  if (!r) return null;
-  return {
-    id: r.id,
-    slug: r.slug,
-    kind: r.kind,
-    title: r.title,
-    summary: r.summary,
-    standard: r.standard,
-    category: r.category,
-    level: r.level,
-    durationSeconds: r.duration_seconds,
-    videoUrl: r.video_url,
-    body: r.body ?? [],
-    chapters: r.chapters ?? [],
-    resources: r.resources ?? [],
-    tags: r.tags ?? [],
-    isPublished: r.is_published,
-    updatedAt: r.updated_at,
-  };
 }
 
 // ---- presets -------------------------------------------------------------------

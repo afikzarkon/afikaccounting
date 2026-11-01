@@ -19,18 +19,6 @@ export type SavedSolution = {
   updatedAt: string;
 };
 
-export type WatchEntry = {
-  contentId: string;
-  slug: string;
-  title: string;
-  kind: "video" | "article";
-  standard: string;
-  durationSeconds: number;
-  progressSeconds: number;
-  completed: boolean;
-  lastViewedAt: string;
-};
-
 export type ActivityEvent = { id: number; kind: string; label: string; href: string | null; createdAt: string };
 
 type SolutionRow = {
@@ -80,53 +68,6 @@ export async function getSavedSolution(id: string): Promise<SavedSolution | null
     .eq("user_id", user.id)
     .maybeSingle();
   return data ? toSolution(data as SolutionRow) : null;
-}
-
-type WatchRow = {
-  content_id: string;
-  progress_seconds: number;
-  completed: boolean;
-  last_viewed_at: string;
-  content: { slug: string; title: string; kind: "video" | "article"; standard: string; duration_seconds: number } | null;
-};
-
-export async function listWatchHistory(limit = 20): Promise<WatchEntry[]> {
-  const user = await getCurrentUser();
-  if (!user) return [];
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("watch_history")
-    .select("content_id, progress_seconds, completed, last_viewed_at, content(slug, title, kind, standard, duration_seconds)")
-    .eq("user_id", user.id)
-    .order("last_viewed_at", { ascending: false })
-    .limit(limit);
-  if (error) throw new Error(error.message);
-  return (data as unknown as WatchRow[])
-    .filter((r) => r.content)
-    .map((r) => ({
-      contentId: r.content_id,
-      slug: r.content!.slug,
-      title: r.content!.title,
-      kind: r.content!.kind,
-      standard: r.content!.standard,
-      durationSeconds: r.content!.duration_seconds,
-      progressSeconds: r.progress_seconds,
-      completed: r.completed,
-      lastViewedAt: r.last_viewed_at,
-    }));
-}
-
-export async function getProgress(contentId: string): Promise<number> {
-  const user = await getCurrentUser();
-  if (!user) return 0;
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("watch_history")
-    .select("progress_seconds, completed")
-    .eq("user_id", user.id)
-    .eq("content_id", contentId)
-    .maybeSingle();
-  return data && !data.completed ? data.progress_seconds : 0;
 }
 
 export async function listActivity(limit = 15): Promise<ActivityEvent[]> {

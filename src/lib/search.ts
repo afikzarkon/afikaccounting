@@ -1,7 +1,7 @@
 /**
  * The site's quick search (Ctrl+K): one list of everything a reader may want
- * to reach — courses, lessons, the concepts inside them, calculators, exams,
- * videos and articles — and how a query ranks it. Pure, so it is tested; the
+ * to reach — courses, lessons, the concepts inside them, calculators and
+ * exams — and how a query ranks it. Pure, so it is tested; the
  * list itself is built on the server (/api/search) and fetched once.
  */
 
@@ -11,7 +11,6 @@ export const SEARCH_KINDS = [
   { kind: "concept", label: "מושגים בשיעורים" },
   { kind: "tool", label: "מחשבונים וכלים" },
   { kind: "exam", label: "מבחנים" },
-  { kind: "content", label: "וידאו ומאמרים" },
   { kind: "page", label: "דפים" },
 ] as const;
 export type SearchKind = (typeof SEARCH_KINDS)[number]["kind"];

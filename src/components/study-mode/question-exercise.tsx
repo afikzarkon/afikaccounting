@@ -1,6 +1,5 @@
 "use client";
 
-import { Check, X } from "lucide-react";
 import { useId, useState } from "react";
 import { Money } from "@/components/basics/ui";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { type ExResult, numberRight, triesFor, XP } from "@/lib/study/score";
 import type { QuestionExercise } from "@/lib/study/types";
 import { cn } from "@/lib/utils";
 import { BalanceGapBoard } from "./balance-gap";
+import { OptionMark, optionClass, promptClass } from "./choice";
 import { Feedback, Gain } from "./journal-simulator";
 import { typedAmount } from "@/lib/amount";
 
@@ -41,16 +41,17 @@ export function QuestionExercise({ q, result, onCheck }: { q: Question; result?:
   const canCheck = q.kind === "number" ? value.trim() !== "" : dr !== "" && cr !== "";
 
   return (
-    <div className="space-y-4">
-      <p id={`${id}-q`} className="text-[16.5px] font-semibold leading-relaxed text-fg">
+    <div className="space-y-5">
+      <p id={`${id}-q`} className={promptClass}>
         {q.prompt}
       </p>
 
       {q.kind === "choice" && (
-        <div role="radiogroup" aria-labelledby={`${id}-q`} className="grid gap-2">
+        <div role="radiogroup" aria-labelledby={`${id}-q`} className="grid gap-2.5">
           {q.options.map((o, i) => {
             const right = done && i === q.answer;
             const wrong = missed.includes(i);
+            const state = right ? "right" : wrong ? "wrong" : done ? "past" : "open";
             return (
               <button
                 key={o}
@@ -59,20 +60,9 @@ export function QuestionExercise({ q, result, onCheck }: { q: Question; result?:
                 aria-checked={right || wrong}
                 aria-disabled={done || wrong}
                 onClick={() => pick(i)}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl border-2 px-3.5 py-3 text-start text-[15px] transition-colors",
-                  right ? "border-success bg-success/10 font-semibold" : wrong ? "border-danger bg-danger/10" : done ? "border-line opacity-60" : "border-line bg-surface hover:border-accent/50 hover:bg-accent-soft/40",
-                  (done || wrong) && "cursor-default",
-                )}
+                className={optionClass(state)}
               >
-                <span
-                  className={cn(
-                    "num grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[12px] font-bold",
-                    right ? "border-success bg-success text-white" : wrong ? "border-danger bg-danger text-white" : "border-line-strong text-muted",
-                  )}
-                >
-                  {right ? <Check className="h-4 w-4" /> : wrong ? <X className="h-4 w-4" /> : "אבגדהו"[i]}
-                </span>
+                <OptionMark state={state} letter={"אבגדהו"[i]} />
                 <span className="min-w-0">{o}</span>
               </button>
             );
@@ -133,13 +123,17 @@ export function QuestionExercise({ q, result, onCheck }: { q: Question; result?:
       {done && (
         <>
           <Feedback ok={result!.ok} title={result!.ok ? <Gain xp={result!.tries === 1 ? XP.first : XP.second} /> : "הנה הפתרון"} />
-          <div className="rounded-xl border border-line bg-surface-2/60 px-4 py-3 text-[14.5px] leading-relaxed text-fg">
-            <ol className="list-inside list-decimal space-y-1">
-              {q.steps.map((s) => (
-                <li key={s}>{s}</li>
+          <div className="rounded-2xl bg-surface-2/70 p-4 text-[15px] leading-relaxed text-fg ring-1 ring-line sm:p-5">
+            <p className="mb-2.5 text-[12.5px] font-bold text-muted">הפתרון, שלב אחר שלב</p>
+            <ol className="space-y-2">
+              {q.steps.map((s, i) => (
+                <li key={s} className="flex gap-2.5">
+                  <span className="num mt-0.5 grid h-5.5 w-5.5 shrink-0 place-items-center rounded-full bg-accent-soft text-[11.5px] font-bold text-accent">{i + 1}</span>
+                  <span className="min-w-0">{s}</span>
+                </li>
               ))}
             </ol>
-            <p className="mt-2 font-semibold">
+            <p className="mt-3 border-t border-line pt-3 font-semibold">
               התשובה:{" "}
               {q.kind === "choice" ? q.options[q.answer] : q.kind === "number" ? <Money v={q.answer} /> : `ח׳ ${q.dr} / ז׳ ${q.cr}`}
             </p>

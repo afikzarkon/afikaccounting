@@ -33,7 +33,6 @@ export const corporateTax: Calculator = {
   category: "מסים על ההכנסה",
   icon: "Landmark",
   accent: "emerald",
-  explainerSlug: "deferred-tax-israel-ias-12",
   scenario: [
     { kind: "select", id: "currency", label: "מטבע הדיווח", options: CURRENCIES, default: "ILS" },
     {
@@ -48,7 +47,6 @@ export const corporateTax: Calculator = {
         { value: "custom", label: "תחום שיפוט אחר / שיעור מותאם" },
       ],
       default: "standard",
-      videoAt: 130,
     },
     {
       kind: "toggle",
@@ -56,7 +54,6 @@ export const corporateTax: Calculator = {
       label: "צפוי רווח חייב עתידי (נכסי המס הנדחים ניתנים למימוש)",
       help: "אם לא, הפרשים ניתנים לניכוי והפסדים מוכרים רק עד גובה ההפרשים החייבים במס שמתהפכים.",
       default: true,
-      videoAt: 610,
     },
   ],
   metrics: [

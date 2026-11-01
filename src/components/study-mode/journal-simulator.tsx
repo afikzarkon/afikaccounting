@@ -173,12 +173,14 @@ export function Feedback({ ok, title, text }: { ok: boolean; title: ReactNode; t
       initial={ok ? { scale: 0.96, opacity: 0 } : { x: 0, opacity: 0 }}
       animate={ok ? { scale: 1, opacity: 1 } : { x: [0, -8, 8, -5, 5, 0], opacity: 1 }}
       transition={{ duration: ok ? 0.25 : 0.4 }}
-      className={cn("flex gap-2.5 rounded-xl border px-3.5 py-3", ok ? "border-success/40 bg-success/10" : "border-danger/40 bg-danger/10")}
+      className={cn("flex gap-3 rounded-2xl px-4 py-3.5 ring-1", ok ? "bg-success/10 ring-success/35" : "bg-danger/10 ring-danger/35")}
     >
-      {ok ? <CircleCheck className="mt-0.5 h-5 w-5 shrink-0 text-success" aria-hidden /> : <CircleX className="mt-0.5 h-5 w-5 shrink-0 text-danger" aria-hidden />}
-      <div className="min-w-0">
-        <p className={cn("text-[14.5px] font-bold", ok ? "text-success" : "text-danger")}>{title}</p>
-        {text && <p className="mt-0.5 text-[14px] leading-relaxed text-fg/90">{text}</p>}
+      <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-xl", ok ? "bg-success/15" : "bg-danger/15")}>
+        {ok ? <CircleCheck className="h-5 w-5 text-success" aria-hidden /> : <CircleX className="h-5 w-5 text-danger" aria-hidden />}
+      </span>
+      <div className="min-w-0 self-center">
+        <p className={cn("text-[15px] font-bold", ok ? "text-success" : "text-danger")}>{title}</p>
+        {text && <p className="mt-1 text-[14.5px] leading-relaxed text-fg/90">{text}</p>}
       </div>
     </motion.div>
   );

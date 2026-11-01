@@ -51,7 +51,7 @@ async function Thanks({ searchParams }: Pick<PageProps<"/checkout/thanks">, "sea
       <span className="grid h-12 w-12 place-items-center rounded-2xl bg-success/10 text-success" aria-hidden>
         <PartyPopper className="h-6 w-6" />
       </span>
-      <h1 className="mt-4 flex flex-wrap items-center gap-2 text-2xl font-semibold tracking-tight text-fg">
+      <h1 className="mt-4 flex flex-wrap items-center gap-2 text-2xl font-bold tracking-tight text-fg">
         תודה! מסלול {planOf(tier).name} <TierBadge tier={tier} />
       </h1>
       {open ? (

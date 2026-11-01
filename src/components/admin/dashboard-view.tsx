@@ -114,7 +114,7 @@ export function DashboardView({ data, storage, days, grain }: { data: Analytics;
           <ShareBar parts={data.videoSources.map((v) => ({ name: SOURCES[v.source] ?? v.source, value: v.count }))} />
           <div className="mt-6 border-t border-line pt-5">
             <p className="mb-3 text-xs font-semibold text-muted">הסרטונים המובילים</p>
-            <RankedBars rows={data.videos.map((v) => ({ label: v.title ?? v.slug, values: [v.count], href: `/content/${v.slug}`, note: v.source ? SOURCES[v.source] : undefined }))} />
+            <RankedBars rows={data.videos.map((v) => ({ label: v.title ?? v.slug, values: [v.count], note: v.source ? SOURCES[v.source] : undefined }))} />
           </div>
         </Panel>
       </div>

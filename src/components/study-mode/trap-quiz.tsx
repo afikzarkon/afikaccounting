@@ -1,46 +1,33 @@
 "use client";
 
-import { Check, X } from "lucide-react";
 import { motion } from "motion/react";
 import { useId } from "react";
 import { XP } from "@/lib/study/score";
 import type { Trap } from "@/lib/study/types";
 import { cn } from "@/lib/utils";
+import { OptionMark, optionClass, promptClass } from "./choice";
 import { Feedback, Gain } from "./journal-simulator";
 
 /** A multiple-choice question of the practice that explains each wrong option. The first choice counts: the right option lights green, a wrong one red with why it tempts. */
 export function TrapQuiz({ trap, answered, onAnswer }: { trap: Trap; answered?: { choice: number; correct: boolean }; onAnswer: (choice: number) => void }) {
   const name = useId();
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <fieldset disabled={!!answered}>
-        <legend className="text-[16.5px] font-semibold leading-relaxed text-fg">{trap.prompt}</legend>
-        <div className="mt-4 grid gap-2">
+        <legend className={promptClass}>{trap.prompt}</legend>
+        <div className="mt-5 grid gap-2.5">
           {trap.options.map((o, i) => {
             const right = answered && i === trap.answer;
             const chosenWrong = answered && i === answered.choice && !answered.correct;
+            const state = right ? "right" : chosenWrong ? "wrong" : answered ? "past" : "open";
             return (
               <motion.label
                 key={o}
                 animate={right && answered.correct ? { scale: [1, 1.03, 1] } : undefined}
-                className={cn(
-                  "flex cursor-pointer items-center gap-3 rounded-xl border-2 px-3.5 py-3 text-[15px] transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--ring)]",
-                  !answered && "border-line bg-surface hover:border-accent/50 hover:bg-accent-soft/40",
-                  right && "border-success bg-success/10 font-semibold text-fg",
-                  chosenWrong && "border-danger bg-danger/10 text-fg",
-                  answered && !right && !chosenWrong && "border-line bg-surface opacity-60",
-                  answered && "cursor-default",
-                )}
+                className={cn(optionClass(state), "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--ring)]")}
               >
                 <input type="radio" name={name} value={i} checked={answered?.choice === i} onChange={() => onAnswer(i)} className="sr-only" />
-                <span
-                  className={cn(
-                    "num grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[12px] font-bold",
-                    right ? "border-success bg-success text-white" : chosenWrong ? "border-danger bg-danger text-white" : "border-line-strong text-muted",
-                  )}
-                >
-                  {right ? <Check className="h-4 w-4" /> : chosenWrong ? <X className="h-4 w-4" /> : "אבגד"[i]}
-                </span>
+                <OptionMark state={state} letter={"אבגד"[i]} />
                 <span className="min-w-0">{o}</span>
               </motion.label>
             );
@@ -53,7 +40,7 @@ export function TrapQuiz({ trap, answered, onAnswer }: { trap: Trap; answered?: 
         ) : (
           <div className="space-y-2">
             <Feedback ok={false} title="לא נכון" text={trap.traps[answered.choice]} />
-            <p className="rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[14px] leading-relaxed text-fg/90">
+            <p className="rounded-2xl bg-surface-2/70 px-4 py-3.5 text-[15px] leading-relaxed text-fg/90 ring-1 ring-line">
               <span className="font-bold text-success">התשובה הנכונה: </span>
               {trap.why}
             </p>

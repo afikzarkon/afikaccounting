@@ -1,10 +1,9 @@
 "use client";
 
-import { Check, PlayCircle, Plus, Trash2 } from "lucide-react";
+import { Check, Plus, Trash2 } from "lucide-react";
 import { motion } from "motion/react";
 import { type KeyboardEvent, useId, useState } from "react";
 import { inputClass } from "@/components/ui/form";
-import { duration } from "@/lib/engine/format";
 import type { DatedValuesField, Field, FieldValue, NumberField } from "@/lib/engine/types";
 import { parseDatedValues } from "@/lib/engine/validate";
 import { cn } from "@/lib/utils";
@@ -18,8 +17,6 @@ type Props<F extends Field = Field> = {
   disabled?: boolean;
   currency: string;
   onChange: (value: FieldValue) => void;
-  /** Opens the explainer video at the field's timestamp, when it has one. */
-  onExplain?: (at: number) => void;
   /** Offered when solving for an unknown: marks or clears this field as X. */
   unknown?: { active: boolean; onToggle: () => void };
   /** For a dated-values field: show its optional note column. */
@@ -27,7 +24,7 @@ type Props<F extends Field = Field> = {
 };
 
 export function FieldControl(props: Props) {
-  const { field, error, disabled, onExplain, unknown } = props;
+  const { field, error, disabled, unknown } = props;
   const id = useId();
   const isX = !!unknown?.active;
   const help = isX
@@ -62,16 +59,6 @@ export function FieldControl(props: Props) {
               title={isX ? "ביטול הסימון כנעלם" : "סימון השדה כנעלם (X)"}
             >
               {isX ? "✓ " : ""}נעלם (X)
-            </button>
-          )}
-          {field.videoAt !== undefined && onExplain && (
-            <button
-              type="button"
-              onClick={() => onExplain(field.videoAt!)}
-              className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent transition hover:brightness-110"
-              title="צפייה בחלק של סרטון ההסבר שעוסק בזה"
-            >
-              <PlayCircle className="h-3.5 w-3.5" /> {duration(field.videoAt)}
             </button>
           )}
         </div>

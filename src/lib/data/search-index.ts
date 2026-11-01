@@ -1,7 +1,6 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { ENGINE_TOOLS, EXAMS_HUB, LEARN_HUB, LEARNING_TOOLS, PRICING_HUB, TOPICS } from "@/lib/catalog";
-import { listContent } from "@/lib/data/content";
 import { listExams } from "@/lib/data/exams";
 import type { SearchItem } from "@/lib/search";
 import { STUDY_MODULES } from "@/lib/study";
@@ -15,13 +14,12 @@ const topicName = (id: string) => {
 /**
  * Everything the quick search can reach, from the same sources the site is
  * built from: the catalog, the lessons and their concept screens (each opens
- * straight on its screen), the calculators, the published exams and the
- * content hub. Titles and addresses only — nothing locked. Cached; refreshed
- * with the exams and the content.
+ * straight on its screen), the calculators, and the published exams.
+ * Titles and addresses only — nothing locked. Cached; refreshed with the exams.
  */
 export async function searchIndex(): Promise<SearchItem[]> {
   "use cache";
-  cacheTag("exams", "content");
+  cacheTag("exams");
   cacheLife("hours");
   const items: SearchItem[] = [];
 
@@ -37,7 +35,6 @@ export async function searchIndex(): Promise<SearchItem[]> {
   for (const c of LEARNING_TOOLS) items.push({ kind: "tool", title: c.label, hint: c.topic, href: c.href });
   for (const c of ENGINE_TOOLS) items.push({ kind: "tool", title: `${c.standard} · ${c.label}`, hint: `מנוע הפתרונות · ${c.description ?? ""}`, href: c.href });
   for (const e of await listExams()) items.push({ kind: "exam", title: e.title, hint: `${EXAMS_HUB.label} · ${topicName(e.topic)} · ${e.subjects.join(" · ")}`, href: `/exams/${e.id}`, tier: e.isSample ? undefined : "exams" });
-  for (const c of await listContent()) items.push({ kind: "content", title: c.title, hint: `${c.kind === "video" ? "וידאו" : "מאמר"} · ${c.standard} · ${c.category}`, href: `/content/${c.slug}` });
   items.push(
     { kind: "page", title: LEARN_HUB.label, hint: "כל הקורסים לפי הסדר", href: LEARN_HUB.href },
     { kind: "page", title: EXAMS_HUB.label, hint: "תרגילים ברמת מבחן עם פתרון מלא", href: EXAMS_HUB.href },

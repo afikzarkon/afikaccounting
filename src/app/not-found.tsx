@@ -9,12 +9,12 @@ export default function NotFound() {
         <Compass className="h-7 w-7" />
       </span>
       <p className="mt-6 font-mono text-sm text-subtle">404</p>
-      <h1 className="mt-1 text-3xl font-semibold tracking-tight text-fg">הדף הזה לא מאוזן</h1>
+      <h1 className="mt-1 text-3xl font-bold tracking-tight text-fg">הדף הזה לא מאוזן</h1>
       <p className="mt-2 max-w-md text-muted">לא מצאנו את מה שחיפשתם. ייתכן שהדף הועבר.</p>
       <div className="mt-8 flex gap-3">
         <ButtonLink href="/">לדף הבית</ButtonLink>
-        <ButtonLink href="/content" variant="secondary">
-          לעיון בתכנים
+        <ButtonLink href="/learn" variant="secondary">
+          למפת הלימוד
         </ButtonLink>
       </div>
     </Container>

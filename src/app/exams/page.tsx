@@ -1,4 +1,4 @@
-import { ArrowLeft, Crown, FileSearch } from "lucide-react";
+import { ArrowLeft, Crown, FileSearch, Hourglass } from "lucide-react";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { EXAMS_LEAD } from "@/components/exams/exam-card";
@@ -14,7 +14,7 @@ import { examFacets, listExams } from "@/lib/data/exams";
 
 export const metadata: Metadata = {
   title: EXAMS_HUB.label,
-  description: "תרגילים ברמת מבחן עם פתרון מלא מאפס, שלב אחר שלב — מלאי, רכוש קבוע ודוחות כספיים. מבחן לדוגמה פתוח לכולם.",
+  description: "תרגילים ברמת מבחן עם פתרון מלא מאפס, שלב אחר שלב — במלאי וברכוש קבוע.",
 };
 
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) || undefined;
@@ -29,7 +29,7 @@ export default function ExamsPage({ searchParams }: PageProps<"/exams">) {
           <Crown className="h-5 w-5 text-amber-500" aria-hidden />
           <TierBadge tier="exams" />
         </div>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
+        <h1 className="mt-3 text-[2.2rem] leading-tight font-bold tracking-tight text-fg sm:text-5xl">
           {EXAMS_HUB.label} — <span className="text-gradient">מתרגלים כמו במבחן</span>
         </h1>
         <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted">
@@ -51,6 +51,7 @@ export default function ExamsPage({ searchParams }: PageProps<"/exams">) {
 
 async function Filters() {
   const f = await examFacets();
+  if (!f.topics.length) return null;
   return <ExamFilters topics={f.topics.map((t) => ({ value: t, label: topicLabel(t) }))} subjects={f.subjects} years={f.years} />;
 }
 
@@ -60,6 +61,13 @@ async function Exams({ searchParams }: Pick<PageProps<"/exams">, "searchParams">
   const [exams, access, all] = await Promise.all([listExams(filters), getAccess(), listExams()]);
   const sample = all.find((e) => e.isSample);
   const member = tierAllows(access.tier, "exams");
+  // Nothing published yet: the area says the exams are on their way, rather than that a filter matched nothing.
+  if (!all.length)
+    return (
+      <div className="mt-8">
+        <EmptyState icon={<Hourglass className="h-5 w-5" />} title="המבחנים בדרך" description="אנחנו כותבים עכשיו את המבחנים והפתרונות המלאים. בינתיים — התרגול שבסוף כל שיעור מחכה לכם." />
+      </div>
+    );
   return (
     <>
       {!member && (

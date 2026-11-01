@@ -156,7 +156,7 @@ export default function Ias16Page() {
       <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-16 sm:pt-14">
         <Breadcrumbs trail={[{ label: "שלב 2 · קורסים מתקדמים" }, { label: "רכוש קבוע (IAS 16)" }]} />
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
+        <h1 className="mt-2 text-[2.2rem] leading-tight font-bold tracking-tight text-fg sm:text-5xl">
           תקן IAS 16 רכוש קבוע <span className="text-gradient">מהקל לקשה</span>
         </h1>
         <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted">

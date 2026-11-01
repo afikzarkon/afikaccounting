@@ -2,25 +2,22 @@
 
 import { Gauge, Maximize, Pause, Play, PlayCircle, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { recordProgress } from "@/lib/actions/history";
 import { track } from "@/lib/analytics/track";
-import type { ContentItem } from "@/lib/content/types";
 import { DEMO_VIDEO_URL } from "@/lib/env";
 import { duration } from "@/lib/engine/format";
 import { type Embed, embedUrl, parseEmbed, thumbnailUrl } from "@/lib/media/embed";
 import { cn } from "@/lib/utils";
 
-export type PlayableItem = Pick<ContentItem, "slug" | "title" | "videoUrl" | "durationSeconds" | "chapters">;
+export type Chapter = { at: number; title: string };
+
+/** A video to play: a file or a YouTube / Vimeo link (`videoUrl`), with its chapters. */
+export type PlayableItem = { slug: string; title: string; videoUrl: string | null; durationSeconds: number; chapters: Chapter[] };
 
 const SPEEDS = [1, 1.25, 1.5, 2];
-/** Seconds of playback between progress saves. */
-const SAVE_EVERY = 20;
 
 type PlayerProps = {
   item: PlayableItem;
   startAt?: number;
-  /** Save progress to the user's watch history (ignored for guests). */
-  track?: boolean;
   layout?: "side" | "stacked";
   className?: string;
 };
@@ -48,7 +45,6 @@ function usePlayTracker(item: PlayableItem, source: "upload" | "youtube" | "vime
 function FilePlayer({
   item,
   startAt = 0,
-  track = true,
   layout = "side",
   className,
 }: PlayerProps) {
@@ -62,34 +58,12 @@ function FilePlayer({
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [speed, setSpeed] = useState(1);
-  const lastSaved = useRef(startAt);
-  const completed = useRef(false);
+  const onProgress = useCallback((t: number) => {
+    timeRef.current = t;
+    setTime(t);
+  }, []);
 
-  const save = useCallback(
-    (seconds: number, done = false) => {
-      if (!track) return;
-      lastSaved.current = seconds;
-      recordProgress(item.slug, seconds, done).catch(() => {});
-    },
-    [item.slug, track],
-  );
-
-  const onProgress = useCallback(
-    (t: number) => {
-      timeRef.current = t;
-      setTime(t);
-      if (Math.abs(t - lastSaved.current) >= SAVE_EVERY) save(t);
-    },
-    [save],
-  );
-
-  const finish = useCallback(() => {
-    setPlaying(false);
-    if (!completed.current) {
-      completed.current = true;
-      save(total, true);
-    }
-  }, [save, total]);
+  const finish = useCallback(() => setPlaying(false), []);
 
   // Simulated playback for lessons without a recording.
   useEffect(() => {
@@ -99,10 +73,9 @@ function FilePlayer({
       timeRef.current = next;
       setTime(next);
       if (next >= total) finish();
-      else if (Math.abs(next - lastSaved.current) >= SAVE_EVERY) save(next);
     }, 1000);
     return () => clearInterval(id);
-  }, [src, playing, speed, total, finish, save]);
+  }, [src, playing, speed, total, finish]);
 
   useEffect(() => {
     if (videoRef.current) videoRef.current.playbackRate = speed;
@@ -112,8 +85,6 @@ function FilePlayer({
     const target = Math.max(0, Math.min(t, total));
     timeRef.current = target;
     setTime(target);
-    // Replaying from the end starts a fresh viewing.
-    if (target < total) completed.current = false;
     const v = videoRef.current;
     if (v) {
       v.currentTime = target;
@@ -128,8 +99,7 @@ function FilePlayer({
       else v.pause();
       return;
     }
-    if (playing) save(time);
-    else {
+    if (!playing) {
       countPlay();
       if (timeRef.current >= total) seek(0, false);
     }
@@ -167,10 +137,7 @@ function FilePlayer({
                 setPlaying(true);
                 countPlay();
               }}
-              onPause={(e) => {
-                setPlaying(false);
-                save(e.currentTarget.currentTime);
-              }}
+              onPause={() => setPlaying(false)}
               onTimeUpdate={(e) => onProgress(e.currentTarget.currentTime)}
               onEnded={finish}
             />
@@ -249,7 +216,7 @@ function Scrubber({
 }: {
   pct: number;
   total: number;
-  chapters: ContentItem["chapters"];
+  chapters: Chapter[];
   onSeek: (t: number) => void;
 }) {
   return (
@@ -319,7 +286,7 @@ function ChapterList({
   onSelect,
   compact,
 }: {
-  chapters: ContentItem["chapters"];
+  chapters: Chapter[];
   activeAt?: number;
   total: number;
   onSelect: (t: number) => void;

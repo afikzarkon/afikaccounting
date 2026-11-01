@@ -18,7 +18,7 @@ export default function ProfilePage() {
   return (
     <Container className="max-w-3xl pt-10 sm:pt-14">
       <p className="text-xs font-semibold text-accent">חשבון</p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg">פרופיל</h1>
+      <h1 className="mt-2 text-3xl font-bold tracking-tight text-fg">פרופיל</h1>
       <Suspense fallback={<Skeleton className="mt-8 h-[480px] rounded-2xl" />}>
         <ProfileContent />
       </Suspense>

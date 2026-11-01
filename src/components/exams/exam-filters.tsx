@@ -3,9 +3,9 @@
 import { Loader2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
-import { ChipGroup } from "@/components/content/content-filters";
+import { cn } from "@/lib/utils";
 
-/** Course, subject and year — in the URL, like the content hub's filters, so a filtered view is linkable and rendered on the server. */
+/** Course, subject and year — in the URL, so a filtered view is linkable and rendered on the server. */
 export function ExamFilters({ topics, subjects, years }: { topics: { value: string; label: string }[]; subjects: string[]; years: number[] }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -46,6 +46,42 @@ export function ExamFilters({ topics, subjects, years }: { topics: { value: stri
         </button>
       )}
       {pending && <Loader2 className="h-4 w-4 animate-spin text-subtle" aria-label="טוען" />}
+    </div>
+  );
+}
+
+/** Single-choice chips; choosing the chosen one again clears it. */
+export function ChipGroup({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: { value: string; label: string }[];
+  value: string | null;
+  onChange: (v: string | null) => void;
+}) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-wrap items-center gap-1.5">
+      <span className="me-1 text-xs text-muted">{label}</span>
+      {options.map((o) => {
+        const on = value === o.value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onChange(on ? null : o.value)}
+            className={cn(
+              "h-8 rounded-full border px-3 text-xs font-medium transition-colors",
+              on ? "border-accent bg-accent text-accent-fg" : "border-line-strong bg-surface text-muted hover:border-accent/50 hover:text-fg",
+            )}
+          >
+            {o.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

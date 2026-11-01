@@ -51,7 +51,7 @@ async function Checkout({ searchParams }: Pick<PageProps<"/checkout">, "searchPa
     <div className="card p-6 sm:p-8">
       {one(sp.welcome) === "1" && <TrackEvent event={{ kind: "signup", meta: { plan: tier } }} once="signup" />}
       <p className="text-xs font-semibold text-accent">תשלום</p>
-      <h1 className="mt-2 flex flex-wrap items-center gap-2 text-2xl font-semibold tracking-tight text-fg">
+      <h1 className="mt-2 flex flex-wrap items-center gap-2 text-2xl font-bold tracking-tight text-fg">
         מסלול {plan.name} <TierBadge tier={tier} />
       </h1>
       <p className="num mt-1 text-sm text-muted">

@@ -104,18 +104,6 @@ export const LEARNING_PATH: Stage[] = [
         tier: "courses",
         preview: ["what"],
       },
-      {
-        id: "statements",
-        format: "page",
-        title: "הכנת דוחות כספיים",
-        standard: "IFRS 18",
-        href: "/basics/statements",
-        description: "המסגרת המושגית, מבנה המאזן ודוח רווח או הפסד לפי IFRS 18, ושאלה מלאה ממאזן בוחן ועד דוחות.",
-        covers: ["מסגרת מושגית", "מאפיינים איכותיים", "שוטף ובלתי שוטף", "קטגוריות IFRS 18", "סיווג לפי מאפיין פעילות", "רווח כולל אחר"],
-        tools: [{ href: "/basics/statements#fs-builder", label: "בונה הדוחות" }],
-        tier: "courses",
-        preview: ["fs-framework"],
-      },
     ],
   },
 ];

@@ -8,7 +8,6 @@ import {
   Layers,
   Link2,
   Loader2,
-  PlayCircle,
   RotateCcw,
   Sparkles,
   TriangleAlert,
@@ -19,8 +18,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { FormAlert, inputClass } from "@/components/ui/form";
 import { Badge } from "@/components/ui/primitives";
-import { VideoDrawer } from "@/components/video/video-drawer";
-import type { PlayableItem } from "@/components/video/video-player";
 import { saveSolution } from "@/lib/actions/solutions";
 import { track } from "@/lib/analytics/track";
 import type { Preset } from "@/lib/data/presets";
@@ -71,12 +68,10 @@ function setQuery(params: Record<string, string>) {
 
 export function Wizard({
   start,
-  explainers,
   presets = [],
   signedIn,
 }: {
   start: WizardStart | null;
-  explainers: Record<string, PlayableItem>;
   /** Ready-made scenarios from the admin's preset library, for every calculator. */
   presets?: Preset[];
   signedIn: boolean;
@@ -89,11 +84,9 @@ export function Wizard({
   /** Bumped to remount inputs after a reset, so their local text state resets too. */
   const [formKey, setFormKey] = useState(0);
   const [saved, setSaved] = useState(start?.saved);
-  const [video, setVideo] = useState<{ open: boolean; at: number }>({ open: false, at: 0 });
   /** The preset the current values came from, so its runs are attributed to it. */
   const [presetId, setPresetId] = useState<string>();
 
-  const explainer = calc?.explainerSlug ? explainers[calc.explainerSlug] : undefined;
   const currency = typeof values.currency === "string" ? values.currency : "ILS";
 
   const result = useMemo<RunResult>(() => (step === 3 && calc ? solveTimed(calc, values) : {}), [step, calc, values]);
@@ -188,11 +181,6 @@ export function Wizard({
             </p>
             <p className="truncate text-xs text-muted">{calc.tagline}</p>
           </div>
-          {explainer && (
-            <Button variant="outline" size="sm" onClick={() => setVideo({ open: true, at: 0 })} className="no-print">
-              <PlayCircle className="h-3.5 w-3.5" /> סרטון הסבר
-            </Button>
-          )}
         </div>
       )}
 
@@ -219,7 +207,6 @@ export function Wizard({
                 errors={errors}
                 currency={currency}
                 onChange={update}
-                onExplain={explainer ? (at) => setVideo({ open: true, at }) : undefined}
                 onReset={reset}
               />
             )}
@@ -278,13 +265,6 @@ export function Wizard({
           )}
         </div>
       )}
-
-      <VideoDrawer
-        item={explainer ?? null}
-        startAt={video.at}
-        open={video.open}
-        onClose={() => setVideo((v) => ({ ...v, open: false }))}
-      />
     </div>
   );
 }
@@ -403,7 +383,6 @@ function FieldsStep({
   errors,
   currency,
   onChange,
-  onExplain,
   onReset,
 }: {
   calc: Calculator;
@@ -412,7 +391,6 @@ function FieldsStep({
   errors: Record<string, string>;
   currency: string;
   onChange: (id: string, v: FieldValue) => void;
-  onExplain?: (at: number) => void;
   onReset: () => void;
 }) {
   const fields = (scope === "scenario" ? calc.scenario : calc.metrics).filter((f) => isVisible(f, values));
@@ -477,7 +455,6 @@ function FieldsStep({
                   }
                   currency={currency}
                   onChange={(v) => onChange(f.id, v)}
-                  onExplain={onExplain}
                 />
               </motion.div>
             );

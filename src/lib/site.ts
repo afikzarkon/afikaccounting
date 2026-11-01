@@ -28,12 +28,11 @@ export const site = {
   name: "AfikAccounting",
   tagline: "חשבונאות מאפס ועד המבחן",
   description:
-    "קורס חשבונאות מאפס בחינם, שיעור אחר שיעור — מושגים עם דוגמה חיה, תרגול עם משוב מיידי וטיפים למבחן. ומשם לקורסים המתקדמים: מלאי, רכוש קבוע ודוחות כספיים, עד רמת מבחן.",
+    "קורס חשבונאות מאפס בחינם, שיעור אחר שיעור — מושגים עם דוגמה חיה, תרגול עם משוב מיידי וטיפים למבחן. ומשם לקורסים המתקדמים: מלאי ורכוש קבוע, עד רמת מבחן.",
   nav: [
     { label: "קורסים", hub: { href: LEARN_HUB.href, label: "למפת הלימוד המלאה" }, items: learnItems },
     { ...EXAMS_HUB, tier: "exams" },
     { label: "כלים", hub: { href: ENGINE_HUB.href, label: "למנוע הפתרונות" }, items: toolItems },
-    { href: "/content", label: "וידאו ומאמרים" },
     PRICING_HUB,
   ] satisfies NavItem[] as NavItem[],
 };

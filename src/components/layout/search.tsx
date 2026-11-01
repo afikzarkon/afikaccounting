@@ -23,7 +23,7 @@ export function SearchTrigger() {
       <button
         type="button"
         onClick={openSearch}
-        className="hidden h-9 w-52 items-center gap-2 rounded-lg border border-line-strong bg-surface px-3 text-[13px] text-subtle transition-colors hover:border-accent/50 hover:text-muted lg:flex"
+        className="hidden h-9 w-52 items-center gap-2 rounded-lg border border-line-strong bg-surface px-3 text-[13px] text-subtle transition-colors hover:border-accent/50 hover:text-muted xl:flex"
       >
         <Search className="h-4 w-4" aria-hidden />
         חיפוש בכל האתר…
@@ -31,7 +31,7 @@ export function SearchTrigger() {
           Ctrl K
         </kbd>
       </button>
-      <button type="button" onClick={openSearch} aria-label="חיפוש" className="hidden h-9 w-9 place-items-center rounded-lg text-muted hover:bg-surface-2 hover:text-fg md:grid lg:hidden">
+      <button type="button" onClick={openSearch} aria-label="חיפוש" className="hidden h-9 w-9 place-items-center rounded-lg text-muted hover:bg-surface-2 hover:text-fg md:grid xl:hidden">
         <Search className="h-[18px] w-[18px]" />
       </button>
     </>

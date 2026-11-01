@@ -1,10 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { canOpenExam, resolveAccess } from "../access";
-import { TOPICS } from "../catalog";
 import { cell, parseBlocks, parseSteps, parseSubjects } from "./parse";
-import { SEED_EXAMS } from "./seed";
-import { matchesExam } from "./types";
+import { type ExamMeta, matchesExam } from "./types";
 
 const NOW = new Date("2026-11-01T12:00:00Z");
 const sub = (tier: string, end: string | null = null) => ({ tier, status: "active", current_period_end: end });
@@ -57,54 +55,13 @@ describe("solution data from the editor", () => {
   it("splits subjects by commas, once each", () => assert.deepEqual(parseSubjects("FIFO, שווי מימוש נטו,FIFO, "), ["FIFO", "שווי מימוש נטו"]));
 });
 
-describe("the demo exams", () => {
-  it("belong to topics on the learning path, have unique ids, and one sample", () => {
-    for (const e of SEED_EXAMS) assert.ok(TOPICS.some((t) => t.id === e.topic), e.topic);
-    assert.equal(new Set(SEED_EXAMS.map((e) => e.id)).size, SEED_EXAMS.length);
-    assert.equal(SEED_EXAMS.filter((e) => e.isSample).length, 1);
-  });
-  it("survive the parser unchanged (what an admin saves is what they wrote)", () => {
-    for (const e of SEED_EXAMS) {
-      assert.deepEqual(parseBlocks(e.content.question), e.content.question, e.id);
-      assert.deepEqual(parseSteps(e.content.steps), e.content.steps, e.id);
-    }
-  });
-  it("balance every journal entry", () => {
-    for (const e of SEED_EXAMS)
-      for (const s of e.content.steps)
-        for (const b of s.blocks)
-          if (b.kind === "entry") {
-            const dr = b.lines.reduce((a, l) => a + (l.dr ?? 0), 0);
-            const cr = b.lines.reduce((a, l) => a + (l.cr ?? 0), 0);
-            assert.equal(dr, cr, `${e.title}: ${b.title}`);
-          }
-  });
-  it("add up: inventory by FIFO and average, and the write-down", () => {
-    const layers = [[200, 50], [300, 60], [500, 66]];
-    const units = layers.reduce((a, [u]) => a + u, 0);
-    const cost = layers.reduce((a, [u, p]) => a + u * p, 0);
-    assert.deepEqual([units, cost], [1000, 61_000]);
-    const left = units - 700;
-    const fifo = left * 66;
-    const avg = (cost / units) * left;
-    const nrv = left * (70 - 5);
-    assert.deepEqual([fifo, cost - fifo, avg, cost - avg, nrv], [19_800, 41_200, 18_300, 42_700, 19_500]);
-    assert.deepEqual([Math.max(0, fifo - nrv), Math.max(0, avg - nrv)], [300, 0]);
-    assert.deepEqual([70_000 - (cost - fifo) - (fifo - nrv), 70_000 - (cost - avg)], [28_500, 27_300]);
-  });
-  it("add up: the fire, the revaluation and the profit or loss", () => {
-    const atFire = 40_000 + 260_000 - (350_000 * 70) / 100;
-    assert.deepEqual([atFire, atFire - 12_000, atFire - 12_000 - 35_000], [55_000, 43_000, 8_000]);
-    const carrying = 500_000 - 2 * (500_000 / 10);
-    assert.deepEqual([carrying, 480_000 - carrying, 480_000 / 8, 480_000 / 8 - 500_000 / 10], [400_000, 80_000, 60_000, 10_000]);
-    const operating = 900 - 540 - 90 - 70;
-    const beforeTax = operating + 15 - 20;
-    assert.deepEqual([operating, operating + 15, beforeTax, beforeTax * 0.75], [200, 215, 195, 146.25]);
-  });
-  it("filter by topic, subject and year", () => {
-    const all = SEED_EXAMS;
+describe("the exams area's filter", () => {
+  const exam = (topic: string, year: number, subjects: string[]): ExamMeta => ({ id: `${topic}-${year}`, topic, year, session: "", title: topic, description: "", subjects, hasPaper: false, isSample: false, published: true });
+  const all = [exam("inventory", 2026, ["FIFO", "שווי מימוש נטו"]), exam("inventory", 2025, ["שריפה וביטוח"]), exam("ias16", 2026, ["הערכה מחדש"])];
+  it("filters by topic, subject and year", () => {
     assert.equal(all.filter((e) => matchesExam(e, { topic: "inventory" })).length, 2);
     assert.equal(all.filter((e) => matchesExam(e, { subject: "FIFO" })).length, 1);
-    assert.equal(all.filter((e) => matchesExam(e, { year: "2025" })).length, 0);
+    assert.equal(all.filter((e) => matchesExam(e, { year: "2025" })).length, 1);
+    assert.equal(all.filter((e) => matchesExam(e, { topic: "ias16", year: "2025" })).length, 0);
   });
 });

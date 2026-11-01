@@ -27,8 +27,6 @@ type FieldBase = {
    * `unknown` field, and the calculator then finds it from a known result.
    */
   solvable?: boolean;
-  /** Seconds into the calculator's explainer video that cover this field. */
-  videoAt?: number;
 };
 
 export type ToggleField = FieldBase & { kind: "toggle"; default: boolean };
@@ -83,8 +81,6 @@ export type CalculatorSchema = {
   category: string;
   icon: string; // lucide icon name, resolved in the UI
   accent: "sky" | "violet" | "amber" | "emerald";
-  /** Content item whose video explains this calculator. */
-  explainerSlug?: string;
   /** Wizard step 1. Any field kind; most calculators use toggles and choices here. */
   scenario: Field[];
   /** Wizard step 2. */

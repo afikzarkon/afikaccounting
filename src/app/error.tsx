@@ -11,7 +11,7 @@ export default function ErrorPage({ error, retry }: { error: unknown; retry: () 
       <span className="grid h-14 w-14 place-items-center rounded-2xl bg-danger/10 text-danger">
         <TriangleAlert className="h-7 w-7" />
       </span>
-      <h1 className="mt-6 text-2xl font-semibold tracking-tight text-fg">משהו השתבש</h1>
+      <h1 className="mt-6 text-2xl font-bold tracking-tight text-fg">משהו השתבש</h1>
       <p className="mt-2 max-w-md text-muted">
         אירעה שגיאה לא צפויה. נסו שוב — אם זה חוזר, ספרו לנו.
         {digest && <span className="mt-2 block font-mono text-xs text-subtle">מזהה: {digest}</span>}

@@ -10,7 +10,7 @@ import { HeroExercise } from "./hero-exercise";
  * (no account) — above the fold on a phone. Beside it, one live question
  * from the course, in the course's own components.
  */
-export function Hero({ trap, lessons, exercises }: { trap: Trap; lessons: number; exercises: number }) {
+export function Hero({ trap, lessons, exercises, videos }: { trap: Trap; lessons: number; exercises: number; videos: number }) {
   return (
     <section className="relative overflow-hidden">
       <div className="bg-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_75%)]" />
@@ -19,7 +19,7 @@ export function Hero({ trap, lessons, exercises }: { trap: Trap; lessons: number
       <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 pt-8 pb-16 sm:px-6 sm:pt-20 lg:grid-cols-[1fr_1fr] lg:gap-14 lg:px-8 lg:pb-24">
         <div>
           <TierBadge tier="free" label="קורס מלא · חינם · בלי הרשמה" />
-          <h1 className="mt-4 text-[2.15rem] leading-[1.1] font-semibold tracking-tight text-fg sm:text-5xl lg:text-6xl">
+          <h1 className="mt-5 text-[2.4rem] leading-[1.05] font-bold tracking-tight text-fg sm:text-6xl lg:text-[4.25rem]">
             חשבונאות <span className="text-gradient">מאפס</span>
             <br />
             קורס מלא, בחינם
@@ -43,11 +43,34 @@ export function Hero({ trap, lessons, exercises }: { trap: Trap; lessons: number
             ))}
           </ul>
           <p className="mt-5 max-w-xl text-sm text-muted">
-            ומשם ממשיכים: <strong className="font-semibold text-fg">מלאי, רכוש קבוע ודוחות כספיים</strong> — עד רמת מבחן.
+            ומשם ממשיכים: <strong className="font-semibold text-fg">מלאי ורכוש קבוע</strong> — עד רמת מבחן.
           </p>
         </div>
 
-        <HeroExercise trap={trap} />
+        <div className="relative">
+          <div aria-hidden className="pointer-events-none absolute -inset-6 rounded-[2.5rem] bg-gradient-to-br from-accent/30 via-cyan-400/10 to-transparent blur-2xl" />
+          <div className="relative">
+            <HeroExercise trap={trap} />
+          </div>
+        </div>
+      </div>
+
+      <div className="relative mx-auto max-w-7xl px-4 pb-4 sm:px-6 lg:px-8">
+        <dl className="grid grid-cols-2 overflow-hidden rounded-3xl bg-surface/70 ring-1 ring-line backdrop-blur sm:grid-cols-4">
+          {[
+            [String(lessons), "שיעורים בקורס החינמי"],
+            [String(exercises), "שאלות תרגול עם משוב"],
+            [String(videos), "סרטוני הסבר"],
+            ["חינם", "בלי הרשמה ובלי כרטיס אשראי"],
+          ].map(([n, label], i) => (
+            <div key={label} className={i % 2 ? "border-s border-line px-5 py-5 sm:px-6" : "px-5 py-5 sm:border-s sm:border-line sm:px-6 sm:first:border-s-0"}>
+              <dt className="text-[13px] text-muted">{label}</dt>
+              <dd className="num mt-1 text-[28px] leading-none font-bold text-fg">
+                <bdi dir="ltr">{n}</bdi>
+              </dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </section>
   );

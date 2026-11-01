@@ -45,7 +45,7 @@ export function CourseOutline({
   const onGroup = !opening && place.step === practice ? ([...groups].reverse().find((g) => g.place.sub <= Math.max(place.sub, 1))?.id ?? groups[0]?.id) : undefined;
 
   const item = (on: boolean, mark: "done" | "on" | "todo") =>
-    cn("flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start text-[13.5px] transition-colors", on ? "bg-accent-soft font-bold text-fg" : "text-fg/85 hover:bg-surface-2", mark === "done" && !on && "text-muted");
+    cn("flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start text-[13.5px] transition-colors", on ? "bg-accent-soft font-bold text-fg ring-1 ring-accent/30" : "text-fg/85 hover:bg-surface-2", mark === "done" && !on && "text-muted");
   const dot = (mark: "done" | "on" | "todo") =>
     mark === "done" ? (
       <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-success text-canvas" aria-hidden>
@@ -93,7 +93,7 @@ export function CourseOutline({
                 </li>
               );
             return (
-              <li key={l.slug} aria-current="page" className="rounded-2xl border border-accent/30 bg-accent-soft/30 p-1.5">
+              <li key={l.slug} aria-current="page" className="rounded-2xl bg-surface p-1.5 shadow-card ring-1 ring-accent/30">
                 <button type="button" onClick={() => onGo(null)} className={cn("flex w-full items-center gap-2.5 rounded-xl px-1.5 py-1.5 text-start text-[14px] font-bold text-fg", opening && "bg-accent-soft")}>
                   <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[11px] font-bold text-accent-fg">{m.n}</span>
                   <span className="min-w-0 flex-1">{m.title}</span>

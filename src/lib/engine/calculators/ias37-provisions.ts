@@ -28,7 +28,6 @@ export const ias37Provisions: Calculator = {
   category: "התחייבויות",
   icon: "Scale",
   accent: "violet",
-  explainerSlug: "ias-37-provisions-decision-tree",
   scenario: [
     { kind: "select", id: "currency", label: "מטבע הדיווח", options: CURRENCIES, default: "ILS" },
     {
@@ -49,7 +48,6 @@ export const ias37Provisions: Calculator = {
       label: "קיימת מחויבות בהווה כתוצאה מאירוע מהעבר",
       help: "משפטית או משתמעת. אם הדבר אינו ברור, המחויבות קיימת כאשר סביר יותר מאשר לא שהיא קיימת, בהתחשב בכל הראיות.",
       default: true,
-      videoAt: 95,
     },
     {
       kind: "radio",
@@ -61,7 +59,6 @@ export const ias37Provisions: Calculator = {
         { value: "remote", label: "קלושה", description: "בלתי סבירה בעליל." },
       ],
       default: "probable",
-      videoAt: 240,
     },
     { kind: "toggle", id: "reliable", label: "ניתן לערוך אומדן מהימן", default: true },
     {
@@ -73,9 +70,8 @@ export const ias37Provisions: Calculator = {
         { value: "expected", label: "תוחלת", description: "לאוכלוסייה גדולה של פריטים." },
       ],
       default: "most-likely",
-      videoAt: 410,
     },
-    { kind: "toggle", id: "discount", label: "השפעת ערך הזמן של הכסף מהותית — יש להוון את ההפרשה", default: true, videoAt: 560 },
+    { kind: "toggle", id: "discount", label: "השפעת ערך הזמן של הכסף מהותית — יש להוון את ההפרשה", default: true },
     {
       kind: "toggle",
       id: "capitalise",

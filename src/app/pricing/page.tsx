@@ -13,7 +13,7 @@ import { isTier, PLANS, type Tier } from "@/lib/pricing";
 
 export const metadata: Metadata = {
   title: "מחירים",
-  description: "חשבונאות מאפס בחינם, לתמיד. הקורסים המתקדמים — מלאי, רכוש קבוע ודוחות כספיים — ומתחם המבחנים במנוי. בלי כרטיס אשראי כדי להתחיל.",
+  description: "חשבונאות מאפס בחינם, לתמיד. הקורסים המתקדמים — מלאי ורכוש קבוע — ומתחם המבחנים במנוי. בלי כרטיס אשראי כדי להתחיל.",
 };
 
 /** What each plan opens, row by row: true, false, or a few words. */
@@ -23,7 +23,6 @@ const COMPARE: { label: string; plans: Record<Tier, boolean | string> }[] = [
   { label: "סרטונים, סיכומים וטיפים למבחן", plans: { free: true, courses: true, exams: true } },
   { label: "מלאי (IAS 2)", plans: { free: "שיעור 1", courses: "כל 6 השיעורים", exams: "כל 6 השיעורים" } },
   { label: "רכוש קבוע (IAS 16)", plans: { free: "פרק 1", courses: "כל הפרקים", exams: "כל הפרקים" } },
-  { label: "הצגת דוחות כספיים", plans: { free: "פרק 1", courses: "כל הפרקים", exams: "כל הפרקים" } },
   { label: "פתרונות מלאים לתרגילים ברמת מבחן", plans: { free: "מבחן לדוגמה", courses: "מבחן לדוגמה", exams: true } },
   { label: "ארכיון מבחנים עם פתרונות", plans: { free: false, courses: false, exams: "בקרוב" } },
 ];
@@ -43,7 +42,7 @@ export default function PricingPage({ searchParams }: PageProps<"/pricing">) {
       <Container className="relative pt-10 pb-16 sm:pt-14">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold text-accent">מחירים</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
+          <h1 className="mt-2 text-[2.2rem] leading-tight font-bold tracking-tight text-fg sm:text-5xl">
             מתחילים <span className="text-gradient">בחינם</span>, ממשיכים עד המבחן
           </h1>
           <p className="mt-3 text-[15px] leading-relaxed text-muted">

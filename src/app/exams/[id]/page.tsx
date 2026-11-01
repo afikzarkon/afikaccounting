@@ -47,7 +47,7 @@ export default async function ExamPage({ params }: PageProps<"/exams/[id]">) {
         {exam.isSample ? <TierBadge tier="free" label="לדוגמה — חינם" /> : <TierBadge tier="exams" />}
         <span className="num text-sm text-muted">{examWhen(exam)}</span>
       </div>
-      <h1 className="mt-2 max-w-4xl text-3xl font-semibold tracking-tight text-fg sm:text-4xl">{exam.title}</h1>
+      <h1 className="mt-2 max-w-4xl text-[2.2rem] leading-tight font-bold tracking-tight text-fg sm:text-5xl">{exam.title}</h1>
       <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-muted">{exam.description}</p>
       <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="נושאים">
         {exam.subjects.map((s) => (
@@ -123,7 +123,6 @@ function Solved({ exam, content: c }: { exam: ExamMeta; content: ExamContent }) 
           <div className="mt-4">
             <VideoPlayer
               item={{ slug: `exam-${exam.id}`, title: exam.title, videoUrl: external ? c.video : file("video"), durationSeconds: c.videoSeconds, chapters: [] }}
-              track={false}
               layout="stacked"
             />
           </div>

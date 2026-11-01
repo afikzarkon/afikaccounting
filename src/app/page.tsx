@@ -36,7 +36,7 @@ const HOW = [
 const FAQ = [
   { q: "זה באמת חינם?", a: "כן. ״חשבונאות מאפס״ — כל 6 השיעורים, עם התרגול, הסרטונים והסיכומים — פתוח בחינם, לתמיד. וגם השיעור הראשון בכל קורס מתקדם." },
   { q: "צריך כרטיס אשראי?", a: "לא. אפשר להתחיל את שיעור 1 עכשיו, בלי הרשמה ובלי כרטיס אשראי." },
-  { q: "מה מקבלים במנוי?", a: "את הקורסים המתקדמים במלואם — מלאי, רכוש קבוע והצגת דוחות כספיים, עד רמת מבחן. במסלול ״קורסים + מבחנים״ נוסף מתחם המבחנים: תרגילים ברמת מבחן עם פתרון מלא מאפס." },
+  { q: "מה מקבלים במנוי?", a: "את הקורסים המתקדמים במלואם — מלאי ורכוש קבוע, עד רמת מבחן. במסלול ״קורסים + מבחנים״ נוסף מתחם המבחנים: תרגילים ברמת מבחן עם פתרון מלא מאפס." },
   { q: "אפשר לבטל?", a: "כן, בכל רגע. המנוי נשאר פעיל עד סוף התקופה ששילמתם עליה, והקורס החינמי נשאר פתוח לכם תמיד." },
   { q: "צריך רקע קודם?", a: "לא. הקורס מתחיל ממש מההתחלה — מה זה עסק, מה זה נכס ולמה יש חובה וזכות." },
 ];
@@ -51,18 +51,18 @@ export default function Home() {
   return (
     <>
       <TrackEvent event={{ kind: "landing_view" }} />
-      <Hero trap={trap} lessons={BASICS_LESSONS.length} exercises={total} />
+      <Hero trap={trap} lessons={BASICS_LESSONS.length} exercises={total} videos={BASICS_LESSONS.reduce((a, m) => a + (m.videos?.length ?? 0), 0)} />
 
-      <Container className="pt-6 sm:pt-10">
+      <Container className="pt-16 sm:pt-20">
         <SectionHeading eyebrow="מכירים את זה?" title="חשבונאות לא קשה. היא פשוט מוסברת מהר מדי." />
         <ul className="mt-8 grid gap-4 sm:grid-cols-3">
           {PAINS.map((p) => (
-            <li key={p.title} className="card p-5">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-danger/10 text-danger" aria-hidden>
+            <li key={p.title} className="card p-6">
+              <span className="grid h-11 w-11 place-items-center rounded-2xl bg-danger/10 text-danger ring-1 ring-danger/20" aria-hidden>
                 <p.icon className="h-5 w-5" />
               </span>
-              <p className="mt-3 font-semibold text-fg">{p.title}</p>
-              <p className="mt-1 text-sm leading-relaxed text-muted">{p.body}</p>
+              <p className="mt-4 text-[17px] font-bold text-fg">{p.title}</p>
+              <p className="mt-1.5 text-[14.5px] leading-relaxed text-muted">{p.body}</p>
             </li>
           ))}
         </ul>
@@ -71,19 +71,18 @@ export default function Home() {
       <section className="mt-16 border-y border-line bg-surface/50 sm:mt-20">
         <Container className="py-16">
           <SectionHeading eyebrow="איך לומדים כאן" title="כל שיעור — שלושה צעדים, ותמיד יודעים איפה אתם" />
-          <ol className="mt-8 grid gap-4 sm:grid-cols-3">
+          <ol className="relative mt-10 grid gap-4 sm:grid-cols-3">
+            <span aria-hidden className="pointer-events-none absolute inset-x-[16%] top-7 hidden h-px bg-gradient-to-l from-accent/0 via-accent/50 to-accent/0 sm:block" />
             {HOW.map((s, i) => (
-              <li key={s.title} className="card flex gap-4 p-5">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent" aria-hidden>
-                  <s.icon className="h-5 w-5" />
+              <li key={s.title} className="relative text-center">
+                <span className="num relative mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-accent to-cyan-500 text-white shadow-[0_14px_30px_-14px_var(--accent)]" aria-hidden>
+                  <s.icon className="h-6 w-6" />
                 </span>
-                <div>
-                  <p className="text-sm font-semibold text-fg">
-                    <span className="num me-1.5 text-xs text-subtle">0{i + 1}</span>
-                    {s.title}
-                  </p>
-                  <p className="mt-1 text-[13.5px] leading-relaxed text-muted">{s.body}</p>
-                </div>
+                <p className="mt-4 text-[17px] font-bold text-fg">
+                  <span className="num me-1.5 text-accent">0{i + 1}</span>
+                  {s.title}
+                </p>
+                <p className="mx-auto mt-1.5 max-w-xs text-[14.5px] leading-relaxed text-muted">{s.body}</p>
               </li>
             ))}
           </ol>
@@ -112,8 +111,8 @@ export default function Home() {
         <ol className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {BASICS_LESSONS.map((m) => (
             <li key={m.slug}>
-              <Link href={studyHref(m.slug)} className="group card flex h-full gap-3 p-4 transition-colors hover:border-accent/50">
-                <span className="num grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-accent-fg">{m.n}</span>
+              <Link href={studyHref(m.slug)} className="group card flex h-full gap-3.5 p-5 transition-all hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-[0_18px_40px_-24px_var(--accent)]">
+                <span className="num grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-accent to-cyan-500 text-[15px] font-bold text-white">{m.n}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold text-fg group-hover:text-accent">{m.title}</span>
                   <span className="mt-1 line-clamp-2 block text-[13px] leading-relaxed text-muted">{m.description}</span>
@@ -139,10 +138,10 @@ export default function Home() {
 
       <Container className="pt-16 sm:pt-20">
         <SectionHeading eyebrow="כשמגיעים למבחן" title="הנושאים שחוזרים בכל מבחן — עד רמת מבחן" description="אותו מבנה בדיוק כמו בקורס החינמי, ובכל קורס השיעור הראשון עלינו." />
-        <ul className="mt-8 grid gap-4 lg:grid-cols-3">
+        <ul className="mt-8 grid gap-4 md:grid-cols-2">
           {paid.map((t) => (
             <li key={t.id}>
-              <Link href={t.href} className="group card flex h-full flex-col p-5 transition-colors hover:border-accent/50">
+              <Link href={t.href} className="group card flex h-full flex-col p-6 transition-all hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-[0_18px_40px_-24px_var(--accent)]">
                 <span className="flex flex-wrap items-center gap-2">
                   <span className="text-[17px] font-semibold text-fg">{t.title}</span>
                   {t.standard && (
@@ -215,16 +214,19 @@ export default function Home() {
       </Container>
 
       <Container className="pt-16 sm:pt-20">
-        <div className="glass flex flex-col items-start gap-5 rounded-3xl p-8 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xl font-semibold text-fg">שיעור 1 לוקח כמה דקות. תתחילו עכשיו.</p>
-            <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
-              <CheckCircle2 className="h-3.5 w-3.5 text-success" aria-hidden /> בלי הרשמה, בלי כרטיס אשראי.
-            </p>
+        <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#1d4ed8] via-[#2563eb] to-[#0891b2] p-8 text-white shadow-[0_30px_60px_-30px_#2563eb] sm:p-12">
+          <div aria-hidden className="bg-grid pointer-events-none absolute inset-0 opacity-30 [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]" />
+          <div className="relative flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-2xl font-bold sm:text-3xl">שיעור 1 לוקח כמה דקות. תתחילו עכשיו.</p>
+              <p className="mt-2 flex items-center gap-1.5 text-[15px] text-white/85">
+                <CheckCircle2 className="h-4 w-4" aria-hidden /> בלי הרשמה, בלי כרטיס אשראי.
+              </p>
+            </div>
+            <ButtonLink href={FIRST_LESSON} size="lg" variant="secondary" className="border-transparent bg-white text-[#1d4ed8] hover:bg-white/90">
+              התחילו את שיעור 1 <ArrowLeft className="h-4 w-4" aria-hidden />
+            </ButtonLink>
           </div>
-          <ButtonLink href={FIRST_LESSON} size="lg">
-            התחילו את שיעור 1 <ArrowLeft className="h-4 w-4" aria-hidden />
-          </ButtonLink>
         </div>
       </Container>
     </>

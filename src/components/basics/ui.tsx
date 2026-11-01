@@ -48,8 +48,8 @@ export function Chapter({ n, id, title, lead, children }: { n: number; id: strin
 /** A highlighted statement that stands on its own: the one sentence to remember. */
 export function KeyCard({ icon, children, className }: { icon?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <div className={cn("flex items-center gap-3 rounded-2xl border-2 border-accent bg-surface px-4 py-4 shadow-[0_10px_30px_-18px_var(--accent)] sm:px-5", className)}>
-      {icon && <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent text-accent-fg">{icon}</span>}
+    <div className={cn("flex items-center gap-3.5 rounded-2xl bg-gradient-to-l from-accent/15 via-accent-soft to-surface px-4 py-4 ring-1 ring-accent/35 sm:px-5", className)}>
+      {icon && <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-accent to-cyan-500 text-white shadow-[0_10px_22px_-12px_var(--accent)]">{icon}</span>}
       <p className="min-w-0 text-[17px] font-bold leading-snug text-fg">{children}</p>
     </div>
   );
@@ -81,8 +81,8 @@ export function JE({ entry, title, note, hl, className }: { entry: Entry; title?
   const total = entry.lines.reduce((s, l) => s + (l.dr ?? 0), 0);
   const lines = [...entry.lines.filter((l) => l.dr), ...entry.lines.filter((l) => l.cr)];
   return (
-    <figure className={cn("min-w-0 overflow-hidden rounded-xl border border-line bg-surface", className)}>
-      <figcaption className="flex items-start gap-2 border-b border-line bg-surface-2/60 px-3 py-2">
+    <figure className={cn("min-w-0 overflow-hidden rounded-2xl border border-line bg-surface", className)}>
+      <figcaption className="flex items-start gap-2 border-b border-line bg-surface-2/70 px-3.5 py-2.5">
         <span className="num mt-px grid h-6 min-w-6 shrink-0 place-items-center rounded-full bg-fg px-1.5 text-[11px] font-bold text-surface">{entry.id}</span>
         <span className="min-w-0 flex-1 text-[14px] font-semibold leading-snug text-fg">{title ?? entry.text}</span>
         {entry.date && <span className="num shrink-0 pt-0.5 text-[11px] text-muted">{entry.date}</span>}
@@ -117,8 +117,8 @@ export function JE({ entry, title, note, hl, className }: { entry: Entry; title?
 /** One sum written out: the parts and the result, as a single block. */
 export function Calc({ children, result, className }: { children: ReactNode; result?: ReactNode; className?: string }) {
   return (
-    <p className={cn("rounded-xl bg-surface-2/80 px-3.5 py-2.5 text-[15px] text-fg ring-1 ring-line", className)}>
-      <span className="me-1.5 text-xs font-bold text-accent">חישוב</span>
+    <p className={cn("rounded-2xl bg-surface-2/80 px-4 py-3 text-[15px] text-fg ring-1 ring-line", className)}>
+      <span className="me-2 rounded-md bg-accent-soft px-1.5 py-0.5 text-[11.5px] font-bold text-accent">חישוב</span>
       {children}
       {result !== undefined && (
         <>
@@ -134,7 +134,7 @@ export function Calc({ children, result, className }: { children: ReactNode; res
 export function Card({ title, children, className }: { title?: ReactNode; children: ReactNode; className?: string }) {
   return (
     <div className={cn("card min-w-0 p-5", className)}>
-      {title && <p className="mb-2 text-[16px] font-semibold text-fg">{title}</p>}
+      {title && <p className="mb-3 border-b border-line pb-2.5 text-[16px] font-bold text-fg">{title}</p>}
       <div className="space-y-3 text-[15px] leading-relaxed text-fg/90">{children}</div>
     </div>
   );
@@ -227,8 +227,8 @@ export function TCard({ t, highlight }: { t: TAccount; highlight?: string }) {
   const drTotal = t.opening > 0 ? t.opening : 0;
   const crTotal = t.opening < 0 ? -t.opening : 0;
   return (
-    <figure className="min-w-0 rounded-xl border border-line bg-surface">
-      <figcaption className="flex items-center justify-between gap-2 border-b-2 border-fg/70 px-3 py-2 text-sm font-semibold text-fg">
+    <figure className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface">
+      <figcaption className="flex items-center justify-between gap-2 border-b-2 border-fg/70 bg-surface-2/60 px-3.5 py-2.5 text-sm font-bold text-fg">
         <span>{t.account}</span>
         <span className="text-[11px] font-normal text-subtle">{TYPE_LABEL[typeOf(t.account)]}</span>
       </figcaption>
@@ -276,7 +276,7 @@ export function TBTable({ tb, caption, kind, changed }: { tb: TrialBalance; capt
     <Scroller caption={caption}>
       <table className="w-full min-w-[26rem] text-sm">
         <thead>
-          <tr className="text-xs text-muted">
+          <tr className="bg-surface-2/50 text-xs text-muted">
             <th className="px-4 py-2 text-start font-medium">חשבון</th>
             {kind && <th className="px-4 py-2 text-start font-medium">סוג</th>}
             <th className="px-4 py-2 text-end font-medium text-debit">חובה</th>
@@ -321,8 +321,8 @@ export function TBTable({ tb, caption, kind, changed }: { tb: TrialBalance; capt
 /** A wide table's frame: it scrolls inside itself, never the page. */
 export function Scroller({ caption, children }: { caption?: ReactNode; children: ReactNode }) {
   return (
-    <div className="my-3 overflow-hidden rounded-xl border border-line bg-surface">
-      {caption && <p className="border-b border-line bg-surface-2/70 px-4 py-2.5 text-sm font-semibold text-fg">{caption}</p>}
+    <div className="my-3 overflow-hidden rounded-2xl border border-line bg-surface">
+      {caption && <p className="border-b border-line bg-surface-2/70 px-4 py-3 text-sm font-bold text-fg">{caption}</p>}
       <div className="overflow-x-auto">{children}</div>
     </div>
   );
@@ -455,5 +455,5 @@ export function Wide({ children, className }: { children: ReactNode; className?:
 
 /** A short highlighted rule. */
 export function Rule({ children }: { children: ReactNode }) {
-  return <p className="rounded-xl border-s-4 border-accent bg-accent-soft px-4 py-3 text-[15.5px] font-medium text-fg">{children}</p>;
+  return <p className="rounded-2xl border-s-4 border-accent bg-accent-soft px-4 py-3.5 text-[15.5px] font-medium text-fg">{children}</p>;
 }
