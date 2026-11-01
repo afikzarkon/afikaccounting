@@ -13,6 +13,7 @@ import { INVENTORY_SCREENS } from "./inventory";
 import { EXAM_SCREENS } from "./inventory-exam";
 import { METHOD_SCREENS } from "./inventory-methods";
 import { LAB_SCREENS } from "./lab-chapter";
+import { REVIEW_SCREENS } from "./review";
 import { YEAR_SCREENS } from "./year";
 
 /** Every concept screen of every course, by id: the basics course, then inventory, then fixed assets. */
@@ -24,6 +25,7 @@ const SCREENS: Record<string, ScreenContent> = {
   ...YEAR_SCREENS,
   ...CHECKS_SCREENS,
   ...ADJUST_SCREENS,
+  ...REVIEW_SCREENS,
   ...CREDIT_SCREENS,
   ...FINAL_SCREENS,
   ...INVENTORY_SCREENS,

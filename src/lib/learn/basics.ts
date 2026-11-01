@@ -374,6 +374,31 @@ export const ACCRUAL = {
   } satisfies Record<keyof typeof AC, Entry[]>,
 };
 
+/**
+ * Lesson 5: a last month that differs from the rest. The regular month comes
+ * from what was recorded, divided by the months it covers; only then is the
+ * odd month worked out.
+ */
+export const ODD = {
+  raise: { recorded: 330_000, months: 11, rate: 0.08 },
+  tax: { recorded: 25_000, months: 10, decRate: 0.15 },
+  phone: { recorded: 42_000, months: 10, missing: 2 },
+};
+const oddMonth = (x: { recorded: number; months: number }) => round2(x.recorded / x.months);
+export const ODD_RESULTS = {
+  raise: { month: oddMonth(ODD.raise), missing: round2(oddMonth(ODD.raise) * (1 + ODD.raise.rate)) },
+  tax: { month: oddMonth(ODD.tax), missing: round2(oddMonth(ODD.tax) + oddMonth(ODD.tax) * (1 + ODD.tax.decRate)) },
+  phone: { month: oddMonth(ODD.phone), missing: round2(oddMonth(ODD.phone) * ODD.phone.missing) },
+};
+
+/** Lesson 5: interest for the part of a year — the rate's period decides the arithmetic. */
+export const PERIOD = {
+  halfYear: { amount: 250_000, rate: 0.03, periodMonths: 6, months: 6 },
+  annual: { amount: 250_000, rate: 0.03, periodMonths: 12, months: 6 },
+  lent: { amount: 36_000, perHalf: 900 },
+};
+export const interestFor = (x: { amount: number; rate: number; periodMonths: number; months: number }) => round2((x.amount * x.rate * x.months) / x.periodMonths);
+
 /** Lesson 4's full example: Shachar Consulting Ltd, set up on 1.1.2023; the preliminary trial balance for 31.12.2025. It sells goods too: its purchases, paid in cash, and the stock counted at year end. */
 export const SHACHAR = {
   name: "שחר ייעוץ בע״מ",

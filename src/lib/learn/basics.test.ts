@@ -294,3 +294,41 @@ describe("cheques and advances split over a deal", () => {
     assert.equal(b["מזומן"], 8_000 - 5_000 - 60);
   });
 });
+
+describe("the review lesson: corrections and contracts over years", async () => {
+  const { CLEANING, FIXES, MULTI_RESULTS, OLD_RESULTS } = await import("./basics-review");
+  const net = (entries: (import("./basics").Entry | null)[]) => {
+    const b = balancesOf(ledger(entries.filter((x): x is import("./basics").Entry => !!x)));
+    return Object.fromEntries(Object.entries(b).filter(([, v]) => Math.abs(v) > 0.005));
+  };
+
+  it("what was recorded plus the correction is exactly what should have been — in every case", () => {
+    for (const c of [CLEANING, ...FIXES]) {
+      for (const x of [c.recorded, c.should, c.fix]) if (x) assert.ok(isBalanced(x), `${c.id}: ${x.id}`);
+      assert.deepEqual(net([c.recorded, c.fix]), net([c.should]), c.id);
+    }
+  });
+
+  it("the profit effect named on each case is what the correction does to profit", () => {
+    for (const c of FIXES) {
+      const move = statements(balancesOf(ledger([c.fix]))).profit;
+      assert.equal(c.profit, move === 0 ? "right" : move > 0 ? "low" : "high", c.id);
+    }
+  });
+
+  it("contracts: 36,000 of an old contract; a 3-year renewal in its last year; an expired lease; the unknown 51,000", () => {
+    assert.deepEqual(OLD_RESULTS, { month: 3_000, balance2024: 45_000, expense2025: 36_000, left: 9_000 });
+    assert.deepEqual(MULTI_RESULTS.renewal, { start: 2023, paid: 144_000, opening: 48_000, expense: 48_000, closing: 0 });
+    assert.deepEqual(MULTI_RESULTS.expired, { month: 2_000, opening: 16_000 });
+    assert.deepEqual(MULTI_RESULTS.unknown, { month: 3_000, opening: 51_000, expense: 36_000, closing: 15_000 });
+  });
+});
+
+describe("the odd month and the rate's period", async () => {
+  const { ODD_RESULTS, PERIOD, interestFor } = await import("./basics");
+  it("a raise, a dearer December, a bill every two months; a half-year rate is twice the annual one", () => {
+    assert.deepEqual(ODD_RESULTS, { raise: { month: 30_000, missing: 32_400 }, tax: { month: 2_500, missing: 5_375 }, phone: { month: 4_200, missing: 8_400 } });
+    assert.equal(interestFor(PERIOD.halfYear), 7_500);
+    assert.equal(interestFor(PERIOD.annual), 3_750);
+  });
+});

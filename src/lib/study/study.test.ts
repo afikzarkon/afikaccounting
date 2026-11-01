@@ -166,9 +166,9 @@ describe("interactive lessons: the accounting in the new questions", () => {
         if (x.kind === "journal") for (const l of x.entry.lines) assert.ok(!l.account.includes("הפרשה"), `${mod.slug}: ${x.id}`);
   });
 
-  it("credit losses: lesson 5, practised mostly by writing entries, with the amounts worked out by hand", () => {
+  it("credit losses: lesson 7, practised mostly by writing entries, with the amounts worked out by hand", () => {
     const m = STUDY_MODULES["basics-credit"];
-    assert.equal(m.n, 5);
+    assert.equal(m.n, 7);
     const entries = m.exercises.filter((x) => x.kind === "journal").length;
     const choice = m.exercises.filter((x) => x.kind === "choice").length + m.traps.length;
     assert.ok(entries >= 6 && choice <= 2, `${entries} entries, ${choice} multiple-choice`);

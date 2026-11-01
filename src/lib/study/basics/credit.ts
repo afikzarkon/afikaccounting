@@ -43,7 +43,7 @@ const amountOf = (x: { adj: Entry }) => x.adj.lines[0].dr!;
 export const CREDIT: StudyModule = {
   slug: "basics-credit",
   course: COURSE,
-  n: 6,
+  n: 7,
   title: "הפסדי אשראי",
   description: "לקוחות ברוטו, הפרשה ונטו; מחיקה וגבייה של חוב אבוד; מתווה 3 הכללים עם שני כרטיסי T — ועד שאלה ברמת בחינה.",
   backHref: COURSE_HREF,

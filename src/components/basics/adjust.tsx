@@ -1,8 +1,9 @@
 import { Banknote, ClipboardList } from "lucide-react";
-import { ACCRUAL, balancesOf, costOfSales, type Entry, ledger, COGS_CASE, SHACHAR, round2, statements, trialBalance } from "@/lib/learn/basics";
+import { ACCRUAL, balancesOf, costOfSales, type Entry, interestFor, ledger, COGS_CASE, ODD, ODD_RESULTS, PERIOD, SHACHAR, round2, statements, trialBalance } from "@/lib/learn/basics";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { cn } from "@/lib/utils";
 import { AdjustedTrialBalance, type Move } from "./adjusted-tb";
+import { MiniQuiz } from "./inventory-interactive";
 import { EntryViews } from "./entry-views";
 import { TCardsDialog } from "./t-dialog";
 import { Posted } from "./t-accounts";
@@ -430,11 +431,49 @@ const example: Step[] = [
 ];
 
 
+/** A year-end entry of two lines. */
+const odd = (text: string, dr: string, cr: string, amount: number): Entry => ({ id: "31.12", text, lines: [{ account: dr, dr: amount }, { account: cr, cr: amount }] });
+
+/** One odd-month case: the story, the regular month and the odd one, and the adjustment. */
+function OddCase({ n, title, story, steps, entry }: { n: number; title: string; story: React.ReactNode; steps: React.ReactNode[]; entry: Entry }) {
+  return (
+    <li className="grid gap-3 rounded-2xl border border-line bg-surface p-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+      <div className="space-y-2">
+        <p className="flex items-center gap-2 text-[16px] font-bold text-fg">
+          <span className="num grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent text-[13px] font-bold text-accent-fg">{n}</span>
+          {title}
+        </p>
+        <p className="text-[14.5px]">{story}</p>
+        <ol className="space-y-1.5">
+          {steps.map((x, i) => (
+            <li key={i} className="rounded-lg bg-surface-2/70 px-3 py-1.5 text-[14.5px]">
+              <span className="me-1.5 text-[11.5px] font-bold text-accent">{i === 0 ? "קודם" : "ואז"}</span>
+              {x}
+            </li>
+          ))}
+        </ol>
+      </div>
+      <JE entry={entry} note={null} />
+    </li>
+  );
+}
+
 export const ADJUST_SCREENS: Record<string, ScreenContent> = {
   accrual: {
     lead: "״הוצאות ביטוח מראש״, ״הוצאות שכר לשלם״ — נשמעים כמו הוצאות, אבל הם בכלל חשבונות מאזניים: נכס או התחייבות. איך זה ייתכן?",
     body: (
       <>
+        <section className="space-y-2 rounded-2xl border border-line bg-surface-2/60 p-4">
+          <h3 className="text-lg font-semibold text-fg">תקופה חשבונאית ועקרון ההקבלה</h3>
+          <p>
+            העסק לא עוצר ב-31.12 — אבל הדוחות כן. לכן מחלקים את חיי העסק ל<strong>תקופות דיווח</strong>: שנה, חצי שנה או רבעון. בכל תקופה רושמים רק את ההכנסות
+            וההוצאות ששייכות לה.
+          </p>
+          <p>
+            <strong>עקרון ההקבלה</strong> אומר: הוצאה נרשמת באותה תקופה כמו ההכנסה שהיא עזרה לייצר. רק כך רואים כמה כל שנה באמת הרוויחה. חסרה הוצאה של השנה?
+            משלימים. נרשמה הוצאה של השנה הבאה? מוציאים. ארבעת חשבונות החתך הם הכלים שבהם עושים את זה.
+          </p>
+        </section>
         <h3 className="text-lg font-semibold text-fg">השם מטעה — אם קוראים רק את המילה הראשונה</h3>
         <p>
           המילה הראשונה אומרת <strong>מאיפה</strong> החשבון בא: מהוצאה או מהכנסה. המילה האחרונה — <strong>מראש</strong>, <strong>לשלם</strong>, <strong>לקבל</strong> — אומרת
@@ -573,6 +612,120 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
           </div>
         </div>
         <Posted entries={[COGS_ENTRY]} at={0} note="שני חשבונות באותו סכום: הנכס שבמחסן, והקטנת העלות ברווח והפסד. בשנה הבאה זה מלאי הפתיחה." />
+      </>
+    ),
+  },
+  "odd-month": {
+    lead: "״ההוצאה מתפלגת באופן שווה — למעט…״. כשהחודש האחרון שונה מהשאר, מוצאים קודם חודש רגיל ממה שכבר נרשם, ורק אז מתקנים את החודש החריג.",
+    body: (
+      <>
+        <KeyCard>חודש רגיל = מה שנרשם ÷ מספר החודשים שנרשמו. לא ÷ 12.</KeyCard>
+        <ol className="space-y-3 [column-span:all]">
+          <OddCase
+            n={1}
+            title={`העלאת שכר של ${pct(ODD.raise.rate)} מדצמבר`}
+            story={<>שכר ינואר עד נובמבר, <Money v={ODD.raise.recorded} />, נרשם. בדצמבר קיבלו העובדים העלאה של {pct(ODD.raise.rate)}, והשכר ישולם ב-9.1.</>}
+            steps={[
+              <>חודש רגיל: <Money v={ODD.raise.recorded} /> ÷ {ODD.raise.months} = <Money v={ODD_RESULTS.raise.month} /></>,
+              <>דצמבר: <Money v={ODD_RESULTS.raise.month} /> × {1 + ODD.raise.rate} = <strong><Money v={ODD_RESULTS.raise.missing} /></strong></>,
+            ]}
+            entry={odd("שכר דצמבר, אחרי ההעלאה", "הוצאות שכר", "הוצאות שכר לשלם", ODD_RESULTS.raise.missing)}
+          />
+          <OddCase
+            n={2}
+            title={`ארנונה שעולה ב-${pct(ODD.tax.decRate)} בדצמבר`}
+            story={<>ארנונה ינואר עד אוקטובר, <Money v={ODD.tax.recorded} />, נרשמה. החשבון של נובמבר ודצמבר יגיע בינואר, ובדצמבר התעריף עלה ב-{pct(ODD.tax.decRate)}.</>}
+            steps={[
+              <>חודש רגיל: <Money v={ODD.tax.recorded} /> ÷ {ODD.tax.months} = <Money v={ODD_RESULTS.tax.month} /></>,
+              <>נובמבר <Money v={ODD_RESULTS.tax.month} /> + דצמבר <Money v={round2(ODD_RESULTS.tax.month * (1 + ODD.tax.decRate))} /> = <strong><Money v={ODD_RESULTS.tax.missing} /></strong></>,
+            ]}
+            entry={odd("ארנונה נובמבר–דצמבר", "הוצאות ארנונה", "הוצאות ארנונה לשלם", ODD_RESULTS.tax.missing)}
+          />
+          <OddCase
+            n={3}
+            title="חשבון שמגיע אחת לחודשיים"
+            story={<>חשבון הטלפון מגיע אחת לחודשיים ומשולם ב-10 לחודש שאחריו. נרשמו ינואר עד אוקטובר: <Money v={ODD.phone.recorded} />. החשבון של נובמבר–דצמבר ישולם ב-10.1.</>}
+            steps={[
+              <>חודש רגיל: <Money v={ODD.phone.recorded} /> ÷ {ODD.phone.months} = <Money v={ODD_RESULTS.phone.month} /></>,
+              <>חסרים {ODD.phone.missing} חודשים: <strong><Money v={ODD_RESULTS.phone.missing} /></strong></>,
+            ]}
+            entry={odd("טלפון נובמבר–דצמבר", "הוצאות טלפון", "הוצאות טלפון לשלם", ODD_RESULTS.phone.missing)}
+          />
+        </ol>
+        <MiniQuiz
+          prefix="basics"
+          chapter="odd-month"
+          items={[
+            {
+              q: "נרשמו 99,000 ₪ שכר על ינואר עד נובמבר. בדצמבר אין שינוי. כמה חסר?",
+              options: ["9,000", "8,250", "99,000", "0"],
+              answer: 0,
+              why: "99,000 ÷ 11 = 9,000 לחודש. מי שמחלק ב-12 מקבל 8,250 — וטועה, כי נרשמו 11 חודשים בלבד.",
+            },
+            {
+              q: "חשמל: נרשמו ינואר עד אוקטובר, 30,000 ₪. מה חסר לסוף השנה, אם דצמבר יקר ב-20% מחודש רגיל?",
+              options: ["6,600", "6,000", "7,200", "3,600"],
+              answer: 0,
+              why: "חודש רגיל 3,000. נובמבר 3,000 + דצמבר 3,600 = 6,600.",
+            },
+          ]}
+        />
+      </>
+    ),
+  },
+
+  "interest-period": {
+    lead: "לפני שמכפילים, קוראים: הריבית לשנה — או לחצי שנה? אותו מספר באחוזים יכול להיות פי שניים כסף.",
+    body: (
+      <>
+        <KeyCard>ריבית = קרן × שיעור × (החודשים שעברו ÷ החודשים בתקופה של השיעור).</KeyCard>
+        <div className="grid gap-3 md:grid-cols-2 [column-span:all]">
+          <section className="space-y-2 rounded-2xl border border-line bg-surface p-4">
+            <p className="text-[15px] font-bold text-fg">ריבית חצי שנתית של {pct(PERIOD.halfYear.rate)}</p>
+            <p className="text-[14.5px]">
+              הלוואה של <Money v={PERIOD.halfYear.amount} /> מ-1.7. הריבית תשולם עם הקרן. עד 31.12 עברו 6 חודשים — תקופה אחת של השיעור.
+            </p>
+            <Calc result={<Money v={interestFor(PERIOD.halfYear)} />}>
+              <Money v={PERIOD.halfYear.amount} /> × {pct(PERIOD.halfYear.rate)} × 6/6
+            </Calc>
+          </section>
+          <section className="space-y-2 rounded-2xl border border-line bg-surface p-4">
+            <p className="text-[15px] font-bold text-fg">ריבית שנתית של {pct(PERIOD.annual.rate)}</p>
+            <p className="text-[14.5px]">אותה הלוואה, אותו מספר באחוזים — אבל לשנה. ב-6 חודשים עברה רק חצי מהתקופה.</p>
+            <Calc result={<Money v={interestFor(PERIOD.annual)} />}>
+              <Money v={PERIOD.annual.amount} /> × {pct(PERIOD.annual.rate)} × 6/12
+            </Calc>
+          </section>
+        </div>
+        <section className="space-y-2">
+          <h3 className="text-lg font-semibold text-fg">ובצד ההכנסות: הלוואה שנתנו</h3>
+          <p>
+            ב-1.1 החברה הלוותה לספק <Money v={PERIOD.lent.amount} />. הריבית — <Money v={PERIOD.lent.perHalf} /> לכל חצי שנה — מתקבלת פעמיים: ב-30.6 על ינואר–יוני, וב-1.1
+            בשנה הבאה על יולי–דצמבר. רק התקבול של 30.6 נרשם.
+          </p>
+          <JE
+            entry={odd("31.12 · ריבית יולי–דצמבר, שתתקבל ב-1.1", "הכנסות ריבית לקבל", "הכנסות ריבית", PERIOD.lent.perHalf)}
+            note="הכסף מגיע ב-1.1, אבל הוא על חודשים של השנה הזו — הכנסה של השנה, ובינתיים נכס. סך הכנסות הריבית של השנה: פעמיים 900."
+          />
+        </section>
+        <MiniQuiz
+          prefix="basics"
+          chapter="interest-period"
+          items={[
+            {
+              q: "הלוואה של 100,000 ₪ מ-1.1, בריבית חצי שנתית של 2%. מה הוצאות הריבית של השנה?",
+              options: ["4,000", "2,000", "1,000", "8,000"],
+              answer: 0,
+              why: "שנה שלמה = שתי תקופות של חצי שנה: 100,000 × 2% × 12/6 = 4,000.",
+            },
+            {
+              q: "הלוואה של 120,000 ₪ מ-1.10, בריבית שנתית של 5%. מה הוצאות הריבית עד 31.12?",
+              options: ["1,500", "6,000", "3,000", "500"],
+              answer: 0,
+              why: "3 חודשים מתוך תקופה של 12: 120,000 × 5% × 3/12 = 1,500.",
+            },
+          ]}
+        />
       </>
     ),
   },
