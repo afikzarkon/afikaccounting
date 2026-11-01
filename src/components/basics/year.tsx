@@ -39,7 +39,7 @@ const CLUES: [string, string][] = [
 ];
 
 /** An event the learner writes first; the entry and its cards behind a click. */
-function TryFirst({ entries, at, opening }: { entries: Entry[]; at: number; opening?: Record<string, number> }) {
+export function TryFirst({ entries, at, opening }: { entries: Entry[]; at: number; opening?: Record<string, number> }) {
   return (
     <div className="space-y-3">
       <p className="rounded-xl bg-surface-2/70 px-3.5 py-2.5 text-[15px] text-fg">
@@ -53,6 +53,24 @@ function TryFirst({ entries, at, opening }: { entries: Entry[]; at: number; open
         <div className="border-t border-line p-3">
           <Posted entries={entries} at={at} opening={opening} title="הפקודה" />
         </div>
+      </details>
+    </div>
+  );
+}
+
+/** Something to work out first: a prompt, and the answer behind a click. */
+export function Reveal({ prompt, label, children }: { prompt: ReactNode; label: string; children: ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <p className="rounded-xl bg-surface-2/70 px-3.5 py-2.5 text-[15px] text-fg">
+        <span className="me-1.5 rounded-md bg-accent-soft px-1.5 py-0.5 text-[11.5px] font-bold text-accent">תורכם</span>
+        {prompt}
+      </p>
+      <details className="group rounded-2xl border border-line bg-surface">
+        <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-[14.5px] font-semibold text-accent [&::-webkit-details-marker]:hidden">
+          <Eye className="h-4 w-4" aria-hidden /> {label}
+        </summary>
+        <div className="space-y-2 border-t border-line p-3">{children}</div>
       </details>
     </div>
   );

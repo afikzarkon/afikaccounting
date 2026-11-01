@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 
 /** What each plan opens, row by row: true, false, or a few words. */
 const COMPARE: { label: string; plans: Record<Tier, boolean | string> }[] = [
-  { label: "חשבונאות מאפס — 6 שיעורים", plans: { free: true, courses: true, exams: true } },
+  { label: "חשבונאות מאפס — 8 שיעורים", plans: { free: true, courses: true, exams: true } },
   { label: "תרגול עם משוב מיידי ומלכודות", plans: { free: true, courses: true, exams: true } },
   { label: "סרטונים, סיכומים וטיפים למבחן", plans: { free: true, courses: true, exams: true } },
   { label: "מלאי (IAS 2)", plans: { free: "שיעור 1", courses: "כל 6 השיעורים", exams: "כל 6 השיעורים" } },

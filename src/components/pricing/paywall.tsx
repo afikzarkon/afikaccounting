@@ -75,7 +75,7 @@ export function Paywall({
         <p className="mt-3 text-sm text-muted">
           עוד לא סיימתם את הבסיס?{" "}
           <Link href="/basics" className="font-medium text-accent hover:underline">
-            חשבונאות מאפס — בחינם, כל 6 השיעורים
+            חשבונאות מאפס — בחינם, כל 8 השיעורים
           </Link>
         </p>
       </div>

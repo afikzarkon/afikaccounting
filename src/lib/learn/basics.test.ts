@@ -332,3 +332,27 @@ describe("the odd month and the rate's period", async () => {
     assert.equal(interestFor(PERIOD.annual), 3_750);
   });
 });
+
+describe("the closing exam question: Almog Ltd", async () => {
+  const { ALMOG } = await import("./basics-exam");
+  it("the three unknowns: 48,000 insurance, 56,000 advertising, 114,000 retained earnings", () => {
+    assert.deepEqual(ALMOG.found, { insurance: 48_000, ads: 56_000, retained: 114_000 });
+    assert.ok(tbBalanced(trialBalance(ALMOG.preliminary)));
+    for (const u of ALMOG.unknowns) assert.ok(!(u in ALMOG.given), u);
+  });
+
+  it("eleven entries, a final trial balance of 4,344,250, profit 551,750, retained 665,750, customers net 910,750", () => {
+    for (const x of ALMOG.entries) assert.ok(isBalanced(x), x.id);
+    const b = balancesOf(ledger(ALMOG.entries, ALMOG.preliminary));
+    const tb = trialBalance(b);
+    assert.equal(tb.dr, 4_344_250);
+    assert.equal(tb.cr, 4_344_250);
+    const s = statements(b);
+    assert.equal(s.profit, 551_750);
+    assert.equal(s.equity.find(([a]) => a === "עודפים")![1], 665_750);
+    assert.equal(ALMOG.customersAfter, 1_005_000);
+    assert.equal(ALMOG.required, 94_250);
+    assert.equal(b["לקוחות"] + b["הפרשה להפסדי אשראי חזויים"], 910_750);
+    for (const a of ["הוצאות ביטוח מראש", "הוצאות שכירות מראש", "מקדמות מלקוחות"]) assert.equal(b[a], 0, a);
+  });
+});
