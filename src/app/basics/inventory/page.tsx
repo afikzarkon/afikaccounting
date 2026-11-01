@@ -12,7 +12,7 @@ import { INVENTORY_LEGACY_CHAPTERS, INVENTORY_LESSONS, inventoryLegacyHref } fro
 export const metadata: Metadata = {
   title: "מלאי (IAS 2) — קורס אינטראקטיבי ומחשבון",
   description:
-    "מלאי מהרעיון ועד רמת מבחן, שיעור אחר שיעור: רישום תקופתי ותמידי, עלות לפי IAS 2, FIFO וממוצע משוקלל תקופתי ונע, שווי מימוש נטו, חילוץ נעלמים ושאלה מלאה — עם תרגול בכל שיעור ומחשבון שמראה את כל הדרך.",
+    "מלאי מאפס ועד רמת מבחן, ב-12 שיעורים: רישום תקופתי ותמידי, IAS 2 ומה נספר כמלאי, עלות והנחות, FIFO וממוצע משוקלל, שווי מימוש נטו, חילוץ נעלמים, שריפה וביטוח ושתי שאלות ברמת מבחן — עם תרגול בכל שיעור ומחשבון שמראה את כל הדרך.",
 };
 
 // The former long page's chapter anchors, and where each lands now.

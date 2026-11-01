@@ -10,6 +10,8 @@ import { FINAL_SCREENS } from "./final";
 import { IAS16_SCREENS } from "./ias16-screens";
 import { INTRO_SCREENS } from "./intro";
 import { INVENTORY_SCREENS } from "./inventory";
+import { COURSE_SCREENS } from "./inventory-course";
+import { COURSE_EXAM_SCREENS } from "./inventory-course-exams";
 import { EXAM_SCREENS } from "./inventory-exam";
 import { METHOD_SCREENS } from "./inventory-methods";
 import { LAB_SCREENS } from "./lab-chapter";
@@ -31,6 +33,8 @@ const SCREENS: Record<string, ScreenContent> = {
   ...INVENTORY_SCREENS,
   ...METHOD_SCREENS,
   ...EXAM_SCREENS,
+  ...COURSE_SCREENS,
+  ...COURSE_EXAM_SCREENS,
   ...IAS16_SCREENS,
 };
 

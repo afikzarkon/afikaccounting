@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
       { source: "/study/basics-journal", destination: "/study/basics-double-entry", permanent: true },
       // The credit-losses page became lesson 5 of the course.
       { source: "/basics/credit-losses", destination: "/study/basics-credit", permanent: true },
+      // The six-lesson inventory course became twelve lessons: each former lesson lands on the one that now teaches what it began with.
+      { source: "/study/inventory-intro", destination: "/study/inventory-what", permanent: true },
+      { source: "/study/inventory-formulas", destination: "/study/inventory-fifo", permanent: true },
+      { source: "/study/inventory-exam", destination: "/study/inventory-worksheet", permanent: true },
     ];
   },
   partialPrefetching: true,

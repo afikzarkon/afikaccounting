@@ -71,7 +71,7 @@ describe("payments, end to end (sandbox provider → webhook → database → ac
 
   it("a guest on free: the first inventory lesson is open, the second is not", async () => {
     const r = await reader();
-    assert.deepEqual([r.tier, r.lesson, canAccessWith(resolveAccess({ configured: true }), INVENTORY, "inventory-intro")], ["free", false, true]);
+    assert.deepEqual([r.tier, r.lesson, canAccessWith(resolveAccess({ configured: true }), INVENTORY, "inventory-what")], ["free", false, true]);
   });
 
   it("pays for courses: the subscription opens, the locked lesson opens, and an invoice is kept", async () => {

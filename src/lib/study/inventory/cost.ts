@@ -9,27 +9,35 @@ const importDuty = (importNet * IMPORT.duty) / 100;
 const importCost = importNet + importDuty + IMPORT.freight;
 const UNIT = { qty: 1_000, price: 12, freightPerUnit: 0.5, toCustomers: 800 };
 const unitCost = UNIT.price + UNIT.freightPerUnit;
-const EXCESS = { qty: 1_200, price: 20, over: 1_000, rate: 10 };
-const excessDiscount = ((EXCESS.qty - EXCESS.over) * EXCESS.price * EXCESS.rate) / 100;
-const excessCost = EXCESS.qty * EXCESS.price - excessDiscount;
 const FINANCE = { qty: 200, price: 100, cashLess: 5 };
 const financeCost = (FINANCE.qty * FINANCE.price * (100 - FINANCE.cashLess)) / 100;
 const PORT = { qty: 100, price: 50, duty: 250, freight: 300, storage: 200 };
 const portCost = PORT.qty * PORT.price + PORT.duty + PORT.freight;
 const CREDIT = { price: 10_000, cash: 9_600 };
+/** The freight screen's purchase: one order, four ways a question words its freight. */
+export const BASES = { qty: 400, price: 25, shipment: 2_000, perUnit: 3, pack: { size: 50, fee: 100 }, kg: { perUnit: 30, rate: 0.2 } };
+const SHIP = { qty: 250, price: 60, shipment: 1_500, inland: 4 };
+const shipUnit = SHIP.price + SHIP.shipment / SHIP.qty + SHIP.inland;
+/** The bundles screen's set: six cups and six plates sold together. */
+export const SET = { cups: 6, cup: 12, plates: 6, plate: 18, qty: 120, threshold: 100, pct: 5, shipment: 1_800, inland: 4 };
+export const SET_PRICE = SET.cups * SET.cup + SET.plates * SET.plate;
+export const SET_COST = (SET.qty * SET_PRICE * (100 - (SET.qty > SET.threshold ? SET.pct : 0))) / 100 + SET.shipment + SET.inland * SET.qty;
+const KG = { qty: 600, price: 35, kg: 12, rate: 0.25 };
+const kgCost = KG.qty * KG.price + KG.qty * KG.kg * KG.rate;
 
-/** Lesson 2: what goes into the cost of inventory under IAS 2 — the test, an imported purchase built line by line, discounts and financing. */
+/** Lesson 4: the cost of a purchase under IAS 2 — the test, an imported purchase built line by line, how freight is worded, bundles, and financing. */
 export const COST: StudyModule = {
   slug: "inventory-cost",
   course: COURSE,
-  n: 2,
-  title: "עלות המלאי לפי IAS 2",
-  description: "מה נכנס לעלות המלאי, מה נשאר בחוץ ומה מנוכה: עלות של רכישה מיובאת שורה אחר שורה, שלושה סוגי הנחה ורכיב מימון.",
+  n: 4,
+  title: "עלות רכישה לפי IAS 2",
+  description: "מה נכנס לעלות המלאי ומה נשאר בחוץ: רכישה מיובאת שורה אחר שורה, הובלה למשלוח, ליחידה, לארגז ולק״ג, ערכות שנמכרות יחד, ורכיב מימון.",
   backHref: COURSE_HREF,
   screens: [
     { id: "inv-cost", title: "מה נכנס לעלות המלאי" },
     { id: "inv-shemesh", title: "דוגמה: עלות של רכישה מיובאת" },
-    { id: "inv-discounts", title: "שלושה סוגי הנחה" },
+    { id: "iv-cost-bases", title: "למשלוח, ליחידה, לארגז, לק״ג" },
+    { id: "iv-bundles", title: "ערכה: כשהיחידה היא ארגז" },
     { id: "inv-financing", title: "רכיב מימון" },
     { id: "inv-cost-sort", title: "תרגול הבנה: בעלות, בחוץ או מנוכה?" },
   ],
@@ -81,13 +89,29 @@ export const COST: StudyModule = {
       ],
     ),
     calc(
-      "excess-discount",
-      "הנחה רק על העודף",
-      `נקנו ${fmt(EXCESS.qty)} יחידות ב-${EXCESS.price} ₪. הספק נותן ${EXCESS.rate}% הנחה על כל יחידה שמעבר ל-${fmt(EXCESS.over)}. מהי עלות הרכישה?`,
-      excessCost,
+      "per-shipment",
+      "הובלה למשלוח",
+      `נקנו ${SHIP.qty} יחידות ב-${SHIP.price} ₪. הובלה ימית: ${fmt(SHIP.shipment)} ₪ למשלוח. הובלה מהנמל למחסן: ${SHIP.inland} ₪ ליחידה. מהי העלות ליחידה?`,
+      shipUnit,
+      [`הובלה למשלוח היא סכום אחד, שמתחלק בין כל יחידות המשלוח: ${fmt(SHIP.shipment)} ÷ ${SHIP.qty} = ${SHIP.shipment / SHIP.qty} ₪ ליחידה.`, `${SHIP.price} + ${SHIP.shipment / SHIP.qty} + ${SHIP.inland} = ${shipUnit} ₪.`],
+    ),
+    calc(
+      "per-kg",
+      "הובלה לפי משקל",
+      `נקנו ${KG.qty} יחידות ב-${KG.price} ₪. כל יחידה שוקלת ${KG.kg} ק״ג, וההובלה עולה ${KG.rate} ₪ לק״ג. מהי עלות הרכישה?`,
+      kgCost,
+      [`הובלה: ${KG.qty} יח׳ × ${KG.kg} ק״ג × ${KG.rate} ₪ = ${fmt(KG.qty * KG.kg * KG.rate)} ₪.`, `עלות: ${fmt(KG.qty * KG.price)} + ${fmt(KG.qty * KG.kg * KG.rate)} = ${fmt(kgCost)} ₪.`],
+    ),
+    calc(
+      "set-cost",
+      "עלות של ערכה",
+      `ערכת אירוח כוללת ${SET.cups} כוסות ב-${SET.cup} ₪ ו-${SET.plates} צלחות ב-${SET.plate} ₪. נקנו ${SET.qty} ערכות; הנחה ${SET.pct}% על רכישה של מעל ${SET.threshold} ערכות; הובלה ימית ${fmt(SET.shipment)} ₪ למשלוח והובלה למחסן ${SET.inland} ₪ לערכה. מהי העלות של ערכה אחת?`,
+      SET_COST / SET.qty,
       [
-        `ההנחה רק על העודף: ${fmt(EXCESS.qty - EXCESS.over)} יח׳ × ${EXCESS.price} × ${EXCESS.rate}% = ${fmt(excessDiscount)} ₪.`,
-        `עלות: ${fmt(EXCESS.qty)} × ${EXCESS.price} − ${fmt(excessDiscount)} = ${fmt(excessCost)} ₪.`,
+        `מחיר ערכה: ${SET.cups} × ${SET.cup} + ${SET.plates} × ${SET.plate} = ${SET_PRICE} ₪.`,
+        `${SET.qty} ערכות × ${SET_PRICE} = ${fmt(SET.qty * SET_PRICE)}; ${SET.qty} > ${SET.threshold}, אז הנחה ${SET.pct}%: ${fmt((SET.qty * SET_PRICE * (100 - SET.pct)) / 100)} ₪.`,
+        `+ ${fmt(SET.shipment)} (ימית) + ${SET.qty} × ${SET.inland} (למחסן) = ${fmt(SET_COST)} ₪.`,
+        `לערכה: ${fmt(SET_COST)} ÷ ${SET.qty} = ${fmt(SET_COST / SET.qty)} ₪.`,
       ],
     ),
     calc(
@@ -95,10 +119,7 @@ export const COST: StudyModule = {
       "רכיב מימון",
       `נקנו ${FINANCE.qty} יחידות ב-${FINANCE.price} ₪ בתנאי אשראי ״שוטף + 180״, חריגים בענף. במזומן המחיר היה נמוך ב-${FINANCE.cashLess}%. מהי עלות המלאי?`,
       financeCost,
-      [
-        "בתנאי אשראי חריגים העלות היא מחיר המזומן; ההפרש הוא הוצאות מימון.",
-        `${FINANCE.qty} × ${FINANCE.price} × ${100 - FINANCE.cashLess}% = ${fmt(financeCost)} ₪.`,
-      ],
+      ["בתנאי אשראי חריגים העלות היא מחיר המזומן; ההפרש הוא הוצאות מימון.", `${FINANCE.qty} × ${FINANCE.price} × ${100 - FINANCE.cashLess}% = ${fmt(financeCost)} ₪.`],
     ),
     choice("vat", "מע״מ", "האם מע״מ בר-קיזוז נכלל בעלות המלאי?", ["כן", "לא"], 1, "מס שאפשר לקבל בחזרה אינו עלות."),
   ],
@@ -117,19 +138,6 @@ export const COST: StudyModule = {
       ],
     },
     {
-      id: "sales-target",
-      prompt: "הספק מבטיח 10% הנחה אם החברה תמכור השנה מעל 5,000 יחידות, והחברה בטוחה שתעמוד ביעד. מה עושים בעת הרכישה?",
-      options: ["לא מנכים — יעד מכירות אינו בשליטת החברה", "מנכים 10% — החברה צופה לעמוד ביעד", "מנכים 5% — חצי מההנחה, מטעמי זהירות", "רושמים את ההנחה כהכנסה"],
-      answer: 0,
-      why: "יעד מכירות תלוי בלקוחות, לא רק בחברה. מכירים בהנחה רק כשהיעד הושג בפועל.",
-      traps: [
-        "",
-        "המלכודת: ״צופה לעמוד״ מספיק רק ביעד שבשליטה הבלעדית של החברה, כמו יעד רכישות. יעד מכירות — לא.",
-        "אין ״חצי הנחה״: או שמכירים בהנחה, או שלא.",
-        "הנחה מספק מקטינה את עלות המלאי — היא לעולם אינה הכנסה.",
-      ],
-    },
-    {
       id: "storage",
       prompt: "אילו עלויות אחסון נכללות בעלות המלאי?",
       options: ["רק אחסון שנחוץ לפני שלב נוסף בתהליך", "כל אחסון, עד שהסחורה נמכרת", "אף אחסון", "רק אחסון במחסני החברה"],
@@ -142,12 +150,20 @@ export const COST: StudyModule = {
         "הפוך: אחסון רגיל במחסני החברה הוא דווקא הדוגמה הקלאסית להוצאה.",
       ],
     },
+    {
+      id: "shipment-per-unit",
+      prompt: "״הובלה ימית: 2,000 ₪ לכל משלוח״. במשלוח 400 יחידות. כמה הובלה נכנסת לעלות של יחידה?",
+      options: ["5 ₪", "2,000 ₪", "800,000 ₪", "0 ₪"],
+      answer: 0,
+      why: "סכום אחד למשלוח, מתחלק בין היחידות שבו: 2,000 ÷ 400 = 5 ₪.",
+      traps: ["", "2,000 ₪ הם המשלוח כולו — לא יחידה.", "המלכודת: לכפול סכום למשלוח בכמות, כאילו הוא ליחידה.", "הובלה פנימה היא חלק מהעלות."],
+    },
   ],
   tips: [
     "עלות = מחיר − הנחות + מכס שלא מוחזר + הובלה פנימה וטיפול. המבחן: האם זה הביא את הסחורה למקומה ולמצבה?",
     "בחוץ: מע״מ בר-קיזוז, אחסון רגיל, הובלה ללקוח, פרסום, בזבוז חריג ותקורה מנהלית.",
-    "״מכס X% מהמחיר נטו״ — על המחיר אחרי ההנחה, בלי ההובלה.",
-    "הנחת יעד: מכירים כשהושג, או כשהיעד בשליטת החברה והיא צופה לעמוד בו. יעד מכירות — רק כשהושג.",
+    "״למשלוח״ — סכום אחד; ״ליחידה״ — × כמות; ״לארגז של N״ — כמות ÷ N × מחיר; ״לק״ג״ — × משקל × כמות.",
+    "ערכה שנמכרת שלמה היא יחידת המלאי: מחירה = סכום מה שבתוכה, וכל הספירה, ההנחות והעלויות — לפי ערכות.",
     "רכיב מימון רק בתנאי אשראי חריגים לענף: העלות היא מחיר המזומן.",
   ],
 };

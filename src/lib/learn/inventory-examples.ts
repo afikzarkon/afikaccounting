@@ -21,6 +21,7 @@ import {
   valuatePeriod,
 } from "./inventory";
 import { explainCosts, explainGpFire, explainHistoryFire, explainNrv, explainPeriod, explainSolve, explainTable, type TraceStep } from "./inventory-explain";
+import { MISHAK_2025, OFEK, OFEK_2026, OFEK_YEARS } from "./inventory-exams";
 import { type Known, solveTable, solveUnknowns, type TableInput, type Unknown } from "./inventory-solver";
 
 const B = (date: string | undefined, qty: number, unitPrice: number, more: Partial<Purchase> = {}): Purchase => ({ date, qty, unitPrice, ...more });
@@ -342,6 +343,16 @@ export const CALC_EXAMPLES: CalcExample[] = [
     fire: GABI_FIRE,
     sharedTerms: true,
   },
+  {
+    id: "ofek",
+    title: "אופק — שאלת מבחן 1",
+    hint: "שנתיים בממוצע תקופתי, תנאים שמשתנים באמצע השנה, ושריפה לפי FIFO עם תקרה",
+    tab: "full",
+    method: "wa-periodic",
+    periods: [...OFEK_YEARS, OFEK_2026],
+    fire: { basis: "history", method: "fifo", savedUnits: OFEK.consignedAtFire, terms: { deductible: { kind: "pct", value: OFEK.deductible }, cap: OFEK.cap }, fireDate: OFEK.fireDate },
+  },
+  { id: "mishak", title: "משחק — שאלת מבחן 2", hint: "ערכות ב-FIFO, הנחה לספק וללקוח ושווי מימוש נטו", tab: "full", method: "fifo", periods: [MISHAK_2025] },
 ];
 
 export const exampleById = (id: string) => CALC_EXAMPLES.find((e) => e.id === id);

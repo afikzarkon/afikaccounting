@@ -56,7 +56,7 @@ describe("canAccess", () => {
     assert.ok(canAccessWith(free, topic("basics"), "basics-final"));
   });
   it("opens only the taste of a paid course on free", () => {
-    assert.ok(canAccessWith(free, topic("inventory"), "inventory-intro"));
+    assert.ok(canAccessWith(free, topic("inventory"), "inventory-what"));
     assert.ok(!canAccessWith(free, topic("inventory"), "inventory-cost"));
     assert.ok(!canAccessWith(free, topic("inventory")), "the topic as a whole is closed");
     assert.ok(canAccessWith(free, topic("ias16"), "ias16-intro"));
@@ -64,9 +64,9 @@ describe("canAccess", () => {
   });
   it("opens every paid course whole on courses and up", () => {
     for (const t of TOPICS) assert.ok(canAccessWith(courses, t), t.id);
-    assert.deepEqual(lockedOf(courses, topic("inventory"), ["inventory-intro", "inventory-cost"]), []);
+    assert.deepEqual(lockedOf(courses, topic("inventory"), ["inventory-what", "inventory-cost"]), []);
   });
-  it("lists what is locked", () => assert.deepEqual(lockedOf(free, topic("inventory"), ["inventory-intro", "inventory-cost", "inventory-exam"]), ["inventory-cost", "inventory-exam"]));
+  it("lists what is locked", () => assert.deepEqual(lockedOf(free, topic("inventory"), ["inventory-what", "inventory-cost", "inventory-exams"]), ["inventory-cost", "inventory-exams"]));
 });
 
 describe("a locked lesson's outline", () => {

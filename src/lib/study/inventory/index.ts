@@ -1,13 +1,19 @@
 import { findScreenIn, lessonHref, screenHrefIn } from "../paths";
+import { AVERAGE } from "./average";
 import { COST } from "./cost";
-import { EXAM } from "./exam";
-import { FORMULAS } from "./formulas";
-import { INTRO } from "./intro";
+import { DISCOUNTS } from "./discounts";
+import { EXAMS } from "./exams";
+import { FIFO } from "./fifo";
+import { FIRE } from "./fire";
+import { IAS2 } from "./ias2";
 import { NRV_LESSON } from "./nrv";
+import { RECORDING } from "./recording";
 import { UNKNOWNS } from "./unknowns";
+import { WHAT } from "./what";
+import { WORKSHEET } from "./worksheet";
 
-/** The inventory course: six lessons, in order. */
-export const INVENTORY_LESSONS = [INTRO, COST, FORMULAS, NRV_LESSON, UNKNOWNS, EXAM];
+/** The inventory course: twelve lessons, in order — from what inventory is to two exam-level questions. */
+export const INVENTORY_LESSONS = [WHAT, RECORDING, IAS2, COST, DISCOUNTS, FIFO, AVERAGE, NRV_LESSON, UNKNOWNS, FIRE, WORKSHEET, EXAMS];
 
 /** The lesson and index of a concept screen of the course, by its id. */
 export const findInventoryScreen = (id: string) => findScreenIn(INVENTORY_LESSONS, id);

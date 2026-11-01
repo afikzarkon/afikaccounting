@@ -1,0 +1,120 @@
+import type { StudyModule } from "../types";
+import { calc, choice, COURSE, COURSE_HREF, fmt } from "./shared";
+
+// Every figure below is computed here, from the question's own numbers.
+const COUNT = { warehouse: 100_000, inTransit: 12_000, heldForOthers: 8_000, consignedOut: 15_000 };
+const owned = COUNT.warehouse + COUNT.inTransit - COUNT.heldForOthers + COUNT.consignedOut;
+/** The corrections screen's shop: last year's count, and what turned up while the statements were being prepared. */
+export const FIX = { counted: 300, unitCost: 80, consigned: 20, broken: 15 };
+export const FIX_UNITS = FIX.counted + FIX.consigned - FIX.broken;
+const OPEN = { counted: 250, unitCost: 120, consigned: 40, broken: 10 };
+const openFixed = (OPEN.counted + OPEN.consigned - OPEN.broken) * OPEN.unitCost;
+const DESTROY = { units: 400, unitCost: 50, destroy: 25 };
+const destroyClosing = (DESTROY.units - DESTROY.destroy) * DESTROY.unitCost;
+
+/** Lesson 3: IAS 2 — what inventory is, what the standard leaves out, whose goods are counted, and fixing a count that was wrong. */
+export const IAS2: StudyModule = {
+  slug: "inventory-ias2",
+  course: COURSE,
+  n: 3,
+  title: "IAS 2: מה נחשב מלאי ושל מי הוא",
+  description: "ההגדרה ושלושת סוגי המלאי, מה התקן לא חל עליו, מה נספר כמלאי של החברה — בדרך, במשגור, מכור והחזק — ואיך מתקנים ספירה שגויה.",
+  backHref: COURSE_HREF,
+  screens: [
+    { id: "inv-ias2", title: "IAS 2: במה עוסק התקן" },
+    { id: "iv-definition", title: "ההגדרה: מוחזק למכירה" },
+    { id: "inv-count", title: "מה נספר כמלאי?" },
+    { id: "inv-count-sort", title: "תרגול הבנה: שלנו או לא?" },
+    { id: "inv-bridge", title: "מהספירה במחסן למלאי בספרים" },
+    { id: "iv-count-fixes", title: "תיקון ספירה: שבור, נשכח, מושמד" },
+  ],
+  exercises: [
+    calc(
+      "owned",
+      "מה נספר כמלאי",
+      `בספירה במחסני החברה נמצא מלאי בעלות ${fmt(COUNT.warehouse)} ₪. בנוסף: סחורה בדרך בעלות ${fmt(COUNT.inTransit)} ₪ שהסיכון בה כבר עבר לחברה; סחורה של ספק אחר שמוחזקת במחסן במשגור, ${fmt(COUNT.heldForOthers)} ₪; וסחורה שהחברה מסרה במשגור לרשת וטרם נמכרה, ${fmt(COUNT.consignedOut)} ₪. מהו המלאי של החברה?`,
+      owned,
+      [
+        `מוסיפים את מה ששלנו ונמצא בחוץ: בדרך (${fmt(COUNT.inTransit)}) ומשגור שמסרנו (${fmt(COUNT.consignedOut)}).`,
+        `מורידים את מה שבמחסן ואינו שלנו: משגור של ספק אחר (${fmt(COUNT.heldForOthers)}).`,
+        `${fmt(COUNT.warehouse)} + ${fmt(COUNT.inTransit)} − ${fmt(COUNT.heldForOthers)} + ${fmt(COUNT.consignedOut)} = ${fmt(owned)} ₪.`,
+      ],
+    ),
+    calc(
+      "opening-fix",
+      "תיקון מלאי הפתיחה",
+      `בדוחות של השנה שעברה הוצג מלאי סגירה של ${OPEN.counted} יח׳ ב-${OPEN.unitCost} ₪. בהכנת הדוחות התברר ש-${OPEN.consigned} יח׳ שהיו במשגור אצל רשת לא נספרו, ו-${OPEN.broken} יח׳ שנספרו היו שבורות ולא ניתנות למכירה. מהו מלאי הפתיחה הנכון השנה?`,
+      openFixed,
+      [
+        "מלאי הפתיחה הנכון = מה שהיה באמת של החברה, וראוי למכירה, ב-31.12.",
+        `${OPEN.counted} + ${OPEN.consigned} (משגור — שלנו) − ${OPEN.broken} (שבורות) = ${OPEN.counted + OPEN.consigned - OPEN.broken} יח׳.`,
+        `× ${OPEN.unitCost} = ${fmt(openFixed)} ₪.`,
+      ],
+    ),
+    calc(
+      "destroy",
+      "יחידות להשמדה",
+      `בספירה ב-31.12 נמצאו ${DESTROY.units} יח׳ בעלות ${DESTROY.unitCost} ₪, ומהן ${DESTROY.destroy} פגומות שהוחלט להשמיד. מהו מלאי הסגירה?`,
+      destroyClosing,
+      ["יחידה שלא תימכר לעולם אינה נכס: היא יוצאת ממלאי הסגירה, והעלות שלה נשארת בעלות המכר.", `(${DESTROY.units} − ${DESTROY.destroy}) × ${DESTROY.unitCost} = ${fmt(destroyClosing)} ₪.`],
+    ),
+    choice("consigned", "משגור", "מלאי שמסרנו במשגור לסוכן, וטרם נמכר — של מי?", ["של הסוכן", "שלנו", "של הלקוח", "של אף אחד"], 1, "הבעלות והסיכון נשארים אצלנו עד המכירה ללקוח הסופי."),
+    choice("bill-and-hold", "מכור והחזק", "מכור והחזק — האם נכלל במלאי שלנו?", ["כן, הוא במחסן שלנו", "לא, הוא כבר של הלקוח"], 1, "המכירה הוכרה והעלות עברה לעלות המכר. אנחנו רק מחזיקים את הסחורה בשביל הלקוח."),
+    choice(
+      "in-transit",
+      "מלאי בדרך",
+      "סחורה נקנתה ב-20.12 והגיעה ב-8.1. לפי ההסכם, הסיכון עובר לחברה כשהסחורה יוצאת ממחסן הספק (ב-20.12). האם היא במלאי ב-31.12?",
+      ["כן — הסיכון כבר על החברה", "לא — היא עוד לא הגיעה", "רק אם שולם עליה", "רק בשיטה תמידית"],
+      0,
+      "לא קובע איפה הסחורה, אלא על מי הסיכון. מ-20.12 הוא על החברה — והסחורה שלה.",
+    ),
+    choice(
+      "samples",
+      "דוגמיות",
+      "חברת קוסמטיקה מחלקת בקניונים דוגמיות חינם של בושם. האם הן מלאי?",
+      ["לא — הן לא מוחזקות למכירה", "כן — הן מוצר של החברה", "כן, אם הן במחסן", "רק בשווי מימוש נטו"],
+      0,
+      "מלאי הוא נכס שמוחזק כדי למכור אותו. דוגמיות שמחולקות חינם הן הוצאת שיווק.",
+    ),
+    choice(
+      "land",
+      "במהלך העסקים הרגיל",
+      "חברה קבלנית קנתה קרקע כדי לבנות עליה דירות ולמכור אותן. האם הקרקע היא מלאי?",
+      ["כן — אצל קבלן, זה מה שהוא מוכר", "לא — קרקע היא תמיד רכוש קבוע", "רק אחרי שהבניין גמור", "תלוי במחיר"],
+      0,
+      "״במהלך העסקים הרגיל״ נבחן לפי מה שהחברה עושה. אצל קבלן הקרקע היא חלק ממה שנמכר — מלאי.",
+    ),
+    choice(
+      "scope",
+      "תחולת התקן",
+      "על איזה מהבאים IAS 2 אינו חל?",
+      ["מניות שחברת השקעות מחזיקה למכירה", "בדים בחנות בגדים", "חומרי גלם במפעל", "מוצרים בתהליך ייצור"],
+      0,
+      "מכשירים פיננסיים (כמו מניות) הוצאו מהתקן — יש להם תקנים משלהם (IAS 32, IFRS 9).",
+    ),
+  ],
+  traps: [
+    {
+      id: "where-not-whose",
+      prompt: "סחורה של ספק אחר יושבת אצלנו במחסן, במשגור. האם היא במלאי שלנו?",
+      options: ["לא — היא של הספק עד שנמכור אותה", "כן — היא במחסן שלנו", "כן, אם נספרה", "חצי — שלנו ושל הספק"],
+      answer: 0,
+      why: "מלאי שייך למי שהסיכון עליו. אנחנו רק מוכרים בשביל הספק; הסחורה שלו.",
+      traps: ["", "המלכודת: מקום אינו בעלות. לא כל מה שבמחסן שלנו — שלנו.", "ספירה שכללה אותה בטעות — מתקנים.", "אין חצי בעלות: הסיכון כולו אצל הספק."],
+    },
+    {
+      id: "broken-opening",
+      prompt: "התברר ש-10 יחידות שנספרו בסגירה של שנה שעברה היו שבורות. מה קורה למלאי הפתיחה השנה?",
+      options: ["מורידים אותן ממנו", "לא משנים — הדוחות כבר פורסמו", "מוסיפים אותן לקניות", "מעבירים אותן לשווי מימוש נטו"],
+      answer: 0,
+      why: "מלאי הפתיחה צריך להיות מה שהיה באמת ראוי למכירה ב-31.12 — בלי היחידות השבורות.",
+      traps: ["", "המלכודת: לגרור את הטעות לשנה הבאה. השאלה מבקשת דוחות נכונים — מתקנים את הפתיחה.", "יחידות שבורות לא נקנו השנה.", "יחידה שאי אפשר למכור בכלל אינה נכס — לא מורידים אותה לשווי מימוש נטו, מוציאים אותה."],
+    },
+  ],
+  tips: [
+    "מלאי = מוחזק למכירה במהלך העסקים הרגיל, בתהליך ייצור, או חומרים לייצור. דוגמיות חינם — לא.",
+    "התקן לא חל על מכשירים פיננסיים ועל נכסים ביולוגיים ותוצרת חקלאית בעת האסיף.",
+    "של מי המלאי? של מי שהסיכון עליו. בדרך — לפי ההסכם; משגור שמסרנו — שלנו; מכור והחזק — של הלקוח.",
+    "ספירה שגויה מתקנים: מוסיפים מה ששלנו ולא נספר, ומורידים מה שנספר ולא שלנו או לא ראוי למכירה.",
+  ],
+};

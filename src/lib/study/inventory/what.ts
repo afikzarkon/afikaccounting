@@ -2,8 +2,6 @@ import type { StudyModule } from "../types";
 import { calc, choice, COURSE, COURSE_HREF, fmt, journal } from "./shared";
 
 // Every figure below is computed here, from the question's own numbers.
-const BUY = { qty: 200, price: 30 }; // periodic, on credit
-const SELL = { qty: 50, price: 80, unitCost: 30 }; // perpetual, for cash
 const COUNT = 18_000;
 const COGS = { opening: 40_000, purchases: 250_000, closing: 55_000 };
 const cogs = COGS.opening + COGS.purchases - COGS.closing;
@@ -13,49 +11,29 @@ const GP = { sales: 400_000, returns: 20_000, cogs: 228_000 };
 const netSales = GP.sales - GP.returns;
 const grossProfit = netSales - GP.cogs;
 const gpPct = Math.round((grossProfit / netSales) * 1000) / 10;
+/** Two years of one shop: the first year's closing count opens the second. */
+export const TWO_YEARS = { unit: 30, buy1: 500, sold1: 380, buy2: 600, sold2: 650, price: 70 };
+const left1 = TWO_YEARS.buy1 - TWO_YEARS.sold1;
+const left2 = left1 + TWO_YEARS.buy2 - TWO_YEARS.sold2;
+export const YEAR2_COGS = left1 * TWO_YEARS.unit + TWO_YEARS.buy2 * TWO_YEARS.unit - left2 * TWO_YEARS.unit;
 
-/** Lesson 1: what inventory is — the matching principle, the vocabulary, the two recording systems and the statement up to gross profit. */
-export const INTRO: StudyModule = {
-  slug: "inventory-intro",
+/** Lesson 1: why inventory exists — the matching principle, the year-end entry, its two homes, the next year, the vocabulary and the statement up to gross profit. */
+export const WHAT: StudyModule = {
+  slug: "inventory-what",
   course: COURSE,
   n: 1,
   title: "מהו מלאי ועלות המכר",
-  description: "מה שלא נמכר אינו הוצאה של השנה: עיקרון ההקבלה, אוצר המילים, רישום תקופתי ותמידי, והדוח עד הרווח הגולמי — גם כשחסרים בו מספרים.",
+  description: "מה שלא נמכר אינו הוצאה של השנה: עיקרון ההקבלה, פקודת המלאי בסוף השנה, מה קורה לה בשנה הבאה, והדוח עד הרווח הגולמי.",
   backHref: COURSE_HREF,
   screens: [
     { id: "inv-idea", title: "מה שלא נמכר — לא הוצאה של השנה" },
-    { id: "inv-ias2", title: "IAS 2: במה עוסק התקן" },
-    { id: "inv-terms", title: "אוצר מילים" },
+    { id: "iv-year-end", title: "ארבעה צעדים בסוף השנה" },
     { id: "inv-homes", title: "שני בתים למלאי הסגירה" },
-    { id: "inv-systems", title: "שתי שיטות רישום: תקופתי ותמידי" },
+    { id: "iv-next-year", title: "בשנה הבאה: הסגירה הופכת לפתיחה" },
+    { id: "inv-terms", title: "אוצר מילים" },
     { id: "inv-cogs", title: "הדוח עד הרווח הגולמי" },
-    { id: "inv-daf", title: "דוח עם סימני שאלה: שתי שנים" },
   ],
   exercises: [
-    journal(
-      "periodic-buy",
-      "קנייה בשיטה תקופתית",
-      `החברה מנהלת מלאי בשיטה תקופתית. היא קנתה מספק ${BUY.qty} יחידות ב-${BUY.price} ₪ ליחידה, באשראי.`,
-      [
-        { account: "קניות", dr: BUY.qty * BUY.price },
-        { account: "ספקים", cr: BUY.qty * BUY.price },
-      ],
-      `בשיטה תקופתית הקנייה נרשמת בחשבון ״קניות״ — חשבון תוצאתי שנכנס לעלות המכר. ${BUY.qty} × ${BUY.price} = ${fmt(BUY.qty * BUY.price)}. המלאי עצמו יתעדכן רק בסוף השנה, לפי ספירה.`,
-      ["קניות", "ספקים", "מלאי", "מזומן", "עלות המכר"],
-    ),
-    journal(
-      "perpetual-sale",
-      "מכירה בשיטה תמידית",
-      `החברה מנהלת מלאי בשיטה תמידית. היא מכרה במזומן ${SELL.qty} יחידות ב-${SELL.price} ₪ ליחידה. העלות של כל יחידה שנמכרה: ${SELL.unitCost} ₪. רשמו את המכירה בפקודה אחת.`,
-      [
-        { account: "מזומן", dr: SELL.qty * SELL.price },
-        { account: "מכירות", cr: SELL.qty * SELL.price },
-        { account: "עלות המכר", dr: SELL.qty * SELL.unitCost },
-        { account: "מלאי", cr: SELL.qty * SELL.unitCost },
-      ],
-      `שני דברים קורים במכירה: ההכנסה (${SELL.qty} × ${SELL.price} = ${fmt(SELL.qty * SELL.price)}), והיציאה של הסחורה מהמלאי לעלות המכר (${SELL.qty} × ${SELL.unitCost} = ${fmt(SELL.qty * SELL.unitCost)}). בשיטה תמידית רושמים את שניהם כבר ביום המכירה.`,
-      ["מזומן", "מכירות", "עלות המכר", "מלאי", "קניות", "לקוחות"],
-    ),
     journal(
       "closing-count",
       "מלאי סגירה בשיטה תקופתית",
@@ -66,6 +44,14 @@ export const INTRO: StudyModule = {
       ],
       "אותו סכום בשני בתים: בחובה — הנכס במאזן, שעובר לשנה הבאה. בזכות — החשבון התוצאתי שמקטין את עלות המכר.",
       ["מלאי סגירה מאזני", "מלאי סגירה רווח או הפסד", "מלאי פתיחה", "קניות", "עלות המכר"],
+    ),
+    choice(
+      "idea-cogs",
+      "עיקרון ההקבלה",
+      "חנות קנתה 20 יחידות ב-10 ₪ ומכרה 15 מהן. אין מלאי פתיחה. מהי עלות המכר?",
+      ["200 ₪", "150 ₪", "50 ₪", "תלוי במחיר המכירה"],
+      1,
+      "רק 15 היחידות שנמכרו: 15 × 10 = 150. חמש היחידות שנשארו הן מלאי — נכס.",
     ),
     calc(
       "cogs",
@@ -82,6 +68,17 @@ export const INTRO: StudyModule = {
       ["אותה נוסחה, והנעלם במקום אחר: סגירה = פתיחה + קניות − עלות המכר.", `${fmt(ROLL.opening)} + ${fmt(ROLL.purchases)} − ${fmt(ROLL.cogs)} = ${fmt(rollClosing)} ₪.`],
     ),
     calc(
+      "second-year",
+      "השנה השנייה",
+      `חנות שהוקמה ב-2025 קנתה בה ${TWO_YEARS.buy1} יח׳ ומכרה ${TWO_YEARS.sold1}. ב-2026 קנתה ${TWO_YEARS.buy2} יח׳ ומכרה ${TWO_YEARS.sold2}. כל יחידה עלתה ${TWO_YEARS.unit} ₪. מהי עלות המכר של 2026?`,
+      YEAR2_COGS,
+      [
+        `מלאי הפתיחה של 2026 הוא הסגירה של 2025: ${TWO_YEARS.buy1} − ${TWO_YEARS.sold1} = ${left1} יח׳ × ${TWO_YEARS.unit} = ${fmt(left1 * TWO_YEARS.unit)} ₪.`,
+        `הסגירה של 2026: ${left1} + ${TWO_YEARS.buy2} − ${TWO_YEARS.sold2} = ${left2} יח׳ × ${TWO_YEARS.unit} = ${fmt(left2 * TWO_YEARS.unit)} ₪.`,
+        `עלות המכר: ${fmt(left1 * TWO_YEARS.unit)} + ${fmt(TWO_YEARS.buy2 * TWO_YEARS.unit)} − ${fmt(left2 * TWO_YEARS.unit)} = ${fmt(YEAR2_COGS)} ₪ — בדיוק ${TWO_YEARS.sold2} × ${TWO_YEARS.unit}.`,
+      ],
+    ),
+    calc(
       "gross-profit",
       "רווח גולמי",
       `מכירות ${fmt(GP.sales)} ₪, הנחות והחזרות ללקוחות ${fmt(GP.returns)} ₪, עלות המכר ${fmt(GP.cogs)} ₪. מהו הרווח הגולמי?`,
@@ -96,22 +93,6 @@ export const INTRO: StudyModule = {
       ["שיעור רווח גולמי = רווח גולמי ÷ מכירות נטו — על המכירות, לא על העלות.", `${fmt(grossProfit)} ÷ ${fmt(netSales)} = ${gpPct}%.`],
     ),
     choice(
-      "idea-cogs",
-      "עיקרון ההקבלה",
-      "חנות קנתה 20 יחידות ב-10 ₪ ומכרה 15 מהן. אין מלאי פתיחה. מהי עלות המכר?",
-      ["200 ₪", "150 ₪", "50 ₪", "תלוי במחיר המכירה"],
-      1,
-      "רק 15 היחידות שנמכרו: 15 × 10 = 150. חמש היחידות שנשארו הן מלאי — נכס.",
-    ),
-    choice(
-      "perpetual-extra",
-      "שיטה תמידית",
-      "בשיטה תמידית, מה רושמים במכירה בנוסף לפקודה ח׳ לקוחות / ז׳ מכירות?",
-      ["ח׳ קניות / ז׳ מלאי", "ח׳ עלות המכר / ז׳ מלאי", "ח׳ מלאי / ז׳ עלות המכר", "כלום"],
-      1,
-      "בכל מכירה מוציאים את העלות של מה שנמכר מהמלאי לעלות המכר.",
-    ),
-    choice(
       "opening-home",
       "מלאי פתיחה",
       "בשיטה תקופתית, באיזה דוח מופיע ״מלאי פתיחה״?",
@@ -120,12 +101,12 @@ export const INTRO: StudyModule = {
       "מלאי הפתיחה הוא חלק מעלות המכר — חשבון תוצאתי בחובה, כמו הקניות.",
     ),
     choice(
-      "supplier-returns",
-      "קניות נטו",
-      "החזרות לספקים משפיעות על...",
-      ["מכירות נטו", "קניות נטו", "מלאי הפתיחה", "שום דבר"],
-      1,
-      "הן מקטינות את הקניות — ודרכן את עלות המכר. הנחות והחזרות ללקוחות מקטינות את המכירות.",
+      "no-entry",
+      "בלי פקודת התאמה",
+      "חברה שכחה לרשום את פקודת מלאי הסגירה. מה קרה לרווח שלה השנה?",
+      ["הוא נמוך מדי — כל הקניות נרשמו כהוצאה", "הוא גבוה מדי", "הוא נכון, רק המאזן שגוי", "אין השפעה"],
+      0,
+      "בלי הפקודה, גם עלות הסחורה שעוד במחסן נשארה בהוצאות. עלות המכר גבוהה מדי — והרווח נמוך מדי.",
     ),
   ],
   traps: [
@@ -170,9 +151,9 @@ export const INTRO: StudyModule = {
     },
   ],
   tips: [
-    "עלות המכר = מלאי פתיחה + קניות נטו − מלאי סגירה. קניות ≠ עלות המכר.",
-    "שיעור רווח גולמי = רווח גולמי ÷ מכירות נטו — תמיד על המכירות.",
-    "תקופתי: ״קניות״ במהלך השנה, ומלאי הסגירה בפקודה בסוף השנה. תמידי: ״מלאי״ בכל קנייה, ועלות המכר בכל מכירה.",
-    "דוח עם סימני שאלה: שנה אחרי שנה, משוואה עם נעלם אחד בכל פעם — וסגירה של שנה היא הפתיחה של הבאה.",
+    "רק מה שנמכר הוא הוצאה של השנה. מה שעוד על המדף — נכס: מלאי.",
+    "סוף השנה: סופרים, מעריכים בעלות, ורושמים ח׳ מלאי סגירה מאזני / ז׳ מלאי סגירה רווח או הפסד.",
+    "מלאי הסגירה של שנה הוא מלאי הפתיחה של הבאה.",
+    "עלות המכר = מלאי פתיחה + קניות נטו − מלאי סגירה. שיעור רווח גולמי = רווח גולמי ÷ מכירות נטו.",
   ],
 };
