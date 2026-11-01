@@ -26,6 +26,7 @@ import {
   xpOf,
 } from "@/lib/study/score";
 import { neighbours, percentOf } from "@/lib/study/outline";
+import { afterAnswer, today } from "@/lib/study/review";
 import { videoAt } from "@/lib/study/paths";
 import type { LessonVideo, StudyModule } from "@/lib/study/types";
 import { type CourseInfo, CourseOutline } from "./course-outline";
@@ -297,7 +298,8 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
     if (it.kind === "exercise") {
       const ex = it.ex;
       const onCheck = (ok: boolean) => {
-        updateTopic(slug, (q) => recordExercise(q, ex, ok));
+        // A weak answer goes up for spaced review, from tomorrow.
+        updateTopic(slug, (q) => afterAnswer(recordExercise(q, ex, ok), it, today()));
         cue(ok ? "ok" : "bad");
       };
       card = {
@@ -323,7 +325,7 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
             trap={t}
             answered={p.traps[t.id]}
             onAnswer={(choice) => {
-              updateTopic(slug, (q) => recordTrap(q, t.id, choice, choice === t.answer));
+              updateTopic(slug, (q) => afterAnswer(recordTrap(q, t.id, choice, choice === t.answer), it, today()));
               cue(choice === t.answer ? "ok" : "bad");
             }}
           />

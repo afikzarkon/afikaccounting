@@ -2,6 +2,7 @@
 
 import { ArrowLeft, BookOpen, BookOpenText, ClipboardPen, Flame, Repeat, RotateCcw, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { maxXp, missedOf, scoreOf, type TopicProgress, xpOf } from "@/lib/study/score";
@@ -45,7 +46,11 @@ export function SummaryCard({
         {missed > 0 && (
           <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl bg-accent-soft px-4 py-3 ring-1 ring-accent/25">
             <p className="num min-w-0 flex-1 text-[14.5px] text-fg">
-              <strong>{missed} שאלות</strong> עוד לא נפתרו — לא עניתם עליהן, או שהתשובה לא הייתה נכונה.
+              <strong>{missed} שאלות</strong> עוד לא נפתרו — לא עניתם עליהן, או שהתשובה לא הייתה נכונה. מה שטעיתם בו נכנס ל
+              <Link href="/review" className="font-semibold text-accent hover:underline">
+                חזרה שלכם
+              </Link>
+              , ויחזור מחר.
             </p>
             <Button onClick={onRetry}>
               <Repeat className="h-4 w-4" aria-hidden /> לתרגל אותן שוב
