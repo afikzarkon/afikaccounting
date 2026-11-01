@@ -21,6 +21,8 @@ const nextConfig: NextConfig = {
       { source: "/study/inventory-intro", destination: "/study/inventory-what", permanent: true },
       { source: "/study/inventory-formulas", destination: "/study/inventory-fifo", permanent: true },
       { source: "/study/inventory-exam", destination: "/study/inventory-worksheet", permanent: true },
+      // The fixed-assets course grew from five lessons to twelve: its depreciation lesson split into straight-line and the other methods.
+      { source: "/study/ias16-depreciation", destination: "/study/ias16-straight", permanent: true },
     ];
   },
   partialPrefetching: true,

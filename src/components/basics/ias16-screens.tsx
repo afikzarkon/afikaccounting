@@ -10,12 +10,9 @@ import { DepreciationSimulator } from "@/components/learn/simulator";
 import { WhatIsPpeSection } from "@/components/learn/what-is-ppe";
 import { RenovationCalculator } from "@/components/renovation/calculator";
 import { DistinctionSection } from "@/components/renovation/distinction";
-import { RenovationExamplesSection } from "@/components/renovation/examples";
 import { RenovationStepsSection } from "@/components/renovation/steps";
-import { RenovationTipsSection } from "@/components/renovation/tips";
 import { RevaluationCalculator } from "@/components/revaluation/calculator";
 import { CheckTipsSection } from "@/components/revaluation/check-tips";
-import { RevaluationExamplesSection } from "@/components/revaluation/examples";
 import { LandBuildingSection } from "@/components/revaluation/land-building";
 import { RevaluationStandardSection } from "@/components/revaluation/standard";
 import { RevaluationStepsSection } from "@/components/revaluation/steps";
@@ -40,9 +37,7 @@ export const IAS16_SCREENS: Record<string, ScreenContent> = {
 
   "renovation-distinction": screen("שיפוץ שמשפר את הנכס או מאריך את חייו נכנס לנכס; תחזוקה ששומרת עליו במצבו — הוצאה.", <DistinctionSection />),
   "renovation-steps": screen("בכל שיפוץ: פחת עד יום השיפוץ, מוסיפים את השיפוץ לערך בספרים, ומפחיתים את הבסיס החדש על יתרת אורך החיים.", <RenovationStepsSection />),
-  "renovation-examples": screen("אותו שיפוץ בכל שיטת פחת: הבסיס החדש זהה, ורק החלוקה שלו בין השנים משתנה — במכנה חדש או בשיעור חדש.", <RenovationExamplesSection />),
   "renovation-calculator": screen("מזינים את הנכס ואת השיפוץ — והמחשבון מראה את הפחת לפני השיפוץ ואחריו, שנה אחרי שנה, עם כל הדרך.", <RenovationCalculator />),
-  "renovation-tips": screen("הטעויות שחוזרות בשאלות שיפוץ: שוכחים את הפחת היחסי עד השיפוץ, ומפחיתים מהעלות במקום מהערך בספרים.", <RenovationTipsSection />),
 
   "exchange-steps": screen("שלושה שלבים קבועים לכל החלפה: תאריך ההחלפה, עדכון הפחת עד אליו, וסיווג העסקה — יש או אין מהות מסחרית.", <ExchangeStepsSection />),
   "exchange-entries": screen("בפקודת ההחלפה הנכס הישן יוצא כולו — עלותו והפחת שנצבר עליו — והנכס החדש נכנס בעלות שנקבעה לו.", <ExchangeJournalSection />),
@@ -52,7 +47,6 @@ export const IAS16_SCREENS: Record<string, ScreenContent> = {
   "revaluation-standard": screen("במודל הערכה מחדש הנכס מוצג בשווי ההוגן: עלייה לקרן הערכה מחדש, ירידה לרווח והפסד — וכל צד מבטל קודם את מה שהצד השני רשם.", <RevaluationStandardSection />),
   "revaluation-steps": screen("פחת עד יום ההערכה, פער לשווי ההוגן, סיווג הפער — ואז פחת חדש מהשווי ההוגן, על יתרת אורך החיים.", <RevaluationStepsSection />),
   "revaluation-land-building": screen("קרקע לא מופחתת, ולכן הקרן שלה עוברת לעודפים רק כשהיא נמכרת; במבנה אפשר להעביר אותה בהדרגה, לפי הפחת.", <LandBuildingSection />),
-  "revaluation-examples": screen("בכל שיטת פחת, ההעברה לעודפים היא הפרש הפחת שנובע מההערכה — ובסוף החיים הקרן מתאפסת.", <RevaluationExamplesSection />),
   "revaluation-yearly": screen("כשמעריכים בכל שנה, חוזרים על אותו סדר בכל שנה: פחת, העברה לעודפים, ורק אז הערכה מחדש.", <YearlyRevaluationSection />),
   "revaluation-check": screen("כשמעבירים את הקרן לעודפים לפי הפחת, יתרתה בכל רגע שווה לערך בספרים לפי ההערכה, פחות הערך בספרים לפי העלות — בדיקה שתופסת כמעט כל טעות.", <CheckTipsSection />),
   "revaluation-calculator": screen("מזינים את הנכס ואת ההערכות — והמחשבון מראה כל שנה: פחת, העברה לעודפים, הערכה מחדש וקרן.", <RevaluationCalculator />),

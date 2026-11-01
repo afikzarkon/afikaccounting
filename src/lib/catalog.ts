@@ -93,10 +93,10 @@ export const LEARNING_PATH: Stage[] = [
         title: "רכוש קבוע",
         standard: "IAS 16",
         href: "/basics/ias16",
-        description: "5 שיעורים אינטראקטיביים, מ״מה הופך פריט לרכוש קבוע״ דרך שיטות הפחת ושאלה מלאה ועד שיפוצים, החלפת נכסים והערכה מחדש — עם תרגול בכל שיעור ומחשבון לכל סוגיה.",
-        covers: ["מהו רכוש קבוע", "שיטות פחת", "שאלה מלאה", "שיפוצים", "החלפה", "הערכה מחדש"],
+        description: "12 שיעורים אינטראקטיביים, מ״מה הופך פריט לרכוש קבוע״ דרך עלות, שיטות פחת ופחת לפי רכיבים, מכירה, שיפוצים, החלפה והערכה מחדש — ועד שתי שאלות ברמת מבחן, עם תרגול בכל שיעור ומחשבון לכל סוגיה.",
+        covers: ["מהו רכוש קבוע", "עלות הנכס", "שיטות פחת", "רכיבים", "מכירה", "שיפוצים", "החלפה", "הערכה מחדש", "שאלות מבחן"],
         tools: [
-          { href: "/study/ias16-depreciation?screen=depreciation", label: "סימולטור פחת", calculator: true },
+          { href: "/study/ias16-methods?screen=depreciation", label: "סימולטור פחת", calculator: true },
           { href: "/study/ias16-renovation?screen=renovation-calculator", label: "מחשבון שיפוץ", calculator: true },
           { href: "/study/ias16-exchange?screen=exchange-calculator", label: "מחשבון החלפה", calculator: true },
           { href: "/study/ias16-revaluation?screen=revaluation-calculator", label: "מחשבון הערכה מחדש", calculator: true },

@@ -87,37 +87,39 @@ function reval(r: Rand) {
 type Maker = (r: Rand) => Exercise;
 
 export const VARIANTS: Record<string, Record<string, Maker>> = {
-  "ias16-intro": {
+  "ias16-cost": {
     "machine-cost": (r) => machineQuestions(machine(r))["machine-cost"],
     "machine-buy": (r) => machineQuestions(machine(r))["machine-buy"],
+  },
+  "ias16-straight": {
     "annual-dep": (r) => machineQuestions(machine(r))["annual-dep"],
     carrying: (r) => machineQuestions(machine(r)).carrying,
-  },
-  "ias16-depreciation": {
     "dep-entry": (r) => depEntryQ(straight(r)),
+    "mid-year": (r) => {
+      const life = pick(r, [4, 5, 8, 10]);
+      return midYearQ({ cost: life * 12_000 * int(r, 1, 5), life, readyMonth: int(r, 2, 12) });
+    },
+  },
+  "ias16-methods": {
     "syd-year2": (r) => {
       const life = pick(r, [3, 4, 5]);
       const salvage = step(r, 0, 20_000, 5_000);
       return sydQ({ cost: ((life * (life + 1)) / 2) * 1_000 * int(r, 2, 20) + salvage, salvage, life });
     },
     "db-year2": (r) => dbQ({ cost: step(r, 50_000, 200_000, 10_000), rate: pick(r, [10, 20, 25, 30, 40]) }),
-    "mid-year": (r) => {
-      const life = pick(r, [4, 5, 8, 10]);
-      return midYearQ({ cost: life * 12_000 * int(r, 1, 5), life, readyMonth: int(r, 2, 12) });
-    },
     units: (r) => {
       const total = pick(r, [50_000, 80_000, 100_000, 120_000]);
       const rate = pick(r, [0.5, 1, 1.5, 2]);
       const salvage = step(r, 0, 10_000, 1_000);
       return unitsQ({ cost: total * rate + salvage, salvage, total, made: step(r, total / 10, (total * 2) / 5, 1_000) });
     },
+  },
+  "ias16-renovation": {
     estimate: (r) => {
       const life = pick(r, [8, 10, 12]);
       const left = int(r, 2, 6);
       return estimateQ({ cost: life * 1_000 * left * int(r, 1, 4), life, years: int(r, 2, life - 3), left });
     },
-  },
-  "ias16-renovation": {
     "reno-capitalise": (r) => renovationQuestions(reno(r))["reno-capitalise"],
     "reno-carrying": (r) => renovationQuestions(reno(r))["reno-carrying"],
     "reno-year": (r) => renovationQuestions(reno(r))["reno-year"],
@@ -138,6 +140,8 @@ export const VARIANTS: Record<string, Record<string, Maker>> = {
     "reval-entry": (r) => revaluationQuestions(reval(r))["reval-entry"],
     "reval-new-dep": (r) => revaluationQuestions(reval(r))["reval-new-dep"],
     "reval-transfer": (r) => revaluationQuestions(reval(r))["reval-transfer"],
+  },
+  "ias16-revaluation-land": {
     "reval-drop": (r) => {
       const surplus = step(r, 5_000, 40_000, 1_000);
       return dropQ({ surplus, decrease: surplus + step(r, 1_000, 20_000, 1_000) });

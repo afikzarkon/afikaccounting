@@ -1,12 +1,19 @@
 import { findScreenIn, lessonHref, screenHrefIn } from "../paths";
-import { DEPRECIATION } from "./depreciation";
-import { EXCHANGE } from "./exchange";
-import { INTRO } from "./intro";
-import { RENOVATION } from "./renovation";
-import { REVALUATION } from "./revaluation";
+import { COMPONENTS } from "./lessons/components";
+import { COST } from "./lessons/cost";
+import { DISPOSAL } from "./lessons/disposal";
+import { EXAMS } from "./lessons/exams";
+import { LAND } from "./lessons/land";
+import { METHODS } from "./lessons/methods";
+import { REVALUE } from "./lessons/revalue";
+import { STRAIGHT } from "./lessons/straight";
+import { SUBSEQUENT } from "./lessons/subsequent";
+import { SWAP_LESSON } from "./lessons/swap";
+import { WHAT } from "./lessons/what";
+import { SHEET } from "./lessons/worksheet";
 
-/** The fixed-assets course: five lessons, in order. */
-export const IAS16_LESSONS = [INTRO, DEPRECIATION, RENOVATION, EXCHANGE, REVALUATION];
+/** The fixed-assets course: twelve lessons, in order — from what an item of PPE is to two exam-level questions. */
+export const IAS16_LESSONS = [WHAT, COST, STRAIGHT, METHODS, COMPONENTS, DISPOSAL, SUBSEQUENT, SWAP_LESSON, LAND, REVALUE, SHEET, EXAMS];
 
 /** The lesson and index of a concept screen of the course, by its id. */
 export const findIas16Screen = (id: string) => findScreenIn(IAS16_LESSONS, id);
@@ -18,8 +25,9 @@ export const ias16ScreenHref = (id: string) => screenHrefIn(IAS16_LESSONS, id);
  * The former long page's anchors (/basics/ias16#id), and where each now
  * lives: every chapter and sub-section kept its id as a screen (but "what",
  * which the basics course already has, is "ppe-what"); a chapter split into
- * screens opens its first; the old tabs' names lead to theirs.
- * The full calculator's card stays on the course page.
+ * screens opens its first; the old tabs' names lead to theirs; and the three
+ * screens of worked examples the twelve-lesson course folded into others
+ * open those.
  */
 const LEGACY_ALIASES: Record<string, string> = {
   what: "ppe-what",
@@ -31,6 +39,9 @@ const LEGACY_ALIASES: Record<string, string> = {
   "basics-part": "ppe-what",
   "concepts-part": "concepts",
   "issues-part": "depreciation",
+  "renovation-examples": "renovation-steps",
+  "renovation-tips": "renovation-steps",
+  "revaluation-examples": "revaluation-steps",
 };
 
 export const IAS16_LEGACY_CHAPTERS = [...IAS16_LESSONS.flatMap((m) => m.screens.map((s) => s.id)), ...Object.keys(LEGACY_ALIASES)];

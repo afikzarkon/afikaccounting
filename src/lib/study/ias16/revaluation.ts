@@ -1,7 +1,6 @@
-import type { StudyModule } from "../types";
-import { calc, choice, COURSE, COURSE_HREF, fmt, journal } from "./shared";
+import { calc, fmt, journal } from "./shared";
 
-// Practice draft — written for the owner's review. Every figure is computed from the question's own numbers,
+// Question builders for the course's lessons (lessons/). Every figure is computed from the question's own numbers,
 // so the same questions also come with new numbers (variants/ias16.ts); ias16-lessons.test checks them against the course's revaluation solver.
 
 /** A straight-line building revalued on 1 January of a later year. */
@@ -77,65 +76,3 @@ export const dropQ = (D: Drop) =>
       `השאר — ${fmt(D.decrease)} − ${fmt(D.surplus)} = ${fmt(D.decrease - D.surplus)} ₪ — הפסד ברווח והפסד.`,
     ],
   );
-
-const Q = revaluationQuestions(REVAL);
-
-/** Lesson 5: the revaluation model — depreciation up to the revaluation, the gap to fair value and where it goes, land against buildings, and the checks that catch almost every mistake. */
-export const REVALUATION: StudyModule = {
-  slug: "ias16-revaluation",
-  course: COURSE,
-  n: 5,
-  title: "מודל הערכה מחדש",
-  description: "פחת עד יום ההערכה, פער לשווי ההוגן וסיווגו — קרן הערכה מחדש או רווח והפסד. ואחר כך: קרקע מול מבנה, העברה לעודפים, דוגמאות, טיפ בדיקה — ומחשבון.",
-  backHref: COURSE_HREF,
-  screens: [
-    { id: "revaluation-standard", title: "מה התקן אומר" },
-    { id: "revaluation-steps", title: "דרכים לפתור שאלה" },
-    { id: "revaluation-land-building", title: "קרקע מול מבנה" },
-    { id: "revaluation-examples", title: "דוגמאות לפי שיטות הפחת" },
-    { id: "revaluation-yearly", title: "דוגמה: הערכה בכל שנה" },
-    { id: "revaluation-check", title: "בדיקה ודגשים" },
-    { id: "revaluation-calculator", title: "מחשבון הערכה מחדש" },
-  ],
-  tools: [{ screen: "revaluation-calculator", label: "מחשבון הערכה מחדש" }],
-  exercises: [
-    Q["reval-gap"],
-    Q["reval-entry"],
-    Q["reval-new-dep"],
-    Q["reval-transfer"],
-    dropQ({ surplus: 16_000, decrease: 20_000 }),
-    choice(
-      "first-drop",
-      "ירידה ראשונה",
-      "נכס הוערך מחדש לראשונה, וערכו ירד. לאן נרשמת הירידה?",
-      ["לרווח והפסד", "לקרן הערכה מחדש, ביתרה בחובה", "ישירות לעודפים"],
-      0,
-      "אין קרן לנכס הזה שאפשר להקטין — הירידה כולה הפסד ברווח והפסד.",
-    ),
-  ],
-  traps: [
-    {
-      id: "land-sale",
-      prompt: "קרקע שבקרן ההערכה מחדש שלה 30,000 ₪ נמכרה. מה קורה ליתרת הקרן?",
-      options: ["עוברת ישירות לעודפים", "נרשמת כרווח ממכירת הקרקע ברווח והפסד", "נשארת בקרן"],
-      answer: 0,
-      why: "הקרן עוברת לעודפים ישירות, בלי לעבור דרך רווח והפסד. הרווח מהמכירה נמדד מול הערך בספרים — השווי שכבר הוערך.",
-      traps: ["", "המלכודת: הקרן לא עוברת דרך רווח והפסד — לא במכירה ולא בשום שלב.", "כשהנכס יוצא מהספרים, גם הקרן שלו לא נשארת: היא עוברת לעודפים."],
-    },
-    {
-      id: "group",
-      prompt: "לחברה חמישה מבנים, ושניים מהם עלו בערכם. האם אפשר להעריך מחדש רק את השניים?",
-      options: ["לא — מעריכים מחדש את כל קבוצת הנכסים", "כן — רק את מה שעלה"],
-      answer: 0,
-      why: "עקרון הקבוצה: מי שבוחר במודל הערכה מחדש מיישם אותו על כל הקבוצה — כאן, כל המבנים.",
-      traps: ["", "המלכודת: בחירה נקודתית של מה שעלה בערכו הייתה מאפשרת לייפות את הדוחות — ולכן התקן מחייב את כל הקבוצה."],
-    },
-  ],
-  tips: [
-    "מעדכנים פחת עד יום ההערכה — ורק אז משווים לשווי ההוגן.",
-    "עלייה — לקרן הערכה מחדש; אבל אם הייתה קודם ירידה לרווח והפסד, קודם מבטלים אותה ברווח והפסד.",
-    "ירידה — קודם מקטינה את הקרן של אותו נכס, והשאר לרווח והפסד.",
-    "הקרן עוברת לעודפים — אף פעם לא דרך רווח והפסד.",
-    "עקרון הקבוצה: מעריכים מחדש את כל קבוצת הנכסים, לא נכס בודד.",
-  ],
-};

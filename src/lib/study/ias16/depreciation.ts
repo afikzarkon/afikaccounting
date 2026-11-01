@@ -1,7 +1,6 @@
-import type { StudyModule } from "../types";
-import { calc, choice, COURSE, COURSE_HREF, fmt, journal } from "./shared";
+import { calc, fmt, journal } from "./shared";
 
-// Practice draft — written for the owner's review. Every figure is computed from the question's own numbers,
+// Question builders for the course's lessons (lessons/). Every figure is computed from the question's own numbers,
 // so the same questions also come with new numbers (variants/ias16.ts), for subscribers' review.
 
 /** A straight-line asset, and its year-end depreciation entry. */
@@ -106,61 +105,3 @@ export const estimateQ = (E: Estimate) => {
 };
 
 export const MID: MidYear = { cost: 60_000, life: 5, readyMonth: 4 };
-
-/** Lesson 2: the depreciation methods side by side, one exam question solved in nine steps, and the mistakes that cost the most points. */
-export const DEPRECIATION: StudyModule = {
-  slug: "ias16-depreciation",
-  course: COURSE,
-  n: 2,
-  title: "שיטות הפחת ושאלה מלאה",
-  description: "ארבע שיטות פחת על אותם נתונים, שאלה מלאה שנפתרת בתשעה שלבים קבועים, והטעויות שעולות הכי הרבה נקודות במבחן.",
-  backHref: COURSE_HREF,
-  screens: [
-    { id: "depreciation", title: "שיטות הפחת — סימולטור" },
-    { id: "method", title: "שאלה מלאה — תשעה שלבים לפתרון" },
-    { id: "exam", title: "טיפים למבחן" },
-  ],
-  tools: [{ screen: "depreciation", label: "סימולטור הפחת" }],
-  exercises: [
-    depEntryQ({ cost: 120_000, salvage: 20_000, life: 5 }),
-    sydQ({ cost: 120_000, salvage: 20_000, life: 4 }),
-    dbQ({ cost: 100_000, rate: 30 }),
-    midYearQ(MID),
-    unitsQ({ cost: 50_000, salvage: 5_000, total: 90_000, made: 18_000 }),
-    estimateQ({ cost: 100_000, life: 10, years: 4, left: 3 }),
-    choice("land", "קרקע", "חברה קנתה קרקע ועליה מבנה. מה מופחת?", ["רק המבנה", "הקרקע והמבנה יחד", "שניהם, כל אחד באורך חיים משלו"], 0, "לקרקע אין אורך חיים מוגבל, ולכן היא לא מופחתת. מפרידים את העלות ומפחיתים רק את המבנה."),
-  ],
-  traps: [
-    {
-      id: "db-salvage",
-      prompt: "מכונה בעלות 100,000 ₪ וערך גרט 10,000 ₪, פחת ביתרה פוחתת בשיעור 20%. מה הפחת בשנה הראשונה?",
-      options: ["20,000 ₪", "18,000 ₪", "10,000 ₪"],
-      answer: 0,
-      why: "ביתרה פוחתת השיעור חל על הערך בספרים — בשנה הראשונה, העלות: 100,000 × 20% = 20,000 ₪. את הגרט לא מנכים מהבסיס.",
-      traps: ["", "המלכודת: (100,000 − 10,000) × 20%. ביתרה פוחתת לא מנכים את הגרט מהבסיס — השיעור כבר לוקח אותו בחשבון.", "זה ערך הגרט — לא הפחת."],
-    },
-    {
-      id: "start-date",
-      prompt: "מכונה שולמה ב-1.2, הותקנה והייתה מוכנה לשימוש ב-1.5, והחלה לייצר רק ב-1.7. ממתי מחשבים פחת?",
-      options: ["מ-1.2, יום התשלום", "מ-1.5, היום שבו הייתה מוכנה לשימוש", "מ-1.7, היום שבו החלה לייצר"],
-      answer: 1,
-      why: "פחת מתחיל כשהנכס זמין לשימוש — במקומו ובמצב שבו הוא יכול לפעול — גם אם עוד לא התחילו להשתמש בו.",
-      traps: ["יום התשלום לא קובע: המכונה עוד לא הייתה מותקנת ומוכנה.", "", "המלכודת: לא מחכים לשימוש בפועל. מוכנה לשימוש — מתחילים להפחית."],
-    },
-    {
-      id: "idle",
-      prompt: "בשנה מסוימת מכונה עמדה מושבתת שלושה חודשים, בהמתנה לחלקי חילוף. היא מופחתת בקו ישר. מה עושים עם הפחת של החודשים האלה?",
-      options: ["ממשיכים להפחית כרגיל", "עוצרים את הפחת עד שהמכונה חוזרת לעבוד"],
-      answer: 0,
-      why: "פחת לא נעצר כשהנכס עומד. בקו ישר מפחיתים לפי הזמן, לא לפי השימוש.",
-      traps: ["", "המלכודת: פחת בקו ישר לא תלוי בשימוש — הוא ממשיך גם כשהמכונה עומדת."],
-    },
-  ],
-  tips: [
-    "פחת מיום שהנכס מוכן לשימוש — לא מיום התשלום, ולא מיום השימוש בפועל.",
-    "ביתרה פוחתת — לא מנכים גרט מהבסיס.",
-    "נכס ל-5 שנים שנכנס באמצע שנה — פחת ב-6 שנות כספים.",
-    "פחת לא נעצר כשהנכס עומד.",
-    "שינוי אומדן — מכאן ולהבא: הערך בספרים חלקי יתרת אורך החיים.",
-  ],
-};
