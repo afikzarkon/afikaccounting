@@ -40,3 +40,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# skills installed with npx skills (local tooling)
+.claude/skills/
+skills-lock.json
