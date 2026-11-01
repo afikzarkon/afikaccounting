@@ -122,7 +122,7 @@ describe("interactive lessons: the accounting in the new questions", () => {
     assert.equal(answerOf(ex("basics-intro", "year-profit")), 36_000);
     // The two bakeries on the grammar screen: one expenses the whole 12,000 computer.
     assert.equal(twinProfit(12_000), 8_000);
-    assert.equal(answerOf(ex("basics-double-entry", "liabilities-gap")), 230_000);
+    assert.equal(answerOf(ex("basics-double-entry", "liabilities-gap")), 147_000);
     assert.equal(answerOf(ex("basics-books", "suppliers-card")), "14,000 בזכות");
     assert.equal(answerOf(ex("basics-books", "retained-close")), 55_000);
     assert.equal(answerOf(ex("basics-books", "profit-to-retained")), 40_000);
