@@ -18,6 +18,9 @@ const learnItems: NavEntry[] = LEARNING_PATH.flatMap((stage) =>
   ),
 );
 
+// Spaced review sits with the courses: it is their questions, back on their day.
+learnItems.push({ section: "חזרה", href: "/review", label: "החזרה שלי", description: "שאלות שטעיתם בהן, חוזרות בזמן הנכון", tier: "free" });
+
 const toolItems: NavEntry[] = [
   { section: "מנוע הפתרונות — לתרחישים מקצועיים", href: ENGINE_HUB.href, label: "כל מחשבוני המנוע", description: "תרחיש שלב אחר שלב, עם פקודות יומן ובאור" },
   ...ENGINE_TOOLS.map((c) => ({ section: "מנוע הפתרונות — לתרחישים מקצועיים", href: c.href, label: `${c.standard} · ${c.label}`, description: c.description })),

@@ -70,7 +70,9 @@ export function updateTopic(slug: string, change: (p: TopicProgress) => TopicPro
   write((s) => ({ ...s, topics: { ...s.topics, [slug]: change({ ...EMPTY_TOPIC, ...s.topics[slug] }) } }));
 }
 
-export const resetTopic = (slug: string) => write((s) => ({ ...s, topics: { ...s.topics, [slug]: EMPTY_TOPIC } }));
+/** Start a lesson over. Its spaced-review schedule stays: starting over does not erase what is due. */
+export const resetTopic = (slug: string) =>
+  write((s) => ({ ...s, topics: { ...s.topics, [slug]: { ...EMPTY_TOPIC, ...(s.topics[slug]?.review && { review: s.topics[slug].review }) } } }));
 
 export const toggleSound = () => write((s) => ({ ...s, sound: !s.sound }));
 

@@ -1,12 +1,64 @@
 import type { StudyModule } from "../types";
 import { calc, choice, COURSE, COURSE_HREF, fmt, journal } from "./shared";
 
-// Practice draft — written for the owner's review. Every figure is computed here, from the question's own numbers.
-export const MACHINE = { price: 100_000, transport: 4_000, install: 6_000, training: 3_000, salvage: 10_000, life: 10 };
-export const machineCost = MACHINE.price + MACHINE.transport + MACHINE.install;
-const machineAnnual = (machineCost - MACHINE.salvage) / MACHINE.life;
-const afterYears = 3;
-const carryingAfter = machineCost - afterYears * machineAnnual;
+// Practice draft — written for the owner's review. Every figure is computed from the question's own numbers,
+// so the same questions also come with new numbers (variants/ias16.ts), for subscribers' review.
+export type Machine = { price: number; transport: number; install: number; training: number; salvage: number; life: number; years: number };
+export const MACHINE: Machine = { price: 100_000, transport: 4_000, install: 6_000, training: 3_000, salvage: 10_000, life: 10, years: 3 };
+
+/** The lesson's machine questions, from the machine's numbers. */
+export function machineQuestions(M: Machine) {
+  const cost = M.price + M.transport + M.install;
+  const annual = (cost - M.salvage) / M.life;
+  const carrying = cost - M.years * annual;
+  return {
+    "machine-cost": calc(
+      "machine-cost",
+      "עלות הנכס",
+      `מכונה נקנתה ב-${fmt(M.price)} ₪. ההובלה למפעל עלתה ${fmt(M.transport)} ₪, ההתקנה ${fmt(M.install)} ₪, והדרכת העובדים לתפעולה ${fmt(M.training)} ₪. מהי עלות המכונה?`,
+      cost,
+      [
+        "נכלל בעלות כל מה שנדרש כדי להביא את המכונה למקומה ולמצב שבו היא מוכנה לשימוש: המחיר, ההובלה וההתקנה.",
+        "הדרכת העובדים אינה מביאה את המכונה למצב שמיש — היא הוצאה של התקופה.",
+        `עלות: ${fmt(M.price)} + ${fmt(M.transport)} + ${fmt(M.install)} = ${fmt(cost)} ₪.`,
+      ],
+    ),
+    "machine-buy": journal(
+      "machine-buy",
+      "רכישת מכונה",
+      `החברה שילמה במזומן על מכונה ${fmt(M.price)} ₪, על הובלתה ${fmt(M.transport)} ₪, על ההתקנה ${fmt(M.install)} ₪ ועל הדרכת העובדים ${fmt(M.training)} ₪. רשמו את הפקודה.`,
+      [
+        { account: "מכונה", dr: cost },
+        { account: "הוצאות הדרכה", dr: M.training },
+        { account: "מזומן", cr: cost + M.training },
+      ],
+      `המחיר, ההובלה וההתקנה הם עלות המכונה: ${fmt(cost)} ₪. ההדרכה — הוצאה. במזומן יצא הכול: ${fmt(cost + M.training)} ₪.`,
+      ["מכונה", "הוצאות הדרכה", "מזומן", "הוצאות פחת", "ספקים"],
+    ),
+    "annual-dep": calc(
+      "annual-dep",
+      "פחת שנתי",
+      `עלות המכונה ${fmt(cost)} ₪, ערך הגרט ${fmt(M.salvage)} ₪ ואורך החיים ${M.life} שנים, בקו ישר. מה הפחת השנתי?`,
+      annual,
+      [
+        `סכום בר-פחת = עלות − ערך גרט: ${fmt(cost)} − ${fmt(M.salvage)} = ${fmt(cost - M.salvage)} ₪.`,
+        `בקו ישר מחלקים בשנות החיים: ${fmt(cost - M.salvage)} ÷ ${M.life} = ${fmt(annual)} ₪ לשנה.`,
+      ],
+    ),
+    carrying: calc(
+      "carrying",
+      "ערך בספרים",
+      `מכונה בעלות ${fmt(cost)} ₪, ופחת שנתי של ${fmt(annual)} ₪. מה הערך שלה בספרים אחרי ${M.years} שנים?`,
+      carrying,
+      [
+        `פחת נצבר אחרי ${M.years} שנים: ${M.years} × ${fmt(annual)} = ${fmt(M.years * annual)} ₪.`,
+        `ערך בספרים = עלות − פחת נצבר: ${fmt(cost)} − ${fmt(M.years * annual)} = ${fmt(carrying)} ₪.`,
+      ],
+    ),
+  };
+}
+
+const Q = machineQuestions(MACHINE);
 
 /** Lesson 1: what an item of property, plant and equipment is, what goes into its cost, and the concepts every question uses. */
 export const INTRO: StudyModule = {
@@ -37,49 +89,10 @@ export const INTRO: StudyModule = {
       0,
       "הוא מוחשי, מוחזק כדי להשתמש בו בעבודה, וישמש יותר מתקופה אחת — שלושת התנאים מתקיימים.",
     ),
-    calc(
-      "machine-cost",
-      "עלות הנכס",
-      `מכונה נקנתה ב-${fmt(MACHINE.price)} ₪. ההובלה למפעל עלתה ${fmt(MACHINE.transport)} ₪, ההתקנה ${fmt(MACHINE.install)} ₪, והדרכת העובדים לתפעולה ${fmt(MACHINE.training)} ₪. מהי עלות המכונה?`,
-      machineCost,
-      [
-        "נכלל בעלות כל מה שנדרש כדי להביא את המכונה למקומה ולמצב שבו היא מוכנה לשימוש: המחיר, ההובלה וההתקנה.",
-        "הדרכת העובדים אינה מביאה את המכונה למצב שמיש — היא הוצאה של התקופה.",
-        `עלות: ${fmt(MACHINE.price)} + ${fmt(MACHINE.transport)} + ${fmt(MACHINE.install)} = ${fmt(machineCost)} ₪.`,
-      ],
-    ),
-    journal(
-      "machine-buy",
-      "רכישת מכונה",
-      `החברה שילמה במזומן על מכונה ${fmt(MACHINE.price)} ₪, על הובלתה ${fmt(MACHINE.transport)} ₪, על ההתקנה ${fmt(MACHINE.install)} ₪ ועל הדרכת העובדים ${fmt(MACHINE.training)} ₪. רשמו את הפקודה.`,
-      [
-        { account: "מכונה", dr: machineCost },
-        { account: "הוצאות הדרכה", dr: MACHINE.training },
-        { account: "מזומן", cr: machineCost + MACHINE.training },
-      ],
-      `המחיר, ההובלה וההתקנה הם עלות המכונה: ${fmt(machineCost)} ₪. ההדרכה — הוצאה. במזומן יצא הכול: ${fmt(machineCost + MACHINE.training)} ₪.`,
-      ["מכונה", "הוצאות הדרכה", "מזומן", "הוצאות פחת", "ספקים"],
-    ),
-    calc(
-      "annual-dep",
-      "פחת שנתי",
-      `עלות המכונה ${fmt(machineCost)} ₪, ערך הגרט ${fmt(MACHINE.salvage)} ₪ ואורך החיים ${MACHINE.life} שנים, בקו ישר. מה הפחת השנתי?`,
-      machineAnnual,
-      [
-        `סכום בר-פחת = עלות − ערך גרט: ${fmt(machineCost)} − ${fmt(MACHINE.salvage)} = ${fmt(machineCost - MACHINE.salvage)} ₪.`,
-        `בקו ישר מחלקים בשנות החיים: ${fmt(machineCost - MACHINE.salvage)} ÷ ${MACHINE.life} = ${fmt(machineAnnual)} ₪ לשנה.`,
-      ],
-    ),
-    calc(
-      "carrying",
-      "ערך בספרים",
-      `אותה מכונה (עלות ${fmt(machineCost)} ₪, פחת שנתי ${fmt(machineAnnual)} ₪). מה הערך שלה בספרים אחרי ${afterYears} שנים?`,
-      carryingAfter,
-      [
-        `פחת נצבר אחרי ${afterYears} שנים: ${afterYears} × ${fmt(machineAnnual)} = ${fmt(afterYears * machineAnnual)} ₪.`,
-        `ערך בספרים = עלות − פחת נצבר: ${fmt(machineCost)} − ${fmt(afterYears * machineAnnual)} = ${fmt(carryingAfter)} ₪.`,
-      ],
-    ),
+    Q["machine-cost"],
+    Q["machine-buy"],
+    Q["annual-dep"],
+    Q.carrying,
   ],
   traps: [
     {

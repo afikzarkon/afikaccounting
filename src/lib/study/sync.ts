@@ -1,3 +1,4 @@
+import { mergeReview, MASTERED, type ReviewEntry } from "./review";
 import { EMPTY_TOPIC, type ExResult, type TopicProgress } from "./score";
 
 /**
@@ -34,6 +35,12 @@ export function sanitizeTopic(raw: unknown): TopicProgress {
     const t = record(v);
     if (ID.test(id) && typeof t.correct === "boolean" && Number.isInteger(t.choice) && (t.choice as number) >= 0 && (t.choice as number) < 10) traps[id] = { choice: t.choice as number, correct: t.correct };
   }
+  const review: Record<string, ReviewEntry> = {};
+  for (const [id, v] of Object.entries(record(r.review)).slice(0, MAX_ITEMS)) {
+    const e = record(v);
+    if (ID.test(id) && Number.isInteger(e.box) && (e.box as number) >= 0 && (e.box as number) <= MASTERED && Number.isInteger(e.due) && (e.due as number) >= 0 && (e.due as number) < 1_000_000)
+      review[id] = { box: e.box as number, due: e.due as number };
+  }
   return {
     step: count(r.step, 10),
     sub: count(r.sub, 500),
@@ -43,12 +50,13 @@ export function sanitizeTopic(raw: unknown): TopicProgress {
     streak: count(r.streak),
     best: count(r.best),
     ...(r.skipped === true && { skipped: true }),
+    ...(Object.keys(review).length > 0 && { review }),
   };
 }
 
 /** Whether a lesson's progress has anything in it worth keeping. */
 export const isEmptyTopic = (p: TopicProgress) =>
-  p.step === 0 && p.sub === 0 && p.seen.length === 0 && Object.keys(p.exercises).length === 0 && Object.keys(p.traps).length === 0 && p.best === 0 && !p.skipped;
+  p.step === 0 && p.sub === 0 && p.seen.length === 0 && Object.keys(p.exercises).length === 0 && Object.keys(p.traps).length === 0 && p.best === 0 && !p.skipped && !Object.keys(p.review ?? {}).length;
 
 /** Of two answers to the same question, the one that went further: finished over not, right over wrong, then in fewer tries. */
 function betterResult(a: ExResult, b: ExResult): ExResult {
@@ -63,7 +71,8 @@ function betterResult(a: ExResult, b: ExResult): ExResult {
 /**
  * One lesson's progress from two devices, joined: every concept read on
  * either, every question's best answer, and the place in the lesson (with its
- * streak and "skipped" mark) of the one further along. A trap counts its first
+ * streak and "skipped" mark) of the one further along, and each question's
+ * review schedule from the one further up its climb. A trap counts its first
  * answer, so where both answered, `first` wins — pass the account's copy
  * first, as it was written before this device's.
  */
@@ -82,6 +91,7 @@ export function mergeTopic(first: TopicProgress, second: TopicProgress): TopicPr
     streak: ahead.streak,
     best: Math.max(a.best, b.best),
     ...(ahead.skipped && { skipped: true }),
+    ...((a.review || b.review) && { review: mergeReview(a.review, b.review) }),
   };
 }
 

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { NextLesson } from "@/components/dashboard/next-lesson";
+import { ReviewDue } from "@/components/review/review-due";
 import { SavedSolutions } from "@/components/dashboard/saved-solutions";
 import { TrackEvent } from "@/components/layout/track-event";
 import { CalculatorIcon } from "@/components/engine/calculator-visuals";
@@ -68,6 +69,10 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/dashboard">, "search
       <div className="mt-8">
         {/* The path needs only each lesson's outline; the lessons' content stays on the server. */}
         <NextLesson courses={COURSES.map(({ title, href, lessons }) => ({ title, href, lessons: lessons.map(outlineOf) }))} locked={locked} upgrade={access.tier === "free"} />
+      </div>
+      <div className="mt-4">
+        {/* Review counts only lessons the reader may open; outlines are enough to count. */}
+        <ReviewDue lessons={COURSES.flatMap((c) => c.lessons.filter((m) => !locked.includes(m.slug)).map(outlineOf))} />
       </div>
 
 

@@ -1,4 +1,5 @@
 import { type Entry, type Line, round2 } from "@/lib/learn/basics";
+import type { ReviewEntry } from "./review";
 import type { Exercise, StudyModule, Trap } from "./types";
 
 /**
@@ -59,6 +60,8 @@ export type TopicProgress = {
   best: number;
   /** Passed over on the course path, for now: opening the lesson takes it back. */
   skipped?: boolean;
+  /** The questions up for spaced review, by id (see review.ts). */
+  review?: Record<string, ReviewEntry>;
   /** The practice questions being tried again, by id: "next" goes from one to the next, then to the summary. */
   retry?: string[];
 };

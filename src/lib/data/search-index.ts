@@ -40,6 +40,7 @@ export async function searchIndex(): Promise<SearchItem[]> {
     { kind: "page", title: EXAMS_HUB.label, hint: "תרגילים ברמת מבחן עם פתרון מלא", href: EXAMS_HUB.href },
     { kind: "page", title: PRICING_HUB.label, hint: "מסלולים ומנוי", href: PRICING_HUB.href },
     { kind: "page", title: "הלוח האישי", hint: "השיעור הבא שלי", href: "/dashboard" },
+    { kind: "page", title: "החזרה שלי", hint: "שאלות שטעיתם בהן, לחזרה", href: "/review" },
     { kind: "page", title: "פרופיל ומנוי", hint: "המנוי, החשבוניות והפרטים", href: "/profile" },
   );
   return items;
