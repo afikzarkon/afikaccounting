@@ -3,6 +3,7 @@ import type { ScreenContent } from "@/components/study-mode/shell";
 import type { StudyModule } from "@/lib/study/types";
 import { ADJUST_SCREENS } from "./adjust";
 import { BOOKS_SCREENS } from "./books";
+import { CHECKS_SCREENS } from "./checks";
 import { CREDIT_SCREENS } from "./credit";
 import { ENTRIES_SCREENS } from "./entries";
 import { FINAL_SCREENS } from "./final";
@@ -19,6 +20,7 @@ const SCREENS: Record<string, ScreenContent> = {
   ...ENTRIES_SCREENS,
   ...LAB_SCREENS,
   ...BOOKS_SCREENS,
+  ...CHECKS_SCREENS,
   ...ADJUST_SCREENS,
   ...CREDIT_SCREENS,
   ...FINAL_SCREENS,

@@ -1,8 +1,9 @@
-import { Building2, Check, Globe, Languages, X } from "lucide-react";
+import { Building2, Check, Globe, Languages, ShieldCheck, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ScreenContent } from "@/components/study-mode/shell";
+import { MiniQuiz } from "./inventory-interactive";
 import { GrammarWidget, TranslatorWidget } from "./language-widgets";
-import { KeyCard, Money, Rule, SideChip, Term } from "./ui";
+import { JE, KeyCard, Money, Rule, SideChip, Term } from "./ui";
 
 // Itai, a nurse who freelances on weekends: a household described the way a business is. Illustrative figures; income and expenses are for a whole year.
 const HOME = {
@@ -22,6 +23,26 @@ const HOME = {
   liabilities: [["יתרת הלוואה על הקטנוע", 9_000]] as [string, number][],
 };
 const total = (xs: [string, number][]) => xs.reduce((s, [, v]) => s + v, 0);
+
+// The four statements a company files every year: which moment or period each covers, and the question it answers.
+const STATEMENTS: { name: string; when: string; asks: string; here: boolean }[] = [
+  { name: "הדוח על המצב הכספי (מאזן)", when: "ליום מסוים", asks: "מה יש לחברה, כמה היא חייבת, ומה שייך לבעלים?", here: true },
+  { name: "דוח רווח או הפסד", when: "לתקופה", asks: "האם החברה הרוויחה — הכנסות פחות הוצאות?", here: true },
+  { name: "דוח על השינויים בהון", when: "לתקופה", asks: "איך השתנה ההון: רווח, הנפקת מניות, חלוקה לבעלים?", here: false },
+  { name: "דוח על תזרימי המזומנים", when: "לתקופה", asks: "מאיפה הגיע הכסף, ולאן הוא הלך?", here: false },
+];
+
+// A company is set up: the founders buy its first shares.
+const SHARES = {
+  id: "1",
+  date: "1.2.2025",
+  text: "״גשר מערכות בע״מ״ הוקמה: שלושה מייסדים קנו מניות ב-90,000 ₪ במזומן",
+  lines: [
+    { account: "מזומן", dr: 90_000 },
+    { account: "הון מניות", cr: 90_000 },
+  ],
+  why: "המזומן נכנס לחברה (חובה). החברה ״חייבת״ אותו לבעלי המניות — הון מניות, בזכות. זו לא הכנסה: החברה לא מכרה כלום.",
+};
 
 type Kind = { name: string; plain: string; example: string; report: "מאזן" | "רווח והפסד" };
 const DEBIT_KINDS: Kind[] = [
@@ -183,6 +204,41 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
             }
           />
         </div>
+        <h3 className="pt-1 text-lg font-semibold text-fg [column-span:all]">ובחברה אמיתית? ארבעה דוחות</h3>
+        <p className="[column-span:all]">
+          חברה מגישה בכל שנה ארבעה דוחות כספיים. שני הראשונים הם אלה שראיתם אצל איתי — והם הבסיס לכל השאר. בקורס הזה בונים אותם. את שני האחרים מחשבים מהם, ונכיר
+          אותם בקורסים הבאים.
+        </p>
+        <ul className="grid gap-2 sm:grid-cols-2 [column-span:all]">
+          {STATEMENTS.map((x) => (
+            <li key={x.name} className={cn("rounded-xl border px-3.5 py-2.5", x.here ? "border-accent/40 bg-accent-soft/50" : "border-line bg-surface")}>
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="text-[15px] font-bold text-fg">{x.name}</span>
+                <span className="rounded-full bg-surface-2 px-2 py-px text-[11px] font-semibold text-muted">{x.when}</span>
+                {x.here && <span className="rounded-full bg-accent px-2 py-px text-[11px] font-bold text-accent-fg">בונים בקורס</span>}
+              </span>
+              <span className="mt-1 block text-[14px] text-fg/85">{x.asks}</span>
+            </li>
+          ))}
+        </ul>
+        <MiniQuiz
+          prefix="basics"
+          chapter="what"
+          items={[
+            {
+              q: "איזה דוח עונה על השאלה ״כמה כסף יש לחברה בבנק ב-31.12?״",
+              options: ["המאזן", "רווח או הפסד", "השינויים בהון", "אף דוח"],
+              answer: 0,
+              why: "מזומן הוא נכס, והמאזן מצלם את הנכסים ביום מסוים.",
+            },
+            {
+              q: "חברה הרוויחה השנה 50,000 ₪, אבל יש לה פחות מזומן מבתחילת השנה. איזה דוח יסביר לאן הלך הכסף?",
+              options: ["תזרימי המזומנים", "רווח או הפסד", "המאזן", "אין הסבר — זו טעות"],
+              answer: 0,
+              why: "רווח אינו מזומן: אפשר להרוויח ובאותה שנה לקנות ציוד או להחזיר הלוואה. דוח תזרימי המזומנים מראה לאן הכסף זרם.",
+            },
+          ]}
+        />
       </>
     ),
   },
@@ -201,6 +257,47 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
         </div>
         <KeyCard icon={<Building2 className="h-5 w-5" />}>כשבעלים משקיע כסף בעסק — זה הון.</KeyCard>
         <p className="text-[15px] text-muted">מבחינת העסק הבעלים הוא צד אחר: העסק קיבל ממנו כסף, ו&quot;חייב&quot; לו אותו.</p>
+
+        <h3 className="pt-1 text-lg font-semibold text-fg [column-span:all]">חברה בע״מ: נפרדת גם בעיני החוק</h3>
+        <p className="[column-span:all]">
+          רוב העסקים שתפגשו בתרגילים הם <Term he="חברה בע״מ" /> — חברה בערבון מוגבל, שמוקמת לפי חוק החברות. לחברה יש ״חיים משפטיים״ משלה: הנכסים שלה, והחובות
+          שלה. הבעלים שלה נקראים <Term he="בעלי מניות" />.
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2 [column-span:all]">
+          <div className="rounded-xl border border-line bg-surface px-3.5 py-3">
+            <p className="flex items-center gap-2 text-[15px] font-bold text-fg">
+              <ShieldCheck className="h-5 w-5 shrink-0 text-accent" aria-hidden /> אחריות מוגבלת
+            </p>
+            <p className="mt-1 text-[14px] text-fg/85">
+              אם החברה נכשלת ולא מחזירה את חובותיה, בעלי המניות מפסידים לכל היותר את מה שהשקיעו. הנושים לא יכולים לגבות מהדירה או מהחשבון הפרטי שלהם.
+            </p>
+          </div>
+          <div className="rounded-xl border border-line bg-surface px-3.5 py-3">
+            <p className="text-[15px] font-bold text-fg">הון מניות</p>
+            <p className="mt-1 text-[14px] text-fg/85">
+              בחברה, ההשקעה של הבעלים נקראת <strong>הון מניות</strong>: החברה מנפיקה מניות, ובעלי המניות משלמים עליהן. זה אותו רעיון כמו הון בעלים — רק בשם של חברה.
+            </p>
+          </div>
+        </div>
+        <JE entry={SHARES} />
+        <MiniQuiz
+          prefix="basics"
+          chapter="entity"
+          items={[
+            {
+              q: "בעלת מניות בחברה לקחה הלוואה פרטית מהבנק כדי לשפץ את הדירה שלה. מה נרשם בספרי החברה?",
+              options: ["לא נרשם דבר", "ח׳ מזומן / ז׳ הלוואה", "ח׳ הון מניות / ז׳ הלוואה", "ח׳ הוצאות שיפוץ / ז׳ מזומן"],
+              answer: 0,
+              why: "ההלוואה של בעלת המניות, לא של החברה. החברה היא ישות נפרדת — ובספרים שלה לא קרה כלום.",
+            },
+            {
+              q: "חברה בע״מ חייבת לספקים 400,000 ₪ ונסגרה בלי כסף. בעלי המניות השקיעו בה 100,000 ₪. כמה עוד יצטרכו לשלם לספקים מכספם?",
+              options: ["0 ₪", "100,000 ₪", "300,000 ₪", "400,000 ₪"],
+              answer: 0,
+              why: "אחריות מוגבלת: הם הפסידו את ה-100,000 שהשקיעו, ולא יותר. החוב הוא של החברה, לא שלהם.",
+            },
+          ]}
+        />
       </>
     ),
   },

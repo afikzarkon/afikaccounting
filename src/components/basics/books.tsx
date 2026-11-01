@@ -1,10 +1,11 @@
 import { ArrowLeft, CalendarClock, Check, RotateCcw } from "lucide-react";
-import { balancesOf, carryForward, CREDIT, type Entry, isBalanceSheet, CANDLES, ledger, statements, trialBalance, TCHELET } from "@/lib/learn/basics";
+import { balancesOf, carryForward, CREDIT, SPLIT, type Entry, isBalanceSheet, CANDLES, ledger, statements, trialBalance, TCHELET } from "@/lib/learn/basics";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { ScreenLink } from "@/components/study-mode/screen-link";
 import { cn } from "@/lib/utils";
 import { ClassifyExercise } from "./classify";
 import { RetainedSolver } from "./retained";
+import { MiniQuiz } from "./inventory-interactive";
 import { Posted, TBox, THead } from "./t-accounts";
 import { Calc, JE, KeyCard, Money, SideChip, StatementsView, type Step, Stepper, TBTable, Term } from "./ui";
 
@@ -170,6 +171,31 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
             ),
           }))}
         />
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold text-fg">הלוואה בתשלומים: קרן וריבית באותו תשלום</h3>
+          <p>
+            ברוב ההלוואות משלמים כל פעם גם חלק מהקרן וגם ריבית — בהעברה אחת. בפקודה מפרקים את התשלום לשניים: הקרן מקטינה את החוב, ורק הריבית היא הוצאה.
+          </p>
+          <JE entry={SPLIT.loanPayment} />
+        </section>
+        <MiniQuiz
+          prefix="basics"
+          chapter="loan"
+          items={[
+            {
+              q: "החברה העבירה לבנק 13,000 ₪: 12,000 קרן ו-1,000 ריבית. בכמה קטן הרווח?",
+              options: ["1,000", "13,000", "12,000", "0"],
+              answer: 0,
+              why: "רק הריבית היא הוצאה. 12,000 הקרן מקטינים את ההלוואה, לא את הרווח.",
+            },
+            {
+              q: "בסוף השנה, איפה תופיע יתרת ההלוואה שעוד לא נפרעה?",
+              options: ["במאזן, בהתחייבויות", "ברווח והפסד, בהוצאות", "במאזן, בנכסים", "לא מופיעה — רק מה ששולם"],
+              answer: 0,
+              why: "החוב לבנק קיים ב-31.12 — התחייבות במאזן. הוא יקטן עם כל תשלום קרן.",
+            },
+          ]}
+        />
       </>
     ),
   },
@@ -295,6 +321,31 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
           answer={retained24}
           opening={0}
           profit={Y24.profit}
+        />
+        <div className="space-y-2 rounded-2xl border-2 border-amber-500/50 bg-amber-500/[0.08] px-4 py-3.5">
+          <p className="text-[16px] font-bold text-fg">מהשנה השנייה: העודפים במאזן הבוחן הם יתרת הפתיחה</p>
+          <p className="text-[15px] leading-relaxed">
+            במהלך השנה אף פקודה לא נוגעת בעודפים — הרווח של השנה עוד מפוזר בהכנסות ובהוצאות. לכן במאזן בוחן של 31.12, לפני שסוגרים את השנה, העודפים הם עדיין
+            היתרה של <strong>1.1</strong>. כדי להגיע לעודפי הסגירה מוסיפים להם את רווח השנה.
+          </p>
+        </div>
+        <MiniQuiz
+          prefix="basics"
+          chapter="retained"
+          items={[
+            {
+              q: "חברה בשנתה השלישית. במאזן הבוחן של 31.12 העודפים הם 70,000 ₪ בזכות, ורווח השנה 25,000 ₪. מהם עודפי הסגירה?",
+              options: ["95,000", "70,000", "45,000", "25,000"],
+              answer: 0,
+              why: "70,000 הם עודפי הפתיחה — הרווח של השנה עוד לא נכנס אליהם. 70,000 + 25,000 = 95,000.",
+            },
+            {
+              q: "חברה הפסידה השנה 30,000 ₪. עודפי הפתיחה 20,000 ₪ בזכות. מה קורה לעודפים?",
+              options: ["10,000 בחובה — הפסדים צבורים", "50,000 בזכות", "10,000 בזכות", "0"],
+              answer: 0,
+              why: "20,000 − 30,000 = −10,000. היתרה עוברת לחובה: ההפסדים עד היום גדולים מהרווחים.",
+            },
+          ]}
         />
       </>
     ),
