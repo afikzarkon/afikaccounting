@@ -162,13 +162,13 @@ describe("cut-off accounts", () => {
     assert.equal(rent["הכנסות שכירות מראש"], -6_000);
   });
 
-  it("Shachar: 10,000 advertising + 14,000 prepaid; 36,000 insurance + 27,000 prepaid; 10,000 interest; 105,000 consulting + 75,000 unearned; 9,000 rent receivable", () => {
+  it("Shachar: 10,000 advertising + 14,000 prepaid; 33,000 insurance + 24,750 prepaid; 10,000 interest; 105,000 consulting + 75,000 unearned; 9,000 rent receivable", () => {
     assert.ok(tbBalanced(trialBalance(SHACHAR.preliminary)));
     const b = balancesOf(ledger(SHACHAR.adjustments, SHACHAR.preliminary));
     assert.equal(b["הוצאות פרסום"], 10_000);
     assert.equal(b["הוצאות פרסום מראש"], 14_000);
-    assert.equal(b["הוצאות ביטוח"], 36_000);
-    assert.equal(b["הוצאות ביטוח מראש"], 27_000);
+    assert.equal(b["הוצאות ביטוח"], 33_000);
+    assert.equal(b["הוצאות ביטוח מראש"], 24_750);
     assert.equal(b["הוצאות ריבית"], 10_000);
     assert.equal(b["הכנסות מייעוץ"], -105_000);
     assert.equal(b["הכנסות ייעוץ מראש"], -75_000);
@@ -178,13 +178,13 @@ describe("cut-off accounts", () => {
     assert.equal(b["מלאי סגירה רווח או הפסד"], -28_500);
   });
 
-  it("Shachar: profit 131,500; retained earnings from 48,000 to 179,500 credit", () => {
+  it("Shachar: profit 134,500; retained earnings from 48,000 to 182,500 credit", () => {
     const b = balancesOf(ledger(SHACHAR.adjustments, SHACHAR.preliminary));
     const s = statements(b);
-    // Income 105,000 + 140,000 + 9,000 + closing stock 28,500 = 282,500; expenses 10,000 + 36,000 + 10,000 + purchases 95,000 = 151,000.
-    assert.equal(s.profit, 131_500);
+    // Income 105,000 + 140,000 + 9,000 + closing stock 28,500 = 282,500; expenses 10,000 + 33,000 + 10,000 + purchases 95,000 = 148,000.
+    assert.equal(s.profit, 134_500);
     assert.equal(SHACHAR.preliminary["עודפים"], -48_000);
-    assert.equal(s.equity.find(([a]) => a === "עודפים")![1], 179_500);
+    assert.equal(s.equity.find(([a]) => a === "עודפים")![1], 182_500);
     assert.ok(identityHolds(s));
     assert.ok(tbBalanced(trialBalance(b)));
   });
@@ -337,20 +337,20 @@ describe("the odd month and the rate's period", async () => {
 
 describe("the closing exam question: Almog Ltd", async () => {
   const { ALMOG } = await import("./basics-exam");
-  it("the three unknowns: 48,000 insurance, 56,000 advertising, 114,000 retained earnings", () => {
-    assert.deepEqual(ALMOG.found, { insurance: 48_000, ads: 56_000, retained: 114_000 });
+  it("the three unknowns: 54,000 insurance, 56,000 advertising, 120,000 retained earnings", () => {
+    assert.deepEqual(ALMOG.found, { insurance: 54_000, ads: 56_000, retained: 120_000 });
     assert.ok(tbBalanced(trialBalance(ALMOG.preliminary)));
     for (const u of ALMOG.unknowns) assert.ok(!(u in ALMOG.given), u);
   });
 
-  it("eleven entries, a final trial balance of 4,344,250, profit 551,750, retained 665,750, customers net 910,750", () => {
+  it("eleven entries, a final trial balance of 4,350,250, profit 545,750, retained 665,750, customers net 910,750", () => {
     for (const x of ALMOG.entries) assert.ok(isBalanced(x), x.id);
     const b = balancesOf(ledger(ALMOG.entries, ALMOG.preliminary));
     const tb = trialBalance(b);
-    assert.equal(tb.dr, 4_344_250);
-    assert.equal(tb.cr, 4_344_250);
+    assert.equal(tb.dr, 4_350_250);
+    assert.equal(tb.cr, 4_350_250);
     const s = statements(b);
-    assert.equal(s.profit, 551_750);
+    assert.equal(s.profit, 545_750);
     assert.equal(s.equity.find(([a]) => a === "עודפים")![1], 665_750);
     assert.equal(ALMOG.customersAfter, 1_005_000);
     assert.equal(ALMOG.required, 94_250);

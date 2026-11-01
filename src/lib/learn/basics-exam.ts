@@ -8,7 +8,7 @@ import { type Balances, type Entry, round2 } from "./basics";
 
 const two = (id: string, text: string, dr: string, cr: string, amount: number, why: string): Entry => ({ id, date: "31.12.2025", text, lines: [{ account: dr, dr: amount }, { account: cr, cr: amount }], why });
 
-const INS = { monthly: 4_000, cycleMonths: 24 }; // from 1.1.2020, renewed every two years; recorded as prepaid
+const INS = { monthly: 4_500, cycleMonths: 24 }; // from 1.1.2020, renewed every two years; recorded as prepaid
 const ADS = { paid: 84_000, months: 24, usedIn2024: 8 }; // 1.5.2024–30.4.2026
 const RENT = { monthly: 3_000, leftAfter2024: 6 }; // two years from 1.7.2023, not renewed
 const SALARY = { recorded: 440_000, months: 11, raise: 0.1 };
@@ -71,7 +71,7 @@ export const ALMOG = {
   ],
   /** The adjustments and corrections, in the order the story tells them — the correction to customers comes before the allowance. */
   entries: [
-    two("1", "ביטוח: 12 החודשים של 2025", "הוצאות ביטוח", "הוצאות ביטוח מראש", insOpening, "המחזורים: 2020–21, 2022–23, 2024–25. ב-1.1.2024 שולמו 96,000; אחרי 2024 נשארו 48,000 — וכולם שייכים ל-2025. המחזור נגמר, והיתרה מתאפסת."),
+    two("1", "ביטוח: 12 החודשים של 2025", "הוצאות ביטוח", "הוצאות ביטוח מראש", insOpening, `המחזורים: 2020–21, 2022–23, 2024–25. ב-1.1.2024 שולמו ${(INS.monthly * INS.cycleMonths).toLocaleString("en-US")}; אחרי 2024 נשארו ${insOpening.toLocaleString("en-US")} — וכולם שייכים ל-2025. המחזור נגמר, והיתרה מתאפסת.`),
     two("2", "פרסום: 12 החודשים של 2025", "הוצאות פרסום", "הוצאות פרסום מראש", adsMonth * 12, `${adsMonth.toLocaleString("en-US")} לחודש × 12. נשארים ${(adsOpening - adsMonth * 12).toLocaleString("en-US")} — ינואר עד אפריל 2026.`),
     two("3", "שכירות: החוזה שנגמר ב-30.6.2025", "הוצאות שכירות", "הוצאות שכירות מראש", RENT.monthly * RENT.leftAfter2024, "החוזה נגמר ולא חודש: ששת החודשים שנשארו נוצלו ב-2025. היתרה מתאפסת."),
     two("4", "שכר דצמבר, אחרי ההעלאה", "הוצאות שכר", "הוצאות שכר לשלם", round2((SALARY.recorded / SALARY.months) * (1 + SALARY.raise)), "חודש רגיל: 440,000 ÷ 11 = 40,000. דצמבר: 40,000 × 1.1 = 44,000."),

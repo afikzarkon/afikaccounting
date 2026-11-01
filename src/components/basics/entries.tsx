@@ -148,8 +148,8 @@ export const ENTRIES_SCREENS: Record<string, ScreenContent> = {
     lead: "כמעט כל פקודה מתחילה בשאלה אחת: מתי הכסף זז — היום, אחר כך, או לפני? התשובה כבר אומרת לכם את רוב הפקודה.",
     body: (
       <>
-        <p>כשהכסף יזוז רק אחר כך, יש בינתיים חוב. לכל צד של חוב יש שם קבוע:</p>
-        <dl className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <p className="[column-span:all]">כשהכסף יזוז רק אחר כך, יש בינתיים חוב. לכל צד של חוב יש שם קבוע:</p>
+        <dl className="grid grid-cols-2 gap-2 lg:grid-cols-4 [column-span:all]">
           {TERMS.map(([t, d]) => (
             <div key={t} className="rounded-xl border border-line bg-surface px-3 py-2">
               <dt className="text-[14px] font-bold text-fg">{t}</dt>
@@ -157,7 +157,9 @@ export const ENTRIES_SCREENS: Record<string, ScreenContent> = {
             </div>
           ))}
         </dl>
-        <ActionFinder />
+        <div className="[column-span:all]">
+          <ActionFinder />
+        </div>
       </>
     ),
   },
