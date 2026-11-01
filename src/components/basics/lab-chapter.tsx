@@ -1,5 +1,5 @@
 import type { ScreenContent } from "@/components/study-mode/shell";
-import { KITS } from "@/lib/learn/basics";
+import { CANDLES } from "@/lib/learn/basics";
 import { TransactionLab } from "./lab";
 import { Money } from "./ui";
 
@@ -9,7 +9,7 @@ export const LAB_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <p>
-          ב-1.1.2023 פתחתם עסק שמוכר ערכות מדע לילדים. כל ערכה עולה לכם <Money v={KITS.unitCost} /> ונמכרת ב-<Money v={KITS.unitPrice} />. עברו על הפעולות אחת אחת:
+          ב-1.3.2025 פתחתם סדנה קטנה שמכינה ומוכרת נרות. כל נר עולה לכם <Money v={CANDLES.unitCost} /> ונמכר ב-<Money v={CANDLES.unitPrice} />. עברו על הפעולות אחת אחת:
         </p>
         <TransactionLab />
       </>

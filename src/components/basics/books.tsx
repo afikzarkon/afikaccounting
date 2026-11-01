@@ -1,5 +1,5 @@
 import { ArrowLeft, CalendarClock, Check, RotateCcw } from "lucide-react";
-import { balancesOf, carryForward, CREDIT, type Entry, isBalanceSheet, KITS, ledger, statements, trialBalance, YUVAL } from "@/lib/learn/basics";
+import { balancesOf, carryForward, CREDIT, type Entry, isBalanceSheet, CANDLES, ledger, statements, trialBalance, TCHELET } from "@/lib/learn/basics";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { ScreenLink } from "@/components/study-mode/screen-link";
 import { cn } from "@/lib/utils";
@@ -8,24 +8,24 @@ import { RetainedSolver } from "./retained";
 import { Posted, TBox, THead } from "./t-accounts";
 import { Calc, JE, KeyCard, Money, SideChip, StatementsView, type Step, Stepper, TBTable, Term } from "./ui";
 
-const Y20 = statements(YUVAL.tb2020);
-const OPENING_21 = carryForward(YUVAL.tb2020);
-const B21 = balancesOf(ledger(YUVAL.entries2021, OPENING_21));
-const Y21 = statements(B21);
+const Y24 = statements(TCHELET.tb2024);
+const OPENING_25 = carryForward(TCHELET.tb2024);
+const B25 = balancesOf(ledger(TCHELET.entries2025, OPENING_25));
+const Y25 = statements(B25);
 
-// Why each of Yuval's balances sits where it does, for the trial-balance exercise.
+// Why each of Tchelet's balances sits where it does, for the trial-balance exercise.
 const EXPLAIN: Record<string, string> = {
   לקוחות: "לקוח שחייב לך כסף הוא נכס שלך, ולכן הוא בצד החובה.",
   קניות: "קניית סחורה היא הוצאה, והוצאות יושבות בצד החובה.",
   "הוצאות שכר": "שכר הוא הוצאה — היתרה שלה בצד החובה.",
   מכירות: "מכירות הן הכנסה, והכנסות יושבות בצד הזכות.",
   ספקים: "לספק העסק חייב כסף — זו התחייבות, ולכן היא בצד הזכות.",
-  "הון בעלים": "ההשקעה של הבעלים היא הון: העסק \"חייב\" אותה להם, ולכן היא בצד הזכות.",
-  "ריהוט משרדי": "ריהוט ישמש את העסק שנים — נכס, ולכן בצד החובה.",
+  "הון מניות": "התמורה שהחברה קיבלה על המניות שהנפיקה היא הון: החברה \"חייבת\" אותה לבעלי המניות, ולכן היא בצד הזכות.",
+  ציוד: "ציוד ישמש את העסק שנים — נכס, ולכן בצד החובה.",
   "הוצאות פרסום": "פרסום הוא הוצאה — בצד החובה.",
-  "הלוואות שהתקבלו": "הלוואה שהעסק קיבל צריך להחזיר — התחייבות, ולכן בצד הזכות.",
+  "הלוואה שהתקבלה": "הלוואה שהעסק קיבל צריך להחזיר — התחייבות, ולכן בצד הזכות.",
   מזומן: "מזומן הוא נכס — בצד החובה.",
-  "הכנסות משכר דירה": "שכר דירה שהעסק מקבל הוא הכנסה — בצד הזכות.",
+  "הכנסות מעמלות": "עמלות שהחברה מרוויחה הן הכנסה — בצד הזכות.",
   "הוצאות ארנונה": "ארנונה היא הוצאה — בצד החובה.",
 };
 
@@ -117,15 +117,15 @@ const TB_WHAT: [string, string][] = [
   ["בשביל מה", "ממנו בונים את הדוחות: החשבונות התוצאתיים לרווח והפסד, והמאזניים — למאזן."],
   ["מה הוא לא מוכיח", "מאזן מאוזן לא אומר שאין טעויות: טעות שנרשמה באותו סכום בשני הצדדים עדיין מאוזנת."],
 ];
-const kitsTb = trialBalance(balancesOf(ledger(KITS.entries)));
+const candlesTb = trialBalance(balancesOf(ledger(CANDLES.entries)));
 
 // Figures the screens quote, computed once.
 const loanEnd = balancesOf(ledger(CREDIT.loan));
-const cash = ledger(KITS.entries).find((t) => t.account === "מזומן")!;
+const cash = ledger(CANDLES.entries).find((t) => t.account === "מזומן")!;
 const cashDr = cash.dr.reduce((s, p) => s + p.amount, 0);
 const cashCr = cash.cr.reduce((s, p) => s + p.amount, 0);
-const retained20 = Y20.equity.find(([a]) => a === "עודפים")![1];
-const retained21 = Y21.equity.find(([a]) => a === "עודפים")![1];
+const retained24 = Y24.equity.find(([a]) => a === "עודפים")![1];
+const retained25 = Y25.equity.find(([a]) => a === "עודפים")![1];
 
 export const BOOKS_SCREENS: Record<string, ScreenContent> = {
   credit: {
@@ -188,14 +188,14 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
           ))}
         </ol>
         <p>
-          איך מגיעים ליתרת הסגירה? נראה את זה על כרטיס אחד: כרטיס המזומן של עסק הערכות מ<ScreenLink id="lab" />. נעבור על הפקודות של השנה אחת אחת, ונראה איך
+          איך מגיעים ליתרת הסגירה? נראה את זה על כרטיס אחד: כרטיס המזומן של סדנת הנרות מ<ScreenLink id="lab" />. נעבור על הפקודות של השנה אחת אחת, ונראה איך
           כל פקודה מוסיפה שורה לכרטיס. בצעד האחרון נסגור את הכרטיס ונמצא את היתרה שלו:
         </p>
         <Stepper
           label="בונים כרטיס T: מזומן"
           steps={[
             // Only the cash card: the one being built here. An entry that does not touch cash leaves it as it was.
-            ...KITS.entries.map((x, i) => ({ title: x.text, body: <Posted entries={KITS.entries} at={i} accounts={["מזומן"]} title={`פקודה ${x.id}`} inline /> })),
+            ...CANDLES.entries.map((x, i) => ({ title: x.text, body: <Posted entries={CANDLES.entries} at={i} accounts={["מזומן"]} title={`פקודה ${x.id}`} inline /> })),
             {
               title: "סוגרים את הכרטיס: מה היתרה?",
               body: (
@@ -236,9 +236,9 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
           ))}
         </dl>
         <p>
-          כך נראה מאזן הבוחן של עסק הערכות, מאותם כרטיסים שבנינו במסך הקודם. יתרת המזומן, <Money v={cash.balance} />, היא היתרה שחישבנו בכרטיס:
+          כך נראה מאזן הבוחן של סדנת הנרות, מאותם כרטיסים שבנינו במסך הקודם. יתרת המזומן, <Money v={cash.balance} />, היא היתרה שחישבנו בכרטיס:
         </p>
-        <TBTable tb={kitsTb} caption="מאזן בוחן · עסק הערכות" kind />
+        <TBTable tb={candlesTb} caption="מאזן בוחן · סדנת הנרות" kind />
 
         <h3 className="pt-2 text-lg font-semibold text-fg">מ-1.1 ועד מאזן נכון ל-31.12</h3>
         <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
@@ -265,9 +265,9 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
       <>
         <Route at={2} />
         <p>
-          לפניכם היתרות של חברת יובל בע&quot;מ ב-31.12.2020. שבצו כל יתרה בצד שלה — חובה או זכות. כל בחירה מקבלת הסבר מיד, ובסוף מתקבל מאזן הבוחן המלא.
+          לפניכם היתרות של חברת תכלת בע&quot;מ ב-31.12.2024. שבצו כל יתרה בצד שלה — חובה או זכות. כל בחירה מקבלת הסבר מיד, ובסוף מתקבל מאזן הבוחן המלא.
         </p>
-        <ClassifyExercise balances={YUVAL.tb2020} explain={EXPLAIN} solution={<TBTable tb={trialBalance(YUVAL.tb2020)} caption="הפתרון: מאזן הבוחן של יובל ליום 31.12.2020" kind />} />
+        <ClassifyExercise balances={TCHELET.tb2024} explain={EXPLAIN} solution={<TBTable tb={trialBalance(TCHELET.tb2024)} caption="הפתרון: מאזן הבוחן של תכלת ליום 31.12.2024" kind />} />
       </>
     ),
   },
@@ -288,12 +288,13 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
           </Fact>
         </div>
         <RetainedSolver
-          assets={Y20.assets}
-          liabilities={Y20.liabilities}
-          equity={Y20.equity.filter(([a]) => a !== "עודפים")}
-          answer={retained20}
+          title="המאזן של תכלת ליום 31.12.2024 — מה חסר?"
+          assets={Y24.assets}
+          liabilities={Y24.liabilities}
+          equity={Y24.equity.filter(([a]) => a !== "עודפים")}
+          answer={retained24}
           opening={0}
-          profit={Y20.profit}
+          profit={Y24.profit}
         />
       </>
     ),
@@ -317,44 +318,44 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
           </div>
         </div>
         <p>
-          ביובל 2020: הכנסות <Money v={Y20.totalIncome} /> פחות הוצאות <Money v={Y20.totalExpenses} /> = רווח <Money v={Y20.profit} />, שעובר לעודפים:
+          בתכלת 2024: הכנסות <Money v={Y24.totalIncome} /> פחות הוצאות <Money v={Y24.totalExpenses} /> = רווח <Money v={Y24.profit} />, שעובר לעודפים:
         </p>
-        <StatementsView s={Y20} year="2020" />
+        <StatementsView s={Y24} year="2024" />
       </>
     ),
   },
 
   carry: {
-    lead: "ב-1.1 החשבונות המאזניים ממשיכים עם יתרת הסגירה שלהם, והתוצאתיים מתחילים מאפס. כך עוברת יובל מ-2020 ל-2021 — שנה שמסתיימת בהפסד.",
+    lead: "ב-1.1 החשבונות המאזניים ממשיכים עם יתרת הסגירה שלהם, והתוצאתיים מתחילים מאפס. כך עוברת תכלת מ-2024 ל-2025 — שנה שמסתיימת בהפסד.",
     body: (
       <>
         <Stepper
-          label="מ-31.12.2020 ל-2021 · יובל"
+          label="מ-31.12.2024 ל-2025 · תכלת"
           steps={[
             {
-              title: "31.12.2020 ← 1.1.2021: מה עובר ומה מתאפס",
+              title: "31.12.2024 ← 1.1.2025: מה עובר ומה מתאפס",
               body: (
                 <>
                   <CarryList />
                   <p className="text-[14.5px] text-muted">
-                    למה? השאלה &quot;כמה הרווחנו ב-2021?&quot; צריכה לספור רק את 2021. מה שהורווח קודם כבר יושב בעודפים.
+                    למה? השאלה &quot;כמה הרווחנו ב-2025?&quot; צריכה לספור רק את 2025. מה שהורווח קודם כבר יושב בעודפים.
                   </p>
                 </>
               ),
             },
             // The year's entries on their own: this screen is about what carries over, not about the cards.
-            ...YUVAL.entries2021.map((x) => ({ title: `2021 · ${x.text}`, body: <JE entry={x} title="פקודת היומן" /> })),
+            ...TCHELET.entries2025.map((x) => ({ title: `2025 · ${x.text}`, body: <JE entry={x} title="פקודת היומן" /> })),
             {
-              title: "סוף 2021: מאזן הבוחן והתוצאה",
+              title: "סוף 2025: מאזן הבוחן והתוצאה",
               body: (
                 <>
-                  <TBTable tb={trialBalance(B21)} caption="מאזן בוחן ליום 31.12.2021" kind />
-                  <Calc result={<span className="text-danger">הפסד <Money v={-Y21.profit} /></span>}>
-                    הכנסות <Money v={Y21.totalIncome} /> − הוצאות <Money v={Y21.totalExpenses} />
+                  <TBTable tb={trialBalance(B25)} caption="מאזן בוחן ליום 31.12.2025" kind />
+                  <Calc result={<span className="text-danger">הפסד <Money v={-Y25.profit} /></span>}>
+                    הכנסות <Money v={Y25.totalIncome} /> − הוצאות <Money v={Y25.totalExpenses} />
                   </Calc>
                   <p className="text-[15px]">ההפסד מקטין את העודפים — הרווחים שנצברו עד עכשיו:</p>
-                  <Calc result={<Money v={retained21} />}>
-                    עודפים <Money v={-OPENING_21["עודפים"]} /> − הפסד <Money v={-Y21.profit} />
+                  <Calc result={<Money v={retained25} />}>
+                    עודפים <Money v={-OPENING_25["עודפים"]} /> − הפסד <Money v={-Y25.profit} />
                   </Calc>
                 </>
               ),
@@ -381,22 +382,22 @@ function Fact({ icon, title, children }: { icon: React.ReactNode; title: string;
   );
 }
 
-/** Yuval's balances on 31.12.2020 beside its openings on 1.1.2021: the balance sheet carries over, profit or loss starts again at zero. */
+/** Tchelet's balances on 31.12.2024 beside its openings on 1.1.2025: the balance sheet carries over, profit or loss starts again at zero. */
 function CarryList() {
-  const rows: [string, number][] = [...Object.entries(YUVAL.tb2020), ["עודפים", 0]];
+  const rows: [string, number][] = [...Object.entries(TCHELET.tb2024), ["עודפים", 0]];
   const side = (v: number) => (v === 0 ? null : <SideChip side={v > 0 ? "dr" : "cr"} className="h-5 min-w-5 text-[10px]" />);
   return (
     <div className="overflow-hidden rounded-xl border border-line">
       <div className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-x-2 border-b border-line bg-surface-2/70 px-3 py-2 text-[11px] font-bold text-muted">
         <span>חשבון</span>
-        <span className="w-[5.5rem] sm:w-[6.5rem] text-end">31.12.2020</span>
+        <span className="w-[5.5rem] sm:w-[6.5rem] text-end">31.12.2024</span>
         <span className="w-4" />
-        <span className="w-[5.5rem] sm:w-[6.5rem] text-end">1.1.2021</span>
+        <span className="w-[5.5rem] sm:w-[6.5rem] text-end">1.1.2025</span>
       </div>
       <ul className="divide-y divide-line/60">
         {rows.map(([a, v]) => {
           const bs = isBalanceSheet(a);
-          const next = OPENING_21[a] ?? 0;
+          const next = OPENING_25[a] ?? 0;
           return (
             <li
               key={a}
@@ -423,7 +424,7 @@ function CarryList() {
         })}
       </ul>
       <p className="border-t border-line px-3 py-2 text-[12.5px] text-muted">
-        <span className="me-1 inline-block h-2.5 w-2.5 rounded-sm bg-accent align-middle" /> מאזני — ממשיך כמו שהוא. תוצאתי — מתחיל מ-0. העודפים נפתחים ברווח של 2020.
+        <span className="me-1 inline-block h-2.5 w-2.5 rounded-sm bg-accent align-middle" /> מאזני — ממשיך כמו שהוא. תוצאתי — מתחיל מ-0. העודפים נפתחים ברווח של 2024.
       </p>
     </div>
   );

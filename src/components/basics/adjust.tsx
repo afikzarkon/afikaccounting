@@ -1,5 +1,5 @@
 import { Banknote, ClipboardList } from "lucide-react";
-import { ACCRUAL, balancesOf, costOfSales, type Entry, ledger, MIA, RONEN, round2, statements, trialBalance } from "@/lib/learn/basics";
+import { ACCRUAL, balancesOf, costOfSales, type Entry, ledger, COGS_CASE, SHACHAR, round2, statements, trialBalance } from "@/lib/learn/basics";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { cn } from "@/lib/utils";
 import { AdjustedTrialBalance, type Move } from "./adjusted-tb";
@@ -8,19 +8,19 @@ import { TCardsDialog } from "./t-dialog";
 import { Posted } from "./t-accounts";
 import { Calc, JE, KeyCard, Money, Rule, StatementsView, type Step, Stepper, TBTable } from "./ui";
 
-const RONEN_FINAL = balancesOf(ledger(RONEN.adjustments, RONEN.preliminary));
-const RONEN_S = statements(RONEN_FINAL);
+const EXAMPLE_FINAL = balancesOf(ledger(SHACHAR.adjustments, SHACHAR.preliminary));
+const EXAMPLE_S = statements(EXAMPLE_FINAL);
 const pct = (r: number) => `${round2(r * 100)}%`;
-// Two illustrative net realisable values for Mia's closing stock: one above its cost, one below.
-const MIA_NRV_HIGH = 330_000;
-const MIA_NRV_LOW = 300_000;
-const MIA_ENTRY: Entry = {
+// Two illustrative net realisable values for the shop's closing stock: one above its cost, one below.
+const COGS_NRV_HIGH = 61_000;
+const COGS_NRV_LOW = 52_000;
+const COGS_ENTRY: Entry = {
   id: "מלאי",
-  date: "31.12.2020",
+  date: `31.12.${COGS_CASE.year}`,
   text: "רישום מלאי הסגירה",
   lines: [
-    { account: "מלאי סגירה מאזני", dr: Math.min(MIA.closing, MIA_NRV_HIGH) },
-    { account: "מלאי סגירה רווח או הפסד", cr: Math.min(MIA.closing, MIA_NRV_HIGH) },
+    { account: "מלאי סגירה מאזני", dr: Math.min(COGS_CASE.closing, COGS_NRV_HIGH) },
+    { account: "מלאי סגירה רווח או הפסד", cr: Math.min(COGS_CASE.closing, COGS_NRV_HIGH) },
   ],
 };
 
@@ -283,10 +283,10 @@ const cutoff: Step[] = [
         diff="ההפך מהקודם: כבר נהנינו, והכסף עוד לא יצא."
         story={
           <>
-            העובדים עבדו כל השנה. שכר ינואר עד נובמבר, <Money v={A.accrued.recorded} />, שולם ונרשם. שכר דצמבר ישולם רק ב-5 בינואר — ולא נרשם.
+            העובדים עבדו כל השנה. שכר ינואר עד נובמבר, <Money v={A.accrued.recorded} />, שולם ונרשם. שכר דצמבר ישולם רק ב-9 בינואר — ולא נרשם.
           </>
         }
-        timeline={<Timeline cash="תשלום דצמבר ב-5.1" cashAt="end" segments={[{ months: 11, label: "ינואר–נובמבר · נרשם", year: "this" }, { months: 1, label: "דצמבר · חסר", year: "next" }]} />}
+        timeline={<Timeline cash="תשלום דצמבר ב-9.1" cashAt="end" segments={[{ months: 11, label: "ינואר–נובמבר · נרשם", year: "this" }, { months: 1, label: "דצמבר · חסר", year: "next" }]} />}
         calc={
           <Calc result={<Money v={R.accrued} />}>
             שכר לחודש: <Money v={A.accrued.recorded} /> ÷ 11 = <Money v={A.accrued.recorded / 11} />. חסר חודש אחד (דצמבר): <Money v={A.accrued.recorded / 11} /> × 1
@@ -365,39 +365,29 @@ const cutoff: Step[] = [
   },
 ];
 
-// Why what was recorded at Ronen is wrong: an expense or an income belongs to the year it was used or earned in — only that part.
-const RONEN_WRONG: Record<string, string> = {
-  פרסום: "אי אפשר להכיר בכל ההוצאה ב-2017: הפרסום לא שימש את כל השנה הנוכחית. מכירים בהוצאה רק על החלק ששומש השנה — 9 חודשים. 3 החודשים של 2018 עדיין נכס.",
-  ביטוח: "הביטוח שימש את כל 2017, אבל שום חלק ממנו לא עבר להוצאה השנה. מכירים בהוצאה על החלק ששומש ב-2017 — 12 חודשים — ומה ששייך ל-2018 נשאר נכס.",
-  ריבית: "השתמשנו בכסף של הבנק חצי שנה ב-2017, ולכן הריבית על התקופה הזו היא הוצאה של 2017 — גם אם עוד לא שילמנו אותה.",
-  ייעוץ: "אי אפשר להכיר בכל ההכנסה ב-2017: השירות לא ניתן לאורך כל התקופה השנה. מכירים בהכנסה רק על החלק שסופק השנה — 9 חודשים. את השאר עוד חייבים ללקוח.",
-  שכירות: "השוכר השתמש במחסן חודשיים ב-2017 — ההכנסה הורווחה השנה, גם אם הכסף עוד לא הגיע. לכן היא שייכת ל-2017.",
-  מלאי: "מה שלא נמכר עד סוף השנה אינו הוצאה של השנה. בלי מלאי סגירה עלות המכר גבוהה ב-20,000 — והרווח נמוך באותו סכום.",
-};
-
-// Where each of Ronen's adjustments took an amount from: an account that had a balance and went down, to the other account of the entry.
-const RONEN_MOVES: Move[] = RONEN.adjustments.flatMap((x) =>
+// Where each of the example's adjustments took an amount from: an account that had a balance and went down, to the other account of the entry.
+const EXAMPLE_MOVES: Move[] = SHACHAR.adjustments.flatMap((x) =>
   x.lines.flatMap((l) => {
-    const had = RONEN.preliminary[l.account];
+    const had = SHACHAR.preliminary[l.account];
     const reduces = had !== undefined && (had > 0 ? !!l.cr : !!l.dr);
     const other = x.lines.find((o) => o.account !== l.account);
     return reduces && other ? [{ from: l.account, to: other.account }] : [];
   }),
 );
 
-const ronen: Step[] = [
+const example: Step[] = [
   {
-    title: "הנתונים: מאזן בוחן ראשוני ליום 31.12.2017",
+    title: `הנתונים: ${SHACHAR.name} — מאזן בוחן ראשוני ליום ${SHACHAR.date}`,
     body: (
       <>
-        <TBTable tb={trialBalance(RONEN.preliminary)} />
+        <TBTable tb={trialBalance(SHACHAR.preliminary)} />
         <p className="text-[14.5px] text-muted">
-          העודפים בחובה: הפסדים צבורים של <Money v={RONEN.preliminary["עודפים"]} /> — היתרה של 1.1.2017. לכל סעיף שואלים: מה נרשם, ומה היה צריך להירשם?
+          העודפים, <Money v={-SHACHAR.preliminary["עודפים"]} /> בזכות, הם היתרה של 1.1.{SHACHAR.year}: רווח השנה עוד לא נוסף אליהם. לכל סעיף שואלים: מה נרשם, ומה היה צריך להירשם?
         </p>
       </>
     ),
   },
-  ...RONEN.items.map((it, i) => ({
+  ...SHACHAR.items.map((it, i) => ({
     title: `${it.entry.id}. ${it.title}`,
     body: (
       <>
@@ -406,19 +396,17 @@ const ronen: Step[] = [
           <div className="rounded-lg border border-danger/30 bg-danger/[0.06] px-3 py-2 text-[14px]">
             <span className="mb-0.5 block text-[11px] font-bold text-danger">מה נרשם</span>
             <p>{it.recorded}</p>
-            {RONEN_WRONG[it.title] && (
-              <p className="mt-1.5 border-t border-danger/20 pt-1.5 text-[13.5px] text-fg/90">
-                <strong className="text-danger">למה זה לא נכון: </strong>
-                {RONEN_WRONG[it.title]}
-              </p>
-            )}
+            <p className="mt-1.5 border-t border-danger/20 pt-1.5 text-[13.5px] text-fg/90">
+              <strong className="text-danger">למה זה לא נכון: </strong>
+              {it.why}
+            </p>
           </div>
           <p className="rounded-lg border border-accent/30 bg-accent-soft/60 px-3 py-2 text-[14px]">
             <span className="mb-0.5 block text-[11px] font-bold text-accent">מה צריך להיות</span>
             {it.should}
           </p>
         </div>
-        <Posted entries={RONEN.adjustments} at={i} opening={RONEN.preliminary} openingLabel="יתרה" />
+        <Posted entries={SHACHAR.adjustments} at={i} opening={SHACHAR.preliminary} openingLabel="יתרה" />
       </>
     ),
   })),
@@ -430,11 +418,11 @@ const ronen: Step[] = [
           <strong>השורות המודגשות</strong> הן החשבונות שפקודות ההתאמה והחתך שינו: ליד חשבון שהשתנה — הסכום הקודם, מחוק, והסכום החדש; ליד חשבון שנפתח — ״חדש״. החצים
           מצביעים מחשבון שירד אל החשבון שאליו עבר הסכום.
         </p>
-        <AdjustedTrialBalance before={RONEN.preliminary} after={RONEN_FINAL} moves={RONEN_MOVES} caption="מאזן בוחן ליום 31.12.2017 — לאחר פקודות התאמה וחתך" />
-        <StatementsView s={RONEN_S} year="2017" />
+        <AdjustedTrialBalance before={SHACHAR.preliminary} after={EXAMPLE_FINAL} moves={EXAMPLE_MOVES} caption={`מאזן בוחן ליום ${SHACHAR.date} — לאחר פקודות התאמה וחתך`} />
+        <StatementsView s={EXAMPLE_S} year={SHACHAR.year} />
         <Rule>
-          רווח 2017: <Money v={RONEN_S.profit} />. העודפים: מהפסדים צבורים של <Money v={RONEN.preliminary["עודפים"]} /> ל-
-          <Money v={-RONEN_S.equity.find(([a]) => a === "עודפים")![1]} /> (חובה).
+          רווח {SHACHAR.year}: <Money v={EXAMPLE_S.profit} />. העודפים: מ-<Money v={-SHACHAR.preliminary["עודפים"]} /> בפתיחה ל-
+          <Money v={EXAMPLE_S.equity.find(([a]) => a === "עודפים")![1]} /> בסגירה.
         </Rule>
       </>
     ),
@@ -518,7 +506,7 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
     body: cutoff[3].body,
   },
 
-  ronen: {
+  "adj-example": {
     body: (
       <>
         {/* What the example starts from, and why it needs fixing — before the walkthrough. Spans both columns on a wide screen. */}
@@ -535,7 +523,7 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
             נרשום את מלאי הסגירה שנספר במחסן.
           </p>
         </div>
-        <Stepper label="רונן · 31.12.2017" steps={ronen} />
+        <Stepper label={`${SHACHAR.name} · ${SHACHAR.date}`} steps={example} />
       </>
     ),
   },
@@ -550,9 +538,9 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
             <ul className="mt-2 space-y-1.5 text-[15.5px]">
               {(
                 [
-                  ["", "יתרת פתיחה מלאי", MIA.opening],
-                  ["+", "קניות השנה", MIA.purchases],
-                  ["−", "מלאי סגירה", MIA.closing],
+                  ["", "יתרת פתיחה מלאי", COGS_CASE.opening],
+                  ["+", "קניות השנה", COGS_CASE.purchases],
+                  ["−", "מלאי סגירה", COGS_CASE.closing],
                 ] as [string, string, number][]
               ).map(([op, t, v]) => (
                 <li key={t} className="flex items-center gap-2">
@@ -564,27 +552,27 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
             </ul>
             <p className="mt-2 flex items-center gap-2 border-t-2 border-fg/70 pt-2 font-bold">
               <span className="w-5" />
-              <span className="flex-1">עלות המכר במיה, 2020</span>
-              <Money v={costOfSales(MIA)} plain />
+              <span className="flex-1">עלות המכר ב{COGS_CASE.name}, {COGS_CASE.year}</span>
+              <Money v={costOfSales(COGS_CASE)} plain />
             </p>
           </div>
           <div className="space-y-2">
             <KeyCard>מלאי הסגירה נמדד לפי הנמוך מבין העלות לבין שווי המימוש נטו.</KeyCard>
             <p className="text-[14.5px]">
-              שווי מימוש נטו = מה שנקבל במכירה, פחות מה שיעלה למכור. במיה העלות <Money v={MIA.closing} />:
+              שווי מימוש נטו = מה שנקבל במכירה, פחות מה שיעלה למכור. ב{COGS_CASE.name} עלות מלאי הסגירה <Money v={COGS_CASE.closing} />:
             </p>
             <ul className="space-y-1 text-[14px]">
               <li className="rounded-lg bg-surface-2/70 px-3 py-1.5">
-                שווי מימוש <Money v={MIA_NRV_HIGH} /> ← רושמים <strong><Money v={Math.min(MIA.closing, MIA_NRV_HIGH)} /></strong> (העלות)
+                שווי מימוש <Money v={COGS_NRV_HIGH} /> ← רושמים <strong><Money v={Math.min(COGS_CASE.closing, COGS_NRV_HIGH)} /></strong> (העלות)
               </li>
               <li className="rounded-lg bg-surface-2/70 px-3 py-1.5">
-                אילו היה <Money v={MIA_NRV_LOW} /> ← היינו רושמים <strong><Money v={Math.min(MIA.closing, MIA_NRV_LOW)} /></strong>, ועלות המכר הייתה עולה ב-
-                <Money v={MIA.closing - MIA_NRV_LOW} />
+                אילו היה <Money v={COGS_NRV_LOW} /> ← היינו רושמים <strong><Money v={Math.min(COGS_CASE.closing, COGS_NRV_LOW)} /></strong>, ועלות המכר הייתה עולה ב-
+                <Money v={COGS_CASE.closing - COGS_NRV_LOW} />
               </li>
             </ul>
           </div>
         </div>
-        <Posted entries={[MIA_ENTRY]} at={0} note="שני חשבונות באותו סכום: הנכס שבמחסן, והקטנת העלות ברווח והפסד. בשנה הבאה זה מלאי הפתיחה." />
+        <Posted entries={[COGS_ENTRY]} at={0} note="שני חשבונות באותו סכום: הנכס שבמחסן, והקטנת העלות ברווח והפסד. בשנה הבאה זה מלאי הפתיחה." />
       </>
     ),
   },

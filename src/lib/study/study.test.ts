@@ -551,8 +551,8 @@ describe("interactive lessons: a lesson's video", () => {
   it("the file is on the site, its chapters are in order inside it, and a chapter's screen is one of the lesson's", async () => {
     const { existsSync } = await import("node:fs");
     const { join } = await import("node:path");
+    // The basics course's videos were withdrawn while the course is rebuilt; any lesson that has one is still checked.
     const withVideo = modules.filter((m) => m.videos?.length);
-    assert.ok(withVideo.some((m) => m.slug === "basics-intro"), "lesson 1 has its video");
     for (const m of withVideo) {
       for (const v of m.videos!) {
         assert.ok(existsSync(join(process.cwd(), "public", v.src)), `${m.slug}: no file at public${v.src}`);

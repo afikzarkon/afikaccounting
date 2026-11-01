@@ -4,19 +4,22 @@ import type { ScreenContent } from "@/components/study-mode/shell";
 import { GrammarWidget, TranslatorWidget } from "./language-widgets";
 import { KeyCard, Money, Rule, SideChip, Term } from "./ui";
 
-// Shula, from the neighbourhood: a household described the way a business is. Illustrative figures; income and expenses are for a whole year.
-const SHULA = {
-  income: [["משכורת", 168_000]] as [string, number][],
+// Itai, a nurse who freelances on weekends: a household described the way a business is. Illustrative figures; income and expenses are for a whole year.
+const HOME = {
+  income: [
+    ["משכורת מבית החולים", 132_000],
+    ["משמרות פרטיות בסופי שבוע", 18_000],
+  ] as [string, number][],
   expenses: [
-    ["שכר דירה", 60_000],
-    ["אוכל וקניות לבית", 42_000],
-    ["דלק וחשמל", 18_000],
+    ["שכר דירה", 54_000],
+    ["אוכל וקניות לבית", 38_400],
+    ["תחבורה, טלפון וחשבונות", 21_600],
   ] as [string, number][],
   assets: [
-    ["רכב", 70_000],
-    ["חיסכון בבנק", 25_000],
+    ["קטנוע", 16_000],
+    ["חיסכון בבנק", 48_000],
   ] as [string, number][],
-  liabilities: [["הלוואה על הרכב", 40_000]] as [string, number][],
+  liabilities: [["יתרת הלוואה על הקטנוע", 9_000]] as [string, number][],
 };
 const total = (xs: [string, number][]) => xs.reduce((s, [, v]) => s + v, 0);
 
@@ -143,7 +146,7 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <p>
-          <strong>דוגמה: שולה מהשכונה.</strong> שולה רוצה להבין את מצבה הכספי. שני דפים עונים לה, ושניהם הם בדיוק שני הדוחות של כל עסק:
+          <strong>דוגמה: איתי, אח במחלקה פנימית.</strong> איתי רוצה לדעת איך הוא עומד כלכלית. שני דפים עונים לו, ושניהם הם בדיוק שני הדוחות של כל עסק:
         </p>
         <div className="grid gap-4 md:grid-cols-2">
           <Mini
@@ -151,31 +154,31 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
             tag="חשבונות תוצאתיים — מתאפסים בכל תחילת שנה"
             title="כמה נכנס וכמה יצא במהלך השנה?"
             cols={[
-              { name: "הכנסות", rows: SHULA.income },
-              { name: "הוצאות", rows: SHULA.expenses },
+              { name: "הכנסות", rows: HOME.income },
+              { name: "הוצאות", rows: HOME.expenses },
             ]}
             verdict={
               <>
-                רווח השנה: <Money v={total(SHULA.income) - total(SHULA.expenses)} />
+                רווח השנה: <Money v={total(HOME.income) - total(HOME.expenses)} />
               </>
             }
           />
           <Mini
             report="מאזן"
-            above="מה המצב הכלכלי שלה: נכסים, חובות והון"
+            above="מה המצב הכלכלי שלו: נכסים, חובות והון"
             tag="ביום מסוים — כאן, 31.12"
-            title="מה יש לה, וממי זה הגיע?"
+            title="מה יש לו, וממי זה הגיע?"
             cols={[
-              { name: "נכסים", rows: SHULA.assets, total: "סך הנכסים" },
+              { name: "נכסים", rows: HOME.assets, total: "סך הנכסים" },
               {
                 name: "התחייבויות והון",
-                rows: [...SHULA.liabilities, ["הון — מה ששלה באמת", total(SHULA.assets) - total(SHULA.liabilities)]],
+                rows: [...HOME.liabilities, ["הון — מה ששלו באמת", total(HOME.assets) - total(HOME.liabilities)]],
                 total: "סך הכול",
               },
             ]}
             verdict={
               <>
-                <Money v={total(SHULA.assets)} /> = <Money v={total(SHULA.liabilities)} /> + <Money v={total(SHULA.assets) - total(SHULA.liabilities)} />
+                <Money v={total(HOME.assets)} /> = <Money v={total(HOME.liabilities)} /> + <Money v={total(HOME.assets) - total(HOME.liabilities)} />
               </>
             }
           />

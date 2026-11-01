@@ -1,10 +1,10 @@
-import { balancesOf, type Entry, isBalanceSheet, KITS, ledger, round2, type Statements, statements } from "@/lib/learn/basics";
+import { balancesOf, type Entry, isBalanceSheet, CANDLES, ledger, round2, type Statements, statements } from "@/lib/learn/basics";
 import { cn } from "@/lib/utils";
 import { Posted } from "./t-accounts";
 import { BalanceSheetT, Money, type Step, Stepper } from "./ui";
 
 // The business's entries as they happen; closing inventory is lesson 4's.
-const STEPS = KITS.entries;
+const STEPS = CANDLES.entries;
 
 /** What kind of entry this is: does it only move balance-sheet accounts, or does it reach profit or loss? */
 function entryKind(entry: Entry) {
@@ -74,5 +74,5 @@ export function TransactionLab() {
       ),
     };
   });
-  return <Stepper label="עסק לערכות מדע · 2023" steps={steps} />;
+  return <Stepper label="סדנת הנרות · 2025" steps={steps} />;
 }

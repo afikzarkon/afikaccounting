@@ -2,7 +2,7 @@
 
 import { Scale } from "lucide-react";
 import { useId, useState } from "react";
-import { balancesOf, identityHolds, KITS, ledger, statements } from "@/lib/learn/basics";
+import { balancesOf, identityHolds, CANDLES, ledger, statements } from "@/lib/learn/basics";
 import { cn } from "@/lib/utils";
 import { Money, SideChip } from "./ui";
 
@@ -13,7 +13,7 @@ import { Money, SideChip } from "./ui";
  * one — and always balance.
  */
 export function EquationWidget({ count }: { count?: number } = {}) {
-  const entries = KITS.entries.slice(0, count);
+  const entries = CANDLES.entries.slice(0, count);
   const [k, setK] = useState(1);
   const entry = entries[k - 1];
   const s = statements(balancesOf(ledger(entries.slice(0, k))));
@@ -30,7 +30,7 @@ export function EquationWidget({ count }: { count?: number } = {}) {
       </p>
       <label className="mt-3 block text-[13px] text-muted">
         <span className="num">
-          פקודה {k} מתוך {entries.length} · עסק ערכות המדע
+          פקודה {k} מתוך {entries.length} · סדנת הנרות
         </span>
         <input type="range" min={1} max={entries.length} value={k} onChange={(e) => setK(Number(e.target.value))} className="mt-1 block w-full accent-[var(--accent)]" />
       </label>

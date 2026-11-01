@@ -1,4 +1,4 @@
-import { CREDIT, KITS } from "@/lib/learn/basics";
+import { CREDIT, CANDLES } from "@/lib/learn/basics";
 import type { StudyModule } from "../types";
 import { COURSE, COURSE_HREF, fmt } from "./shared";
 
@@ -26,28 +26,6 @@ export const DOUBLE_ENTRY: StudyModule = {
     { id: "advances", title: "מקדמות: הכסף לפני העסקה" },
     { id: "loan", title: "הלוואה: קבלה, פירעון וריבית" },
     { id: "actions", title: "שמות קבועים ופעולות נפוצות" },
-  ],
-  // The recorded lesson, slide by slide: its slides fade into one another, and each chapter starts with the fade.
-  // A screen that covers two slides (double entry and the simple entry; credit and the compound entry) opens at the first.
-  videos: [
-    {
-      src: "/videos/basics-double-entry.mp4",
-      title: "הרישום הכפול ופקודות יומן — איך רושמים כל אירוע בעסק",
-      duration: 234,
-      chapters: [
-        { at: 0, title: "פתיחה" },
-        { at: 14, title: "נכסים = התחייבויות + הון", screen: "equation" },
-        { at: 45, title: "הוצאה מול השקעה", screen: "expense" },
-        { at: 71, title: "רישום כפול", screen: "double" },
-        { at: 86, title: "פקודת יומן פשוטה" },
-        { at: 109, title: "עסקאות באשראי", screen: "credit" },
-        { at: 133, title: "פקודה מורכבת" },
-        { at: 154, title: "מקדמות: הכסף לפני העסקה", screen: "advances" },
-        { at: 174, title: "הלוואה: קבלה, ריבית ופירעון", screen: "loan" },
-        { at: 195, title: "הפעולות הנפוצות", screen: "actions" },
-        { at: 216, title: "לסיכום" },
-      ],
-    },
   ],
   exercises: [
     {
@@ -88,7 +66,7 @@ export const DOUBLE_ENTRY: StudyModule = {
       },
       accounts: ["מזומן", "הון בעלים", "מכירות", "הלוואה", "הוצאות שכירות"],
     },
-    { kind: "journal", id: "owner-draw", skill: "משיכת בעלים", entry: KITS.entries[7], accounts: ["הון בעלים", "מזומן", "הוצאות שכר", "מכירות", "קניות"] },
+    { kind: "journal", id: "owner-draw", skill: "משיכת בעלים", entry: CANDLES.entries[7], accounts: ["הון בעלים", "מזומן", "הוצאות שכר", "מכירות", "קניות"] },
     // Compound: several accounts on one side.
     {
       kind: "journal",
@@ -191,11 +169,11 @@ export const DOUBLE_ENTRY: StudyModule = {
   ],
   traps: [
     {
-      id: "laptop",
-      prompt: "קנית לעסק לפטופ ב-1,850 ₪ במזומן. לאיזה חשבון נרשם הלפטופ בחובה?",
-      options: ["קניות", "הוצאות משרדיות", "לפטופ — נכס", "הון בעלים"],
+      id: "printer",
+      prompt: "קנית לעסק מדפסת תוויות ב-2,400 ₪ במזומן. לאיזה חשבון נרשמת המדפסת בחובה?",
+      options: ["קניות", "הוצאות משרדיות", "מדפסת — נכס", "הון בעלים"],
       answer: 2,
-      why: "הלפטופ ישמש שנים ואפשר למכור אותו — זו השקעה, כלומר נכס בשמו.",
+      why: "המדפסת תשמש שנים ואפשר למכור אותה — זו השקעה, כלומר נכס בשמו.",
       traps: [
         "המלכודת: ״קניות״ הוא רק סחורה שקונים כדי למכור. ציוד לשימוש העסק אינו קניות.",
         "הוצאה משרתת תקופה קצרה. מה שמשרת שנים הוא נכס.",
@@ -231,8 +209,8 @@ export const DOUBLE_ENTRY: StudyModule = {
     },
     {
       id: "loan",
-      prompt: "השנה החברה פרעה 50,000 ₪ מקרן ההלוואה ושילמה 5,000 ₪ ריבית. מה ההוצאה ברווח והפסד?",
-      options: ["55,000 ₪", "50,000 ₪", "5,000 ₪", "0 ₪"],
+      prompt: "השנה החברה פרעה 30,000 ₪ מקרן ההלוואה ושילמה 4,500 ₪ ריבית. מה ההוצאה ברווח והפסד?",
+      options: ["34,500 ₪", "30,000 ₪", "4,500 ₪", "0 ₪"],
       answer: 2,
       why: "רק הריבית היא הוצאה — המחיר על השימוש בכסף. החזר הקרן רק מקטין את החוב.",
       traps: [
