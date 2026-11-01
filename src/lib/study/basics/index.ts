@@ -4,10 +4,11 @@ import { CREDIT } from "./credit";
 import { DOUBLE_ENTRY } from "./double-entry";
 import { FINAL } from "./final";
 import { INTRO } from "./intro";
+import { YEAR } from "./year";
 import { findScreenIn, lessonHref, screenHrefIn } from "../paths";
 
-/** The basics course: six lessons, in order. */
-export const BASICS_LESSONS = [INTRO, DOUBLE_ENTRY, BOOKS, ADJUST, CREDIT, FINAL];
+/** The basics course, in order. */
+export const BASICS_LESSONS = [INTRO, DOUBLE_ENTRY, BOOKS, YEAR, ADJUST, CREDIT, FINAL];
 
 export { lessonHref };
 

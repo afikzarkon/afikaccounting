@@ -234,3 +234,63 @@ describe("practice", () => {
     assert.equal(answer("q15"), 14_200);
   });
 });
+
+describe("a whole year: Noga and Ofek", async () => {
+  const { NOGA, OFEK } = await import("./basics-year");
+  it("every entry balances and every account has a type", () => {
+    for (const x of [...NOGA.entries, ...OFEK.entries, ...OFEK.next]) {
+      assert.ok(isBalanced(x), `${x.id}: ${x.text}`);
+      for (const l of x.lines) assert.ok(typeOf(l.account));
+    }
+  });
+
+  it("Noga 2025: trial balance 467,000, cash 278,000, profit 30,000; the third instalment still owed, the advance closed", () => {
+    const b = balancesOf(ledger(NOGA.entries));
+    const tb = trialBalance(b);
+    assert.equal(tb.dr, 467_000);
+    assert.equal(tb.cr, 467_000);
+    assert.equal(b["מזומן"], 278_000);
+    assert.equal(statements(b).profit, 30_000);
+    assert.equal(b["זכאים"], -20_000);
+    assert.equal(b["לקוחות"], 32_000);
+    assert.equal(b["מקדמות מלקוחות"], 0);
+  });
+
+  it("Ofek 2025: trial balance 706,000, cash 391,420, profit 40,420; the bounced cheque leaves no trace but its fee", () => {
+    const b = balancesOf(ledger(OFEK.entries));
+    const tb = trialBalance(b);
+    assert.equal(tb.dr, 706_000);
+    assert.equal(tb.cr, 706_000);
+    assert.equal(b["מזומן"], 391_420);
+    assert.equal(statements(b).profit, 40_420);
+    for (const a of ["זכאים", "מקדמות לספקים", "מקדמות מלקוחות"]) assert.equal(b[a], 0, a);
+    assert.equal(b["לקוחות"], 25_000);
+    assert.equal(b["ספקים"], -16_000);
+    assert.equal(b["הוצאות עמלות בנק"], 80);
+  });
+
+  it("Ofek 2026: opens with 40,420 retained, earns 15,000, closes at 55,420; cash 370,420", () => {
+    const opening = carryForward(balancesOf(ledger(OFEK.entries)));
+    assert.equal(opening["עודפים"], -40_420);
+    const b = balancesOf(ledger(OFEK.next, opening));
+    const s = statements(b);
+    assert.equal(trialBalance(b).dr, 585_420);
+    assert.equal(s.profit, 15_000);
+    assert.equal(s.equity.find(([a]) => a === "עודפים")![1], 55_420);
+    assert.equal(b["מזומן"], 370_420);
+    assert.ok(identityHolds(s));
+  });
+});
+
+describe("cheques and advances split over a deal", () => {
+  it("the cheque story ends with the customer paid, and only the bank's fee as an expense", async () => {
+    const { CHECKS } = await import("./basics");
+    const b = balancesOf(ledger(CHECKS.run));
+    assert.equal(b["לקוחות"], 0);
+    assert.equal(b["ספקים"], 0);
+    assert.equal(b["מכירות"], -8_000);
+    assert.equal(b["קניות"], 5_000);
+    assert.equal(b["הוצאות עמלות בנק"], 60);
+    assert.equal(b["מזומן"], 8_000 - 5_000 - 60);
+  });
+});

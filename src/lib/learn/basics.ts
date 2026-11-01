@@ -31,6 +31,7 @@ const EXPLICIT: Record<string, AccountType> = {
   "ריהוט משרדי": "asset",
   לפטופ: "asset",
   מדפסת: "asset",
+  "ציוד הגברה": "asset",
   ציוד: "asset",
   מכונות: "asset",
   "כלי רכב": "asset",

@@ -35,7 +35,7 @@ const stock = Math.min(STOCK.cost, STOCK.nrv);
 export const ADJUST: StudyModule = {
   slug: "basics-adjust",
   course: COURSE,
-  n: 4,
+  n: 5,
   title: "התאמות סוף שנה",
   description: "בסיס מצטבר וארבעת חשבונות החתך, דוגמה מלאה של פקודות התאמה, ומלאי סגירה.",
   backHref: COURSE_HREF,

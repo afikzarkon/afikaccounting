@@ -5,7 +5,7 @@ import { COURSE, COURSE_HREF } from "./shared";
 export const FINAL: StudyModule = {
   slug: "basics-final",
   course: COURSE,
-  n: 6,
+  n: 7,
   title: "גיליון רב-טורי ותרגול מסכם",
   description: "כל מה שלמדנו בטבלה אחת: שאלה מלאה נפתרת צעד אחר צעד, ממאזן הבוחן הראשוני ועד הרווח — ואז שני משחקים שבהם פותרים גיליון שלם בעצמכם, השני עם נעלמים.",
   backHref: COURSE_HREF,
