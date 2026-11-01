@@ -59,8 +59,8 @@ describe("canAccess", () => {
     assert.ok(canAccessWith(free, topic("inventory"), "inventory-intro"));
     assert.ok(!canAccessWith(free, topic("inventory"), "inventory-cost"));
     assert.ok(!canAccessWith(free, topic("inventory")), "the topic as a whole is closed");
-    assert.ok(canAccessWith(free, topic("ias16"), "what"));
-    assert.ok(!canAccessWith(free, topic("ias16"), "revaluation"));
+    assert.ok(canAccessWith(free, topic("ias16"), "ias16-intro"));
+    assert.ok(!canAccessWith(free, topic("ias16"), "ias16-revaluation"));
   });
   it("opens every paid course whole on courses and up", () => {
     for (const t of TOPICS) assert.ok(canAccessWith(courses, t), t.id);

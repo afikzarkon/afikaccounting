@@ -6,13 +6,14 @@ import { BOOKS_SCREENS } from "./books";
 import { CREDIT_SCREENS } from "./credit";
 import { ENTRIES_SCREENS } from "./entries";
 import { FINAL_SCREENS } from "./final";
+import { IAS16_SCREENS } from "./ias16-screens";
 import { INTRO_SCREENS } from "./intro";
 import { INVENTORY_SCREENS } from "./inventory";
 import { EXAM_SCREENS } from "./inventory-exam";
 import { METHOD_SCREENS } from "./inventory-methods";
 import { LAB_SCREENS } from "./lab-chapter";
 
-/** Every concept screen of every course, by id: the basics course, then inventory. */
+/** Every concept screen of every course, by id: the basics course, then inventory, then fixed assets. */
 const SCREENS: Record<string, ScreenContent> = {
   ...INTRO_SCREENS,
   ...ENTRIES_SCREENS,
@@ -24,6 +25,7 @@ const SCREENS: Record<string, ScreenContent> = {
   ...INVENTORY_SCREENS,
   ...METHOD_SCREENS,
   ...EXAM_SCREENS,
+  ...IAS16_SCREENS,
 };
 
 /** A lesson's concept screens, in its order. A screen listed in the lesson but missing here fails the build. */
