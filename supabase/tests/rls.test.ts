@@ -105,6 +105,20 @@ describe("database rules (RLS)", () => {
     assert.ok(await can("admin", `insert into public.subscriptions (user_id, tier) values ('${ID.free}', 'courses')`));
   });
 
+  it("keeps each reader's lesson progress to themselves", async () => {
+    assert.ok(await can("free", `insert into public.lesson_progress (slug, progress) values ('basics-intro', '{"seen":[0]}')`), "a reader saves their own progress");
+    assert.ok(!(await can("free", `insert into public.lesson_progress (user_id, slug, progress) values ('${ID.courses}', 'basics-intro', '{}')`)), "a reader writes another's progress");
+    assert.ok(!(await can("guest", `insert into public.lesson_progress (user_id, slug, progress) values ('${ID.free}', 'basics-intro', '{}')`)), "a guest writes progress");
+    assert.ok(!(await can("free", `insert into public.lesson_progress (slug, progress) values ('Not A Slug', '{}')`)), "a malformed lesson slug");
+    assert.ok(!(await can("free", `insert into public.lesson_progress (slug, progress) values ('basics-books', '[]')`)), "progress that is not an object");
+    const slugs = (who: Reader) => as<{ slug: string }>(who, "select slug from public.lesson_progress").then((r) => r.map((x) => x.slug));
+    assert.deepEqual(await slugs("free"), ["basics-intro"]);
+    assert.deepEqual(await slugs("courses"), [], "another reader sees none of it");
+    assert.deepEqual(await slugs("guest"), []);
+    const changed = await as("courses", `update public.lesson_progress set progress = '{}' returning slug`);
+    assert.equal(changed.length, 0, "another reader changes none of it");
+  });
+
   it("keeps the admin lookups for admins", async () => {
     assert.ok(!(await can("free", `select public.admin_user_by_email('exams@example.com')`)));
     assert.deepEqual(await as("admin", `select public.admin_user_by_email('EXAMS@example.com') as id`), [{ id: ID.exams }]);

@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { EMPTY_TOPIC, type TopicProgress } from "@/lib/study/score";
+import { mergeTopic } from "@/lib/study/sync";
 
 /**
  * Lesson progress per topic, and the sound switch, kept per browser. Storage
@@ -10,7 +11,8 @@ import { EMPTY_TOPIC, type TopicProgress } from "@/lib/study/score";
  */
 /** The lesson opened last, for "continue where you left off": enough to show and link it without loading the lesson. */
 export type LastLesson = { slug: string; title: string; course: string; n: number; percent: number };
-type State = { sound: boolean; topics: Record<string, TopicProgress>; last?: LastLesson };
+/** `owner` is the account this browser's progress was last joined with; none for a guest's. */
+type State = { sound: boolean; topics: Record<string, TopicProgress>; last?: LastLesson; owner?: string };
 
 const KEY = "afik.study.v2";
 const EVENT = "afik-study-progress";
@@ -38,7 +40,8 @@ const parse = (raw: string): State => {
   try {
     const s = JSON.parse(raw) as Partial<State>;
     const last = s.last && typeof s.last === "object" && typeof s.last.slug === "string" ? s.last : undefined;
-    return { sound: s.sound !== false, topics: s.topics && typeof s.topics === "object" ? s.topics : {}, last };
+    const owner = typeof s.owner === "string" ? s.owner : undefined;
+    return { sound: s.sound !== false, topics: s.topics && typeof s.topics === "object" ? s.topics : {}, last, owner };
   } catch {
     return JSON.parse(EMPTY);
   }
@@ -89,3 +92,24 @@ export function setLast(last: LastLesson) {
 
 /** The lesson opened last, if any (none on the server and before the first lesson). */
 export const useLast = () => useStore().last;
+
+/** Every lesson's progress as stored now, for the account sync (outside React). */
+export const readTopics = () => parse(read()).topics;
+
+/** Told of every change to the stored progress, from this tab or another; returns the way to stop. */
+export const onProgressChange = (cb: () => void) => subscribe(cb);
+
+/**
+ * Join the account's progress into this browser's, lesson by lesson (the
+ * account's copy first: see mergeTopic). A guest's progress joins the account
+ * that signs in; progress another account left in this browser (a shared
+ * computer) does not — it is replaced by this account's own.
+ */
+export function mergeAccountTopics(account: Record<string, TopicProgress>, owner: string) {
+  write((s) => {
+    if (s.owner && s.owner !== owner) return { ...s, topics: account, last: undefined, owner };
+    const topics = { ...s.topics };
+    for (const [slug, p] of Object.entries(account)) topics[slug] = topics[slug] ? mergeTopic(p, { ...EMPTY_TOPIC, ...topics[slug] }) : p;
+    return { ...s, topics, owner };
+  });
+}

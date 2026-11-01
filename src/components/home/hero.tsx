@@ -36,7 +36,7 @@ export function Hero({ trap, lessons, exercises, videos }: { trap: Trap; lessons
             </ButtonLink>
           </div>
           <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-1.5 text-[13px] text-muted sm:mt-7">
-            {[`${exercises} שאלות תרגול עם משוב`, "בלי כרטיס אשראי", "ההתקדמות נשמרת בדפדפן"].map((t) => (
+            {[`${exercises} שאלות תרגול עם משוב`, "בלי כרטיס אשראי", "עם חשבון — ההתקדמות בכל מכשיר"].map((t) => (
               <li key={t} className="num flex items-center gap-1.5">
                 <CheckCircle2 className="h-4 w-4 text-success" aria-hidden /> {t}
               </li>
