@@ -56,13 +56,16 @@ export function TryInCalc({ id, label = "נסו במחשבון" }: { id: string;
 
 export type QuizItem = { q: string; options: string[]; answer: number; why: string };
 
-/** `prefix` keeps each page's saved answers apart; the inventory page keeps its original "inv". */
-export function MiniQuiz({ chapter, items, prefix = "inv" }: { chapter: string; items: QuizItem[]; prefix?: string }) {
+/**
+ * `prefix` keeps each page's saved answers apart; the inventory page keeps its original "inv".
+ * `bare`: on a self-check page of its own, whose heading already says what it is.
+ */
+export function MiniQuiz({ chapter, items, prefix = "inv", bare }: { chapter: string; items: QuizItem[]; prefix?: string; bare?: boolean }) {
   const progress = useProgress();
   return (
     <div className="card p-5">
-      <p className="text-[16px] font-semibold text-fg">בדקו את עצמכם</p>
-      <ol className="mt-3 space-y-4">
+      {!bare && <p className="mb-3 text-[16px] font-semibold text-fg">בדקו את עצמכם</p>}
+      <ol className="space-y-4">
         {items.map((it, i) => {
           const key = `${prefix}:${chapter}:${i + 1}`;
           const saved = progress.answers[key];

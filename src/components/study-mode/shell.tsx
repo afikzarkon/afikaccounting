@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpenText, ChevronDown, ClipboardPen, Flag, PlayCircle, Sparkles } from "lucide-react";
+import { BookOpenText, ChevronDown, ClipboardCheck, ClipboardPen, Flag, PlayCircle, Sparkles } from "lucide-react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type ReactNode, Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -79,8 +79,11 @@ const playable = (slug: string, v: LessonVideo) => ({
   chapters: v.chapters.map(({ at, title }) => ({ at, title })),
 });
 
-/** A concept screen's content, rendered on the server: the one principle it teaches, and the rest. */
-export type ScreenContent = { lead?: ReactNode; body: ReactNode };
+/**
+ * A concept screen's content, rendered on the server: the one principle it teaches, and the rest.
+ * `check`, when it has one, is a self-check on a page of its own right after it — not a screen of its own in the lesson's outline.
+ */
+export type ScreenContent = { lead?: ReactNode; body: ReactNode; check?: ReactNode };
 
 /**
  * The lesson, as a page of the site: the course beside it (every lesson, and
@@ -108,7 +111,7 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
   const arrived = useCallback(() => {
     setMoved(true);
     setOpening(false);
-  }, []);
+  }, [setMoved, setOpening]);
   const enter = () => {
     setDir(1);
     setMoved(true);
@@ -131,10 +134,15 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
   const top = useRef<HTMLDivElement>(null);
   const first = useRef(true);
   const [sheet, setSheet] = useState(false);
+  // The concept screen whose self-check page is open, if any: the page after the screen, and before the next one.
+  const [checkOf, setCheckOf] = useState<string | null>(null);
+  const checkAt = (to: Place) => (to.step === 0 && screens[to.sub]?.check ? m.screens[to.sub].id : null);
+  const checking = !opening && step === 0 && checkOf !== null && checkOf === checkAt(place);
 
   const go = (to: Place, d: 1 | -1) => {
     setDir(d);
     setMoved(true);
+    setCheckOf(null);
     // Leaving a concept screen forward counts as having read it.
     updateTopic(slug, (q) => {
       const from = clampPlace(m, q);
@@ -148,6 +156,11 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
   const retry = STEPS[step].id === "practice" ? p.retry : undefined;
   const nextScreen = () => {
     if (opening) return enter();
+    // A concept screen with a self-check goes on to it first.
+    if (!checking && checkAt(place)) {
+      setDir(1);
+      return setCheckOf(checkAt(place));
+    }
     if (!retry?.length) return go(move(m, place, 1), 1);
     const upcoming = Array.from({ length: subCount(m, step) - 1 }, (_, i) => i + 1).find((sub) => sub > place.sub && retry.includes(practiceId(practiceAt(m, sub)!)));
     if (upcoming) return go({ step, sub: upcoming }, 1);
@@ -155,12 +168,20 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
     go({ step: STEPS.length - 1, sub: 0 }, 1);
   };
   const prevScreen = () => {
+    // Back from a self-check is back to its screen.
+    if (checking) {
+      setDir(-1);
+      return setCheckOf(null);
+    }
     // Back from the lesson's first screen is back to its opening.
     if (at === 1) {
       setDir(-1);
       return setOpening(true);
     }
-    go(move(m, place, -1), -1);
+    // Back onto a screen with a self-check is back onto its self-check, the page just before.
+    const to = move(m, place, -1);
+    go(to, -1);
+    setCheckOf(checkAt(to));
   };
   const tryMissedAgain = () => {
     const first = missedOf(m, p)[0];
@@ -192,7 +213,7 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
     }
     if ((top.current?.getBoundingClientRect().top ?? 0) < 0) top.current?.scrollIntoView({ block: "start" });
     heading.current?.focus({ preventScroll: true });
-  }, [place.step, place.sub, opening]);
+  }, [place.step, place.sub, opening, checking]);
 
   // "Continue where you left off", across the site: this lesson, and how far through it.
   const percent = percentOf(m, p);
@@ -261,6 +282,13 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
           }}
         />
       ),
+    };
+  } else if (id === "learn" && checking) {
+    card = {
+      icon: <ClipboardCheck className="h-4 w-4" />,
+      eyebrow: `בדקו את עצמכם · ${m.screens[place.sub].title}`,
+      title: "בדקו את עצמכם",
+      content: screens[place.sub].check,
     };
   } else if (id === "learn") {
     const s = screens[place.sub];
@@ -355,9 +383,23 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
   const resumable = !opening && !moved && (p.step > 0 || p.sub > 0);
 
   // "Previous" and "next", named. Trying missed questions again, "next" goes to the next of them.
+  // A self-check sits between its screen and the next place, so it changes the names on both sides of it.
   const around = neighbours(m, place, opening);
-  const nextLabel = retry?.length ? (retry.some((id) => practiceOf(m).findIndex((it) => practiceId(it) === id) + 1 > place.sub) ? "השאלה הבאה לחזרה" : "לסיכום") : around.next?.label;
-  const where = opening ? "על השיעור" : id === "learn" ? `מושג ${place.sub + 1} מתוך ${m.screens.length}` : id === "practice" ? card.eyebrow : "סיכום";
+  const prevLabel = checking ? m.screens[place.sub].title : !opening && at > 1 && checkAt(move(m, place, -1)) ? "בדקו את עצמכם" : around.prev?.label;
+  const nextLabel = retry?.length
+    ? retry.some((id) => practiceOf(m).findIndex((it) => practiceId(it) === id) + 1 > place.sub)
+      ? "השאלה הבאה לחזרה"
+      : "לסיכום"
+    : !opening && !checking && checkAt(place)
+      ? "בדקו את עצמכם"
+      : around.next?.label;
+  const where = opening
+    ? "על השיעור"
+    : id === "learn"
+      ? `מושג ${place.sub + 1} מתוך ${m.screens.length}${checking ? " · בדקו את עצמכם" : ""}`
+      : id === "practice"
+        ? card.eyebrow
+        : "סיכום";
   const outline = <CourseOutline course={course} current={m} progress={p} place={place} opening={opening} onGo={goTo} />;
 
   return (
@@ -439,7 +481,7 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
               <div ref={body} className="mt-6">
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div
-                    key={opening ? "opening" : `${place.step}-${place.sub}`}
+                    key={opening ? "opening" : `${place.step}-${place.sub}${checking ? "-check" : ""}`}
                     initial={{ opacity: 0, x: -28 * dir }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 28 * dir }}
@@ -454,7 +496,7 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
               <LessonNav
                 className="mt-8"
                 position={opening ? undefined : `${at} מתוך ${total}`}
-                prev={around.prev ? { label: around.prev.label, onClick: prevScreen } : undefined}
+                prev={around.prev && prevLabel ? { label: prevLabel, onClick: prevScreen } : undefined}
                 next={(opening || !last) && nextLabel ? { label: nextLabel, onClick: nextScreen } : undefined}
               />
             </div>

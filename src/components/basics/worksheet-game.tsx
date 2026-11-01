@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, CircleCheck, CircleX, GripVertical, Hourglass, RotateCcw, Rocket, Scale, Shuffle, ThumbsUp, Timer, Trophy, Zap } from "lucide-react";
-import { type DragEvent, type ReactNode, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { type DragEvent, type ReactNode, type RefObject, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/form";
 import { JournalSimulator } from "@/components/study-mode/journal-simulator";
@@ -432,8 +432,29 @@ function SortStage({ c, onDone }: { c: WorksheetCase; onDone: (s: SortStats) => 
 // ---------------------------------------------------------------------------
 // Stage 2: each adjustment — the entry, then its amounts in the adjustments column, and the column balanced.
 
+/**
+ * When `on` changes (not on mount): the element back at the top of the screen, if
+ * the reader is below its top — the next question opens there, and the page must
+ * not stay down where the last one's table was.
+ */
+function useBackToTop(ref: RefObject<HTMLElement | null>, on: unknown) {
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    const el = ref.current;
+    // Under the site's sticky bars (and the lesson's bar on a phone) counts as above the screen.
+    if (!el || el.getBoundingClientRect().top >= 120) return;
+    el.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }, [ref, on]);
+}
+
 function AdjustStage({ c, onDone }: { c: WorksheetCase; onDone: () => void }) {
   const [i, setI] = useState(0);
+  const top = useRef<HTMLDivElement>(null);
+  useBackToTop(top, i);
   const [results, setResults] = useState<Record<number, ExResult>>({});
   const [cells, setCells] = useState<Record<string, { dr: string; cr: string }>>({});
   const [wrong, setWrong] = useState<Set<string>>();
@@ -475,7 +496,7 @@ function AdjustStage({ c, onDone }: { c: WorksheetCase; onDone: () => void }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div ref={top} className="scroll-mt-32 space-y-4">
       <ol className="flex flex-wrap gap-1.5" aria-label="פקודות ההתאמה">
         {c.items.map((it, k) => (
           <li
@@ -842,9 +863,11 @@ export function WorksheetGame({ c }: { c: WorksheetCase }) {
   const [sort, setSort] = useState<SortStats>();
   const [round, setRound] = useState(0);
   const result = worksheetResult(c);
+  const top = useRef<HTMLDivElement>(null);
+  useBackToTop(top, `${round}-${stage}`);
 
   return (
-    <div key={round} className="card space-y-4 p-4">
+    <div key={round} ref={top} className="card scroll-mt-32 space-y-4 p-4">
       <ol className="flex flex-wrap items-center gap-2" aria-label="שלבי המשחק">
         {STAGES.map((s, k) => (
           <li

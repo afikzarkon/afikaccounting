@@ -22,8 +22,9 @@ const toLines = (d: Draft[]): Line[] => d.filter((x) => amountOf(x.amount) > 0).
  * Practice: build the entry for a transaction. Each offered account goes to the
  * debit or the credit side with an amount; the T-accounts and the debit = credit
  * check follow every keystroke. Two tries, then the answer is shown.
+ * `noXp`: where a right answer earns no points (a self-check), it says so plainly.
  */
-export function JournalSimulator({ ex, result, onCheck }: { ex: JournalExercise; result?: ExResult; onCheck: (ok: boolean) => void }) {
+export function JournalSimulator({ ex, result, onCheck, noXp }: { ex: JournalExercise; result?: ExResult; onCheck: (ok: boolean) => void; noXp?: boolean }) {
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [wrong, setWrong] = useState<string[]>([]);
   const answer = ex.entry;
@@ -117,7 +118,7 @@ export function JournalSimulator({ ex, result, onCheck }: { ex: JournalExercise;
 
       {/* The check right under the entry being built, where the eye already is; the T-accounts follow. */}
       {done ? (
-        <Feedback ok={result!.ok} title={result!.ok ? <Gain xp={result!.tries === 1 ? XP.first : XP.second} /> : "זו הפקודה הנכונה"} text={answer.why} />
+        <Feedback ok={result!.ok} title={result!.ok ? noXp ? "נכון!" : <Gain xp={result!.tries === 1 ? XP.first : XP.second} /> : "זו הפקודה הנכונה"} text={answer.why} />
       ) : (
         <div className="space-y-2">
           {result && result.tries > 0 && (

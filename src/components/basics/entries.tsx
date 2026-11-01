@@ -5,6 +5,7 @@ import { SIMPLE } from "@/lib/study/basics/shared";
 import { ActionFinder } from "./action-finder";
 import { EquationWidget } from "./equation-widget";
 import { ExpenseSorter } from "./expense-sorter";
+import { JournalCheck } from "./journal-check";
 import { MiniQuiz } from "./inventory-interactive";
 import { EntryFlow } from "./entry-flow";
 import { TIntro } from "./t-accounts";
@@ -46,25 +47,28 @@ export const ENTRIES_SCREENS: Record<string, ScreenContent> = {
           כל פעולה משנה את המשוואה בשני מקומות לפחות, והיא תמיד נשארת מאוזנת. נסו כאן על ארבע הפעולות הראשונות של עסק קטן. את העסק כולו, עם כרטיסי ה-T, תראו בהמשך השיעור — ב<ScreenLink id="lab" />.
         </p>
         <EquationWidget count={4} />
-        <MiniQuiz
-          prefix="basics"
-          chapter="equation"
-          items={[
-            {
-              q: "לעסק נכסים של 90,000 ₪ והתחייבויות של 35,000 ₪. מה ההון?",
-              options: ["55,000", "125,000", "35,000", "90,000"],
-              answer: 0,
-              why: "הון = נכסים − התחייבויות: 90,000 − 35,000 = 55,000.",
-            },
-            {
-              q: "העסק לקח הלוואה של 20,000 ₪. מה קרה למשוואה?",
-              options: ["נכסים +20,000 והתחייבויות +20,000", "נכסים +20,000 והון +20,000", "רק הנכסים גדלו", "שום דבר לא השתנה"],
-              answer: 0,
-              why: "נכנס כסף (נכס), ונוצר חוב לבנק (התחייבות). שני הצדדים גדלו באותו סכום, והמשוואה מאוזנת.",
-            },
-          ]}
-        />
       </>
+    ),
+    check: (
+      <MiniQuiz
+        bare
+        prefix="basics"
+        chapter="equation"
+        items={[
+          {
+            q: "לעסק נכסים של 90,000 ₪ והתחייבויות של 35,000 ₪. מה ההון?",
+            options: ["55,000", "125,000", "35,000", "90,000"],
+            answer: 0,
+            why: "הון = נכסים − התחייבויות: 90,000 − 35,000 = 55,000.",
+          },
+          {
+            q: "העסק לקח הלוואה של 20,000 ₪. מה קרה למשוואה?",
+            options: ["נכסים +20,000 והתחייבויות +20,000", "נכסים +20,000 והון +20,000", "רק הנכסים גדלו", "שום דבר לא השתנה"],
+            answer: 0,
+            why: "נכנס כסף (נכס), ונוצר חוב לבנק (התחייבות). שני הצדדים גדלו באותו סכום, והמשוואה מאוזנת.",
+          },
+        ]}
+      />
     ),
   },
 
@@ -129,19 +133,20 @@ export const ENTRIES_SCREENS: Record<string, ScreenContent> = {
           הנה <strong>פקודה פשוטה</strong> — חשבון אחד בכל צד. והחיצים מראים לאן עוברת כל שורה שלה:
         </p>
         <EntryFlow entry={SIMPLE} note="לסדנה נכנס חודש שימוש בחלל העבודה (חובה), ויצא ממנה כסף (זכות)." aside={<TIntro />} />
-        <MiniQuiz
-          prefix="basics"
-          chapter="double"
-          items={[
-            {
-              q: "הסדנה מכרה נרות ב-1,400 ₪, והלקוחה העבירה את הכסף. מה בחובה?",
-              options: ["מזומן", "מכירות", "קניות", "לקוחות"],
-              answer: 0,
-              why: "כסף נכנס לסדנה — חובה. מה שיצא ממנה הוא הנרות: מכירות, בזכות.",
-            },
-          ]}
-        />
       </>
+    ),
+    check: (
+      <JournalCheck
+        chapter="double"
+        items={[
+          {
+            text: "הסדנה מכרה נרות ב-1,400 ₪, והלקוחה העבירה את הכסף במקום.",
+            lines: [{ account: "מזומן", dr: 1_400 }, { account: "מכירות", cr: 1_400 }],
+            why: "כסף נכנס לסדנה — מזומן בחובה. מה שיצא ממנה הוא הנרות: מכירות, בזכות.",
+            accounts: ["מזומן", "מכירות", "לקוחות", "קניות"],
+          },
+        ]}
+      />
     ),
   },
   actions: {
