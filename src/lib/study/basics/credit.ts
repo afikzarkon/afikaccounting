@@ -13,27 +13,27 @@ const journal = (id: string, skill: string, text: string, lines: Entry["lines"],
 });
 
 // Every figure below is computed here, or by the credit-loss model, from the question's own numbers.
-const FIRST = { gross: 300_000, rate: 0.04 }; // a new business's first year end
+const FIRST = { gross: 260_000, rate: 0.05 }; // a new business's first year end
 const firstAllowance = round2(FIRST.gross * FIRST.rate);
-const BANKRUPT = 7_000;
-const RECOVERED = 3_000;
+const BANKRUPT = 5_500;
+const RECOVERED = 2_400;
 const [TOPUP, OPENING, REVERSAL] = SELF;
 // A troubled customer beside the general rate.
-const SPECIFIC = { debt: 40_000, rate: 0.5, general: 0.05 };
+const SPECIFIC = { debt: 35_000, rate: 0.6, general: 0.04 };
 const SPEC = year({
-  openingAR: 600_000,
-  openingAllowance: 20_000,
-  creditSales: 1_500_000,
-  collections: 1_400_000,
+  openingAR: 540_000,
+  openingAllowance: 18_000,
+  creditSales: 1_350_000,
+  collections: 1_260_000,
   required: (g) => SPECIFIC.debt * SPECIFIC.rate + (g - SPECIFIC.debt) * SPECIFIC.general,
 });
 // A recovered debt, and a credit purchase that has nothing to do with customers.
-const BACK = { openingAR: 400_000, openingAllowance: 16_000, creditSales: 900_000, collections: 880_000, writeOffs: 10_000, recovered: 2_000, rate: 0.04, purchases: 300_000 };
+const BACK = { openingAR: 350_000, openingAllowance: 14_000, creditSales: 820_000, collections: 790_000, writeOffs: 8_000, recovered: 1_500, rate: 0.05, purchases: 260_000 };
 const RECOVERY = year({ ...BACK, required: (g) => g * BACK.rate });
-const NET = { gross: 300_000, rate: 0.03 };
-const FROM_NET = { net: 475_000, rate: 0.05 };
-const GAP = { opening: 300_000, closing: 350_000, sales: 1_000_000, writeOffs: 6_000 };
-const CARD = { opening: 500_000, sales: 1_200_000, collections: 869_000, writeOffs: 31_000 };
+const NET = { gross: 280_000, rate: 0.04 };
+const FROM_NET = { net: 456_000, rate: 0.04 };
+const GAP = { opening: 280_000, closing: 310_000, sales: 940_000, writeOffs: 5_000 };
+const CARD = { opening: 450_000, sales: 1_100_000, collections: 815_000, writeOffs: 27_000 };
 
 const pct = (r: number) => `${round2(r * 100)}%`;
 const adjLines = (x: { adj: Entry }) => x.adj.lines;
@@ -43,61 +43,38 @@ const amountOf = (x: { adj: Entry }) => x.adj.lines[0].dr!;
 export const CREDIT: StudyModule = {
   slug: "basics-credit",
   course: COURSE,
-  n: 5,
+  n: 7,
   title: "הפסדי אשראי",
   description: "לקוחות ברוטו, הפרשה ונטו; מחיקה וגבייה של חוב אבוד; מתווה 3 הכללים עם שני כרטיסי T — ועד שאלה ברמת בחינה.",
   backHref: COURSE_HREF,
   screens: [
     { id: "cl-idea", title: "הרעיון: לא כל לקוח ישלם" },
     { id: "cl-net", title: "ברוטו, הפרשה ונטו" },
-    { id: "cl-allowance", title: "ההפרשה של רונית: הוצאה מול כרית" },
+    { id: "cl-allowance", title: "ההפרשה של עינב: הוצאה מול כרית" },
     { id: "cl-terms", title: "חוב אבוד, חוב ספציפי — והנוסחה" },
     { id: "cl-entries", title: "הפקודות של השנה" },
     { id: "cl-method", title: "מתווה 3 הכללים" },
     { id: "cl-extract", title: "חילוץ נעלמים: ארבע נוסחאות" },
-    { id: "cl-first", title: "דוגמה ראשונה: אלון בע״מ" },
+    { id: "cl-first", title: "דוגמה ראשונה: ארז בע״מ" },
     { id: "cl-scenarios", title: "שלושה תרחישים, שלושה נעלמים" },
     { id: "cl-specific", title: "הפרשה ספציפית וכללית" },
     { id: "cl-recovery", title: "מסיחים וחוב שחזר" },
-    { id: "cl-exam", title: "שאלה ברמת בחינה: גלבוע בע״מ" },
+    { id: "cl-exam", title: "שאלה ברמת בחינה: כרמל בע״מ" },
     { id: "cl-calc", title: "מחשבון: בדקו את התשובה שלכם" },
   ],
   tools: [{ screen: "cl-calc", label: "מחשבון הפסדי אשראי" }],
-  // The recorded lesson comes in two parts: the ideas and their entries (part A), then the method of the three rules (part B).
-  // Its slides fade into one another, and each chapter starts with the fade.
-  videos: [
-    {
-      src: "/videos/basics-credit-a.mp4",
-      title: "הפסדי אשראי — לא כל לקוח ישלם",
-      part: "חלק א׳",
-      duration: 201,
-      chapters: [
-        { at: 0, title: "פתיחה" },
-        { at: 13, title: "הרעיון: לא כל לקוח ישלם", screen: "cl-idea" },
-        { at: 40, title: "ברוטו, הפרשה ונטו", screen: ["cl-net", "cl-allowance"] },
-        { at: 68, title: "חוב אבוד — וחוב שחזר", screen: ["cl-terms", "cl-recovery"] },
-        { at: 105, title: "סוף השנה: השלמה או ביטול", screen: "cl-entries" },
-        { at: 139, title: "הפרשה ספציפית וכללית", screen: "cl-specific" },
-        { at: 174, title: "לסיכום" },
-      ],
-    },
-    {
-      src: "/videos/basics-credit-b.mp4",
-      title: "מתווה 3 הכללים — שיטה אחת לכל שאלה",
-      part: "חלק ב׳",
-      duration: 199,
-      chapters: [
-        { at: 0, title: "פתיחה" },
-        { at: 18, title: "שלושה כללים, באותו סדר", screen: "cl-method" },
-        { at: 48, title: "מה נכנס לכל צד" },
-        { at: 78, title: "דוגמה: אלון בע״מ", screen: "cl-first" },
-        { at: 107, title: "אלון: שני הכרטיסים" },
-        { at: 143, title: "אלון: הפקודה והמאזן" },
-        { at: 174, title: "לסיכום" },
-      ],
-    },
-  ],
   exercises: [
+    journal(
+      "same-day",
+      "מחיקה, ספציפית וכללית יחד",
+      "לפני ההתאמות: לקוחות 900,000 ₪, הפרשה 50,000 ₪. ב-31.12 התברר שחוב של 30,000 ₪ אבוד, והוא נמחק כנגד ההפרשה. אחרי המחיקה: על לקוח שחייב 100,000 ₪ מפרישים 70%, ועל שאר הלקוחות 4%. רשמו את פקודת השלמת ההפרשה.",
+      [
+        { account: EXPENSE, dr: 80_800 },
+        { account: ALLOW, cr: 80_800 },
+      ],
+      "אחרי המחיקה: לקוחות 870,000, הפרשה 20,000. נדרש: 70% × 100,000 = 70,000, ועוד 4% × 770,000 = 30,800 — סך 100,800. חסרים 80,800.",
+      [EXPENSE, ALLOW, AR, "מזומן"],
+    ),
     journal(
       "first-allowance",
       "הפרשה ראשונה",
@@ -150,9 +127,9 @@ export const CREDIT: StudyModule = {
     journal(
       "reversal",
       "ביטול הפרשה עודפת",
-      `לקוחות ב-1.1: ${fmt(REVERSAL.openingAR)} ₪, הפרשה ${fmt(REVERSAL.openingAllowance)} ₪. במהלך השנה: מכירות באשראי ${fmt(REVERSAL.creditSales!)} ₪, גבייה ${fmt(REVERSAL.collections!)} ₪. בסוף השנה לקוח בקשיים חייב 50,000 ₪ (הפרשה ספציפית 80%), ועל השאר 3%. רשמו את פקודת ההתאמה ב-31.12.`,
+      `לקוחות ב-1.1: ${fmt(REVERSAL.openingAR)} ₪, הפרשה ${fmt(REVERSAL.openingAllowance)} ₪. במהלך השנה: מכירות באשראי ${fmt(REVERSAL.creditSales!)} ₪, גבייה ${fmt(REVERSAL.collections!)} ₪. בסוף השנה לקוח בקשיים חייב 40,000 ₪ (הפרשה ספציפית 75%), ועל השאר 3%. רשמו את פקודת ההתאמה ב-31.12.`,
       adjLines(REVERSAL),
-      `לקוחות בסוף השנה: ${fmt(REVERSAL.mid.gross)}. ספציפית 40,000 + כללית 3% × ${fmt(REVERSAL.mid.gross - 50_000)} = ${fmt(REVERSAL.required - 40_000)} → נדרשת ${fmt(REVERSAL.required)}. בכרטיס כבר ${fmt(REVERSAL.mid.allowance)} — יותר מדי. מבטלים ${fmt(amountOf(REVERSAL))}: ההפרשה קטנה (חובה), וההוצאה קטנה (זכות).`,
+      `לקוחות בסוף השנה: ${fmt(REVERSAL.mid.gross)}. ספציפית 30,000 + כללית 3% × ${fmt(REVERSAL.mid.gross - 40_000)} = ${fmt(REVERSAL.required - 30_000)} → נדרשת ${fmt(REVERSAL.required)}. בכרטיס כבר ${fmt(REVERSAL.mid.allowance)} — יותר מדי. מבטלים ${fmt(amountOf(REVERSAL))}: ההפרשה קטנה (חובה), וההוצאה קטנה (זכות).`,
       [ALLOW, EXPENSE, AR, "מזומן"],
     ),
     journal(
@@ -246,15 +223,15 @@ export const CREDIT: StudyModule = {
     },
     {
       id: "expense-is-required",
-      prompt: "ההפרשה הנדרשת ב-31.12 היא 40,000 ₪. בכרטיס ההפרשה, לפני ההתאמה, יש 25,000 ₪ בזכות. מה הוצאות הפסדי האשראי השנה?",
-      options: ["15,000 ₪", "40,000 ₪", "65,000 ₪", "25,000 ₪"],
+      prompt: "ההפרשה הנדרשת ב-31.12 היא 44,000 ₪. בכרטיס ההפרשה, לפני ההתאמה, יש 27,000 ₪ בזכות. מה הוצאות הפסדי האשראי השנה?",
+      options: ["17,000 ₪", "44,000 ₪", "71,000 ₪", "27,000 ₪"],
       answer: 0,
-      why: "ההוצאה היא רק מה שחסר בכרטיס כדי להגיע לנדרשת: 40,000 − 25,000 = 15,000.",
+      why: "ההוצאה היא רק מה שחסר בכרטיס כדי להגיע לנדרשת: 44,000 − 27,000 = 17,000.",
       traps: [
         "",
-        "המלכודת: 40,000 היא יתרת הסגירה של ההפרשה, לא ההוצאה. 25,000 מתוכה כבר בכרטיס.",
+        "המלכודת: 44,000 היא יתרת הסגירה של ההפרשה, לא ההוצאה. 27,000 מתוכה כבר בכרטיס.",
         "מחברים במקום להחסיר: היתרה שבכרטיס כבר נספרה — משלימים עד הנדרשת.",
-        "25,000 הם מה שיש, לא מה שחסר.",
+        "27,000 הם מה שיש, לא מה שחסר.",
       ],
     },
   ],

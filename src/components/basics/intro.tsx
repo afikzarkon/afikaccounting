@@ -1,24 +1,48 @@
-import { Building2, Check, Globe, Languages, X } from "lucide-react";
+import { Building2, Check, Globe, Languages, ShieldCheck, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ScreenContent } from "@/components/study-mode/shell";
+import { MiniQuiz } from "./inventory-interactive";
 import { GrammarWidget, TranslatorWidget } from "./language-widgets";
-import { KeyCard, Money, Rule, SideChip, Term } from "./ui";
+import { JE, KeyCard, Money, Rule, SideChip, Term } from "./ui";
 
-// Shula, from the neighbourhood: a household described the way a business is. Illustrative figures; income and expenses are for a whole year.
-const SHULA = {
-  income: [["משכורת", 168_000]] as [string, number][],
+// Itai, a nurse who freelances on weekends: a household described the way a business is. Illustrative figures; income and expenses are for a whole year.
+const HOME = {
+  income: [
+    ["משכורת מבית החולים", 132_000],
+    ["משמרות פרטיות בסופי שבוע", 18_000],
+  ] as [string, number][],
   expenses: [
-    ["שכר דירה", 60_000],
-    ["אוכל וקניות לבית", 42_000],
-    ["דלק וחשמל", 18_000],
+    ["שכר דירה", 54_000],
+    ["אוכל וקניות לבית", 38_400],
+    ["תחבורה, טלפון וחשבונות", 21_600],
   ] as [string, number][],
   assets: [
-    ["רכב", 70_000],
-    ["חיסכון בבנק", 25_000],
+    ["קטנוע", 16_000],
+    ["חיסכון בבנק", 48_000],
   ] as [string, number][],
-  liabilities: [["הלוואה על הרכב", 40_000]] as [string, number][],
+  liabilities: [["יתרת הלוואה על הקטנוע", 9_000]] as [string, number][],
 };
 const total = (xs: [string, number][]) => xs.reduce((s, [, v]) => s + v, 0);
+
+// The four statements a company files every year: which moment or period each covers, and the question it answers.
+const STATEMENTS: { name: string; when: string; asks: string; here: boolean }[] = [
+  { name: "הדוח על המצב הכספי (מאזן)", when: "ליום מסוים", asks: "מה יש לחברה, כמה היא חייבת, ומה שייך לבעלים?", here: true },
+  { name: "דוח רווח או הפסד", when: "לתקופה", asks: "האם החברה הרוויחה — הכנסות פחות הוצאות?", here: true },
+  { name: "דוח על השינויים בהון", when: "לתקופה", asks: "איך השתנה ההון: רווח, הנפקת מניות, חלוקה לבעלים?", here: false },
+  { name: "דוח על תזרימי המזומנים", when: "לתקופה", asks: "מאיפה הגיע הכסף, ולאן הוא הלך?", here: false },
+];
+
+// A company is set up: the founders buy its first shares.
+const SHARES = {
+  id: "1",
+  date: "1.2.2025",
+  text: "״גשר מערכות בע״מ״ הוקמה: שלושה מייסדים קנו מניות ב-90,000 ₪ במזומן",
+  lines: [
+    { account: "מזומן", dr: 90_000 },
+    { account: "הון מניות", cr: 90_000 },
+  ],
+  why: "המזומן נכנס לחברה (חובה). החברה ״חייבת״ אותו לבעלי המניות — הון מניות, בזכות. זו לא הכנסה: החברה לא מכרה כלום.",
+};
 
 type Kind = { name: string; plain: string; example: string; report: "מאזן" | "רווח והפסד" };
 const DEBIT_KINDS: Kind[] = [
@@ -33,9 +57,9 @@ const CREDIT_KINDS: Kind[] = [
 
 // The language, side by side with accounting: each part of a language has its twin.
 const PARTS: { language: string; accounting: string; example: string }[] = [
-  { language: "מילים", accounting: "חשבונות", example: "מזומן, ספקים, מכירות, שכר דירה" },
+  { language: "מילים", accounting: "חשבונות", example: "מזומן, ספקים, מכירות, שכירות" },
   { language: "דקדוק", accounting: "תקני חשבונאות", example: "הכללים שקובעים איך רושמים כל דבר" },
-  { language: "משפט", accounting: "רישום של אירוע אחד", example: "״מכרנו עוגה ב-1,200 ₪ במזומן״" },
+  { language: "משפט", accounting: "רישום של אירוע אחד", example: "״מכרנו סט צלחות ב-1,350 ₪ במזומן״" },
   { language: "סיפור שלם", accounting: "הדוחות הכספיים", example: "מה קרה בעסק השנה, ומה מצבו היום" },
 ];
 
@@ -49,12 +73,13 @@ const READERS: { who: string; asks: string }[] = [
 
 export const INTRO_SCREENS: Record<string, ScreenContent> = {
   language: {
-    lead: "ברוכים הבאים! חשבונאות היא שפה — שפת העסקים. כמו כל שפה זרה, לומדים אותה מאפס, מילה אחרי מילה, ואחרי זה היא נשמעת טבעית.",
+    lead: "ברוכים הבאים! חשבונאות היא הדרך שבה עסק מספר מה קרה לו — במספרים, ולפי כללים שכולם מכירים. הכי קל ללמוד אותה כמו שפה: מילה אחרי מילה, עד שהיא נשמעת טבעית.",
     body: (
       <>
         <p>
-          דמיינו שפתחתם מאפייה קטנה. כל יום קורים בה דברים: מוכרים עוגות, משלמים שכר דירה, קונים קמח. כל זה קורה &quot;בשפה של בני אדם&quot; — סיפורים, קבלות,
-          שיחות. אבל ברגע שתרצו הלוואה מהבנק, שותף שישקיע, או לדווח למס — תצטרכו לספר את הסיפור הזה <strong>בשפה שכולם מבינים</strong>. זו החשבונאות.
+          דמיינו שפתחתם את ״אדמה״, סטודיו קטן לקרמיקה. כל יום קורים בו דברים: מוכרים קערות, משלמים שכירות, קונים חימר וזיגוג. כל זה קורה ״בשפה של בני אדם״ —
+          הודעות, קבלות, שיחות. אבל ברגע שתרצו הלוואה מהבנק, שותפה שתשקיע, או לדווח למס — תצטרכו לספר את הסיפור הזה <strong>בשפה שכולם מבינים</strong>. זו
+          החשבונאות.
         </p>
         <div className="overflow-hidden rounded-2xl border border-line">
           <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1.4fr)] bg-surface-2 px-3 py-2 text-[12.5px] font-bold text-muted">
@@ -99,7 +124,7 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
           </p>
           <p className="text-[14.5px]">
             את <Term he="IFRS" /> כותבת הוועדה לתקני חשבונאות בינלאומיים (IASB), והוא מחייב חברות ביותר מ-140 מדינות. כל תקן עוסק בנושא אחד — למשל{" "}
-            <span dir="ltr">IAS 2</span> במלאי ו-<span dir="ltr">IAS 16</span> ברכוש קבוע, כמו המחשב של המאפיות.
+            <span dir="ltr">IAS 2</span> במלאי ו-<span dir="ltr">IAS 16</span> ברכוש קבוע, כמו תנור השריפה של שני הסטודיואים.
           </p>
           <p className="text-[14.5px]">
             <strong>ובישראל?</strong> חברות ציבוריות (שהמניות שלהן נסחרות בבורסה) מדווחות לפי IFRS. חברות פרטיות יכולות לדווח גם לפי התקנים הישראליים. בארה״ב
@@ -143,7 +168,7 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <p>
-          <strong>דוגמה: שולה מהשכונה.</strong> שולה רוצה להבין את מצבה הכספי. שני דפים עונים לה, ושניהם הם בדיוק שני הדוחות של כל עסק:
+          <strong>דוגמה: איתי, אח במחלקה פנימית.</strong> איתי רוצה לדעת איך הוא עומד כלכלית. שני דפים עונים לו, ושניהם הם בדיוק שני הדוחות של כל עסק:
         </p>
         <div className="grid gap-4 md:grid-cols-2">
           <Mini
@@ -151,35 +176,70 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
             tag="חשבונות תוצאתיים — מתאפסים בכל תחילת שנה"
             title="כמה נכנס וכמה יצא במהלך השנה?"
             cols={[
-              { name: "הכנסות", rows: SHULA.income },
-              { name: "הוצאות", rows: SHULA.expenses },
+              { name: "הכנסות", rows: HOME.income },
+              { name: "הוצאות", rows: HOME.expenses },
             ]}
             verdict={
               <>
-                רווח השנה: <Money v={total(SHULA.income) - total(SHULA.expenses)} />
+                רווח השנה: <Money v={total(HOME.income) - total(HOME.expenses)} />
               </>
             }
           />
           <Mini
             report="מאזן"
-            above="מה המצב הכלכלי שלה: נכסים, חובות והון"
+            above="מה המצב הכלכלי שלו: נכסים, חובות והון"
             tag="ביום מסוים — כאן, 31.12"
-            title="מה יש לה, וממי זה הגיע?"
+            title="מה יש לו, וממי זה הגיע?"
             cols={[
-              { name: "נכסים", rows: SHULA.assets, total: "סך הנכסים" },
+              { name: "נכסים", rows: HOME.assets, total: "סך הנכסים" },
               {
                 name: "התחייבויות והון",
-                rows: [...SHULA.liabilities, ["הון — מה ששלה באמת", total(SHULA.assets) - total(SHULA.liabilities)]],
+                rows: [...HOME.liabilities, ["הון — מה ששלו באמת", total(HOME.assets) - total(HOME.liabilities)]],
                 total: "סך הכול",
               },
             ]}
             verdict={
               <>
-                <Money v={total(SHULA.assets)} /> = <Money v={total(SHULA.liabilities)} /> + <Money v={total(SHULA.assets) - total(SHULA.liabilities)} />
+                <Money v={total(HOME.assets)} /> = <Money v={total(HOME.liabilities)} /> + <Money v={total(HOME.assets) - total(HOME.liabilities)} />
               </>
             }
           />
         </div>
+        <h3 className="pt-1 text-lg font-semibold text-fg [column-span:all]">ובחברה אמיתית? ארבעה דוחות</h3>
+        <p className="[column-span:all]">
+          חברה מגישה בכל שנה ארבעה דוחות כספיים. שני הראשונים הם אלה שראיתם אצל איתי — והם הבסיס לכל השאר. בקורס הזה בונים אותם. את שני האחרים מחשבים מהם, ונכיר
+          אותם בקורסים הבאים.
+        </p>
+        <ul className="grid gap-2 sm:grid-cols-2 [column-span:all]">
+          {STATEMENTS.map((x) => (
+            <li key={x.name} className={cn("rounded-xl border px-3.5 py-2.5", x.here ? "border-accent/40 bg-accent-soft/50" : "border-line bg-surface")}>
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="text-[15px] font-bold text-fg">{x.name}</span>
+                <span className="rounded-full bg-surface-2 px-2 py-px text-[11px] font-semibold text-muted">{x.when}</span>
+                {x.here && <span className="rounded-full bg-accent px-2 py-px text-[11px] font-bold text-accent-fg">בונים בקורס</span>}
+              </span>
+              <span className="mt-1 block text-[14px] text-fg/85">{x.asks}</span>
+            </li>
+          ))}
+        </ul>
+        <MiniQuiz
+          prefix="basics"
+          chapter="what"
+          items={[
+            {
+              q: "איזה דוח עונה על השאלה ״כמה כסף יש לחברה בבנק ב-31.12?״",
+              options: ["המאזן", "רווח או הפסד", "השינויים בהון", "אף דוח"],
+              answer: 0,
+              why: "מזומן הוא נכס, והמאזן מצלם את הנכסים ביום מסוים.",
+            },
+            {
+              q: "חברה הרוויחה השנה 50,000 ₪, אבל יש לה פחות מזומן מבתחילת השנה. איזה דוח יסביר לאן הלך הכסף?",
+              options: ["תזרימי המזומנים", "רווח או הפסד", "המאזן", "אין הסבר — זו טעות"],
+              answer: 0,
+              why: "רווח אינו מזומן: אפשר להרוויח ובאותה שנה לקנות ציוד או להחזיר הלוואה. דוח תזרימי המזומנים מראה לאן הכסף זרם.",
+            },
+          ]}
+        />
       </>
     ),
   },
@@ -190,14 +250,55 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
       <>
         <div className="grid gap-2 sm:grid-cols-2">
           <p className="flex items-center gap-2 rounded-xl border border-success/30 bg-success/[0.06] px-3 py-2.5 text-[15px]">
-            <Check className="h-5 w-5 shrink-0 text-success" aria-hidden /> שכירות המשרד של העסק — נרשמת
+            <Check className="h-5 w-5 shrink-0 text-success" aria-hidden /> השכירות של הסטודיו — נרשמת
           </p>
           <p className="flex items-center gap-2 rounded-xl border border-danger/30 bg-danger/[0.05] px-3 py-2.5 text-[15px]">
-            <X className="h-5 w-5 shrink-0 text-danger" aria-hidden /> הקפה שהבעלים קנתה לבית — לא נרשמת
+            <X className="h-5 w-5 shrink-0 text-danger" aria-hidden /> ארוחת הערב שהבעלים הזמינה הביתה — לא נרשמת
           </p>
         </div>
         <KeyCard icon={<Building2 className="h-5 w-5" />}>כשבעלים משקיע כסף בעסק — זה הון.</KeyCard>
         <p className="text-[15px] text-muted">מבחינת העסק הבעלים הוא צד אחר: העסק קיבל ממנו כסף, ו&quot;חייב&quot; לו אותו.</p>
+
+        <h3 className="pt-1 text-lg font-semibold text-fg [column-span:all]">חברה בע״מ: נפרדת גם בעיני החוק</h3>
+        <p className="[column-span:all]">
+          רוב העסקים שתפגשו בתרגילים הם <Term he="חברה בע״מ" /> — חברה בערבון מוגבל, שמוקמת לפי חוק החברות. לחברה יש ״חיים משפטיים״ משלה: הנכסים שלה, והחובות
+          שלה. הבעלים שלה נקראים <Term he="בעלי מניות" />.
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2 [column-span:all]">
+          <div className="rounded-xl border border-line bg-surface px-3.5 py-3">
+            <p className="flex items-center gap-2 text-[15px] font-bold text-fg">
+              <ShieldCheck className="h-5 w-5 shrink-0 text-accent" aria-hidden /> אחריות מוגבלת
+            </p>
+            <p className="mt-1 text-[14px] text-fg/85">
+              אם החברה נכשלת ולא מחזירה את חובותיה, בעלי המניות מפסידים לכל היותר את מה שהשקיעו. הנושים לא יכולים לגבות מהדירה או מהחשבון הפרטי שלהם.
+            </p>
+          </div>
+          <div className="rounded-xl border border-line bg-surface px-3.5 py-3">
+            <p className="text-[15px] font-bold text-fg">הון מניות</p>
+            <p className="mt-1 text-[14px] text-fg/85">
+              בחברה, ההשקעה של הבעלים נקראת <strong>הון מניות</strong>: החברה מנפיקה מניות, ובעלי המניות משלמים עליהן. זה אותו רעיון כמו הון בעלים — רק בשם של חברה.
+            </p>
+          </div>
+        </div>
+        <JE entry={SHARES} />
+        <MiniQuiz
+          prefix="basics"
+          chapter="entity"
+          items={[
+            {
+              q: "בעלת מניות בחברה לקחה הלוואה פרטית מהבנק כדי לשפץ את הדירה שלה. מה נרשם בספרי החברה?",
+              options: ["לא נרשם דבר", "ח׳ מזומן / ז׳ הלוואה", "ח׳ הון מניות / ז׳ הלוואה", "ח׳ הוצאות שיפוץ / ז׳ מזומן"],
+              answer: 0,
+              why: "ההלוואה של בעלת המניות, לא של החברה. החברה היא ישות נפרדת — ובספרים שלה לא קרה כלום.",
+            },
+            {
+              q: "חברה בע״מ חייבת לספקים 400,000 ₪ ונסגרה בלי כסף. בעלי המניות השקיעו בה 100,000 ₪. כמה עוד יצטרכו לשלם לספקים מכספם?",
+              options: ["0 ₪", "100,000 ₪", "300,000 ₪", "400,000 ₪"],
+              answer: 0,
+              why: "אחריות מוגבלת: הם הפסידו את ה-100,000 שהשקיעו, ולא יותר. החוב הוא של החברה, לא שלהם.",
+            },
+          ]}
+        />
       </>
     ),
   },
@@ -219,6 +320,24 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
           <SideColumn side="dr" kinds={DEBIT_KINDS} />
           <SideColumn side="cr" kinds={CREDIT_KINDS} />
         </div>
+        <MiniQuiz
+          prefix="basics"
+          chapter="types"
+          items={[
+            {
+              q: "הסטודיו חייב 2,600 ₪ לספק החימר. מאיזה סוג החשבון ״ספקים״, ובאיזה צד הוא גדל?",
+              options: ["התחייבות — גדל בזכות", "נכס — גדל בחובה", "הוצאה — גדל בחובה", "הכנסה — גדל בזכות"],
+              answer: 0,
+              why: "הסטודיו חייב כסף לאחרים — התחייבות. התחייבויות גדלות בזכות.",
+            },
+            {
+              q: "״הכנסות מסדנאות״ — באיזה צד תהיה היתרה, ובאיזה דוח החשבון יופיע?",
+              options: ["זכות · רווח והפסד", "חובה · רווח והפסד", "זכות · מאזן", "חובה · מאזן"],
+              answer: 0,
+              why: "הכנסה גדלה בזכות, ומודדת את התקופה — לכן היא בדוח רווח והפסד.",
+            },
+          ]}
+        />
       </>
     ),
   },

@@ -3,6 +3,7 @@ import type { ScreenContent } from "@/components/study-mode/shell";
 import type { StudyModule } from "@/lib/study/types";
 import { ADJUST_SCREENS } from "./adjust";
 import { BOOKS_SCREENS } from "./books";
+import { CHECKS_SCREENS } from "./checks";
 import { CREDIT_SCREENS } from "./credit";
 import { ENTRIES_SCREENS } from "./entries";
 import { FINAL_SCREENS } from "./final";
@@ -12,6 +13,8 @@ import { INVENTORY_SCREENS } from "./inventory";
 import { EXAM_SCREENS } from "./inventory-exam";
 import { METHOD_SCREENS } from "./inventory-methods";
 import { LAB_SCREENS } from "./lab-chapter";
+import { REVIEW_SCREENS } from "./review";
+import { YEAR_SCREENS } from "./year";
 
 /** Every concept screen of every course, by id: the basics course, then inventory, then fixed assets. */
 const SCREENS: Record<string, ScreenContent> = {
@@ -19,7 +22,10 @@ const SCREENS: Record<string, ScreenContent> = {
   ...ENTRIES_SCREENS,
   ...LAB_SCREENS,
   ...BOOKS_SCREENS,
+  ...YEAR_SCREENS,
+  ...CHECKS_SCREENS,
   ...ADJUST_SCREENS,
+  ...REVIEW_SCREENS,
   ...CREDIT_SCREENS,
   ...FINAL_SCREENS,
   ...INVENTORY_SCREENS,

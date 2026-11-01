@@ -5,24 +5,25 @@ import { SIMPLE } from "@/lib/study/basics/shared";
 import { ActionFinder } from "./action-finder";
 import { EquationWidget } from "./equation-widget";
 import { ExpenseSorter } from "./expense-sorter";
+import { MiniQuiz } from "./inventory-interactive";
 import { EntryFlow } from "./entry-flow";
 import { TIntro } from "./t-accounts";
 import { Card, Money, Term } from "./ui";
 
 // Expense or investment, row by row: what it is, where it is reported, what it does to profit on the day it is paid.
 const EXPENSE_VS_ASSET: [string, string, string][] = [
-  ["מה זה", "משהו שנוצל ונגמר", "משהו שנשאר בעסק ושווה כסף"],
+  ["מה זה", "משהו שעבד בשבילנו עכשיו — ונגמר", "משהו שימשיך לעבוד בשבילנו גם בשנה הבאה"],
   ["איפה מופיע", "בדוח רווח והפסד", "במאזן, ברשימת הנכסים"],
-  ["ביום התשלום", "מקטין את הרווח", "הרווח לא משתנה — מזומן הפך לנכס"],
-  ["דוגמאות", "שכירות, חשמל, משכורות, פרסום", "תנור, מחשב, רכב, ריהוט"],
+  ["ביום התשלום", "מקטין את הרווח", "הרווח לא משתנה — הכסף החליף צורה"],
+  ["דוגמאות", "שכירות, חשמל, שכר, פרסום", "מכונה, מחשב, רכב, ריהוט"],
 ];
 
+// Who owes whom, by name: the four accounts for money that will move later.
 const TERMS: [string, string][] = [
-  ["ספקים", "מי שהעסק חייב לו על סחורה"],
-  ["לקוחות", "מי שחייב לעסק על סחורה שקנה"],
-  ["זכאים", "מי שהעסק חייב לו — לא על סחורה"],
-  ["חייבים", "מי שחייב לעסק — לא על סחורה"],
-  ["צ'ק דחוי", "ייפרע בתאריך מאוחר; עד אז — חוב"],
+  ["לקוחות", "קנו מאיתנו סחורה או שירות, ועוד לא שילמו"],
+  ["ספקים", "מכרו לנו סחורה למכירה, ועוד לא שילמנו להם"],
+  ["חייבים", "חייבים לנו על משהו שאינו מכירה רגילה — למשל ריבית או שכירות"],
+  ["זכאים", "אנחנו חייבים להם על משהו שאינו סחורה — ציוד, שיפוץ, שירות"],
 ];
 
 export const ENTRIES_SCREENS: Record<string, ScreenContent> = {
@@ -45,17 +46,35 @@ export const ENTRIES_SCREENS: Record<string, ScreenContent> = {
           כל פעולה משנה את המשוואה בשני מקומות לפחות, והיא תמיד נשארת מאוזנת. נסו כאן על ארבע הפעולות הראשונות של עסק קטן. את העסק כולו, עם כרטיסי ה-T, תראו בהמשך השיעור — ב<ScreenLink id="lab" />.
         </p>
         <EquationWidget count={4} />
+        <MiniQuiz
+          prefix="basics"
+          chapter="equation"
+          items={[
+            {
+              q: "לעסק נכסים של 90,000 ₪ והתחייבויות של 35,000 ₪. מה ההון?",
+              options: ["55,000", "125,000", "35,000", "90,000"],
+              answer: 0,
+              why: "הון = נכסים − התחייבויות: 90,000 − 35,000 = 55,000.",
+            },
+            {
+              q: "העסק לקח הלוואה של 20,000 ₪. מה קרה למשוואה?",
+              options: ["נכסים +20,000 והתחייבויות +20,000", "נכסים +20,000 והון +20,000", "רק הנכסים גדלו", "שום דבר לא השתנה"],
+              answer: 0,
+              why: "נכנס כסף (נכס), ונוצר חוב לבנק (התחייבות). שני הצדדים גדלו באותו סכום, והמשוואה מאוזנת.",
+            },
+          ]}
+        />
       </>
     ),
   },
 
   expense: {
-    lead: "כל תשלום של העסק הוא אחד משניים: הוצאה — משהו שנוצל ונגמר, או השקעה — משהו שימשיך לשרת את העסק גם בעתיד, ולכן הוא נכס.",
+    lead: "על כל תשלום שואלים שאלה אחת: האם מה שקנינו ימשיך לעבוד בשבילנו גם בשנה הבאה? כן — השקעה, כלומר נכס. לא — הוצאה.",
     body: (
       <>
         <p>
-          כשהעסק משלם, הכסף יוצא — אבל לא תמיד הוא &quot;נעלם&quot;. לפעמים הוא נוצל וזהו (שכירות, חשמל, משכורות), ולפעמים הוא רק החליף צורה: מזומן הפך לתנור, למחשב או לרכב
-          — דברים שעדיין שייכים לעסק ושווים כסף. השאלה לבדיקה: <strong>האם זה ימשיך לשרת את העסק אחרי היום, ואפשר למכור את זה?</strong> כן — השקעה. לא — הוצאה.
+          כשהעסק משלם, הכסף יוצא — אבל הוא לא תמיד ״נעלם״. שכירות של החודש, חשמל, שכר: עבדו בשבילנו החודש, ונגמרו. מכונה, מחשב או רכב: הכסף רק החליף צורה,
+          והם ימשיכו לעבוד בשבילנו עוד שנים. לכן השאלה לבדיקה: <strong>האם זה עוד יעבוד בשבילנו בשנה הבאה?</strong>
         </p>
         <div className="overflow-hidden rounded-2xl border border-line">
           <div className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,1fr)] bg-surface-2 px-3 py-2 text-[12.5px] font-bold text-muted">
@@ -75,16 +94,16 @@ export const ENTRIES_SCREENS: Record<string, ScreenContent> = {
             </div>
           ))}
         </div>
-        <Card title="דוגמה: המאפייה שילמה החודש 35,000 ₪">
+        <Card title="דוגמה: סדנת הנרות שילמה באפריל 12,500 ₪">
           <p>
-            <Money v={5_000} /> שכירות לחודש, ו-<Money v={30_000} /> על תנור חדש. מכרה באותו חודש ב-<Money v={12_000} />.
+            <Money v={3_500} /> שכירות לחודש, ו-<Money v={9_000} /> על מכונה להמסת שעווה. באותו חודש היא מכרה נרות ב-<Money v={8_000} />.
           </p>
           <ul className="list-disc space-y-1 ps-5 marker:text-subtle">
             <li>
-              השכירות נוצלה החודש — הוצאה. הרווח: <Money v={12_000} /> − <Money v={5_000} /> = <strong><Money v={7_000} /></strong>.
+              השכירות של אפריל נגמרה באפריל — הוצאה. הרווח: <Money v={8_000} /> − <Money v={3_500} /> = <strong><Money v={4_500} /></strong>.
             </li>
-            <li>התנור לא נכנס לחישוב הרווח: <Money v={30_000} /> מזומן הפכו לתנור ששווה <Money v={30_000} />. לעסק יש בדיוק אותו שווי — רק בצורה אחרת.</li>
-            <li>מי שהיה רושם גם את התנור כהוצאה היה מראה הפסד של <Money v={23_000} /> — בחודש שבו העסק בכלל הרוויח.</li>
+            <li>המכונה לא נכנסת לחישוב הרווח: <Money v={9_000} /> בחשבון הפכו למכונה ששווה <Money v={9_000} />. לעסק יש אותו שווי — רק בצורה אחרת.</li>
+            <li>מי שהיה רושם גם את המכונה כהוצאה היה מראה הפסד של <Money v={4_500} /> — בחודש שבו הסדנה בכלל הרוויחה.</li>
           </ul>
         </Card>
         <ExpenseSorter />
@@ -95,30 +114,42 @@ export const ENTRIES_SCREENS: Record<string, ScreenContent> = {
   double: {
     lead: (
           <>
-            כל אירוע נרשם פעמיים: <span className="text-debit">ערך שנכנס (מקבל) — חובה</span>, <span className="text-credit">ערך שיוצא (נותן) — זכות</span>. סך החובה תמיד שווה
+            כל אירוע נרשם פעמיים: <span className="text-debit">מה שנכנס לעסק — חובה</span>, <span className="text-credit">מה שיצא ממנו — זכות</span>. סך החובה תמיד שווה
             לסך הזכות.
           </>
     ),
     body: (
       <>
         <p>
-          הרישום של אירוע נקרא <Term he="פקודת יומן" />. כך קוראים אותה: למעלה — שורות החובה (<span className="font-semibold text-debit">ח׳</span>), מה שהעסק
-          קיבל. מתחתן, מוזחות פנימה — שורות הזכות (<span className="font-semibold text-credit">ז׳</span>), מה שהעסק נתן. ליד כל שורה הסכום, וסך החובה תמיד שווה לסך
+          הרישום של אירוע נקרא <Term he="פקודת יומן" />. כך קוראים אותה: למעלה — שורות החובה (<span className="font-semibold text-debit">ח׳</span>), מה שנכנס
+          לעסק. מתחתן, מוזחות פנימה — שורות הזכות (<span className="font-semibold text-credit">ז׳</span>), מה שיצא ממנו. ליד כל שורה הסכום, וסך החובה תמיד שווה לסך
           הזכות.
         </p>
         <p>
           הנה <strong>פקודה פשוטה</strong> — חשבון אחד בכל צד. והחיצים מראים לאן עוברת כל שורה שלה:
         </p>
-        <EntryFlow entry={SIMPLE} note="העסק קיבל חודש שימוש במבנה (חובה) ונתן מזומן (זכות)." aside={<TIntro />} />
+        <EntryFlow entry={SIMPLE} note="לסדנה נכנס חודש שימוש בחלל העבודה (חובה), ויצא ממנה כסף (זכות)." aside={<TIntro />} />
+        <MiniQuiz
+          prefix="basics"
+          chapter="double"
+          items={[
+            {
+              q: "הסדנה מכרה נרות ב-1,400 ₪, והלקוחה העבירה את הכסף. מה בחובה?",
+              options: ["מזומן", "מכירות", "קניות", "לקוחות"],
+              answer: 0,
+              why: "כסף נכנס לסדנה — חובה. מה שיצא ממנה הוא הנרות: מכירות, בזכות.",
+            },
+          ]}
+        />
       </>
     ),
   },
   actions: {
-    lead: "רוב הפעולות בעסק חוזרות על עצמן — ולכל אחת יש פקודה קבועה. מכירים אותן, ורוב פקודות היומן כבר כתובות.",
+    lead: "כמעט כל פקודה מתחילה בשאלה אחת: מתי הכסף זז — היום, אחר כך, או לפני? התשובה כבר אומרת לכם את רוב הפקודה.",
     body: (
       <>
-        <p>מי שהעסק חייב לו, ומי שחייב לעסק, מקבלים בחשבונאות שמות קבועים:</p>
-        <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        <p className="[column-span:all]">כשהכסף יזוז רק אחר כך, יש בינתיים חוב. לכל צד של חוב יש שם קבוע:</p>
+        <dl className="grid grid-cols-2 gap-2 lg:grid-cols-4 [column-span:all]">
           {TERMS.map(([t, d]) => (
             <div key={t} className="rounded-xl border border-line bg-surface px-3 py-2">
               <dt className="text-[14px] font-bold text-fg">{t}</dt>
@@ -126,7 +157,9 @@ export const ENTRIES_SCREENS: Record<string, ScreenContent> = {
             </div>
           ))}
         </dl>
-        <ActionFinder />
+        <div className="[column-span:all]">
+          <ActionFinder />
+        </div>
       </>
     ),
   },

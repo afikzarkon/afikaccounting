@@ -108,62 +108,62 @@ export function year(p: Year) {
 export type YearResult = ReturnType<typeof year>;
 
 // ---------------------------------------------------------------------------
-// The idea, with round numbers: Ronit's shop.
+// The idea, with round numbers: Einav's shop.
 
-export const RONIT = { customers: 100, each: 1_000, unpaid: 5 };
+export const EINAV = { customers: 80, each: 1_500, unpaid: 4 };
 
 // ---------------------------------------------------------------------------
-// The first full example: Alon Ltd, and the same year with a smaller estimate.
+// The first full example: Erez Ltd, and the same year with a smaller estimate.
 
-const ALON_YEAR = { openingAR: 700_000, openingAllowance: 30_000, creditSales: 2_000_000, collections: 1_888_000, writeOffs: 12_000 };
-export const ALON = { rate: 0.05, lowRate: 0.02, ...year({ ...ALON_YEAR, required: (g) => g * 0.05 }) };
-export const ALON_LOW = year({ ...ALON_YEAR, required: (g) => g * ALON.lowRate });
+const EREZ_YEAR = { openingAR: 640_000, openingAllowance: 28_000, creditSales: 2_300_000, collections: 2_170_000, writeOffs: 10_000 };
+export const EREZ = { rate: 0.05, lowRate: 0.02, ...year({ ...EREZ_YEAR, required: (g) => g * 0.05 }) };
+export const EREZ_LOW = year({ ...EREZ_YEAR, required: (g) => g * EREZ.lowRate });
 
 // ---------------------------------------------------------------------------
 // Scenario A: the opening gross is unknown; the opening net and the rate are given.
 
 export const SCENARIO_A = (() => {
-  const openingNet = 570_000;
+  const openingNet = 665_000;
   const rate = 0.05;
   // Net is what is left after the allowance: gross × (1 − rate).
   const openingAR = round2(openingNet / (1 - rate));
   const openingAllowance = round2(openingAR * rate);
-  return { openingNet, rate, ...year({ openingAR, openingAllowance, creditSales: 1_500_000, collections: 1_420_000, writeOffs: 10_000, required: (g) => g * rate }) };
+  return { openingNet, rate, ...year({ openingAR, openingAllowance, creditSales: 1_800_000, collections: 1_690_000, writeOffs: 12_000, required: (g) => g * rate }) };
 })();
 
 // ---------------------------------------------------------------------------
 // Scenario B: the year's expense is unknown. The rate is extracted from last year's closing balances.
 
 export const SCENARIO_B = (() => {
-  const openingAR = 900_000;
-  const openingAllowance = 45_000;
+  const openingAR = 750_000;
+  const openingAllowance = 30_000;
   const rate = round2(openingAllowance / openingAR);
-  return { rate, ...year({ openingAR, openingAllowance, creditSales: 3_000_000, collections: 2_832_000, writeOffs: 28_000, required: (g) => g * rate }) };
+  return { rate, ...year({ openingAR, openingAllowance, creditSales: 2_600_000, collections: 2_470_000, writeOffs: 22_000, required: (g) => g * rate }) };
 })();
 
 // ---------------------------------------------------------------------------
 // Scenario C: collections are unknown; both customer balances, sales and write-offs are given.
 
 export const SCENARIO_C = (() => {
-  const openingAR = 400_000;
-  const closingAR = 460_000;
-  const creditSales = 1_250_000;
-  const writeOffs = 14_000;
-  const rate = 0.04;
+  const openingAR = 360_000;
+  const closingAR = 415_000;
+  const creditSales = 1_100_000;
+  const writeOffs = 9_000;
+  const rate = 0.05;
   // Customers: opening + credit sales − collections − write-offs = closing.
   const collections = round2(openingAR + creditSales - writeOffs - closingAR);
   return { closingAR, rate, ...year({ openingAR, openingAllowance: round2(openingAR * rate), creditSales, collections, writeOffs, required: (g) => g * rate }) };
 })();
 
 // ---------------------------------------------------------------------------
-// Scenario D: a specific customer in trouble beside the general allowance — Dor Ltd and a garage.
+// Scenario D: a specific customer in trouble beside the general allowance — Moria Ltd and a car centre.
 
-export const DOR = (() => {
-  const specificName = "מוסך הצפון";
-  const specificDebt = 60_000;
-  const specificRate = 0.7;
-  const generalRate = 0.04;
-  const base = { openingAR: 820_000, openingAllowance: 50_000, creditSales: 2_600_000, collections: 2_520_000 };
+export const MORIA = (() => {
+  const specificName = "מרכז הרכב בעמק";
+  const specificDebt = 45_000;
+  const specificRate = 0.8;
+  const generalRate = 0.05;
+  const base = { openingAR: 700_000, openingAllowance: 42_000, creditSales: 2_200_000, collections: 2_150_000 };
   const split = (gross: number, specificLeft: number) => {
     const specific = round2(specificLeft * specificRate);
     const general = round2((gross - specificLeft) * generalRate);
@@ -187,17 +187,17 @@ export const DOR = (() => {
 })();
 
 // ---------------------------------------------------------------------------
-// Credit sales, a distracting purchase and a recovered debt: Eran Ltd.
+// Credit sales, a distracting purchase and a recovered debt: Nevo Ltd.
 
-export const ERAN = (() => {
-  const openingGross = 500_000;
-  const openingAllowance = 20_000;
-  const creditSales = 1_800_000;
-  const collections = 1_650_000;
-  const creditPurchases = 700_000;
-  const written = 15_000;
-  const recovered = 4_000;
-  const rate = 0.04;
+export const NEVO = (() => {
+  const openingGross = 450_000;
+  const openingAllowance = 18_000;
+  const creditSales = 1_600_000;
+  const collections = 1_480_000;
+  const creditPurchases = 650_000;
+  const written = 12_000;
+  const recovered = 3_000;
+  const rate = 0.05;
   const yearEntries = [
     e("1", "2025", "מכירות באשראי", [
       { account: AR, dr: creditSales },
@@ -223,26 +223,26 @@ export const ERAN = (() => {
 })();
 
 // ---------------------------------------------------------------------------
-// The exam question: Gilboa Ltd, 2025.
+// The exam question: Carmel Ltd, 2025.
 
-export const GILBOA = (() => {
-  const openingNet = 912_000;
+export const CARMEL = (() => {
+  const openingNet = 855_000;
   const openingRate = 0.05;
   const openingGross = round2(openingNet / (1 - openingRate));
   const openingAllowance = round2(openingGross - openingNet);
-  const openingSuppliers = 600_000;
-  const creditSales = 3_200_000;
-  const cashSales = 400_000;
-  const collections = 3_050_000;
-  const creditPurchases = 1_900_000;
-  const supplierPayments = 1_750_000;
-  const bankruptName = "רשת אורן";
-  const bankruptDebt = 36_000;
-  const recovered = 9_000;
-  const specificName = "דלתא שיווק";
-  const specificDebt = 70_000;
-  const specificRate = 0.6;
-  const generalRate = 0.05;
+  const openingSuppliers = 520_000;
+  const creditSales = 2_900_000;
+  const cashSales = 350_000;
+  const collections = 2_760_000;
+  const creditPurchases = 1_700_000;
+  const supplierPayments = 1_580_000;
+  const bankruptName = "רשת חן";
+  const bankruptDebt = 28_000;
+  const recovered = 6_000;
+  const specificName = "אופקים סחר";
+  const specificDebt = 55_000;
+  const specificRate = 0.7;
+  const generalRate = 0.04;
   const yearEntries: Entry[] = [
     e("1", "2025", "מכירות באשראי", [
       { account: AR, dr: creditSales },
@@ -310,14 +310,14 @@ export const GILBOA = (() => {
 
 export const SELF = [
   // The write-offs ran past the allowance; the year-end entry covers the gap and the required balance.
-  year({ openingAR: 500_000, openingAllowance: 25_000, creditSales: 1_200_000, collections: 869_000, writeOffs: 31_000, required: (g) => g * 0.05 }),
-  // The opening allowance is the unknown: closing 54,000, expense 18,000.
-  year({ openingAR: 860_000, openingAllowance: 43_000, creditSales: 2_000_000, collections: 1_951_000, writeOffs: 9_000, recovered: 2_000, required: (g) => g * 0.06 }),
-  // A specific customer of 50,000 at 80%, 3% on the rest — and too much allowance already.
-  year({ openingAR: 380_000, openingAllowance: 60_000, creditSales: 1_000_000, collections: 980_000, required: (g) => 50_000 * 0.8 + (g - 50_000) * 0.03 }),
+  year({ openingAR: 450_000, openingAllowance: 22_000, creditSales: 1_100_000, collections: 815_000, writeOffs: 27_000, required: (g) => g * 0.05 }),
+  // The opening allowance is the unknown, found from the closing allowance and the year's expense.
+  year({ openingAR: 780_000, openingAllowance: 39_000, creditSales: 1_850_000, collections: 1_800_000, writeOffs: 8_000, recovered: 3_000, required: (g) => g * 0.06 }),
+  // A specific customer of 40,000 at 75%, 3% on the rest — and too much allowance already.
+  year({ openingAR: 420_000, openingAllowance: 55_000, creditSales: 900_000, collections: 870_000, required: (g) => 40_000 * 0.75 + (g - 40_000) * 0.03 }),
 ];
 
 /** Every entry on the page, for the balance checks. */
 export function allCreditLossEntries(): Entry[] {
-  return [ALON, ALON_LOW, SCENARIO_A, SCENARIO_B, SCENARIO_C, DOR, DOR.bankrupt, ERAN, GILBOA, ...SELF].flatMap((x) => x.entries);
+  return [EREZ, EREZ_LOW, SCENARIO_A, SCENARIO_B, SCENARIO_C, MORIA, MORIA.bankrupt, NEVO, CARMEL, ...SELF].flatMap((x) => x.entries);
 }

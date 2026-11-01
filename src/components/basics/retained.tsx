@@ -16,7 +16,7 @@ const parseNumber = (s: string) => Number(s.replace(/[,\s₪]/g, ""));
  * so the unknown is the difference. The learner types it in and checks it; the
  * working appears once it is right, or on request.
  */
-export function RetainedSolver({ assets, liabilities, equity, answer, opening, profit }: { assets: Rows; liabilities: Rows; equity: Rows; answer: number; opening: number; profit: number }) {
+export function RetainedSolver({ title, assets, liabilities, equity, answer, opening, profit }: { title: string; assets: Rows; liabilities: Rows; equity: Rows; answer: number; opening: number; profit: number }) {
   const id = useId();
   const [value, setValue] = useState("");
   const [checked, setChecked] = useState<null | boolean>(null);
@@ -41,7 +41,7 @@ export function RetainedSolver({ assets, liabilities, equity, answer, opening, p
 
   return (
     <div className="card overflow-hidden">
-      <p className="border-b border-line bg-surface-2/50 px-4 py-3 text-sm font-semibold text-fg">המאזן של יובל ליום 31.12.2020 — מה חסר?</p>
+      <p className="border-b border-line bg-surface-2/50 px-4 py-3 text-sm font-semibold text-fg">{title}</p>
       <div className="grid sm:grid-cols-2">
         <div className="flex flex-col sm:border-e-2 sm:border-fg/70">
           <ul className="divide-y divide-line/60">{list("נכסים", assets)}</ul>

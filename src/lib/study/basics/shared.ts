@@ -17,21 +17,12 @@ export function practice(id: string): QuestionExercise {
   return exercise;
 }
 
-/** The two worked entries of "double entry": one account on each side, and several on one side. */
+/** The worked entry of "double entry": one account on each side. */
 export const SIMPLE: Entry = {
   id: "1",
-  text: "העסק שילם 2,000 ₪ שכירות במזומן",
+  text: "סדנת הנרות שילמה 3,500 ₪ שכירות לחודש אפריל",
   lines: [
-    { account: "הוצאות שכירות", dr: 2_000 },
-    { account: "מזומן", cr: 2_000 },
-  ],
-};
-export const COMPOUND: Entry = {
-  id: "2",
-  text: "העסק קנה ציוד ב-50,000 ₪: 20,000 במזומן והשאר באשראי",
-  lines: [
-    { account: "ציוד", dr: 50_000 },
-    { account: "מזומן", cr: 20_000 },
-    { account: "זכאים", cr: 30_000 },
+    { account: "הוצאות שכירות", dr: 3_500 },
+    { account: "מזומן", cr: 3_500 },
   ],
 };

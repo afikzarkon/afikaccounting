@@ -3,13 +3,14 @@ import type { ReactNode } from "react";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
 import { type Balances, balancesOf, type Entry, ledger, round2, type TAccount } from "@/lib/learn/basics";
-import { adjustment, ALLOW, ALON, ALON_LOW, AR, DOR, ERAN, EXPENSE, GILBOA, RONIT, SCENARIO_A, SCENARIO_B, SCENARIO_C, writeOff, year } from "@/lib/learn/credit-losses";
+import { adjustment, ALLOW, EREZ, EREZ_LOW, AR, MORIA, NEVO, EXPENSE, CARMEL, EINAV, SCENARIO_A, SCENARIO_B, SCENARIO_C, writeOff, year } from "@/lib/learn/credit-losses";
 import { cn } from "@/lib/utils";
 import { ClosingArrow } from "./closing-arrow";
 import { CreditLossCalculator } from "./credit-calculator";
 import { EntriesDialog } from "./entries-dialog";
 import { FormulaDialog } from "./formula-dialog";
 import { TCardsDialog } from "./t-dialog";
+import { MiniQuiz } from "./inventory-interactive";
 import { Posted } from "./t-accounts";
 import { Calc, JE, KeyCard, Money, Rule, type Step, Stepper } from "./ui";
 
@@ -308,10 +309,10 @@ function walk(name: string, x: Year, unknown: string[], { given, solve, all }: {
 }
 
 // ---------------------------------------------------------------------------
-// The idea: Ronit's shop. Her first year — 100 customers on credit, 5 expected not to pay.
+// The idea: Einav's shop. Her first year — 80 customers on credit, 4 expected not to pay.
 
-const RONIT_TOTAL = RONIT.customers * RONIT.each;
-/** A few lines of Ronit's credit notebook, and the rest of her customers in one line — adding up to what she is owed. */
+const EINAV_TOTAL = EINAV.customers * EINAV.each;
+/** A few lines of Einav's credit notebook, and the rest of her customers in one line — adding up to what she is owed. */
 const PINKAS_SHOWN: [string, number][] = [
   ["משפחת כהן", 1_200],
   ["מיכל", 850],
@@ -321,19 +322,19 @@ const PINKAS_SHOWN: [string, number][] = [
 ];
 const PINKAS: [string, number][] = [
   ...PINKAS_SHOWN,
-  [`ועוד ${RONIT.customers - PINKAS_SHOWN.length} לקוחות`, RONIT_TOTAL - PINKAS_SHOWN.reduce((t, [, v]) => t + v, 0)],
+  [`ועוד ${EINAV.customers - PINKAS_SHOWN.length} לקוחות`, EINAV_TOTAL - PINKAS_SHOWN.reduce((t, [, v]) => t + v, 0)],
 ];
-const RONIT_LOSS = RONIT.unpaid * RONIT.each;
-const RONIT_YEAR = year({ openingAR: 0, openingAllowance: 0, creditSales: RONIT_TOTAL, required: (g) => g * (RONIT.unpaid / RONIT.customers) });
+const EINAV_LOSS = EINAV.unpaid * EINAV.each;
+const EINAV_YEAR = year({ openingAR: 0, openingAllowance: 0, creditSales: EINAV_TOTAL, required: (g) => g * (EINAV.unpaid / EINAV.customers) });
 
 const TERMS: { name: string; what: string; amount: number; tone: string }[] = [
-  { name: "לקוחות ברוטו", what: "כל מה שהלקוחות חייבים לפי החשבוניות. נכס, יתרה בחובה.", amount: RONIT_TOTAL, tone: "bg-debit/10 text-debit" },
-  { name: "הפרשה להפסדי אשראי", what: "הכרית: החלק שצפוי לא להיגבות. יתרה בזכות, והיא מקטינה את הלקוחות.", amount: RONIT_LOSS, tone: "bg-credit/10 text-credit" },
-  { name: "לקוחות נטו", what: "מה שבאמת צפוי להיגבות: ברוטו פחות ההפרשה. זה מה שנכנס לסך הנכסים.", amount: RONIT_TOTAL - RONIT_LOSS, tone: "bg-accent-soft text-accent" },
+  { name: "לקוחות ברוטו", what: "כל מה שהלקוחות חייבים לפי החשבוניות. נכס, יתרה בחובה.", amount: EINAV_TOTAL, tone: "bg-debit/10 text-debit" },
+  { name: "הפרשה להפסדי אשראי", what: "הכרית: החלק שצפוי לא להיגבות. יתרה בזכות, והיא מקטינה את הלקוחות.", amount: EINAV_LOSS, tone: "bg-credit/10 text-credit" },
+  { name: "לקוחות נטו", what: "מה שבאמת צפוי להיגבות: ברוטו פחות ההפרשה. זה מה שנכנס לסך הנכסים.", amount: EINAV_TOTAL - EINAV_LOSS, tone: "bg-accent-soft text-accent" },
 ];
 
 // The terms' example: customers after the adjustments, one of them in trouble, and what the allowance card already holds.
-const TERMS_EG = { gross: 110_000, specific: 10_000, specificRate: 0.6, general: 0.05, inCard: 8_000 };
+const TERMS_EG = { gross: 130_000, specific: 12_000, specificRate: 0.5, general: 0.04, inCard: 9_000 };
 const termsSpecific = round2(TERMS_EG.specific * TERMS_EG.specificRate);
 const termsGeneral = round2((TERMS_EG.gross - TERMS_EG.specific) * TERMS_EG.general);
 const termsRequired = termsSpecific + termsGeneral;
@@ -360,7 +361,7 @@ const MORE_TERMS: { name: string; what: ReactNode; eg: ReactNode; aside?: ReactN
     aside: <>לא בנוסחה — כבר ירד מהלקוחות</>,
     eg: (
       <>
-        לקוח שחייב <strong className="text-fg">1,000</strong> פשט רגל: הלקוחות ברוטו וההפרשה קטנים שניהם ב-<strong className="text-fg">1,000</strong>.
+        לקוח שחייב <strong className="text-fg">1,500</strong> פשט רגל: הלקוחות ברוטו וההפרשה קטנים שניהם ב-<strong className="text-fg">1,500</strong>.
       </>
     ),
   },
@@ -410,10 +411,10 @@ const MORE_TERMS: { name: string; what: ReactNode; eg: ReactNode; aside?: ReactN
 ];
 
 // ---------------------------------------------------------------------------
-// Ronit's second year, entry by entry: the year's sales and collections, a debt written off, and the year end.
+// Einav's second year, entry by entry: the year's sales and collections, a debt written off, and the year end.
 
-const R2 = { sales: 500_000, collections: 479_000, written: 1_000, rate: 0.05, lowRate: 0.03 };
-const R2_OPEN: Balances = { [AR]: RONIT_TOTAL, [ALLOW]: -RONIT_LOSS };
+const R2 = { sales: 600_000, collections: 563_500, written: 1_500, rate: 0.05, lowRate: 0.03 };
+const R2_OPEN: Balances = { [AR]: EINAV_TOTAL, [ALLOW]: -EINAV_LOSS };
 const r2Line = (id: string, date: string, text: string, dr: string, cr: string, amount: number): Entry => ({
   id,
   date,
@@ -554,7 +555,7 @@ function Worked({ example, found }: { example: ReactNode; found: ReactNode }) {
   );
 }
 
-/** One of Ronit's entries: the story, the entries, what they did, and the cards they moved behind a button. */
+/** One of Einav's entries: the story, the entries, what they did, and the cards they moved behind a button. */
 function EventStep({
   story,
   at,
@@ -591,14 +592,14 @@ function EventStep({
   );
 }
 
-const ronitYear: Step[] = [
+const einavYear: Step[] = [
   {
     title: "1. מכירות וגבייה — רק כרטיס הלקוחות",
     body: (
       <EventStep
         story={
           <>
-            השנה השנייה של רונית. היא פותחת אותה עם לקוחות של <Money v={RONIT_TOTAL} /> והפרשה של <Money v={RONIT_LOSS} />. במהלך השנה מכרה בהקפה ב-
+            השנה השנייה של עינב. היא פותחת אותה עם לקוחות של <Money v={EINAV_TOTAL} /> והפרשה של <Money v={EINAV_LOSS} />. במהלך השנה מכרה בהקפה ב-
             <Money v={R2.sales} />, וגבתה <Money v={R2.collections} />.
           </>
         }
@@ -630,7 +631,7 @@ const ronitYear: Step[] = [
       <EventStep
         story={
           <>
-            ב-31.12 הלקוחות עומדים על <Money v={r2Gross} />, ורונית מעריכה ש-{pct(R2.rate)} מהם לא ייגבו. בכרטיס ההפרשה יש כבר <Money v={r2Before} /> — משלימים רק את
+            ב-31.12 הלקוחות עומדים על <Money v={r2Gross} />, ועינב מעריכה ש-{pct(R2.rate)} מהם לא ייגבו. בכרטיס ההפרשה יש כבר <Money v={r2Before} /> — משלימים רק את
             מה שחסר.
           </>
         }
@@ -664,7 +665,7 @@ const ronitYear: Step[] = [
       <EventStep
         story={
           <>
-            אותה שנה, אבל רונית מעריכה רק {pct(R2.lowRate)}: נדרשת <Money v={round2(r2Gross * R2.lowRate)} />, ובכרטיס כבר <Money v={r2Before} />. את העודף מבטלים — הפקודה
+            אותה שנה, אבל עינב מעריכה רק {pct(R2.lowRate)}: נדרשת <Money v={round2(r2Gross * R2.lowRate)} />, ובכרטיס כבר <Money v={r2Before} />. את העודף מבטלים — הפקודה
             הפוכה.
           </>
         }
@@ -819,28 +820,28 @@ function Formula({ title, when, formula, example, note }: { title: string; when:
 // ---------------------------------------------------------------------------
 // The examples, each a walkthrough.
 
-const alon: Step[] = [
-  ...walk("אלון", ALON, [k(ALLOW, ALON.ids.adj), k(AR, "סגירה"), k(ALLOW, "סגירה")], {
+const erez: Step[] = [
+  ...walk("ארז", EREZ, [k(ALLOW, EREZ.ids.adj), k(AR, "סגירה"), k(ALLOW, "סגירה")], {
     solve: (
       <ol className="list-inside list-decimal space-y-1">
         <li>
-          <strong>Y</strong> — לקוחות בסגירה (חובה): {f(ALON.openingAR)} + {f(ALON.creditSales!)} − {f(ALON.collections!)} − {f(ALON.writeOffs!)} ={" "}
+          <strong>Y</strong> — לקוחות בסגירה (חובה): {f(EREZ.openingAR)} + {f(EREZ.creditSales!)} − {f(EREZ.collections!)} − {f(EREZ.writeOffs!)} ={" "}
           <strong>
-            <Money v={ALON.result.gross} />
+            <Money v={EREZ.result.gross} />
           </strong>
           .
         </li>
         <li>
-          <strong>Z</strong> — ההפרשה בסגירה (זכות) היא הנדרשת: {f(ALON.result.gross)} × {pct(ALON.rate)} ={" "}
+          <strong>Z</strong> — ההפרשה בסגירה (זכות) היא הנדרשת: {f(EREZ.result.gross)} × {pct(EREZ.rate)} ={" "}
           <strong>
-            <Money v={ALON.required} />
+            <Money v={EREZ.required} />
           </strong>
           .
         </li>
         <li>
-          <strong>X</strong> — ההוצאה, כהפרש בכרטיס ההפרשה: {f(ALON.required)} = {f(ALON.openingAllowance)} − {f(ALON.writeOffs!)} + X, ולכן X ={" "}
+          <strong>X</strong> — ההוצאה, כהפרש בכרטיס ההפרשה: {f(EREZ.required)} = {f(EREZ.openingAllowance)} − {f(EREZ.writeOffs!)} + X, ולכן X ={" "}
           <strong>
-            <Money v={ALON.result.expense} />
+            <Money v={EREZ.result.expense} />
           </strong>
           .
         </li>
@@ -853,11 +854,11 @@ const alon: Step[] = [
     body: (
       <>
         <p>
-          אותה שנה, אבל ההנהלה מעריכה רק {pct(ALON.lowRate)}: נדרשת <Money v={ALON_LOW.required} />, ובכרטיס כבר יש <Money v={ALON_LOW.mid.allowance} />. העודף,{" "}
-          <Money v={-ALON_LOW.result.expense} />, מבוטל — והפעם הנעלם יושב בצד <strong>החובה</strong> של ההפרשה.
+          אותה שנה, אבל ההנהלה מעריכה רק {pct(EREZ.lowRate)}: נדרשת <Money v={EREZ_LOW.required} />, ובכרטיס כבר יש <Money v={EREZ_LOW.mid.allowance} />. העודף,{" "}
+          <Money v={-EREZ_LOW.result.expense} />, מבוטל — והפעם הנעלם יושב בצד <strong>החובה</strong> של ההפרשה.
         </p>
-        <TwoT accounts={ALON_LOW.result.accounts} entries={ALON_LOW.entries} unknown={[k(ALLOW, ALON_LOW.ids.adj)]} closing={closingNote(ALON_LOW.result.allowance)} />
-        <JE entry={ALON_LOW.adj} title={`${ALON_LOW.adj.id}. ${ALON_LOW.adj.text} · 31.12`} note={null} />
+        <TwoT accounts={EREZ_LOW.result.accounts} entries={EREZ_LOW.entries} unknown={[k(ALLOW, EREZ_LOW.ids.adj)]} closing={closingNote(EREZ_LOW.result.allowance)} />
+        <JE entry={EREZ_LOW.adj} title={`${EREZ_LOW.adj.id}. ${EREZ_LOW.adj.text} · 31.12`} note={null} />
       </>
     ),
   },
@@ -989,24 +990,24 @@ const scenarios: Step[] = [
   },
 ];
 
-const dor: Step[] = [
-  ...walk("דור", DOR, [k(ALLOW, DOR.ids.adj), k(AR, "סגירה"), k(ALLOW, "סגירה")], {
+const moria: Step[] = [
+  ...walk("מוריה", MORIA, [k(ALLOW, MORIA.ids.adj), k(AR, "סגירה"), k(ALLOW, "סגירה")], {
     solve: (
       <>
         <p>
-          לקוחות בסגירה: <Money v={DOR.result.gross} />. &quot;{DOR.specificName}&quot; עדיין חייב — הוא נשאר בכרטיס הלקוחות, ורק ההפרשה עליו מחושבת לחוד:
+          לקוחות בסגירה: <Money v={MORIA.result.gross} />. &quot;{MORIA.specificName}&quot; עדיין חייב — הוא נשאר בכרטיס הלקוחות, ורק ההפרשה עליו מחושבת לחוד:
         </p>
         <DataTable
           head={["", "חישוב", "סכום"]}
           rows={[
-            ["הפרשה ספציפית", `${f(DOR.specificDebt)} × ${pct(DOR.specificRate)}`, DOR.specific],
-            ["הפרשה כללית — נכון", `(${f(DOR.result.gross)} − ${f(DOR.specificDebt)}) × ${pct(DOR.generalRate)}`, DOR.general],
-            ["הפרשה כללית — שגוי (על כולם)", `${f(DOR.result.gross)} × ${pct(DOR.generalRate)}`, DOR.wrongGeneral],
+            ["הפרשה ספציפית", `${f(MORIA.specificDebt)} × ${pct(MORIA.specificRate)}`, MORIA.specific],
+            ["הפרשה כללית — נכון", `(${f(MORIA.result.gross)} − ${f(MORIA.specificDebt)}) × ${pct(MORIA.generalRate)}`, MORIA.general],
+            ["הפרשה כללית — שגוי (על כולם)", `${f(MORIA.result.gross)} × ${pct(MORIA.generalRate)}`, MORIA.wrongGeneral],
           ]}
-          foot={["יתרת סגירה נדרשת", "ספציפית + כללית נכונה", DOR.required]}
+          foot={["יתרת סגירה נדרשת", "ספציפית + כללית נכונה", MORIA.required]}
         />
         <p>
-          בכרטיס ההפרשה יש <Money v={DOR.mid.allowance} />; ההוצאה: <strong><Money v={DOR.result.expense} /></strong>.
+          בכרטיס ההפרשה יש <Money v={MORIA.mid.allowance} />; ההוצאה: <strong><Money v={MORIA.result.expense} /></strong>.
         </p>
       </>
     ),
@@ -1016,18 +1017,18 @@ const dor: Step[] = [
     body: (
       <>
         <p>
-          אז זה כבר לא אומדן — זה חוב אבוד. מוחקים את כל <Money v={DOR.specificDebt} />: הוא יוצא מהלקוחות ומההפרשה, ואין לו יותר הפרשה ספציפית. המחיקה גדולה מהיתרה
-          שבכרטיס, ולכן לפני ההתאמה ההפרשה בחובה: <Money v={-DOR.bankrupt.mid.allowance} />. נדרשת רק כללית: {f(DOR.bankrupt.result.gross)} × {pct(DOR.generalRate)} ={" "}
-          <Money v={DOR.bankrupt.required} />, וההוצאה <Money v={DOR.bankrupt.result.expense} />.
+          אז זה כבר לא אומדן — זה חוב אבוד. מוחקים את כל <Money v={MORIA.specificDebt} />: הוא יוצא מהלקוחות ומההפרשה, ואין לו יותר הפרשה ספציפית. המחיקה גדולה מהיתרה
+          שבכרטיס, ולכן לפני ההתאמה ההפרשה בחובה: <Money v={-MORIA.bankrupt.mid.allowance} />. נדרשת רק כללית: {f(MORIA.bankrupt.result.gross)} × {pct(MORIA.generalRate)} ={" "}
+          <Money v={MORIA.bankrupt.required} />, וההוצאה <Money v={MORIA.bankrupt.result.expense} />.
         </p>
-        <TwoT accounts={DOR.bankrupt.result.accounts} entries={DOR.bankrupt.entries} unknown={[k(ALLOW, DOR.bankrupt.ids.adj), k(ALLOW, "סגירה")]} closing={closingNote(DOR.bankrupt.result.allowance)} />
-        <Entries entries={[DOR.bankrupt.entries.find((x) => x.id === DOR.bankrupt.ids.writeOff)!, DOR.bankrupt.adj]} />
+        <TwoT accounts={MORIA.bankrupt.result.accounts} entries={MORIA.bankrupt.entries} unknown={[k(ALLOW, MORIA.bankrupt.ids.adj), k(ALLOW, "סגירה")]} closing={closingNote(MORIA.bankrupt.result.allowance)} />
+        <Entries entries={[MORIA.bankrupt.entries.find((x) => x.id === MORIA.bankrupt.ids.writeOff)!, MORIA.bankrupt.adj]} />
       </>
     ),
   },
 ];
 
-const eran: Step[] = walk("ערן", ERAN, [k(ALLOW, ERAN.adj.id), k(AR, "סגירה"), k(ALLOW, "סגירה")], {
+const nevo: Step[] = walk("נבו", NEVO, [k(ALLOW, NEVO.adj.id), k(AR, "סגירה"), k(ALLOW, "סגירה")], {
   given: (
     <p className="text-[14px] text-muted">
       הקניות באשראי לא נכנסות לאף כרטיס: הן מגדילות ספקים — התחייבות. החוב שחזר נכנס פעמיים לכרטיס הלקוחות (החזרה בחובה, גבייה בזכות) ופעם אחת להפרשה (בזכות).
@@ -1036,21 +1037,21 @@ const eran: Step[] = walk("ערן", ERAN, [k(ALLOW, ERAN.adj.id), k(AR, "סגי�
   solve: (
     <ol className="list-inside list-decimal space-y-1">
       <li>
-        לקוחות בסוף השנה: <Money v={ERAN.mid.gross} />; נדרשת × {pct(ERAN.rate)} = <Money v={ERAN.required} />.
+        לקוחות בסוף השנה: <Money v={NEVO.mid.gross} />; נדרשת × {pct(NEVO.rate)} = <Money v={NEVO.required} />.
       </li>
       <li>
-        בהפרשה לפני ההתאמה: {f(ERAN.openingAllowance)} − {f(ERAN.written)} + {f(ERAN.recovered)} = <Money v={ERAN.mid.allowance} />. ההוצאה:{" "}
-        <strong><Money v={ERAN.result.expense} /></strong>.
+        בהפרשה לפני ההתאמה: {f(NEVO.openingAllowance)} − {f(NEVO.written)} + {f(NEVO.recovered)} = <Money v={NEVO.mid.allowance} />. ההוצאה:{" "}
+        <strong><Money v={NEVO.result.expense} /></strong>.
       </li>
     </ol>
   ),
   all: true,
 });
 
-// The exam question: Gilboa Ltd.
-const g = GILBOA;
+// The exam question: Carmel Ltd.
+const g = CARMEL;
 const G_UNKNOWN = [k(ALLOW, g.adj.id), k(AR, "פתיחה"), k(ALLOW, "פתיחה"), k(AR, "סגירה"), k(ALLOW, "סגירה")];
-const gilboa: Step[] = [
+const carmel: Step[] = [
   {
     title: "כללים 1–2: שני הכרטיסים, ומה שלא שייך אליהם",
     body: (
@@ -1150,14 +1151,14 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
       <>
         <section className="space-y-3 rounded-2xl border-2 border-accent/30 bg-accent-soft/40 p-4">
           <p className="flex items-center gap-2 text-[16px] font-bold text-fg">
-            <Store className="h-5 w-5 shrink-0 text-accent" aria-hidden /> דמיינו: המכולת של רונית
+            <Store className="h-5 w-5 shrink-0 text-accent" aria-hidden /> דמיינו: המכולת של עינב
           </p>
           <p className="text-[15px]">
-            רונית מחזיקה מכולת שכונתית, ולקוחות קבועים קונים אצלה ״על החשבון״: לוקחים עכשיו ומשלמים בסוף החודש. כל קנייה כזו היא כותבת בפנקס ההקפה. השנה{" "}
-            {RONIT.customers} לקוחות קנו כך, ובסך הכול מגיעים לה <Money v={RONIT_TOTAL} />.
+            עינב מחזיקה מכולת שכונתית, ולקוחות קבועים קונים אצלה ״על החשבון״: לוקחים עכשיו ומשלמים בסוף החודש. כל קנייה כזו היא כותבת בפנקס ההקפה. השנה{" "}
+            {EINAV.customers} לקוחות קנו כך, ובסך הכול מגיעים לה <Money v={EINAV_TOTAL} />.
           </p>
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
-            <figure className="overflow-hidden rounded-xl border border-line bg-surface" aria-label="פנקס ההקפה של רונית">
+            <figure className="overflow-hidden rounded-xl border border-line bg-surface" aria-label="פנקס ההקפה של עינב">
               <figcaption className="border-b-2 border-fg/70 bg-surface-2/60 px-3 py-2 text-sm font-bold text-fg">פנקס ההקפה</figcaption>
               <ul className="divide-y divide-dashed divide-line text-[14px]">
                 {PINKAS.map(([name, amount]) => (
@@ -1169,25 +1170,32 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
                 ))}
               </ul>
               <p className="flex items-center justify-between border-t-2 border-fg/70 px-3 py-2 text-[14px] font-bold text-fg">
-                <span>סך הכול מגיע לרונית</span>
-                <Money v={RONIT_TOTAL} plain />
+                <span>סך הכול מגיע לעינב</span>
+                <Money v={EINAV_TOTAL} plain />
               </p>
             </figure>
             <p className="self-center rounded-xl border-2 border-amber-500/50 bg-amber-500/[0.1] p-3 text-[14px] leading-relaxed text-fg">
-              <strong>מניסיון של שנים:</strong> בערך {pct(RONIT.unpaid / RONIT.customers)} מהסכום לא נגבה אף פעם — כ-<Money v={RONIT_LOSS} />. אבל ליד אף שם בפנקס לא כתוב{" "}
-              <strong>מי</strong>. רונית יודעת רק <strong>כמה</strong>.
+              <strong>מניסיון של שנים:</strong> בערך {pct(EINAV.unpaid / EINAV.customers)} מהסכום לא נגבה אף פעם — כ-<Money v={EINAV_LOSS} />. אבל ליד אף שם בפנקס לא כתוב{" "}
+              <strong>מי</strong>. עינב יודעת רק <strong>כמה</strong>.
             </p>
           </div>
         </section>
         <h3 className="text-lg font-semibold text-fg">אז כמה באמת יש לה?</h3>
         <p>
-          לא <Money v={RONIT_TOTAL} />, אלא בערך <Money v={RONIT_TOTAL - RONIT_LOSS} />. את ה-<Money v={RONIT_LOSS} /> שכנראה לא יגיעו היא רושמת כבר עכשיו כ״כרית״ בצד —
+          לא <Money v={EINAV_TOTAL} />, אלא בערך <Money v={EINAV_TOTAL - EINAV_LOSS} />. את ה-<Money v={EINAV_LOSS} /> שכנראה לא יגיעו היא רושמת כבר עכשיו כ״כרית״ בצד —
           זו <strong>ההפרשה להפסדי אשראי</strong>. ההפסד שייך לשנה שבה נעשו המכירות, ולכן נרשם בה — גם אם הלקוח יפשוט רגל רק בשנה הבאה.
         </p>
         <KeyCard>
           את הלקוחות לא מוחקים — הרי לא יודעים מי לא ישלם. רושמים לידם חשבון נפרד, כרית, שמקטין אותם. וכשמתברר שלקוח מסוים לא ישלם — מורידים אותו מהלקוחות ומהכרית
           יחד.
         </KeyCard>
+        <MiniQuiz
+          prefix="basics"
+          chapter={"cl-idea"}
+          items={[
+            { q: "למה רושמים הוצאת הפסדי אשראי עוד לפני שיודעים מי לא ישלם?", options: ["כי ההפסד שייך לשנה שבה נעשו המכירות", "כי כך משלמים פחות מס", "כי הלקוחות כבר פשטו רגל", "לא רושמים — מחכים לדעת מי"], answer: 0, why: "עקרון ההקבלה: המכירות באשראי של השנה יצרו גם את הסיכון. לכן ההפסד הצפוי נרשם באותה שנה — כאומדן." },
+          ]}
+        />
       </>
     ),
   },
@@ -1211,19 +1219,26 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
         </ul>
         <p className="rounded-xl bg-surface-2/70 py-3.5 text-center text-xl font-semibold text-fg [column-span:all]">לקוחות ברוטו − הפרשה = לקוחות נטו</p>
         <div className="space-y-2 [column-span:all]">
-          <p className="text-[15px] font-semibold text-fg">אצל רונית: מה שמגיע לה, ומה שבאמת צפוי להגיע</p>
-          <div className="flex overflow-hidden rounded-lg text-center text-[13.5px] font-semibold" role="img" aria-label={`לקוחות ברוטו ${f(RONIT_TOTAL)}: נטו ${f(RONIT_TOTAL - RONIT_LOSS)} והפרשה ${f(RONIT_LOSS)}`}>
-            <span className="num bg-accent py-2.5 text-accent-fg" style={{ flex: RONIT_TOTAL - RONIT_LOSS }}>
-              לקוחות נטו · <Money v={RONIT_TOTAL - RONIT_LOSS} plain />
+          <p className="text-[15px] font-semibold text-fg">אצל עינב: מה שמגיע לה, ומה שבאמת צפוי להגיע</p>
+          <div className="flex overflow-hidden rounded-lg text-center text-[13.5px] font-semibold" role="img" aria-label={`לקוחות ברוטו ${f(EINAV_TOTAL)}: נטו ${f(EINAV_TOTAL - EINAV_LOSS)} והפרשה ${f(EINAV_LOSS)}`}>
+            <span className="num bg-accent py-2.5 text-accent-fg" style={{ flex: EINAV_TOTAL - EINAV_LOSS }}>
+              לקוחות נטו · <Money v={EINAV_TOTAL - EINAV_LOSS} plain />
             </span>
-            <span className="num bg-credit/20 px-2 py-2.5 text-credit" style={{ flex: RONIT_LOSS * 3 }}>
-              הפרשה · <Money v={RONIT_LOSS} plain />
+            <span className="num bg-credit/20 px-2 py-2.5 text-credit" style={{ flex: EINAV_LOSS * 3 }}>
+              הפרשה · <Money v={EINAV_LOSS} plain />
             </span>
           </div>
           <p className="num text-center text-[13.5px] text-muted">
-            כל הפס — <Money v={RONIT_TOTAL} plain />: הלקוחות ברוטו. ההפרשה לא מוחקת אף לקוח — היא רק אומרת איזה חלק מהם כנראה לא יגיע.
+            כל הפס — <Money v={EINAV_TOTAL} plain />: הלקוחות ברוטו. ההפרשה לא מוחקת אף לקוח — היא רק אומרת איזה חלק מהם כנראה לא יגיע.
           </p>
         </div>
+        <MiniQuiz
+          prefix="basics"
+          chapter={"cl-net"}
+          items={[
+            { q: "לקוחות ברוטו 200,000 ₪, הפרשה 8,000 ₪. כמה יוצג במאזן כלקוחות נטו?", options: ["192,000", "200,000", "208,000", "8,000"], answer: 0, why: "נטו = ברוטו − הפרשה: 200,000 − 8,000 = 192,000." },
+          ]}
+        />
       </>
     ),
   },
@@ -1234,14 +1249,21 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
       <>
         <h3 className="text-lg font-semibold text-fg">הפקודה: הוצאה מול כרית</h3>
         <p>
-          בסוף השנה רונית רושמת את ההפרשה. בחובה — <strong>הוצאות הפסדי אשראי</strong>, ברווח והפסד של השנה. בזכות — ההפרשה, שיושבת במאזן ליד הלקוחות ומקטינה אותם.
+          בסוף השנה עינב רושמת את ההפרשה. בחובה — <strong>הוצאות הפסדי אשראי</strong>, ברווח והפסד של השנה. בזכות — ההפרשה, שיושבת במאזן ליד הלקוחות ומקטינה אותם.
           ההפסד שייך לשנה שבה נעשו המכירות, גם אם הלקוח יפשוט רגל רק בשנה הבאה.
         </p>
-        <Posted entries={RONIT_YEAR.entries} at={1} title="ההפרשה של רונית · 31.12" note={null} />
-        <NetView gross={RONIT_YEAR.result.gross} allowance={RONIT_YEAR.result.allowance} caption="המאזן של רונית — סעיף הלקוחות" />
+        <Posted entries={EINAV_YEAR.entries} at={1} title="ההפרשה של עינב · 31.12" note={null} />
+        <NetView gross={EINAV_YEAR.result.gross} allowance={EINAV_YEAR.result.allowance} caption="המאזן של עינב — סעיף הלקוחות" />
         <p className="text-[14.5px] text-muted">
-          הלקוחות נשארים <Money v={RONIT_TOTAL} /> בכרטיס שלהם. במאזן מוצגים ליד ההפרשה, ונכנסים לסך הנכסים בנטו: <Money v={RONIT_TOTAL - RONIT_LOSS} />.
+          הלקוחות נשארים <Money v={EINAV_TOTAL} /> בכרטיס שלהם. במאזן מוצגים ליד ההפרשה, ונכנסים לסך הנכסים בנטו: <Money v={EINAV_TOTAL - EINAV_LOSS} />.
         </p>
+        <MiniQuiz
+          prefix="basics"
+          chapter={"cl-allowance"}
+          items={[
+            { q: "״הפרשה להפסדי אשראי חזויים״ — באיזה צד היתרה שלה, ולמה?", options: ["זכות — היא מקטינה נכס", "חובה — היא נכס", "חובה — היא הוצאה", "זכות — היא הכנסה"], answer: 0, why: "ההפרשה יושבת מול הלקוחות ומקטינה אותם. נכס בניכוי — היתרה שלו בזכות." },
+          ]}
+        />
       </>
     ),
   },
@@ -1283,15 +1305,22 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
             </>
           }
         />
+        <MiniQuiz
+          prefix="basics"
+          chapter={"cl-terms"}
+          items={[
+            { q: "לקוח שחייב 2,000 ₪ פשט רגל, והחוב נמחק כנגד ההפרשה. מה קורה ללקוחות נטו?", options: ["לא משתנים", "קטנים ב-2,000", "גדלים ב-2,000", "קטנים ב-4,000"], answer: 0, why: "גם הלקוחות ברוטו וגם ההפרשה קטנים ב-2,000 — וההפרש ביניהם נשאר אותו דבר." },
+          ]}
+        />
       </>
     ),
   },
 
   "cl-entries": {
-    lead: "שנה שלמה של רונית, פקודה אחר פקודה: מה כל אחת עושה ללקוחות, להפרשה ולרווח — וכל שאלה בנויה מהן.",
+    lead: "שנה שלמה של עינב, פקודה אחר פקודה: מה כל אחת עושה ללקוחות, להפרשה ולרווח — וכל שאלה בנויה מהן.",
     body: (
       <>
-        <Stepper label="רונית · 2026" steps={ronitYear} tool={<FormulaButton />} />
+        <Stepper label="עינב · 2026" steps={einavYear} tool={<FormulaButton />} />
       </>
     ),
   },
@@ -1389,15 +1418,15 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <Given
-          title='נתון: חברת אלון בע"מ, 2025'
+          title='נתון: חברת ארז בע"מ, 2025'
           asks={<>הוצאות הפסדי האשראי לשנה, פקודות היומן, וסעיף הלקוחות במאזן.</>}
         >
           <p>
-            ב-1.1.2025: לקוחות <Money v={ALON.openingAR} />, הפרשה <Money v={ALON.openingAllowance} />. במהלך השנה: מכירות באשראי <Money v={ALON.creditSales!} />, גבייה{" "}
-            <Money v={ALON.collections!} />, ונמחק חוב אבוד של <Money v={ALON.writeOffs!} />. בסוף השנה ההנהלה מעריכה ש-{pct(ALON.rate)} מהלקוחות לא ייגבו.
+            ב-1.1.2025: לקוחות <Money v={EREZ.openingAR} />, הפרשה <Money v={EREZ.openingAllowance} />. במהלך השנה: מכירות באשראי <Money v={EREZ.creditSales!} />, גבייה{" "}
+            <Money v={EREZ.collections!} />, ונמחק חוב אבוד של <Money v={EREZ.writeOffs!} />. בסוף השנה ההנהלה מעריכה ש-{pct(EREZ.rate)} מהלקוחות לא ייגבו.
           </p>
         </Given>
-        <Stepper label="אלון · 2025" steps={alon} tool={<FormulaButton />} />
+        <Stepper label="ארז · 2025" steps={erez} tool={<FormulaButton />} />
       </>
     ),
   },
@@ -1415,7 +1444,7 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <Given
-          title='נתון: חברת דור בע"מ, 2025 — לקוח אחד בקשיים'
+          title='נתון: חברת מוריה בע"מ, 2025 — לקוח אחד בקשיים'
           asks={<>ההפרשה הנדרשת ופקודת ההתאמה ב-31.12.</>}
         >
           <p>
@@ -1423,12 +1452,12 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
             אחרת ההפסד שלו נספר פעמיים.
           </p>
           <p>
-            ב-1.1: לקוחות <Money v={DOR.openingAR} />, הפרשה <Money v={DOR.openingAllowance} />. מכירות באשראי <Money v={DOR.creditSales!} />, גבייה{" "}
-            <Money v={DOR.collections!} />. ב-31.12 &quot;{DOR.specificName}&quot; חייב <Money v={DOR.specificDebt} /> ונמצא בקשיים — {pct(DOR.specificRate)} מהחוב לא ייגבה.
-            על שאר הלקוחות {pct(DOR.generalRate)}.
+            ב-1.1: לקוחות <Money v={MORIA.openingAR} />, הפרשה <Money v={MORIA.openingAllowance} />. מכירות באשראי <Money v={MORIA.creditSales!} />, גבייה{" "}
+            <Money v={MORIA.collections!} />. ב-31.12 &quot;{MORIA.specificName}&quot; חייב <Money v={MORIA.specificDebt} /> ונמצא בקשיים — {pct(MORIA.specificRate)} מהחוב לא ייגבה.
+            על שאר הלקוחות {pct(MORIA.generalRate)}.
           </p>
         </Given>
-        <Stepper label="דור · 2025" steps={dor} tool={<FormulaButton />} />
+        <Stepper label="מוריה · 2025" steps={moria} tool={<FormulaButton />} />
       </>
     ),
   },
@@ -1437,16 +1466,16 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <Given
-          title='נתון: חברת ערן בע"מ, 2025 — עם נתון שלא שייך'
+          title='נתון: חברת נבו בע"מ, 2025 — עם נתון שלא שייך'
           asks={<>הוצאות הפסדי האשראי, פקודות היומן וסעיף הלקוחות במאזן.</>}
         >
           <p>
-            ב-1.1.2025: לקוחות <Money v={ERAN.openingGross} />, הפרשה <Money v={ERAN.openingAllowance} />. במהלך השנה: מכירות באשראי <Money v={ERAN.creditSales} />, גבייה{" "}
-            <Money v={ERAN.collections} />, קניות באשראי <Money v={ERAN.creditPurchases} />, מחיקת חוב אבוד <Money v={ERAN.written} />, וגבייה של חוב שנמחק ב-2024 בסך{" "}
-            <Money v={ERAN.recovered} />. בסוף השנה מפרישים {pct(ERAN.rate)} מהלקוחות.
+            ב-1.1.2025: לקוחות <Money v={NEVO.openingGross} />, הפרשה <Money v={NEVO.openingAllowance} />. במהלך השנה: מכירות באשראי <Money v={NEVO.creditSales} />, גבייה{" "}
+            <Money v={NEVO.collections} />, קניות באשראי <Money v={NEVO.creditPurchases} />, מחיקת חוב אבוד <Money v={NEVO.written} />, וגבייה של חוב שנמחק ב-2024 בסך{" "}
+            <Money v={NEVO.recovered} />. בסוף השנה מפרישים {pct(NEVO.rate)} מהלקוחות.
           </p>
         </Given>
-        <Stepper label="ערן · 2025" steps={eran} tool={<FormulaButton />} />
+        <Stepper label="נבו · 2025" steps={nevo} tool={<FormulaButton />} />
       </>
     ),
   },
@@ -1455,7 +1484,7 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <Given
-          title='נתון: חברת גלבוע בע"מ, 2025'
+          title='נתון: חברת כרמל בע"מ, 2025'
           asks={<>(1) יתרות הפתיחה של הלקוחות וההפרשה; (2) פקודות היומן; (3) הוצאות הפסדי האשראי; (4) סעיף הלקוחות במאזן ליום 31.12.2025.</>}
         >
           <ul className="grid list-inside list-disc gap-x-6 gap-y-1 lg:grid-cols-2">
@@ -1479,7 +1508,7 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
             </li>
           </ul>
         </Given>
-        <Stepper label="גלבוע · לפי שלושת הכללים" steps={gilboa} tool={<FormulaButton />} />
+        <Stepper label="כרמל · לפי שלושת הכללים" steps={carmel} tool={<FormulaButton />} />
       </>
     ),
   },
