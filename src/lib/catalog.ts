@@ -8,6 +8,10 @@
  */
 
 import type { Tier } from "./pricing";
+import { LESSON_N as IAS19_LESSON_N } from "./study/ias19/shared";
+
+/** The employee-benefits course's size, from its lessons' numbering (a test checks it against the lessons) — so the menu never ships the lessons themselves. */
+const IAS19_LESSON_COUNT = Object.keys(IAS19_LESSON_N).length;
 
 export type CatalogLink = { href: string; label: string; description?: string };
 /** A topic's tool; `calculator` lists a tool inside a lesson among the calculators too (other tools of the page always are). */
@@ -93,7 +97,7 @@ export const LEARNING_PATH: Stage[] = [
         title: "רכוש קבוע",
         standard: "IAS 16",
         href: "/basics/ias16",
-        description: "12 שיעורים אינטראקטיביים, מ״מה הופך פריט לרכוש קבוע״ דרך עלות, שיטות פחת ופחת לפי רכיבים, מכירה, שיפוצים, החלפה והערכה מחדש — ועד שתי שאלות ברמת מבחן, עם תרגול בכל שיעור ומחשבון לכל סוגיה.",
+        description: "14 שיעורים אינטראקטיביים, מ״מה הופך פריט לרכוש קבוע״ דרך עלות, שיטות פחת ופחת לפי רכיבים, מכירה, שיפוצים, החלפה והערכה מחדש — ועד שלוש שאלות ברמת מבחן, עם תרגול בכל שיעור ומחשבון לכל סוגיה.",
         covers: ["מהו רכוש קבוע", "עלות הנכס", "שיטות פחת", "רכיבים", "מכירה", "שיפוצים", "החלפה", "הערכה מחדש", "שאלות מבחן"],
         tools: [
           { href: "/study/ias16-methods?screen=depreciation", label: "סימולטור פחת", calculator: true },
@@ -103,6 +107,30 @@ export const LEARNING_PATH: Stage[] = [
         ],
         tier: "courses",
         preview: ["ias16-intro"],
+      },
+      {
+        id: "ias19",
+        format: "lessons",
+        title: "הטבות עובד",
+        standard: "IAS 19",
+        href: "/basics/ias19",
+        description: `${IAS19_LESSON_COUNT} שיעורים אינטראקטיביים, מארבעת סוגי ההטבות וארגז הכלים — ערך נוכחי ומעגל התחייבות — דרך הטבות לזמן קצר, הפקדה מוגדרת והטבה מוגדרת לכל אורכה: מדידה, שיוך לשנים, שינוי תנאים, נכסי תכנית והצגה — ועד שתי שאלות ברמת מבחן, עם תרגול בכל שיעור.`,
+        covers: [
+          "ארבעת סוגי ההטבות",
+          "ערך נוכחי וריבית חלקית",
+          "הטבות לזמן קצר",
+          "הפקדה מוגדרת מול הטבה מוגדרת",
+          "מדידה בחמישה צעדים",
+          "שיוך לשנות שירות",
+          "מעגל ההתחייבות",
+          "שירות עבר וסילוק",
+          "נכסי תכנית ותקרה",
+          "הטבות ארוכות ופיטורין",
+          "שאלות מבחן",
+        ],
+        tools: [],
+        tier: "courses",
+        preview: ["ias19-map"],
       },
     ],
   },

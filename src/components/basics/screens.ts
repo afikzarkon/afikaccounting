@@ -11,6 +11,7 @@ import { IAS16_COURSE_SCREENS } from "./ias16-course";
 import { IAS16_COURSE_MORE_SCREENS } from "./ias16-course-more";
 import { IAS16_COURSE_NEW_SCREENS } from "./ias16-course-new";
 import { IAS16_SCREENS } from "./ias16-screens";
+import { IAS19_BASICS_SCREENS } from "./ias19-course";
 import { INTRO_SCREENS } from "./intro";
 import { INVENTORY_SCREENS } from "./inventory";
 import { COURSE_SCREENS } from "./inventory-course";
@@ -21,7 +22,7 @@ import { LAB_SCREENS } from "./lab-chapter";
 import { REVIEW_SCREENS } from "./review";
 import { YEAR_SCREENS } from "./year";
 
-/** Every concept screen of every course, by id: the basics course, then inventory, then fixed assets. */
+/** Every concept screen of every course, by id: the basics course, then inventory, then fixed assets, then employee benefits. */
 const SCREENS: Record<string, ScreenContent> = {
   ...INTRO_SCREENS,
   ...ENTRIES_SCREENS,
@@ -42,6 +43,7 @@ const SCREENS: Record<string, ScreenContent> = {
   ...IAS16_COURSE_SCREENS,
   ...IAS16_COURSE_MORE_SCREENS,
   ...IAS16_COURSE_NEW_SCREENS,
+  ...IAS19_BASICS_SCREENS,
 };
 
 /** A lesson's concept screens, in its order. A screen listed in the lesson but missing here fails the build. */
