@@ -77,15 +77,18 @@ export async function getExamContent(exam: ExamMeta, access?: Access): Promise<E
   const supabase = await createClient();
   const { data } = await supabase.from("exam_solutions").select("question, steps, video, video_seconds, solution_path").eq("exam_id", exam.id).maybeSingle();
   // Allowed, and no solution written yet: an empty one (the paper may still be there).
-  if (!data) return { question: [], steps: [], video: null, videoSeconds: 0, hasSolutionFile: false };
+  if (!data) return { question: [], steps: [], video: null, videoSeconds: 0, hasSolutionFile: false, solutionIsPdf: false };
   return {
     question: parseBlocks(data.question),
     steps: parseSteps(data.steps),
     video: data.video || null,
     videoSeconds: Math.max(0, Number(data.video_seconds) || 0),
     hasSolutionFile: !!data.solution_path,
+    solutionIsPdf: isPdf(data.solution_path),
   };
 }
+
+const isPdf = (path: string | null | undefined) => !!path && /\.pdf$/i.test(path);
 
 export type ExamFile = "question" | "solution" | "video";
 
@@ -113,6 +116,8 @@ export async function signedExamFile(id: string, which: ExamFile, download = fal
     if (which === "video" && path && /^https?:\/\//.test(path)) return path;
   }
   if (!path) return null;
+  // PDFs are view-only: no download link is ever signed for one.
+  if (isPdf(path)) download = false;
   const { data } = await supabase.storage.from("exams").createSignedUrl(path, SIGNED_SECONDS[which], download ? { download: true } : undefined);
   return data?.signedUrl ?? null;
 }

@@ -22,3 +22,6 @@ export const ACCESS_PREVIEW_TIER = process.env.ACCESS_PREVIEW_TIER ?? "";
 
 /** Auth cookie flags. Not HttpOnly: the admin's browser client reads the session for direct uploads. Secure whenever the site is served over HTTPS. */
 export const AUTH_COOKIE_OPTIONS = { sameSite: "lax", secure: SITE_URL.startsWith("https://") } as const;
+
+/** Show "Continue with Google" once the Google provider is enabled in Supabase (Authentication → Providers). */
+export const GOOGLE_AUTH_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_AUTH === "1";

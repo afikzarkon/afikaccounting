@@ -4,7 +4,7 @@ import { GrantTier, RevokeTier } from "@/components/admin/grant-tier";
 import { AdminHeader, AdminSkeleton, Panel, SetupRequired } from "@/components/admin/ui";
 import { TierBadge } from "@/components/pricing/tier-badge";
 import { requireAdmin } from "@/lib/auth/dal";
-import { listSubscriptions, unlessSetupRequired } from "@/lib/data/admin";
+import { listDeviceAlerts, listSubscriptions, unlessSetupRequired } from "@/lib/data/admin";
 import { shortDate } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "מנויים" };
@@ -27,7 +27,7 @@ export default function AdminSubscriptionsPage() {
 
 async function Subscriptions() {
   await requireAdmin("/admin/subscriptions");
-  const data = await unlessSetupRequired(listSubscriptions());
+  const [data, alerts] = await Promise.all([unlessSetupRequired(listSubscriptions()), unlessSetupRequired(listDeviceAlerts())]);
   if (!data) return <SetupRequired />;
 
   return (
@@ -60,6 +60,37 @@ async function Subscriptions() {
           </ul>
         ) : (
           <p className="text-sm text-muted">עדיין אין מסלולים. הענקה ידנית מופיעה כאן מיד.</p>
+        )}
+      </Panel>
+
+      <Panel
+        title="חשבונות בשימוש חשוד"
+        description="ב-30 הימים האחרונים: חשבון שנכנסו אליו משלושה מכשירים או יותר, או משתי מדינות. ייתכן שהוא משותף או נמכר. אפשר להיות מחוברים ממכשיר אחד בכל פעם; כניסה חדשה מנתקת את הקודמת."
+      >
+        {alerts === null ? (
+          <p className="text-sm text-muted">כדי לראות את הרשימה, יש להריץ את ה-migration של החיבור היחיד (20261105000000_single_session.sql).</p>
+        ) : alerts.length ? (
+          <ul className="divide-y divide-line">
+            {alerts.map((a) => (
+              <li key={a.userId} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-3 text-sm">
+                <span className="min-w-0 flex-[1_1_14rem]">
+                  <span className="block font-medium text-fg" dir="ltr">
+                    {a.email}
+                  </span>
+                  <span className="block text-xs text-muted">{a.fullName || "ללא שם"}</span>
+                </span>
+                <span className="text-xs font-medium text-danger">
+                  {a.devices} מכשירים · {a.countries || 1} {a.countries > 1 ? "מדינות" : "מדינה"} · {a.signIns} כניסות
+                </span>
+                <span className="w-full text-xs text-muted">
+                  {a.labels.join(" · ")}
+                  {a.countryList.length ? ` · ${a.countryList.join(", ")}` : ""} · אחרונה {shortDate(a.lastAt)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted">אין חשבונות חשודים.</p>
         )}
       </Panel>
 

@@ -241,3 +241,41 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---- Leak deterrents on course and exam pages (components/layout/content-guard) ---- */
+html[data-guard] main {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+html[data-guard] main :is(input, textarea, select, [contenteditable="true"]) {
+  -webkit-user-select: text;
+  user-select: text;
+}
+/* The window is in the background (a snipping tool, another app): nothing clear to capture. */
+html[data-guard="hidden"] main {
+  filter: blur(18px);
+}
+html[data-guard] main img {
+  -webkit-user-drag: none;
+}
+.content-watermark {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  background-repeat: repeat;
+}
+@media print {
+  /* Only the cheat sheets their own buttons print (printing-sheet, printing-inv) leave the page. */
+  html[data-guard]:not(.printing-sheet):not(.printing-inv) body {
+    visibility: hidden;
+  }
+  html[data-guard]:not(.printing-sheet):not(.printing-inv) body::after {
+    content: "הדפסת התוכן אינה זמינה.";
+    visibility: visible;
+    position: absolute;
+    inset: 2rem 2rem auto;
+    font-size: 18px;
+  }
+}

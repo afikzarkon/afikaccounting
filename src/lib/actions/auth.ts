@@ -1,7 +1,9 @@
 "use server";
 
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getCurrentUser, safeNext } from "@/lib/auth/dal";
+import { DEVICE_COOKIE, claimNewSession, signInContext } from "@/lib/auth/session";
 import { SITE_URL, isSupabaseConfigured } from "@/lib/env";
 import { isTier } from "@/lib/pricing";
 import { maskEmail, securityLog } from "@/lib/security-log";
@@ -13,6 +15,11 @@ const NOT_CONFIGURED: FormState = {
 };
 
 const field = (fd: FormData, name: string) => String(fd.get(name) ?? "").trim();
+
+/** This request's device and place, for the new session's sign-in record. */
+async function context() {
+  return signInContext(await headers(), (await cookies()).get(DEVICE_COOKIE)?.value);
+}
 
 export async function signUp(_prev: FormState, fd: FormData): Promise<FormState> {
   if (!isSupabaseConfigured) return NOT_CONFIGURED;
@@ -46,6 +53,7 @@ export async function signUp(_prev: FormState, fd: FormData): Promise<FormState>
   if (error) return { error: error.message, values };
 
   // With email confirmation off, Supabase returns a session immediately.
+  if (data.session) await claimNewSession(data.session.access_token, await context());
   if (data.session) redirect(next ? `${next}${next.includes("?") ? "&" : "?"}welcome=1` : "/dashboard?welcome=1");
   return { ok: true, message: `שלחנו קישור אימות לכתובת ${email}. יש לפתוח אותו כדי להפעיל את החשבון.` };
 }
@@ -59,7 +67,7 @@ export async function signIn(_prev: FormState, fd: FormData): Promise<FormState>
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
     securityLog("login_failed", { email: maskEmail(email), code: error.code ?? error.status });
     // Do not reveal whether the account exists.
@@ -69,6 +77,8 @@ export async function signIn(_prev: FormState, fd: FormData): Promise<FormState>
       values: { email },
     };
   }
+  // This sign-in takes the account: any other device is signed out.
+  await claimNewSession(data.session.access_token, await context());
   redirect(safeNext(fd.get("next")));
 }
 

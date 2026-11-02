@@ -190,6 +190,27 @@ export async function listSubscriptions(): Promise<AdminSubscriptions> {
   };
 }
 
+// ---- shared accounts ------------------------------------------------------------
+
+export type DeviceAlert = {
+  userId: string;
+  email: string;
+  fullName: string;
+  devices: number;
+  countries: number;
+  signIns: number;
+  lastAt: string;
+  labels: string[];
+  countryList: string[];
+};
+
+/** Accounts signed in from three or more devices, or two countries, in the window: possibly shared or resold. */
+export async function listDeviceAlerts(days = 30): Promise<DeviceAlert[]> {
+  const supabase = await createClient();
+  const rows = check<DeviceAlert[]>(await supabase.rpc("admin_device_alerts", { p_days: days }));
+  return rows.map((r) => ({ ...r, devices: Number(r.devices), countries: Number(r.countries), signIns: Number(r.signIns), labels: r.labels ?? [], countryList: r.countryList ?? [] }));
+}
+
 // ---- exams -------------------------------------------------------------------
 
 export type AdminExamRow = ExamMeta & { hasSteps: boolean; updatedAt: string };

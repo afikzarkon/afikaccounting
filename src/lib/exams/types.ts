@@ -45,6 +45,8 @@ export type ExamContent = {
   video: string | null;
   videoSeconds: number;
   hasSolutionFile: boolean;
+  /** The solution file is a PDF: shown on the page, never downloaded. Other formats (a spreadsheet) still download. */
+  solutionIsPdf: boolean;
 };
 
 export type ExamFilters = { topic?: string; subject?: string; year?: string };

@@ -98,11 +98,6 @@ function Solved({ exam, content: c }: { exam: ExamMeta; content: ExamContent }) 
           <h2 id="question" className="flex flex-1 items-center gap-2 text-2xl font-semibold tracking-tight text-fg">
             <FileText className="h-6 w-6 text-accent" aria-hidden /> השאלה
           </h2>
-          {exam.hasPaper && (
-            <ButtonLink href={file("question", true)} variant="secondary" size="sm" prefetch={false}>
-              <Download className="h-3.5 w-3.5" aria-hidden /> הורדת השאלון
-            </ButtonLink>
-          )}
         </div>
         {c.question.length > 0 && (
           <div className="card mt-4 p-4 sm:p-6">
@@ -110,7 +105,7 @@ function Solved({ exam, content: c }: { exam: ExamMeta; content: ExamContent }) 
           </div>
         )}
         {exam.hasPaper && (
-          <iframe src={file("question")} title={`השאלון: ${exam.title}`} className="mt-4 h-[75vh] w-full rounded-2xl border border-line bg-surface" />
+          <PdfFrame src={file("question")} title={`השאלון: ${exam.title}`} />
         )}
         {!exam.hasPaper && !c.question.length && <p className="mt-3 text-sm text-muted">השאלה עוד לא הועלתה.</p>}
       </section>
@@ -134,12 +129,13 @@ function Solved({ exam, content: c }: { exam: ExamMeta; content: ExamContent }) 
           <h2 id="solution" className="flex-1 text-2xl font-semibold tracking-tight text-fg">
             הפתרון, מאפס
           </h2>
-          {c.hasSolutionFile && (
+          {c.hasSolutionFile && !c.solutionIsPdf && (
             <ButtonLink href={file("solution", true)} variant="secondary" size="sm" prefetch={false}>
               <Download className="h-3.5 w-3.5" aria-hidden /> הפתרון כקובץ
             </ButtonLink>
           )}
         </div>
+        {c.hasSolutionFile && c.solutionIsPdf && <PdfFrame src={file("solution")} title={`הפתרון: ${exam.title}`} />}
         <div className="mt-4">
           {c.steps.length ? (
             <SolutionSteps
@@ -159,12 +155,17 @@ function Solved({ exam, content: c }: { exam: ExamMeta; content: ExamContent }) 
               }))}
             />
           ) : (
-            <p className="text-sm text-muted">הפתרון המפורט עוד לא נכתב{c.hasSolutionFile ? " — בינתיים הוא זמין כקובץ." : "."}</p>
+            <p className="text-sm text-muted">הפתרון המפורט עוד לא נכתב{c.hasSolutionFile ? (c.solutionIsPdf ? " — בינתיים הוא מוצג כקובץ למעלה." : " — בינתיים הוא זמין כקובץ.") : "."}</p>
           )}
         </div>
       </section>
     </div>
   );
+}
+
+/** A PDF shown in the browser's viewer, its toolbar (download, print) hidden. View-only, not unbreakable. */
+function PdfFrame({ src, title }: { src: string; title: string }) {
+  return <iframe src={`${src}#toolbar=0&navpanes=0`} title={title} className="mt-4 h-[75vh] w-full rounded-2xl border border-line bg-surface" />;
 }
 
 function ContentSkeleton() {

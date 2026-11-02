@@ -17,6 +17,8 @@ create schema auth; create schema storage;
 create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb default '{}', created_at timestamptz default now());
 create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
 create function auth.role() returns text language sql stable as $$ select nullif(current_setting('request.jwt.claim.role', true), '') $$;
+create function auth.jwt() returns jsonb language sql stable as $$ select jsonb_strip_nulls(jsonb_build_object('sub', nullif(current_setting('request.jwt.claim.sub', true), ''), 'session_id', nullif(current_setting('request.jwt.claim.session_id', true), ''))) $$;
+create table auth.sessions (id uuid primary key, user_id uuid, created_at timestamptz default now());
 create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
 create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text, name text);
 alter table storage.objects enable row level security;
@@ -24,7 +26,7 @@ grant usage on schema public, auth, storage to anon, authenticated, service_role
 `;
 
 export type Db = PGlite & {
-  /** Run a query as a reader: "guest" (anon), "service" (service_role), or a user id (authenticated). */
+  /** Run a query as a reader: "guest" (anon), "service" (service_role), or a user id (authenticated) — "<user id>/<session id>" signs in on that session. */
   as<T>(who: string, sql: string, params?: unknown[]): Promise<T[]>;
   /** Whether a statement as this reader goes through (false when a rule refuses it). */
   can(who: string, sql: string, params?: unknown[]): Promise<boolean>;
@@ -41,11 +43,16 @@ export async function startDb(): Promise<Db> {
   await db.exec(`grant select, insert, update, delete on all tables in schema public, storage to anon, authenticated, service_role;`);
   db.as = async <T,>(who: string, sql: string, params?: unknown[]) => {
     const role = who === "guest" ? "anon" : who === "service" ? "service_role" : "authenticated";
-    await db.exec(role === "authenticated" ? `set request.jwt.claim.sub = '${who.replace(/'/g, "")}'; set role authenticated` : `reset request.jwt.claim.sub; set role ${role}`);
+    const [sub, sid = ""] = who.replace(/'/g, "").split("/");
+    await db.exec(
+      role === "authenticated"
+        ? `set request.jwt.claim.sub = '${sub}'; set request.jwt.claim.session_id = '${sid}'; set role authenticated`
+        : `reset request.jwt.claim.sub; reset request.jwt.claim.session_id; set role ${role}`,
+    );
     try {
       return (await db.query<T>(sql, params)).rows;
     } finally {
-      await db.exec(`reset role; reset request.jwt.claim.sub`);
+      await db.exec(`reset role; reset request.jwt.claim.sub; reset request.jwt.claim.session_id`);
     }
   };
   db.can = async (who, sql, params) => {

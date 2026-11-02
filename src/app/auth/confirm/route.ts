@@ -1,6 +1,7 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 import { safeNext } from "@/lib/auth/dal";
+import { DEVICE_COOKIE, claimNewSession, signInContext } from "@/lib/auth/session";
 import { recordActivity } from "@/lib/data/user";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
@@ -26,8 +27,10 @@ export async function GET(request: NextRequest) {
   if (!tokenHash || !type) return fail("הקישור אינו שלם.");
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
+  const { data, error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
   if (error) return fail("תוקף הקישור פג או שכבר נעשה בו שימוש.");
+  // The link signed them in: this session takes the account (after a password reset, every other device is out).
+  if (data.session) await claimNewSession(data.session.access_token, signInContext(request.headers, request.cookies.get(DEVICE_COOKIE)?.value));
 
   if (type === "signup" || type === "email") await recordActivity("account_confirmed", "אימות כתובת האימייל");
 
