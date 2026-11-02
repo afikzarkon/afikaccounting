@@ -30,6 +30,7 @@ export const REVALUE: StudyModule = {
     { id: "ppe-reset-prop", title: "איפוס פחת נצבר או הצגה יחסית" },
     { id: "revaluation-steps", title: "שלבי הפתרון" },
     { id: "ppe-transfer", title: "הקרן לעודפים: בקצב הפחת או בגריעה" },
+    { id: "revaluation-land-building", title: "קרקע מול מבנה" },
     { id: "revaluation-yearly", title: "דוגמה: הערכה בכל שנה" },
     { id: "revaluation-check", title: "בדיקה ודגשים" },
     { id: "ppe-reval-sale", title: "מכירה או החלפה אחרי הערכה" },

@@ -19,7 +19,6 @@ export const LAND: StudyModule = {
     { id: "ppe-models", title: "שני מודלים: עלות או הערכה מחדש" },
     { id: "revaluation-standard", title: "מה התקן אומר" },
     { id: "ppe-land-values", title: "קרקע: עלייה, ירידה ומתחת לעלות" },
-    { id: "revaluation-land-building", title: "קרקע מול מבנה" },
   ],
   exercises: [
     journal(

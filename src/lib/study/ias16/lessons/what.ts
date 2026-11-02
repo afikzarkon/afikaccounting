@@ -4,7 +4,8 @@ import { calc, choice, COURSE, COURSE_HREF, fmt, journal } from "../shared";
 /** The matching screen's machine: bought once, used for years. */
 export const SPREAD = { cost: 40_000, life: 4, revenue: 30_000 };
 /** The first straight-line example, before lesson 3 takes the method apart. */
-export const FIRST_SL = { cost: 50_000, salvage: 10_000, life: 4 };
+const FIRST = { cost: 50_000, salvage: 10_000, life: 4 };
+export const FIRST_SL = { ...FIRST, annual: (FIRST.cost - FIRST.salvage) / FIRST.life };
 const BUY = { cost: 250_000 };
 
 /** Lesson 1: what an item of property, plant and equipment is — why it is not an expense, the definition, recognition, and telling it from inventory and from an expense. */
@@ -13,12 +14,13 @@ export const WHAT: StudyModule = {
   course: COURSE,
   n: 1,
   title: "מהו רכוש קבוע",
-  description: "מפת הקורס, למה מכונה אינה הוצאה של השנה שבה נקנתה, נוסחת הקו הישר, שלושת התנאים בהגדרה, שני תנאי ההכרה — ואיך מבדילים רכוש קבוע ממלאי ומהוצאה.",
+  description: "מפת הקורס, למה מכונה אינה הוצאה של השנה שבה נקנתה, נוסחת הקו הישר, פקודת הפחת, שלושת התנאים בהגדרה, שני תנאי ההכרה — ואיך מבדילים רכוש קבוע ממלאי ומהוצאה.",
   backHref: COURSE_HREF,
   screens: [
     { id: "ppe-welcome", title: "מה נלמד בקורס" },
     { id: "ppe-matching", title: "נכס שמשרת שנים — לא הוצאה של שנה" },
     { id: "ppe-sl-first", title: "איך מחשבים פחת: קו ישר" },
+    { id: "ppe-dep-entry", title: "פקודת הפחת: הוצאות פחת ופחת נצבר" },
     { id: "ppe-what", title: "מהו רכוש קבוע לפי התקן" },
     { id: "ppe-recognition", title: "מתי מכירים: שני תנאים, וחלקי חילוף" },
     { id: "ppe-sort", title: "תרגול הבנה: רכוש קבוע, מלאי או הוצאה?" },
@@ -133,6 +135,7 @@ export const WHAT: StudyModule = {
     "מכירים בו כשצפויות הטבות כלכליות — גם עקיפות — והעלות ניתנת למדידה מהימנה.",
     "השיטה הנפוצה ביותר — קו ישר: פחת שנתי = (עלות − ערך גרט) ÷ שנות חיים. כל שנה מלאה מקבלת אותו סכום.",
     "ביום הרכישה: ח׳ רכוש קבוע / ז׳ מזומן או ספקים — בלי השפעה על רווח והפסד. ההוצאה מגיעה דרך הפחת.",
+    "בסוף כל שנה: ח׳ הוצאות פחת (תוצאתי — מתחיל כל שנה מאפס) / ז׳ פחת נצבר (מאזני — מצטבר ומקטין את הנכס). ערך בספרים = עלות − פחת נצבר.",
     "אותו פריט יכול להיות רכוש קבוע אצל חברה אחת ומלאי אצל אחרת — לפי מה שעושים בו.",
   ],
 };
