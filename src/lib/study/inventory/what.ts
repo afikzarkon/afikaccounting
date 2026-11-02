@@ -26,6 +26,7 @@ export const WHAT: StudyModule = {
   description: "מה שלא נמכר אינו הוצאה של השנה: עיקרון ההקבלה, פקודת המלאי בסוף השנה, מה קורה לה בשנה הבאה, והדוח עד הרווח הגולמי.",
   backHref: COURSE_HREF,
   screens: [
+    { id: "iv-welcome", title: "מה נלמד בקורס" },
     { id: "inv-idea", title: "מה שלא נמכר — לא הוצאה של השנה" },
     { id: "iv-year-end", title: "ארבעה צעדים בסוף השנה" },
     { id: "inv-homes", title: "שני בתים למלאי הסגירה" },

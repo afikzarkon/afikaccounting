@@ -71,7 +71,7 @@ export function Reveal({ steps, label = "הצעד הבא" }: { steps: ReactNode[
       <button
         type="button"
         onClick={() => setShown(done ? 1 : shown + 1)}
-        className="inline-flex h-9 items-center gap-1 rounded-lg bg-surface px-3 text-sm font-semibold text-accent ring-1 ring-accent/40 hover:bg-accent-soft"
+        className={cn("inline-flex h-10 items-center gap-1.5 rounded-xl px-5 text-[15px] font-bold transition active:scale-95", done ? "bg-surface text-accent ring-1 ring-accent/40 hover:bg-accent-soft" : "bg-accent text-accent-fg shadow-[0_8px_20px_-10px_var(--accent)] ring-2 ring-accent/30 hover:brightness-110")}
       >
         {done ? (
           <>
@@ -80,7 +80,7 @@ export function Reveal({ steps, label = "הצעד הבא" }: { steps: ReactNode[
         ) : (
           <>
             {label}{" "}
-            <span className="num text-muted">
+            <span className="num font-semibold opacity-80">
               ({shown + 1}/{steps.length})
             </span>{" "}
             <ChevronLeft className="h-4 w-4" aria-hidden />

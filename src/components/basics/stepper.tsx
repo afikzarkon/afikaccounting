@@ -61,7 +61,7 @@ export function Stepper({
   };
 
   // One set of buttons, in the pinned header beside the progress bar. They move inside this walkthrough only, so
-  // they are worded and coloured apart from the lesson's own solid "הבא" — an outline, and "לצעד הבא".
+  // they are worded apart from the lesson's own "הבא" — "לצעד הבא" — and the forward one is solid, so it is the first thing the eye finds.
   const nav = (
     <div className="flex items-center gap-2">
       <button
@@ -77,7 +77,7 @@ export function Stepper({
         <button
           type="button"
           onClick={() => go(i + 1)}
-          className="inline-flex h-9 items-center gap-1 rounded-lg bg-accent-soft px-4 text-sm font-semibold text-accent ring-1 ring-accent/50 transition hover:ring-accent active:scale-95 max-sm:ms-auto"
+          className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-accent px-5 text-[15px] font-bold text-accent-fg shadow-[0_8px_20px_-10px_var(--accent)] ring-2 ring-accent/30 transition hover:brightness-110 active:scale-95 max-sm:ms-auto"
         >
           לצעד הבא <ChevronLeft className="h-4 w-4" aria-hidden />
         </button>

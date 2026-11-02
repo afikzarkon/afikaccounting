@@ -479,22 +479,27 @@ export const FIFO_PERPETUAL_STEPS: Step[] = [
     ),
   },
   {
-    title: `שלב ${4 + FIFO_CARD.groups.length} · עלות המכר — סכום המכירות`,
+    title: `שלב ${4 + FIFO_CARD.groups.length} · עלות המכר`,
     body: (
       <>
-        <p>
-          אין צורך לחכות לסוף השנה ולבנות דוח: בשיטה תמידית עלות המכר ידועה בכל רגע — השורה האחרונה בעמודת עלות המכר בכרטיס היא כבר עלות המכר של השנה.
-        </p>
+        <p>עלות המכר יוצאת מהנוסחה של כל דוח — עם מלאי הסגירה שמצאנו בכרטיס:</p>
+        <Working
+          words="עלות המכר = מלאי פתיחה + קניות − מלאי סגירה"
+          numbers={
+            <>
+              <Money v={OPEN.cost} plain /> + <Money v={BOUGHT_COST} plain /> − <Money v={FIFO_T.closingCarrying} plain /> = <Money v={FIFO_T.cogs} plain /> ₪
+            </>
+          }
+        />
+        <TipNote>
+          הכרטיס כבר מכיל את התשובה: חיבור עלות כל המכירות בעמודת עלות המכר נותן את אותו סכום — <Money v={FIFO_PERPETUAL_COGS} plain /> ₪. זו הדרך הארוכה; טובה כדי לוודא שצדקתם.
+        </TipNote>
         <Table
-          caption="עלות כל מכירה"
+          caption="בדיקה — עלות כל מכירה"
           head={["מכירה", "יחידות", "מאילו שכבות", "עלות"]}
           rows={FIFO_CARD.sales.map((s) => [s.date, qty(s.qty), s.taken, <Money key="c" v={s.cost} plain />])}
           foot={["עלות המכר", qty(SOLD), "", <Money key="c" v={FIFO_PERPETUAL_COGS} plain />]}
         />
-        <TipNote>
-          דרך נוספת, בלי הכרטיס: מלאי פתיחה + קניות − מלאי סגירה = <Money v={OPEN.cost} plain /> + <Money v={BOUGHT_COST} plain /> − <Money v={FIFO_T.closingCarrying} plain /> ={" "}
-          <Money v={FIFO_T.cogs} plain /> — אותה עלות המכר.
-        </TipNote>
       </>
     ),
   },
@@ -647,22 +652,27 @@ export const MA_STEPS: Step[] = [
     ),
   },
   {
-    title: `שלב ${4 + MA_CARD.groups.length} · עלות המכר — סכום המכירות`,
+    title: `שלב ${4 + MA_CARD.groups.length} · עלות המכר`,
     body: (
       <>
-        <p>
-          אין צורך לחכות לסוף השנה ולבנות דוח: בשיטה תמידית עלות המכר ידועה בכל רגע — השורה האחרונה בעמודת עלות המכר בכרטיס היא כבר עלות המכר של השנה.
-        </p>
+        <p>עלות המכר יוצאת מהנוסחה של כל דוח — עם מלאי הסגירה שמצאנו בכרטיס:</p>
+        <Working
+          words="עלות המכר = מלאי פתיחה + קניות − מלאי סגירה"
+          numbers={
+            <>
+              <Money v={OPEN.cost} plain /> + <Money v={BOUGHT_COST} plain /> − <Money v={MA.closingCarrying} plain /> = <Money v={MA.cogs} plain /> ₪
+            </>
+          }
+        />
+        <TipNote>
+          הכרטיס כבר מכיל את התשובה: חיבור עלות כל המכירות בעמודת עלות המכר נותן את אותו סכום — <Money v={MA_COGS} plain /> ₪. זו הדרך הארוכה; טובה כדי לוודא שצדקתם.
+        </TipNote>
         <Table
-          caption="עלות כל מכירה"
+          caption="בדיקה — עלות כל מכירה"
           head={["מכירה", "יחידות", "ממוצע באותו יום", "עלות"]}
           rows={MA_CARD.sales.map((s) => [s.date, qty(s.qty), u(s.avg), <Money key="c" v={s.cost} plain />])}
           foot={["עלות המכר", qty(SOLD), "", <Money key="c" v={MA_COGS} plain />]}
         />
-        <TipNote>
-          דרך נוספת, בלי הכרטיס: מלאי פתיחה + קניות − מלאי סגירה = <Money v={OPEN.cost} plain /> + <Money v={BOUGHT_COST} plain /> − <Money v={MA.closingCarrying} plain /> ={" "}
-          <Money v={MA.cogs} plain /> — אותה עלות המכר.
-        </TipNote>
       </>
     ),
   },

@@ -23,8 +23,9 @@ import {
   WA_OPEN,
 } from "@/lib/learn/inventory-examples";
 import { closingFromSoldPct, discountPctFromAmount, lastSaleQty, purchasesFromSoldPct, salesFromGp, solveUnknowns } from "@/lib/learn/inventory-solver";
-import { CountBridge, type SortItem, SortQuiz, TryInCalc } from "./inventory-interactive";
-import { FIFO, FIFO_PERIODIC_STEPS, FIFO_PERPETUAL_STEPS, FIFO_T, MA, MA_STEPS, TipNote, WA, WA_STEPS } from "./inventory-stages";
+import { CountBridge, FillGrid, type SortItem, SortQuiz, TryInCalc } from "./inventory-interactive";
+import { FIFO_DRILL, FIFO_DRILL_ANSWERS as FA, FIFO_DRILL_COGS, MA_DRILL, MA_DRILL_ANSWERS as MD, SHELF_DRILL, SHELF_DRILL_ANSWERS as SA, SHELF_DRILL_COGS, WA_DRILL, WA_DRILL_ANSWERS as WD } from "@/lib/study/inventory/drills";
+import { FIFO, FIFO_PERIODIC_STEPS, FIFO_PERPETUAL_STEPS, FIFO_T, MA, MA_STEPS, WA, WA_STEPS } from "./inventory-stages";
 import { MoreDialog, PatternPicker, Reveal, Sorted, Story } from "./inventory-teach";
 import { FlowStrip, TraceStepView } from "./inventory-trace";
 import { KeyCard, Money, Rule, type Step, Stepper, Term, Wide } from "./ui";
@@ -112,6 +113,85 @@ const reverseSteps: Step[] = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Each method's first drill: a small year, solved by building the table by hand.
+
+const f = (n: number) => ({ find: n });
+
+const FIFO_DRILL_PAGE = (
+  <>
+    <FillGrid
+      caption="שלב א · טבלת הרכישות: סכום לכל שורה, ואז הסיכום"
+      hint="כמות × מחיר בכל שורה; בשורה האחרונה — סך היחידות וסך העלות."
+      head={["תאריך", "יחידות", "מחיר", "סכום"]}
+      rows={[
+        ...FIFO_DRILL.buys.map((b) => [b.date, b.qty, b.price, f(b.qty * b.price)]),
+        ["סה״כ", f(FA.units), "", f(FA.cost)],
+      ]}
+    />
+    <FillGrid
+      caption={`שלב ב · כמה נשאר, ומאיזו רכישה (נמכרו ${FIFO_DRILL.sold} יח׳)`}
+      hint="נשאר = כל היחידות − מה שנמכר. ב-FIFO נשארות האחרונות: הולכים מהרכישה האחרונה אחורה."
+      head={["", "יחידות", "סכום"]}
+      rows={[
+        ["נשארו במלאי", f(FA.left), ""],
+        [`מהרכישה של ${FIFO_DRILL.buys[2].date}`, FIFO_DRILL.buys[2].qty, f(FA.fromLast)],
+        [`ועוד מהרכישה של ${FIFO_DRILL.buys[1].date}`, FA.left - FIFO_DRILL.buys[2].qty, f(FA.fromBefore)],
+        ["מלאי סגירה", "", f(FA.closing)],
+        ["עלות המכר (כל העלות − הסגירה)", "", f(FIFO_DRILL_COGS)],
+      ]}
+    />
+  </>
+);
+
+const SHELF_DRILL_PAGE = (
+  <FillGrid
+    caption="כרטיס FIFO תמידי: עלות כל מכירה, מהשכבה הוותיקה"
+    hint="במכירה לוקחים קודם מהשכבה הוותיקה שעוד נשארה; כשהיא נגמרת — עוברים לבאה."
+    head={["תאריך", "תנועה", "יחידות", "עלות המכירה", "נשאר במלאי"]}
+    rows={[
+      ["1.2", "קנייה", `${SHELF_DRILL.buy1.qty} × ${SHELF_DRILL.buy1.price}`, "", `${SHELF_DRILL.buy1.qty} × ${SHELF_DRILL.buy1.price}`],
+      ["1.4", "מכירה", SHELF_DRILL.sell1, f(SA.sale1), `${SHELF_DRILL.buy1.qty - SHELF_DRILL.sell1} × ${SHELF_DRILL.buy1.price}`],
+      ["1.6", "קנייה", `${SHELF_DRILL.buy2.qty} × ${SHELF_DRILL.buy2.price}`, "", `${SHELF_DRILL.buy1.qty - SHELF_DRILL.sell1} × ${SHELF_DRILL.buy1.price} + ${SHELF_DRILL.buy2.qty} × ${SHELF_DRILL.buy2.price}`],
+      ["1.8", "מכירה", SHELF_DRILL.sell2, f(SA.sale2), "?"],
+      ["סוף השנה", "", "", "", ""],
+      ["", "עלות המכר", "", f(SHELF_DRILL_COGS), ""],
+      ["", "מלאי סגירה", "", "", f(SA.closing)],
+    ]}
+  />
+);
+
+const WA_DRILL_PAGE = (
+  <FillGrid
+    caption={`ממוצע תקופתי: כל מה שהיה זמין, וממוצע אחד (נמכרו ${WA_DRILL.sold} יח׳)`}
+    hint="מלאי הפתיחה נכנס גם לסכום וגם לכמות. ממוצע = סך העלות ÷ סך היחידות."
+    head={["", "יחידות", "מחיר", "סכום"]}
+    rows={[
+      ["מלאי פתיחה", WA_DRILL.opening.qty, "", WA_DRILL.opening.cost],
+      ...WA_DRILL.buys.map((b, i) => [`רכישה ${i + 1}`, b.qty, b.price, f(WD.buyCosts[i])]),
+      ["סה״כ זמין", f(WD.units), "", f(WD.cost)],
+      ["ממוצע ליחידה", "", f(WD.avg), ""],
+      ["מלאי סגירה", f(WD.left), "", f(WD.closing)],
+      ["עלות המכר", WA_DRILL.sold, "", f(WD.cogs)],
+    ]}
+  />
+);
+
+const MA_DRILL_PAGE = (
+  <FillGrid
+    caption="כרטיס מלאי בממוצע נע — טבלה אחת, שורה לכל תנועה"
+    hint="קנייה: מוסיפים יחידות ועלות, ומחשבים ממוצע חדש. מכירה: יחידות × הממוצע הקיים — והממוצע לא משתנה."
+    head={["תאריך", "תנועה", "יחידות", "עלות התנועה", "יתרה — יח׳", "יתרה — ₪", "ממוצע"]}
+    rows={[
+      ["1.1", `קנייה ב-${MA_DRILL.buy1.price} ₪`, MA_DRILL.buy1.qty, MA_DRILL.buy1.qty * MA_DRILL.buy1.price, f(MD.rows[0].units), f(MD.rows[0].cost), f(MD.rows[0].avg)],
+      ["1.3", "מכירה", MA_DRILL.sell1, f(MD.rows[1].sale!), f(MD.rows[1].units), f(MD.rows[1].cost), MD.avg1],
+      ["1.5", `קנייה ב-${MA_DRILL.buy2.price} ₪`, MA_DRILL.buy2.qty, MA_DRILL.buy2.qty * MA_DRILL.buy2.price, f(MD.rows[2].units), f(MD.rows[2].cost), f(MD.rows[2].avg)],
+      ["1.8", "מכירה", MA_DRILL.sell2, f(MD.rows[3].sale!), f(MD.rows[3].units), f(MD.rows[3].cost), MD.avg3],
+      ["", "עלות המכר", "", f(MD.cogs), "", "", ""],
+    ]}
+  />
+);
+
 /** The concept screens of lessons 3 to 5: the cost formulas, net realisable value and what is counted, and the unknowns. */
 export const METHOD_SCREENS: Record<string, ScreenContent> = {
   "inv-fifo": {
@@ -126,6 +206,7 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
         <Stepper label="מחברת · FIFO תקופתי" steps={FIFO_PERIODIC_STEPS} />
       </>
     ),
+    check: FIFO_DRILL_PAGE,
   },
   "inv-fifo-shelf": {
     lead: "FIFO תמידי: בכל מכירה שואלים מה יש במלאי באותו יום, ולוקחים קודם מהשכבה הוותיקה. בסוף מגיעים לאותו מלאי סגירה כמו בדרך התקופתית.",
@@ -139,6 +220,7 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
         </Rule>
       </>
     ),
+    check: SHELF_DRILL_PAGE,
   },
   "inv-wa": {
     lead: "ממוצע משוקלל תקופתי: ממוצע אחד לכל השנה — כל העלות שהייתה זמינה, חלקי כל היחידות.",
@@ -158,6 +240,7 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
         </MoreDialog>
       </>
     ),
+    check: WA_DRILL_PAGE,
   },
   "inv-ma": {
     lead: "ממוצע נע: ממוצע חדש אחרי כל קנייה — ורק אחרי קנייה. מכירה יוצאת בממוצע הקיים ולא משנה אותו.",
@@ -171,6 +254,7 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
         </Rule>
       </>
     ),
+    check: MA_DRILL_PAGE,
   },
   "inv-compare": {
     lead: "אותם נתונים, שלוש שיטות, שלוש תוצאות — אבל בכל שיטה מלאי הסגירה ועלות המכר יחד שווים לכל מה שהיה זמין.",
@@ -188,9 +272,6 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
           />
         </Wide>
         <KeyCard>המחירים עלו — ולכן ב-FIFO נשארו על המדף היחידות היקרות: הסגירה הגבוהה ביותר, והרווח הגבוה ביותר. הממוצעים נופלים באמצע.</KeyCard>
-        <TipNote>
-          בכל שורה: סגירה + עלות המכר = <Money v={FIFO.availableCost} plain /> — כל מה שהיה זמין. השיטה רק מחליטה איך לחלק, אז הסכום הזה בודק כל פתרון.
-        </TipNote>
       </>
     ),
   },

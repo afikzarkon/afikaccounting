@@ -536,7 +536,7 @@ describe("the inventory course", () => {
     near(answer("inventory-average", "wa-cogs"), wa.cogs, "wa-cogs");
     near(answer("inventory-average", "ma-sale-cost"), ma.cogs - ET.sell1.qty * ET.buy1.price, "ma-sale-cost");
     for (const r of [fifo, wa, ma]) assert.deepEqual(r.warnings, []);
-    const avg = valuatePeriod({ label: "2025", opening: { units: 200, cost: 2_000 }, purchases: [{ qty: 200, unitPrice: answer("inventory-average", "price-from-avg") }], sales: [] }, "wa-periodic");
+    const avg = valuatePeriod({ label: "2025", opening: { units: 200, cost: 2_000 }, purchases: [{ qty: 200, unitPrice: answer("inventory-unknowns", "price-from-avg") }], sales: [] }, "wa-periodic");
     near(avg.avgCost!, 12, "price-from-avg");
   });
 
@@ -612,5 +612,67 @@ describe("interactive lessons: a lesson's video", () => {
       const screens = m.videos!.flatMap((v) => v.chapters.flatMap((c) => [c.screen ?? []].flat()));
       assert.equal(new Set(screens).size, screens.length, `${m.slug}: a screen has two chapters`);
     }
+  });
+});
+
+describe("the inventory course: the method drills and the new practice agree with the engine", () => {
+  it("each drill's answers are the engine's", async () => {
+    const d = await import("./inventory/drills");
+    const near = (a: number, b: number, where: string) => assert.ok(Math.abs(a - b) < 1e-6, `${where}: ${a} ≠ ${b}`);
+    const fifo = valuatePeriod({ label: "d", purchases: d.FIFO_DRILL.buys.map((b) => ({ qty: b.qty, unitPrice: b.price })), sales: [{ qty: d.FIFO_DRILL.sold }] }, "fifo");
+    near(d.FIFO_DRILL_ANSWERS.closing, fifo.closingCarrying, "fifo closing");
+    near(d.FIFO_DRILL_COGS, fifo.cogs, "fifo cogs");
+    const S = d.SHELF_DRILL;
+    const shelf = valuatePeriod(
+      {
+        label: "d",
+        purchases: [
+          { date: "2025-02-01", qty: S.buy1.qty, unitPrice: S.buy1.price },
+          { date: "2025-06-01", qty: S.buy2.qty, unitPrice: S.buy2.price },
+        ],
+        sales: [
+          { date: "2025-04-01", qty: S.sell1 },
+          { date: "2025-08-01", qty: S.sell2 },
+        ],
+      },
+      "fifo",
+      { system: "perpetual" },
+    );
+    near(d.SHELF_DRILL_ANSWERS.sale1, shelf.saleCosts[0], "sale 1");
+    near(d.SHELF_DRILL_ANSWERS.sale2, shelf.saleCosts[1], "sale 2");
+    near(d.SHELF_DRILL_ANSWERS.closing, shelf.closingCarrying, "shelf closing");
+    const W = d.WA_DRILL;
+    const wa = valuatePeriod({ label: "d", opening: { units: W.opening.qty, cost: W.opening.cost }, purchases: W.buys.map((b) => ({ qty: b.qty, unitPrice: b.price })), sales: [{ qty: W.sold }] }, "wa-periodic");
+    near(d.WA_DRILL_ANSWERS.avg, wa.avgCost!, "wa average");
+    near(d.WA_DRILL_ANSWERS.closing, wa.closingCarrying, "wa closing");
+    const M = d.MA_DRILL;
+    const ma = valuatePeriod(
+      {
+        label: "d",
+        purchases: [
+          { date: "2025-01-01", qty: M.buy1.qty, unitPrice: M.buy1.price },
+          { date: "2025-05-01", qty: M.buy2.qty, unitPrice: M.buy2.price },
+        ],
+        sales: [
+          { date: "2025-03-01", qty: M.sell1 },
+          { date: "2025-08-01", qty: M.sell2 },
+        ],
+      },
+      "moving-avg",
+    );
+    near(d.MA_DRILL_ANSWERS.cogs, ma.cogs, "ma cogs");
+    near(d.MA_DRILL_ANSWERS.closing, ma.closingCarrying, "ma closing");
+  });
+
+  it("the new FIFO and average questions", () => {
+    const answer = (slug: string, id: string) => {
+      const x = STUDY_MODULES[slug].exercises.find((e) => e.id === id);
+      assert.ok(x && x.kind === "number", `${slug}: no calculation ${id}`);
+      return x.answer;
+    };
+    const fifo = valuatePeriod({ label: "q", opening: { units: 40, cost: 320 }, purchases: [{ qty: 60, unitPrice: 9 }, { qty: 50, unitPrice: 10 }, { qty: 30, unitPrice: 12 }], sales: [{ qty: 110 }] }, "fifo");
+    assert.equal(answer("inventory-fifo", "fifo-three"), fifo.closingCarrying);
+    const wa = valuatePeriod({ label: "q", opening: { units: 50, cost: 500 }, purchases: [{ qty: 100, unitPrice: 11 }, { qty: 50, unitPrice: 13 }], sales: [{ qty: 140 }] }, "wa-periodic");
+    assert.equal(answer("inventory-average", "wa-closing-open"), wa.closingCarrying);
   });
 });

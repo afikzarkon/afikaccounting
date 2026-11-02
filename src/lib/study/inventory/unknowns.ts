@@ -1,5 +1,5 @@
 import type { StudyModule } from "../types";
-import { calc, COURSE, COURSE_HREF, fmt } from "./shared";
+import { calc, choice, COURSE, COURSE_HREF, fmt } from "./shared";
 
 // Every figure below is computed here, from the question's own numbers.
 const SALES = { cogs: 84_000, gp: 30 }; // percents
@@ -10,6 +10,9 @@ const lastQty = LAST.available - LAST.others - LAST.counted;
 const RETAIL = { opening: 30_000, purchases: 90_000, sales: 150_000, gp: 40 };
 const retailCogs = (RETAIL.sales * (100 - RETAIL.gp)) / 100;
 const retailClosing = RETAIL.opening + RETAIL.purchases - retailCogs;
+const AVG = { openUnits: 200, openCost: 2_000, qty: 200, avg: 12 };
+const avgTotal = (AVG.openUnits + AVG.qty) * AVG.avg;
+const avgPrice = (avgTotal - AVG.openCost) / AVG.qty;
 const DISC = { amount: 2_400, qty: 400, price: 75 };
 const discPct = (DISC.amount * 100) / (DISC.qty * DISC.price);
 const SOLD = { p: 60, cogs: 180_000 };
@@ -28,6 +31,7 @@ export const UNKNOWNS: StudyModule = {
     { id: "inv-chain", title: "תבנית 1: שרשרת המשוואות" },
     { id: "inv-qty", title: "כמות חסרה: תבניות 2–3" },
     { id: "inv-gp", title: "שיעור רווח גולמי: תבניות 4–5" },
+    { id: "inv-avg-price", title: "מחיר רכישה מממוצע: תבנית 6" },
     { id: "inv-pct", title: "אחוזים: תבניות 7–8" },
   ],
   exercises: [
@@ -57,6 +61,17 @@ export const UNKNOWNS: StudyModule = {
       ],
     ),
     calc(
+      "price-from-avg",
+      "מחיר רכישה מממוצע",
+      `ממוצע תקופתי. מלאי פתיחה ${AVG.openUnits} יח׳ בעלות ${fmt(AVG.openCost)} ₪; נקנו ${AVG.qty} יח׳ במחיר לא ידוע. העלות הממוצעת לשנה: ${AVG.avg} ₪. מה היה מחיר הרכישה ליחידה?`,
+      avgPrice,
+      [
+        `סך העלות = הממוצע × כל היחידות = ${AVG.avg} × ${AVG.openUnits + AVG.qty} = ${fmt(avgTotal)} ₪.`,
+        `מזה ${fmt(AVG.openCost)} של הפתיחה; נשאר לרכישה ${fmt(avgTotal - AVG.openCost)} ₪.`,
+        `מחיר = ${fmt(avgTotal - AVG.openCost)} ÷ ${AVG.qty} = ${fmt(avgPrice)} ₪.`,
+      ],
+    ),
+    calc(
       "discount-rate",
       "שיעור הנחה",
       `הספק נותן אחוז הנחה קבוע שלא נמסר. ברכישה של ${DISC.qty} יח׳ ב-${DISC.price} ₪ התקבלה הנחה של ${fmt(DISC.amount)} ₪. מהו שיעור ההנחה, באחוזים?`,
@@ -69,6 +84,28 @@ export const UNKNOWNS: StudyModule = {
       `חברה שהוקמה השנה מכרה ${SOLD.p}% מערך מה שקנתה. עלות המכר: ${fmt(SOLD.cogs)} ₪. בכמה קנתה?`,
       soldPurchases,
       [`בלי מלאי פתיחה, עלות המכר = ${SOLD.p}% × הקניות.`, `קניות = ${fmt(SOLD.cogs)} ÷ ${SOLD.p}% = ${fmt(soldPurchases)} ₪.`],
+    ),
+    calc(
+      "opening-from-chain",
+      "מלאי פתיחה חסר",
+      "עלות המכר 150,000 ₪, קניות נטו 160,000 ₪ ומלאי סגירה 45,000 ₪. מהו מלאי הפתיחה?",
+      35_000,
+      ["עלות המכר = פתיחה + קניות − סגירה; הפתיחה היא הנעלם.", "פתיחה = 150,000 − 160,000 + 45,000 = 35,000 ₪."],
+    ),
+    calc(
+      "price-from-sales",
+      "מחיר מכירה משיעור גולמי",
+      "נמכרו 2,000 יחידות. עלות המכר 63,000 ₪, ושיעור הרווח הגולמי 30%. מה היה מחיר המכירה ליחידה?",
+      45,
+      ["מכירות = 63,000 ÷ 70% = 90,000 ₪.", "מחיר = 90,000 ÷ 2,000 = 45 ₪."],
+    ),
+    choice(
+      "markup-or-margin",
+      "שיעור רווח גולמי",
+      "״שיעור הרווח הגולמי 20%, עלות המכר 80,000 ₪״. מהן המכירות?",
+      ["100,000 ₪", "96,000 ₪", "64,000 ₪", "16,000 ₪"],
+      0,
+      "עלות המכר היא 80% מהמכירות: 80,000 ÷ 0.8 = 100,000 ₪. (96,000 הוא תוספת 20% על העלות — שיעור אחר.)",
     ),
   ],
   traps: [

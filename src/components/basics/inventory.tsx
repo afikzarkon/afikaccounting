@@ -8,7 +8,7 @@ import { entriesFor, purchaseCost, statement, valuatePeriod } from "@/lib/learn/
 import { DAF, DISCOUNT_EXCESS, DISCOUNT_WHOLE, FINANCING, LEHAVA, SHEMESH } from "@/lib/learn/inventory-examples";
 import { ROW_LABEL, solveTable, TABLE_ROWS } from "@/lib/learn/inventory-solver";
 import { cn } from "@/lib/utils";
-import { type FillData, FormulaLab, SoldSlider, SortQuiz, SystemSwitch, TableFill, TryInCalc } from "./inventory-interactive";
+import { type FillData, SoldSlider, SortQuiz, SystemSwitch, TableFill, TryInCalc } from "./inventory-interactive";
 import { MoreDialog, Sorted, Story } from "./inventory-teach";
 import { GrossProfitStatementView } from "./inventory-trace";
 import { Card, KeyCard, Money, Rule, type Step, Stepper, Term, Wide } from "./ui";
@@ -42,6 +42,9 @@ const FIN = purchaseCost(FINANCING);
 type TermCard = { term: string; def: string; ex: ReactNode; home: "מאזן" | "רווח או הפסד" | "—" };
 
 /** The vocabulary in three small groups, so it is met a few words at a time. */
+/** The formulas screen's notebooks: one batch in January, one in June, one sale in September. */
+const PICK = { qty: 100, first: 10, second: 14 };
+
 const TERM_GROUPS: { title: string; terms: TermCard[] }[] = [
   {
     title: "מה יש במחסן",
@@ -365,7 +368,7 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
             <p className="font-bold text-fg">תקופתי — פעם בשנה</p>
             <p className="mt-1 text-[14.5px] text-fg/85">במהלך השנה: ״קניות״. בסוף השנה: סופרים, ורושמים מלאי סגירה.</p>
           </div>
-          <div className="rounded-xl border-2 border-accent/50 bg-accent-soft/50 p-4">
+          <div className="rounded-xl border-2 border-line-strong bg-surface p-4">
             <p className="font-bold text-fg">תמידי — בכל תנועה</p>
             <p className="mt-1 text-[14.5px] text-fg/85">בקנייה: ״מלאי״. בכל מכירה: גם ח׳ עלות המכר / ז׳ מלאי.</p>
           </div>
@@ -533,27 +536,34 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
   },
 
   "inv-formulas": {
-    lead: "כשהמחירים משתנים, צריך כלל שאומר מה נמכר ומה נשאר על המדף: FIFO או ממוצע משוקלל.",
+    lead: "כשהמחירים משתנים, צריך כלל שאומר איזו יחידה נמכרה ואיזו נשארה על המדף: FIFO או ממוצע משוקלל. כל כלל נותן עלות מכר אחרת.",
     body: (
       <>
+        <Story icon={<Package />} title={`חנות קנתה ${PICK.qty} מחברות ב-${PICK.first} ₪ בינואר, ועוד ${PICK.qty} ב-${PICK.second} ₪ ביוני`}>
+          <p>בספטמבר מכרה {PICK.qty} מחברות. המחברות זהות — אז איזה מהן נמכרו, ובכמה עלו?</p>
+        </Story>
         <Wide className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-xl border-2 border-accent/50 bg-accent-soft/50 p-4">
+          <div className="rounded-xl border-2 border-line-strong bg-surface p-4">
             <p className="font-bold text-fg">FIFO — נכנס ראשון, יוצא ראשון</p>
-            <p className="mt-1 text-[14.5px] text-fg/85">הוותיקות נמכרות קודם; על המדף נשארות האחרונות.</p>
+            <p className="mt-1 text-[14.5px] text-fg/85">נמכרו הוותיקות, של ינואר.</p>
+            <p className="mt-2 text-[14.5px]">
+              עלות המכר: <Money v={PICK.qty * PICK.first} /> · על המדף: <Money v={PICK.qty * PICK.second} />
+            </p>
           </div>
           <div className="rounded-xl border-2 border-line-strong bg-surface p-4">
             <p className="font-bold text-fg">ממוצע משוקלל</p>
-            <p className="mt-1 text-[14.5px] text-fg/85">כל יחידה שווה לממוצע: תקופתי (אחד לשנה) או נע (חדש אחרי כל קנייה).</p>
+            <p className="mt-1 text-[14.5px] text-fg/85">כל מחברת שווה לממוצע: {(PICK.first + PICK.second) / 2} ₪.</p>
+            <p className="mt-2 text-[14.5px]">
+              עלות המכר: <Money v={(PICK.qty * (PICK.first + PICK.second)) / 2} /> · על המדף: <Money v={(PICK.qty * (PICK.first + PICK.second)) / 2} />
+            </p>
           </div>
         </Wide>
-        <KeyCard>LIFO אסור. ולמלאי דומה באופיו ובשימוש — אותה נוסחה.</KeyCard>
-        <p>חנות האוזניות &quot;צליל&quot;: שלוש קניות ושתי מכירות. שנו את מחירי הרכישה, או הפכו את המגמה — ותראו את השיטות נפרדות:</p>
-        <Wide>
-          <FormulaLab />
-        </Wide>
-        <div className="flex flex-wrap gap-2">
-          <TryInCalc id="tzlil" label="פתחו את צליל במחשבון" />
-        </div>
+        <KeyCard>בשתי השיטות עלות המכר ומלאי הסגירה יחד הם <Money v={PICK.qty * (PICK.first + PICK.second)} plain /> ₪ — כל מה שנקנה. השיטה רק מחליטה איך לחלק.</KeyCard>
+        <MoreDialog label="ומה עוד צריך לדעת על הכללים">
+          <p>LIFO (נכנס אחרון, יוצא ראשון) — אסור לפי IAS 2.</p>
+          <p>לכל מלאי דומה באופיו ובשימושו — אותה נוסחה. ופריטים ייחודיים — זיהוי ספציפי, במסך הבא.</p>
+          <p>ממוצע משוקלל יש בשתי דרכים: תקופתי (ממוצע אחד לשנה) ונע (ממוצע חדש אחרי כל קנייה) — שיעור 7.</p>
+        </MoreDialog>
       </>
     ),
   },

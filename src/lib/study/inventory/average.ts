@@ -7,23 +7,19 @@ export const ET_WA_COGS = ET_COST - ET_CLOSING_UNITS * ET_WA_AVG;
 const left = (ET.buy1.qty - ET.sell1.qty) * ET.buy1.price;
 export const ET_MA_AVG = (left + ET.buy2.qty * ET.buy2.price) / (ET.buy1.qty - ET.sell1.qty + ET.buy2.qty);
 export const ET_MA_SALE2 = ET.sell2.qty * ET_MA_AVG;
-const AVG = { openUnits: 200, openCost: 2_000, qty: 200, avg: 12 };
-const avgTotal = (AVG.openUnits + AVG.qty) * AVG.avg;
-const avgPrice = (avgTotal - AVG.openCost) / AVG.qty;
 
-/** Lesson 7: the weighted average — periodic and moving, the three methods side by side, and a price found from an average. */
+/** Lesson 7: the weighted average — periodic and moving, and the three methods side by side. */
 export const AVERAGE: StudyModule = {
   slug: "inventory-average",
   course: COURSE,
   n: 7,
   title: "ממוצע משוקלל: תקופתי ונע",
-  description: "ממוצע אחד לשנה, או ממוצע חדש אחרי כל קנייה — על אותה חנות כמו FIFO; השוואה בין שלוש השיטות, ומחיר חסר שמחלצים מתוך ממוצע.",
+  description: "ממוצע אחד לשנה, או ממוצע חדש אחרי כל קנייה — על אותה חנות כמו FIFO, והשוואה בין שלוש השיטות.",
   backHref: COURSE_HREF,
   screens: [
     { id: "inv-wa", title: "ממוצע משוקלל תקופתי" },
     { id: "inv-ma", title: "ממוצע משוקלל נע" },
     { id: "inv-compare", title: "שלוש שיטות, שלוש תוצאות" },
-    { id: "inv-avg-price", title: "מחיר רכישה מממוצע" },
   ],
   exercises: [
     journal(
@@ -52,17 +48,6 @@ export const AVERAGE: StudyModule = {
       `ממוצע חדש אחרי הקנייה: (${fmt(left)} + ${fmt(ET.buy2.qty * ET.buy2.price)}) ÷ (${ET.buy1.qty - ET.sell1.qty} + ${ET.buy2.qty}) = ${ET_MA_AVG} ₪.`,
       `עלות המכירה: ${ET.sell2.qty} × ${ET_MA_AVG} = ${fmt(ET_MA_SALE2)} ₪.`,
     ]),
-    calc(
-      "price-from-avg",
-      "מחיר רכישה מממוצע",
-      `ממוצע תקופתי. מלאי פתיחה ${AVG.openUnits} יח׳ בעלות ${fmt(AVG.openCost)} ₪; נקנו ${AVG.qty} יח׳ במחיר לא ידוע. העלות הממוצעת לשנה: ${AVG.avg} ₪. מה היה מחיר הרכישה ליחידה?`,
-      avgPrice,
-      [
-        `סך העלות = הממוצע × כל היחידות = ${AVG.avg} × ${AVG.openUnits + AVG.qty} = ${fmt(avgTotal)} ₪.`,
-        `מזה ${fmt(AVG.openCost)} של הפתיחה; נשאר לרכישה ${fmt(avgTotal - AVG.openCost)} ₪.`,
-        `מחיר = ${fmt(avgTotal - AVG.openCost)} ÷ ${AVG.qty} = ${fmt(avgPrice)} ₪.`,
-      ],
-    ),
     choice("ma-when", "ממוצע נע", "מתי מחשבים ממוצע חדש בשיטה הנעה?", ["אחרי כל מכירה", "אחרי כל קנייה", "בסוף השנה", "בכל חודש"], 1, "רק קנייה מוסיפה יחידות בעלות אחרת. מכירה יוצאת בממוצע הקיים."),
     choice(
       "same-average",
@@ -79,6 +64,31 @@ export const AVERAGE: StudyModule = {
       ["FIFO", "ממוצע תקופתי", "ממוצע נע", "בכולן זהה"],
       0,
       "ב-FIFO נמכרות קודם היחידות הוותיקות — כשהמחירים יורדים, הן היקרות. עלות המכר הגבוהה ביותר, והרווח הנמוך ביותר.",
+    ),
+    calc(
+      "wa-closing-open",
+      "ממוצע תקופתי עם מלאי פתיחה",
+      "מלאי פתיחה 50 יח׳ בעלות 500 ₪. נקנו 100 יח׳ ב-11 ₪ ו-50 יח׳ ב-13 ₪. נמכרו 140 יח׳. מהו מלאי הסגירה לפי ממוצע משוקלל תקופתי?",
+      675,
+      ["ממוצע: (500 + 1,100 + 650) ÷ (50 + 100 + 50) = 2,250 ÷ 200 = 11.25 ₪.", "נשארו 60 יח׳: 60 × 11.25 = 675 ₪."],
+    ),
+    calc(
+      "ma-new-average",
+      "ממוצע נע אחרי קנייה",
+      "בכרטיס המלאי (ממוצע נע) יתרה של 80 יח׳ בעלות 960 ₪. נקנו עוד 40 יח׳ ב-15 ₪. מה הממוצע החדש ליחידה?",
+      13,
+      ["עלות: 960 + 600 = 1,560 ₪; יחידות: 80 + 40 = 120.", "ממוצע: 1,560 ÷ 120 = 13 ₪."],
+    ),
+    journal(
+      "ma-buy",
+      "קנייה בממוצע נע",
+      "החברה מנהלת מלאי בשיטה תמידית לפי ממוצע נע. היא קנתה 40 יחידות ב-15 ₪ במזומן. רשמו את הפקודה.",
+      [
+        { account: "מלאי", dr: 600 },
+        { account: "מזומן", cr: 600 },
+      ],
+      "בשיטה תמידית הקנייה נכנסת למלאי בעלותה: 40 × 15 = 600 ₪. הממוצע מתעדכן בכרטיס — לא בפקודה.",
+      ["מלאי", "מזומן", "קניות", "עלות המכר"],
     ),
   ],
   traps: [
@@ -111,7 +121,6 @@ export const AVERAGE: StudyModule = {
     "ממוצע תקופתי: (עלות פתיחה + קניות) ÷ (יח׳ פתיחה + יח׳ שנקנו). ממוצע אחד לשנה; תאריכי המכירות לא משנים.",
     "ממוצע נע: ממוצע חדש רק אחרי קנייה. מכירה יוצאת בממוצע הקיים ולא משנה אותו.",
     "בכל שיטה: מלאי סגירה + עלות המכר = כל מה שהיה זמין. רק החלוקה ביניהם משתנה.",
-    "מחיר חסר בממוצע: ממוצע × כל היחידות = סך העלות; מה שאינו של הפתיחה ושל הרכישות הידועות — שייך לנעלם.",
     "לא מעגלים באמצע — רק בסוף, או לפי הוראת השאלה.",
   ],
 };

@@ -47,6 +47,7 @@ const EXPLICIT: Record<string, AccountType> = {
   "רווח מהערכה מחדש": "income",
   "רווח הון": "income",
   "הפסד הון": "expense",
+  "הפסד מירידת ערך": "expense",
   קרקע: "asset",
   "הלוואה לעובד": "asset",
   "הלוואה שניתנה": "asset",

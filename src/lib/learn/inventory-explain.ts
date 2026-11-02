@@ -245,29 +245,6 @@ export function stockCard(r: PeriodResult): TraceTable {
   };
 }
 
-/** The moving average, event by event: a new average after each purchase, and each sale out at the average before it. */
-function movingWalk(r: PeriodResult): string[] {
-  const out: string[] = [];
-  let units = 0;
-  let cost = 0;
-  for (const x of r.ledger) {
-    if (x.kind === "open") out.push(`מלאי פתיחה: ${q(x.qty)} יח׳ בעלות ${m(x.amount)} ₪ — ממוצע פתיחה ${u(x.avg)}.`);
-    else if (x.kind === "buy")
-      out.push(
-        units > 1e-9
-          ? `${dateLabel(x.date)} — רכישה ← ממוצע חדש: (${m(cost)} ביתרה + ${m(x.amount)} שנקנו) ÷ (${q(units)} + ${q(x.qty)} יח׳) = ${m(x.cost)} ÷ ${q(x.units)} = ${u(x.avg)} ליחידה.`
-          : `${dateLabel(x.date)} — רכישה למחסן ריק: ${m(x.amount)} ÷ ${q(x.qty)} = ${u(x.avg)} ליחידה.`,
-      );
-    else
-      out.push(
-        `${dateLabel(x.date)} — ${x.kind === "sell" ? "מכירה" : "חוסר"}: לפני שמוציאים בודקים מה הממוצע העדכני — ${u(x.unitCost)}. ${q(x.qty)} × ${u(x.unitCost)} = ${m(x.amount)} ₪ ← לעלות המכר. הממוצע לא משתנה; ביתרה נשארו ${q(x.units)} יח׳ (${m(x.cost)} ₪).`,
-      );
-    units = x.units;
-    cost = x.cost;
-  }
-  return out;
-}
-
 export function explainValuation(r: PeriodResult): TraceStep {
   const cogsBefore = r.availableCost - r.closingCostBasis;
   const toCogs: FlowBox[] = [
@@ -321,21 +298,14 @@ export function explainValuation(r: PeriodResult): TraceStep {
       rules: ["R19"],
     };
   }
-  const saleCosts = r.ledger.filter((x) => x.kind === "sell" || x.kind === "shrink");
+  // The stock card is the working: each row already shows the new average after a purchase and each sale at it, so the step adds nothing in words.
   return {
     id: "value",
     title: `הערכת מלאי הסגירה — ${METHOD_LABEL["moving-avg"]}`,
-    text: [
-      "הכלל: לפני כל מכירה מחשבים ממוצע עדכני. אם מאז המכירה הקודמת נכנסה רכישה, הממוצע השתנה — ממוצע חדש = (עלות היתרה + עלות הרכישה) ÷ (יחידות ביתרה + יחידות שנקנו). המכירה עצמה יוצאת בממוצע הזה, ולא משנה אותו.",
-      "בכרטיס המלאי שלמטה, עמודות היתרה (צבועות) הן הלב: אחרי כל תנועה רושמים כמה יחידות נשארו, בכמה כל אחת, ובכמה הכול.",
-    ],
-    walk: movingWalk(r),
+    text: ["קנייה ← ממוצע חדש: (עלות היתרה + עלות הרכישה) ÷ (יחידות ביתרה + שנקנו). מכירה ← יוצאת בממוצע שעל הכרטיס, והממוצע לא משתנה."],
     tables: [stockCard(r)],
     flow: [
-      [
-        ...saleCosts.map((x, i) => ({ label: `${i ? "+ " : ""}${dateLabel(x.date)}: ${q(x.qty)} × ${u(x.unitCost)}`, value: `${m(x.amount)} ₪` })),
-        { label: "= עלות המכר (לפני בדיקת שווי מימוש נטו)", value: `${m(cogsBefore)} ₪`, tone: "accent" as const },
-      ],
+      [{ label: "עלות המכר = סה״כ עמודת ״יצא״ בכרטיס (לפני בדיקת שווי מימוש נטו)", value: `${m(cogsBefore)} ₪`, tone: "accent" as const }],
     ],
     rules: ["R20"],
   };

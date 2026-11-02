@@ -1,13 +1,13 @@
 "use client";
 
-import { ArrowLeftRight, Calculator, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
+import { Calculator, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useContext, useId, useState } from "react";
 import { LessonContext } from "@/components/study-mode/screen-link";
 import { NumberInput, parseNumber } from "@/components/study/inputs";
 import { type Entry, ledger } from "@/lib/learn/basics";
-import { compareMethods, METHOD_LABEL, priceTrend, valuatePeriod } from "@/lib/learn/inventory";
-import { lehavaWith, tzlilWith } from "@/lib/learn/inventory-examples";
+import { valuatePeriod } from "@/lib/learn/inventory";
+import { lehavaWith } from "@/lib/learn/inventory-examples";
 import { INVENTORY_CALC, inventoryScreenHref } from "@/lib/study/inventory";
 import { stableOrder } from "@/lib/shuffle";
 import { cn } from "@/lib/utils";
@@ -383,75 +383,6 @@ export function SortQuiz({ id, items, options, title, prefix = "inv" }: { id: st
   );
 }
 
-// ---------------------------------------------------------------------------
-// Chapter 6: change three prices and watch the formulas part ways.
-
-export function FormulaLab() {
-  const [prices, setPrices] = useState<[string, string, string]>(["20", "30", "40"]);
-  const p = prices.map((x) => parseNumber(x)) as [number, number, number];
-  const valid = p.every((x) => Number.isFinite(x) && x >= 0);
-  const period = tzlilWith(valid ? p : [20, 30, 40]);
-  const all = compareMethods([period]);
-  const perpetualFifo = valuatePeriod(period, "fifo", { system: "perpetual" });
-  const rows = [
-    { label: "FIFO תקופתי", r: all.fifo[0] },
-    { label: "FIFO תמידי", r: perpetualFifo },
-    { label: METHOD_LABEL["wa-periodic"], r: all["wa-periodic"][0] },
-    { label: METHOD_LABEL["moving-avg"], r: all["moving-avg"][0] },
-  ];
-  const trend = priceTrend(period);
-  const order = [rows[0], rows[2], rows[3]].sort((a, b) => b.r.grossProfit - a.r.grossProfit);
-  return (
-    <div className="card space-y-4 p-5">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {(["1.2 (10 יח')", "10.4 (5 יח')", "17.8 (6 יח')"] as const).map((l, i) => (
-          <NumberInput key={l} label={`מחיר הרכישה ב-${l}`} suffix="₪" value={prices[i]} onChange={(v) => setPrices((s) => s.map((x, j) => (j === i ? v : x)) as [string, string, string])} error={Number.isFinite(p[i]) && p[i] >= 0 ? undefined : "הזינו מחיר"} />
-        ))}
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <button type="button" className={btn} onClick={() => setPrices(([a, b, c]) => [c, b, a])}>
-          <ArrowLeftRight className="h-4 w-4" aria-hidden /> היפוך מגמה
-        </button>
-        <button type="button" className={btn} onClick={() => setPrices(["20", "30", "40"])}>
-          <RotateCcw className="h-4 w-4" aria-hidden /> מחירי הדוגמה
-        </button>
-      </div>
-      <Scroller caption="אותם נתונים — ארבע תוצאות (מכירות 1,000 ₪)">
-        <table className="w-full min-w-[28rem] text-sm">
-          <thead>
-            <tr className="text-xs text-muted">
-              <th scope="col" className="px-3 py-2 text-start font-medium">שיטה</th>
-              <th scope="col" className="px-3 py-2 text-end font-medium">מלאי סגירה (9 יח׳)</th>
-              <th scope="col" className="px-3 py-2 text-end font-medium">עלות המכר</th>
-              <th scope="col" className="px-3 py-2 text-end font-medium">רווח גולמי</th>
-            </tr>
-          </thead>
-          <tbody aria-live="polite">
-            {rows.map(({ label, r }) => (
-              <tr key={label} className="border-t border-line/70">
-                <th scope="row" className="px-3 py-1.5 text-start font-normal text-fg">{label}</th>
-                <td className="px-3 py-1.5 text-end"><Money v={r.closingCarrying} plain /></td>
-                <td className="px-3 py-1.5 text-end"><Money v={r.cogs} plain /></td>
-                <td className="px-3 py-1.5 text-end font-semibold"><Money v={r.grossProfit} plain /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Scroller>
-      <p className="rounded-lg bg-accent-soft px-3 py-2 text-sm text-fg" aria-live="polite">
-        {trend === "up" && <>המחירים עלו: על המדף ב-FIFO נשארות היחידות היקרות, ולכן עלות המכר נמוכה והרווח הגולמי הגבוה ביותר. </>}
-        {trend === "down" && <>המחירים ירדו: עכשיו ב-FIFO נשארות היחידות הזולות — והסדר התהפך. </>}
-        {trend === "flat" && <>כל המחירים זהים — כל השיטות נותנות אותה תוצאה. </>}
-        {trend === "mixed" && <>המחירים עלו וירדו — אין כלל פשוט; צריך לחשב. </>}
-        {trend !== "flat" && (
-          <>
-            הסדר עכשיו: {order.map((o) => o.label).join(" > ")}.
-          </>
-        )}
-      </p>
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Chapter 7: the FIFO shelf, event by event.
@@ -577,6 +508,104 @@ export function AnswerCheck({ answers }: { answers: { label: string; value: numb
       <button type="button" className={cn(btn, "text-xs")} onClick={() => setShown((s) => !s)}>
         {shown ? "הסתירו את התשובות" : "הראו תשובות"}
       </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// A method's first drill: a small table with empty cells the reader fills in.
+
+/** A cell: given text or a number, or a number to find. */
+export type GridCell = string | number | { find: number };
+
+/**
+ * The reader builds the solution in a table of their own: the empty cells are
+ * theirs to fill, "בדיקה" marks each one right or wrong, and the answers can be
+ * shown. Kept on the page only — a first try, not a score.
+ */
+export function FillGrid({ caption, head, rows, hint }: { caption: string; head: string[]; rows: GridCell[][]; hint?: string }) {
+  const [v, setV] = useState<Record<string, string>>({});
+  const [checked, setChecked] = useState(false);
+  const blanks = rows.flatMap((r, i) => r.flatMap((c, j) => (typeof c === "object" ? [`${i}:${j}`] : [])));
+  const value = (i: number, j: number) => v[`${i}:${j}`] ?? "";
+  const right = (i: number, j: number, c: { find: number }) => {
+    const x = parseNumber(value(i, j));
+    return Number.isFinite(x) && Math.abs(x - c.find) < 0.01;
+  };
+  const score = blanks.filter((k) => {
+    const [i, j] = k.split(":").map(Number);
+    return right(i, j, rows[i][j] as { find: number });
+  }).length;
+  return (
+    <div className="card space-y-3 p-4">
+      <p className="text-[15px] font-semibold text-fg">{caption}</p>
+      {hint && <p className="text-[14px] text-muted">{hint}</p>}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[30rem] text-sm">
+          <thead>
+            <tr className="text-xs text-muted">
+              {head.map((h) => (
+                <th key={h} scope="col" className="px-2 py-2 text-start font-medium">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i} className="border-t border-line/70">
+                {r.map((c, j) =>
+                  typeof c === "object" ? (
+                    <td key={j} className="px-1.5 py-1">
+                      <input
+                        dir="ltr"
+                        inputMode="decimal"
+                        aria-label={`${head[j]} — שורה ${i + 1}`}
+                        value={value(i, j)}
+                        onChange={(e) => {
+                          setChecked(false);
+                          setV((p) => ({ ...p, [`${i}:${j}`]: e.target.value }));
+                        }}
+                        className={cn(
+                          "num w-24 rounded-md border bg-surface px-2 py-1 text-end text-[14px] outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]",
+                          checked ? (right(i, j, c) ? "border-success bg-success/10" : "border-danger bg-danger/10") : "border-accent/50 bg-accent-soft/40",
+                        )}
+                      />
+                    </td>
+                  ) : (
+                    <td key={j} className={cn("px-2 py-1.5", typeof c === "number" ? "num text-end" : "text-start")}>
+                      {typeof c === "number" ? fmt(c) : c}
+                    </td>
+                  ),
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" className={cn(btn, "bg-accent font-semibold text-accent-fg ring-0 hover:bg-accent hover:brightness-110")} onClick={() => setChecked(true)}>
+          בדיקה
+        </button>
+        <button
+          type="button"
+          className={btn}
+          onClick={() => {
+            setV(Object.fromEntries(blanks.map((k) => {
+              const [i, j] = k.split(":").map(Number);
+              return [k, String((rows[i][j] as { find: number }).find)];
+            })));
+            setChecked(true);
+          }}
+        >
+          הראו תשובות
+        </button>
+        {checked && (
+          <span className={cn("text-sm font-semibold", score === blanks.length ? "text-success" : "text-fg")} aria-live="polite">
+            {score === blanks.length ? "✓ הכול נכון" : `${score} מתוך ${blanks.length} נכונים`}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

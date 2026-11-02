@@ -38,6 +38,43 @@ const keyed = (xs: ReactNode[]) => xs.map((x, i) => <Fragment key={i}>{x}</Fragm
 
 export const COURSE_SCREENS: Record<string, ScreenContent> = {
   // ---------------------------------------------------------------- lesson 1
+  "iv-welcome": {
+    lead: "לפני המושגים — מפה: מה נלמד בקורס, באיזה סדר, ומה תדעו לעשות בסופו.",
+    body: (
+      <>
+        <Story icon={<ClipboardCheck />} title="מה שאלת מלאי במבחן מבקשת">
+          <p>חברה קונה ומוכרת סחורה במהלך השנה. צריך למצוא כמה שווה מה שנשאר במחסן, כמה עלה מה שנמכר, וכמה הרוויחה — ולפעמים גם כמה תקבל מהביטוח אחרי שריפה.</p>
+        </Story>
+        <Wide className="grid gap-3 sm:grid-cols-2">
+          {(
+            [
+              ["שיעורים 1–3 · היסודות", "מהו מלאי ולמה הוא לא הוצאה, איך רושמים אותו, ומה נספר כמלאי של החברה."],
+              ["שיעורים 4–5 · כמה עולה המלאי", "מה נכנס לעלות של רכישה, ואיך קוראים כל סוג של הנחה."],
+              ["שיעורים 6–8 · איך מעריכים", "FIFO, ממוצע תקופתי וממוצע נע — ואז הנמוך מבין העלות לשווי מימוש נטו."],
+              ["שיעורים 9–12 · שאלות מבחן", "נעלמים, שריפה וביטוח, דף הפתרון — ושתי שאלות מלאות ברמת מבחן."],
+            ] as const
+          ).map(([t, d], i) => (
+            <div key={t} className="rounded-xl border border-line bg-surface p-3.5">
+              <p className="flex items-center gap-2 font-semibold text-fg">
+                <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
+                {t}
+              </p>
+              <p className="mt-1 text-[14.5px] text-fg/85">{d}</p>
+            </div>
+          ))}
+        </Wide>
+        <Card title="בשיעור הזה">
+          <ul className="list-inside list-disc space-y-1 text-[15px]">
+            <li>למה מה שלא נמכר אינו הוצאה של השנה</li>
+            <li>ארבעת הצעדים בסוף השנה, ופקודת מלאי הסגירה</li>
+            <li>מה קורה למלאי בשנה הבאה</li>
+            <li>הדוח עד הרווח הגולמי</li>
+          </ul>
+        </Card>
+        <KeyCard>כל שיעור בנוי אותו דבר: מושגים קצרים, אחד בכל מסך, עם בדיקה קטנה אחרי כל אחד — ואז תרגול וסיכום. מה שצריך לדעת מראש: רק חובה וזכות.</KeyCard>
+      </>
+    ),
+  },
   "iv-year-end": {
     lead: "בשיטה תקופתית, הקניות נרשמות כל השנה כהוצאה. בסוף השנה מתקנים: סופרים מה נשאר, ומוציאים את העלות שלו מההוצאות.",
     body: (
