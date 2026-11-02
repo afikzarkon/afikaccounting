@@ -15,6 +15,8 @@ import type { StudyModule } from "@/lib/study/types";
  * the lessons' outlines only — it looks the same.
  */
 export function GatedCoursePath({ lessons }: { lessons: StudyModule[] }) {
+  // Every lesson hidden by the admin: no path to show.
+  if (!lessons.length) return null;
   const topic = topicByHref(lessons[0].backHref);
   if (!topic || topic.tier === "free") return <CoursePath lessons={lessons} />;
   return (
