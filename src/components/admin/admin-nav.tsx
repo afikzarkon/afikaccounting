@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, FileCheck2, FileStack, Gauge, Layers, type LucideIcon, Settings } from "lucide-react";
+import { BadgeCheck, FileCheck2, FileStack, Gauge, Layers, type LucideIcon, ScanSearch, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ const ITEMS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/exams", label: "מבחנים", icon: FileCheck2 },
   { href: "/admin/presets", label: "תרחישים מוכנים", icon: Layers },
   { href: "/admin/subscriptions", label: "מנויים", icon: BadgeCheck },
+  { href: "/admin/watermark", label: "סימני מים", icon: ScanSearch },
   { href: "/admin/settings", label: "הגדרות", icon: Settings },
 ];
 

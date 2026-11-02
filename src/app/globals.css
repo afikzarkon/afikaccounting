@@ -259,12 +259,17 @@ html[data-guard="hidden"] main {
 html[data-guard] main img {
   -webkit-user-drag: none;
 }
-.content-watermark {
+/* A hidden mark (lib/watermark.ts): the reader's code at 3% opacity, found with the reveal tool in /admin/watermark. */
+.content-mark {
   position: fixed;
-  inset: 0;
   z-index: 60;
   pointer-events: none;
-  background-repeat: repeat;
+  user-select: none;
+  white-space: nowrap;
+  font: 600 10px/1 var(--font-geist-mono), monospace;
+  letter-spacing: 0.12em;
+  color: var(--fg);
+  opacity: 0.03;
 }
 @media print {
   /* Only the cheat sheets their own buttons print (printing-sheet, printing-inv) leave the page. */

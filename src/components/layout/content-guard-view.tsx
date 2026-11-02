@@ -1,7 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
+import { MARK_SPOTS } from "@/lib/watermark";
 
 /** The pages whose content is guarded: the courses, the lessons, review, and an exam. */
 const GUARDED = ["/study/", "/basics", "/review", "/exams/"];
@@ -9,17 +10,9 @@ export const isGuarded = (pathname: string) => GUARDED.some((p) => pathname === 
 
 const editable = (t: EventTarget | null) => t instanceof HTMLElement && !!t.closest("input, textarea, select, [contenteditable='true']");
 
-/** A tiled, rotated line of text as an SVG background: no element to delete in place of it. */
-function watermark(text: string) {
-  const safe = text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="360" height="200"><text x="0" y="110" transform="rotate(-24 180 100)" font-family="sans-serif" font-size="14" fill="#808080" fill-opacity="0.16">${safe}</text></svg>`;
-  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
-}
-
-export function ContentGuardView({ mark }: { mark: string | null }) {
+export function ContentGuardView({ code }: { code: string | null }) {
   const pathname = usePathname();
   const on = isGuarded(pathname);
-  const background = useMemo(() => (mark ? watermark(`${mark} · ${new Date().toLocaleDateString("he-IL")}`) : null), [mark]);
 
   useEffect(() => {
     if (!on) return;
@@ -74,6 +67,15 @@ export function ContentGuardView({ mark }: { mark: string | null }) {
     };
   }, [on]);
 
-  if (!on || !background) return null;
-  return <div aria-hidden className="content-watermark" style={{ backgroundImage: background }} />;
+  if (!on || !code) return null;
+  // Nearly transparent: unseen while reading, there in every capture of the screen.
+  return (
+    <div aria-hidden>
+      {MARK_SPOTS.map((s) => (
+        <span key={s.id} className="content-mark" style={s.style}>
+          {code}
+        </span>
+      ))}
+    </div>
+  );
 }

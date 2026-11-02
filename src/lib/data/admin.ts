@@ -211,6 +211,41 @@ export async function listDeviceAlerts(days = 30): Promise<DeviceAlert[]> {
   return rows.map((r) => ({ ...r, devices: Number(r.devices), countries: Number(r.countries), signIns: Number(r.signIns), labels: r.labels ?? [], countryList: r.countryList ?? [] }));
 }
 
+// ---- watermark lookup -------------------------------------------------------------
+
+export type MarkMatch = {
+  id: string;
+  fullName: string;
+  createdAt: string;
+  signIns: { device: string; country: string; at: string }[];
+};
+
+/**
+ * The accounts whose id starts with a watermark's 8 hex digits (lib/watermark.ts):
+ * one, almost always. The uuid range is exactly the ids with that prefix.
+ */
+export async function findByMarkCode(hex: string): Promise<MarkMatch[]> {
+  const supabase = await createClient();
+  const profiles = check<{ id: string; full_name: string; created_at: string }[]>(
+    await supabase
+      .from("profiles")
+      .select("id, full_name, created_at")
+      .gte("id", `${hex}-0000-0000-0000-000000000000`)
+      .lte("id", `${hex}-ffff-ffff-ffff-ffffffffffff`)
+      .limit(5),
+  );
+  // Recent sign-ins, when the single-session migration has run; without it, none.
+  const { data: signIns } = profiles.length
+    ? await supabase.from("sign_ins").select("user_id, device, country, created_at").in("user_id", profiles.map((p) => p.id)).order("created_at", { ascending: false }).limit(20)
+    : { data: [] };
+  return profiles.map((p) => ({
+    id: p.id,
+    fullName: p.full_name,
+    createdAt: p.created_at,
+    signIns: (signIns ?? []).filter((x) => x.user_id === p.id).map((x) => ({ device: x.device, country: x.country, at: x.created_at })),
+  }));
+}
+
 // ---- exams -------------------------------------------------------------------
 
 export type AdminExamRow = ExamMeta & { hasSteps: boolean; updatedAt: string };
