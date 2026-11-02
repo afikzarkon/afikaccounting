@@ -1,4 +1,4 @@
-import { Building2, CalendarClock, Cog, Factory, HandCoins, Layers, Package, Truck } from "lucide-react";
+import { Building2, CalendarClock, ClipboardCheck, Cog, Factory, HandCoins, Layers, Package, Truck } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
@@ -7,14 +7,14 @@ import { LATE, PRESS, PRESS_IN, PRESS_OUT, SHOP, SHOP_COST } from "@/lib/study/i
 import { GROUP, GROUP_GAIN, SOLD, SOLD_GAIN, TRUCK_LOSS, TRUCK_SALE } from "@/lib/study/ias16/lessons/disposal";
 import { DB, DB_RATE, SYD, SYD_FISCAL } from "@/lib/study/ias16/lessons/methods";
 import { READY, TRUCK } from "@/lib/study/ias16/lessons/straight";
-import { SPREAD } from "@/lib/study/ias16/lessons/what";
+import { FIRST_SL, SPREAD } from "@/lib/study/ias16/lessons/what";
 import { MiniQuiz, SortQuiz } from "./inventory-interactive";
 import { MoreDialog, Reveal, Sorted, Story } from "./inventory-teach";
-import { Card, KeyCard, Money, Rule, type Step, Stepper, Wide } from "./ui";
+import { Card, Formula, Frac, KeyCard, Money, Rule, type Step, Stepper, Wide } from "./ui";
 
 /**
  * The concept screens the twelve-lesson fixed-assets course added to the ones
- * it kept, lessons 1–6: what an item is, its cost, straight-line and the other
+ * it kept, lessons 1–6: the course map, what an item is, its cost, straight-line and the other
  * methods, components, and disposal. One principle per screen, each with a
  * self-check on a page of its own.
  */
@@ -41,6 +41,7 @@ const dbRows = (() => {
   });
 })();
 const sydDigits = (SYD.life * (SYD.life + 1)) / 2;
+const sydLife = (k: number) => (SYD.cost * (SYD.life - k + 1)) / sydDigits;
 
 // Lesson 5's machine in its three parts, for two years.
 const componentSteps: Step[] = [
@@ -112,21 +113,71 @@ const SORT_ITEMS = [
 
 export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
   // ---------------------------------------------------------------- lesson 1
+  "ppe-welcome": {
+    lead: "לפני המושגים — מפה: מה נלמד בקורס, באיזה סדר, ומה תדעו לעשות בסופו.",
+    body: (
+      <>
+        <Story icon={<ClipboardCheck />} title="מה שאלת רכוש קבוע במבחן מבקשת">
+          <p>חברה קונה מכונות, מבנים וכלי רכב, ומשתמשת בהם שנים. צריך לקבוע בכמה לרשום כל נכס, כמה פחת להוציא בכל שנה ומה הערך שלו בספרים — ומה קורה כשמשפצים אותו, מוכרים אותו, מחליפים אותו או מעריכים אותו מחדש.</p>
+        </Story>
+        <Wide className="grid gap-3 sm:grid-cols-2">
+          {(
+            [
+              ["שיעורים 1–3 · היסודות", "מהו רכוש קבוע, מה נכנס לעלות שלו, ופחת בקו ישר — השיטה הנפוצה ביותר."],
+              ["שיעורים 4–6 · פחת לעומק, ויציאה מהספרים", "שיטות פחת נוספות, פחת לפי רכיבים, ומכירה וגריעה."],
+              ["שיעורים 7–8 · אירועים בחיי הנכס", "תחזוקה, שיפור והחלפת רכיב — והחלפת נכס בנכס."],
+              ["שיעורים 9–12 · הערכה מחדש ושאלות מבחן", "מודל ההערכה מחדש לקרקע ולנכס שמופחת, דף הפתרון — ושתי שאלות מלאות ברמת מבחן."],
+            ] as const
+          ).map(([t, d], i) => (
+            <div key={t} className="rounded-xl border border-line bg-surface p-3.5">
+              <p className="flex items-center gap-2 font-semibold text-fg">
+                <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
+                {t}
+              </p>
+              <p className="mt-1 text-[14.5px] text-fg/85">{d}</p>
+            </div>
+          ))}
+        </Wide>
+        <Card title="בשיעור הזה">
+          <ul className="list-inside list-disc space-y-1 text-[15px]">
+            <li>למה מכונה אינה הוצאה של השנה שבה נקנתה</li>
+            <li>נוסחת הקו הישר — הפחת הראשון שלכם</li>
+            <li>מהו רכוש קבוע לפי התקן, ומתי מכירים בו</li>
+            <li>רכוש קבוע, מלאי או הוצאה?</li>
+          </ul>
+        </Card>
+        <KeyCard>כל שיעור בנוי אותו דבר: מושגים קצרים, אחד בכל מסך, עם בדיקה קטנה אחרי כל אחד — ואז תרגול וסיכום. מה שצריך לדעת מראש: רק חובה וזכות.</KeyCard>
+      </>
+    ),
+  },
   "ppe-matching": {
     lead: "מכונה שתשמש ארבע שנים לא נצרכת בשנה אחת. לכן העלות שלה לא נרשמת כהוצאה ביום הקנייה — היא נפרסת על השנים שבהן המכונה מייצרת הכנסות.",
     body: (
       <>
-        <Story icon={<Factory />} title={`מכונה ב-${n(SPREAD.cost)} ₪, ${SPREAD.life} שנים, הכנסות של ${n(SPREAD.revenue)} ₪ בכל שנה`}>
-          <p>מה יקרה לרווח אם כל העלות תירשם כהוצאה בשנה הראשונה?</p>
+        <Story icon={<Factory />} title={`מכונה ב-${n(SPREAD.cost)} ₪ שתשמש ${SPREAD.life} שנים`}>
+          <p>
+            בכל שנה היא מייצרת הכנסות של <Money v={SPREAD.revenue} />. מה יקרה לרווח אם כל העלות תירשם כהוצאה בשנה הראשונה — ומה אם נפרוס אותה?
+          </p>
         </Story>
-        <Wide className="grid gap-3 md:grid-cols-2">
+        <Wide className="grid gap-3">
           <Card title="✗ הכול כהוצאה בשנה הראשונה" className="border-danger/40">
-            <DataTable head={["שנה", "רווח"]} rows={Array.from({ length: SPREAD.life }, (_, i) => [`${i + 1}`, SPREAD.revenue - (i === 0 ? SPREAD.cost : 0)])} />
-            <p className="text-sm text-muted">שנה ראשונה בהפסד, ושלוש שנים ״רווחיות מדי״ — אותה מכונה, אותה עבודה.</p>
+            <DataTable
+              head={["שנה", "הכנסות", "הוצאה", "רווח"]}
+              rows={Array.from({ length: SPREAD.life }, (_, i) => {
+                const expense = i === 0 ? SPREAD.cost : 0;
+                return [`${i + 1}`, SPREAD.revenue, expense, SPREAD.revenue - expense];
+              })}
+            />
+            <p className="text-sm text-muted">
+              שנה 1: <Money v={SPREAD.revenue} plain /> − <Money v={SPREAD.cost} plain /> = הפסד של <Money v={SPREAD.cost - SPREAD.revenue} />. בשנים 2–4 אין הוצאה בכלל — אותה מכונה, אותה עבודה.
+            </p>
           </Card>
           <Card title="✓ פריסה — פחת" className="border-success/40">
-            <DataTable head={["שנה", "רווח"]} rows={Array.from({ length: SPREAD.life }, (_, i) => [`${i + 1}`, SPREAD.revenue - SPREAD.cost / SPREAD.life])} />
-            <p className="text-sm text-muted">בכל שנה ההוצאה עומדת מול ההכנסות שהמכונה יצרה בה.</p>
+            <DataTable head={["שנה", "הכנסות", "הוצאה", "רווח"]} rows={Array.from({ length: SPREAD.life }, (_, i) => [`${i + 1}`, SPREAD.revenue, SPREAD.cost / SPREAD.life, SPREAD.revenue - SPREAD.cost / SPREAD.life])} />
+            <p className="text-sm text-muted">
+              הוצאה בכל שנה: <Money v={SPREAD.cost} plain /> ÷ {SPREAD.life} = <Money v={SPREAD.cost / SPREAD.life} />. רווח: <Money v={SPREAD.revenue} plain /> − <Money v={SPREAD.cost / SPREAD.life} plain /> ={" "}
+              <Money v={SPREAD.revenue - SPREAD.cost / SPREAD.life} /> — בכל שנה.
+            </p>
           </Card>
         </Wide>
         <KeyCard>זה עיקרון ההקבלה: הוצאה נרשמת יחד עם ההכנסה שהיא יצרה. החלק של הנכס שנצרך בכל שנה נקרא פחת.</KeyCard>
@@ -144,6 +195,58 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
         options: ["את החלק של הנכס שנצרך בתקופה", "את הירידה במחיר השוק של הנכס", "כסף שהחברה חוסכת להחלפת הנכס", "את עלות התיקונים"],
         answer: 0,
         why: "פחת הוא הקצאה של העלות לתקופות השימוש — לא מדידה של שווי השוק.",
+      },
+    ]),
+  },
+  "ppe-sl-first": {
+    lead: "יש כמה שיטות לחשב פחת. הנפוצה ביותר היא קו ישר: כל שנה מלאה מקבלת אותו פחת. עד שיעור 4 — כל חישוב פחת בקורס הוא בקו ישר.",
+    body: (
+      <>
+        <Wide>
+          <Formula
+            title="קו ישר"
+            when={`מכונה ב-${n(FIRST_SL.cost)} ₪ תשמש ${FIRST_SL.life} שנים, ובסופן תימכר כגרוטאה ב-${n(FIRST_SL.salvage)} ₪.`}
+            formula={
+              <>
+                פחת שנתי = <Frac top="עלות − ערך גרט" bottom="שנות חיים" />
+              </>
+            }
+            example={
+              <>
+                <Frac top={<><Money v={FIRST_SL.cost} plain /> − <Money v={FIRST_SL.salvage} plain /></>} bottom={FIRST_SL.life} /> = <Money v={(FIRST_SL.cost - FIRST_SL.salvage) / FIRST_SL.life} />
+              </>
+            }
+          />
+        </Wide>
+        <Wide>
+          <DataTable
+            head={["בנוסחה", "מה זה", "בדוגמה"]}
+            rows={[
+              ["עלות", "מה שהנכס עלה — בשיעור 2 נראה בדיוק מה נכנס אליה", FIRST_SL.cost],
+              ["ערך גרט", "מה שצפוי להתקבל על הנכס בסוף השימוש; אם לא נאמר — אפס", FIRST_SL.salvage],
+              ["שנות חיים", "כמה שנים הנכס ישמש את החברה", FIRST_SL.life],
+            ]}
+          />
+        </Wide>
+        <KeyCard>מפחיתים רק את מה שבאמת ייצרך — העלות פחות ערך הגרט — ומחלקים אותו שווה בשווה בין השנים. בסוף החיים נשאר בספרים בדיוק ערך הגרט.</KeyCard>
+        <MoreDialog label="ושיטות אחרות?">
+          <p>יתרה פוחתת, סכום ספרות השנים ויחידות תפוקה — כל אחת מחלקת את אותו סכום אחרת בין השנים. נלמד אותן בשיעור 4.</p>
+          <p>לפעמים השאלה נותנת שיעור באחוזים במקום שנות חיים — למשל 25% לשנה, שהם 4 שנים. בשיעור 3 נראה גם את זה, וגם שנה שבה הנכס עבד רק חלק ממנה.</p>
+        </MoreDialog>
+      </>
+    ),
+    check: quiz("ppe-sl-first", [
+      {
+        q: "מכונה ב-90,000 ₪, בלי ערך גרט, תשמש 6 שנים. מה הפחת השנתי בקו ישר?",
+        options: ["15,000 ₪", "90,000 ₪", "18,000 ₪", "6,000 ₪"],
+        answer: 0,
+        why: "(90,000 − 0) ÷ 6 = 15,000 ₪.",
+      },
+      {
+        q: "משאית ב-70,000 ₪, ערך גרט 10,000 ₪, 5 שנים. מה הפחת השנתי בקו ישר?",
+        options: ["12,000 ₪", "14,000 ₪", "16,000 ₪", "10,000 ₪"],
+        answer: 0,
+        why: "(70,000 − 10,000) ÷ 5 = 12,000 ₪. 14,000 יוצא כששוכחים להוריד את הגרט.",
       },
     ]),
   },
@@ -429,9 +532,38 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
       <>
         <Story icon={<Truck />} title={`משאית ב-${n(TRUCK.cost)} ₪, ${TRUCK.rate * 100}% לשנה, מ-1.${TRUCK.startMonth}.${TRUCK.year}`}>
           <p>
-            {TRUCK.rate * 100}% לשנה = {1 / TRUCK.rate} שנות חיים. פחת שנתי: <Money v={truckAnnual} />.
+            {TRUCK.rate * 100}% לשנה = {1 / TRUCK.rate} שנות חיים, בלי ערך גרט.
           </p>
         </Story>
+        <Wide className="grid gap-3 md:grid-cols-2">
+          <Formula
+            title="שנות חיים נתונות"
+            when="הנוסחה מהשיעור הראשון."
+            formula={
+              <>
+                פחת שנתי = <Frac top="עלות − ערך גרט" bottom="שנות חיים" />
+              </>
+            }
+            example={
+              <>
+                <Frac top={<><Money v={TRUCK.cost} plain /> − 0</>} bottom={1 / TRUCK.rate} /> = <Money v={truckAnnual} />
+              </>
+            }
+          />
+          <Formula
+            title="שיעור באחוזים נתון"
+            when="השיעור חל על העלות; 100% ÷ השיעור = שנות החיים."
+            formula={<>פחת שנתי = עלות × שיעור</>}
+            example={
+              <>
+                <Money v={TRUCK.cost} plain /> × {TRUCK.rate * 100}% = <Money v={truckAnnual} />
+              </>
+            }
+          />
+        </Wide>
+        <Rule>
+          שנה חלקית — פחת שנתי × חודשים ÷ 12. ב-{TRUCK.year}, מ-1.{TRUCK.startMonth}: <Money v={truckAnnual} plain /> × {13 - TRUCK.startMonth}/12 = <Money v={(truckAnnual * (13 - TRUCK.startMonth)) / 12} />.
+        </Rule>
         <Wide>
           <DataTable head={["שנה", "פחת השנה", "פחת נצבר", "עלות מופחתת"]} rows={truckRows} />
         </Wide>
@@ -510,6 +642,24 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
           </p>
         </Story>
         <Wide>
+          <Formula
+            title="יתרה פוחתת"
+            when="השיעור חל כל שנה על מה שנשאר בספרים — לא על העלות."
+            formula={<>פחת השנה = ערך בספרים בתחילת השנה × שיעור</>}
+            example={
+              <span className="flex flex-col items-center gap-1">
+                <span>
+                  שנה 1: <Money v={DB.cost} plain /> × {Math.round(DB_RATE * 100)}% = <Money v={dbRows[0][2] as number} />
+                </span>
+                <span>
+                  שנה 2: <Money v={dbRows[1][1] as number} plain /> × {Math.round(DB_RATE * 100)}% = <Money v={dbRows[1][2] as number} />
+                </span>
+              </span>
+            }
+            note="בשנה האחרונה מורידים בדיוק עד ערך הגרט."
+          />
+        </Wide>
+        <Wide>
           <DataTable head={["", "ערך בתחילת השנה", "פחת", "ערך בסוף השנה"]} rows={dbRows} />
         </Wide>
         <KeyCard>השיעור חל על מה שנשאר, לא על העלות. הגרט כבר ״בפנים״ — בנוסחת השיעור — ולכן לא מורידים אותו שוב.</KeyCard>
@@ -542,6 +692,29 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
             סכום הספרות: {Array.from({ length: DB.life }, (_, i) => i + 1).join(" + ")} = {(DB.life * (DB.life + 1)) / 2}.
           </p>
         </Story>
+        <Wide>
+          <Formula
+            title="סכום ספרות השנים"
+            when="סכום הספרות = n × (n + 1) ÷ 2. יורד — המונה מתחיל ב-n; עולה — ב-1."
+            formula={
+              <>
+                פחת השנה = (עלות − ערך גרט) × <Frac top="מונה השנה" bottom="סכום הספרות" />
+              </>
+            }
+            example={
+              <span className="flex flex-col items-center gap-1">
+                <span>
+                  יורד, שנה 1: <Money v={DB.cost - DB.salvage} plain /> × <Frac top={DB.life} bottom={(DB.life * (DB.life + 1)) / 2} /> ={" "}
+                  <Money v={((DB.cost - DB.salvage) * DB.life) / ((DB.life * (DB.life + 1)) / 2)} />
+                </span>
+                <span>
+                  עולה, שנה 1: <Money v={DB.cost - DB.salvage} plain /> × <Frac top={1} bottom={(DB.life * (DB.life + 1)) / 2} /> ={" "}
+                  <Money v={(DB.cost - DB.salvage) / ((DB.life * (DB.life + 1)) / 2)} />
+                </span>
+              </span>
+            }
+          />
+        </Wide>
         <Wide>
           <DataTable
             head={["שנה", "יורד", "עולה"]}
@@ -577,9 +750,33 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
       <>
         <Story icon={<CalendarClock />} title={`נכס ב-${n(SYD.cost)} ₪, ${SYD.life} שנים, סכום ספרות יורד, מ-1.${SYD.startMonth}`}>
           <p>
-            שנת חיים 1 (מונה {SYD.life}): <Money v={(SYD.cost * SYD.life) / sydDigits} />. שנת חיים 2 (מונה {SYD.life - 1}): <Money v={(SYD.cost * (SYD.life - 1)) / sydDigits} />.
+            שנת חיים 1 (מונה {SYD.life}): <Money v={sydLife(1)} />. שנת חיים 2 (מונה {SYD.life - 1}): <Money v={sydLife(2)} />.
           </p>
         </Story>
+        <Wide>
+          <Formula
+            title="שנת כספים שמתחלקת בין שתי שנות חיים"
+            when="קודם מחשבים כל שנת חיים בנוסחה של השיטה, ואז לוקחים מכל אחת את החודשים שנפלו בשנת הכספים."
+            formula={
+              <>
+                <span className="whitespace-nowrap">פחת השנה =</span>
+                <span className="inline-flex items-center whitespace-nowrap">
+                  שנת חיים א׳ × <Frac top="חודשים" bottom="12" />
+                </span>
+                +
+                <span className="inline-flex items-center whitespace-nowrap">
+                  שנת חיים ב׳ × <Frac top="חודשים" bottom="12" />
+                </span>
+              </>
+            }
+            example={
+              <>
+                שנת כספים 2: <Money v={sydLife(1)} plain /> × <Frac top={SYD.startMonth - 1} bottom="12" /> + <Money v={sydLife(2)} plain /> × <Frac top={13 - SYD.startMonth} bottom="12" /> ={" "}
+                <Money v={SYD_FISCAL[1]} />
+              </>
+            }
+          />
+        </Wide>
         <Reveal
           steps={keyed([
             <>
@@ -613,7 +810,23 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "ביחידות תפוקה הפחת עוקב אחרי השימוש: (עלות − גרט) × התפוקה של השנה ÷ התפוקה הכוללת הצפויה. שנה בלי ייצור — בלי פחת.",
     body: (
       <>
-        <Story icon={<Factory />} title="מכונה ב-512,000 ₪, ערך גרט 2,000 ₪, צפויה לייצר 100,000 יחידות">
+        <Wide>
+          <Formula
+            title="יחידות תפוקה"
+            when="מכונה ב-512,000 ₪, ערך גרט 2,000 ₪, צפויה לייצר 100,000 יחידות; בשנה הראשונה ייצרה 50,000."
+            formula={
+              <>
+                פחת השנה = (עלות − ערך גרט) × <Frac top="תפוקת השנה" bottom="תפוקה כוללת צפויה" />
+              </>
+            }
+            example={
+              <>
+                <Money v={510_000} plain /> × <Frac top={<Money v={50_000} plain />} bottom={<Money v={100_000} plain />} /> = <Money v={255_000} />
+              </>
+            }
+          />
+        </Wide>
+        <Story icon={<Factory />} title="אותה מכונה, ארבע שנים">
           <DataTable
             head={["שנה", "יחידות", "פחת"]}
             rows={[50_000, 20_000, 25_000, 5_000].map((u, i) => [`${i + 1}`, u, (510_000 * u) / 100_000])}

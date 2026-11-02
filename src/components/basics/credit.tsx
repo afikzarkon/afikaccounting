@@ -12,7 +12,7 @@ import { FormulaDialog } from "./formula-dialog";
 import { TCardsDialog } from "./t-dialog";
 import { MiniQuiz } from "./inventory-interactive";
 import { Posted } from "./t-accounts";
-import { Calc, JE, KeyCard, Money, Rule, type Step, Stepper } from "./ui";
+import { Calc, Formula, Frac, JE, KeyCard, Money, Rule, type Step, Stepper } from "./ui";
 
 const pct = (r: number) => `${round2(r * 100)}%`;
 const f = (v: number) => v.toLocaleString("he-IL");
@@ -788,32 +788,6 @@ function P({ r }: { r: number }) {
     <bdi dir="ltr" className="num">
       {pct(r)}
     </bdi>
-  );
-}
-
-/** A fraction drawn as one: numerator over a bar over denominator. */
-function Frac({ top, bottom }: { top: ReactNode; bottom: ReactNode }) {
-  return (
-    <span className="mx-1 inline-flex flex-col items-center text-center align-middle leading-tight">
-      <span className="px-1.5 pb-1">{top}</span>
-      <span className="w-full border-t-2 border-fg/80 px-1.5 pt-1">{bottom}</span>
-    </span>
-  );
-}
-
-/** One extraction formula: when to use it, the formula, and the formula with numbers. */
-function Formula({ title, when, formula, example, note }: { title: string; when: string; formula: ReactNode; example: ReactNode; note?: string }) {
-  return (
-    <div className="flex min-w-0 flex-col rounded-xl border border-line bg-surface-2/40 p-3">
-      <p className="font-bold text-fg">{title}</p>
-      <p className="text-[13px] text-muted">{when}</p>
-      <div className="mt-2 flex flex-wrap items-center justify-center gap-x-1 rounded-lg bg-surface px-3 py-3 text-[16px] font-semibold text-fg ring-1 ring-accent/40">{formula}</div>
-      <div className="mt-2 flex items-center gap-2 rounded-lg bg-accent-soft px-3 py-2.5 text-[15px] text-fg">
-        <span className="shrink-0 rounded bg-accent px-1.5 py-0.5 text-[11px] font-bold text-accent-fg">בדוגמה</span>
-        <span className="flex flex-1 flex-wrap items-center justify-center gap-x-1">{example}</span>
-      </div>
-      {note && <p className="mt-1.5 text-xs text-muted">{note}</p>}
-    </div>
   );
 }
 
