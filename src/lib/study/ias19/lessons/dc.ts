@@ -17,7 +17,7 @@ export const INSURED = { payroll: 15_000_000, premium: 0.006 };
 export const INSURED_EXPENSE = INSURED.payroll * INSURED.premium;
 
 /** The exercise: production workers under section 14 — at each year end, one month's salary per worker, raised every January. */
-export const SECTION14 = { workers: 25, salary: 10_200, from: 2020, raise: 0.025 };
+export const SECTION14 = { workers: 25, salary: 10_200, from: 2021, raise: 0.025 };
 export const s14 = (year: number) => SECTION14.workers * raised(SECTION14.salary, Array(year - SECTION14.from).fill(SECTION14.raise));
 
 const traps: Trap[] = [
@@ -83,11 +83,11 @@ export const DC_LESSON: StudyModule = {
     { id: "emp-dc-master", title: "בדיקת שליטה, וגשר לשיעור הבא" },
   ],
   exercises: [
-    calc("s14-2022", "סעיף 14: הוצאה", `${SECTION14.workers} עובדי ייצור חתומים על סעיף 14. בסוף כל שנה מפקידה החברה לכל עובד את משכורתו החודשית האחרונה. השכר ב-${SECTION14.from} היה ${fmt(SECTION14.salary)} ₪, ועולה ב-${pct(SECTION14.raise)} בכל ינואר. מה ההוצאה של 2022?`, s14(2022), [
-      `שכר 2022: ${fmt(SECTION14.salary)} × ${1 + SECTION14.raise}² = ${fmt(s14(2022) / SECTION14.workers)} ₪.`,
-      `× ${SECTION14.workers} עובדים = ${fmt(s14(2022))} ₪ — וכולו שולם, ולכן אין יתרה במאזן.`,
+    calc("s14-2023", "סעיף 14: הוצאה", `${SECTION14.workers} עובדי ייצור חתומים על סעיף 14. בסוף כל שנה מפקידה החברה לכל עובד את משכורתו החודשית האחרונה. השכר ב-${SECTION14.from} היה ${fmt(SECTION14.salary)} ₪, ועולה ב-${pct(SECTION14.raise)} בכל ינואר. מה ההוצאה של 2023?`, s14(2023), [
+      `שכר 2023: ${fmt(SECTION14.salary)} × ${1 + SECTION14.raise}² = ${fmt(s14(2023) / SECTION14.workers)} ₪.`,
+      `× ${SECTION14.workers} עובדים = ${fmt(s14(2023))} ₪ — וכולו שולם, ולכן אין יתרה במאזן.`,
     ]),
-    calc("s14-2023", "סעיף 14: השנה הבאה", `${SECTION14.workers} עובדי ייצור חתומים על סעיף 14; בסוף כל שנה מופקדת לכל אחד משכורתו החודשית האחרונה. השכר ב-${SECTION14.from} היה ${fmt(SECTION14.salary)} ₪ ועולה ב-${pct(SECTION14.raise)} בכל ינואר. מה ההוצאה של 2023?`, s14(2023), [`שכר 2023: ${fmt(SECTION14.salary)} × ${1 + SECTION14.raise}³; × ${SECTION14.workers} = ${fmt(s14(2023))} ₪.`]),
+    calc("s14-2024", "סעיף 14: השנה הבאה", `${SECTION14.workers} עובדי ייצור חתומים על סעיף 14; בסוף כל שנה מופקדת לכל אחד משכורתו החודשית האחרונה. השכר ב-${SECTION14.from} היה ${fmt(SECTION14.salary)} ₪ ועולה ב-${pct(SECTION14.raise)} בכל ינואר. מה ההוצאה של 2024?`, s14(2024), [`שכר 2024: ${fmt(SECTION14.salary)} × ${1 + SECTION14.raise}³; × ${SECTION14.workers} = ${fmt(s14(2024))} ₪.`]),
     calc("dc-payable", "הפקדה שטרם הועברה", `שכר שנתי ${fmt(DC_VAR.payroll)} ₪, הפקדת מעסיק ${pct(DC_VAR.rate)}, והכסף עובר ב-10 לחודש שאחרי. מה ההתחייבות ב-31.12?`, DC_VAR_YEAR.liability, [
       `הוצאה: ${fmt(DC_VAR.payroll)} × ${pct(DC_VAR.rate)} = ${fmt(DC_VAR_YEAR.expense)} ₪; שולמו 11 חודשים.`,
       `נשארה ההפקדה של דצמבר: ${fmt(DC_VAR_YEAR.liability)} ₪.`,

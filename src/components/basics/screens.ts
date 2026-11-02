@@ -12,6 +12,7 @@ import { IAS16_COURSE_MORE_SCREENS } from "./ias16-course-more";
 import { IAS16_COURSE_NEW_SCREENS } from "./ias16-course-new";
 import { IAS16_SCREENS } from "./ias16-screens";
 import { IAS19_BASICS_SCREENS } from "./ias19-course";
+import { IAS19_DB_SCREENS } from "./ias19-course-db";
 import { IAS19_SIMPLE_SCREENS } from "./ias19-course-simple";
 import { IAS19_TOOLS_SCREENS } from "./ias19-course-tools";
 import { INTRO_SCREENS } from "./intro";
@@ -48,6 +49,7 @@ const SCREENS: Record<string, ScreenContent> = {
   ...IAS19_BASICS_SCREENS,
   ...IAS19_TOOLS_SCREENS,
   ...IAS19_SIMPLE_SCREENS,
+  ...IAS19_DB_SCREENS,
 };
 
 /** A lesson's concept screens, in its order. A screen listed in the lesson but missing here fails the build. */

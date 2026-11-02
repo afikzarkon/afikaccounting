@@ -29,7 +29,6 @@ import { Card, JE, KeyCard, Money, Rule, Stepper, Wide } from "./ui";
 
 const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={items} />;
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
-const r = (v: number) => Math.round(v);
 const stayers = SICK.carried.staff - SICK.carried.leavers;
 
 export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
