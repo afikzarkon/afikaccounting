@@ -1,4 +1,5 @@
 import type { StudyModule } from "../../types";
+import { VAN, VAN_ACCUM_AT_SALE, VAN_CARRYING_AT_SALE, VAN_FIRST_MONTHS, VAN_SALE, VAN_SALE_MONTHS, VAN_SALE_RESULT } from "../bakery";
 import { calc, choice, COURSE, COURSE_HREF, fmt, journal } from "../shared";
 
 /** A machine sold at the end of its second year. */
@@ -16,18 +17,29 @@ const groupSoldAccum = (groupSoldCost / GROUP.life) * GROUP.years;
 export const GROUP_GAIN = GROUP.price - (groupSoldCost - groupSoldAccum);
 const COSTS = { carrying: 40_000, price: 52_000, broker: 2_000 };
 const BACK = { carrying: 93_000, loss: 8_000 };
+/** A gain read backwards, two steps: to the amortised cost, then to the accumulated depreciation. */
+const SALE_BACK = { cost: 100_000, price: 40_000, gain: 6_000 };
 
-/** Lesson 6: disposal — the gain or loss, depreciation up to the day, selling part of a group, solving for the proceeds, and the year-end entries of a worksheet. */
+/** Lesson 7: disposal — the gain or loss, depreciation up to the day, selling part of a group, solving for the proceeds, and the year-end entries of a worksheet. */
 export const DISPOSAL: StudyModule = {
   slug: "ias16-disposal",
   course: COURSE,
-  n: 6,
+  n: 7,
   title: "מכירה וגריעה",
   description: "רווח או הפסד הון: תמורה נטו מול הערך בספרים ביום המכירה. פחת עד יום המכירה, מכירה של חלק מקבוצה, ותיקוני רכוש קבוע בגיליון עבודה.",
+  goal: "לגרוע נכס שנמכר: פחת עד יום המכירה, רווח או הפסד הון, והפקודה.",
+  outcomes: [
+    "לרשום פחת עד יום המכירה, לפני כל חישוב אחר",
+    "לחשב רווח או הפסד הון: תמורה פחות עלות מופחתת",
+    "לרשום את פקודת המכירה — העלות והפחת הנצבר יוצאים יחד",
+    "לגרוע חלק מקבוצת נכסים",
+    "לחלץ תמורה או פחת נצבר מתוך רווח או הפסד שנתון",
+  ],
   backHref: COURSE_HREF,
   screens: [
     { id: "ppe-sale", title: "רווח או הפסד הון" },
     { id: "ppe-sale-date", title: "קודם פחת עד יום המכירה" },
+    { id: "ppe-sale-bakery", title: "המאפייה מוכרת את המשאית" },
     { id: "ppe-sale-part", title: "מכירה של חלק מקבוצה" },
     { id: "ppe-worksheet", title: "רכוש קבוע בגיליון עבודה" },
   ],
@@ -111,6 +123,27 @@ export const DISPOSAL: StudyModule = {
       "לחברה 8 מכונות זהות, 50,000 ₪ כל אחת, 10 שנים בקו ישר בלי גרט. אחרי 4 שנים נמכרו 2 מהן ב-55,000 ₪. מה הפסד ההון?",
       5_000,
       ["עלות מה שנמכר: 100,000 ₪; פחת שנצבר עליו: 100,000 ÷ 10 × 4 = 40,000 ₪.", "ערך בספרים 60,000 ₪; הפסד: 60,000 − 55,000 = 5,000 ₪."],
+    ),
+    calc(
+      "van-sale",
+      "רווח או הפסד הון",
+      `המשאית של המאפייה: עלות ${fmt(VAN.cost)} ₪, ${VAN.rate * 100}% לשנה בקו ישר מ-1.${VAN.readyMonth}.${VAN.from}, בלי ערך גרט. ב-1.${VAN_SALE.month}.${VAN_SALE.year} היא נמכרה ב-${fmt(VAN_SALE.proceeds)} ₪, בהפסד. מה סכום הפסד ההון?`,
+      -VAN_SALE_RESULT,
+      [
+        `פחת עד יום המכירה: ${VAN_FIRST_MONTHS} חודשים ב-${VAN.from}, שנה מלאה בכל שנה שאחריה, ו-${VAN_SALE_MONTHS} חודשים ב-${VAN_SALE.year}: פחת נצבר ${fmt(VAN_ACCUM_AT_SALE)} ₪.`,
+        `עלות מופחתת ביום המכירה: ${fmt(VAN.cost)} − ${fmt(VAN_ACCUM_AT_SALE)} = ${fmt(VAN_CARRYING_AT_SALE)} ₪.`,
+        `העלות המופחתת גבוהה מהתמורה: ${fmt(VAN_CARRYING_AT_SALE)} − ${fmt(VAN_SALE.proceeds)} = ${fmt(-VAN_SALE_RESULT)} ₪ — הפסד הון.`,
+      ],
+    ),
+    calc(
+      "sale-back-accum",
+      "מהרווח אל הפחת הנצבר",
+      `מכונה בעלות ${fmt(SALE_BACK.cost)} ₪ נמכרה ב-${fmt(SALE_BACK.price)} ₪, ונרשם רווח הון של ${fmt(SALE_BACK.gain)} ₪. כמה פחת נצבר היה עליה ביום המכירה?`,
+      SALE_BACK.cost - (SALE_BACK.price - SALE_BACK.gain),
+      [
+        `רווח = תמורה − עלות מופחתת. לכן עלות מופחתת = ${fmt(SALE_BACK.price)} − ${fmt(SALE_BACK.gain)} = ${fmt(SALE_BACK.price - SALE_BACK.gain)} ₪.`,
+        `עלות מופחתת = עלות − פחת נצבר. לכן פחת נצבר = ${fmt(SALE_BACK.cost)} − ${fmt(SALE_BACK.price - SALE_BACK.gain)} = ${fmt(SALE_BACK.cost - (SALE_BACK.price - SALE_BACK.gain))} ₪.`,
+      ],
     ),
   ],
   traps: [

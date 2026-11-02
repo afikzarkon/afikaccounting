@@ -13,20 +13,36 @@ const before = SYD.startMonth - 1;
 export const SYD_FISCAL = [(lifeYear(1) * (12 - before)) / 12, (lifeYear(1) * before) / 12 + (lifeYear(2) * (12 - before)) / 12];
 const ASC = { cost: 66_000, salvage: 6_000, life: 5 };
 const ascDigits = (ASC.life * (ASC.life + 1)) / 2;
+/** Declining balance read backwards: two charges in a row give the rate, and the first gives the cost. */
+export const DB_BACK = { first: 20_000, second: 16_000 };
+const dbBackRate = (DB_BACK.first - DB_BACK.second) / DB_BACK.first;
+const dbBackCost = (DB_BACK.first * DB_BACK.first) / (DB_BACK.first - DB_BACK.second);
+/** Units of production read backwards: the charge per kilometre. */
+export const UNITS_BACK = { charge: 9_000, km: 30_000 };
 
-/** Lesson 4: the accelerated methods — declining balance, the sum of the years' digits both ways, units of production — and how a part year splits a life year. */
+/** Lesson 5: why there are several methods, the accelerated ones — declining balance, the sum of the years' digits both ways, units of production — how a part year splits a life year, and how a question tells which method it wants. */
 export const METHODS: StudyModule = {
   slug: "ias16-methods",
   course: COURSE,
-  n: 4,
-  title: "שיטות פחת נוספות",
-  description: "יתרה פוחתת, סכום ספרות השנים יורד ועולה, ויחידות תפוקה — ואיך שנת חיים שמתחילה באמצע שנה מתחלקת בין שתי שנות כספים.",
+  n: 5,
+  title: "שיטות פחת, ואיך יודעים באיזו להשתמש",
+  description: "למה יש כמה שיטות; יתרה פוחתת, סכום ספרות השנים יורד ועולה, ויחידות תפוקה; שנת חיים שמתחילה באמצע שנה — ואיך מזהים מהשאלה באיזו שיטה לחשב.",
+  goal: "לחשב פחת בכל אחת מהשיטות, ולזהות מתוך הנתונים בשאלה באיזו שיטה מדובר.",
+  outcomes: [
+    "להסביר למה יש כמה שיטות פחת, ומה משותף לכולן",
+    "לחשב פחת ביתרה פוחתת, בסכום ספרות השנים ובתפוקה",
+    "לחלק שנת חיים בין שתי שנות כספים כשהנכס נכנס באמצע שנה",
+    "לזהות מהנתונים בשאלה איזו שיטה לבחור",
+    "לחלץ שיעור, עלות או פחת ליחידה מתוך פחת שנתון",
+  ],
   backHref: COURSE_HREF,
   screens: [
+    { id: "ppe-why-methods", title: "למה יש כמה שיטות" },
     { id: "ppe-db", title: "יתרה פוחתת: שיעור קבוע על ערך שהולך וקטן" },
     { id: "ppe-syd", title: "סכום ספרות השנים: יורד ועולה" },
     { id: "ppe-syd-part", title: "כשהנכס נכנס באמצע שנה" },
     { id: "ppe-units", title: "יחידות תפוקה" },
+    { id: "ppe-which-method", title: "איך יודעים באיזו שיטה לחשב" },
     { id: "depreciation", title: "סימולטור: כל השיטות על אותו נכס" },
   ],
   tools: [{ screen: "depreciation", label: "סימולטור הפחת" }],
@@ -94,6 +110,24 @@ export const METHODS: StudyModule = {
       "מכונה בעלות 210,000 ₪, ערך גרט 10,000 ₪, צפויה לעבוד 50,000 שעות. השנה עבדה 6,000 שעות. מה הפחת?",
       24_000,
       ["פחת לשעה: (210,000 − 10,000) ÷ 50,000 = 4 ₪.", "6,000 × 4 = 24,000 ₪."],
+    ),
+    calc(
+      "db-back",
+      "מהפחת אל העלות — יתרה פוחתת",
+      `נכס מופחת ביתרה פוחתת. הפחת בשנה הראשונה היה ${fmt(DB_BACK.first)} ₪, ובשנה השנייה ${fmt(DB_BACK.second)} ₪. מה עלות הנכס?`,
+      dbBackCost,
+      [
+        `ביתרה פוחתת, הפחת של שנה 2 = השיעור × (עלות − פחת שנה 1). לכן היחס בין שתי השנים הוא 1 − שיעור: ${fmt(DB_BACK.second)} ÷ ${fmt(DB_BACK.first)} = ${fmt(DB_BACK.second / DB_BACK.first)}.`,
+        `השיעור: 1 − ${fmt(DB_BACK.second / DB_BACK.first)} = ${fmt(dbBackRate * 100)}%.`,
+        `פחת שנה 1 = עלות × שיעור. לכן עלות = ${fmt(DB_BACK.first)} ÷ ${fmt(dbBackRate * 100)}% = ${fmt(dbBackCost)} ₪.`,
+      ],
+    ),
+    calc(
+      "units-back",
+      "פחת לק״מ",
+      `המשאית של המאפייה מופחתת לפי ק״מ. השנה היא נסעה ${fmt(UNITS_BACK.km)} ק״מ, והפחת היה ${fmt(UNITS_BACK.charge)} ₪. כמה פחת נרשם על כל ק״מ, בשקלים?`,
+      UNITS_BACK.charge / UNITS_BACK.km,
+      [`פחת השנה = פחת לק״מ × הק״מ של השנה.`, `לכן פחת לק״מ = ${fmt(UNITS_BACK.charge)} ÷ ${fmt(UNITS_BACK.km)} = ${fmt(UNITS_BACK.charge / UNITS_BACK.km)} ₪.`],
     ),
   ],
   traps: [

@@ -91,10 +91,12 @@ export const VARIANTS: Record<string, Record<string, Maker>> = {
     "machine-cost": (r) => machineQuestions(machine(r))["machine-cost"],
     "machine-buy": (r) => machineQuestions(machine(r))["machine-buy"],
   },
-  "ias16-straight": {
+  "ias16-table": {
     "annual-dep": (r) => machineQuestions(machine(r))["annual-dep"],
     carrying: (r) => machineQuestions(machine(r)).carrying,
     "dep-entry": (r) => depEntryQ(straight(r)),
+  },
+  "ias16-straight": {
     "mid-year": (r) => {
       const life = pick(r, [4, 5, 8, 10]);
       return midYearQ({ cost: life * 12_000 * int(r, 1, 5), life, readyMonth: int(r, 2, 12) });

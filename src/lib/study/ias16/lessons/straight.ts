@@ -1,9 +1,8 @@
 import type { StudyModule } from "../../types";
-import { depEntryQ, MID, midYearQ } from "../depreciation";
-import { MACHINE, machineQuestions } from "../intro";
+import { VAN, VAN_ANNUAL, VAN_FIRST, VAN_FIRST_MONTHS } from "../bakery";
+import { MID, midYearQ } from "../depreciation";
 import { calc, choice, COURSE, COURSE_HREF, fmt } from "../shared";
 
-const Q = machineQuestions(MACHINE);
 /** A truck depreciated at a rate, from the middle of a year. */
 export const TRUCK = { cost: 40_000, rate: 0.25, startMonth: 7, year: 2022 };
 const truckAnnual = TRUCK.cost * TRUCK.rate;
@@ -12,27 +11,46 @@ const monthsFirst = 13 - TRUCK.startMonth;
 const truckAccum = (years: number) => truckAnnual * years;
 /** A machine ready before it was first used. */
 export const READY = { cost: 360_000, life: 6, bought: 2, ready: 5, used: 7 };
+/** A first year read backwards: from its charge to the month the asset was ready. */
+export const BACK_START = { cost: 120_000, life: 6, charge: 15_000 };
+const backMonths = (BACK_START.charge / (BACK_START.cost / BACK_START.life)) * 12;
 
-/** Lesson 3: when depreciation starts, the straight line, rates, part years, the entry, carrying amount, and land. */
+/** Lesson 4: time — when depreciation starts and stops, part years, rates, land — and the five questions to ask before any charge. */
 export const STRAIGHT: StudyModule = {
   slug: "ias16-straight",
   course: COURSE,
-  n: 3,
-  title: "פחת בקו ישר",
-  description: "מתי מתחילים להפחית, פחת שנתי, המרה בין שנים לאחוזים, שנה חלקית, פחת נצבר וערך בספרים — וקרקע שלא מופחתת.",
+  n: 4,
+  title: "הזמן: ממתי מפחיתים, שנה חלקית ואחוזים",
+  description: "מתי מתחילים להפחית, שנה חלקית, המרה בין שנים לאחוזים, קרקע שלא מופחתת — וחמש השאלות ששואלים לפני כל חישוב פחת.",
+  goal: "לחשב את הפחת של כל שנת כספים — גם כשהנכס נכנס באמצע שנה, וגם כשהשאלה נותנת שיעור באחוזים.",
+  outcomes: [
+    "לקבוע ממתי מפחיתים: היום שבו הנכס זמין לשימוש",
+    "לחשב פחת לשנה חלקית לפי מספר החודשים",
+    "להמיר בין שנות חיים לשיעור פחת באחוזים",
+    "להפריד קרקע ממבנה ולהפחית רק את המבנה",
+    "לענות על חמש השאלות שקובעות כל חישוב פחת",
+  ],
   backHref: COURSE_HREF,
   screens: [
     { id: "ppe-available", title: "מתי מתחילים: היום שבו הנכס זמין לשימוש" },
-    { id: "concepts", title: "עלות, פחת, ערך בספרים — ואיך הם מתחברים" },
     { id: "ppe-rate", title: "משנים לאחוזים, ומאחוזים לשנים" },
     { id: "ppe-sl", title: "קו ישר: שנה מלאה, שנה חלקית ושיעור באחוזים" },
     { id: "ppe-land", title: "קרקע ומבנה: מפרידים לפני שמפחיתים" },
+    { id: "ppe-five-questions", title: "חמש שאלות לפני כל חישוב פחת" },
   ],
   exercises: [
-    depEntryQ({ cost: 120_000, salvage: 20_000, life: 5 }),
-    Q["annual-dep"],
-    Q.carrying,
     midYearQ(MID),
+    calc(
+      "van-first",
+      "שנה ראשונה חלקית",
+      `המשאית של המאפייה נקנתה ב-1.${VAN.boughtMonth}.${VAN.from} ב-${fmt(VAN.cost)} ₪, והייתה מוכנה לשימוש ב-1.${VAN.readyMonth}.${VAN.from}. שיעור הפחת ${VAN.rate * 100}% לשנה, בקו ישר, בלי ערך גרט. מה הפחת לשנת ${VAN.from}?`,
+      VAN_FIRST,
+      [
+        `מפחיתים מהיום שבו המשאית מוכנה לשימוש — 1.${VAN.readyMonth}, לא מיום הקנייה: ${VAN_FIRST_MONTHS} חודשים.`,
+        `פחת שנתי: ${fmt(VAN.cost)} × ${VAN.rate * 100}% = ${fmt(VAN_ANNUAL)} ₪.`,
+        `${fmt(VAN_ANNUAL)} × ${VAN_FIRST_MONTHS}/12 = ${fmt(VAN_FIRST)} ₪.`,
+      ],
+    ),
     calc(
       "rate-first",
       "שיעור באחוזים, שנה חלקית",
@@ -55,6 +73,17 @@ export const STRAIGHT: StudyModule = {
       [
         `מפחיתים מהיום שבו המכונה זמינה לשימוש — 1.${READY.ready}: ${13 - READY.ready} חודשים. השביתה לא דוחה את הפחת.`,
         `${fmt(READY.cost)} ÷ ${READY.life} × ${13 - READY.ready}/12 = ${fmt(((READY.cost / READY.life) * (13 - READY.ready)) / 12)} ₪.`,
+      ],
+    ),
+    calc(
+      "back-start",
+      "מהפחת אל תאריך הכניסה",
+      `הפחת לשנה הראשונה של מכונה היה ${fmt(BACK_START.charge)} ₪. עלותה ${fmt(BACK_START.cost)} ₪, ${BACK_START.life} שנות חיים, בקו ישר, בלי ערך גרט. על כמה חודשים של השנה הראשונה היא הופחתה?`,
+      backMonths,
+      [
+        `פחת לשנה מלאה: ${fmt(BACK_START.cost)} ÷ ${BACK_START.life} = ${fmt(BACK_START.cost / BACK_START.life)} ₪.`,
+        `פחת השנה = פחת שנתי × חודשים/12 — ולכן חודשים = ${fmt(BACK_START.charge)} ÷ ${fmt(BACK_START.cost / BACK_START.life)} × 12 = ${fmt(backMonths)}.`,
+        `${fmt(backMonths)} חודשים עד דצמבר: המכונה נכנסה לשימוש ב-1.${13 - backMonths}.`,
       ],
     ),
     choice(
@@ -84,21 +113,12 @@ export const STRAIGHT: StudyModule = {
       why: "פחת לא נעצר כשהנכס עומד. בקו ישר מפחיתים לפי הזמן, לא לפי השימוש.",
       traps: ["", "המלכודת: פחת בקו ישר לא תלוי בשימוש — הוא ממשיך גם כשהמכונה עומדת."],
     },
-    {
-      id: "salvage-in-balance",
-      prompt: "מכונה בעלות 130,000 ₪, ערך גרט 10,000 ₪, 3 שנות חיים בקו ישר. מה העלות המופחתת בסוף חייה?",
-      options: ["10,000 ₪", "0", "130,000 ₪", "40,000 ₪"],
-      answer: 0,
-      why: "מפחיתים רק את הסכום בר-הפחת (120,000). ערך הגרט לא מופחת — הוא מה שנשאר בספרים בסוף.",
-      traps: ["", "המלכודת: הפחתתם גם את הגרט. בסוף החיים נשאר בדיוק ערך הגרט.", "זו העלות — בלי שום פחת.", "זה הפחת השנתי, לא מה שנשאר."],
-    },
   ],
   tips: [
     "פחת מתחיל ביום שבו הנכס זמין לשימוש — לא ביום התשלום ולא ביום השימוש בפועל — ולא נעצר כשהנכס עומד.",
-    "קו ישר: (עלות − ערך גרט) ÷ שנות חיים. שיעור באחוזים — × עלות.",
-    "המרה: שיעור = 100% ÷ שנות חיים; שנות חיים = 100% ÷ שיעור. 4 שנים = 25%, 5 = 20%, 8 = 12.5%, 10 = 10%.",
-    "שנה חלקית: × חודשים/12. נכס ל-5 שנים שנכנס באמצע שנה מופיע ב-6 שנות כספים.",
-    "פקודה: ח׳ הוצאות פחת / ז׳ פחת נצבר. ערך בספרים = עלות − פחת נצבר; בסוף החיים — ערך הגרט.",
+    "שנה חלקית: פחת שנתי × חודשים/12. נכס ל-5 שנים שנכנס באמצע שנה מופיע ב-6 שנות כספים.",
+    "שיעור באחוזים: פחת שנתי = עלות × שיעור. המרה: שיעור = 100% ÷ שנות חיים; 4 שנים = 25%, 5 = 20%, 8 = 12.5%, 10 = 10%.",
     "קרקע לא מופחתת: מפרידים אותה מהמבנה, לפי האחוז שבשאלה.",
+    "לפני כל חישוב: מה העלות? מה ערך הגרט? כמה שנים או איזה שיעור? מאיזה תאריך? כמה חודשים השנה?",
   ],
 };

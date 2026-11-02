@@ -11,15 +11,24 @@ const BACK = { carrying: 120_000, gain: 15_000, cashIn: 10_000 };
 export const FLEET = { given: 5, fairEach: 98_000, cashOut: 140_000, received: 4 };
 export const FLEET_EACH = (FLEET.given * FLEET.fairEach + FLEET.cashOut) / FLEET.received;
 
-/** Lesson 8: exchanging one asset for another — commercial substance, which fair value, the cash, the entries, solving backwards, and the rest of the year. */
+/** Lesson 9: exchanging one asset for another — commercial substance, which fair value, the cash, the entries, solving backwards, and the rest of the year. */
 export const SWAP_LESSON: StudyModule = {
   slug: "ias16-exchange",
   course: COURSE,
-  n: 8,
+  n: 9,
   title: "החלפת נכסים",
   description: "עם מהות מסחרית — שווי הוגן ורווח או הפסד; בלי — ערך בספרים. איזה שווי הוגן, מה עושה המזומן, איך מחלצים נתון מרווח שנתון — והפחת של הנכס החדש עד סוף השנה.",
+  goal: "לרשום החלפת נכס בנכס — עם מהות מסחרית ובלעדיה — ולהמשיך להפחית את הנכס החדש.",
+  outcomes: [
+    "להסביר למה החלפה היא מכירה וקנייה באותו יום",
+    "לקבוע אם יש מהות מסחרית, ובאיזה שווי הוגן להשתמש",
+    "לחשב את עלות הנכס החדש ואת הרווח או ההפסד, גם כשיש תשלום במזומן",
+    "לרשום את פקודת ההחלפה ואת הפחת של הנכס החדש עד סוף השנה",
+    "לחלץ שווי הוגן מתוך רווח שנתון",
+  ],
   backHref: COURSE_HREF,
   screens: [
+    { id: "ppe-swap-is-sale", title: "החלפה היא מכירה וקנייה באותו יום" },
     { id: "ppe-swap-rule", title: "הכלל: מהות מסחרית ושווי הוגן" },
     { id: "exchange-steps", title: "שלבי הפתרון" },
     { id: "exchange-entries", title: "פקודות היומן" },

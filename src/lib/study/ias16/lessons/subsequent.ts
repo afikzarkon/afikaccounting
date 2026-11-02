@@ -1,4 +1,5 @@
 import type { StudyModule } from "../../types";
+import { OVEN, OVEN_BEFORE_UPGRADE, UPGRADE, UPGRADE_ANNUAL, UPGRADE_BASE } from "../bakery";
 import { estimateQ } from "../depreciation";
 import { oldRoofQ, RENO, renovationQuestions } from "../renovation";
 import { calc, choice, COURSE, COURSE_HREF, fmt, journal } from "../shared";
@@ -12,19 +13,28 @@ export const TANK_LOSS = TANK.tank - tankAccum;
 export const MOTOR = { carrying: 109_000, salvage: 2_000, hoursLeft: 21_400, improvement: 43_000, extraHours: 3_600 };
 export const MOTOR_RATE = (MOTOR.carrying + MOTOR.improvement - MOTOR.salvage) / (MOTOR.hoursLeft + MOTOR.extraHours);
 
-/** Lesson 7: costs after the asset is in use — maintenance, improvement, replacing a part — and a change in an estimate. */
+/** Lesson 8: costs after the asset is in use — maintenance, improvement, replacing a part — and a change in an estimate, taught first: a renovation is the same idea with money added. */
 export const SUBSEQUENT: StudyModule = {
   slug: "ias16-renovation",
   course: COURSE,
-  n: 7,
+  n: 8,
   title: "עלויות עוקבות: תחזוקה, שיפור והחלפת רכיב",
   description: "תחזוקה — הוצאה; שיפור שמאריך חיים או מגדיל תפוקה — נכנס לנכס, ומפחיתים מחדש את הבסיס החדש; רכיב שמוחלף — יוצא מהספרים; ושינוי אומדן — מכאן ולהבא.",
+  goal: "לטפל בכל עלות שמגיעה אחרי שהנכס בשימוש — ולחשב מחדש את הפחת מכאן ולהבא.",
+  outcomes: [
+    "להבחין בין תחזוקה (הוצאה) לשיפור או להחלפת רכיב (נכנסים לנכס)",
+    "לחשב פחת אחרי שינוי אומדן, בלי לתקן את העבר",
+    "לחשב פחת אחרי שיפוץ: עלות מופחתת + שיפוץ, על החיים שנותרו",
+    "לגרוע רכיב שהוחלף ולהכניס את החדש",
+    "לחלץ את עלות השיפוץ מתוך הפחת החדש",
+  ],
   backHref: COURSE_HREF,
   screens: [
     { id: "renovation-distinction", title: "נכנס לנכס או הוצאה" },
-    { id: "renovation-steps", title: "שיפוץ: שלבי הפתרון" },
-    { id: "ppe-replace", title: "החלפת רכיב: הישן יוצא, החדש נכנס" },
     { id: "ppe-estimate", title: "שינוי אומדן — מכאן ולהבא" },
+    { id: "renovation-steps", title: "שיפוץ: שלבי הפתרון" },
+    { id: "ppe-upgrade-bakery", title: "התנור של המאפייה משודרג" },
+    { id: "ppe-replace", title: "החלפת רכיב: הישן יוצא, החדש נכנס" },
     { id: "renovation-calculator", title: "מחשבון שיפוץ" },
   ],
   tools: [{ screen: "renovation-calculator", label: "מחשבון שיפוץ" }],
@@ -72,6 +82,16 @@ export const SUBSEQUENT: StudyModule = {
       ],
       "טיפול ששומר על הקיים לא מוסיף הטבות חדשות — הוצאה בתקופה.",
       ["הוצאות תיקונים ואחזקה", "מזומן", "מכונה", "פחת נצבר"],
+    ),
+    calc(
+      "upgrade-back",
+      "מהפחת החדש אל עלות השדרוג",
+      `ב-1.1.${UPGRADE.year} שודרג התנור של המאפייה. העלות המופחתת שלו לפני השדרוג הייתה ${fmt(OVEN_BEFORE_UPGRADE)} ₪. אחרי השדרוג הוא מופחת ${fmt(UPGRADE_ANNUAL)} ₪ בשנה, על ${UPGRADE.lifeLeft} השנים שנותרו, עם ערך גרט של ${fmt(OVEN.salvage)} ₪. כמה עלה השדרוג?`,
+      UPGRADE.cost,
+      [
+        `הפחת החדש = (בסיס חדש − ערך גרט) ÷ שנים שנותרו. לכן בסיס חדש = ${fmt(UPGRADE_ANNUAL)} × ${UPGRADE.lifeLeft} + ${fmt(OVEN.salvage)} = ${fmt(UPGRADE_BASE)} ₪.`,
+        `בסיס חדש = עלות מופחתת לפני השדרוג + השדרוג. לכן השדרוג = ${fmt(UPGRADE_BASE)} − ${fmt(OVEN_BEFORE_UPGRADE)} = ${fmt(UPGRADE.cost)} ₪.`,
+      ],
     ),
   ],
   traps: [

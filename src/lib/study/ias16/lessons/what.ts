@@ -7,20 +7,28 @@ export const SPREAD = { cost: 40_000, life: 4, revenue: 30_000 };
 const FIRST = { cost: 50_000, salvage: 10_000, life: 4 };
 export const FIRST_SL = { ...FIRST, annual: (FIRST.cost - FIRST.salvage) / FIRST.life };
 const BUY = { cost: 250_000 };
+/** The first question read backwards: from the yearly charge to the cost. */
+const BACK = { annual: 30_000, life: 5 };
 
-/** Lesson 1: what an item of property, plant and equipment is — why it is not an expense, the definition, recognition, and telling it from inventory and from an expense. */
+/** Lesson 1: what an item of property, plant and equipment is — why it is not an expense, a first straight line, the definition, recognition, and telling it from inventory and from an expense. The depreciation entry waits for lesson 3, where accumulated depreciation is taught. */
 export const WHAT: StudyModule = {
   slug: "ias16-intro",
   course: COURSE,
   n: 1,
   title: "מהו רכוש קבוע",
-  description: "מפת הקורס, למה מכונה אינה הוצאה של השנה שבה נקנתה, נוסחת הקו הישר, פקודת הפחת, שלושת התנאים בהגדרה, שני תנאי ההכרה — ואיך מבדילים רכוש קבוע ממלאי ומהוצאה.",
+  description: "מפת הקורס והחברה שתלווה אותנו, למה מכונה אינה הוצאה של השנה שבה נקנתה, הצצה לנוסחת הקו הישר, שלושת התנאים בהגדרה, שני תנאי ההכרה — ואיך מבדילים רכוש קבוע ממלאי ומהוצאה.",
+  goal: "להבין למה נכס שמשרת שנים אינו הוצאה של שנה אחת, ולזהות מה נחשב רכוש קבוע.",
+  outcomes: [
+    "להסביר למה עלות של מכונה נפרסת על שנות השימוש בה",
+    "לחשב פחת שנתי פשוט בקו ישר",
+    "לבדוק את שלושת התנאים של רכוש קבוע ואת שני תנאי ההכרה",
+    "להבדיל בין רכוש קבוע, מלאי והוצאה",
+  ],
   backHref: COURSE_HREF,
   screens: [
     { id: "ppe-welcome", title: "מה נלמד בקורס" },
     { id: "ppe-matching", title: "נכס שמשרת שנים — לא הוצאה של שנה" },
     { id: "ppe-sl-first", title: "איך מחשבים פחת: קו ישר" },
-    { id: "ppe-dep-entry", title: "פקודת הפחת: הוצאות פחת ופחת נצבר" },
     { id: "ppe-what", title: "מהו רכוש קבוע לפי התקן" },
     { id: "ppe-recognition", title: "מתי מכירים: שני תנאים, וחלקי חילוף" },
     { id: "ppe-sort", title: "תרגול הבנה: רכוש קבוע, מלאי או הוצאה?" },
@@ -76,6 +84,13 @@ export const WHAT: StudyModule = {
       SPREAD.revenue - SPREAD.cost / SPREAD.life,
       [`הוצאה שנתית: ${fmt(SPREAD.cost)} ÷ ${SPREAD.life} = ${fmt(SPREAD.cost / SPREAD.life)} ₪.`, `רווח: ${fmt(SPREAD.revenue)} − ${fmt(SPREAD.cost / SPREAD.life)} = ${fmt(SPREAD.revenue - SPREAD.cost / SPREAD.life)} ₪ — בכל אחת מהשנים.`],
     ),
+    calc(
+      "spread-back",
+      "מהפחת אל העלות",
+      `החברה רושמת על מכונה פחת של ${fmt(BACK.annual)} ₪ בכל שנה, בקו ישר, במשך ${BACK.life} שנים, בלי ערך גרט. כמה עלתה המכונה?`,
+      BACK.annual * BACK.life,
+      [`פחת שנתי = עלות ÷ שנות חיים — ולכן עלות = פחת שנתי × שנות חיים.`, `${fmt(BACK.annual)} × ${BACK.life} = ${fmt(BACK.annual * BACK.life)} ₪.`],
+    ),
     choice(
       "forklift",
       "סיווג פריט",
@@ -99,17 +114,6 @@ export const WHAT: StudyModule = {
       ["מלאי", "רכוש קבוע", "הוצאה"],
       0,
       "הוא מוחזק למכירה במהלך העסקים הרגיל — מלאי, גם אם אצל חברה אחרת אותו בניין היה רכוש קבוע.",
-    ),
-    journal(
-      "first-dep",
-      "פחת ראשון",
-      "מכונה בעלות 48,000 ₪ תשמש 4 שנים, בלי ערך גרט, בקו ישר, מתחילת השנה. רשמו את פקודת הפחת בסוף השנה.",
-      [
-        { account: "הוצאות פחת", dr: 12_000 },
-        { account: "פחת נצבר", cr: 12_000 },
-      ],
-      "48,000 ÷ 4 = 12,000 ₪: החלק של המכונה שנצרך השנה עובר להוצאות; הפחת הנצבר מקטין את הנכס במאזן.",
-      ["הוצאות פחת", "פחת נצבר", "מכונה", "מזומן"],
     ),
   ],
   traps: [
@@ -135,7 +139,6 @@ export const WHAT: StudyModule = {
     "מכירים בו כשצפויות הטבות כלכליות — גם עקיפות — והעלות ניתנת למדידה מהימנה.",
     "השיטה הנפוצה ביותר — קו ישר: פחת שנתי = (עלות − ערך גרט) ÷ שנות חיים. כל שנה מלאה מקבלת אותו סכום.",
     "ביום הרכישה: ח׳ רכוש קבוע / ז׳ מזומן או ספקים — בלי השפעה על רווח והפסד. ההוצאה מגיעה דרך הפחת.",
-    "בסוף כל שנה: ח׳ הוצאות פחת (תוצאתי — מתחיל כל שנה מאפס) / ז׳ פחת נצבר (מאזני — מצטבר ומקטין את הנכס). ערך בספרים = עלות − פחת נצבר.",
     "אותו פריט יכול להיות רכוש קבוע אצל חברה אחת ומלאי אצל אחרת — לפי מה שעושים בו.",
   ],
 };

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { sydYears, timeSchedule } from "./depreciation";
-import { LOGI_Q, logi, press } from "./ias16-exams";
+import { LOGI_Q, logi, press, SHAKED_Q, shaked } from "./ias16-exams";
 import { solveLand, solveRevaluation } from "./revaluation";
 
 const near = (a: number, b: number, where: string) => assert.ok(Math.abs(a - b) < 0.005, `${where}: ${a} ≠ ${b}`);
@@ -83,5 +83,42 @@ describe("exam question 2: Logistika Tzfonit", () => {
     near(l.truck.result, -28_750, "truck");
     near(l.truck.dep2025, 146_250, "trucks 2025");
     near(l.truck.keptAccum2025, 315_000, "trucks accumulated");
+  });
+});
+
+describe("exam question 3: Shaked Industries, a question of unknowns", () => {
+  const s = shaked();
+
+  it("the machine's life, from its accumulated depreciation", () => {
+    near(s.monthsTo2025, 45, "months");
+    near(s.annual, 60_000, "annual");
+    near(s.life, 8, "life");
+  });
+
+  it("the exchange: the fair value behind the gain, and the new machine", () => {
+    near(s.carryingAtExchange, 225_000, "carrying");
+    near(s.fairValue, 240_000, "fair value");
+    near(s.newCost, 290_000, "new cost");
+    near(s.dep2026New, 14_500, "new machine 2026");
+  });
+
+  it("the building: the fair value behind the new charge, the surplus and its transfer", () => {
+    near(s.carryingAtRevaluation, 850_000, "carrying");
+    near(s.fair, 986_000, "fair value");
+    near(s.surplus, 136_000, "surplus");
+    near(s.transfer2026, 4_000, "transfer");
+    near(s.surplus2026, 132_000, "surplus 2026");
+    near(s.totalDep2026, 73_500, "depreciation 2026");
+  });
+
+  it("the building's revaluation agrees with the revaluation solver", () => {
+    const B = SHAKED_Q.building;
+    const r = solveRevaluation({ cost: B.cost, salvage: 0, life: B.life, method: "sl", firstYear: B.from, revaluations: [{ year: B.revalued, timing: "end", fairValue: s.fair }], transfer: "depreciation" });
+    near(r.events[0].oci, s.surplus, "surplus");
+    const y = r.rows.find((x) => x.year === 2026)!;
+    near(y.dep, B.charge2026, "the new charge");
+    near(y.transfer, s.transfer2026, "transfer");
+    near(y.surplus, s.surplus2026, "surplus 2026");
+    near(y.closing, s.building2026, "carrying 2026");
   });
 });

@@ -171,3 +171,68 @@ export function logi() {
     truck: { annual, dep2023: truckDep2023, dep2024: truckDep2024, soldDep2025, soldAccum, soldCarrying, result: truckResult, dep2025: truckDep2025, keptCost: T.each * (T.count - 1), keptAccum2025 },
   };
 }
+
+// ---------------------------------------------------------------------------
+// Question 3: "Shaked Industries" — a question of unknowns. A machine whose
+// life is hidden in its accumulated depreciation, exchanged mid-2026 for a
+// gain that hides its fair value; and a building whose fair value hides in
+// the charge after its first revaluation.
+
+export const SHAKED_Q = {
+  machine: { cost: 480_000, readyMonth: 4, from: 2022, accumulated2025: 225_000 },
+  /** On 1.7.2026, with commercial substance: the company paid cash and recorded a gain. */
+  exchange: { month: 7, year: 2026, cashPaid: 50_000, gain: 15_000, newLife: 10 },
+  /** Revaluation model, reset method; the surplus moves to retained earnings as the building is depreciated. */
+  building: { cost: 1_000_000, from: 2020, life: 40, revalued: 2025, charge2026: 29_000 },
+};
+
+export function shaked() {
+  const Q = SHAKED_Q;
+  const M = Q.machine;
+  const X = Q.exchange;
+  const B = Q.building;
+  // The machine's life, from its accumulated depreciation and dates.
+  const monthsTo2025 = (2025 - M.from) * 12 + (13 - M.readyMonth);
+  const annual = (M.accumulated2025 / monthsTo2025) * 12;
+  const life = M.cost / annual;
+  // To the day of the exchange: half a year more.
+  const dep2026Old = (annual * (X.month - 1)) / 12;
+  const accumAtExchange = M.accumulated2025 + dep2026Old;
+  const carryingAtExchange = M.cost - accumAtExchange;
+  const fairValue = carryingAtExchange + X.gain;
+  const newCost = fairValue + X.cashPaid;
+  const dep2026New = ((newCost / X.newLife) * (13 - X.month)) / 12;
+  // The building: its value under the cost model at the revaluation, and the fair value the new charge implies.
+  const costAnnual = B.cost / B.life;
+  const yearsToRevaluation = B.revalued - B.from + 1;
+  const carryingAtRevaluation = B.cost - costAnnual * yearsToRevaluation;
+  const lifeLeft = B.life - yearsToRevaluation;
+  const fair = B.charge2026 * lifeLeft;
+  const surplus = fair - carryingAtRevaluation;
+  const transfer2026 = B.charge2026 - costAnnual;
+  const surplus2026 = surplus - transfer2026;
+  const building2026 = fair - B.charge2026;
+  const totalDep2026 = dep2026Old + dep2026New + B.charge2026;
+  return {
+    monthsTo2025,
+    annual,
+    life,
+    dep2026Old,
+    accumAtExchange,
+    carryingAtExchange,
+    fairValue,
+    newCost,
+    dep2026New,
+    newCarrying2026: newCost - dep2026New,
+    costAnnual,
+    yearsToRevaluation,
+    carryingAtRevaluation,
+    lifeLeft,
+    fair,
+    surplus,
+    transfer2026,
+    surplus2026,
+    building2026,
+    totalDep2026,
+  };
+}

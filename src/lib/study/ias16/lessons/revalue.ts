@@ -18,17 +18,25 @@ const costModel = CHECK.cost - ((CHECK.cost - CHECK.land) / CHECK.life) * CHECK.
 /** A revalued building sold. */
 export const SALE = { carrying: 900_000, surplus: 120_000, price: 950_000 };
 
-/** Lesson 10: revaluing an asset that is depreciated — reset or proportional, the new charge, the transfer to retained earnings, the check, and a sale after a revaluation. */
+/** Lesson 11: revaluing an asset that is depreciated — reset or proportional, the new charge, the transfer to retained earnings, the check, and a sale after a revaluation. */
 export const REVALUE: StudyModule = {
   slug: "ias16-revaluation",
   course: COURSE,
-  n: 10,
+  n: 11,
   title: "מודל הערכה מחדש: נכס שמופחת",
   description: "מבנה שמופחת ומוערך מחדש: איפוס הפחת הנצבר או הצגה יחסית, פחת חדש מהשווי ההוגן, העברת הקרן לעודפים בקצב הפחת או בגריעה, הבדיקה שתופסת כמעט כל טעות — ומכירה אחרי הערכה.",
+  goal: "להעריך מחדש נכס שמופחת, לחשב את הפחת החדש ולהעביר את הקרן לעודפים.",
+  outcomes: [
+    "לעבוד לפי שלבי הפתרון: פחת עד ההערכה, פער לשווי ההוגן, פחת חדש",
+    "לאפס פחת נצבר או להציג מחדש באופן יחסי",
+    "להעביר את הקרן לעודפים בקצב הפחת או בגריעה",
+    "לבדוק את הפתרון בבדיקה שתופסת כמעט כל טעות",
+    "למכור או להחליף נכס שהוערך מחדש",
+  ],
   backHref: COURSE_HREF,
   screens: [
-    { id: "ppe-reset-prop", title: "איפוס פחת נצבר או הצגה יחסית" },
     { id: "revaluation-steps", title: "שלבי הפתרון" },
+    { id: "ppe-reset-prop", title: "איפוס פחת נצבר או הצגה יחסית" },
     { id: "ppe-transfer", title: "הקרן לעודפים: בקצב הפחת או בגריעה" },
     { id: "revaluation-land-building", title: "קרקע מול מבנה" },
     { id: "revaluation-yearly", title: "דוגמה: הערכה בכל שנה" },

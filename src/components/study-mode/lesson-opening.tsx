@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, BookOpenText, Calculator, CircleCheck, ClipboardPen, Play, RotateCcw, Star } from "lucide-react";
+import { ArrowLeft, BookOpenText, Calculator, CircleCheck, ClipboardPen, Play, RotateCcw, Star, Target } from "lucide-react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { maxXp, PRACTICE_GROUPS, practiceOf, statusOf, type TopicProgress, xpOf } from "@/lib/study/score";
@@ -90,6 +90,22 @@ export function LessonOpening({
           ))}
         </div>
       </StageHero>
+
+      <section aria-labelledby="opening-goal" className="rounded-2xl bg-accent-soft/60 p-5 ring-1 ring-accent/20 sm:p-6">
+        <StageLabel id="opening-goal" icon={<Target className="h-4 w-4 text-accent" aria-hidden />}>
+          מטרת השיעור
+        </StageLabel>
+        <p className="text-[16.5px] font-semibold leading-relaxed text-fg">{m.goal}</p>
+        <p className="mt-4 mb-2 text-[13.5px] font-bold text-muted">בסוף השיעור תדעו:</p>
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {m.outcomes.map((o) => (
+            <li key={o} className="flex items-start gap-2 text-[15px] leading-relaxed text-fg/90">
+              <CircleCheck className="mt-1 h-4 w-4 shrink-0 text-success" aria-hidden />
+              {o}
+            </li>
+          ))}
+        </ul>
+      </section>
 
       {videos?.map((v, i) => (
         <section

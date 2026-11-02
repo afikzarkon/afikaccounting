@@ -14,6 +14,10 @@ export type StudyModule = {
   title: string;
   /** One line on what the lesson covers, for the course page. */
   description: string;
+  /** The lesson's aim, in one sentence, on its opening. */
+  goal: string;
+  /** What the learner can do by its end — each a thing they do, not a topic. */
+  outcomes: string[];
   /** The course page this lesson belongs to, and where "exit" goes. */
   backHref: string;
   /** The concept screens, in order. The first screen of a former chapter keeps its id. */

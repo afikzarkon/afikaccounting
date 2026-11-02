@@ -14,16 +14,25 @@ export const YEAR_DEP = whole + bought + sold;
 /** A balance-sheet line from its pieces. */
 const LINE = { cost: 610_000, accum: 86_000 };
 
-/** Lesson 11: the answer sheet — a timeline for each asset, the nine steps, the statements, and the mistakes that cost the most. */
+/** Lesson 12: the answer sheet — a timeline for each asset, the nine steps, the statements, and the mistakes that cost the most. */
 export const SHEET: StudyModule = {
   slug: "ias16-worksheet",
   course: COURSE,
-  n: 11,
+  n: 12,
   title: "דף הפתרון והצגה בדוחות",
   description: "איך בונים פתרון לשאלת רכוש קבוע: ציר זמן לכל נכס, טבלה לכל שנה, תשעה שלבים קבועים — ואיפה כל מספר יושב במאזן, ברווח והפסד וברווח הכולל האחר.",
+  goal: "לארגן שאלה עם כמה נכסים וכמה שנים בדף פתרון קבוע, ולדעת איפה כל מספר יושב בדוחות.",
+  outcomes: [
+    "לבנות ציר זמן וטבלה לכל נכס",
+    "לחבר כמה נכסים לטבלה אחת של החברה",
+    "לפתור שאלה מלאה בתשעה שלבים קבועים",
+    "לשבץ כל מספר במאזן, ברווח והפסד או ברווח הכולל האחר",
+    "לזהות את הטעויות הנפוצות במבחן",
+  ],
   backHref: COURSE_HREF,
   screens: [
     { id: "ppe-sheet", title: "ציר זמן וטבלה לכל נכס" },
+    { id: "ppe-bakery-all", title: "המאפייה: שלושה נכסים בטבלה אחת" },
     { id: "method", title: "שאלה מלאה — תשעה שלבים לפתרון" },
     { id: "ppe-statements", title: "איפה כל מספר יושב בדוחות" },
     { id: "exam", title: "טיפים למבחן" },

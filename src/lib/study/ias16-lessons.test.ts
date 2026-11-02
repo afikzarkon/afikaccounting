@@ -22,8 +22,8 @@ const answer = (slug: string, id: string) => {
 const near = (a: number, b: number, where: string) => assert.ok(Math.abs(a - b) < 1e-6, `${where}: ${a} ≠ ${b}`);
 
 describe("the fixed-assets course", () => {
-  it("twelve lessons, numbered in order, all on the fixed-assets page, the first free", () => {
-    assert.equal(IAS16_LESSONS.length, 12);
+  it("fourteen lessons, numbered in order, all on the fixed-assets page, the first free", () => {
+    assert.equal(IAS16_LESSONS.length, 14);
     IAS16_LESSONS.forEach((m, i) => {
       assert.equal(m.n, i + 1, m.slug);
       assert.equal(m.backHref, "/basics/ias16", m.slug);

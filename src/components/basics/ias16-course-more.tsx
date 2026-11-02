@@ -795,7 +795,7 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
           קרן 2023 <Money v={L.oci2023} /> · קרן 2024 <Money v={L.surplusBuilding2024} /> · הפסד 2024 <Money v={L.landLoss} /> · רווח מהמכירה <Money v={L.saleGain} />
         </Rule>
         <div className="flex flex-wrap gap-2 text-sm text-muted">
-          <Truck className="h-4 w-4" aria-hidden /> את המבנה אפשר לבדוק גם במחשבון ההערכה מחדש (שיעור 10).
+          <Truck className="h-4 w-4" aria-hidden /> את המבנה אפשר לבדוק גם במחשבון ההערכה מחדש (שיעור 11).
         </div>
       </>
     ),

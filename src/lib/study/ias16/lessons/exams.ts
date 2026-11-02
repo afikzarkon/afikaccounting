@@ -1,24 +1,34 @@
-import { LOGI_Q, logi, PRESS_Q, press } from "@/lib/learn/ias16-exams";
+import { LOGI_Q, logi, PRESS_Q, press, SHAKED_Q, shaked } from "@/lib/learn/ias16-exams";
 import type { StudyModule } from "../../types";
 import { calc, choice, COURSE, COURSE_HREF, fmt, journal } from "../shared";
 
 const P = press();
 const L = logi();
+const S = shaked();
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
-/** Lesson 12: two exam-level questions — each asked, then solved step by step — and their answers to check one by one. */
+/** Lesson 14: three exam-level questions — the third one of unknowns — each asked, then solved step by step, and their answers to check one by one. */
 export const EXAMS: StudyModule = {
   slug: "ias16-exams",
   course: COURSE,
-  n: 12,
-  title: "שתי שאלות ברמת מבחן",
-  description: "שתי שאלות מלאות, כמו במבחן: ״הדפוס הירוק״ — עלות שורה אחר שורה, שלושה רכיבים בשלוש שיטות, שיפור והחלפה; ״לוגיסטיקה צפונית״ — מבנה וקרקע בהערכה מחדש עד המכירה, ומשאיות שאחת מהן נמכרת.",
+  n: 14,
+  title: "שלוש שאלות ברמת מבחן",
+  description: "שלוש שאלות מלאות, כמו במבחן: ״הדפוס הירוק״ — עלות, שלושה רכיבים בשלוש שיטות, שיפור והחלפה; ״לוגיסטיקה צפונית״ — מבנה וקרקע בהערכה מחדש עד המכירה, ומשאיות; ״שקד תעשיות״ — שאלה שהנתונים בה חבויים בתוצאות.",
+  goal: "לפתור לבד שאלות מלאות ברמת מבחן — כולל שאלה שהנתונים בה חסרים ומחולצים מהתוצאות.",
+  outcomes: [
+    "לפתור שאלה עם עלות, רכיבים בשלוש שיטות, שיפור והחלפה",
+    "לפתור שאלה בהערכה מחדש של מבנה וקרקע עד המכירה",
+    "לחלץ אורך חיים, שווי הוגן וקרן מתוך פחת ורווח שנתונים",
+    "לבנות פתרון מלא עם דף הפתרון ולבדוק אותו מול פתרון מלא",
+  ],
   backHref: COURSE_HREF,
   screens: [
     { id: "ppe-press", title: "שאלה 1: הדפוס הירוק" },
     { id: "ppe-press-solve", title: "שאלה 1: הפתרון" },
     { id: "ppe-logi", title: "שאלה 2: לוגיסטיקה צפונית" },
     { id: "ppe-logi-solve", title: "שאלה 2: הפתרון" },
+    { id: "ppe-shaked", title: "שאלה 3: שקד תעשיות — שאלה עם נעלמים" },
+    { id: "ppe-shaked-solve", title: "שאלה 3: הפתרון" },
   ],
   exercises: [
     calc("press-cost", "דפוס: עלות המכונה", "שאלה 1 (הדפוס הירוק): מהי עלות המכונה?", P.cost, [
@@ -82,6 +92,25 @@ export const EXAMS: StudyModule = {
       0,
       "השביתה עיכבה את השימוש, לא את הזמינות. פחת מהיום שבו המכונה מוכנה לפעול.",
     ),
+    calc("shaked-life", "שקד: אורך החיים של מכונה א׳", "שאלה 3 (שקד תעשיות): מה אורך החיים של מכונה א׳, בשנים?", S.life, [
+      `מ-1.${SHAKED_Q.machine.readyMonth}.${SHAKED_Q.machine.from} עד 31.12.2025: ${S.monthsTo2025} חודשים.`,
+      `פחת שנתי = ${fmt(SHAKED_Q.machine.accumulated2025)} ÷ ${S.monthsTo2025} × 12 = ${fmt(S.annual)} ₪; חיים = ${fmt(SHAKED_Q.machine.cost)} ÷ ${fmt(S.annual)} = ${fmt(S.life)} שנים.`,
+    ]),
+    calc("shaked-fair", "שקד: השווי ההוגן של מכונה א׳", "שאלה 3: מה השווי ההוגן של מכונה א׳ ביום ההחלפה?", S.fairValue, [
+      `פחת 2026 עד ההחלפה: ${fmt(S.dep2026Old)} ₪. עלות מופחתת: ${fmt(SHAKED_Q.machine.cost)} − ${fmt(S.accumAtExchange)} = ${fmt(S.carryingAtExchange)} ₪.`,
+      `רווח = שווי הוגן − עלות מופחתת, ולכן שווי הוגן = ${fmt(S.carryingAtExchange)} + ${fmt(SHAKED_Q.exchange.gain)} = ${fmt(S.fairValue)} ₪.`,
+    ]),
+    calc("shaked-new", "שקד: פחת מכונה ב׳ ב-2026", "שאלה 3: מה הפחת של מכונה ב׳ בשנת 2026?", S.dep2026New, [
+      `עלות מכונה ב׳: ${fmt(S.fairValue)} + ${fmt(SHAKED_Q.exchange.cashPaid)} = ${fmt(S.newCost)} ₪.`,
+      `${fmt(S.newCost)} ÷ ${SHAKED_Q.exchange.newLife} × 6/12 = ${fmt(S.dep2026New)} ₪.`,
+    ]),
+    calc("shaked-surplus", "שקד: הקרן של המבנה", "שאלה 3: כמה נזקף לקרן הערכה מחדש ב-31.12.2025?", S.surplus, [
+      `שווי הוגן = הפחת החדש × השנים שנותרו: ${fmt(SHAKED_Q.building.charge2026)} × ${S.lifeLeft} = ${fmt(S.fair)} ₪.`,
+      `עלות מופחתת לפני ההערכה: ${fmt(S.carryingAtRevaluation)} ₪. הקרן: ${fmt(S.fair)} − ${fmt(S.carryingAtRevaluation)} = ${fmt(S.surplus)} ₪.`,
+    ]),
+    calc("shaked-dep", "שקד: הוצאות פחת 2026", "שאלה 3: מה סך הוצאות הפחת ב-2026?", S.totalDep2026, [
+      `מכונה א׳ עד ההחלפה ${fmt(S.dep2026Old)} + מכונה ב׳ ${fmt(S.dep2026New)} + מבנה ${fmt(SHAKED_Q.building.charge2026)} = ${fmt(S.totalDep2026)} ₪.`,
+    ]),
   ],
   traps: [
     {

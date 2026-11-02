@@ -7,13 +7,21 @@ export const PLOT = { cost: 1_000, first: 1_200, up: 1_400, down: 900 };
 /** A plot that fell below cost and then recovered. */
 export const BACKUP = { cost: 500_000, fell: 450_000, rose: 540_000 };
 
-/** Lesson 9: the revaluation model on land — the two models, where a rise and a fall go, a fall below cost and its recovery. */
+/** Lesson 10: the revaluation model on land — the two models, where a rise and a fall go, a fall below cost and its recovery. */
 export const LAND: StudyModule = {
   slug: "ias16-revaluation-land",
   course: COURSE,
-  n: 9,
+  n: 10,
   title: "מודל הערכה מחדש: קרקע",
   description: "מודל העלות מול מודל הערכה מחדש, ועל נכס שלא מופחת — קרקע: עלייה לקרן הערכה מחדש, ירידה — קודם מהקרן ואז להפסד, והתאוששות שמבטלת קודם את ההפסד.",
+  goal: "להבין את מודל הערכה מחדש על נכס שלא מופחת — קרקע: לאן הולכת עלייה ולאן ירידה.",
+  outcomes: [
+    "להבחין בין מודל העלות למודל הערכה מחדש",
+    "לרשום עלייה בשווי לקרן הערכה מחדש",
+    "לרשום ירידה: קודם מהקרן, והשאר להפסד",
+    "לרשום התאוששות שמבטלת קודם הפסד קודם",
+    "להסביר מה קורה לקרן כשהקרקע נמכרת",
+  ],
   backHref: COURSE_HREF,
   screens: [
     { id: "ppe-models", title: "שני מודלים: עלות או הערכה מחדש" },

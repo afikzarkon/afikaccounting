@@ -9,11 +9,13 @@ import { REVALUE } from "./lessons/revalue";
 import { STRAIGHT } from "./lessons/straight";
 import { SUBSEQUENT } from "./lessons/subsequent";
 import { SWAP_LESSON } from "./lessons/swap";
+import { TABLE } from "./lessons/table";
+import { UNKNOWNS } from "./lessons/unknowns";
 import { WHAT } from "./lessons/what";
 import { SHEET } from "./lessons/worksheet";
 
-/** The fixed-assets course: twelve lessons, in order — from what an item of PPE is to two exam-level questions. */
-export const IAS16_LESSONS = [WHAT, COST, STRAIGHT, METHODS, COMPONENTS, DISPOSAL, SUBSEQUENT, SWAP_LESSON, LAND, REVALUE, SHEET, EXAMS];
+/** The fixed-assets course: fourteen lessons, in order — from what an item of PPE is, through the sheet every question is solved in, to questions of unknowns and three exam-level questions. */
+export const IAS16_LESSONS = [WHAT, COST, TABLE, STRAIGHT, METHODS, COMPONENTS, DISPOSAL, SUBSEQUENT, SWAP_LESSON, LAND, REVALUE, SHEET, UNKNOWNS, EXAMS];
 
 /** The lesson and index of a concept screen of the course, by its id. */
 export const findIas16Screen = (id: string) => findScreenIn(IAS16_LESSONS, id);

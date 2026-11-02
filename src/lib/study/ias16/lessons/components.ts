@@ -21,13 +21,20 @@ const LIFE = { cost: 180_000, salvage: 20_000, from: 7, charge: 8_000 };
 const SALV = { cost: 240_000, life: 5, carrying: 196_000 };
 const HOURS = { cost: 150_000, total: 30_000, charge: 22_500 };
 
-/** Lesson 5: depreciation by components — why an asset is split, one machine in three parts, and the figures a question hides behind an answer. */
+/** Lesson 6: depreciation by components — why an asset is split, one machine in three parts, and the figures a question hides behind an answer. */
 export const COMPONENTS: StudyModule = {
   slug: "ias16-components",
   course: COURSE,
-  n: 5,
+  n: 6,
   title: "פחת לפי רכיבים",
   description: "כשלחלקים משמעותיים של נכס יש חיים שונים — כל רכיב מופחת לחוד, בשיטה שלו. מכונה אחת בשלושה רכיבים, ואיך מחלצים אורך חיים, ערך גרט או תפוקה מתוך תשובה שנתונה.",
+  goal: "לפצל נכס לרכיבים, להפחית כל רכיב בשיטה שלו, ולחבר את כולם לשורה אחת.",
+  outcomes: [
+    "להחליט מתי חלק של נכס הוא רכיב נפרד",
+    "לחלק את עלות הנכס בין הרכיבים",
+    "לחשב פחת לכל רכיב בשיטה ובאורך החיים שלו",
+    "לחלץ אורך חיים, ערך גרט או תפוקה של רכיב מתוך פחת שנתון",
+  ],
   backHref: COURSE_HREF,
   screens: [
     { id: "ppe-components", title: "למה מפצלים נכס לרכיבים" },
