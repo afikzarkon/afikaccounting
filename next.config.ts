@@ -1,7 +1,53 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV !== "production";
+const origin = (url: string | undefined) => {
+  try {
+    return url ? new URL(url).origin : "";
+  } catch {
+    return "";
+  }
+};
+// Supabase serves the API, auth, and Storage (media, signed exam files); the demo video may live elsewhere.
+const supabase = origin(process.env.NEXT_PUBLIC_SUPABASE_URL);
+const demoVideo = origin(process.env.NEXT_PUBLIC_DEMO_VIDEO_URL);
+const embeds = "https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com";
+
+// Without nonces: they need every page rendered per request, which Partial Prerendering rules out.
+// Inline scripts stay allowed (Next.js bootstrap, the theme script); everything else is pinned to known origins.
+const csp = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  "style-src 'self' 'unsafe-inline'",
+  `img-src 'self' data: blob: https://i.ytimg.com ${supabase}`,
+  "font-src 'self' data:",
+  `media-src 'self' blob: ${supabase} ${demoVideo}`,
+  `connect-src 'self' ${supabase}${isDev ? " ws:" : ""}`,
+  `frame-src 'self' ${embeds} ${supabase}`,
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  ...(isDev ? [] : ["upgrade-insecure-requests"]),
+]
+  .map((d) => d.replace(/\s+/g, " ").trim())
+  .join("; ");
+
+const securityHeaders = [
+  { key: "Content-Security-Policy", value: csp },
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+];
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  poweredByHeader: false,
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders }];
+  },
   cacheComponents: true,
   // IAS 16 is one page in the foundations, like inventory: its former addresses land on their place in it.
   async redirects() {

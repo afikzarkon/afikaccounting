@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { SUPABASE_KEY, SUPABASE_URL, isSupabaseConfigured } from "@/lib/env";
+import { AUTH_COOKIE_OPTIONS, SUPABASE_KEY, SUPABASE_URL, isSupabaseConfigured } from "@/lib/env";
 
 // Signed-in only. /admin additionally checks the admin role in its pages and actions.
 const PROTECTED = ["/dashboard", "/profile", "/admin"];
@@ -16,6 +16,7 @@ export async function updateSession(request: NextRequest) {
   if (!isSupabaseConfigured) return response;
 
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_KEY, {
+    cookieOptions: AUTH_COOKIE_OPTIONS,
     cookies: {
       getAll() {
         return request.cookies.getAll();

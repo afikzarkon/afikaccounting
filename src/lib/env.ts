@@ -19,3 +19,6 @@ export const DEMO_VIDEO_URL = process.env.NEXT_PUBLIC_DEMO_VIDEO_URL ?? "";
  * Ignored once Supabase is configured.
  */
 export const ACCESS_PREVIEW_TIER = process.env.ACCESS_PREVIEW_TIER ?? "";
+
+/** Auth cookie flags. Not HttpOnly: the admin's browser client reads the session for direct uploads. Secure whenever the site is served over HTTPS. */
+export const AUTH_COOKIE_OPTIONS = { sameSite: "lax", secure: SITE_URL.startsWith("https://") } as const;

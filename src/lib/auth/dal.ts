@@ -2,6 +2,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { isSupabaseConfigured } from "@/lib/env";
+import { securityLog } from "@/lib/security-log";
 import { createClient } from "@/lib/supabase/server";
 
 export type SessionUser = { id: string; email: string };
@@ -53,7 +54,9 @@ export async function requireAdmin(next = "/admin"): Promise<SessionUser> {
 /** For admin Server Actions: never redirects, so the caller can report the failure. */
 export async function assertAdmin(): Promise<SessionUser | null> {
   const user = await getCurrentUser();
-  return user && (await isAdmin()) ? user : null;
+  if (user && (await isAdmin())) return user;
+  securityLog("admin_denied", { user: user?.id ?? null });
+  return null;
 }
 
 export const getProfile = cache(async (): Promise<Profile | null> => {
@@ -79,5 +82,6 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
 /** Only allow same-site relative paths as post-login destinations. */
 export function safeNext(value: FormDataEntryValue | string | null | undefined, fallback = "/dashboard") {
   const s = typeof value === "string" ? value : "";
-  return s.startsWith("/") && !s.startsWith("//") && !s.startsWith("/\\") ? s : fallback;
+  // Browsers drop tabs and newlines and read "\" as "/", so "/\t/evil.com" would leave the site: refuse both anywhere.
+  return s.startsWith("/") && !s.startsWith("//") && !/[\\\u0000-\u001f\u007f]/.test(s) ? s : fallback;
 }

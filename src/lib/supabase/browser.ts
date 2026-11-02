@@ -1,5 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
-import { SUPABASE_KEY, SUPABASE_URL } from "@/lib/env";
+import { AUTH_COOKIE_OPTIONS, SUPABASE_KEY, SUPABASE_URL } from "@/lib/env";
 
 /**
  * Browser client that carries the user's session cookie. Used only for direct
@@ -7,5 +7,5 @@ import { SUPABASE_KEY, SUPABASE_URL } from "@/lib/env";
  * the bucket's policies decide who may write.
  */
 export function createBrowserSupabase() {
-  return createBrowserClient(SUPABASE_URL, SUPABASE_KEY);
+  return createBrowserClient(SUPABASE_URL, SUPABASE_KEY, { cookieOptions: AUTH_COOKIE_OPTIONS });
 }

@@ -135,7 +135,7 @@ describe("the webhook", () => {
     assert.equal((await handleWebhook(bad, headers(bad), { provider, apply: db.apply })).status, 400);
     const body = JSON.stringify(event());
     const res = await handleWebhook(body, headers(body), { provider, apply: async () => Promise.reject(new Error("db down")) });
-    assert.deepEqual(res, { status: 500, body: { ok: false, error: "db down" } });
+    assert.deepEqual(res, { status: 500, body: { ok: false, error: "apply failed" } });
   });
   it("refuses an oversized body before reading it", async () => {
     const res = await handleWebhook("x".repeat(70_000), new Headers(), { provider, apply: fakeDb().apply });

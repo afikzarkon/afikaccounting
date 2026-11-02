@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser, safeNext } from "@/lib/auth/dal";
 import { SITE_URL, isSupabaseConfigured } from "@/lib/env";
 import { isTier } from "@/lib/pricing";
+import { maskEmail, securityLog } from "@/lib/security-log";
 import { createClient } from "@/lib/supabase/server";
 import { EMAIL_RE, type FormState, passwordProblem } from "./types";
 
@@ -60,6 +61,7 @@ export async function signIn(_prev: FormState, fd: FormData): Promise<FormState>
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
+    securityLog("login_failed", { email: maskEmail(email), code: error.code ?? error.status });
     // Do not reveal whether the account exists.
     const unconfirmed = error.code === "email_not_confirmed";
     return {

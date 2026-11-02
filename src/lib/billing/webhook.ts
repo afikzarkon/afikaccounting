@@ -31,7 +31,10 @@ export type ApplyEvent = (provider: string, event: BillingEvent, raw: unknown) =
 export async function handleWebhook(rawBody: string, headers: Headers, deps: { provider: PaymentProvider; apply: ApplyEvent }): Promise<{ status: number; body: { ok: boolean; outcome?: ApplyOutcome | "not-a-subscription-event"; error?: string } }> {
   if (rawBody.length > 64_000) return { status: 413, body: { ok: false, error: "too large" } };
   const verified = await deps.provider.verifyWebhook(rawBody, headers);
-  if (!verified.ok) return { status: 400, body: { ok: false, error: verified.error } };
+  if (!verified.ok) {
+    console.warn(JSON.stringify({ event: "security.webhook_rejected", provider: deps.provider.name, reason: verified.error }));
+    return { status: 400, body: { ok: false, error: verified.error } };
+  }
   if (!verified.event) return { status: 200, body: { ok: true, outcome: "not-a-subscription-event" } };
   let raw: unknown = {};
   try {
@@ -44,6 +47,8 @@ export async function handleWebhook(rawBody: string, headers: Headers, deps: { p
     const outcome = await deps.apply(deps.provider.name, verified.event, raw);
     return { status: 200, body: { ok: true, outcome } };
   } catch (e) {
-    return { status: 500, body: { ok: false, error: e instanceof Error ? e.message : "apply failed" } };
+    // The database's message stays in the server log; the caller only learns to retry.
+    console.error(JSON.stringify({ event: "billing.apply_failed", provider: deps.provider.name, error: e instanceof Error ? e.message : String(e) }));
+    return { status: 500, body: { ok: false, error: "apply failed" } };
   }
 }
