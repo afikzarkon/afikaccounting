@@ -6,6 +6,7 @@ import { CoursePath, LegacyHashRedirect } from "@/components/study-mode/course";
 import { CourseHeader } from "@/components/study-mode/course-header";
 import { Container } from "@/components/ui/primitives";
 import { BASICS_LESSONS, LEGACY_CHAPTERS, legacyHref } from "@/lib/study/basics";
+import { visibleLessons } from "@/lib/visibility/server";
 
 // The former long page's chapter anchors, and where each lands now.
 const REDIRECTS = Object.fromEntries(LEGACY_CHAPTERS.map((id) => [id, legacyHref(id) ?? ""]));
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
  * a practice section by kind of question; progress on top, and the course's
  * reference (cheat sheet, glossary, mistakes, questions) at the bottom.
  */
-export default function BasicsPage() {
+export default async function BasicsPage() {
   return (
     <div className="relative">
       <LegacyHashRedirect redirects={REDIRECTS} />
@@ -30,7 +31,7 @@ export default function BasicsPage() {
         <CoursePageHead />
 
         <div className="mt-8">
-          <CoursePath lessons={BASICS_LESSONS} />
+          <CoursePath lessons={await visibleLessons(BASICS_LESSONS)} />
         </div>
 
         <section id="reference" aria-labelledby="reference-title" className="mt-16 scroll-mt-24">
@@ -51,7 +52,7 @@ export default function BasicsPage() {
   );
 }
 
-function CoursePageHead() {
+async function CoursePageHead() {
   return (
     <CourseHeader
       trail={[{ label: "שלב 1 · חינם" }, { label: "חשבונאות מאפס" }]}
@@ -60,7 +61,7 @@ function CoursePageHead() {
           חשבונאות בסיסית <span className="text-gradient">מאפס</span>
         </>
       }
-      lessons={BASICS_LESSONS}
+      lessons={await visibleLessons(BASICS_LESSONS)}
     >
       <p>שיעורים אינטראקטיביים, צעד אחר צעד. בכל שיעור: מושגים עם דוגמאות חיות, ואחריהם תרגול עם משוב מיידי — פקודות יומן, שאלות אמריקאיות ושאלות חישוב. ובסוף, טיפים זהב.</p>
     </CourseHeader>

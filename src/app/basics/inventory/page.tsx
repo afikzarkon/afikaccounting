@@ -8,6 +8,7 @@ import { LegacyHashRedirect } from "@/components/study-mode/course";
 import { CourseHeader } from "@/components/study-mode/course-header";
 import { Container } from "@/components/ui/primitives";
 import { INVENTORY_LEGACY_CHAPTERS, INVENTORY_LESSONS, inventoryLegacyHref } from "@/lib/study/inventory";
+import { visibleLessons } from "@/lib/visibility/server";
 
 export const metadata: Metadata = {
   title: "מלאי (IAS 2) — קורס אינטראקטיבי ומחשבון",
@@ -24,7 +25,7 @@ const REDIRECTS = Object.fromEntries(INVENTORY_LEGACY_CHAPTERS.map((id) => [id, 
  * the course's reference (summary sheet, traps, true or false, practice
  * questions) at the bottom.
  */
-export default function InventoryPage() {
+export default async function InventoryPage() {
   return (
     <div className="relative">
       <LegacyHashRedirect redirects={REDIRECTS} />
@@ -37,7 +38,7 @@ export default function InventoryPage() {
               מלאי <span className="text-gradient">מאפס ועד מבחן</span>
             </>
           }
-          lessons={INVENTORY_LESSONS}
+          lessons={await visibleLessons(INVENTORY_LESSONS)}
         >
           <p>
             שיעורים אינטראקטיביים, צעד אחר צעד. בכל שיעור: מושגים עם דוגמאות חיות, ואחריהם תרגול עם משוב מיידי — פקודות יומן, שאלות אמריקאיות ושאלות חישוב. ובסוף, מחשבון שמראה
@@ -52,7 +53,7 @@ export default function InventoryPage() {
         </CourseHeader>
 
         <div className="mt-8">
-          <GatedCoursePath lessons={INVENTORY_LESSONS} />
+          <GatedCoursePath lessons={await visibleLessons(INVENTORY_LESSONS)} />
         </div>
 
         <section id="reference" aria-labelledby="reference-title" className="mt-16 scroll-mt-24">

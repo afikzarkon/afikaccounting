@@ -5,6 +5,8 @@ import { listExams } from "@/lib/data/exams";
 import type { SearchItem } from "@/lib/search";
 import { STUDY_MODULES } from "@/lib/study";
 import { lessonHref } from "@/lib/study/paths";
+import { isLinkHidden } from "@/lib/visibility/rules";
+import { VISIBILITY_TAG, getVisibility } from "@/lib/visibility/server";
 
 const topicName = (id: string) => {
   const t = TOPICS.find((x) => x.id === id);
@@ -20,6 +22,7 @@ const topicName = (id: string) => {
 export async function searchIndex(): Promise<SearchItem[]> {
   "use cache";
   cacheTag("exams");
+  cacheTag(VISIBILITY_TAG);
   cacheLife("hours");
   const items: SearchItem[] = [];
 
@@ -43,5 +46,7 @@ export async function searchIndex(): Promise<SearchItem[]> {
     { kind: "page", title: "החזרה שלי", hint: "שאלות שטעיתם בהן, לחזרה", href: "/review" },
     { kind: "page", title: "פרופיל ומנוי", hint: "המנוי, החשבוניות והפרטים", href: "/profile" },
   );
-  return items;
+  // Nothing the admin hid is found.
+  const { links } = await getVisibility();
+  return items.filter((i) => !isLinkHidden(links, i.href));
 }

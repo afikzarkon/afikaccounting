@@ -8,8 +8,10 @@ import { Navbar } from "@/components/layout/navbar";
 import { PageViewTracker } from "@/components/layout/page-view-tracker";
 import { SearchPalette } from "@/components/layout/search";
 import { ThemeProvider } from "@/components/layout/theme-provider";
+import { VisibilityProvider } from "@/components/layout/visibility";
 import { SITE_URL } from "@/lib/env";
 import { site } from "@/lib/site";
+import { getVisibility } from "@/lib/visibility/server";
 import "./globals.css";
 
 // Heebo covers Hebrew and Latin; numbers in tables use Geist Mono.
@@ -29,33 +31,37 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // What the admin hid: cached, so the pages stay prerendered; refreshed when it changes.
+  const visibility = await getVisibility();
   return (
     <html lang="he" dir="rtl" suppressHydrationWarning className={`${heebo.variable} ${geistMono.variable} h-full`}>
       {/* Extensions such as Grammarly add attributes to <body> before React loads. */}
       <body suppressHydrationWarning className="flex min-h-full flex-col">
         <ThemeProvider>
-          <a
-            href="#main"
-            className="sr-only z-50 rounded-lg bg-accent px-4 py-2 text-accent-fg focus:not-sr-only focus:fixed focus:top-3 focus:start-3"
-          >
-            דילוג לתוכן
-          </a>
-          <Navbar />
-          <main id="main" className="flex-1">
-            {children}
-          </main>
-          <Footer />
-          <Suspense fallback={<MobileTabBarView />}>
-            <MobileTabBar />
-          </Suspense>
-          <SearchPalette />
-          <Suspense fallback={null}>
-            <PageViewTracker />
-          </Suspense>
-          <Suspense fallback={null}>
-            <ContentGuard />
-          </Suspense>
+          <VisibilityProvider value={visibility}>
+            <a
+              href="#main"
+              className="sr-only z-50 rounded-lg bg-accent px-4 py-2 text-accent-fg focus:not-sr-only focus:fixed focus:top-3 focus:start-3"
+            >
+              דילוג לתוכן
+            </a>
+            <Navbar />
+            <main id="main" className="flex-1">
+              {children}
+            </main>
+            <Footer />
+            <Suspense fallback={<MobileTabBarView />}>
+              <MobileTabBar />
+            </Suspense>
+            <SearchPalette />
+            <Suspense fallback={null}>
+              <PageViewTracker />
+            </Suspense>
+            <Suspense fallback={null}>
+              <ContentGuard />
+            </Suspense>
+          </VisibilityProvider>
         </ThemeProvider>
       </body>
     </html>

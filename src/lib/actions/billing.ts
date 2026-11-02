@@ -8,6 +8,9 @@ import { getCurrentUser, getProfile, safeNext } from "@/lib/auth/dal";
 import { getMySubscription } from "@/lib/data/billing";
 import { SITE_URL } from "@/lib/env";
 import { planOf } from "@/lib/pricing";
+import { planKey } from "@/lib/visibility/items";
+import { isHidden } from "@/lib/visibility/rules";
+import { getVisibility } from "@/lib/visibility/server";
 
 type Result = { ok: true; url?: string } | { ok: false; error: string };
 
@@ -26,6 +29,8 @@ export async function startCheckout(input: { tier: string; interval: string; fro
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: "צריך להתחבר כדי לשלם." };
   if (!paid(input.tier)) return { ok: false, error: "מסלול לא מוכר." };
+  // A plan the admin hid isn't for sale.
+  if (isHidden(await getVisibility(), planKey(input.tier))) return { ok: false, error: "המסלול הזה אינו זמין כרגע." };
   const tier = input.tier;
   const interval = intervalOf(input.interval);
   const from = safeNext(input.from, "");
@@ -75,6 +80,7 @@ export async function changePlan(input: { tier: string; interval: string }): Pro
   const m = await mine();
   if (!m) return { ok: false, error: "לא נמצא מנוי בתשלום לשינוי." };
   if (!paid(input.tier)) return { ok: false, error: "מסלול לא מוכר." };
+  if (isHidden(await getVisibility(), planKey(input.tier))) return { ok: false, error: "המסלול הזה אינו זמין כרגע." };
   const interval = intervalOf(input.interval);
   if (input.tier === m.sub.tier && interval === m.sub.interval) return { ok: false, error: "זה כבר המסלול שלכם." };
   try {

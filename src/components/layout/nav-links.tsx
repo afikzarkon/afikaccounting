@@ -6,8 +6,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { TierBadge } from "@/components/pricing/tier-badge";
-import { type NavEntry, type NavGroup, site } from "@/lib/site";
+import { type NavEntry, type NavGroup, navFor } from "@/lib/site";
 import { cn } from "@/lib/utils";
+import { useVisibility } from "./visibility";
 
 const isActive = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`));
 /** A link to a spot inside a page (#tab) or a preset (?calc) is never "the page you're on". */
@@ -37,9 +38,10 @@ export function NavLinks() {
 }
 
 export function NavLinksView({ pathname = "" }: { pathname?: string }) {
+  const nav = navFor(useVisibility().visibility);
   return (
     <nav aria-label="ניווט ראשי" className="hidden items-center gap-1 md:flex">
-      {site.nav.map((item) => {
+      {nav.map((item) => {
         if ("items" in item) return <NavDropdown key={item.label} group={item} pathname={pathname} />;
         const active = isActive(pathname, item.href);
         return (
@@ -156,6 +158,7 @@ export function MobileNav() {
 }
 
 export function MobileNavView({ pathname = "" }: { pathname?: string }) {
+  const nav = navFor(useVisibility().visibility);
   const [open, setOpen] = useState(false);
   const [lastPath, setLastPath] = useState(pathname);
   // Close the menu after navigating.
@@ -205,7 +208,7 @@ export function MobileNavView({ pathname = "" }: { pathname?: string }) {
             transition={{ duration: 0.16 }}
             className="absolute inset-x-3 top-[4.25rem] z-50 max-h-[calc(100vh-5.5rem)] overflow-y-auto rounded-2xl border border-line-strong bg-surface p-2 shadow-xl"
           >
-            {site.nav.map((item) =>
+            {nav.map((item) =>
               "items" in item ? (
                 // Each category folds, so the menu stays short; the one you're in starts open.
                 <details key={item.label} open={groupActive(pathname, item)} className="group py-0.5">

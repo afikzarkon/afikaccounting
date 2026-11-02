@@ -3,6 +3,9 @@ import { TierBadge } from "@/components/pricing/tier-badge";
 import { ButtonLink } from "@/components/ui/button";
 import { FIRST_LESSON } from "@/lib/catalog";
 import type { Trap } from "@/lib/study/types";
+import { BUTTONS } from "@/lib/visibility/items";
+import { isHidden, isLinkHidden, labelOf } from "@/lib/visibility/rules";
+import { getVisibility } from "@/lib/visibility/server";
 import { HeroExercise } from "./hero-exercise";
 
 /**
@@ -10,7 +13,12 @@ import { HeroExercise } from "./hero-exercise";
  * (no account) — above the fold on a phone. Beside it, one live question
  * from the course, in the course's own components.
  */
-export function Hero({ trap, lessons, exercises, videos }: { trap: Trap; lessons: number; exercises: number; videos: number }) {
+export async function Hero({ trap, lessons, exercises, videos }: { trap: Trap; lessons: number; exercises: number; videos: number }) {
+  const v = await getVisibility();
+  const { heroStart: start, heroTour: tour } = BUTTONS;
+  // "What's in the course" scrolls to the free course's section: it goes with it.
+  const showStart = !isHidden(v, start.key) && !isLinkHidden(v.links, FIRST_LESSON);
+  const showTour = !isHidden(v, tour.key) && !isHidden(v, "home:free-course") && !isLinkHidden(v.links, "/basics");
   return (
     <section className="relative overflow-hidden">
       <div className="bg-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_75%)]" />
@@ -28,12 +36,16 @@ export function Hero({ trap, lessons, exercises, videos }: { trap: Trap; lessons
             <span className="num">{lessons}</span> שיעורים קצרים, מ״מה זה חובה וזכות״ ועד דוחות כספיים. בכל שיעור: מושג עם דוגמה חיה, תרגול עם משוב מיידי, וטיפים למבחן.
           </p>
           <div className="mt-6 flex flex-wrap gap-3 sm:mt-8">
-            <ButtonLink href={FIRST_LESSON} size="lg">
-              התחילו את שיעור 1 <ArrowLeft className="h-4 w-4" aria-hidden />
-            </ButtonLink>
-            <ButtonLink href="#free-course" variant="secondary" size="lg" className="max-sm:hidden">
-              <PlayCircle className="h-4 w-4" aria-hidden /> מה יש בקורס
-            </ButtonLink>
+            {showStart && (
+              <ButtonLink href={FIRST_LESSON} size="lg">
+                {labelOf(v, start.key, start.label)} <ArrowLeft className="h-4 w-4" aria-hidden />
+              </ButtonLink>
+            )}
+            {showTour && (
+              <ButtonLink href="#free-course" variant="secondary" size="lg" className="max-sm:hidden">
+                <PlayCircle className="h-4 w-4" aria-hidden /> {labelOf(v, tour.key, tour.label)}
+              </ButtonLink>
+            )}
           </div>
           <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-1.5 text-[13px] text-muted sm:mt-7">
             {[`${exercises} שאלות תרגול עם משוב`, "בלי כרטיס אשראי", "עם חשבון — ההתקדמות בכל מכשיר"].map((t) => (

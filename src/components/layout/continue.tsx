@@ -8,6 +8,7 @@ import { EXAMS_HUB, FIRST_LESSON, LEARN_HUB } from "@/lib/catalog";
 import { studyHref } from "@/lib/study";
 import { cn } from "@/lib/utils";
 import { openSearch } from "./search";
+import { useVisibility } from "./visibility";
 
 /** A ring that fills with the lesson's progress, its number inside. */
 function Ring({ percent, n, size = 28 }: { percent: number; n: number; size?: number }) {
@@ -59,6 +60,7 @@ export function MobileTabBar() {
 
 export function MobileTabBarView({ pathname = "" }: { pathname?: string }) {
   const last = useLast();
+  const { linkShown } = useVisibility();
   if (pathname.startsWith("/study/") || pathname.startsWith("/admin")) return null;
   const on = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const tab = "flex flex-col items-center justify-center gap-0.5 text-[11px] font-semibold";
@@ -68,14 +70,18 @@ export function MobileTabBarView({ pathname = "" }: { pathname?: string }) {
       <div className="h-[calc(4.25rem+env(safe-area-inset-bottom))] md:hidden" aria-hidden />
       <nav
         aria-label="ניווט מהיר"
-        className="no-print fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+        className="no-print fixed inset-x-0 bottom-0 z-40 grid auto-cols-fr grid-flow-col border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
       >
-        <Link href={LEARN_HUB.href} aria-current={on(LEARN_HUB.href) || pathname.startsWith("/basics") ? "page" : undefined} className={cn(tab, "h-16", on(LEARN_HUB.href) || pathname.startsWith("/basics") ? "text-accent" : "text-muted")}>
-          <BookOpen className="h-5 w-5" aria-hidden /> קורסים
-        </Link>
-        <Link href={EXAMS_HUB.href} aria-current={on(EXAMS_HUB.href) ? "page" : undefined} className={cn(tab, "h-16", on(EXAMS_HUB.href) ? "text-amber-700 dark:text-amber-300" : "text-amber-700/80 dark:text-amber-300/80")}>
-          <Crown className="h-5 w-5" aria-hidden /> מבחנים
-        </Link>
+        {linkShown(LEARN_HUB.href) && (
+          <Link href={LEARN_HUB.href} aria-current={on(LEARN_HUB.href) || pathname.startsWith("/basics") ? "page" : undefined} className={cn(tab, "h-16", on(LEARN_HUB.href) || pathname.startsWith("/basics") ? "text-accent" : "text-muted")}>
+            <BookOpen className="h-5 w-5" aria-hidden /> קורסים
+          </Link>
+        )}
+        {linkShown(EXAMS_HUB.href) && (
+          <Link href={EXAMS_HUB.href} aria-current={on(EXAMS_HUB.href) ? "page" : undefined} className={cn(tab, "h-16", on(EXAMS_HUB.href) ? "text-amber-700 dark:text-amber-300" : "text-amber-700/80 dark:text-amber-300/80")}>
+            <Crown className="h-5 w-5" aria-hidden /> מבחנים
+          </Link>
+        )}
         <Link href={last ? studyHref(last.slug) : FIRST_LESSON} className={cn(tab, "h-16 text-fg")}>
           <span className="-mt-5 grid h-11 w-11 place-items-center rounded-full bg-accent text-accent-fg shadow-[0_8px_20px_-8px_var(--accent)]" aria-hidden>
             <Play className="h-5 w-5" />

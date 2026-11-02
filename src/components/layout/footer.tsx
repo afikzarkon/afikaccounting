@@ -2,6 +2,8 @@ import Link from "next/link";
 import { EXAMS_HUB, FIRST_LESSON, LEARN_HUB, LEARNING_TOOLS, PRICING_HUB, TOPICS } from "@/lib/catalog";
 import { CALCULATORS } from "@/lib/engine/registry";
 import { site } from "@/lib/site";
+import { isLinkHidden } from "@/lib/visibility/rules";
+import { getVisibility } from "@/lib/visibility/server";
 import { LogoMark } from "./logo";
 
 // The same map as the menu, from the catalog: the courses, the tools, the videos, and the plans and the account.
@@ -40,7 +42,10 @@ const REFERENCES = [
   "פקודת מס הכנסה [נוסח חדש], התשכ\"א-1961",
 ];
 
-export function Footer() {
+export async function Footer() {
+  // Without what the admin hid; a column left empty goes.
+  const { links } = await getVisibility();
+  const columns = COLUMNS.map((c) => ({ ...c, links: c.links.filter((l) => !isLinkHidden(links, l.href)) })).filter((c) => c.links.length);
   return (
     <footer className="no-print mt-24 border-t border-line bg-surface/40">
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
@@ -52,7 +57,7 @@ export function Footer() {
             </div>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">{site.description}</p>
           </div>
-          {COLUMNS.map((col) => (
+          {columns.map((col) => (
             <div key={col.title}>
               <p className="text-xs font-semibold text-fg">{col.title}</p>
               <ul className="mt-4 space-y-2.5">

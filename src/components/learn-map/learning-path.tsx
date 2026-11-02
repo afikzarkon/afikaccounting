@@ -3,18 +3,20 @@ import Link from "next/link";
 import { TierBadge } from "@/components/pricing/tier-badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge } from "@/components/ui/primitives";
-import { LEARNING_PATH, type Stage, tasteLabel, type Topic } from "@/lib/catalog";
+import { type Stage, tasteLabel, type Topic } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
+import { getVisibility, visiblePath } from "@/lib/visibility/server";
 
 /**
  * The learning path, stage by stage: what to learn first, and for each topic
  * its guide, its pages and its calculators. `compact` is the home page's version.
  */
-export function LearningPath({ compact = false }: { compact?: boolean }) {
+export async function LearningPath({ compact = false }: { compact?: boolean }) {
+  const path = visiblePath(await getVisibility());
   return (
     <ol className="relative space-y-6">
-      {LEARNING_PATH.map((stage, i) => (
-        <StageRow key={stage.id} stage={stage} compact={compact} last={i === LEARNING_PATH.length - 1} />
+      {path.map((stage, i) => (
+        <StageRow key={stage.id} stage={stage} compact={compact} last={i === path.length - 1} />
       ))}
     </ol>
   );

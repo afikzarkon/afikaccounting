@@ -13,6 +13,8 @@ import { getAccess } from "@/lib/auth/access";
 import { TOPICS, topicByHref } from "@/lib/catalog";
 import { STUDY_MODULES, studyHref } from "@/lib/study";
 import { outlineOf } from "@/lib/study/paths";
+import { isLinkHidden } from "@/lib/visibility/rules";
+import { getVisibility } from "@/lib/visibility/server";
 
 const ORPHANS = orphanScreens(Object.values(STUDY_MODULES));
 if (ORPHANS.length) throw new Error(`Screens no lesson shows: ${ORPHANS.join(", ")}`);
@@ -31,15 +33,19 @@ export async function generateMetadata({ params }: PageProps<"/study/[topic]">):
  * Where to go after a lesson: the next lesson of its course, else the topic
  * after the course on the learning path — straight into its free first lesson
  * when it has one (the end of the free course leads into inventory's).
+ * Lessons and courses the admin hid are passed over.
  */
-function nextOf(slug: string) {
+function nextOf(slug: string, hidden: string[]) {
+  const shown = (href: string) => !isLinkHidden(hidden, href);
   const m = STUDY_MODULES[slug];
-  const course = Object.values(STUDY_MODULES).filter((x) => x.backHref === m.backHref);
-  const after = course.find((x) => x.n === m.n + 1);
+  const course = Object.values(STUDY_MODULES)
+    .filter((x) => x.backHref === m.backHref && x.n > m.n && shown(studyHref(x.slug)))
+    .sort((a, b) => a.n - b.n);
+  const after = course[0];
   if (after) return { href: studyHref(after.slug), label: `לשיעור ${after.n}: ${after.title}` };
-  const t = TOPICS[TOPICS.findIndex((x) => x.href === m.backHref) + 1];
+  const t = TOPICS.slice(TOPICS.findIndex((x) => x.href === m.backHref) + 1).find((x) => shown(x.href));
   if (!t) return undefined;
-  const taste = t.preview.find((p) => p in STUDY_MODULES);
+  const taste = t.preview.find((p) => p in STUDY_MODULES && shown(studyHref(p)));
   if (taste) return { href: studyHref(taste), label: `הצעד הבא — ${t.title}, והשיעור הראשון עלינו` };
   return { href: t.lesson ?? t.href, label: `לנושא הבא: ${t.title}` };
 }
@@ -65,11 +71,13 @@ async function Lesson({ params }: Pick<PageProps<"/study/[topic]">, "params">) {
   const free = topic.tier === "free" || topic.preview.includes(m.slug);
   if (!free && !canAccessWith(await getAccess(), topic, m.slug)) return <LockedLesson slug={m.slug} />;
   const last = Math.max(...Object.values(STUDY_MODULES).filter((x) => x.backHref === m.backHref).map((x) => x.n));
+  // Cached: reading it keeps a free lesson prerendered.
+  const { links } = await getVisibility();
   return (
     <>
       <TrackEvent event={{ kind: "lesson_start", target: m.slug, meta: { course: topic.id, n: m.n } }} />
       {topic.tier === "free" && m.n === last && <CourseDone module={m} course={topic.id} />}
-      <StudyShell module={m} screens={screensFor(m)} next={nextOf(m.slug)} course={courseOf(m.slug)} />
+      <StudyShell module={m} screens={screensFor(m)} next={nextOf(m.slug, links)} course={courseOf(m.slug, links)} />
     </>
   );
 }
@@ -78,11 +86,11 @@ async function Lesson({ params }: Pick<PageProps<"/study/[topic]">, "params">) {
  * The course beside a lesson: its page, and its lessons in order — this one
  * whole, the others as outlines (titles and counts, never their questions).
  */
-function courseOf(slug: string) {
+function courseOf(slug: string, hidden: string[]) {
   const m = STUDY_MODULES[slug];
   const topic = topicByHref(m.backHref)!;
   const lessons = Object.values(STUDY_MODULES)
-    .filter((x) => x.backHref === m.backHref)
+    .filter((x) => x.backHref === m.backHref && (x.slug === slug || !isLinkHidden(hidden, studyHref(x.slug))))
     .sort((a, b) => a.n - b.n)
     .map((x) => (x.slug === slug ? x : outlineOf(x)));
   return { title: topic.standard ? `${topic.title} (${topic.standard})` : topic.title, href: topic.href, lessons };

@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { ACCENTS, CalculatorIcon, SectionIcon } from "./calculator-visuals";
 import { FieldControl } from "./field-control";
 import { SolutionView } from "./solution-view";
+import { useVisibility } from "@/components/layout/visibility";
 
 const STEPS = [
   { title: "תקן ונושא", short: "תקן" },
@@ -335,12 +336,15 @@ function Stepper({
 }
 
 function StandardStep({ selected, onChoose }: { selected?: string; onChoose: (c: Calculator) => void }) {
+  // A calculator the admin hid isn't offered (and its address is blocked).
+  const { linkShown } = useVisibility();
+  const calculators = CALCULATORS.filter((c) => linkShown(`/engine?calc=${c.slug}`));
   return (
     <div>
       <h2 className="text-xl font-semibold tracking-tight text-fg">באיזה תקן עוסקת הסוגיה שלכם?</h2>
       <p className="mt-1 text-sm text-muted">בחרו נושא כדי להגדיר את התרחיש שלב אחר שלב.</p>
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        {CALCULATORS.map((c, i) => {
+        {calculators.map((c, i) => {
           const active = c.slug === selected;
           return (
             <motion.button

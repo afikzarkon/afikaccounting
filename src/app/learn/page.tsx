@@ -4,13 +4,18 @@ import Link from "next/link";
 import { LearningPath } from "@/components/learn-map/learning-path";
 import { Container } from "@/components/ui/primitives";
 import { ENGINE_HUB, ENGINE_TOOLS, LEARNING_TOOLS } from "@/lib/catalog";
+import { isLinkHidden } from "@/lib/visibility/rules";
+import { getVisibility } from "@/lib/visibility/server";
 
 export const metadata: Metadata = {
   title: "מפת הלימוד",
   description: "כל הקורסים באתר במקום אחד, לפי הסדר: חשבונאות מאפס בחינם, ואחריה הקורסים המתקדמים — מלאי ורכוש קבוע — עם הכלים והמחשבונים של כל נושא.",
 };
 
-export default function LearnPage() {
+export default async function LearnPage() {
+  const { links } = await getVisibility();
+  const learning = LEARNING_TOOLS.filter((x) => !isLinkHidden(links, x.href));
+  const engine = ENGINE_TOOLS.filter((x) => !isLinkHidden(links, x.href));
   return (
     <div className="relative">
       <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
@@ -38,7 +43,7 @@ export default function LearnPage() {
               <div>
                 <p className="mb-1.5 text-xs font-semibold text-accent">מחשבונים לימודיים — עם הדרך המלאה</p>
                 <ul className="space-y-1 text-sm">
-                  {LEARNING_TOOLS.map((x) => (
+                  {learning.map((x) => (
                     <li key={x.href}>
                       <Link href={x.href} className="text-fg hover:text-accent hover:underline">
                         {x.label}
@@ -51,7 +56,7 @@ export default function LearnPage() {
               <div>
                 <p className="mb-1.5 text-xs font-semibold text-accent">מנוע הפתרונות — לתרחישים מקצועיים</p>
                 <ul className="space-y-1 text-sm">
-                  {ENGINE_TOOLS.map((x) => (
+                  {engine.map((x) => (
                     <li key={x.href}>
                       <Link href={x.href} className="text-fg hover:text-accent hover:underline">
                         <span className="num">{x.standard}</span> · {x.label}

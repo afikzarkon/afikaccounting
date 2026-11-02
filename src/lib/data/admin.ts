@@ -211,6 +211,18 @@ export async function listDeviceAlerts(days = 30): Promise<DeviceAlert[]> {
   return rows.map((r) => ({ ...r, devices: Number(r.devices), countries: Number(r.countries), signIns: Number(r.signIns), labels: r.labels ?? [], countryList: r.countryList ?? [] }));
 }
 
+// ---- site visibility -------------------------------------------------------------
+
+/** What is hidden or renamed now, read fresh for the admin's switches (not from the cache). */
+export async function listVisibility(): Promise<{ hidden: Record<string, boolean>; labels: Record<string, string> }> {
+  const supabase = await createClient();
+  const rows = check<{ key: string; hidden: boolean; label: string | null }[]>(await supabase.from("site_visibility").select("key, hidden, label"));
+  return {
+    hidden: Object.fromEntries(rows.filter((r) => r.hidden).map((r) => [r.key, true])),
+    labels: Object.fromEntries(rows.filter((r) => r.label).map((r) => [r.key, r.label as string])),
+  };
+}
+
 // ---- watermark lookup -------------------------------------------------------------
 
 export type MarkMatch = {

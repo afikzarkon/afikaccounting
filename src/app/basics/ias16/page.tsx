@@ -9,6 +9,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/primitives";
 import { screenHref } from "@/lib/study/basics";
 import { IAS16_LEGACY_CHAPTERS, IAS16_LESSONS, ias16LegacyHref } from "@/lib/study/ias16";
+import { visibleLessons } from "@/lib/visibility/server";
 
 export const metadata: Metadata = {
   title: "רכוש קבוע (IAS 16) — קורס אינטראקטיבי ומחשבונים",
@@ -24,7 +25,7 @@ const REDIRECTS = Object.fromEntries(IAS16_LEGACY_CHAPTERS.map((id) => [id, ias1
  * screens (the sections of the former long page, each under its principle)
  * and a practice section; progress on top, and the full calculator at the bottom.
  */
-export default function Ias16Page() {
+export default async function Ias16Page() {
   return (
     <div className="relative">
       <LegacyHashRedirect redirects={REDIRECTS} />
@@ -37,7 +38,7 @@ export default function Ias16Page() {
               רכוש קבוע <span className="text-gradient">מהקל לקשה</span>
             </>
           }
-          lessons={IAS16_LESSONS}
+          lessons={await visibleLessons(IAS16_LESSONS)}
         >
           <p>
             שיעורים אינטראקטיביים, צעד אחר צעד: מהו רכוש קבוע ומושגי היסוד, ואז הסוגיות מהפשוטה למורכבת — שיטות הפחת, שאלה מלאה, שיפוצים, החלפת נכסים והערכה מחדש. בכל
@@ -52,7 +53,7 @@ export default function Ias16Page() {
         </CourseHeader>
 
         <div className="mt-8">
-          <GatedCoursePath lessons={IAS16_LESSONS} />
+          <GatedCoursePath lessons={await visibleLessons(IAS16_LESSONS)} />
         </div>
 
         <section id="full-calculator" aria-labelledby="full-calculator-h" className="mt-16 scroll-mt-24">

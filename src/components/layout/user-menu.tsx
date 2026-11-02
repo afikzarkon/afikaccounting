@@ -7,26 +7,37 @@ import { useEffect, useRef, useState } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { signOut } from "@/lib/actions/auth";
 import { FIRST_LESSON } from "@/lib/catalog";
+import { BUTTONS } from "@/lib/visibility/items";
+import { useVisibility } from "./visibility";
 
 /** A guest's way in: straight into lesson 1, no account needed. */
 export function GuestActions() {
+  const { shown, label } = useVisibility();
+  const { headerLogin: login, headerStart: start } = BUTTONS;
   return (
     <div className="flex items-center gap-1.5">
-      <ButtonLink href="/login" variant="ghost" size="sm" className="hidden sm:inline-flex">
-        התחברות
-      </ButtonLink>
-      <ButtonLink href={FIRST_LESSON} size="sm" className="max-sm:px-2.5">
-        התחילו בחינם <ArrowLeft className="h-3.5 w-3.5 max-sm:hidden" aria-hidden />
-      </ButtonLink>
+      {shown(login.key) && (
+        <ButtonLink href="/login" variant="ghost" size="sm" className="hidden sm:inline-flex">
+          {label(login.key, login.label)}
+        </ButtonLink>
+      )}
+      {shown(start.key) && (
+        <ButtonLink href={FIRST_LESSON} size="sm" className="max-sm:px-2.5">
+          {label(start.key, start.label)} <ArrowLeft className="h-3.5 w-3.5 max-sm:hidden" aria-hidden />
+        </ButtonLink>
+      )}
     </div>
   );
 }
 
 /** For an account on the free plan: the way to the plans. */
 export function UpgradeButton() {
+  const { shown, linkShown, label } = useVisibility();
+  const b = BUTTONS.headerUpgrade;
+  if (!shown(b.key) || !linkShown("/pricing")) return null;
   return (
     <ButtonLink href="/pricing" size="sm" className="max-sm:hidden">
-      <Sparkles className="h-3.5 w-3.5" aria-hidden /> שדרוג
+      <Sparkles className="h-3.5 w-3.5" aria-hidden /> {label(b.key, b.label)}
     </ButtonLink>
   );
 }

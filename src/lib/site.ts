@@ -1,5 +1,6 @@
 import { ENGINE_HUB, ENGINE_TOOLS, EXAMS_HUB, LEARN_HUB, LEARNING_PATH, LEARNING_TOOLS, PRICING_HUB } from "./catalog";
 import type { Tier } from "./pricing";
+import { type Visibility, isLinkHidden } from "./visibility/rules";
 
 /** A top-level link; `tier` gives it that plan's colour (the exams area is gold). */
 export type NavLink = { href: string; label: string; tier?: Tier };
@@ -39,3 +40,17 @@ export const site = {
     PRICING_HUB,
   ] satisfies NavItem[] as NavItem[],
 };
+
+/**
+ * The menu without what the admin hid: hidden links drop out, a category
+ * keeps its hub only while the hub is shown, and an emptied category goes.
+ */
+export function navFor(v: Visibility): NavItem[] {
+  const shown = (href: string) => !isLinkHidden(v.links, href);
+  return site.nav.flatMap((item): NavItem[] => {
+    if (!("items" in item)) return shown(item.href) ? [item] : [];
+    const items = item.items.filter((i) => shown(i.href));
+    if (!items.length && !shown(item.hub.href)) return [];
+    return [{ ...item, items, hub: shown(item.hub.href) ? item.hub : (items[0] ?? item.hub) }];
+  });
+}

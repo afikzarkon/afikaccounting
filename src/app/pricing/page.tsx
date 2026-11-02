@@ -10,6 +10,9 @@ import { Container, SectionHeading } from "@/components/ui/primitives";
 import { FIRST_LESSON } from "@/lib/catalog";
 import { safeNext } from "@/lib/auth/dal";
 import { isTier, PLANS, type Tier } from "@/lib/pricing";
+import { planKey } from "@/lib/visibility/items";
+import { isHidden } from "@/lib/visibility/rules";
+import { getVisibility } from "@/lib/visibility/server";
 
 export const metadata: Metadata = {
   title: "מחירים",
@@ -35,7 +38,10 @@ const FAQ = [
   { q: "מה קורה להתקדמות שלי כשאני משדרג?", a: "שום דבר לא מתאפס: השיעורים שכבר עשיתם נשארים מסומנים, והשיעורים הנעולים פשוט נפתחים במקומם במסלול." },
 ];
 
-export default function PricingPage({ searchParams }: PageProps<"/pricing">) {
+export default async function PricingPage({ searchParams }: PageProps<"/pricing">) {
+  // The comparison leaves out a plan the admin hid, like the cards do.
+  const v = await getVisibility();
+  const plans = PLANS.filter((p) => !isHidden(v, planKey(p.tier)));
   return (
     <div className="relative">
       <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
@@ -65,7 +71,7 @@ export default function PricingPage({ searchParams }: PageProps<"/pricing">) {
                   <th scope="col" className="px-4 py-3 text-start font-medium text-muted">
                     <span className="sr-only">מה כלול</span>
                   </th>
-                  {PLANS.map((p) => (
+                  {plans.map((p) => (
                     <th key={p.tier} scope="col" className={p.featured ? "bg-accent-soft/60 px-3 py-3" : "px-3 py-3"}>
                       <TierBadge tier={p.tier} />
                     </th>
@@ -78,7 +84,7 @@ export default function PricingPage({ searchParams }: PageProps<"/pricing">) {
                     <th scope="row" className="px-4 py-3 text-start font-medium text-fg">
                       {row.label}
                     </th>
-                    {PLANS.map((p) => {
+                    {plans.map((p) => {
                       const v = row.plans[p.tier];
                       return (
                         <td key={p.tier} className={p.featured ? "bg-accent-soft/60 px-3 py-3 text-center" : "px-3 py-3 text-center"}>

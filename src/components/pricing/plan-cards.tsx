@@ -4,6 +4,9 @@ import { billingEnabled } from "@/lib/billing";
 import { FIRST_LESSON } from "@/lib/catalog";
 import { checkoutHref, PLANS, PRICES_ARE_FINAL, signupHref } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
+import { planKey } from "@/lib/visibility/items";
+import { isHidden } from "@/lib/visibility/rules";
+import { getVisibility } from "@/lib/visibility/server";
 import { PlanCta } from "./plan-cta";
 import { TierBadge } from "./tier-badge";
 
@@ -14,14 +17,17 @@ import { TierBadge } from "./tier-badge";
  * `from` names the page, for plan_click; `returnTo` is where to send the
  * reader back after paying (the lesson they came from).
  */
-export function PlanCards({ from, chosen, returnTo }: { from: string; chosen?: string; returnTo?: string }) {
+export async function PlanCards({ from, chosen, returnTo }: { from: string; chosen?: string; returnTo?: string }) {
   const paying = billingEnabled();
+  // A plan the admin hid has no card.
+  const v = await getVisibility();
+  const plans = PLANS.filter((p) => !isHidden(v, planKey(p.tier)));
   const href = (tier: (typeof PLANS)[number]["tier"], interval: "month" | "year" = "month") =>
     tier === "free" ? FIRST_LESSON : paying ? checkoutHref(tier, interval, returnTo) : signupHref(tier);
   return (
     <div>
-      <div className="grid items-stretch gap-4 lg:grid-cols-3">
-        {PLANS.map((p) => {
+      <div className={cn("grid items-stretch gap-4", plans.length === 3 ? "lg:grid-cols-3" : plans.length === 2 && "lg:grid-cols-2")}>
+        {plans.map((p) => {
           const featured = chosen ? chosen === p.tier : p.featured;
           return (
             <article
