@@ -1,3 +1,5 @@
+import { LESSON_N as IAS19_LESSON_N } from "./study/ias19/shared";
+
 /**
  * The site's plans: the one source the pricing page, the home page and every
  * paywall read. Plain data, so it ships to the browser with the paywall.
@@ -40,7 +42,7 @@ export const PLANS: Plan[] = [
     tier: "courses",
     name: "קורסים",
     description: "כל הקורסים המתקדמים, עד רמת מבחן",
-    includes: ["כל מה שבחינם", "מלאי (IAS 2) — כל 6 השיעורים", "רכוש קבוע (IAS 16) — כל 5 השיעורים", "מחשבונים שמראים את כל הדרך"],
+    includes: ["כל מה שבחינם", "מלאי (IAS 2) — כל 12 השיעורים", "רכוש קבוע (IAS 16) — כל 14 השיעורים", `הטבות עובד (IAS 19) — כל ${Object.keys(IAS19_LESSON_N).length} השיעורים`, "מחשבונים שמראים את כל הדרך"],
     monthly: 49, // PLACEHOLDER
     yearly: 390, // PLACEHOLDER
     featured: true,

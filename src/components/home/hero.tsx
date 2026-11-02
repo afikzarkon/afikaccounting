@@ -55,7 +55,7 @@ export async function Hero({ trap, lessons, exercises, videos }: { trap: Trap; l
             ))}
           </ul>
           <p className="mt-5 max-w-xl text-sm text-muted">
-            ומשם ממשיכים: <strong className="font-semibold text-fg">מלאי ורכוש קבוע</strong> — עד רמת מבחן.
+            ומשם ממשיכים: <strong className="font-semibold text-fg">מלאי, רכוש קבוע והטבות עובד</strong> — עד רמת מבחן.
           </p>
         </div>
 

@@ -10,22 +10,29 @@ import { Container, SectionHeading } from "@/components/ui/primitives";
 import { FIRST_LESSON } from "@/lib/catalog";
 import { safeNext } from "@/lib/auth/dal";
 import { isTier, PLANS, type Tier } from "@/lib/pricing";
+import { IAS16_LESSONS } from "@/lib/study/ias16";
+import { IAS19_LESSONS } from "@/lib/study/ias19";
+import { INVENTORY_LESSONS } from "@/lib/study/inventory";
 import { planKey } from "@/lib/visibility/items";
 import { isHidden } from "@/lib/visibility/rules";
 import { getVisibility } from "@/lib/visibility/server";
 
 export const metadata: Metadata = {
   title: "מחירים",
-  description: "חשבונאות מאפס בחינם, לתמיד. הקורסים המתקדמים — מלאי ורכוש קבוע — ומתחם המבחנים במנוי. בלי כרטיס אשראי כדי להתחיל.",
+  description: "חשבונאות מאפס בחינם, לתמיד. הקורסים המתקדמים — מלאי, רכוש קבוע והטבות עובד — ומתחם המבחנים במנוי. בלי כרטיס אשראי כדי להתחיל.",
 };
+
+/** "כל N השיעורים", counted from the course itself. */
+const all = (lessons: unknown[]) => `כל ${lessons.length} השיעורים`;
 
 /** What each plan opens, row by row: true, false, or a few words. */
 const COMPARE: { label: string; plans: Record<Tier, boolean | string> }[] = [
   { label: "חשבונאות מאפס — 8 שיעורים", plans: { free: true, courses: true, exams: true } },
   { label: "תרגול עם משוב מיידי ומלכודות", plans: { free: true, courses: true, exams: true } },
   { label: "סרטונים, סיכומים וטיפים למבחן", plans: { free: true, courses: true, exams: true } },
-  { label: "מלאי (IAS 2)", plans: { free: "שיעור 1", courses: "כל 6 השיעורים", exams: "כל 6 השיעורים" } },
-  { label: "רכוש קבוע (IAS 16)", plans: { free: "שיעור 1", courses: "כל 5 השיעורים", exams: "כל 5 השיעורים" } },
+  { label: "מלאי (IAS 2)", plans: { free: "שיעור 1", courses: all(INVENTORY_LESSONS), exams: all(INVENTORY_LESSONS) } },
+  { label: "רכוש קבוע (IAS 16)", plans: { free: "שיעור 1", courses: all(IAS16_LESSONS), exams: all(IAS16_LESSONS) } },
+  { label: "הטבות עובד (IAS 19)", plans: { free: "שיעור 1", courses: all(IAS19_LESSONS), exams: all(IAS19_LESSONS) } },
   { label: "פתרונות מלאים לתרגילים ברמת מבחן", plans: { free: "מבחן לדוגמה", courses: "מבחן לדוגמה", exams: true } },
   { label: "ארכיון מבחנים עם פתרונות", plans: { free: false, courses: false, exams: "בקרוב" } },
 ];

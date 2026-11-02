@@ -61,6 +61,23 @@ describe("canAccess", () => {
     assert.ok(!canAccessWith(free, topic("inventory")), "the topic as a whole is closed");
     assert.ok(canAccessWith(free, topic("ias16"), "ias16-intro"));
     assert.ok(!canAccessWith(free, topic("ias16"), "ias16-revaluation"));
+    assert.ok(canAccessWith(free, topic("ias19"), "ias19-map"));
+    assert.ok(!canAccessWith(free, topic("ias19"), "ias19-toolkit"));
+    assert.ok(!canAccessWith(free, topic("ias19")), "the topic as a whole is closed");
+  });
+  it("opens the employee-benefits course whole on courses", () => {
+    assert.ok(canAccessWith(courses, topic("ias19"), "ias19-toolkit"));
+    assert.deepEqual(lockedOf(courses, topic("ias19"), ["ias19-map", "ias19-toolkit", "ias19-exams"]), []);
+    assert.deepEqual(lockedOf(free, topic("ias19"), ["ias19-map", "ias19-toolkit", "ias19-exams"]), ["ias19-toolkit", "ias19-exams"]);
+  });
+  it("the plans name every course with its true number of lessons", async () => {
+    const { PLANS } = await import("./pricing");
+    const { INVENTORY_LESSONS } = await import("./study/inventory");
+    const { IAS16_LESSONS } = await import("./study/ias16");
+    const { IAS19_LESSONS } = await import("./study/ias19");
+    const includes = PLANS.find((p) => p.tier === "courses")!.includes.join(" | ");
+    for (const [name, lessons] of [["מלאי", INVENTORY_LESSONS], ["רכוש קבוע", IAS16_LESSONS], ["הטבות עובד", IAS19_LESSONS]] as const)
+      assert.ok(includes.includes(`${name}`) && new RegExp(`${name}[^|]*כל ${lessons.length} השיעורים`).test(includes), `${name}: ${lessons.length} lessons`);
   });
   it("opens every paid course whole on courses and up", () => {
     for (const t of TOPICS) assert.ok(canAccessWith(courses, t), t.id);

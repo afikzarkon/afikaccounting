@@ -9,7 +9,7 @@ import { getVisibility } from "@/lib/visibility/server";
 
 export const metadata: Metadata = {
   title: "מפת הלימוד",
-  description: "כל הקורסים באתר במקום אחד, לפי הסדר: חשבונאות מאפס בחינם, ואחריה הקורסים המתקדמים — מלאי ורכוש קבוע — עם הכלים והמחשבונים של כל נושא.",
+  description: "כל הקורסים באתר במקום אחד, לפי הסדר: חשבונאות מאפס בחינם, ואחריה הקורסים המתקדמים — מלאי, רכוש קבוע והטבות עובד — עם הכלים והמחשבונים של כל נושא.",
 };
 
 export default async function LearnPage() {
