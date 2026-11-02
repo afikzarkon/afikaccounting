@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { EXAMS_HUB, FIRST_LESSON, LEARN_HUB, LEARNING_TOOLS, PRICING_HUB, TOPICS } from "@/lib/catalog";
 import { CALCULATORS } from "@/lib/engine/registry";
+import { LEGAL_LINKS } from "@/lib/legal";
 import { site } from "@/lib/site";
 import { isLinkHidden } from "@/lib/visibility/rules";
 import { getVisibility } from "@/lib/visibility/server";
@@ -91,9 +92,19 @@ export async function Footer() {
             </p>
           </div>
         </div>
-        <p className="mt-8 text-xs text-subtle">
-          © <CurrentYear /> {site.name}. כל הזכויות שמורות.
-        </p>
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-xs text-subtle">
+          <p>
+            © <CurrentYear /> {site.name}. כל הזכויות שמורות. אין להעתיק, להפיץ או לשתף את התכנים ללא אישור בכתב.
+          </p>
+          {/* Never hidden by the admin's visibility rules: the law needs them reachable from every page. */}
+          <nav aria-label="מסמכים משפטיים" className="flex flex-wrap gap-x-4 gap-y-2">
+            {LEGAL_LINKS.map((l) => (
+              <Link key={l.href} href={l.href} className="font-medium text-muted transition-colors hover:text-fg">
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
       </div>
     </footer>
   );

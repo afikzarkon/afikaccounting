@@ -49,6 +49,23 @@ function GoogleMark() {
   );
 }
 
+/** Under the sign-up form (and the Google button above it): what signing up agrees to, with the documents a click away. */
+function TermsNote({ action }: { action: string }) {
+  return (
+    <p className="text-center text-xs leading-relaxed text-subtle">
+      {action} אתם מסכימים ל
+      <Link href="/terms" target="_blank" className="font-medium text-accent hover:underline">
+        תנאי השימוש
+      </Link>{" "}
+      ול
+      <Link href="/privacy" target="_blank" className="font-medium text-accent hover:underline">
+        מדיניות הפרטיות
+      </Link>
+      , ומאשרים שהתכנים הם לצורכי לימוד ואינם ייעוץ מקצועי.
+    </p>
+  );
+}
+
 export function LoginForm() {
   const params = useSearchParams();
   const next = params.get("next") ?? "";
@@ -138,9 +155,7 @@ export function RegisterForm() {
       <SubmitButton className="w-full" size="lg">
         יצירת חשבון
       </SubmitButton>
-      <p className="text-center text-xs leading-relaxed text-subtle">
-        ביצירת החשבון אתם מאשרים שהתכנים הם לצורכי לימוד ואינם מהווים ייעוץ מקצועי.
-      </p>
+      <TermsNote action="ביצירת החשבון" />
     </form>
   );
 }
