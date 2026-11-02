@@ -65,3 +65,6 @@ export const STAGES: { n: number; title: string; lessons: Ias19Slug[]; core?: bo
   { n: 3, title: "הטבה מוגדרת", lessons: ["ias19-measure", "ias19-attribute", "ias19-rollforward", "ias19-amend", "ias19-assets", "ias19-present"], core: true },
   { n: 4, title: "הרחבות וסיכום", lessons: ["ias19-other", "ias19-exams"] },
 ];
+
+/** A rate as a percentage, e.g. 0.07 → "7%" (never 7.000000000000001%). */
+export const pct = (r: number, digits = 4) => `${(r * 100).toLocaleString("en-US", { maximumFractionDigits: digits })}%`;

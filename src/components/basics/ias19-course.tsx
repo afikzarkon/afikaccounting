@@ -9,9 +9,10 @@ import { Sorted, Story } from "./inventory-teach";
 import { Card, KeyCard, Money, Rule, Stepper, Wide } from "./ui";
 
 /**
- * The employee-benefits course, lessons 1–4: the map and the principle, the
- * toolkit, short-term benefits, and defined contribution against defined
- * benefit. The figures come from lib/study/ias19 and the solver behind it.
+ * The employee-benefits course, lesson 1: the map, the principle and the four
+ * kinds of benefit — no numbers, all of it sorting. The other lessons' screens
+ * are in the ias19-course-* files; their figures come from lib/study/ias19 and
+ * the solver behind it.
  */
 
 const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={items} />;
