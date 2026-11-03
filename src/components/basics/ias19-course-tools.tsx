@@ -144,7 +144,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
                   <p>
                     פתיחה <Money v={SOLVED.roll.opening} />, שולמו <Money v={SOLVED.roll.payments} />, סגירה <Money v={SOLVED.roll.closing} />. ההוצאה היא המספר שמאזן.
                   </p>
-                  <RollForward
+                  <RollForward pnTo="רווח והפסד"
                     title="הפרשה לחופשה"
                     rows={[
                       { label: "יתרת פתיחה", value: SOLVED.roll.opening, kind: "balance" },

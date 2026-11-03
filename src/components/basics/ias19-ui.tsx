@@ -1,7 +1,7 @@
 import { ArrowDown, Lightbulb, MapPin, MessageCircle, Signpost, Star } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Num } from "@/components/study/blocks";
+import { Roll } from "@/components/study/ledger";
 import { studyHref } from "@/lib/study";
 import { branchOf, MIND_MAP } from "@/lib/study/ias19/map";
 import { type Ias19Slug, LESSON_N, prereqLine } from "@/lib/study/ias19/shared";
@@ -97,50 +97,28 @@ export function MapBranch({ lesson, children }: { lesson: Ias19Slug; children: R
 export type RollRow = { label: ReactNode; value: number; how?: ReactNode; kind?: "balance" | "pn" };
 
 /**
- * A roll-forward drawn the same way in every lesson: opening, the lines that
- * explain the year, the P.N. that balances it — marked as the balancing line —
- * and the closing; and for each line, the rate and the years it uses.
+ * A roll-forward drawn the same way in every lesson, as on a worksheet:
+ * opening, the lines that explain the year, the P.N. that balances it —
+ * tagged with where it lands — and the closing; under each line, the rate and
+ * the years it uses. The obligation is a credit and prints negative; plan
+ * assets (`side="debit"`) print as they are.
  */
-export function RollForward({ title, rows, unit = "₪" }: { title: ReactNode; rows: RollRow[]; unit?: string }) {
-  const hasHow = rows.some((r) => r.how);
+export function RollForward({ title, rows, unit, side = "credit", pnTo = "OCI" }: { title: ReactNode; rows: RollRow[]; unit?: string; side?: "credit" | "debit"; pnTo?: ReactNode }) {
+  const balances = rows.flatMap((r, i) => (r.kind === "balance" ? [i] : []));
+  const last = balances[balances.length - 1];
   return (
-    <figure className="overflow-hidden rounded-xl border border-line">
-      <figcaption className="border-b border-line bg-surface-2/70 px-4 py-2.5 text-sm font-semibold text-fg">
-        {title} <span className="text-xs font-normal text-muted">({unit})</span>
-      </figcaption>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[22rem] text-sm">
-          <thead>
-            <tr className="text-xs text-muted">
-              <th className="px-3 py-2 text-start font-medium">שורה</th>
-              <th className="px-3 py-2 text-end font-medium">סכום</th>
-              {hasHow && <th className="px-3 py-2 text-start font-medium">באיזו ריבית וכמה שנים</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr
-                key={i}
-                className={cn(
-                  "border-t border-line/70",
-                  r.kind === "balance" && "bg-surface-2/50 font-semibold",
-                  r.kind === "pn" && "bg-amber-500/[0.1] font-bold",
-                )}
-              >
-                <td className="px-3 py-2 text-fg">
-                  {r.label}
-                  {r.kind === "pn" && <span className="ms-1.5 rounded bg-amber-500/20 px-1.5 py-px text-[10.5px] font-bold text-amber-700 dark:text-amber-300">שורה מאזנת</span>}
-                </td>
-                <td className="px-3 py-2 text-end text-fg">
-                  <Num v={Math.round(r.value)} />
-                </td>
-                {hasHow && <td className="px-3 py-2 text-[13px] text-muted">{r.how}</td>}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </figure>
+    <Roll
+      title={title}
+      unit={unit}
+      side={side}
+      lines={rows.map((r, i) => ({
+        label: r.label,
+        value: r.value,
+        note: r.how,
+        kind: r.kind === "pn" ? "focal" : r.kind === "balance" ? (i === last && i > 0 ? "closing" : "opening") : undefined,
+        tag: r.kind === "pn" ? pnTo : undefined,
+      }))}
+    />
   );
 }
 

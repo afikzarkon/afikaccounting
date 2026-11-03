@@ -2,6 +2,7 @@ import { ArrowLeft, Building2, CalendarClock, ClipboardList, Factory, HelpCircle
 import { Fragment, type ReactNode } from "react";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
+import { Statement } from "@/components/study/ledger";
 import { SHAKED_Q, shaked } from "@/lib/learn/ias16-exams";
 import {
   BAKERY,
@@ -60,6 +61,7 @@ import {
   unkTwoMonths,
 } from "@/lib/study/ias16/lessons/unknowns";
 import { cn } from "@/lib/utils";
+import { PpeNote } from "./ias16-note";
 import { AssetSheet, type SheetLine } from "./ias16-sheet";
 import { FillGrid, MiniQuiz } from "./inventory-interactive";
 import { ChainChips, MoreDialog, Reveal, Sorted, Story } from "./inventory-teach";
@@ -278,20 +280,19 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
           <p>אותה שורה מהטבלה — שורת {OVEN.from + 2} — מתפצלת לשני דוחות.</p>
         </Story>
         <Wide className="grid gap-3 md:grid-cols-2">
-          <Card title={`מאזן ליום 31.12.${OVEN.from + 2}`}>
-            <DataTable
-              head={["רכוש קבוע", "₪"]}
-              rows={[
-                ["תנור — עלות (B)", OVEN.cost],
-                ["בניכוי פחת נצבר (D)", -3 * OVEN_ANNUAL],
-              ]}
-              foot={["עלות מופחתת (E)", OVEN.cost - 3 * OVEN_ANNUAL]}
-            />
-          </Card>
-          <Card title={`רווח והפסד לשנת ${OVEN.from + 2}`}>
-            <DataTable head={["הוצאות", "₪"]} rows={[["הוצאות פחת (C)", OVEN_ANNUAL]]} />
-            <p className="text-sm text-muted">רק הפחת של השנה. הפחת של השנים הקודמות כבר נרשם ברווח והפסד שלהן.</p>
-          </Card>
+          <Statement
+            title={`מאזן ליום 31.12.${OVEN.from + 2} (קטע)`}
+            rows={[
+              { label: "רכוש קבוע", kind: "heading" },
+              { label: "תנור — עלות (B)", values: [OVEN.cost] },
+              { label: "בניכוי פחת נצבר (D)", values: [-3 * OVEN_ANNUAL] },
+              { label: "עלות מופחתת (E)", values: [OVEN.cost - 3 * OVEN_ANNUAL], kind: "total" },
+            ]}
+          />
+          <div className="space-y-2">
+            <Statement title={`רווח והפסד לשנת ${OVEN.from + 2} (קטע)`} rows={[{ label: "הוצאות פחת (C)", values: [-OVEN_ANNUAL] }]} />
+            <p className="text-sm text-muted">רק הפחת של השנה, בסוגריים כי זו הוצאה. הפחת של השנים הקודמות כבר נרשם ברווח והפסד שלהן.</p>
+          </div>
         </Wide>
         <KeyCard>מאזן — תמונה ביום אחד, ולכן מספרים מצטברים (B, D, E). רווח והפסד — שנה אחת, ולכן רק C.</KeyCard>
       </>
@@ -639,26 +640,27 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
             ]}
           />
         </Wide>
+        <Wide>
+          <PpeNote />
+        </Wide>
         <Wide className="grid gap-3 md:grid-cols-2">
-          <Card title={`רווח והפסד לשנת ${YEAR_2026.year}`}>
-            <DataTable
-              head={["", "₪"]}
-              rows={[
-                ["הוצאות פחת", YEAR_2026.totalCharge],
-                [VAN_SALE_RESULT < 0 ? "הפסד הון ממכירת המשאית" : "רווח הון ממכירת המשאית", Math.abs(VAN_SALE_RESULT)],
-              ]}
-            />
-          </Card>
-          <Card title={`מאזן ליום 31.12.${YEAR_2026.year}`}>
-            <DataTable
-              head={["רכוש קבוע", "₪"]}
-              rows={[
-                ["עלות", OVEN.cost + BUILDING_COST + LAND_COST],
-                ["בניכוי פחת נצבר", -(YEAR_2026.oven.accumulated + YEAR_2026.building.accumulated)],
-              ]}
-              foot={["עלות מופחתת", YEAR_2026.oven.carrying + YEAR_2026.building.carrying + LAND_COST]}
-            />
-          </Card>
+          <Statement
+            title={`רווח והפסד לשנת ${YEAR_2026.year} (קטע)`}
+            rows={[
+              { label: "הוצאות פחת", values: [-YEAR_2026.totalCharge] },
+              { label: VAN_SALE_RESULT < 0 ? "הפסד הון ממכירת המשאית" : "רווח הון ממכירת המשאית", values: [VAN_SALE_RESULT] },
+              { label: "השפעה על הרווח", values: [VAN_SALE_RESULT - YEAR_2026.totalCharge], kind: "total" },
+            ]}
+          />
+          <Statement
+            title={`מאזן ליום 31.12.${YEAR_2026.year} (קטע)`}
+            rows={[
+              { label: "רכוש קבוע", kind: "heading" },
+              { label: "עלות", values: [OVEN.cost + BUILDING_COST + LAND_COST] },
+              { label: "בניכוי פחת נצבר", values: [-(YEAR_2026.oven.accumulated + YEAR_2026.building.accumulated)] },
+              { label: "עלות מופחתת", values: [YEAR_2026.oven.carrying + YEAR_2026.building.carrying + LAND_COST], kind: "total" },
+            ]}
+          />
         </Wide>
         <MoreDialog label="מאיפה כל מספר?">
           <p>

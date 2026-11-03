@@ -9,7 +9,7 @@ import { lessonRef, pct } from "@/lib/study/ias19/shared";
 import { Bridge, ExplainTask, HintLadder, MapBranch, Recipe5, RollForward, T19 } from "./ias19-ui";
 import { MiniQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
-import { RollWaterfall } from "./roll-waterfall";
+import { RollSchedule } from "./roll-schedule";
 import { Card, KeyCard, Money, Rule, Stepper, Wide } from "./ui";
 
 /** The employee-benefits course, lessons 5–7: measuring at one date, attribution to years of service, and a year's roll-forward. */
@@ -375,7 +375,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
             [<strong key="p">P.N.</strong>, "כל מה שנשאר: שינויי הנחות, והפער בין הצפוי למה שקרה. ל-OCI, לא לרווח והפסד"],
           ]}
         />
-        <RollWaterfall />
+        <RollSchedule />
       </Wide>
     ),
     check: quiz("emp-roll-lines", [

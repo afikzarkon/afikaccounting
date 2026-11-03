@@ -1,4 +1,5 @@
 import { Callout, DataTable, JournalEntry, Num } from "@/components/study/blocks";
+import { Roll } from "@/components/study/ledger";
 import { Formula } from "@/components/study/math";
 import { texNum } from "@/components/study/ui";
 import { solveLand, solveRevaluation } from "@/lib/learn/revaluation";
@@ -116,6 +117,28 @@ export function YearlyRevaluationSection() {
                     </p>
                   </>
                 )}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Roll
+                    title={`המבנה בספרים — ${year}`}
+                    side="debit"
+                    lines={[
+                      { label: prev ? "יתרת פתיחה (שווי הוגן)" : "יתרת פתיחה (עלות)", value: row.opening, kind: "opening" as const },
+                      { label: "פחת השנה", value: -row.dep },
+                      ...(Math.abs(row.revaluation) > 0.005 ? [{ label: "הערכה מחדש", value: row.revaluation, kind: "focal" as const }] : []),
+                      { label: "יתרת סגירה", value: row.closing, kind: "closing" as const },
+                    ]}
+                  />
+                  <Roll
+                    title={`קרן הערכה מחדש — מבנה — ${year}`}
+                    side="credit"
+                    lines={[
+                      { label: "יתרת פתיחה", value: prev ? prev.surplusAfter : 0, kind: "opening" as const },
+                      ...(row.transfer > 0.005 ? [{ label: "העברה לעודפים", value: -row.transfer }] : []),
+                      ...(ev && Math.abs(ev.oci) > 0.005 ? [{ label: "הערכה מחדש", value: ev.oci, kind: "focal" as const, tag: "OCI" }] : []),
+                      { label: "יתרת סגירה", value: row.surplus, kind: "closing" as const },
+                    ]}
+                  />
+                </div>
                 <div className="grid gap-3 xl:grid-cols-2">
                   <JournalEntry title="פחת השנה (מבנה)" date={`31.12.${year}`} lines={depLines(row.dep)} />
                   {row.transfer > 0.005 && <JournalEntry title="העברה לעודפים (קרן המבנה)" date={`31.12.${year}`} lines={transferLines(row.transfer)} />}

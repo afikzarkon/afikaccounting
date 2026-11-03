@@ -161,7 +161,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
                     <p>
                       <Money v={SICK_CLOSING} plain /> − <Money v={SICK_OPENING} plain /> + <Money v={SICK_PAID} plain /> = <strong><Money v={SICK_EXPENSE} /></strong>.
                     </p>
-                    <RollForward
+                    <RollForward pnTo="רווח והפסד"
                       title="הפרשה לימי מחלה"
                       rows={[
                         { label: "יתרת פתיחה", value: SICK_OPENING, kind: "balance" },

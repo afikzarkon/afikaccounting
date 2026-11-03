@@ -339,7 +339,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
               { label: "יתרת סגירה", value: PLAN_YEAR.closing, kind: "balance", how: `2 שנים, n = ${PLAN.n - 1}` },
             ]}
           />
-          <RollForward
+          <RollForward side="debit"
             title="נכסי תכנית — 2024"
             rows={[
               { label: "יתרת פתיחה", value: PLAN.assets.opening, kind: "balance" },
@@ -527,7 +527,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
               {
                 title: "הנכסים — באותו פיצול",
                 body: (
-                  <RollForward
+                  <RollForward side="debit"
                     title="נכסי תכנית — 2024"
                     rows={[
                       { label: "יתרת פתיחה", value: PLAN.assets.opening, kind: "balance" },

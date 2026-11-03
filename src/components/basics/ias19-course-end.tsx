@@ -118,7 +118,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
               {
                 title: "המעגל",
                 body: (
-                  <RollForward
+                  <RollForward pnTo="רווח והפסד"
                     title="מענק יובל — 2023"
                     rows={[
                       { label: "יתרת פתיחה", value: AWARD_OPENING, kind: "balance" },
@@ -499,7 +499,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             {
               title: "מעגל הנכסים",
               body: (
-                <RollForward
+                <RollForward side="debit"
                   unit="אלפי ₪"
                   title={`נכסי תכנית — ${EXAM_B.year}`}
                   rows={[

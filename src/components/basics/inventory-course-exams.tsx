@@ -2,6 +2,7 @@ import { Bike, Flame, Gift, ShieldCheck } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
+import { Statement } from "@/components/study/ledger";
 import { dateLabel, purchaseCost, valuatePeriod, type Period } from "@/lib/learn/inventory";
 import { MISHAK, mishak, OFEK, OFEK_2026, OFEK_YEARS, ofek } from "@/lib/learn/inventory-exams";
 import { m, pc } from "@/lib/learn/inventory-explain";
@@ -85,17 +86,25 @@ const sheetSteps: Step[] = [
           שווי מימוש נטו: {GV.closingUnits} × {GAVIA.nrvPerUnit} = <Money v={GV.nrvTotal!} /> — נמוך מהעלות, הורדה של <Money v={GV.writeDown} />. מלאי סגירה:{" "}
           <Money v={GV.closingCarrying} />.
         </p>
-        <DataTable
-          head={["", "₪"]}
-          rows={[
-            ["מכירות", GV.netSales],
-            ["מלאי פתיחה", GV.openingCost],
-            ["קניות", GV.purchasesCost],
-            ["מלאי סגירה", -GV.closingCarrying],
-            ["עלות המכר", GV.cogs],
-            ["רווח גולמי", GV.grossProfit],
-          ]}
-        />
+        <div className="grid gap-3 md:grid-cols-2">
+          <Statement
+            title="רווח והפסד (עד הרווח הגולמי)"
+            rows={[
+              { label: "מכירות", values: [GV.netSales] },
+              { label: "עלות המכר", values: [-GV.cogs], note: "ראו חישוב" },
+              { label: "רווח גולמי", values: [GV.grossProfit], kind: "total" },
+            ]}
+          />
+          <Statement
+            title="חישוב עלות המכר"
+            rows={[
+              { label: "מלאי פתיחה", values: [GV.openingCost] },
+              { label: "קניות", values: [GV.purchasesCost] },
+              { label: "בניכוי: מלאי סגירה", values: [-GV.closingCarrying] },
+              { label: "עלות המכר", values: [GV.cogs], kind: "total" },
+            ]}
+          />
+        </div>
       </>
     ),
   },
@@ -131,15 +140,17 @@ const ofekSteps: Step[] = [
   {
     title: "2025 · עד הרווח התפעולי",
     body: (
-      <DataTable
-        head={["", "₪"]}
+      <Statement
+        title="רווח והפסד לשנת 2025 (מהרווח הגולמי)"
         rows={[
-          ["רווח גולמי", O25.grossProfit],
-          [`אחסון (${n(OFEK.storageMonthly)} × 12)`, -OFEK.storageMonthly * 12],
-          [`הובלה ללקוחות (${O.sold2025} × ${OFEK.delivery})`, -OFEK.delivery * O.sold2025],
-          ["הוצאות מכירה ושיווק", -O.selling2025],
-          ["הוצאות הנהלה וכלליות", -OFEK.admin2025],
-          ["רווח תפעולי", O.operating2025],
+          { label: "רווח גולמי", values: [O25.grossProfit] },
+          {
+            label: "הוצאות מכירה ושיווק",
+            values: [-O.selling2025],
+            note: `אחסון ${n(OFEK.storageMonthly)} × 12 = ${n(OFEK.storageMonthly * 12)}; הובלה ללקוחות ${O.sold2025} × ${OFEK.delivery} = ${n(OFEK.delivery * O.sold2025)}`,
+          },
+          { label: "הוצאות הנהלה וכלליות", values: [-OFEK.admin2025] },
+          { label: "רווח תפעולי", values: [O.operating2025], kind: "total" },
         ]}
       />
     ),
@@ -469,18 +480,19 @@ export const COURSE_EXAM_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <Wide>
-          <DataTable
-            head={["", "₪"]}
+          <Statement
+            title="רווח והפסד (מהרווח הגולמי)"
             rows={[
-              ["רווח גולמי", OPER.grossProfit],
-              ["אחסון במחסני החברה", -OPER.storage],
-              ["הובלה ללקוחות", -OPER.delivery],
-              ["פרסום", -OPER.advertising],
-              ["הוצאות מכירה ושיווק", -OPER_SELLING],
-              ["הוצאות הנהלה וכלליות", -OPER.admin],
-              ["רווח תפעולי", OPER_PROFIT],
-              ["הוצאות מימון (רכיב אשראי)", -OPER.finance],
-              ["רווח לפני מס", OPER_PROFIT - OPER.finance],
+              { label: "רווח גולמי", values: [OPER.grossProfit] },
+              {
+                label: "הוצאות מכירה ושיווק",
+                values: [-OPER_SELLING],
+                note: `אחסון במחסני החברה ${OPER.storage.toLocaleString("en-US")} + הובלה ללקוחות ${OPER.delivery.toLocaleString("en-US")} + פרסום ${OPER.advertising.toLocaleString("en-US")}`,
+              },
+              { label: "הוצאות הנהלה וכלליות", values: [-OPER.admin] },
+              { label: "רווח תפעולי", values: [OPER_PROFIT], kind: "subtotal" },
+              { label: "הוצאות מימון (רכיב אשראי)", values: [-OPER.finance] },
+              { label: "רווח לפני מס", values: [OPER_PROFIT - OPER.finance], kind: "total" },
             ]}
           />
         </Wide>
