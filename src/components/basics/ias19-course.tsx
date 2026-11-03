@@ -32,7 +32,7 @@ const KIND_NAMES = ["הטבה לזמן קצר", "הטבה לאחר סיום הע
 /** A paragraph on one idea. */
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
 
-/** The sorting questions, in their order, and the kind each "yes" lands on; the sorting screen walks the hard case down them. */
+/** The sorting questions, in their order, and the kind each "yes" lands on. */
 const TREE = {
   label: "עץ החלטות: נוצרה מהחלטה לסיים את העבודה? כן, פיטורין. אחרת, משולמת כולה עד 12 חודשים מסוף שנת העבודה? כן, לזמן קצר. אחרת, משולמת אחרי שההעסקה נגמרת? כן, לאחר סיום העסקה. אחרת, הטבה אחרת לזמן ארוך",
   questions: [
@@ -303,21 +303,6 @@ export const IAS19_BASICS_SCREENS: Record<string, ScreenContent> = {
           KIND_OPTIONS,
           "מיינו את חמשת המקרים",
         )}
-        <Part title="מקרה קשה: מענק ותק">
-          <P>עובד יקבל מענק ותק בגובה משכורת חודשית כשישלים 10 שנות עבודה. הוא ימשיך לעבוד גם אחרי זה. לאיזה סוג המענק שייך?</P>
-          <details className="group rounded-xl border border-line bg-surface">
-            <summary className="cursor-pointer list-none px-3 py-2 text-[14.5px] font-bold text-accent [&::-webkit-details-marker]:hidden">נסו לבד, ואז פתחו את הפתרון</summary>
-            <div className="border-t border-line p-3">
-              <DecisionTree
-                {...TREE}
-                path={{
-                  stop: 3,
-                  answers: ["לא. אף אחד לא החליט לסיים את העבודה.", "לא. על השנה הראשונה משלמים רק אחרי תשע שנים.", "לא. משלמים בזמן שהוא עדיין עובד."],
-                }}
-              />
-            </div>
-          </details>
-        </Part>
       </>
     ),
   },

@@ -90,7 +90,7 @@ export const MAP: StudyModule = {
     { id: "emp-map-principle", title: "העיקרון: עבודה של היום, התחייבות של היום" },
     { id: "emp-map-types", title: "איך מבדילים בין הסוגים, עם תאריכים" },
     { id: "emp-map-ladder", title: "הכלל: עץ החלטות של שלוש שאלות" },
-    { id: "emp-map-sort", title: "ממיינים: חמישה מקרים ומקרה קשה אחד" },
+    { id: "emp-map-sort", title: "ממיינים: חמישה מקרים" },
     { id: "emp-map-master", title: "בדיקת שליטה, וגשר לשיעור הבא" },
   ],
   exercises: TEN.map((x) => choice(x.id, "מיון הטבה", x.text, [...KINDS], x.kind, x.why)),
