@@ -240,6 +240,9 @@ const xNum = (v: number) => String(Math.round(v * 100) / 100);
 const base = (i: number) => `(${factor(i)})`;
 
 export const TOOL = {
+  fv: "PV × (1 + RATE)^YEAR = FV",
+  fvExcel: "=FV(rate;nper;pmt;pv)",
+  roll: "פתיחה + מה שנוסף − תשלומים = סגירה",
   pv: "FV ÷ (1 + RATE)^YEAR = PV",
   pvExcel: "=PV(rate;nper;pmt;fv)",
   partRate: "(1 + RATE)^YEAR − 1 = שיעור לתקופה",
@@ -256,6 +259,11 @@ const year = (months: number) => (months % 12 === 0 ? String(months / 12) : `(${
 const xYear = (months: number) => (months % 12 === 0 ? String(months / 12) : `${months}/12`);
 
 export const tool = {
+  fv: (today: number, i: number, n: number): Worked => ({
+    formula: TOOL.fv,
+    numbers: `${amt(today)} × ${base(i)}^${num(n)} = ${money(today * (1 + i) ** n)}`,
+    excel: { formula: TOOL.fvExcel, numbers: `=FV(${xRate(i)};${num(n)};0;-${xNum(today)}) → ${money(today * (1 + i) ** n)}` },
+  }),
   pv: (fv: number, i: number, n: number): Worked => ({
     formula: TOOL.pv,
     numbers: `${amt(fv)} ÷ ${base(i)}^${num(n)} = ${money(pv(fv, i, n))}`,
@@ -293,6 +301,16 @@ export const tool = {
   expense: (opening: number, payments: number, closing: number): Worked => ({
     ...work.expense(opening, payments, closing),
     excel: { numbers: `=${xNum(closing)}-${xNum(opening)}+${xNum(payments)} → ${money(shortTermExpense(opening, payments, closing))}` },
+  }),
+  closing: (opening: number, added: number, payments: number): Worked => ({
+    formula: TOOL.roll,
+    numbers: `${amt(opening)} + ${amt(added)} − ${amt(payments)} = ${money(opening + added - payments)}`,
+    excel: { numbers: `=${xNum(opening)}+${xNum(added)}-${xNum(payments)} → ${money(opening + added - payments)}` },
+  }),
+  paymentsST: (opening: number, expense: number, closing: number): Worked => ({
+    formula: FORMULA.paymentsST,
+    numbers: `${amt(opening)} + ${amt(expense)} − ${amt(closing)} = ${money(opening + expense - closing)}`,
+    excel: { numbers: `=${xNum(opening)}+${xNum(expense)}-${xNum(closing)} → ${money(opening + expense - closing)}` },
   }),
   pnInterest: (r: { opening: number; interest: number; payments: number; closing: number }): Worked => ({
     ...work.pnInterest(r),
