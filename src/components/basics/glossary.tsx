@@ -88,11 +88,11 @@ const TERMS: [string, string][] = [
   ["שיטה קמעונאית", "הערכת מלאי לפי מחיר המכירה בניכוי שיעור הרווח הגולמי."],
 ];
 
-export function Glossary() {
+export function Glossary({ terms = TERMS, placeholder = "למשל: מאזן, הפרשה, חתך" }: { terms?: [string, string][]; placeholder?: string }) {
   const id = useId();
   const [q, setQ] = useState("");
   const query = q.trim();
-  const rows = TERMS.filter(([he, d]) => !query || he.includes(query) || d.includes(query));
+  const rows = terms.filter(([he, d]) => !query || he.includes(query) || d.includes(query));
   return (
     <div className="card overflow-hidden">
       <div className="border-b border-line bg-surface-2/50 p-4">
@@ -101,7 +101,7 @@ export function Glossary() {
         </label>
         <div className="relative mt-2">
           <Search className="pointer-events-none absolute inset-y-0 start-3 my-auto h-4 w-4 text-subtle" aria-hidden />
-          <input id={id} value={q} onChange={(e) => setQ(e.target.value)} placeholder="למשל: מאזן, הפרשה, חתך" className={cn(inputClass, "ps-9")} />
+          <input id={id} value={q} onChange={(e) => setQ(e.target.value)} placeholder={placeholder} className={cn(inputClass, "ps-9")} />
         </div>
         <p className="mt-1 text-xs text-muted" aria-live="polite">
           {rows.length} מונחים

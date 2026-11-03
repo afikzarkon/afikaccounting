@@ -1,11 +1,13 @@
-import { ArrowDown, Lightbulb, MapPin, MessageCircle, Signpost, Star } from "lucide-react";
+import { ArrowDown, BookOpenCheck, Lightbulb, MapPin, MessageCircle, Signpost, Star, Undo2 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Roll } from "@/components/study/ledger";
 import { studyHref } from "@/lib/study";
 import { branchOf, MIND_MAP } from "@/lib/study/ias19/map";
+import { PRIMER_NEEDS, primerTitle } from "@/lib/study/ias19/primer";
 import { type Ias19Slug, LESSON_N, prereqLine } from "@/lib/study/ias19/shared";
 import { cn } from "@/lib/utils";
+import { FORMULA_COLORS, Mark } from "./ias19-formula";
 import { Reveal } from "./inventory-teach";
 
 /**
@@ -89,6 +91,20 @@ export function MapBranch({ lesson, children }: { lesson: Ias19Slug; children: R
       <p className="text-[13.5px] text-muted">
         <strong className="text-fg/80">נדרש מהשיעורים הקודמים:</strong> {prereqLine(lesson)}
       </p>
+      {PRIMER_NEEDS[lesson].length > 0 && (
+        <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13.5px] text-muted">
+          <BookOpenCheck className="h-4 w-4 text-accent" aria-hidden />
+          <strong className="text-fg/80">ידע מקדים:</strong>
+          {PRIMER_NEEDS[lesson].map((id, i) => (
+            <span key={id}>
+              <Link href={`/basics/ias19#primer-${id}`} className="font-medium text-accent hover:underline">
+                {primerTitle(id)}
+              </Link>
+              {i < PRIMER_NEEDS[lesson].length - 1 && " ·"}
+            </span>
+          ))}
+        </p>
+      )}
     </section>
   );
 }
@@ -122,7 +138,6 @@ export function RollForward({ title, rows, unit, side = "credit", pnTo = "OCI" }
   );
 }
 
-const CIRCLED = ["①", "②", "③", "④", "⑤"];
 export const RECIPE_STEPS = [
   "הטבה לשנת שירות אחת, בשכר הצפוי בפרישה",
   "שנות שירות שנצברו עד תאריך המדידה",
@@ -131,14 +146,19 @@ export const RECIPE_STEPS = [
   "i: תשואת אג״ח קונצרניות איכותיות בתאריך המדידה",
 ];
 
-/** The five-step recipe, ①–⑤, and its formula; with values, the formula with numbers. */
-export function Recipe5({ values, result }: { values?: ReactNode[]; result?: ReactNode }) {
+/** The same five steps as five questions in everyday words, asked in this order. */
+export const RECIPE_QUESTIONS = ["כמה ההטבה לכל שנת עבודה?", "כמה שנות עבודה כבר עברו?", "כמה עובדים צפויים לקבל?", "בעוד כמה שנים משלמים?", "באיזו ריבית מהוונים?"];
+
+/** The five-step recipe, ①–⑤ in their colours, and its formula; with values, the formula with numbers. `asQuestions` asks the five questions instead of naming the steps. */
+export function Recipe5({ values, result, asQuestions }: { values?: ReactNode[]; result?: ReactNode; asQuestions?: boolean }) {
   return (
     <div className="space-y-2 rounded-2xl border-2 border-accent/30 bg-surface p-3.5">
       <ol className="space-y-1.5">
-        {RECIPE_STEPS.map((s, i) => (
+        {(asQuestions ? RECIPE_QUESTIONS : RECIPE_STEPS).map((s, i) => (
           <li key={s} className="flex items-baseline gap-2 text-[14.5px]">
-            <span className="text-[18px] font-bold text-accent">{CIRCLED[i]}</span>
+            <span className="text-[18px]">
+              <Mark c={(i + 1) as 1 | 2 | 3 | 4 | 5} />
+            </span>
             <span className="min-w-0 flex-1 text-fg/90">{s}</span>
             {values?.[i] !== undefined && <span className="shrink-0 font-semibold text-fg">{values[i]}</span>}
           </li>
@@ -216,6 +236,59 @@ export function Bridge({ summary, children }: { summary: ReactNode; children: Re
       </h3>
       <p className="text-[15px] leading-relaxed text-fg/90">{children}</p>
     </section>
+  );
+}
+
+/**
+ * The two boxes a year's numbers land in: profit or loss — what the company
+ * did this year (the work, the interest) — and OCI — changes in estimates
+ * nobody decided on. The balancing line, P.N., drops into OCI, and an arrow
+ * back to profit or loss is struck out: it never returns.
+ */
+export function TwoBuckets({ pl = ["עלות העבודה של השנה", "הריבית על החוב"], oci = ["שינוי בהערכות: הריבית ירדה, עזבו פחות עובדים"], drop = "P.N. — המספר המאזן" }: { pl?: ReactNode[]; oci?: ReactNode[]; drop?: ReactNode }) {
+  const bucket = "flex min-h-32 flex-col rounded-b-[2rem] rounded-t-md border-2 border-t-[5px] px-3 pt-2 pb-4";
+  return (
+    <figure role="img" aria-label="שתי קופות: רווח והפסד הוא מה שהחברה עשתה השנה; OCI הוא שינויי הערכה. המספר המאזן נופל ל-OCI ולא חוזר לרווח והפסד." className="space-y-2 rounded-2xl border border-line bg-surface p-3.5">
+      <figcaption className="text-[14px] font-bold text-fg">שתי קופות</figcaption>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
+        <div>
+          <p className="mb-1 h-9" />
+          <div className={cn(bucket, "border-fg/40 bg-surface-2/60")}>
+            <p className="text-[15px] font-bold text-fg">{DEST.pl.label}</p>
+            <p className="mb-1.5 text-[12px] text-muted">מה שהחברה עשתה השנה</p>
+            <ul className="space-y-1 text-[13px] text-fg">
+              {pl.map((x, i) => (
+                <li key={i} className="rounded bg-surface px-2 py-0.5 ring-1 ring-line">
+                  {x}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <div className="flex flex-col items-center pb-10 text-center">
+          <Undo2 className="h-5 w-5 text-danger" aria-hidden />
+          <span className="text-[11.5px] font-bold text-danger line-through decoration-2">חוזר</span>
+          <span className="text-[11px] text-muted">לעולם לא</span>
+        </div>
+        <div>
+          <p className="mb-1 flex h-9 flex-col items-center">
+            <span className="rounded-full border-2 border-amber-500/60 bg-amber-500/15 px-2 text-[12px] font-bold text-fg">{drop}</span>
+            <ArrowDown className="h-4 w-4" style={{ color: FORMULA_COLORS[5].color }} aria-hidden />
+          </p>
+          <div className={cn(bucket, "border-credit/60 bg-credit/[0.08]")}>
+            <p className="text-[15px] font-bold text-fg">{DEST.oci.label}</p>
+            <p className="mb-1.5 text-[12px] text-muted">שינויי הערכה שאף אחד לא החליט עליהם</p>
+            <ul className="space-y-1 text-[13px] text-fg">
+              {oci.map((x, i) => (
+                <li key={i} className="rounded bg-surface px-2 py-0.5 ring-1 ring-line">
+                  {x}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </figure>
   );
 }
 

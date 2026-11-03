@@ -122,7 +122,7 @@ export function PvSlide({ fv, i, n, title, unit = "₪" }: { fv: number; i: numb
             <span className="flex min-w-0 flex-1 flex-col items-center">
               <span
                 className={cn("flex w-full items-end justify-center rounded-t-md border-2 pb-1 text-[12.5px] font-bold text-fg", k === 0 && "ring-2 ring-accent")}
-                style={{ height: `${(v / fv) * 6.5}rem`, minHeight: "2.2rem", ...tint(k === 0 ? 0 : 1, k === 0 ? 30 : 12), borderColor: k === 0 ? "var(--accent)" : FORMULA_COLORS[1].color }}
+                style={{ height: `${(v / fv) * 6.5}rem`, minHeight: "2.2rem", ...(k === 0 ? { borderColor: "var(--accent)", background: "var(--accent-soft)" } : tint(1, 12)) }}
               >
                 <N v={v} />
               </span>
@@ -390,7 +390,7 @@ export function BankStatement({ title = "דף חשבון", opening, moves, closi
   const expected = opening + moves.reduce((s, m) => s + m.v, 0);
   const gap = closing - expected;
   return (
-    <Frame label={`דף חשבון: פתיחה ${nf.format(opening)}, תנועות, סגירה ${nf.format(closing)}${unexplained ? `; לא הוסבר ${nf.format(gap)}` : ""}`} title={title}>
+    <Frame className="max-w-lg" label={`דף חשבון: פתיחה ${nf.format(opening)}, תנועות, סגירה ${nf.format(closing)}${unexplained ? `; לא הוסבר ${nf.format(gap)}` : ""}`} title={title}>
       <table className="w-full text-[14px]">
         <tbody>
           <tr className="border-b border-line">

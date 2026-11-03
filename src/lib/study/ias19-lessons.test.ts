@@ -1,9 +1,13 @@
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, it } from "node:test";
 import { TOPICS } from "../catalog";
 import { STUDY_MODULES } from ".";
 import { IAS19_LESSONS } from "./ias19";
+import { IAS19_GLOSSARY } from "./ias19/glossary";
 import { MIND_MAP } from "./ias19/map";
+import { PRIMER, PRIMER_NEEDS, PRIMER_PERCENT_ANSWER, PRIMER_PV_ANSWER, PRIMER_ROLL_ANSWER } from "./ias19/primer";
 import { LESSON_N, PREREQS, STAGES } from "./ias19/shared";
 import { SKILLS } from "./ias19/skills";
 
@@ -43,5 +47,63 @@ describe("the employee-benefits course", () => {
     for (const slug of Object.keys(LESSON_N)) assert.ok(onMap.has(slug as keyof typeof LESSON_N), slug);
     assert.equal(SKILLS.length, 11);
     for (const s of SKILLS) assert.ok(s.lessons.length > 0, s.skill);
+  });
+});
+
+describe("before we start: the primer, and the glossary", () => {
+  it("six cards with unique ids, three a must and three recommended, each with a self-check", () => {
+    assert.equal(PRIMER.length, 6);
+    assert.equal(new Set(PRIMER.map((c) => c.id)).size, 6);
+    assert.equal(PRIMER.filter((c) => c.level === "must").length, 3);
+    assert.equal(PRIMER.filter((c) => c.level === "recommended").length, 3);
+    for (const c of PRIMER) {
+      assert.ok(c.checks.length > 0, c.id);
+      for (const q of c.checks) assert.ok(q.answer >= 0 && q.answer < q.options.length && new Set(q.options).size === q.options.length, `${c.id}: ${q.q}`);
+    }
+    assert.equal(PRIMER.find((c) => c.id === "pl-oci")!.checks.length, 2);
+  });
+
+  it("who needs what: a key for every lesson, only real cards, lesson 1 empty, the present value in lessons 5 to 11", () => {
+    assert.deepEqual(Object.keys(PRIMER_NEEDS), Object.keys(LESSON_N));
+    const ids = new Set(PRIMER.map((c) => c.id));
+    for (const needs of Object.values(PRIMER_NEEDS)) for (const id of needs) assert.ok(ids.has(id), id);
+    assert.deepEqual(PRIMER_NEEDS["ias19-map"], []);
+    for (const slug of ["ias19-measure", "ias19-attribute", "ias19-rollforward", "ias19-amend", "ias19-assets", "ias19-present", "ias19-other"] as const) assert.ok(PRIMER_NEEDS[slug].includes("pv"), slug);
+    // The blueprint's table, in the site's numbering.
+    const byN = (id: string) => PRIMER.find((c) => c.id === id)!.needed.map((s) => LESSON_N[s]).sort((a, b) => a - b);
+    assert.deepEqual(byN("pv"), [2, 5, 6, 7, 8, 9, 10, 11]);
+    assert.deepEqual(byN("roll"), [2, 7, 8, 9, 10, 11]);
+    assert.deepEqual(byN("pl-oci"), [4, 7, 8, 9, 10, 11]);
+    assert.deepEqual(byN("accrual"), [1, 3]);
+    assert.deepEqual(byN("journal"), [3, 4, 10]);
+    assert.deepEqual(byN("percent"), [3, 5, 6]);
+  });
+
+  it("the self-checks' answers are the solver's", () => {
+    assert.equal(PRIMER_PV_ANSWER, 9_070);
+    assert.equal(PRIMER_ROLL_ANSWER, 30);
+    assert.equal(PRIMER_PERCENT_ANSWER, 230);
+    assert.ok(PRIMER.find((c) => c.id === "pv")!.checks[0].options[0].includes("9,070"));
+  });
+
+  it("the glossary: sixteen terms, none twice, none empty", () => {
+    assert.equal(IAS19_GLOSSARY.length, 16);
+    assert.equal(new Set(IAS19_GLOSSARY.map(([t]) => t)).size, 16);
+    for (const [t, d] of IAS19_GLOSSARY) assert.ok(t.trim() && d.trim(), t);
+  });
+
+  it("no orphan screens: the course's screen files define exactly the screens its lessons list", () => {
+    // screens.ts is server-only, so its orphanScreens is read here from the sources it maps.
+    const dir = join(process.cwd(), "src/components/basics");
+    const defined = readdirSync(dir)
+      .filter((f) => /^ias19-course.*\.tsx$/.test(f))
+      .flatMap((f) => [...readFileSync(join(dir, f), "utf8").matchAll(/^ {2}"(emp-[\w-]+)": \{/gm)].map((m) => m[1]));
+    const listed = IAS19_LESSONS.flatMap((m) => m.screens.map((s) => s.id));
+    assert.deepEqual([...defined].sort(), [...listed].sort());
+  });
+
+  it("lesson 1 has the minute-and-a-half screen right after the principle", () => {
+    const ids = IAS19_LESSONS[0].screens.map((s) => s.id);
+    assert.equal(ids[ids.indexOf("emp-map-principle") + 1], "emp-map-simple");
   });
 });

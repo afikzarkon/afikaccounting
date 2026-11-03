@@ -9,6 +9,10 @@ const [SHORT, POST, OTHER, TERM] = [0, 1, 2, 3];
 export const CLOSING = { leaveEarly: 8_000, stayToEnd: 20_000, staff: 60 };
 export const CLOSING_EXTRA = CLOSING.stayToEnd - CLOSING.leaveEarly;
 
+/** "IAS 19 in a minute and a half": 100 ₪ three years away, and the debt's bank statement — round numbers, no calculation asked. */
+export const SIMPLE_PV = { fv: 100, i: 0.1, n: 3 };
+export const SIMPLE_BANK = { opening: 1_000, service: 100, interest: 50, paid: 30 };
+
 /** Ten benefits to sort, without computing anything — and the kind of each. */
 export const TEN: { id: string; text: string; kind: number; why: string }[] = [
   { id: "sort-leave", text: "ימי חופשה שנתית שלא נוצלו, ואפשר לצבור אותם עד סוף השנה הבאה.", kind: SHORT, why: "הם צפויים להיות מנוצלים עד 12 חודשים אחרי סוף השנה שבה נצברו." },
@@ -77,6 +81,7 @@ export const MAP: StudyModule = {
   screens: [
     { id: "emp-map-welcome", title: "מה נלמד בקורס, ואיפה הכול במפה" },
     { id: "emp-map-principle", title: "העיקרון: עבודה של היום, התחייבות של היום" },
+    { id: "emp-map-simple", title: "IAS 19 בדקה וחצי" },
     { id: "emp-map-types", title: "ארבעת סוגי ההטבות" },
     { id: "emp-map-ladder", title: "הכלל: ארבע שאלות מיון, לפי הסדר" },
     { id: "emp-map-solved", title: "דוגמה פתורה: מרכז שירות נסגר" },
