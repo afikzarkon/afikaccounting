@@ -8,18 +8,21 @@ import { EXAM_A_SOLVED as A, EXAM_B_ROUNDED as BR, EXAM_B_SOLVED as B } from "@/
 import { AWARD, AWARD_IF_POST, AWARD_META, AWARD_OPENING, AWARD_PL, AWARD_SERVICE, AWARD_YEAR, TERM, TERM_DISCOUNTED, TERM_LATE } from "@/lib/study/ias19/lessons/other";
 import { CLOSING, CLOSING_EXTRA } from "@/lib/study/ias19/lessons/map";
 import { lessonRef, lessonsRef, pct } from "@/lib/study/ias19/shared";
+import { Ltr } from "./ias19-formula";
 import { Bridge, DestTag, ExplainTask, HintLadder, Ladder, MapBranch, RECIPE_STEPS, Recipe5, RollForward, T19 } from "./ias19-ui";
 import { Fork, NetBars, Routing, SplitBar, Timeline, TwoPanel } from "./ias19-visuals";
 import { MiniQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { PrintButton } from "./print-button";
 import { JE, Money, Rule, Stepper } from "./ui";
+import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
 
 /** The employee-benefits course, lessons 11–12: other long-term and termination benefits, the two exam-level questions, and the cheat sheet. */
 
-const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={items} />;
+const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={ltrQuiz(items)} />;
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
-const L = ({ children }: { children: ReactNode }) => <bdi dir="ltr">{children}</bdi>;
+/** A formula inside a sentence, read left to right. */
+const L = Ltr;
 const M = ({ v }: { v: number }) => <Money v={Math.round(v)} />;
 /** Thousands, one decimal. */
 const K = ({ v }: { v: number }) => <bdi dir="ltr" className="num">{(Math.round(v * 10) / 10).toLocaleString("en-US")}</bdi>;
@@ -169,7 +172,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
               title: "שירות — שוטף ועבר, סכום אחד",
               body: (
                 <p>
-                  שוטף: <M v={AWARD_YEAR.serviceBefore} /> (עד התיקון) + <M v={AWARD_YEAR.serviceAfter} /> (אחריו). שירות עבר: <M v={AWARD_YEAR.pastAfter} /> − <M v={AWARD_YEAR.pastBefore} /> = <M v={AWARD_YEAR.pastService} />. עלות
+                  שוטף: <M v={AWARD_YEAR.serviceBefore} /> (עד התיקון) + <M v={AWARD_YEAR.serviceAfter} /> (אחריו). שירות עבר: <L><M v={AWARD_YEAR.pastAfter} /> − <M v={AWARD_YEAR.pastBefore} /> = <M v={AWARD_YEAR.pastService} /></L>. עלות
                   שירות אחת: <strong><M v={AWARD_SERVICE} /></strong>.
                 </p>
               ),
@@ -184,7 +187,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
                     { label: "עלות ריבית", value: AWARD_YEAR.interest, how: `חצי שנה ${pct(AWARD.rateStart)}, חצי ${pct(AWARD.rateAmend)} על היתרה אחרי התיקון` },
                     { label: "עלות שירות (שוטף ועבר)", value: AWARD_SERVICE, how: "סכום אחד" },
                     { label: `P.N. — ${AWARD_YEAR.pn < 0 ? "רווח" : "הפסד"}`, value: AWARD_YEAR.pn, kind: "pn", how: "ברווח והפסד!" },
-                    { label: "יתרת סגירה", value: AWARD_YEAR.closing, kind: "balance", how: `${pct(AWARD.rateAmend)}, n = ${AWARD_META.nEnd}` },
+                    { label: "יתרת סגירה", value: AWARD_YEAR.closing, kind: "balance", how: ltrFormulas(`${pct(AWARD.rateAmend)}, n = ${AWARD_META.nEnd}`) },
                   ]}
                 />
               ),
@@ -193,7 +196,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
               title: "בדיקה: הכול לרווח והפסד",
               body: (
                 <p>
-                  <M v={AWARD_SERVICE} /> + <M v={AWARD_YEAR.interest} /> {AWARD_YEAR.pn < 0 ? "−" : "+"} <M v={Math.abs(AWARD_YEAR.pn)} /> = <strong><M v={AWARD_PL} /></strong> — בדיוק ההפרש בין הסגירה לפתיחה.
+                  <L><M v={AWARD_SERVICE} /> + <M v={AWARD_YEAR.interest} /> {AWARD_YEAR.pn < 0 ? "−" : "+"} <M v={Math.abs(AWARD_YEAR.pn)} /> = <strong><M v={AWARD_PL} /></strong></L> — בדיוק ההפרש בין הסגירה לפתיחה.
                 </p>
               ),
             },
@@ -216,9 +219,9 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             }
             hints={[
               "מה מקבל כל עובד בכל מקרה?",
-              "פיטורין = מה שההחלטה נותנת לכולם; התוספת — שכר על שירות.",
+              ltrFormulas("פיטורין = מה שההחלטה נותנת לכולם; התוספת — שכר על שירות."),
               <>
-                <Money v={CLOSING.leaveEarly} plain /> × {CLOSING.staff} = <Money v={TERM} />, בלי היוון.
+                <L><Money v={CLOSING.leaveEarly} plain /> × {CLOSING.staff} = <Money v={TERM} /></L>, בלי היוון.
               </>,
               <span key="j" className="block space-y-2">
                 <JE entry={{ id: "1", text: "הטבת פיטורין", lines: [{ account: "הוצאות שכר", dr: TERM }, { account: "התחייבות בגין פיטורין", cr: TERM }] }} />
@@ -450,8 +453,11 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             title: `${y2}: התיקון`,
             body: (
               <p>
-                המענק הנוסף ({EXAM_A.assembly.amendment.grant.toLocaleString("en-US")} ÷ {EXAM_A.assembly.amendment.minYears} = <Money v={asm.addedPerYear} /> לשנה) — רק לקבוצות {asm.addedTo.join(" ו-")}. שירות עבר ב-1.7: <M v={asm.year2.after} /> −{" "}
-                <M v={asm.year2.before} /> = <strong><M v={asm.year2.pastService} /></strong>.
+                המענק הנוסף (<L>{EXAM_A.assembly.amendment.grant.toLocaleString("en-US")} ÷ {EXAM_A.assembly.amendment.minYears} = <Money v={asm.addedPerYear} /></L> לשנה) — רק לקבוצות {asm.addedTo.join(" ו-")}. שירות עבר ב-1.7:{" "}
+                <L>
+                  <M v={asm.year2.after} /> − <M v={asm.year2.before} /> = <strong><M v={asm.year2.pastService} /></strong>
+                </L>
+                .
               </p>
             ),
           },
@@ -606,16 +612,16 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             body: (
               <ul className="list-inside list-disc space-y-1 text-[15px]">
                 <li>
-                  שיעור: {EXAM_B.note.interestLast} ÷ {EXAM_B.note.openingLast.toLocaleString("en-US")} = <strong>{pct(B.exactRate, 4)}</strong> — לא {pct(BR.rate)}.
+                  שיעור: <L>{EXAM_B.note.interestLast} ÷ {EXAM_B.note.openingLast.toLocaleString("en-US")} = <strong>{pct(B.exactRate, 4)}</strong></L> — לא {pct(BR.rate)}.
                 </li>
                 <li>
-                  מהקרן: {EXAM_B.note.paidFromAssetsLast} ÷ {EXAM_B.note.paidLast} = {pct(B.fromAssets)}.
+                  מהקרן: <L>{EXAM_B.note.paidFromAssetsLast} ÷ {EXAM_B.note.paidLast} = {pct(B.fromAssets)}</L>.
                 </li>
                 <li>
-                  הפקדה: {EXAM_B.note.contributionLast} ÷ {B.payrollLast.toLocaleString("en-US")} (כל מי שעבד ב-30.6, כולל מי שפרש בדצמבר) = {pct(B.contributionRate)}.
+                  הפקדה: <L>{EXAM_B.note.contributionLast} ÷ {B.payrollLast.toLocaleString("en-US")} = {pct(B.contributionRate)}</L> (כל מי שעבד ב-30.6, כולל מי שפרש בדצמבר).
                 </li>
                 <li>
-                  תוספת לדרג {EXAM_B.note.amendedLast}׳: {EXAM_B.note.pastServiceLast} ÷ <K v={B.beforeLast} /> = {pct(B.addedLast)}; דרג {EXAM_B.amendment.grade}׳ יקבל {pct(B.addedNow)}.
+                  תוספת לדרג {EXAM_B.note.amendedLast}׳: <L>{EXAM_B.note.pastServiceLast} ÷ <K v={B.beforeLast} /> = {pct(B.addedLast)}</L>; דרג {EXAM_B.amendment.grade}׳ יקבל {pct(B.addedNow)}.
                 </li>
               </ul>
             ),
@@ -637,12 +643,12 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
                 title={`התחייבות — ${EXAM_B.year}`}
                 rows={[
                   { label: "פתיחה (נתונה)", value: B.obligation.opening, kind: "balance" },
-                  { label: "ריבית", value: B.obligation.interest, how: `${pct(B.exactRate, 4)} × הפתיחה` },
-                  { label: "שירות שוטף", value: B.obligation.service, how: `שנה אחת לכל עובד, n = ${B.nEnd}` },
+                  { label: "ריבית", value: B.obligation.interest, how: ltrFormulas(`${pct(B.exactRate, 4)} × הפתיחה`) },
+                  { label: "שירות שוטף", value: B.obligation.service, how: ltrFormulas(`שנה אחת לכל עובד, n = ${B.nEnd}`) },
                   { label: "שירות עבר", value: B.obligation.pastService, how: `דרג ${EXAM_B.amendment.grade}׳, ${pct(B.addedNow)} על ${B.servedEnd} שנים` },
-                  { label: "תשלומים", value: -B.obligation.payments, how: `${EXAM_B.leavers.heads} × משכורת × ${B.servedEnd}` },
+                  { label: "תשלומים", value: -B.obligation.payments, how: ltrFormulas(`${EXAM_B.leavers.heads} × משכורת × ${B.servedEnd}`) },
                   { label: "P.N. — הפסד", value: B.obligation.pn, kind: "pn", how: "הפרישה המפתיעה, והנחות אחרות" },
-                  { label: "סגירה", value: B.obligation.closing, kind: "balance", how: `${B.servedEnd} שנים, n = ${B.nEnd}` },
+                  { label: "סגירה", value: B.obligation.closing, kind: "balance", how: ltrFormulas(`${B.servedEnd} שנים, n = ${B.nEnd}`) },
                 ]}
               />
             ),
@@ -656,7 +662,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
                 rows={[
                   { label: "פתיחה", value: B.assets.opening, kind: "balance" },
                   { label: "הכנסות ריבית", value: B.assets.interest, how: `${Math.round(B.assets.interestOnOpening)} על הפתיחה + ${Math.round(B.assets.interestOnContribution)} על ההפקדה, חצי שנה` },
-                  { label: "הפקדה", value: B.assets.contribution, how: `${pct(B.contributionRate)} × ${Math.round(B.assets.payroll)}` },
+                  { label: "הפקדה", value: B.assets.contribution, how: ltrFormulas(`${pct(B.contributionRate)} × ${Math.round(B.assets.payroll)}`) },
                   { label: "שולם מהקרן", value: -B.assets.paid, how: `${pct(B.fromAssets)} מהתשלומים` },
                   { label: "P.N. — רווח", value: B.assets.pn, kind: "pn", how: "נתון" },
                   { label: "סגירה", value: B.assets.closing, kind: "balance" },
@@ -669,7 +675,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             body: (
               <div className="space-y-2">
                 <p>
-                  התחייבות נטו: <K v={B.obligation.closing} /> − <K v={B.assets.closing} /> = <strong><K v={B.net} /></strong> אלפי ₪.
+                  התחייבות נטו: <L><K v={B.obligation.closing} /> − <K v={B.assets.closing} /> = <strong><K v={B.net} /></strong></L> אלפי ₪.
                 </p>
                 <NetBars obligation={B.obligation.closing} assets={B.assets.closing} title={`31.12.${EXAM_B.year} (אלפי ₪)`} />
                 <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-[14.5px]">
@@ -729,11 +735,11 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
           <DataTable
             head={["צעד", "מה עושים", "הערה"]}
             rows={[
-              [CIRCLED[0], "הטבה לשנה = ההטבה הצפויה בפרישה (לפי השכר החזוי) ÷ שנות הצבירה", `שנות שירות או שנות צבירה (${lessonRef("ias19-attribute")})`],
+              [CIRCLED[0], ltrFormulas("הטבה לשנה = ההטבה הצפויה בפרישה (לפי השכר החזוי) ÷ שנות הצבירה"), `שנות שירות או שנות צבירה (${lessonRef("ias19-attribute")})`],
               [CIRCLED[1], RECIPE_STEPS[1], "רק שנים שמקנות זכאות"],
-              [CIRCLED[2], "עובדים צפויים = כמות × הסתברות להישאר ולקבל", "רק מי שצפוי לקבל"],
-              [CIRCLED[3], "n = שנים עד התשלום", "לא שנות הצבירה"],
-              [CIRCLED[4], "i = תשואה על אג״ח קונצרניות איכותיות במועד המדידה", "סעיף 83; בישראל השוק עמוק — הממשלתית היא פיתיון"],
+              [CIRCLED[2], ltrFormulas("עובדים צפויים = כמות × הסתברות להישאר ולקבל"), "רק מי שצפוי לקבל"],
+              [CIRCLED[3], ltrFormulas("n = שנים עד התשלום"), "לא שנות הצבירה"],
+              [CIRCLED[4], ltrFormulas("i = תשואה על אג״ח קונצרניות איכותיות במועד המדידה"), "סעיף 83; בישראל השוק עמוק — הממשלתית היא פיתיון"],
             ]}
           />
         </div>
@@ -744,7 +750,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             head={["שורה", "ריבית", "n או תקופה", "הערות"]}
             rows={[
               ["יתרת פתיחה", "הריבית שבה נמדדה בסגירת השנה הקודמת", "—", "הסגירה של השנה הקודמת"],
-              ["ריבית", "תחילת התקופה", "שנה שלמה, או (1+i)^(m÷12) − 1 לחלק שנה", "תשלום באמצע שנה מקטין את הריבית מיומו (סעיף 123)"],
+              ["ריבית", "תחילת התקופה", <>שנה שלמה, או <L>(1+i)^(m÷12) − 1</L> לחלק שנה</>, "תשלום באמצע שנה מקטין את הריבית מיומו (סעיף 123)"],
               ["עלות שירות שוטף", "תחילת השנה (בפיצול: תחילת כל תת־תקופה)", "n מסוף התקופה שאליה מתייחסת העלות", "בשינוי באמצע שנה — שתי תקופות"],
               ["עלות שירות עבר", "הריבית ביום התיקון", "n מיום התיקון עד התשלום", "אחרי פחות לפני, לרווח והפסד מיד (סעיפים 102–103)"],
               ["תשלומים", "—", "לפי המציאות", "סילוק: התחייבות פחות תשלום, לרווח והפסד (סעיפים 109–111)"],
@@ -784,11 +790,11 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
         <div>
           <h4 className="mb-2 font-bold text-fg">ד. נכסי תוכנית ותקרה ({lessonRef("ias19-assets")})</h4>
           <ul className="list-inside list-disc space-y-1 text-[15px]">
-            <li>התחייבות נטו = התחייבות פחות שווי הוגן של הנכסים (סעיף 113).</li>
+            <li><L>התחייבות נטו = התחייבות פחות שווי הוגן של הנכסים</L> (סעיף 113).</li>
             <li>הכנסות ריבית על נכסים: אותו שיעור ואותו פיצול תקופות כמו על ההתחייבות (סעיף 125).</li>
-            <li>הפקדה באמצע שנה מרוויחה ריבית חלקית בלבד: (1+i) בחזקת (m ÷ 12) פחות 1.</li>
+            <li>הפקדה באמצע שנה מרוויחה ריבית חלקית בלבד: <L>(1+i)^(m ÷ 12) − 1</L>.</li>
             <li>רק תשלום שיצא מהנכסים מקטין את הנכסים; ההתחייבות קטנה בכל התשלום.</li>
-            <li>נכס נטו = הנמוך מבין (נכסים פחות התחייבות) והתקרה (סעיף 64). ההפרש בין התשואה בפועל לריבית — ב-OCI.</li>
+            <li><L>נכס נטו = הנמוך מבין (נכסים פחות התחייבות) והתקרה</L> (סעיף 64). ההפרש בין התשואה בפועל לריבית — ב-OCI.</li>
           </ul>
         </div>
 

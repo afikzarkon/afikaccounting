@@ -5,19 +5,21 @@ import type { ScreenContent } from "@/components/study-mode/shell";
 import { partRate, pv, simplePart } from "@/lib/learn/ias19";
 import { HOOK, SOLVED, SOLVED_PART, SOLVED_PV, SOLVED_ROLL, TOGETHER, TOGETHER_PART, TOGETHER_PV, TOGETHER_ROLL } from "@/lib/study/ias19/lessons/toolkit";
 import { lessonRef } from "@/lib/study/ias19/shared";
-import { FormulaFill } from "./ias19-formula";
+import { FormulaFill, Ltr } from "./ias19-formula";
 import { Bridge, ExplainTask, HintLadder, MapBranch, RollForward, T19 } from "./ias19-ui";
 import { BankStatement, Diff, PvSlide, SplitBar, Timeline, WrongRight } from "./ias19-visuals";
 import { MiniQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { Money, Stepper } from "./ui";
+import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
 
 /** The employee-benefits course, lesson 2: the toolkit — present value, interest for part of a year, and the roll-forward. */
 
-const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={items} />;
+const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={ltrQuiz(items)} />;
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
 const pct = (r: number, d = 2) => `${(r * 100).toLocaleString("en-US", { maximumFractionDigits: d })}%`;
-const L = ({ children }: { children: ReactNode }) => <bdi dir="ltr">{children}</bdi>;
+/** A formula inside a sentence, read left to right. */
+const L = Ltr;
 
 export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
   "emp-tool-hook": {
@@ -72,7 +74,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
           bottom={["(1 + ", { t: "i" }, ")", { sup: "n" }]}
           result={<Money v={Math.round(pv(HOOK.amount, HOOK.rate, HOOK.years))} />}
         />
-        <Remember>n הוא מספר השנים מהיום ועד התשלום, לא מספר השנים שכבר עברו.</Remember>
+        <Remember>n הוא מספר השנים מהיום ועד התשלום, לא מספר השנים שכבר עברו. נשארה חצי שנה? <L>n = 0.5</L>.</Remember>
       </>
     ),
     check: quiz("emp-tool-pv", [
@@ -108,7 +110,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
           cuts={["1.1", "1.4", "31.12"]}
         />
         <WrongRight
-          label={`ריבית פשוטה: 8% כפול 3/12 = ${pct(simplePart(0.08, 3))}. ריבית דריבית: 1.08 בחזקת 3/12 פחות 1 = ${pct(partRate(0.08, 3), 4)}`}
+          label={`ריבית פשוטה: 8% כפול 3/12, שווה ${pct(simplePart(0.08, 3))}. ריבית דריבית: 1.08 בחזקת 3/12 פחות 1, שווה ${pct(partRate(0.08, 3), 4)}`}
           wrong={
             <p>
               ריבית פשוטה: <L>8% × 3/12</L> = <Diff>{pct(simplePart(0.08, 3))}</Diff>
@@ -147,7 +149,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
         <Part title="מוסכמת הסימנים">
           <P>בחוברות ובאקסל החוב נרשם במינוס, ותשלום בפלוס, כי תשלום מקטין את החוב. פונקציית PV באקסל מחזירה מינוס: זו לא טעות, רק הופכים סימן.</P>
         </Part>
-        <Remember>פתיחה + מה שנוסף − תשלומים + P.N. = סגירה. כל שורה אפשר לגלות, אם כל השאר ידועות.</Remember>
+        <Remember><L>פתיחה + מה שנוסף − תשלומים + P.N. = סגירה</L>. כל שורה אפשר לגלות, אם כל השאר ידועות.</Remember>
       </>
     ),
     check: quiz("emp-tool-roll", [
@@ -167,8 +169,11 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
               body: (
                 <div className="space-y-2">
                   <p>
-                    עובד צבר מענק של <Money v={SOLVED.pv.fv} />, שישולם בעוד {SOLVED.pv.years} שנים. ריבית {pct(SOLVED.pv.rate)}. <Money v={SOLVED.pv.fv} plain /> ÷ <L>{1 + SOLVED.pv.rate}</L>
-                    <sup>{SOLVED.pv.years}</sup> = <strong><Money v={Math.round(SOLVED_PV)} /></strong>.
+                    עובד צבר מענק של <Money v={SOLVED.pv.fv} />, שישולם בעוד {SOLVED.pv.years} שנים. ריבית {pct(SOLVED.pv.rate)}. <L>
+                      <Money v={SOLVED.pv.fv} plain /> ÷ {1 + SOLVED.pv.rate}
+                      <sup>{SOLVED.pv.years}</sup> = <strong><Money v={Math.round(SOLVED_PV)} /></strong>
+                    </L>
+                    .
                   </p>
                   <PvSlide fv={SOLVED.pv.fv} i={SOLVED.pv.rate} n={SOLVED.pv.years} />
                 </div>
@@ -224,7 +229,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
             }
             hints={[
               "מכפילים או מחלקים כשמחזירים סכום מהעתיד להיום?",
-              "הכלי הראשון: ערך נוכחי = סכום ÷ (1+i)ⁿ.",
+              ltrFormulas("הכלי הראשון: סכום עתידי ÷ (1 + ריבית)^שנים = ערך נוכחי."),
               <>
                 <Money v={TOGETHER.pv.fv} plain /> ÷ <L>{1 + TOGETHER.pv.rate}</L>
                 <sup>{TOGETHER.pv.years}</sup>
@@ -271,7 +276,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
             }
             hints={[
               "מה חסר כדי שהמעגל יתאזן?",
-              "הכלי השלישי: הוצאה = סגירה − פתיחה + תשלומים.",
+              ltrFormulas("הכלי השלישי: הוצאה = סגירה − פתיחה + תשלומים."),
               <>
                 <Money v={TOGETHER.roll.closing} plain /> − <Money v={TOGETHER.roll.opening} plain /> + <Money v={TOGETHER.roll.payments} plain />
               </>,

@@ -4,8 +4,10 @@ import type { ReactNode } from "react";
 import { expectedHeads } from "@/lib/learn/ias19";
 import { lessonHref } from "@/lib/study/paths";
 import { screenHref } from "@/lib/study/basics";
+import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
 import { lessonList } from "@/lib/study/ias19/shared";
-import { LIFE_BANK, LIFE_HEADS, LIFE_PL, LIFE_PV, LIFE_PV_TODAY, PRIMER, type PrimerCard, type PrimerId } from "@/lib/study/ias19/primer";
+import { LIFE_BANK, LIFE_HEADS, LIFE_PL, LIFE_PV, LIFE_PV_HALF, LIFE_PV_TODAY, PRIMER, type PrimerCard, type PrimerId } from "@/lib/study/ias19/primer";
+import { Eq, Frac } from "./ias19-formula";
 import { PrimerHashOpen } from "./ias19-primer-open";
 import { TwoBuckets } from "./ias19-ui";
 import { BankStatement, PeopleGrid, PvSlide, Timeline, TwoPanel } from "./ias19-visuals";
@@ -25,20 +27,82 @@ const FIGURE: Record<PrimerId, ReactNode> = {
   pv: (
     <>
       <PvSlide fv={LIFE_PV.fv} i={LIFE_PV.i} n={LIFE_PV.n} title="100 ₪ בעוד חמש שנים, מוחזרים להיום" />
-      <div className="space-y-1.5 rounded-xl border border-line bg-surface-2/40 px-3 py-2.5 text-[14.5px]">
-        <p className="font-bold text-fg">בנוסחה</p>
-        <p dir="ltr" className="num text-end">
-          {LIFE_PV.fv} ÷ (1 + {LIFE_PV.i})<sup>{LIFE_PV.n}</sup> = {LIFE_PV.fv} ÷ {((1 + LIFE_PV.i) ** LIFE_PV.n).toFixed(3)} = {LIFE_PV_TODAY}
-        </p>
-        <p className="pt-1 font-bold text-fg">ובאקסל</p>
-        <p>אותו חישוב עושה הפונקציה PV. כותבים בתא:</p>
-        <p dir="ltr" className="num text-end font-semibold text-fg">
-          =PV({LIFE_PV.i * 100}%;{LIFE_PV.n};0;-{LIFE_PV.fv})
-        </p>
-        <p className="text-[13.5px] text-muted">
-          לפי הסדר: הריבית, מספר השנים, 0 כי אין תשלומים בדרך, והסכום העתידי. אקסל מחזיר {LIFE_PV_TODAY}. את הסכום כותבים עם מינוס, אחרת התוצאה יוצאת שלילית.
-        </p>
-      </div>
+      <Eq
+        rows={[
+          {
+            label: "הנוסחה, במילים",
+            f: (
+              <>
+                <Frac
+                  top="ערך עתידי"
+                  bottom={
+                    <>
+                      (1 + ריבית)<sup>שנים</sup>
+                    </>
+                  }
+                />{" "}
+                = ערך נוכחי
+              </>
+            ),
+          },
+          {
+            label: "הנוסחה, באנגלית",
+            f: (
+              <>
+                <Frac
+                  top="FV"
+                  bottom={
+                    <>
+                      (1 + RATE)<sup>YEAR</sup>
+                    </>
+                  }
+                />{" "}
+                = PV
+              </>
+            ),
+          },
+          {
+            label: "עם המספרים",
+            f: (
+              <>
+                <Frac
+                  top={LIFE_PV.fv}
+                  bottom={
+                    <>
+                      (1 + {LIFE_PV.i})<sup>{LIFE_PV.n}</sup>
+                    </>
+                  }
+                />{" "}
+                = <Frac top={LIFE_PV.fv} bottom={((1 + LIFE_PV.i) ** LIFE_PV.n).toFixed(3)} /> = {LIFE_PV_TODAY}
+              </>
+            ),
+          },
+          {
+            label: "ואם התשלום בעוד חצי שנה",
+            f: (
+              <>
+                <Frac
+                  top={LIFE_PV.fv}
+                  bottom={
+                    <>
+                      (1 + {LIFE_PV.i})<sup>0.5</sup>
+                    </>
+                  }
+                />{" "}
+                = {LIFE_PV_HALF}
+              </>
+            ),
+          },
+        ]}
+        note="החזקה היא מספר השנים עד התשלום, גם כשזה חלק משנה: חצי שנה היא 0.5, ושלושה חודשים הם 0.25."
+      />
+      <Eq
+        rows={[
+          { label: "באקסל, בלי מספרים", f: "=PV(rate;nper;pmt;fv)" },
+          { label: "באקסל, עם המספרים", f: `=PV(${LIFE_PV.i * 100}%;${LIFE_PV.n};0;-${LIFE_PV.fv})` },
+        ]}
+        note={`rate היא הריבית, nper מספר השנים, pmt תשלומים בדרך (אצלנו 0), ו-fv הסכום העתידי. אקסל מחזיר ${LIFE_PV_TODAY}. את fv כותבים עם מינוס, אחרת התוצאה יוצאת שלילית.`}
+      />
     </>
   ),
   roll: (
@@ -67,9 +131,19 @@ const FIGURE: Record<PrimerId, ReactNode> = {
         ]}
         drop="שינוי בשווי"
       />
-      <p className="text-[14px] text-fg">
-        רווח כולל = <Money v={LIFE_PL.income - LIFE_PL.expenses} plain /> + <Money v={LIFE_PL.revaluation} plain /> = <strong><Money v={LIFE_PL.income - LIFE_PL.expenses + LIFE_PL.revaluation} plain /></strong>
-      </p>
+      <Eq
+        rows={[
+          { label: "במילים", f: "רווח והפסד + OCI = רווח כולל" },
+          {
+            label: "עם המספרים",
+            f: (
+              <>
+                <Money v={LIFE_PL.income - LIFE_PL.expenses} plain /> + <Money v={LIFE_PL.revaluation} plain /> = <strong><Money v={LIFE_PL.income - LIFE_PL.expenses + LIFE_PL.revaluation} plain /></strong>
+              </>
+            ),
+          },
+        ]}
+      />
     </>
   ),
   accrual: (
@@ -125,7 +199,7 @@ function Card({ c }: { c: PrimerCard }) {
         </p>
         <p>
           <strong className="text-fg">דוגמה שאתם מכירים: </strong>
-          {c.life}
+          {ltrFormulas(c.life)}
         </p>
         {FIGURE[c.id]}
         {c.examples && (
@@ -133,15 +207,15 @@ function Card({ c }: { c: PrimerCard }) {
             <p className="font-bold text-fg">ככה זה נראה בקורס</p>
             <ul className="mt-1 list-disc space-y-1 ps-5">
               {c.examples.map((e) => (
-                <li key={e}>{e}</li>
+                <li key={e}>{ltrFormulas(e)}</li>
               ))}
             </ul>
           </div>
         )}
-        {c.rule && <p className="rounded-xl border-s-4 border-accent bg-accent-soft px-3 py-2 font-medium text-fg">הכלל: {c.rule}</p>}
+        {c.rule && <p className="rounded-xl border-s-4 border-accent bg-accent-soft px-3 py-2 font-medium text-fg">הכלל: {ltrFormulas(c.rule)}</p>}
         <div>
           <p className="mb-1.5 text-[14px] font-bold text-fg">בדיקה עצמית</p>
-          <MiniQuiz bare prefix="ias19" chapter={`primer-${c.id}`} items={c.checks} />
+          <MiniQuiz bare prefix="ias19" chapter={`primer-${c.id}`} items={ltrQuiz(c.checks)} />
         </div>
         <p className="text-[13.5px] text-muted">
           איפה לומדים אותו: {c.taught}.{" "}

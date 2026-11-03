@@ -9,6 +9,7 @@ import { BankStatement, DateWindows, DecisionTree, Fork, PvSlide, Staircase, Tim
 import { MiniQuiz, SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { Money, Rule } from "./ui";
+import { ltrQuiz } from "@/lib/study/ias19/ltr";
 
 /**
  * The employee-benefits course, lesson 1: what the standard is for, how it is
@@ -18,7 +19,7 @@ import { Money, Rule } from "./ui";
  * behind it.
  */
 
-const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={items} />;
+const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={ltrQuiz(items)} />;
 const sort = (id: string, items: Parameters<typeof SortQuiz>[0]["items"], options: [string, string][], title?: string) => <SortQuiz prefix="ias19" id={id} items={items} options={options} title={title} />;
 const KIND_OPTIONS: [string, string][] = [
   ["short", "לזמן קצר"],

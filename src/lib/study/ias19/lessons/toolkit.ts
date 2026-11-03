@@ -99,8 +99,8 @@ export const TOOLKIT: StudyModule = {
   ],
   exercises: [
     calc("tool-pv", "ערך נוכחי", `מענק של ${fmt(PV_Q.fv)} ₪ ישולם בעוד ${PV_Q.years} שנים. שיעור ההיוון ${pct(PV_Q.rate)}. מה ערכו היום?`, pv(PV_Q.fv, PV_Q.rate, PV_Q.years), [
-      `PV = FV ÷ (1+i)^n = ${fmt(PV_Q.fv)} ÷ ${1 + PV_Q.rate}^${PV_Q.years}.`,
-      `= ${fmt(Math.round(pv(PV_Q.fv, PV_Q.rate, PV_Q.years)))} ₪.`,
+      "FV ÷ (1 + RATE)^YEAR = PV.",
+      `${fmt(PV_Q.fv)} ÷ ${1 + PV_Q.rate}^${PV_Q.years} = ${fmt(Math.round(pv(PV_Q.fv, PV_Q.rate, PV_Q.years)))} ₪.`,
     ]),
     calc("tool-part", "ריבית לחלק משנה", `יתרה של ${fmt(PART_Q.balance)} ₪, שיעור שנתי ${pct(PART_Q.rate)}. מה הריבית ל-${PART_Q.months} חודשים, לפי התקן?`, partInterest(PART_Q.balance, PART_Q.rate, PART_Q.months), [
       `${fmt(PART_Q.balance)} × ((${1 + PART_Q.rate})^(${PART_Q.months}/12) − 1).`,
@@ -138,7 +138,7 @@ export const TOOLKIT: StudyModule = {
   tips: [
     "ארגז הכלים: ערך נוכחי, ריבית לחלק משנה ומעגל — שלוש פעולות שחוזרות בכל שאלה של הטבה מוגדרת.",
     "כלל המעגל: פתיחה + הוצאות ושינויים − תשלומים + P.N. = סגירה; כל רכיב אפשר לגלות אם כל השאר ידועים. כלל הריבית (סעיף 123): יתרה × ((1+i)^(m/12) − 1), ותשלום באמצע השנה מקטין את הריבית על התקופה שנשארה.",
-    "PV = FV ÷ (1+i)^n, ו-n הוא השנים עד התשלום — לא השנים שעברו.",
+    "FV ÷ (1 + RATE)^YEAR = PV, ו-YEAR הוא השנים עד התשלום — לא השנים שעברו. חצי שנה היא 0.5.",
     "מוסכמת סימנים: התחייבות במינוס ותשלום בפלוס; PV באקסל מחזיר מינוס — מהפכים סימן.",
   ],
 };

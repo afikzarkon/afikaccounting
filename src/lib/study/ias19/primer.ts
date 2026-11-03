@@ -46,6 +46,8 @@ export const PRIMER_PERCENT_ANSWER = expectedHeads(PRIMER_PERCENT.staff, PRIMER_
 /** The examples from life the cards draw: 100 ₪ in five years at 8%; a bank page; a company's year; 40 employees, 90% staying. */
 export const LIFE_PV = { fv: 100, i: 0.08, n: 5 };
 export const LIFE_PV_TODAY = Math.round(pv(LIFE_PV.fv, LIFE_PV.i, LIFE_PV.n));
+/** The same 100 ₪, half a year away: the power is 0.5. */
+export const LIFE_PV_HALF = Math.round(pv(LIFE_PV.fv, LIFE_PV.i, 0.5));
 export const LIFE_BANK = { opening: 1_000, deposit: 300, withdrawal: 200, closing: 1_150 };
 export const LIFE_PL = { income: 1_000, expenses: 700, revaluation: 50 };
 export const LIFE_HEADS = { staff: 40, leaving: 0.1 };
@@ -124,10 +126,10 @@ export const PRIMER: PrimerCard[] = [
     plain: "כסף שמקבלים מאוחר שווה פחות מכסף שמקבלים עכשיו. כסף שבידך אפשר להשקיע ולהרוויח עליו ריבית.",
     need: "חוב לעובדים משולם לרוב בעוד שנים רבות. בדוחות רושמים כמה הוא שווה היום, ולכן כמעט כל חישוב בקורס עובר דרך היוון.",
     life: `מציעים לך ${LIFE_PV.fv} ₪ היום, או ${LIFE_PV.fv} ₪ בעוד ${LIFE_PV.n} שנים. כולם בוחרים היום. בריבית ${pct(LIFE_PV.i)}, ה-${LIFE_PV.fv} של בעוד ${LIFE_PV.n} שנים שווים היום בערך ${LIFE_PV_TODAY}.`,
-    rule: "ערך נוכחי = סכום עתידי ÷ (1 + ריבית) בחזקת מספר השנים.",
+    rule: "מחלקים ב-(1 + ריבית) פעם אחת לכל שנה עד התשלום. חצי שנה היא חזקה של 0.5.",
     checks: [
       {
-        q: `${fmt(PRIMER_PV.fv)} ₪ ישולמו בעוד ${PRIMER_PV.n} שנים, בריבית ${pct(PRIMER_PV.i)}. כמה הם שווים היום?`,
+        q: `סכום של ${fmt(PRIMER_PV.fv)} ₪ ישולם בעוד ${PRIMER_PV.n} שנים, בריבית ${pct(PRIMER_PV.i)}. כמה הוא שווה היום?`,
         options: [`כ-${fmt(PRIMER_PV_ANSWER)}`, `כ-${fmt(PRIMER_PV_ONE_YEAR)}`, fmt(PRIMER_PV_TIMES), fmt(PRIMER_PV.fv)],
         answer: 0,
         why: `${fmt(PRIMER_PV.fv)} ÷ 1.05² = כ-${fmt(PRIMER_PV_ANSWER)}. מחלקים פעמיים, פעם לכל שנה. ${fmt(PRIMER_PV_ONE_YEAR)} הוא שנה אחת בלבד; ${fmt(PRIMER_PV_TIMES)} הוא כפל במקום חילוק.`,
@@ -167,7 +169,7 @@ export const PRIMER: PrimerCard[] = [
     ],
     checks: [
       {
-        q: `${PRIMER_PERCENT.staff} עובדים, ${pct(PRIMER_PERCENT.leaving)} צפויים לעזוב. כמה צפויים להישאר?`,
+        q: `בחברה ${PRIMER_PERCENT.staff} עובדים, ו-${pct(PRIMER_PERCENT.leaving)} צפויים לעזוב. כמה צפויים להישאר?`,
         options: [String(PRIMER_PERCENT_ANSWER), String(PRIMER_PERCENT.staff * PRIMER_PERCENT.leaving), String(PRIMER_PERCENT.staff), String(PRIMER_PERCENT.staff - 8)],
         answer: 0,
         why: `${PRIMER_PERCENT.staff} × ${pct(1 - PRIMER_PERCENT.leaving)} = ${PRIMER_PERCENT_ANSWER}.`,

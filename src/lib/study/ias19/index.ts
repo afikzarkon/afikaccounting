@@ -11,9 +11,10 @@ import { PRESENT } from "./lessons/present";
 import { ROLLFORWARD } from "./lessons/rollforward";
 import { SHORT } from "./lessons/short";
 import { TOOLKIT } from "./lessons/toolkit";
+import { withLtrFormulas } from "./ltr";
 
-/** The employee-benefits course: twelve lessons, in four stages — foundations, the simple benefits, the defined benefit chain (one lesson leaning on the one before), and the extensions with two exam-level questions. */
-export const IAS19_LESSONS = [MAP, TOOLKIT, SHORT, DC_LESSON, MEASURE, ATTRIBUTE, ROLLFORWARD, AMEND, ASSETS, PRESENT, OTHER, EXAMS];
+/** The employee-benefits course: twelve lessons, in four stages — foundations, the simple benefits, the defined benefit chain (one lesson leaning on the one before), and the extensions with two exam-level questions. Every formula in their practice reads left to right. */
+export const IAS19_LESSONS = [MAP, TOOLKIT, SHORT, DC_LESSON, MEASURE, ATTRIBUTE, ROLLFORWARD, AMEND, ASSETS, PRESENT, OTHER, EXAMS].map(withLtrFormulas);
 
 /** The lesson and index of a concept screen of the course, by its id. */
 export const findIas19Screen = (id: string) => findScreenIn(IAS19_LESSONS, id);

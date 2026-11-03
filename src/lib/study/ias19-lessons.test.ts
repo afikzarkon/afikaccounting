@@ -6,6 +6,7 @@ import { TOPICS } from "../catalog";
 import { STUDY_MODULES } from ".";
 import { IAS19_LESSONS } from "./ias19";
 import { IAS19_GLOSSARY } from "./ias19/glossary";
+import { ltrFormulas } from "./ias19/ltr";
 import { MIND_MAP } from "./ias19/map";
 import { PRIMER, PRIMER_NEEDS, PRIMER_PERCENT_ANSWER, PRIMER_PV_ANSWER, PRIMER_ROLL_ANSWER } from "./ias19/primer";
 import { LESSON_N, PREREQS, STAGES } from "./ias19/shared";
@@ -104,5 +105,30 @@ describe("before we start: the primer, and the glossary", () => {
 
   it("the course opens on what IAS 19 is and why it is needed", () => {
     assert.equal(IAS19_LESSONS[0].screens[0].id, "emp-map-why");
+  });
+});
+
+describe("formulas read left to right", () => {
+  const LRI = String.fromCharCode(0x2066);
+  const PDI = String.fromCharCode(0x2069);
+  /** The text as read, without the marks that hold each operator in place. */
+  const plain = (s: string) => s.replaceAll(String.fromCharCode(0x200e), "");
+  it("wraps the formula clause, and leaves the words around it outside", () => {
+    assert.equal(plain(ltrFormulas("שיעור לרבעון: 1.08^(3/12) − 1 = 1.94%.")), `שיעור לרבעון: ${LRI}1.08^(3/12) − 1 = 1.94%${PDI}.`);
+    assert.equal(plain(ltrFormulas("פתיחה + הוצאה − תשלומים = סגירה, ולכן הוצאה = סגירה − פתיחה.")), `${LRI}פתיחה + הוצאה − תשלומים = סגירה${PDI}, ולכן ${LRI}הוצאה = סגירה − פתיחה${PDI}.`);
+    assert.equal(ltrFormulas("מיום התשלום החוב קטן, ולכן אין עליו ריבית."), "מיום התשלום החוב קטן, ולכן אין עליו ריבית.");
+  });
+
+  it("every solution step with a formula in the course is laid out left to right", () => {
+    for (const m of IAS19_LESSONS)
+      for (const x of m.exercises)
+        if (x.kind !== "journal") for (const s of x.steps) if (/[=×÷^]/.test(s)) assert.ok(s.includes(LRI), `${m.slug}/${x.id}: ${s}`);
+  });
+});
+
+describe("formulas read left to right: P.N.", () => {
+  it("does not take the dot of P.N. for the end of a sentence", () => {
+    const out = ltrFormulas("P.N. = סגירה − פתיחה. ולכל שורה, המקום שלה.").replaceAll(String.fromCharCode(0x200e), "");
+    assert.equal(out, `${String.fromCharCode(0x2066)}P.N. = סגירה − פתיחה${String.fromCharCode(0x2069)}. ולכל שורה, המקום שלה.`);
   });
 });

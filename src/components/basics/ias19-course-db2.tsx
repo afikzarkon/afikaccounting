@@ -28,18 +28,20 @@ import {
 import { AM_ASSETS, AM_ASSETS_PARTS, AM_EFFECT, AM_YEAR, AMENDED, NOTE, NOTE_ADDED, NOTE_CONTRIBUTION, NOTE_FROM_ASSETS, NOTE_PAYROLL, NOTE_RATE, NOTE_X } from "@/lib/study/ias19/lessons/present";
 import { EXAM_B } from "@/lib/learn/ias19-exams";
 import { lessonRef, lessonsRef, pct } from "@/lib/study/ias19/shared";
-import { FormulaFill } from "./ias19-formula";
+import { FormulaFill, Ltr } from "./ias19-formula";
 import { Bridge, DestTag, ExplainTask, HintLadder, Ladder, MapBranch, RollForward, T19, TwoBuckets } from "./ias19-ui";
 import { BeforeAfter, Fork, NetBars, Routing, SplitBar, TwoPanel } from "./ias19-visuals";
 import { MiniQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { JE, Money, Rule, Stepper } from "./ui";
+import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
 
 /** The employee-benefits course, lessons 8–10: an amendment mid-year and settlement, plan assets and the ceiling, presentation and reverse engineering. */
 
-const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={items} />;
+const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={ltrQuiz(items)} />;
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
-const L = ({ children }: { children: ReactNode }) => <bdi dir="ltr">{children}</bdi>;
+/** A formula inside a sentence, read left to right. */
+const L = Ltr;
 const M = ({ v }: { v: number }) => <Money v={Math.round(v)} />;
 const n5 = CTO.retire - CTO.from;
 
@@ -224,12 +226,12 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
                 <RollForward
                   title={`מנהל הטכנולוגיה, ${CTO.from + 1}`}
                   rows={[
-                    { label: "יתרת פתיחה", value: CTO_OPENING, kind: "balance", how: `${pct(CTO.rateEnd2023)}, n = ${n5}` },
+                    { label: "יתרת פתיחה", value: CTO_OPENING, kind: "balance", how: ltrFormulas(`${pct(CTO.rateEnd2023)}, n = ${n5}`) },
                     { label: "עלות ריבית", value: CTO_YEAR.interest, how: `חצי שנה ${pct(CTO.rateEnd2023)} על הפתיחה, חצי ${pct(CTO.rateAmend)} על היתרה אחרי התיקון` },
-                    { label: "עלות שירות שוטף", value: CTO_YEAR.service, how: `חצי ${pct(CTO.rateEnd2023)} (n = ${n5 - 0.5}), חצי ${pct(CTO.rateAmend)} (n = ${n5 - 1})` },
-                    { label: "עלות שירות עבר", value: CTO_YEAR.pastService, how: `${pct(CTO.rateAmend)}, n = ${n5 - 0.5}, ביום התיקון` },
+                    { label: "עלות שירות שוטף", value: CTO_YEAR.service, how: <>חצי {pct(CTO.rateEnd2023)} (<L>n = {n5 - 0.5}</L>), חצי {pct(CTO.rateAmend)} (<L>n = {n5 - 1}</L>)</> },
+                    { label: "עלות שירות עבר", value: CTO_YEAR.pastService, how: ltrFormulas(`${pct(CTO.rateAmend)}, n = ${n5 - 0.5}, ביום התיקון`) },
                     { label: "P.N., הפסד", value: CTO_YEAR.pn, kind: "pn", how: "בלי עיגולי ביניים" },
-                    { label: "יתרת סגירה", value: CTO_YEAR.closing, kind: "balance", how: `2 × ${CTO.newPerYear.toLocaleString("en-US")}, ${pct(CTO.rateAmend)}, n = ${n5 - 1}` },
+                    { label: "יתרת סגירה", value: CTO_YEAR.closing, kind: "balance", how: ltrFormulas(`2 × ${CTO.newPerYear.toLocaleString("en-US")}, ${pct(CTO.rateAmend)}, n = ${n5 - 1}`) },
                   ]}
                 />
               ),
@@ -255,7 +257,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
               "התשלום לפי תנאי התוכנית, או הסכם חדש?",
               "הסכם מחוץ לתנאים: סילוק. יתרה פחות תשלום, לרווח והפסד.",
               <>
-                <M v={CTO_YEAR.closing} /> − <Money v={SETTLE.paid} /> = <M v={SETTLE_GAIN} />
+                <L><M v={CTO_YEAR.closing} /> − <Money v={SETTLE.paid} /> = <M v={SETTLE_GAIN} /></L>
               </>,
               <JE
                 key="je"
@@ -276,7 +278,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
           <HintLadder
             task={
               <>
-                במקום זאת: המנהל פורש במפתיע ב-{RETIRE.date}, וזכאי לפי התנאים ל-{RETIRE.years} × <Money v={CTO.newPerYear} plain /> = <Money v={RETIRE_PAID} />. איך נרשם ההפרש מול היתרה?
+                במקום זאת: המנהל פורש במפתיע ב-{RETIRE.date}, וזכאי לפי התנאים ל-<L>{RETIRE.years} × <Money v={CTO.newPerYear} plain /> = <Money v={RETIRE_PAID} /></L>. איך נרשם ההפרש מול היתרה?
               </>
             }
             hints={["התשלום חורג מתנאי התוכנית?", "לא. זו פרישה לפי התנאים, ולכן אין סילוק.", <>ההפרש: <Money v={RETIRE_PAID} plain /> − <M v={CTO_YEAR.closing} /></>, <><strong><M v={RETIRE_PN} /></strong> הפסד: P.N. ב-OCI.</>]}
@@ -345,7 +347,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
           <T19 he="נכסי תכנית" par="8, 113" /> הם כסף בקופה נפרדת מהחברה. הם נועדו רק לתשלום לעובדים, ונושי החברה לא יכולים לגעת בהם.
         </P>
         <P>
-          לכן מורידים אותם מהחוב: <strong>התחייבות נטו = החוב פחות שווי הקופה</strong>.
+          לכן מורידים אותם מהחוב: <strong><L>התחייבות נטו = החוב פחות שווי הקופה</L></strong>.
         </P>
         <DataTable
           head={["שורה במעגל הקופה", "איך"]}
@@ -436,11 +438,11 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
           <RollForward
             title="החוב, 2024"
             rows={[
-              { label: "יתרת פתיחה", value: PLAN_OPENING, kind: "balance", how: `${pct(PLAN.rate)}, n = ${PLAN.n}` },
-              { label: "עלות ריבית", value: PLAN_YEAR.interest, how: `${pct(PLAN.rate)} × הפתיחה` },
-              { label: "עלות שירות", value: PLAN_YEAR.service, how: `n = ${PLAN.n - 1}` },
+              { label: "יתרת פתיחה", value: PLAN_OPENING, kind: "balance", how: ltrFormulas(`${pct(PLAN.rate)}, n = ${PLAN.n}`) },
+              { label: "עלות ריבית", value: PLAN_YEAR.interest, how: ltrFormulas(`${pct(PLAN.rate)} × הפתיחה`) },
+              { label: "עלות שירות", value: PLAN_YEAR.service, how: ltrFormulas(`n = ${PLAN.n - 1}`) },
               { label: "P.N.", value: PLAN_YEAR.pn, kind: "pn", how: "אין שינוי בהנחות" },
-              { label: "יתרת סגירה", value: PLAN_YEAR.closing, kind: "balance", how: `2 שנים, n = ${PLAN.n - 1}` },
+              { label: "יתרת סגירה", value: PLAN_YEAR.closing, kind: "balance", how: ltrFormulas(`2 שנים, n = ${PLAN.n - 1}`) },
             ]}
           />
           <RollForward
@@ -467,7 +469,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
           ]}
         />
         <p className="text-[14px] text-muted">
-          סך הרווח הכולל: <M v={PLAN_EFFECT.total} />. התחייבות נטו בפתיחה: <M v={PLAN_OPENING} /> − <Money v={PLAN.assets.opening} plain /> = <M v={PLAN_OPENING - PLAN.assets.opening} />.
+          סך הרווח הכולל: <M v={PLAN_EFFECT.total} />. התחייבות נטו בפתיחה: <L><M v={PLAN_OPENING} /> − <Money v={PLAN.assets.opening} plain /> = <M v={PLAN_OPENING - PLAN.assets.opening} /></L>.
         </p>
       </>
     ),
@@ -489,17 +491,17 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
           }
           hints={[
             "כל העודף של 2023 הוא נכס של החברה?",
-            "הכלל: נכס נטו = הנמוך מבין העודף לתקרה. והריבית משוחזרת מהחוב: ריבית ÷ פתיחה.",
+            ltrFormulas("הכלל: נכס נטו = הנמוך מבין העודף לתקרה. והריבית משוחזרת מהחוב: ריבית ÷ פתיחה."),
             <>
-              2023: עודף <Money v={SURPLUS.assets - SURPLUS.obligation} plain />, תקרה <Money v={SURPLUS_CEILING} plain />: נכס נטו <Money v={SURPLUS_NET} />; הקופה מוכרת ב-<Money v={SURPLUS_OPEN_ASSETS} />. ריבית: <Money v={SURPLUS.interestCost} plain /> ÷{" "}
-              <Money v={SURPLUS.obligation} plain /> = {pct(SURPLUS_RATE)}.
+              2023: עודף <Money v={SURPLUS.assets - SURPLUS.obligation} plain />, תקרה <Money v={SURPLUS_CEILING} plain />: נכס נטו <Money v={SURPLUS_NET} />; הקופה מוכרת ב-<Money v={SURPLUS_OPEN_ASSETS} />. ריבית: <L><Money v={SURPLUS.interestCost} plain /> ÷{" "}
+              <Money v={SURPLUS.obligation} plain /> = {pct(SURPLUS_RATE)}</L>.
             </>,
             <span key="s" className="block space-y-1">
               <span className="block">
-                קופה: ריבית <Money v={SURPLUS_A.interest} />; P.N. = <Money v={SURPLUS.closingAssets} plain /> − <Money v={SURPLUS_OPEN_ASSETS} plain /> − <Money v={SURPLUS_A.interest} plain /> = <Money v={SURPLUS_A.pn} /> רווח.
+                קופה: ריבית <Money v={SURPLUS_A.interest} />; <L>P.N. = <Money v={SURPLUS.closingAssets} plain /> − <Money v={SURPLUS_OPEN_ASSETS} plain /> − <Money v={SURPLUS_A.interest} plain /> = <Money v={SURPLUS_A.pn} /></L> רווח.
               </span>
               <span className="block">
-                חוב: P.N. = <Money v={SURPLUS.closingObligation} plain /> − <Money v={SURPLUS.obligation} plain /> − <Money v={SURPLUS.interestCost} plain /> − <Money v={SURPLUS.service} plain /> = <Money v={SURPLUS_PN_OBLIGATION} /> הפסד.
+                חוב: <L>P.N. = <Money v={SURPLUS.closingObligation} plain /> − <Money v={SURPLUS.obligation} plain /> − <Money v={SURPLUS.interestCost} plain /> − <Money v={SURPLUS.service} plain /> = <Money v={SURPLUS_PN_OBLIGATION} /></L> הפסד.
               </span>
               <span className="block">
                 2024: עודף <Money v={SURPLUS.closingAssets - SURPLUS.closingObligation} plain /> מול תקרה <Money v={SURPLUS_END_CEILING} plain />: מכירים ב-<Money v={SURPLUS_END} />. השפעה: שירות <Money v={SURPLUS_EFFECT.salary} />, ריבית נטו{" "}
@@ -595,10 +597,10 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
         <DataTable
           head={["מה מחלצים", "איך", "מתי מותר"]}
           rows={[
-            ["ריבית ההיוון", "עלות ריבית ÷ יתרת פתיחה", "רק בלי תשלומים או שינוי באמצע השנה, ובלי לעגל"],
-            ["החלק של הקופה בתשלומים", "הטבות ששולמו מהקופה ÷ כל ההטבות ששולמו", "תמיד"],
-            ["שיעור ההפקדה", "ההפקדה ÷ השכר של כל מי שעבד ביום ההפקדה", "כולל מי שעזב אחר כך"],
-            ["תוספת להטבה", "שירות עבר ÷ החוב לפני התיקון", "באותו יום ובאותה ריבית"],
+            ["ריבית ההיוון", ltrFormulas("עלות ריבית ÷ יתרת פתיחה"), "רק בלי תשלומים או שינוי באמצע השנה, ובלי לעגל"],
+            ["החלק של הקופה בתשלומים", ltrFormulas("הטבות ששולמו מהקופה ÷ כל ההטבות ששולמו"), "תמיד"],
+            ["שיעור ההפקדה", ltrFormulas("ההפקדה ÷ השכר של כל מי שעבד ביום ההפקדה"), "כולל מי שעזב אחר כך"],
+            ["תוספת להטבה", ltrFormulas("שירות עבר ÷ החוב לפני התיקון"), "באותו יום ובאותה ריבית"],
           ]}
         />
         <Remember>שיעור שמשוחזר מביאור לא מעגלים. יצא 4.4987%? משתמשים ב-4.4987%, לא ב-4.5%.</Remember>
@@ -614,7 +616,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
       <>
         {ROUTES}
         <Rule>
-          השכר לפי המחלקה של העובד. הריבית הנטו במימון או בשכר, לפי המדיניות. OCI בשורה נטו אחת. והנדסה לאחור: ריבית ÷ פתיחה, רק בשנה בלי תשלומים או שינוי באמצע.
+          השכר לפי המחלקה של העובד. הריבית הנטו במימון או בשכר, לפי המדיניות. OCI בשורה נטו אחת. והנדסה לאחור: <L>ריבית ÷ פתיחה</L>, רק בשנה בלי תשלומים או שינוי באמצע.
         </Rule>
       </>
     ),
@@ -652,10 +654,10 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
                   rows={[
                     { label: "יתרת פתיחה", value: PLAN_OPENING, kind: "balance" },
                     { label: "עלות ריבית", value: AM_YEAR.interest, how: `${Math.round(AM_YEAR.interestBefore)} (חצי שנה, ${pct(PLAN.rate)}) + ${Math.round(AM_YEAR.interestAfter)} (חצי שנה, ${pct(AMENDED.rateAfter)}, על היתרה אחרי התיקון)` },
-                    { label: "עלות שירות שוטף", value: AM_YEAR.service, how: `${Math.round(AM_YEAR.serviceBefore)} (n = ${PLAN.n - 0.5}) + ${Math.round(AM_YEAR.serviceAfter)} (n = ${PLAN.n - 1})` },
-                    { label: "עלות שירות עבר", value: AM_YEAR.pastService, how: `${Math.round(AM_YEAR.pastAfter)} − ${Math.round(AM_YEAR.pastBefore)}, ${pct(AMENDED.rateAfter)}, n = ${PLAN.n - 0.5}` },
+                    { label: "עלות שירות שוטף", value: AM_YEAR.service, how: ltrFormulas(`${Math.round(AM_YEAR.serviceBefore)} (n = ${PLAN.n - 0.5}) + ${Math.round(AM_YEAR.serviceAfter)} (n = ${PLAN.n - 1})`) },
+                    { label: "עלות שירות עבר", value: AM_YEAR.pastService, how: ltrFormulas(`${Math.round(AM_YEAR.pastAfter)} − ${Math.round(AM_YEAR.pastBefore)}, ${pct(AMENDED.rateAfter)}, n = ${PLAN.n - 0.5}`) },
                     { label: "P.N., הפסד", value: AM_YEAR.pn, kind: "pn" },
-                    { label: "יתרת סגירה", value: AM_YEAR.closing, kind: "balance", how: `2 × ${AMENDED.newPerYear.toLocaleString("en-US")}, ${pct(AMENDED.rateEnd)}, n = ${PLAN.n - 1}` },
+                    { label: "יתרת סגירה", value: AM_YEAR.closing, kind: "balance", how: ltrFormulas(`2 × ${AMENDED.newPerYear.toLocaleString("en-US")}, ${pct(AMENDED.rateEnd)}, n = ${PLAN.n - 1}`) },
                   ]}
                 />
               ),
@@ -727,15 +729,15 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
             task="חלצו: ריבית ההיוון, אחוז התשלומים מהקופה, שיעור ההפקדה, ושיעור התוספת לדרג א׳."
             hints={[
               "מה מותר לחלץ ישירות, ובאיזה תנאי?",
-              "ריבית = עלות ריבית ÷ פתיחה (מותר: אין תשלומים או שינוי באמצע השנה). האחוזים: חלק ÷ שלם.",
-              <>ריבית: {NOTE.interestLast} ÷ {NOTE.openingLast.toLocaleString("en-US")} = {pct(NOTE_RATE, 4)}, בלי לעגל.</>,
+              ltrFormulas("ריבית = עלות ריבית ÷ פתיחה (מותר: אין תשלומים או שינוי באמצע השנה). האחוזים: חלק ÷ שלם."),
+              <>ריבית: <L>{NOTE.interestLast} ÷ {NOTE.openingLast.toLocaleString("en-US")} = {pct(NOTE_RATE, 4)}</L>, בלי לעגל.</>,
               <span key="s" className="block space-y-1">
-                <span className="block">קופה: {NOTE.paidFromAssetsLast} ÷ {NOTE.paidLast} = {pct(NOTE_FROM_ASSETS)}.</span>
+                <span className="block">קופה: <L>{NOTE.paidFromAssetsLast} ÷ {NOTE.paidLast} = {pct(NOTE_FROM_ASSETS)}</L>.</span>
                 <span className="block">
-                  הפקדה: {NOTE.contributionLast} ÷ ({NOTE_PAYROLL.map((g) => `${g.heads} × ${g.salary}`).join(" + ")}) = {pct(NOTE_CONTRIBUTION, 2)} → {pct(NOTE_X.contributionRate)}: על כל מי שעבד ב-30.6, כולל מי שפרש בדצמבר.
+                  הפקדה: <L>{NOTE.contributionLast} ÷ ({NOTE_PAYROLL.map((g) => `${g.heads} × ${g.salary}`).join(" + ")}) = {pct(NOTE_CONTRIBUTION, 2)} → {pct(NOTE_X.contributionRate)}</L>: על כל מי שעבד ב-30.6, כולל מי שפרש בדצמבר.
                 </span>
                 <span className="block">
-                  תוספת: {NOTE.pastServiceLast} ÷ {NOTE_X.beforeLast.toFixed(1)} (החוב לדרג א׳ לפני התיקון: {EXAM_B.grades[0].heads} × {EXAM_B.year - EXAM_B.startYear} × {EXAM_B.grades[0].salaryLast} × {1 + EXAM_B.grades[0].raise}^{EXAM_B.retireYear - EXAM_B.year + 1} ÷ (1 + הריבית)^{EXAM_B.retireYear - EXAM_B.year + 1}) = {pct(NOTE_ADDED, 2)} → {pct(NOTE_X.addedLast)}.
+                  תוספת: <L>{NOTE.pastServiceLast} ÷ {NOTE_X.beforeLast.toFixed(1)}</L> (החוב לדרג א׳ לפני התיקון: {EXAM_B.grades[0].heads} × {EXAM_B.year - EXAM_B.startYear} × {EXAM_B.grades[0].salaryLast} × {1 + EXAM_B.grades[0].raise}^{EXAM_B.retireYear - EXAM_B.year + 1} ÷ (1 + הריבית)^{EXAM_B.retireYear - EXAM_B.year + 1}) <L>= {pct(NOTE_ADDED, 2)} → {pct(NOTE_X.addedLast)}</L>.
                 </span>
               </span>,
             ]}

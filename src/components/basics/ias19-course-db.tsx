@@ -27,19 +27,21 @@ import {
 import { GROUP, GROUP_OPENING, groupStep, VP, VP_ACCRUED, VP_LATER, VP_LATER_OBLIGATION, VP_LATER_PER_YEAR, VP_OBLIGATION, VP_PER_YEAR } from "@/lib/study/ias19/lessons/measure";
 import { CF, CF_PER_YEAR, CHANGED, CHANGED_CLOSING, CHANGED_PER_YEAR, CHANGED_PN, RATE_ONLY_CLOSING, RATE_ONLY_PN, Y1, Y1_PN, Y2 } from "@/lib/study/ias19/lessons/rollforward";
 import { lessonRef, pct } from "@/lib/study/ias19/shared";
-import { FormulaFill, type Term } from "./ias19-formula";
+import { FormulaFill, Ltr, type Term } from "./ias19-formula";
 import { Bridge, ExplainTask, HintLadder, Ladder, MapBranch, Recipe5, RollForward, T19, TwoBuckets } from "./ias19-ui";
 import { BankStatement, Diff, PeopleGrid, Routing, Timeline, WrongRight, YearBars } from "./ias19-visuals";
 import { MiniQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { RollSchedule } from "./roll-schedule";
 import { Money, Rule } from "./ui";
+import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
 
 /** The employee-benefits course, lessons 5–7: measuring at one date, attribution to years of service, and a year's roll-forward. */
 
-const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={items} />;
+const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={ltrQuiz(items)} />;
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
-const L = ({ children }: { children: ReactNode }) => <bdi dir="ltr">{children}</bdi>;
+/** A formula inside a sentence, read left to right. */
+const L = Ltr;
 const M = ({ v }: { v: number }) => <Money v={Math.round(v)} />;
 const g = groupStep(GROUP.opening);
 const n1 = CF.retire - CF.from;
@@ -69,7 +71,7 @@ const servedVsN = (served: number, n: number, title?: ReactNode) => (
     ]}
     spans={[
       { from: 0, to: served, label: `② ${served} שנות עבודה`, tone: 2 },
-      { from: served, to: served + n, label: `④ n = ${n}: מהוונים על אלה`, tone: 4 },
+      { from: served, to: served + n, label: ltrFormulas(`④ n = ${n}: מהוונים על אלה`), tone: 4 },
     ]}
     marks={[{ at: served, label: "היום", tone: "accent" }]}
   />
@@ -211,7 +213,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
           bottom={BOTTOM}
           working={[
             <>
-              מונה: <M v={VP_PER_YEAR} /> × {VP.served} × 1 = <M v={VP_ACCRUED} /> (מה שנצבר).
+              מונה: <L><M v={VP_PER_YEAR} /> × {VP.served} × 1 = <M v={VP_ACCRUED} /></L> (מה שנצבר).
             </>,
             <>
               מכנה: <L>{1 + VP.rate}^{VP.yearsToRetire}</L>, ההיוון על {VP.yearsToRetire} השנים שנשארו, לא על {VP.served} שעברו.
@@ -258,9 +260,9 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
             }
             hints={[
               "כמה עובדים באמת יקבלו, וכמה שנים כל אחד צבר?",
-              `שאלות ② ו-③: שנתיים, ו-${GROUP.opening.staff} × ${pct(GROUP.opening.stay)}.`,
+              ltrFormulas(`שאלות ② ו-③: שנתיים, ו-${GROUP.opening.staff} × ${pct(GROUP.opening.stay)}.`),
               <>
-                ① {pct(GROUP.opening.share)} × <Money v={GROUP.opening.finalSalary} plain /> = <Money v={g.perYear} plain />; ② {g.years}; ③ {g.heads}; ④ {g.n}; ⑤ {pct(g.i)} (לא הממשלתית).
+                ① <L>{pct(GROUP.opening.share)} × <Money v={GROUP.opening.finalSalary} plain /> = <Money v={g.perYear} plain /></L>; ② {g.years}; ③ {g.heads}; ④ {g.n}; ⑤ {pct(g.i)} (לא הממשלתית).
               </>,
               <>
                 <Money v={g.perYear} plain /> × {g.years} × {g.heads} ÷ <L>{1 + g.i}^{g.n}</L> = <strong><M v={GROUP_OPENING} /></strong>
@@ -284,7 +286,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
             </>
           }
         />
-        <Bridge summary="החוב = הטבה לשנה × שנות עבודה × עובדים צפויים ÷ (1+i)ⁿ.">מה קורה כשההטבה לא שווה בכל שנה, כשיש תקרה, או כשהזכאות מתחילה רק משנה מסוימת? {lessonRef("ias19-attribute")}.</Bridge>
+        <Bridge summary={<><L>החוב = הטבה לשנה × שנות עבודה × עובדים צפויים ÷ (1+i)ⁿ</L>.</>}>מה קורה כשההטבה לא שווה בכל שנה, כשיש תקרה, או כשהזכאות מתחילה רק משנה מסוימת? {lessonRef("ias19-attribute")}.</Bridge>
       </>
     ),
     check: quiz("emp-measure-master", [
@@ -343,8 +345,8 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
       </>
     ),
     check: quiz("emp-attr-formula", [
-      { q: "2,000 ₪ לכל אחת מ-5 השנים הראשונות, ו-500 ₪ לכל שנה אחריהן. איך משייכים?", options: ["לפי נוסחת התוכנית", "בקו ישר", "רק את השנים הראשונות", "שווה בשווה בין המדרגות"], answer: 0, why: "המאוחרות נותנות פחות, ואין סיבה לקו ישר." },
-      { q: "1,500 ₪ לכל אחת מ-4 השנים הראשונות, ו-5,000 ₪ לכל שנה אחריהן. איך משייכים?", options: ["בקו ישר", "לפי נוסחת התוכנית", "רק את השנים המאוחרות", "לא משייכים"], answer: 0, why: "המאוחרות גבוהות מהותית (סעיף 73)." },
+      { q: "הטבה של 2,000 ₪ לכל אחת מ-5 השנים הראשונות, ו-500 ₪ לכל שנה אחריהן. איך משייכים?", options: ["לפי נוסחת התוכנית", "בקו ישר", "רק את השנים הראשונות", "שווה בשווה בין המדרגות"], answer: 0, why: "המאוחרות נותנות פחות, ואין סיבה לקו ישר." },
+      { q: "הטבה של 1,500 ₪ לכל אחת מ-4 השנים הראשונות, ו-5,000 ₪ לכל שנה אחריהן. איך משייכים?", options: ["בקו ישר", "לפי נוסחת התוכנית", "רק את השנים המאוחרות", "לא משייכים"], answer: 0, why: "המאוחרות גבוהות מהותית (סעיף 73)." },
     ]),
   },
   "emp-attr-cap": {
@@ -385,7 +387,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
       </>
     ),
     check: quiz("emp-attr-cap", [
-      { q: "2,500 ₪ לכל שנה עד תקרה של 10,000. אחרי 2 שנים, כמה נצבר?", options: ["5,000, והחלון 4 שנים", "10,000", "2,500", "5,000, והחלון כל שנות העבודה"], answer: 0, why: "החלון נגמר ב-4 שנים; עד אז 2,500 לשנה." },
+      { q: "הטבה של 2,500 ₪ לכל שנה, עד תקרה של 10,000. אחרי 2 שנים, כמה נצבר?", options: ["5,000, והחלון 4 שנים", "10,000", "2,500", "5,000, והחלון כל שנות העבודה"], answer: 0, why: "החלון נגמר ב-4 שנים; עד אז 2,500 לשנה." },
       { q: "העובדת התחילה בגיל 26, והזכאות מגיל 35. היום היא בת 31. כמה שנים נספרות?", options: ["0", "5", "9", "4"], answer: 0, why: "עד גיל 35 העבודה לא מקנה זכאות." },
     ]),
   },
@@ -443,7 +445,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
           bottom={BOTTOM}
           working={[
             <>
-              קו ישר (אסור כאן) היה נותן <Money v={FRONT.cap} plain /> ÷ {FRONT.expected} × {FRONT.served} = <Money v={FRONT_WRONG} plain />, ומהוון <M v={FRONT_WRONG_OBLIGATION} />: נמוך מדי.
+              קו ישר (אסור כאן) היה נותן <L><Money v={FRONT.cap} plain /> ÷ {FRONT.expected} × {FRONT.served} = <Money v={FRONT_WRONG} plain /></L>, ומהוון <M v={FRONT_WRONG_OBLIGATION} />: נמוך מדי.
             </>,
           ]}
           result={<M v={FRONT_OBLIGATION} />}
@@ -475,11 +477,11 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
               "השנים המאוחרות נותנות יותר או פחות?",
               "שאלה (א): הרבה יותר. קו ישר על כל שנות הצבירה.",
               <>
-                הטבה כוללת: {BACK.early.upTo} × <Money v={BACK.early.perYear} plain /> + {BACK.expected - BACK.early.upTo} × <Money v={BACK.later} plain /> = <Money v={BACK_A.total} plain />; ÷ {BACK.expected} ={" "}
-                <M v={BACK_A.perYear!} /> לשנה.
+                הטבה כוללת: <L>{BACK.early.upTo} × <Money v={BACK.early.perYear} plain /> + {BACK.expected - BACK.early.upTo} × <Money v={BACK.later} plain /> = <Money v={BACK_A.total} plain /></L>;{" "}
+                <L><Money v={BACK_A.total} plain /> ÷ {BACK.expected} = <M v={BACK_A.perYear!} /></L> לשנה.
               </>,
               <>
-                × {BACK.served} = <M v={BACK_ACCRUED} />; ÷ <L>{1 + BACK.rate}^{BACK.n}</L> = <strong><M v={BACK_OBLIGATION} /></strong>. הנוסחה (אסורה כאן) הייתה נותנת <Money v={BACK_WRONG} plain /> ו-<M v={BACK_WRONG_OBLIGATION} />.
+                <L><M v={BACK_A.perYear!} /> × {BACK.served} = <M v={BACK_ACCRUED} /></L>; <L><M v={BACK_ACCRUED} /> ÷ {1 + BACK.rate}^{BACK.n} = <strong><M v={BACK_OBLIGATION} /></strong></L>. הנוסחה (אסורה כאן) הייתה נותנת <Money v={BACK_WRONG} plain /> ו-<M v={BACK_WRONG_OBLIGATION} />.
               </>,
             ]}
           />
@@ -555,8 +557,8 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
       </>
     ),
     check: quiz("emp-attr-master", [
-      { q: "1,500 ₪ לשנה עד תקרה של 6,000. אחרי 3 שנים: כמה נצבר, ומה החלון?", options: ["4,500; ארבע שנים", "6,000; שלוש שנים", "4,500; כל שנות העבודה", "1,500; שנה אחת"], answer: 0, why: "מגיעים לתקרה בשנה הרביעית." },
-      { q: "1,000 ₪ ל-5 השנים הראשונות, 5,000 ₪ לכל שנה אחריהן. איזו שיטה?", options: ["קו ישר", "נוסחת התוכנית"], answer: 0, why: "סעיף 73." },
+      { q: "הטבה של 1,500 ₪ לשנה, עד תקרה של 6,000. אחרי 3 שנים: כמה נצבר, ומה החלון?", options: ["4,500; ארבע שנים", "6,000; שלוש שנים", "4,500; כל שנות העבודה", "1,500; שנה אחת"], answer: 0, why: "מגיעים לתקרה בשנה הרביעית." },
+      { q: "הטבה של 1,000 ₪ ל-5 השנים הראשונות, 5,000 ₪ לכל שנה אחריהן. איזו שיטה?", options: ["קו ישר", "נוסחת התוכנית"], answer: 0, why: "סעיף 73." },
       { q: "התחיל בגיל 28, זכאות מגיל 35, היום בן 33. כמה שנים נספרות?", options: ["0", "5", "7", "2"], answer: 0, why: "הזכאות עוד לא התחילה." },
       { q: "משולם בגיל 67, נצבר על 12 שנים מגיל 50. בגיל 55, מה n?", options: ["12", "5", "7", "17"], answer: 0, why: "מגיל 55 עד 67." },
     ]),
@@ -657,7 +659,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
     lead: "P.N. = סגירה − פתיחה − ריבית − שירות + תשלומים. ולכל שורה, המקום שלה בדוחות.",
     body: (
       <>
-        <Rule>פתיחה + ריבית + עלות שירות − תשלומים + P.N. = סגירה. ולכן P.N. = סגירה − פתיחה − ריבית − שירות + תשלומים.</Rule>
+        <Rule><L>פתיחה + ריבית + עלות שירות − תשלומים + P.N. = סגירה</L>. ולכן <L>P.N. = סגירה − פתיחה − ריבית − שירות + תשלומים</L>.</Rule>
         <Routing
           label="עלות השירות והריבית לרווח והפסד; ה-P.N. ל-OCI; הסגירה למאזן"
           title={`לאן הולכת כל שורה (סמנכ״ל הכספים, ${CF.from})`}
@@ -703,7 +705,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
             { at: CF.from + 2, label: `31.12.${CF.from + 1}` },
             { at: CF.retire + 1, label: `31.12.${CF.retire}: פרישה` },
           ]}
-          spans={[{ from: CF.from + 1, to: CF.retire + 1, label: `④ n = ${n1} מסוף השנה הראשונה`, tone: 4 }]}
+          spans={[{ from: CF.from + 1, to: CF.retire + 1, label: ltrFormulas(`④ n = ${n1} מסוף השנה הראשונה`), tone: 4 }]}
           marks={[
             { at: CF.from, label: `⑤ ${pct(CF.rateStart)}`, tone: 5 },
             { at: CF.from + 1, label: `⑤ ${pct(CF.rateEnd1)}`, tone: 5 },
@@ -717,19 +719,19 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
           rows={[
             { label: "יתרת פתיחה", value: 0, kind: "balance", how: "אין: שנה ראשונה" },
             { label: "עלות ריבית", value: 0, how: "אין על מה" },
-            { label: "עלות שירות", value: Y1.service, how: `${pct(CF.rateStart)}, n = ${n1}` },
+            { label: "עלות שירות", value: Y1.service, how: ltrFormulas(`${pct(CF.rateStart)}, n = ${n1}`) },
             { label: "P.N., הפסד", value: Y1_PN, kind: "pn", how: "הריבית ירדה" },
-            { label: "יתרת סגירה", value: Y1.closing, kind: "balance", how: `${pct(CF.rateEnd1)}, n = ${n1}` },
+            { label: "יתרת סגירה", value: Y1.closing, kind: "balance", how: ltrFormulas(`${pct(CF.rateEnd1)}, n = ${n1}`) },
           ]}
         />
         <RollForward
           title={`סמנכ״ל כספים, ${CF.from + 1}: שום הנחה לא השתנתה`}
           rows={[
             { label: "יתרת פתיחה", value: Y1.closing, kind: "balance" },
-            { label: "עלות ריבית", value: Y2.interest, how: `${pct(CF.rateEnd1)} × הפתיחה` },
-            { label: "עלות שירות", value: Y2.service, how: `${pct(CF.rateEnd1)}, n = ${n1 - 1}` },
+            { label: "עלות ריבית", value: Y2.interest, how: ltrFormulas(`${pct(CF.rateEnd1)} × הפתיחה`) },
+            { label: "עלות שירות", value: Y2.service, how: ltrFormulas(`${pct(CF.rateEnd1)}, n = ${n1 - 1}`) },
             { label: "P.N.", value: Y2.pn, kind: "pn", how: "הכול הוסבר: אפס" },
-            { label: "יתרת סגירה", value: Y2.closing, kind: "balance", how: `2 שנים, ${pct(CF.rateEnd1)}, n = ${n1 - 1}` },
+            { label: "יתרת סגירה", value: Y2.closing, kind: "balance", how: ltrFormulas(`2 שנים, ${pct(CF.rateEnd1)}, n = ${n1 - 1}`) },
           ]}
         />
         <Part title={`ואם בסוף ${CF.from + 1} ההנחות השתנו?`}>
@@ -740,7 +742,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
             רק הסגירה: 2 × <M v={CHANGED_PER_YEAR} /> ÷ <L>{1 + CHANGED.rateEnd}^{CHANGED.retire - CF.from - 1}</L> = <M v={CHANGED_CLOSING} />.
           </P>
           <P>
-            P.N. = <M v={CHANGED_CLOSING} /> − <M v={Y2.closing} /> = <strong><M v={CHANGED_PN} /></strong> הפסד, ל-OCI.
+            <L>P.N. = <M v={CHANGED_CLOSING} /> − <M v={Y2.closing} /> = <strong><M v={CHANGED_PN} /></strong></L> הפסד, ל-OCI.
           </P>
         </Part>
       </>
@@ -777,7 +779,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
                 סגירה: 2 × <M v={CF_PER_YEAR} /> ÷ <L>{1 + CHANGED.rateEnd}^{n1 - 1}</L> = <M v={RATE_ONLY_CLOSING} />
               </>,
               <>
-                P.N. = <M v={RATE_ONLY_CLOSING} /> − <M v={Y2.closing} /> = <strong><M v={RATE_ONLY_PN} /></strong> הפסד (בלי עיגולי ביניים). ואם הריבית הייתה עולה? החוב היה קטן, וה-P.N. רווח.
+                <L>P.N. = <M v={RATE_ONLY_CLOSING} /> − <M v={Y2.closing} /> = <strong><M v={RATE_ONLY_PN} /></strong></L> הפסד (בלי עיגולי ביניים). ואם הריבית הייתה עולה? החוב היה קטן, וה-P.N. רווח.
               </>,
             ]}
           />

@@ -21,16 +21,19 @@ import {
   VEST_PAID,
 } from "@/lib/study/ias19/lessons/short";
 import { lessonRef, lessonsRef, pct } from "@/lib/study/ias19/shared";
-import { FormulaFill } from "./ias19-formula";
+import { FormulaFill, Ltr } from "./ias19-formula";
 import { Bridge, ExplainTask, HintLadder, MapBranch, RollForward, T19 } from "./ias19-ui";
 import { Fork, PeopleGrid, SplitBar, Timeline, TwoPanel } from "./ias19-visuals";
 import { MiniQuiz } from "./inventory-interactive";
 import { Sorted, Story } from "./inventory-teach";
 import { Card, JE, Money, Stepper } from "./ui";
+import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
 
 /** The employee-benefits course, lessons 3–4: short-term benefits, and defined contribution against defined benefit. */
 
-const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={items} />;
+const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={ltrQuiz(items)} />;
+/** A formula inside a sentence, read left to right. */
+const L = Ltr;
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
 const stayers = SICK.carried.staff - SICK.carried.leavers;
 
@@ -162,7 +165,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
           given={false}
           stepwise={false}
         />
-        <Remember>הפרשה בסוף השנה = (ימים שצפוי לנצל + ימי העוזבים, אם מבשילה) × עלות יום. ההוצאה: סגירה − פתיחה + תשלומים.</Remember>
+        <Remember><L>הפרשה בסוף השנה = (ימים שצפוי לנצל + ימי העוזבים, אם מבשילה) × עלות יום</L>. ההוצאה: <L>סגירה − פתיחה + תשלומים</L>.</Remember>
       </>
     ),
     check: quiz("emp-short-bonus", [
@@ -193,7 +196,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
               title: "1. פתיחה",
               body: (
                 <p>
-                  לא מבשילים: העוזבים לא יקבלו כלום. מפרישים רק לנשארים: {stayers} × {SICK.carried.days} × <Money v={SICK.dayCost} plain /> = <strong><Money v={SICK_OPENING} /></strong>.
+                  לא מבשילים: העוזבים לא יקבלו כלום. מפרישים רק לנשארים: <L>{stayers} × {SICK.carried.days} × <Money v={SICK.dayCost} plain /> = <strong><Money v={SICK_OPENING} /></strong></L>.
                 </p>
               ),
             },
@@ -201,7 +204,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
               title: "2. תשלומים",
               body: (
                 <p>
-                  <Money v={SICK.dayCost} plain /> × ({SICK.usedMore.staff} × {SICK.usedMore.days} + {SICK.usedLess.staff} × {SICK.usedLess.days}) = <strong><Money v={SICK_PAID} /></strong>.
+                  <L><Money v={SICK.dayCost} plain /> × ({SICK.usedMore.staff} × {SICK.usedMore.days} + {SICK.usedLess.staff} × {SICK.usedLess.days}) = <strong><Money v={SICK_PAID} /></strong></L>.
                 </p>
               ),
             },
@@ -211,7 +214,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
                 <div className="space-y-1.5">
                   <p>מי שניצל {SICK.usedMore.days} ניצל את כל {SICK.entitlement} הימים של השנה ועוד יום מהצבור. שאר הצבור שלו פקע.</p>
                   <p>
-                    מי שניצל {SICK.usedLess.days} השאיר {SICK_LEFT} יום מהשנה: {SICK.usedLess.staff} × {SICK_LEFT} × <Money v={SICK.dayCost} plain /> = <strong><Money v={SICK_CLOSING} /></strong>.
+                    מי שניצל {SICK.usedLess.days} השאיר {SICK_LEFT} יום מהשנה: <L>{SICK.usedLess.staff} × {SICK_LEFT} × <Money v={SICK.dayCost} plain /> = <strong><Money v={SICK_CLOSING} /></strong></L>.
                   </p>
                 </div>
               ),
@@ -221,7 +224,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
               body: (
                 <div className="space-y-3">
                   <p>
-                    <Money v={SICK_CLOSING} plain /> − <Money v={SICK_OPENING} plain /> + <Money v={SICK_PAID} plain /> = <strong><Money v={SICK_EXPENSE} /></strong>.
+                    <L><Money v={SICK_CLOSING} plain /> − <Money v={SICK_OPENING} plain /> + <Money v={SICK_PAID} plain /> = <strong><Money v={SICK_EXPENSE} /></strong></L>.
                   </p>
                   <RollForward
                     pnTo="רווח והפסד"
@@ -258,11 +261,11 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
               "למי מפרישים עכשיו בפתיחה: רק לנשארים?",
               "הכלל: ימים שצפוי לנצל + ימי העוזבים, כי ההיעדרות מבשילה.",
               <>
-                פתיחה: {SICK.carried.staff} × {SICK.carried.days} × <Money v={SICK.dayCost} plain /> = <Money v={VEST_OPENING} />.
+                פתיחה: <L>{SICK.carried.staff} × {SICK.carried.days} × <Money v={SICK.dayCost} plain /> = <Money v={VEST_OPENING} /></L>.
               </>,
               <>
-                תשלומים: <Money v={SICK_PAID} plain /> + {VEST.left} × {SICK.carried.days} × <Money v={SICK.dayCost} plain /> = <Money v={VEST_PAID} />. סגירה <Money v={SICK_CLOSING} plain /> (כמו קודם).
-                הוצאה: <Money v={SICK_CLOSING} plain /> − <Money v={VEST_OPENING} plain /> + <Money v={VEST_PAID} plain /> = <strong><Money v={VEST_EXPENSE} /></strong>.
+                תשלומים: <L><Money v={SICK_PAID} plain /> + {VEST.left} × {SICK.carried.days} × <Money v={SICK.dayCost} plain /> = <Money v={VEST_PAID} /></L>. סגירה <Money v={SICK_CLOSING} plain /> (כמו קודם).
+                הוצאה: <L><Money v={SICK_CLOSING} plain /> − <Money v={VEST_OPENING} plain /> + <Money v={VEST_PAID} plain /> = <strong><Money v={VEST_EXPENSE} /></strong></L>.
               </>,
             ]}
           />
@@ -278,13 +281,13 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
             }
             hints={[
               "מי צפוי לקבל: כולם, או רק מי שיישאר?",
-              "מחויבות ואומדן מהימן: נוסחה × עובדים צפויים.",
+              ltrFormulas("מחויבות ואומדן מהימן: נוסחה × עובדים צפויים."),
               <>
-                פתיחה: ({BONUS.staff} − {BONUS.expectedLeavers}) × <span dir="ltr">{pct(BONUS.share)}</span> × <Money v={BONUS.estimate} plain /> = <Money v={BONUS_OPENING} />.
+                פתיחה: <L>({BONUS.staff} − {BONUS.expectedLeavers}) × {pct(BONUS.share)} × <Money v={BONUS.estimate} plain /> = <Money v={BONUS_OPENING} /></L>.
               </>,
               <>
-                תשלום: {BONUS.paidTo} × <span dir="ltr">{pct(BONUS.share)}</span> × <Money v={BONUS.actual} plain /> = <Money v={BONUS_PAID} />; סגירה 0. הוצאה: 0 − <Money v={BONUS_OPENING} plain /> +{" "}
-                <Money v={BONUS_PAID} plain /> = <strong><Money v={BONUS_EXPENSE} /></strong>: הפער בין האומדן לתשלום.
+                תשלום: <L>{BONUS.paidTo} × {pct(BONUS.share)} × <Money v={BONUS.actual} plain /> = <Money v={BONUS_PAID} /></L>; סגירה 0. הוצאה: <L>0 − <Money v={BONUS_OPENING} plain /> +{" "}
+                <Money v={BONUS_PAID} plain /> = <strong><Money v={BONUS_EXPENSE} /></strong></L>: הפער בין האומדן לתשלום.
               </>,
             ]}
           />
@@ -442,7 +445,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
         <Stepper
           label="הפקדה מוגדרת"
           steps={[
-            { title: "1. ההוצאה", body: <p><Money v={DC.payroll} plain /> × {pct(DC.rate)} = <strong><Money v={DC_YEAR.expense} /></strong>.</p> },
+            { title: "1. ההוצאה", body: <p><L><Money v={DC.payroll} plain /> × {pct(DC.rate)} = <strong><Money v={DC_YEAR.expense} /></strong></L>.</p> },
             { title: "2. מה שולם", body: <p>11 חודשים הועברו במהלך השנה: <Money v={DC_PAID} />.</p> },
             { title: "3. מה נשאר", body: <p>ההפקדה של דצמבר תעבור בינואר: <strong><Money v={DC_YEAR.liability} /></strong>, זכאים.</p> },
             {
@@ -478,7 +481,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
                 שכר שנתי <Money v={DC_VAR.payroll} />, הפקדה {pct(DC_VAR.rate)}, הכסף עובר ב-10 לחודש שאחרי. מה ההוצאה, מה שולם ומה הזכאים?
               </>
             }
-            hints={["מה מגיע על כל השנה, ומה מזה כבר הועבר?", "הכלל: הוצאה = ההפקדה המגיעה; ההפרש הוא זכאים.", <>הוצאה: <Money v={DC_VAR.payroll} plain /> × {pct(DC_VAR.rate)} = <Money v={DC_VAR_YEAR.expense} />.</>, <>זכאים <Money v={DC_VAR_YEAR.liability} />; מזומן <Money v={DC_VAR_YEAR.expense - DC_VAR_YEAR.liability} />.</>]}
+            hints={["מה מגיע על כל השנה, ומה מזה כבר הועבר?", ltrFormulas("הכלל: הוצאה = ההפקדה המגיעה; ההפרש הוא זכאים."), <>הוצאה: <L><Money v={DC_VAR.payroll} plain /> × {pct(DC_VAR.rate)} = <Money v={DC_VAR_YEAR.expense} /></L>.</>, <>זכאים <Money v={DC_VAR_YEAR.liability} />; מזומן <Money v={DC_VAR_YEAR.expense - DC_VAR_YEAR.liability} />.</>]}
           />
         </Part>
         <Part title="ב. מבטח שלקח את הסיכון">
@@ -496,7 +499,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
                 מבטח קיבל על עצמו את כל הסיכון של מענקי הפרישה, והחברה משלמת לו רק פרמיה של {pct(INSURED.premium)} מעלות השכר (<Money v={INSURED.payroll} />). סווגו, וצרו את המעגל.
               </>
             }
-            hints={["יש לחברה מחויבות כלשהי מעבר לפרמיה?", "המבחן: מי נושא בסיכון. המבטח: הפקדה מוגדרת.", <>הוצאה = הפרמיה: <Money v={INSURED.payroll} plain /> × {pct(INSURED.premium)} = <Money v={INSURED_EXPENSE} />.</>, <>מעגל: פתיחה 0, הוצאה <Money v={INSURED_EXPENSE} plain />, תשלום <Money v={INSURED_EXPENSE} plain />, סגירה 0.</>]}
+            hints={["יש לחברה מחויבות כלשהי מעבר לפרמיה?", "המבחן: מי נושא בסיכון. המבטח: הפקדה מוגדרת.", <>הוצאה = הפרמיה: <L><Money v={INSURED.payroll} plain /> × {pct(INSURED.premium)} = <Money v={INSURED_EXPENSE} /></L>.</>, <>מעגל: פתיחה 0, הוצאה <Money v={INSURED_EXPENSE} plain />, תשלום <Money v={INSURED_EXPENSE} plain />, סגירה 0.</>]}
           />
         </Part>
       </>

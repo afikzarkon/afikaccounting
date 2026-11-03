@@ -1,4 +1,5 @@
-import type { CSSProperties, ReactNode } from "react";
+import { Children, cloneElement, type CSSProperties, Fragment, isValidElement, type ReactNode } from "react";
+import { ltrMarks } from "@/lib/study/ias19/ltr";
 import { cn } from "@/lib/utils";
 import { Arrows } from "./ias19-arrows";
 import { Reveal } from "./inventory-teach";
@@ -81,8 +82,7 @@ function Line({ lhs, top, bottom, terms, show, anchors, tail }: { lhs?: ReactNod
       ),
     );
   return (
-    <span className="flex flex-wrap items-center gap-x-1.5 gap-y-2">
-      {lhs && <span className="font-bold text-fg">{lhs} =</span>}
+    <span className="flex flex-wrap items-center gap-x-1.5 gap-y-2" dir="ltr">
       {bottom ? (
         <span className="inline-flex flex-col items-center">
           <span className="flex flex-wrap items-center justify-center gap-1 px-1 pb-1.5">{render(top)}</span>
@@ -93,13 +93,15 @@ function Line({ lhs, top, bottom, terms, show, anchors, tail }: { lhs?: ReactNod
       ) : (
         <span className="flex flex-wrap items-center gap-1">{render(top)}</span>
       )}
+      {lhs && <span className="font-bold text-fg">= {lhs}</span>}
       {tail}
     </span>
   );
 }
 
 /**
- * The formula: the data (each with its part's colour and number) and arrows
+ * The formula, read left to right as in a maths notebook — the working on the
+ * left, "=", and what it gives on the right, in Hebrew as in English: the data (each with its part's colour and number) and arrows
  * from them to the slots; under it, what each part is; then, step by step,
  * the numbers in the slots, the working, and the result. `stepwise={false}`
  * shows it all at once.
@@ -147,9 +149,9 @@ export function FormulaFill({
     )),
     ...(result !== undefined
       ? [
-          <span key="res" className="block text-[16.5px] font-bold text-fg">
-            {lhs && <>{lhs} = </>}
+          <span key="res" className="block text-[16.5px] font-bold text-fg" dir="ltr">
             <span className="rounded-md bg-surface px-2 py-0.5 ring-2 ring-accent">{result}</span>
+            {lhs && <> = {lhs}</>}
           </span>,
         ]
       : []),
@@ -196,5 +198,45 @@ export function FormulaFill({
         </dl>
       )}
     </figure>
+  );
+}
+
+/**
+ * One formula written out a few ways — in words, in letters, with the
+ * numbers in — each line read left to right, as in a maths notebook.
+ */
+export function Eq({ rows, note }: { rows: { label: ReactNode; f: ReactNode }[]; note?: ReactNode }) {
+  return (
+    <div className="rounded-xl border border-line bg-surface-2/40 px-3 py-2.5">
+      <dl className="space-y-2">
+        {rows.map((r, i) => (
+          <div key={i}>
+            <dt className="text-[12.5px] font-bold text-muted">{r.label}</dt>
+            <dd dir="ltr" className="num mt-0.5 flex flex-wrap items-center gap-x-1.5 text-start text-[15px] text-fg">
+              {marked(r.f)}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      {note && <p className="mt-2 text-[13.5px] text-muted">{note}</p>}
+    </div>
+  );
+}
+
+/** Every string in a formula (one fragment deep) with its operators held in place. */
+function marked(n: ReactNode): ReactNode {
+  return Children.map(n, (c) => (typeof c === "string" ? ltrMarks(c) : isValidElement<{ children?: ReactNode }>(c) && c.type === Fragment ? cloneElement(c, undefined, marked(c.props.children)) : c));
+}
+
+/** A formula inside a Hebrew sentence, read left to right. */
+export const Ltr = ({ children }: { children: ReactNode }) => <bdi dir="ltr">{marked(children)}</bdi>;
+
+/** A fraction drawn stacked: the numerator over a line, the denominator under it. */
+export function Frac({ top, bottom }: { top: ReactNode; bottom: ReactNode }) {
+  return (
+    <span className="inline-flex flex-col items-center align-middle">
+      <span className="px-1 pb-0.5">{marked(top)}</span>
+      <span className="w-full border-t-2 border-fg/70 px-1 pt-0.5 text-center">{marked(bottom)}</span>
+    </span>
   );
 }
