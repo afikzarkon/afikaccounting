@@ -291,7 +291,7 @@ export function BeforeAfter({ title, before, after, jump, unit = "₪" }: { titl
   const up = after.v - before.v;
   return (
     <Frame label={`לפני ${nf.format(before.v)} ${unit}, אחרי ${nf.format(after.v)} ${unit}: קפיצה של ${nf.format(up)} ${unit}`} title={title}>
-      <div className="flex items-end justify-center gap-6">
+      <div className="flex items-end justify-center gap-6 pe-16">
         <div className="flex w-24 flex-col items-center">
           <span className="text-[13px] font-bold text-fg">
             <N v={before.v} />
@@ -299,13 +299,15 @@ export function BeforeAfter({ title, before, after, jump, unit = "₪" }: { titl
           <span className="w-full rounded-t-md border-2" style={{ height: h(before.v), ...tint(1, 14) }} />
           <span className="mt-1 text-center text-[12px] text-muted">{before.label}</span>
         </div>
-        <div className="flex w-24 flex-col items-center">
+        <div className="relative flex w-24 flex-col items-center">
           <span className="text-[13px] font-bold text-fg">
             <N v={after.v} />
           </span>
+          <span className="absolute top-6 -end-3 translate-x-full whitespace-nowrap rounded bg-danger/10 px-1.5 text-[12.5px] font-bold text-danger rtl:-translate-x-full">
+            +<N v={up} />
+          </span>
           <span className="flex w-full flex-col overflow-hidden rounded-t-md border-2" style={{ height: h(after.v), borderColor: FORMULA_COLORS[1].color }}>
-            <span className="grid place-items-center border-b-2 border-dashed border-danger bg-danger/15 text-[12px] font-bold text-danger" style={{ height: `${(up / after.v) * 100}%` }}>
-              +<N v={up} />
+            <span className="border-b-2 border-dashed border-danger bg-danger/20" style={{ height: `${(up / after.v) * 100}%` }}>
             </span>
             <span className="flex-1" style={tint(1, 14)} />
           </span>

@@ -28,7 +28,8 @@ import {
 import { AM_ASSETS, AM_ASSETS_PARTS, AM_EFFECT, AM_YEAR, AMENDED, NOTE, NOTE_ADDED, NOTE_CONTRIBUTION, NOTE_FROM_ASSETS, NOTE_PAYROLL, NOTE_RATE, NOTE_X } from "@/lib/study/ias19/lessons/present";
 import { EXAM_B } from "@/lib/learn/ias19-exams";
 import { lessonRef, lessonsRef, pct } from "@/lib/study/ias19/shared";
-import { Bridge, DestTag, ExplainTask, HintLadder, MapBranch, RollForward, T19 } from "./ias19-ui";
+import { Bridge, DestTag, ExplainTask, HintLadder, Ladder, MapBranch, RollForward, T19 } from "./ias19-ui";
+import { BeforeAfter, Fork, SplitBar } from "./ias19-visuals";
 import { MiniQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { Card, JE, Money, Rule, Stepper } from "./ui";
@@ -41,90 +42,142 @@ const L = ({ children }: { children: ReactNode }) => <bdi dir="ltr">{children}</
 const M = ({ v }: { v: number }) => <Money v={Math.round(v)} />;
 const n5 = CTO.retire - CTO.from;
 
+/** Three events that sound alike, and where each lands. */
+const EVENTS = (
+  <Fork
+    label="שלושה אירועים: שיפור תנאים יוצר שירות עבר לרווח והפסד; הסכם לסגור את החוב הוא סילוק לרווח והפסד; פרישה לפי התנאים, מוקדם מהצפוי, היא P.N. ל-OCI"
+    question="מה קרה באמצע השנה?"
+    branches={[
+      { when: "התנאים השתפרו", then: "שירות עבר על השנים שעברו", to: "pl" },
+      { when: "״ניתן לך סכום ונסגור עניין״", then: "סילוק: עסקה חדשה", to: "pl" },
+      { when: "עזב לפי התנאים, מוקדם", then: "טעות באומדן: P.N.", to: "oci" },
+    ]}
+  />
+);
+
+/** The technology manager's year, cut at the amendment: each half with its terms, its rate and its years to payment. */
+const SPLIT_YEAR = (
+  <SplitBar
+    title={`השנה של מנהל הטכנולוגיה, ${CTO.from + 1}: חתוכה ב-1.7`}
+    periods={[
+      { months: 6, label: `תנאים ישנים: ${CTO.oldPerYear.toLocaleString("he-IL")} ₪ לשנה`, rate: pct(CTO.rateEnd2023), n: `${n5 - 0.5} שנים מ-30.6`, tone: 1 },
+      { months: 6, label: `תנאים חדשים: ${CTO.newPerYear.toLocaleString("he-IL")} ₪ לשנה`, rate: pct(CTO.rateAmend), n: `${n5 - 1} שנים מ-31.12`, tone: 4 },
+    ]}
+    cuts={[`1.1.${CTO.from + 1}`, "1.7: התיקון", `31.12.${CTO.from + 1}`]}
+  />
+);
+
+/** Settlement against an unexpected retirement: one question decides. */
+const SETTLE_FORK = (
+  <Fork
+    label="האם התשלום לפי תנאי התוכנית? לא: סילוק, ההפרש לרווח והפסד. כן, רק מוקדם: P.N., ההפרש ל-OCI"
+    question="התשלום לפי תנאי התוכנית?"
+    branches={[
+      { when: "לא: הסכם חדש", then: "סילוק. יתרה פחות תשלום", to: "pl" },
+      { when: "כן, רק מוקדם מהצפוי", then: "טעות באומדן. P.N.", to: "oci" },
+    ]}
+  />
+);
+
 export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
   // ---------------------------------------------------------------------------
   // Lesson 8: amendment, past service, settlement.
   "emp-amend-hook": {
-    lead: "שלושה אירועים שנשמעים דומים — שיפור תנאים, ״בוא נסגור עניין״, ועזיבה — וכל אחד נרשם אחרת.",
+    lead: "שלושה אירועים שנשמעים דומים, וכל אחד נרשם אחרת.",
     body: (
       <>
         <Story icon={<Briefcase />} title="המענק עולה מ-1 באפריל">
-          <p>הבוס מודיע: מ-1 באפריל המענק בפרישה עולה מ-60,000 ל-80,000 ₪ לכל שנת עבודה. האם התוספת מגיעה רק על העבודה מכאן והלאה, או גם על כל מה שכבר עבדתם?</p>
-          <p>ומה אם תגידו ״תן לי 150,000 עכשיו ונסגור את העניין״? או שפשוט תעזבו מחר? אותה חברה, שלושה אירועים, וכל אחד נרשם אחרת.</p>
+          <p>הבוס מודיע: מ-1 באפריל המענק בפרישה עולה מ-60,000 ל-80,000 ₪ לכל שנת עבודה. התוספת מגיעה רק על העבודה מכאן, או גם על מה שכבר עבדתם?</p>
+          <p>ומה אם תגידו ״תן לי 150,000 עכשיו ונסגור עניין״? או שפשוט תעזבו מחר?</p>
         </Story>
-        <MapBranch lesson="ias19-amend">ב{lessonRef("ias19-rollforward")} כל ההנחות היו קבועות לאורך השנה. כאן נכנס אירוע אחד באמצע השנה — ועליו נשענים {lessonsRef("ias19-assets", "ias19-present")} (נכסים והצגה).</MapBranch>
+        {EVENTS}
+        <MapBranch lesson="ias19-amend">ב{lessonRef("ias19-rollforward")} ההנחות היו קבועות כל השנה. כאן נכנס אירוע אחד באמצע השנה, ועליו נשענים {lessonsRef("ias19-assets", "ias19-present")}.</MapBranch>
       </>
     ),
   },
   "emp-amend-split": {
-    lead: "שינוי תנאים מפצל את השנה לשתי תקופות, והעבר ״מתעדכן״: ההפרש הוא עלות שירות עבר — לרווח והפסד, מיד.",
+    lead: "שינוי תנאים חותך את השנה לשתיים, ומעדכן גם את העבר.",
     body: (
       <>
         <P>
-          <T19 he="שינוי תנאי תוכנית" en="Plan amendment" />: מרגע השינוי ההנחות חדשות, ולכן מפצלים את השנה לשתי תקופות — לכל אחת התנאים, השיעור וה-n שלה.
+          <T19 he="שינוי תנאי תוכנית" en="Plan amendment" />: מיום השינוי ההנחות חדשות. לכן חותכים את השנה לשתי תקופות, ולכל אחת התנאים, הריבית וה-n שלה.
         </P>
+        {SPLIT_YEAR}
         <P>
-          בנוסף, העבר מתעדכן לתנאים החדשים. ההפרש הוא <T19 he="עלות שירות עבר" en="Past service cost" par="102–103" />: ההתחייבות אחרי השינוי פחות ההתחייבות לפניו — שתיהן ביום השינוי — והוא נרשם
-          מיד לרווח והפסד.
+          גם העבר מתעדכן לתנאים החדשים. ההפרש הוא <T19 he="עלות שירות עבר" en="Past service cost" par="102–103" />, והוא נרשם מיד לרווח והפסד.
         </P>
+        <BeforeAfter
+          title="שירות עבר: החוב ביום התיקון, לפני ואחרי"
+          before={{ label: "בתנאים הישנים", v: Math.round(CTO_YEAR.pastBefore) }}
+          after={{ label: "בתנאים החדשים", v: Math.round(CTO_YEAR.pastAfter) }}
+          jump={<>הקפיצה היא שירות עבר: לרווח והפסד, מיד</>}
+        />
         <P>
-          ריבית על חלק משנה (<span dir="ltr">IAS 19.123</span>): עד השינוי — על הפתיחה; מהשינוי — על היתרה המעודכנת. ותשלום באמצע השנה מפחית ריבית מיומו.
+          ריבית על חצי שנה (<span dir="ltr">IAS 19.123</span>): עד השינוי על הפתיחה, ומהשינוי על היתרה המעודכנת. תשלום באמצע השנה מקטין את הריבית מיומו.
         </P>
       </>
     ),
     check: quiz("emp-amend-split", [
-      { q: "המענק עולה גם על השנים שעברו. ההפרש על העבר — שירות שוטף או שירות עבר?", options: ["שירות עבר", "שירות שוטף", "P.N.", "סילוק"], answer: 0, why: "תוספת על שירות שכבר ניתן = שירות עבר." },
-      { q: "באיזו ריבית מחשבים את שני צדי שירות העבר?", options: ["בריבית של יום השינוי", "בריבית של תחילת השנה", "בריבית של סוף השנה", "צד אחד בכל ריבית"], answer: 0, why: "שתי היתרות ביום השינוי." },
+      { q: "המענק עולה גם על השנים שעברו. ההפרש על העבר: שירות שוטף או שירות עבר?", options: ["שירות עבר", "שירות שוטף", "P.N.", "סילוק"], answer: 0, why: "תוספת על עבודה שכבר נעשתה = שירות עבר." },
+      { q: "באיזו ריבית מחשבים את שני הצדדים של שירות העבר?", options: ["בריבית של יום השינוי", "בריבית של תחילת השנה", "בריבית של סוף השנה", "צד אחד בכל ריבית"], answer: 0, why: "שתי היתרות ביום השינוי." },
     ]),
   },
   "emp-amend-settle": {
-    lead: "סילוק — תשלום מחוץ לתנאים שמבטל את ההתחייבות — לרווח והפסד; פרישה לפי התנאים, גם מוקדמת — P.N. ב-OCI.",
+    lead: "תשלום מחוץ לתנאים הוא סילוק, לרווח והפסד. לפי התנאים, גם מוקדם, הוא P.N. ב-OCI.",
     body: (
       <>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Card title={<T19 he="סילוק" en="Settlement" par="109–111" />}>
-            <p>החברה משלמת סכום כדי להיפטר מההתחייבות, בהסכם שאינו לפי תנאי התוכנית. הרווח או ההפסד: יתרת ההתחייבות פחות התשלום — לרווח והפסד.</p>
-          </Card>
-          <Card title="פרישה בלתי צפויה">
-            <p>העובד עוזב ומקבל בדיוק מה שמגיע לו לפי התוכנית — רק מוקדם מהצפוי. זה לא סילוק: ההפרש בין היתרה לתשלום הוא שינוי אומדן — P.N. ב-OCI.</p>
-          </Card>
-        </div>
+        <P>
+          <T19 he="סילוק" en="Settlement" par="109–111" />: החברה משלמת סכום בהסכם חדש, כדי להיפטר מהחוב לתמיד.
+        </P>
+        <P>פרישה בלתי צפויה: העובד מקבל בדיוק מה שהתוכנית קובעת, רק מוקדם מהצפוי. זה לא סילוק, אלא טעות באומדן.</P>
+        {SETTLE_FORK}
       </>
     ),
     check: quiz("emp-amend-settle", [
-      { q: "החברה משלמת 92,000 ₪ לביטול התחייבות שבספרים 96,500. מה הרישום?", options: ["רווח מסילוק 4,500 ברווח והפסד", "P.N. רווח 4,500 ב-OCI", "שירות עבר שלילי", "אין רישום"], answer: 0, why: "תשלום מחוץ לתנאים = סילוק." },
+      { q: "החברה משלמת 92,000 ₪ לביטול חוב שבספרים 96,500. מה הרישום?", options: ["רווח מסילוק 4,500 ברווח והפסד", "P.N. רווח 4,500 ב-OCI", "שירות עבר שלילי", "אין רישום"], answer: 0, why: "תשלום מחוץ לתנאים = סילוק." },
       { q: "עובד פורש לפי התנאים, מוקדם מהצפוי. סילוק או P.N.?", options: ["P.N. ב-OCI", "סילוק"], answer: 0, why: "תשלום לפי התנאים אינו סילוק." },
     ]),
   },
   "emp-amend-rule": {
-    lead: "שנה מפוצלת: ארבעה צעדים — שירות לכל תקופה, שירות עבר, ריבית לכל תקופה, וסגירה ו-P.N.",
+    lead: "שנה חתוכה: ארבעה צעדים, תמיד באותו סדר.",
     body: (
-      <Rule>
-        (א) לכל תקופה: ריבית של תחילתה, n עד סוף התקופה, וצבירה של חודשי התקופה בלבד. (ב) שירות עבר = יתרה אחרי השינוי פחות יתרה לפניו, באותה ריבית ובאותו n של יום השינוי. (ג) ריבית: עד השינוי
-        על היתרה בפתיחה; אחרי השינוי על היתרה אחרי שירות העבר. (ד) סילוק: יתרה פחות תשלום — לרווח והפסד; תשלום לפי התנאים — P.N. ב-OCI.
-      </Rule>
+      <>
+        <Ladder
+          steps={[
+            { q: "שירות שוטף, לכל תקופה:", yes: "הריבית של תחילת התקופה, n עד סוף התקופה, רק חודשי התקופה." },
+            { q: "שירות עבר, ביום השינוי:", yes: "החוב אחרי פחות החוב לפני, באותה ריבית ובאותו n." },
+            { q: "ריבית, לכל תקופה:", yes: "עד השינוי על הפתיחה; אחריו על היתרה אחרי שירות העבר." },
+            { q: "סגירה, ו-P.N.:", yes: "הסגירה בריבית סוף השנה; P.N. מאזן." },
+          ]}
+        />
+        {SPLIT_YEAR}
+        <Rule>וסילוק: יתרה פחות תשלום, לרווח והפסד. תשלום לפי התנאים: P.N. ב-OCI.</Rule>
+      </>
     ),
-    check: quiz("emp-amend-rule", [{ q: "אחרי התיקון — על איזו יתרה הריבית?", options: ["על היתרה אחרי שירות העבר", "על הפתיחה", "על הסגירה", "על שירות העבר בלבד"], answer: 0, why: "מיום התיקון — היתרה המעודכנת." }]),
+    check: quiz("emp-amend-rule", [{ q: "אחרי התיקון, על איזו יתרה הריבית?", options: ["על היתרה אחרי שירות העבר", "על הפתיחה", "על הסגירה", "על שירות העבר בלבד"], answer: 0, why: "מיום התיקון: היתרה המעודכנת." }]),
   },
   "emp-amend-solved": {
-    lead: "מפצלים, מודדים את שני הצדדים ביום התיקון, ומסיימים במעגל — וה-P.N. מאזן.",
+    lead: "חותכים, מודדים את שני הצדדים ביום התיקון, וסוגרים במעגל.",
     body: (
       <>
         <Story icon={<Briefcase />} title="מנהל הטכנולוגיה">
           <p>
-            התחיל ב-1.1.{CTO.from}; בפרישה ב-31.12.{CTO.retire} יקבל <Money v={CTO.oldPerYear} /> לכל שנת שירות. השיעור ב-31.12.{CTO.from}: {pct(CTO.rateEnd2023)}. ב-1.7.{CTO.from + 1} המענק עולה ל-
-            <Money v={CTO.newPerYear} /> לשנה — גם על העבר — והשיעור יורד ל-{pct(CTO.rateAmend)}, ונשאר כך עד סוף השנה.
+            התחיל ב-1.1.{CTO.from}. בפרישה ב-31.12.{CTO.retire} יקבל <Money v={CTO.oldPerYear} /> לכל שנת עבודה. הריבית ב-31.12.{CTO.from}: {pct(CTO.rateEnd2023)}.
+          </p>
+          <p>
+            ב-1.7.{CTO.from + 1} המענק עולה ל-<Money v={CTO.newPerYear} /> לשנה, גם על העבר. הריבית יורדת ל-{pct(CTO.rateAmend)}, ונשארת כך עד סוף השנה.
           </p>
         </Story>
+        {SPLIT_YEAR}
         <Stepper
-          label="שנה מפוצלת"
+          label="שנה חתוכה"
           steps={[
             { title: "פתיחה", body: <p><Money v={CTO.oldPerYear} plain /> × 1 ÷ <L>{1 + CTO.rateEnd2023}^{n5}</L> = <strong><M v={CTO_OPENING} /></strong>.</p> },
             {
               title: "(א) שירות שוטף, שתי תקופות",
               body: (
                 <div className="space-y-1.5">
-                  <p>עד התיקון: <Money v={CTO.oldPerYear / 2} plain /> ÷ <L>{1 + CTO.rateEnd2023}^{n5 - 0.5}</L> = <M v={CTO_YEAR.serviceBefore} /> — מהוון מ-30.6, בשיעור של תחילת התקופה.</p>
+                  <p>עד התיקון: <Money v={CTO.oldPerYear / 2} plain /> ÷ <L>{1 + CTO.rateEnd2023}^{n5 - 0.5}</L> = <M v={CTO_YEAR.serviceBefore} />. מהוון מ-30.6, בריבית של תחילת התקופה.</p>
                   <p>אחרי: <Money v={CTO.newPerYear / 2} plain /> ÷ <L>{1 + CTO.rateAmend}^{n5 - 1}</L> = <M v={CTO_YEAR.serviceAfter} />. סה״כ <strong><M v={CTO_YEAR.service} /></strong>.</p>
                 </div>
               ),
@@ -133,8 +186,9 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
               title: "(ב) שירות עבר ב-1.7",
               body: (
                 <div className="space-y-1.5">
-                  <p>1.5 שנות שירות. לפני: <Money v={CTO.oldPerYear * 1.5} plain /> ÷ <L>{1 + CTO.rateAmend}^{n5 - 0.5}</L> = <M v={CTO_YEAR.pastBefore} />.</p>
-                  <p>אחרי: <Money v={CTO.newPerYear * 1.5} plain /> ÷ <L>{1 + CTO.rateAmend}^{n5 - 0.5}</L> = <M v={CTO_YEAR.pastAfter} />. הפרש: <strong><M v={CTO_YEAR.pastService} /></strong> — לרווח והפסד.</p>
+                  <p>1.5 שנות עבודה. לפני: <Money v={CTO.oldPerYear * 1.5} plain /> ÷ <L>{1 + CTO.rateAmend}^{n5 - 0.5}</L> = <M v={CTO_YEAR.pastBefore} />.</p>
+                  <p>אחרי: <Money v={CTO.newPerYear * 1.5} plain /> ÷ <L>{1 + CTO.rateAmend}^{n5 - 0.5}</L> = <M v={CTO_YEAR.pastAfter} />. הפרש: <strong><M v={CTO_YEAR.pastService} /></strong>, לרווח והפסד.</p>
+                  <BeforeAfter before={{ label: "לפני התיקון", v: Math.round(CTO_YEAR.pastBefore) }} after={{ label: "אחרי התיקון", v: Math.round(CTO_YEAR.pastAfter) }} jump="שירות עבר" />
                 </div>
               ),
             },
@@ -151,13 +205,13 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
               title: "סגירה, והמעגל",
               body: (
                 <RollForward
-                  title={`מנהל הטכנולוגיה — ${CTO.from + 1}`}
+                  title={`מנהל הטכנולוגיה, ${CTO.from + 1}`}
                   rows={[
                     { label: "יתרת פתיחה", value: CTO_OPENING, kind: "balance", how: `${pct(CTO.rateEnd2023)}, n = ${n5}` },
                     { label: "עלות ריבית", value: CTO_YEAR.interest, how: `חצי שנה ${pct(CTO.rateEnd2023)} על הפתיחה, חצי ${pct(CTO.rateAmend)} על היתרה אחרי התיקון` },
                     { label: "עלות שירות שוטף", value: CTO_YEAR.service, how: `חצי ${pct(CTO.rateEnd2023)} (n = ${n5 - 0.5}), חצי ${pct(CTO.rateAmend)} (n = ${n5 - 1})` },
                     { label: "עלות שירות עבר", value: CTO_YEAR.pastService, how: `${pct(CTO.rateAmend)}, n = ${n5 - 0.5}, ביום התיקון` },
-                    { label: "P.N. — הפסד", value: CTO_YEAR.pn, kind: "pn", how: "בלי עיגולי ביניים" },
+                    { label: "P.N., הפסד", value: CTO_YEAR.pn, kind: "pn", how: "בלי עיגולי ביניים" },
                     { label: "יתרת סגירה", value: CTO_YEAR.closing, kind: "balance", how: `2 × ${CTO.newPerYear.toLocaleString("en-US")}, ${pct(CTO.rateAmend)}, n = ${n5 - 1}` },
                   ]}
                 />
@@ -169,19 +223,20 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
     ),
   },
   "emp-amend-together": {
-    lead: "אותה יתרה — שלוש דרכים לצאת ממנה: סילוק (רווח והפסד), פרישה לפי התנאים (OCI), וביטול תוכנית בתשלום (סילוק).",
+    lead: "אותה יתרה, שלוש דרכים לצאת ממנה. השאלה תמיד: לפי התנאים, או הסכם חדש?",
     body: (
       <>
+        {SETTLE_FORK}
         <Part title="א. סילוק">
           <HintLadder
             task={
               <>
-                ב-31.12.{CTO.from + 1} החברה משלמת למנהל <Money v={SETTLE.paid} /> תמורת ביטול ההתחייבות שבספרים — <M v={CTO_YEAR.closing} />. מה הרישום?
+                ב-31.12.{CTO.from + 1} החברה משלמת למנהל <Money v={SETTLE.paid} /> תמורת ביטול החוב שבספרים, <M v={CTO_YEAR.closing} />. מה הרישום?
               </>
             }
             hints={[
               "התשלום לפי תנאי התוכנית, או הסכם חדש?",
-              "הסכם מחוץ לתנאים — סילוק: יתרה פחות תשלום, לרווח והפסד.",
+              "הסכם מחוץ לתנאים: סילוק. יתרה פחות תשלום, לרווח והפסד.",
               <>
                 <M v={CTO_YEAR.closing} /> − <Money v={SETTLE.paid} /> = <M v={SETTLE_GAIN} />
               </>,
@@ -207,38 +262,46 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
                 במקום זאת: המנהל פורש במפתיע ב-{RETIRE.date}, וזכאי לפי התנאים ל-{RETIRE.years} × <Money v={CTO.newPerYear} plain /> = <Money v={RETIRE_PAID} />. איך נרשם ההפרש מול היתרה?
               </>
             }
-            hints={["האם התשלום חורג מתנאי התוכנית?", "לא — זו פרישה לפי התנאים, ולכן אין סילוק.", <>ההפרש: <Money v={RETIRE_PAID} plain /> − <M v={CTO_YEAR.closing} /></>, <><strong><M v={RETIRE_PN} /></strong> הפסד — P.N. ב-OCI.</>]}
+            hints={["התשלום חורג מתנאי התוכנית?", "לא. זו פרישה לפי התנאים, ולכן אין סילוק.", <>ההפרש: <Money v={RETIRE_PAID} plain /> − <M v={CTO_YEAR.closing} /></>, <><strong><M v={RETIRE_PN} /></strong> הפסד: P.N. ב-OCI.</>]}
           />
         </Part>
         <Part title="ג. ביטול תוכנית קטנה">
           <HintLadder
             task={
               <>
-                חברה משלמת לעובד <Money v={SMALL.paid} /> תמורת ביטול התוכנית, והיתרה בספרים <Money v={SMALL.books} />. מה הרישום — ומה היה משתנה אילו העובד פשוט התפטר מיוזמתו?
+                חברה משלמת לעובד <Money v={SMALL.paid} /> תמורת ביטול התוכנית, והיתרה בספרים <Money v={SMALL.books} />. מה הרישום? ומה היה משתנה אילו העובד פשוט התפטר?
               </>
             }
-            hints={["האם הביטול הוא לפי תנאי התוכנית?", "לא — זו עסקה שמבטלת את ההתחייבות: סילוק.", <>הפסד: <Money v={SMALL.paid} plain /> − <Money v={SMALL.books} plain /></>, <><strong><Money v={SMALL_LOSS} /></strong> הפסד מסילוק, לרווח והפסד. אילו התפטר מיוזמתו ויצא לפי התנאים — זו פרישה בלתי צפויה: P.N. ב-OCI.</>]}
+            hints={["הביטול לפי תנאי התוכנית?", "לא. זו עסקה שמבטלת את החוב: סילוק.", <>הפסד: <Money v={SMALL.paid} plain /> − <Money v={SMALL.books} plain /></>, <><strong><Money v={SMALL_LOSS} /></strong> הפסד מסילוק, לרווח והפסד. אילו התפטר ויצא לפי התנאים: פרישה בלתי צפויה, P.N. ב-OCI.</>]}
           />
         </Part>
       </>
     ),
   },
   "emp-amend-master": {
-    lead: "שינוי תנאים מפצל ויוצר שירות עבר; תשלום מחוץ לתנאים — סילוק; לפי התנאים — P.N.",
+    lead: "שינוי תנאים יוצר שירות עבר. תשלום מחוץ לתנאים: סילוק. לפי התנאים: P.N.",
     body: (
       <>
-        <ExplainTask task="הסבירו לחבר, בשלושה משפטים, מה ההבדל בין סילוק לבין פרישה בלתי צפויה." model="בשניהם ההתחייבות יוצאת מהספרים. בסילוק החברה עושה עסקה חדשה, מחוץ לתנאי התוכנית, כדי להיפטר מההתחייבות — וההפרש הוא רווח או הפסד מהעסקה, ברווח והפסד. בפרישה בלתי צפויה העובד מקבל בדיוק מה שהתוכנית קובעת, רק מוקדם — אז ההפרש הוא טעות באומדן, ומקומו ב-OCI." />
-        <Bridge summary="שינוי תנאים מפצל את השנה ויוצר שירות עבר; תשלום מחוץ לתנאים הוא סילוק; תשלום לפי התנאים הוא P.N.">
-          ומה אם החברה הפקידה כסף בקרן נפרדת שתשלם את ההטבה? איך זה משפיע על ההתחייבות ועל הריבית? {lessonRef("ias19-assets")}.
+        <ExplainTask
+          task="הסבירו לחבר, בשלושה משפטים, מה ההבדל בין סילוק לפרישה בלתי צפויה."
+          model={
+            <>
+              בשניהם החוב יוצא מהספרים. בסילוק החברה עושה עסקה חדשה, מחוץ לתנאים, וההפרש הוא רווח או הפסד מהעסקה, ברווח והפסד. בפרישה בלתי צפויה העובד מקבל בדיוק מה שהתוכנית קובעת, רק מוקדם; ההפרש הוא טעות באומדן, ב-OCI.
+              <span className="mt-2 block">{SETTLE_FORK}</span>
+            </>
+          }
+        />
+        <Bridge summary="שינוי תנאים חותך את השנה ויוצר שירות עבר. תשלום מחוץ לתנאים הוא סילוק; לפי התנאים, P.N.">
+          ומה אם החברה הפקידה כסף בקופה נפרדת שתשלם את ההטבה? איך זה משפיע על החוב ועל הריבית? {lessonRef("ias19-assets")}.
         </Bridge>
       </>
     ),
     check: quiz("emp-amend-master", [
-      { q: "המענק עולה ל-7.5% גם על השנים שעברו. ההפרש על העבר?", options: ["שירות עבר", "שירות שוטף", "P.N.", "סילוק"], answer: 0, why: "תוספת על שירות שכבר ניתן." },
-      { q: "שני צדי שירות העבר — באיזו ריבית?", options: ["של יום השינוי", "של תחילת השנה", "של סוף השנה", "כל צד בשלו"], answer: 0, why: "באותה ריבית ובאותו n." },
-      { q: "החברה משלמת 64,000 וההתחייבות בספרים 70,500. מה הרישום?", options: ["רווח מסילוק 6,500 ברווח והפסד", "P.N. רווח 6,500", "הפסד 6,500", "אין"], answer: 0, why: "סילוק — יתרה פחות תשלום." },
-      { q: "עובד פורש לפי התנאים, מוקדם מהצפוי. סילוק או P.N.?", options: ["P.N. ב-OCI", "סילוק ברווח והפסד"], answer: 0, why: "לפי התנאים — לא סילוק." },
-      { q: "תשלום של 18,000 ₪ באוגוסט — משפיע על הריבית?", options: ["כן, מקטין אותה מיומו", "לא", "מגדיל אותה", "רק בשנה הבאה"], answer: 0, why: "החוב קטן מיום התשלום." },
+      { q: "המענק עולה ל-7.5% גם על השנים שעברו. ההפרש על העבר?", options: ["שירות עבר", "שירות שוטף", "P.N.", "סילוק"], answer: 0, why: "תוספת על עבודה שכבר נעשתה." },
+      { q: "שני הצדדים של שירות העבר: באיזו ריבית?", options: ["של יום השינוי", "של תחילת השנה", "של סוף השנה", "כל צד בשלו"], answer: 0, why: "באותה ריבית ובאותו n." },
+      { q: "החברה משלמת 64,000 והחוב בספרים 70,500. מה הרישום?", options: ["רווח מסילוק 6,500 ברווח והפסד", "P.N. רווח 6,500", "הפסד 6,500", "אין"], answer: 0, why: "סילוק: יתרה פחות תשלום." },
+      { q: "עובד פורש לפי התנאים, מוקדם מהצפוי. סילוק או P.N.?", options: ["P.N. ב-OCI", "סילוק ברווח והפסד"], answer: 0, why: "לפי התנאים: לא סילוק." },
+      { q: "תשלום של 18,000 ₪ באוגוסט: משפיע על הריבית?", options: ["כן, מקטין אותה מיומו", "לא", "מגדיל אותה", "רק בשנה הבאה"], answer: 0, why: "החוב קטן מיום התשלום." },
     ]),
   },
 
