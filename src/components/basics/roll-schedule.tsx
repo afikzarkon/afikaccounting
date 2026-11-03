@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { WsAmount } from "@/components/study/ledger";
 import { cn } from "@/lib/utils";
+import { work } from "@/lib/study/ias19/formulas";
+import { Work } from "./ias19-formula";
 import { RollForward } from "./ias19-ui";
 
 /**
@@ -57,7 +58,7 @@ export function RollSchedule() {
           rows={[
             { label: "יתרת פתיחה", value: OPENING, kind: "balance" },
             { label: "שירות שוטף", value: SERVICE },
-            { label: "הוצ׳ ריבית", value: INTEREST, how: "6% × הפתיחה" },
+            { label: "הוצ׳ ריבית", value: INTEREST, how: <Work w={work.interestCost(OPENING, 0.06)} /> },
             { label: "הטבות ששולמו", value: -PAID },
             { label: "רווח (הפסד) אקטוארי", value: pn, kind: "pn", how: "P.N." },
             { label: "יתרת סגירה (ס.י)", value: c.closing, kind: "balance" },
@@ -66,13 +67,11 @@ export function RollSchedule() {
       </div>
 
       <div className="space-y-1.5 rounded-xl bg-surface-2/60 px-3.5 py-3 text-[14px] leading-relaxed text-fg">
-        <p>
-          צפוי, בלי OCI: <WsAmount v={-OPENING} /> + (<WsAmount v={-SERVICE} />) + (<WsAmount v={-INTEREST} />) + <WsAmount v={PAID} /> = <strong><WsAmount v={-EXPECTED} /></strong>. המדידה החדשה בסוף השנה:{" "}
-          <strong><WsAmount v={-c.closing} /></strong>.
-        </p>
-        <p>
-          OCI = <WsAmount v={-c.closing} /> − (<WsAmount v={-EXPECTED} />) = <strong><WsAmount v={-pn} /></strong>. {c.says}
-        </p>
+        <p>צפוי, בלי OCI:</p>
+        <Work w={work.rollExpected({ opening: OPENING, interest: INTEREST, service: SERVICE, payments: PAID })} />
+        <p>המדידה החדשה בסוף השנה, והפער הוא ה-OCI:</p>
+        <Work w={work.pnDB({ opening: OPENING, interest: INTEREST, service: SERVICE, payments: PAID, closing: c.closing })} />
+        <p>{c.says}</p>
       </div>
     </figure>
   );

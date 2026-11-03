@@ -59,15 +59,31 @@ export const FORMULA = {
   accPv: "מה שנצבר ÷ (1 + i)^n = התחייבות",
   groupsTotal: "סכום היתרות של הקבוצות = יתרת המחלקה",
   peopleTotal: "סכום החובות לכל עובד = החוב הכולל",
+  // Lesson 7: a year's roll-forward.
+  interestCost: "פתיחה × i של תחילת השנה = עלות ריבית",
+  /** The benefit one year of service adds (all the employees together), at the start-of-year rate, n counted from the year's end. */
+  service: "הטבה לשנה ÷ (1 + i)^n = עלות שירות שוטף",
+  rollDB: "פתיחה + ריבית + שירות − תשלומים + P.N. = סגירה",
+  rollExpected: "פתיחה + ריבית + שירות − תשלומים = סגירה צפויה",
+  pnDB: "סגירה − פתיחה − ריבית − שירות + תשלומים = P.N.",
+  paymentsDB: "פתיחה + ריבית + שירות + P.N. − סגירה = תשלומים",
+  nYear: "שנת התשלום − השנה שבסופה מודדים = n",
+  perYearGroup: "תשלום לעובד × עובדים × הסיכוי להישאר ÷ שנות הצבירה = הטבה לשנה",
+  liabilityMove: "שירות + ריבית + P.N. − תשלומים = השינוי בהתחייבות",
+  paidTotal: "שולם מהקרן + שולם מהחברה = התשלומים שמקטינים את ההתחייבות",
 } as const;
 
 /** A result worked out: the formula, and the same formula with the numbers in and the result. */
 export type Worked = { formula: string; numbers: string };
 
-/** An amount as the course writes it in a working line, with ₪ on the result only: a balance to the shekel, as an earlier line showed it; a small amount such as a day's cost to the agora. */
-const amt = (v: number) => fmt(Math.abs(v) >= 1_000 ? Math.round(v) : v);
+/** An amount as the course writes it in a working line, with ₪ on the result only: to the shekel, as the line that found it showed it. (A salary, a benefit per year or a day's cost goes through `cents`.) */
+const amt = (v: number) => minus(fmt(Math.round(v) || 0));
+/** A hyphen-minus becomes the course's minus sign. */
+const minus = (s: string) => s.replace(/^-/, "−");
+/** A term added with its sign: "+ 250" or "− 250" (a P.N. that is a gain). */
+const signed = (v: number) => (v < 0 ? `− ${amt(-v)}` : `+ ${amt(v)}`);
 /** The result: to the shekel, or to the agora where the course asks for it (a day's cost). */
-const money = (v: number, agorot = false) => `${fmt(agorot ? Math.round(v * 100) / 100 : Math.round(v))} ₪`;
+const money = (v: number, agorot = false) => `${minus(fmt((agorot ? Math.round(v * 100) / 100 : Math.round(v)) || 0))} ₪`;
 /** A count or a number of years: as it is, to two decimals at most (2.5 years, 340 employees). */
 const num = (v: number) => fmt(Math.round(v * 100) / 100);
 /** A salary or a benefit per year: always to the agora, on every line it appears, so a result and the next line that uses it agree. */
@@ -116,12 +132,12 @@ export const work = {
   /** The provision at the year's end: the days the stayers are expected to use, and — when the absence vests — the leavers' days too. */
   absence: (x: { stay: number; leave?: number; days: number; dayCost: number }): Worked => {
     const groups = [`${x.stay} × ${x.days}`, ...(x.leave ? [`${x.leave} × ${x.days}`] : [])].join(" + ");
-    return { formula: FORMULA.absence, numbers: `(${groups}) × ${amt(x.dayCost)} = ${money((x.stay + (x.leave ?? 0)) * x.days * x.dayCost)}` };
+    return { formula: FORMULA.absence, numbers: `(${groups}) × ${cents(x.dayCost)} = ${money((x.stay + (x.leave ?? 0)) * x.days * x.dayCost)}` };
   },
   /** Days paid or provided for, group by group, each at its own day's cost. */
   days: (groups: { staff: number; days: number; dayCost: number }[]): Worked => ({
     formula: FORMULA.days,
-    numbers: `${groups.map((g) => `${g.staff} × ${g.days} × ${amt(g.dayCost)}`).join(" + ")} = ${money(groups.reduce((s, g) => s + g.staff * g.days * g.dayCost, 0))}`,
+    numbers: `${groups.map((g) => `${g.staff} × ${g.days} × ${cents(g.dayCost)}`).join(" + ")} = ${money(groups.reduce((s, g) => s + g.staff * g.days * g.dayCost, 0))}`,
   }),
   stayers: (staff: number, leaving: number): Worked => ({ formula: FORMULA.stayers, numbers: `${staff} − ${leaving} = ${staff - leaving}` }),
   lifo: (entitlement: number, used: number): Worked => ({ formula: FORMULA.lifo, numbers: `${entitlement} − ${used} = ${Math.max(0, entitlement - used)}` }),
@@ -173,4 +189,32 @@ export const work = {
   accPv: (acc: number, i: number, n: number): Worked => ({ formula: FORMULA.accPv, numbers: `${amt(acc)} ÷ ${factor(i)}^${num(n)} = ${money(pv(acc, i, n))}` }),
   groupsTotal: (parts: number[]): Worked => ({ formula: FORMULA.groupsTotal, numbers: sumLine(parts) }),
   peopleTotal: (parts: number[]): Worked => ({ formula: FORMULA.peopleTotal, numbers: sumLine(parts) }),
+  interestCost: (opening: number, i: number): Worked => ({ formula: FORMULA.interestCost, numbers: `${amt(opening)} × ${pct(i)} = ${money(opening * i)}` }),
+  service: (perYear: number, i: number, n: number): Worked => ({ formula: FORMULA.service, numbers: `${cents(perYear)} ÷ ${factor(i)}^${num(n)} = ${money(pv(perYear, i, n))}` }),
+  rollDB: (r: { opening: number; interest: number; service: number; payments?: number; pn?: number }): Worked => ({
+    formula: FORMULA.rollDB,
+    numbers: `${amt(r.opening)} + ${amt(r.interest)} + ${amt(r.service)} − ${amt(r.payments ?? 0)} ${signed(r.pn ?? 0)} = ${money(r.opening + r.interest + r.service - (r.payments ?? 0) + (r.pn ?? 0))}`,
+  }),
+  rollExpected: (r: { opening: number; interest: number; service: number; payments?: number }): Worked => ({
+    formula: FORMULA.rollExpected,
+    numbers: `${amt(r.opening)} + ${amt(r.interest)} + ${amt(r.service)} − ${amt(r.payments ?? 0)} = ${money(r.opening + r.interest + r.service - (r.payments ?? 0))}`,
+  }),
+  pnDB: (r: { opening: number; interest: number; service: number; payments?: number; closing: number }): Worked => ({
+    formula: FORMULA.pnDB,
+    numbers: `${amt(r.closing)} − ${amt(r.opening)} − ${amt(r.interest)} − ${amt(r.service)} + ${amt(r.payments ?? 0)} = ${money(r.closing - r.opening - r.interest - r.service + (r.payments ?? 0))}`,
+  }),
+  paymentsDB: (r: { opening: number; interest: number; service: number; pn: number; closing: number }): Worked => ({
+    formula: FORMULA.paymentsDB,
+    numbers: `${amt(r.opening)} + ${amt(r.interest)} + ${amt(r.service)} ${signed(r.pn)} − ${amt(r.closing)} = ${money(r.opening + r.interest + r.service + r.pn - r.closing)}`,
+  }),
+  nYear: (payYear: number, at: number): Worked => ({ formula: FORMULA.nYear, numbers: `${payYear} − ${at} = ${payYear - at}` }),
+  perYearGroup: (payment: number, staff: number, stay: number, years: number): Worked => ({
+    formula: FORMULA.perYearGroup,
+    numbers: `${cents(payment)} × ${staff} × ${pct(stay)} ÷ ${years} = ${money((payment * staff * stay) / years, true)}`,
+  }),
+  liabilityMove: (service: number, interest: number, pn: number, payments: number): Worked => ({
+    formula: FORMULA.liabilityMove,
+    numbers: `${amt(service)} + ${amt(interest)} ${signed(pn)} − ${amt(payments)} = ${money(service + interest + pn - payments)}`,
+  }),
+  paidTotal: (fromFund: number, fromCompany: number): Worked => ({ formula: FORMULA.paidTotal, numbers: `${amt(fromFund)} + ${amt(fromCompany)} = ${money(fromFund + fromCompany)}` }),
 };

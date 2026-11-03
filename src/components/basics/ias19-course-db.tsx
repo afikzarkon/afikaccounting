@@ -22,7 +22,7 @@ import {
   LATE_TOTAL,
 } from "@/lib/study/ias19/lessons/attribute";
 import { GROUP, groupStep, VP, VP_ACCRUED, VP_LATER, VP_LATER_PER_YEAR, VP_OBLIGATION, VP_PER_YEAR } from "@/lib/study/ias19/lessons/measure";
-import { CF, CF_PER_YEAR, CHANGED, CHANGED_CLOSING, CHANGED_PER_YEAR, CHANGED_PN, RATE_ONLY_CLOSING, RATE_ONLY_PN, Y1, Y1_PN, Y2 } from "@/lib/study/ias19/lessons/rollforward";
+import { CF, CF_PER_YEAR, CHANGED, CHANGED_CLOSING, CHANGED_PER_YEAR, RATE_ONLY_CLOSING, Y1, Y1_PN, Y2 } from "@/lib/study/ias19/lessons/rollforward";
 import { lessonRef, pct } from "@/lib/study/ias19/shared";
 import { FORMULA, said, work } from "@/lib/study/ias19/formulas";
 import { FormulaFill, Ltr, type Term, Work } from "./ias19-formula";
@@ -703,7 +703,7 @@ ${said(work.counted(33, 35))}` },
       </>
     ),
     check: quiz("emp-roll-lines", [
-      { q: "פתיחה 4,000; ריבית תחילת השנה 5%; שירות 600; סגירה 4,950. מה ה-P.N.?", options: ["150, הפסד", "150, רווח", "350", "0"], answer: 0, why: "4,950 − 4,000 − 200 − 600 = 150: החוב גדל יותר מהצפוי." },
+      { q: "פתיחה 4,000; ריבית תחילת השנה 5%; שירות 600; סגירה 4,950. מה ה-P.N.?", options: ["150, הפסד", "150, רווח", "350", "0"], answer: 0, why: `${said(work.interestCost(4_000, 0.05))}\n${said(work.pnDB({ opening: 4_000, interest: 200, service: 600, closing: 4_950 }))}\nהחוב גדל יותר מהצפוי: הפסד.` },
       { q: "לאן הולך ה-P.N. של הטבה מוגדרת?", options: ["ל-OCI", "לרווח והפסד", "למאזן בלבד", "לעודפים ישירות"], answer: 0, why: "סעיף 57(ד)." },
     ]),
   },
@@ -736,19 +736,29 @@ ${said(work.counted(33, 35))}` },
             ["סגירה", "סוף השנה", "מסוף השנה עד התשלום"],
           ]}
         />
+        <Remember>
+          <span className="block">
+            <L>{FORMULA.interestCost}</L>.
+          </span>
+          <span className="block">
+            <L>{FORMULA.service}</L>, ו-n של השירות: <L>{FORMULA.nYear}</L>.
+          </span>
+        </Remember>
         <P>למה ירידת ריבית לא משנה את עלות השירות של אותה שנה? השירות נמדד לפי תחילת השנה, וכל השינוי נתפס ב-P.N.</P>
       </>
     ),
     check: quiz("emp-roll-rates", [
       { q: "באיזה שיעור מחשבים ריבית: תחילת השנה או סופה?", options: ["תחילת השנה", "סוף השנה", "ממוצע", "תלוי בשאלה"], answer: 0, why: "ריבית ושירות: תחילת השנה." },
-      { q: "סגירה ב-31.12.2025, פרישה ב-31.12.2030. מה n של עלות השירות של 2025?", options: ["5", "6", "4", "1"], answer: 0, why: "מסוף 2025 עד סוף 2030." },
+      { q: "סגירה ב-31.12.2025, פרישה ב-31.12.2030. מה n של עלות השירות של 2025?", options: ["5", "6", "4", "1"], answer: 0, why: said(work.nYear(2030, 2025)) },
     ]),
   },
   "emp-roll-rule": {
     lead: "P.N. = סגירה − פתיחה − ריבית − שירות + תשלומים. ולכל שורה, המקום שלה בדוחות.",
     body: (
       <>
-        <Rule><L>פתיחה + ריבית + עלות שירות − תשלומים + P.N. = סגירה</L>. ולכן <L>P.N. = סגירה − פתיחה − ריבית − שירות + תשלומים</L>.</Rule>
+        <Rule>
+          <L>{FORMULA.rollDB}</L>. ולכן <L>{FORMULA.pnDB}</L>.
+        </Rule>
         <Routing
           label="עלות השירות והריבית לרווח והפסד; ה-P.N. ל-OCI; הסגירה למאזן"
           title={`לאן הולכת כל שורה (סמנכ״ל הכספים, ${CF.from})`}
@@ -800,39 +810,39 @@ ${said(work.counted(33, 35))}` },
             { at: CF.from + 1, label: `⑤ ${pct(CF.rateEnd1)}`, tone: 5 },
           ]}
         />
-        <P>
-          ① הצבירה לשנה: {pct(CF.share)} × <Money v={CF.salary} plain /> × <L>{1 + CF.growth}^{n1}</L> = <strong><M v={CF_PER_YEAR} /></strong>.
-        </P>
+        <Work w={work.nYear(CF.retire, CF.from)} />
+        <P>① הצבירה לשנה:</P>
+        <Work w={work.perYearGrown(CF.share, CF.salary, CF.growth, n1)} />
         <RollForward
           title={`סמנכ״ל כספים, ${CF.from}`}
           rows={[
             { label: "יתרת פתיחה", value: 0, kind: "balance", how: "אין: שנה ראשונה" },
             { label: "עלות ריבית", value: 0, how: "אין על מה" },
-            { label: "עלות שירות", value: Y1.service, how: ltrFormulas(`${pct(CF.rateStart)}, n = ${n1}`) },
-            { label: "P.N., הפסד", value: Y1_PN, kind: "pn", how: "הריבית ירדה" },
-            { label: "יתרת סגירה", value: Y1.closing, kind: "balance", how: ltrFormulas(`${pct(CF.rateEnd1)}, n = ${n1}`) },
+            { label: "עלות שירות", value: Y1.service, how: <Work w={work.service(CF_PER_YEAR, CF.rateStart, n1)} /> },
+            { label: "P.N., הפסד", value: Y1_PN, kind: "pn", how: <>הריבית ירדה:<Work w={work.pnDB({ opening: 0, interest: 0, service: Y1.service, closing: Y1.closing })} /></> },
+            { label: "יתרת סגירה", value: Y1.closing, kind: "balance", how: <Work w={work.measure({ perYear: CF_PER_YEAR, years: 1, heads: 1, n: n1, i: CF.rateEnd1 })} /> },
           ]}
         />
         <RollForward
           title={`סמנכ״ל כספים, ${CF.from + 1}: שום הנחה לא השתנתה`}
           rows={[
             { label: "יתרת פתיחה", value: Y1.closing, kind: "balance" },
-            { label: "עלות ריבית", value: Y2.interest, how: ltrFormulas(`${pct(CF.rateEnd1)} × הפתיחה`) },
-            { label: "עלות שירות", value: Y2.service, how: ltrFormulas(`${pct(CF.rateEnd1)}, n = ${n1 - 1}`) },
-            { label: "P.N.", value: Y2.pn, kind: "pn", how: "הכול הוסבר: אפס" },
-            { label: "יתרת סגירה", value: Y2.closing, kind: "balance", how: ltrFormulas(`2 שנים, ${pct(CF.rateEnd1)}, n = ${n1 - 1}`) },
+            { label: "עלות ריבית", value: Y2.interest, how: <Work w={work.interestCost(Y1.closing, CF.rateEnd1)} /> },
+            { label: "עלות שירות", value: Y2.service, how: <Work w={work.service(CF_PER_YEAR, CF.rateEnd1, n1 - 1)} /> },
+            { label: "P.N.", value: Y2.pn, kind: "pn", how: <>הכול הוסבר:<Work w={work.pnDB({ opening: Y1.closing, interest: Y2.interest, service: Y2.service, closing: Y2.closing })} /></> },
+            { label: "יתרת סגירה", value: Y2.closing, kind: "balance", how: <Work w={work.measure({ perYear: CF_PER_YEAR, years: 2, heads: 1, n: n1 - 1, i: CF.rateEnd1 })} /> },
           ]}
         />
         <Part title={`ואם בסוף ${CF.from + 1} ההנחות השתנו?`}>
           <P>
             הפרישה נדחית ל-31.12.{CHANGED.retire} (עוד שנה של עליית שכר), והריבית יורדת ל-{pct(CHANGED.rateEnd)}. ריבית ושירות לא זזים: הם לפי תחילת השנה.
           </P>
-          <P>
-            רק הסגירה: 2 × <M v={CHANGED_PER_YEAR} /> ÷ <L>{1 + CHANGED.rateEnd}^{CHANGED.retire - CF.from - 1}</L> = <M v={CHANGED_CLOSING} />.
-          </P>
-          <P>
-            <L>P.N. = <M v={CHANGED_CLOSING} /> − <M v={Y2.closing} /> = <strong><M v={CHANGED_PN} /></strong></L> הפסד, ל-OCI.
-          </P>
+          <P>עוד שנה של עליית שכר מגדילה את ①:</P>
+          <Work w={work.perYearGrown(CF.share, CF.salary, CF.growth, CHANGED.retire - CF.from)} />
+          <P>רק הסגירה זזה:</P>
+          <Work w={work.measure({ perYear: CHANGED_PER_YEAR, years: 2, heads: 1, n: CHANGED.retire - CF.from - 1, i: CHANGED.rateEnd })} />
+          <P>וה-P.N., הפסד ל-OCI:</P>
+          <Work w={work.pnDB({ opening: Y1.closing, interest: Y2.interest, service: Y2.service, closing: CHANGED_CLOSING })} />
         </Part>
       </>
     ),
@@ -863,12 +873,20 @@ ${said(work.counted(33, 35))}` },
             }
             hints={[
               "אילו שורות תלויות בריבית של סוף השנה?",
-              "רק הסגירה. פתיחה, ריבית ושירות לא זזים.",
               <>
-                סגירה: 2 × <M v={CF_PER_YEAR} /> ÷ <L>{1 + CHANGED.rateEnd}^{n1 - 1}</L> = <M v={RATE_ONLY_CLOSING} />
+                רק הסגירה. פתיחה, ריבית ושירות לא זזים, וה-P.N. יוצא מהמעגל:
+                <span className="block">
+                  <L>{FORMULA.pnDB}</L>
+                </span>
               </>,
               <>
-                <L>P.N. = <M v={RATE_ONLY_CLOSING} /> − <M v={Y2.closing} /> = <strong><M v={RATE_ONLY_PN} /></strong></L> הפסד (בלי עיגולי ביניים). ואם הריבית הייתה עולה? החוב היה קטן, וה-P.N. רווח.
+                סגירה:
+                <Work w={work.measure({ perYear: CF_PER_YEAR, years: 2, heads: 1, n: n1 - 1, i: CHANGED.rateEnd })} />
+              </>,
+              <>
+                <Work w={work.measure({ perYear: CF_PER_YEAR, years: 2, heads: 1, n: n1 - 1, i: CHANGED.rateEnd })} />
+                <Work w={work.pnDB({ opening: Y1.closing, interest: Y2.interest, service: Y2.service, closing: RATE_ONLY_CLOSING })} />
+                הפסד (בלי עיגולי ביניים). ואם הריבית הייתה עולה? החוב היה קטן, וה-P.N. רווח.
               </>,
             ]}
           />
@@ -905,7 +923,7 @@ ${said(work.counted(33, 35))}` },
       </>
     ),
     check: quiz("emp-roll-master", [
-      { q: "פתיחה 2,000; ריבית תחילת השנה 5%; שירות 400; תשלומים 300; סגירה 2,300. מה ה-P.N.?", options: ["100, הפסד", "100, רווח", "0", "200"], answer: 0, why: "צפוי: 2,000 + 100 + 400 − 300 = 2,200. בפועל 2,300: החוב גדל ב-100 יותר מהצפוי, הפסד." },
+      { q: "פתיחה 2,000; ריבית תחילת השנה 5%; שירות 400; תשלומים 300; סגירה 2,300. מה ה-P.N.?", options: ["100, הפסד", "100, רווח", "0", "200"], answer: 0, why: `${said(work.interestCost(2_000, 0.05))}\n${said(work.pnDB({ opening: 2_000, interest: 100, service: 400, payments: 300, closing: 2_300 }))}\nהחוב גדל ב-100 יותר מהצפוי: הפסד.` },
       { q: "ריבית: באיזה שיעור?", options: ["תחילת השנה", "סוף השנה"], answer: 0, why: "ריבית ושירות לפי תחילת השנה." },
       { q: "לאן הולך ה-P.N.?", options: ["ל-OCI", "לרווח והפסד"], answer: 0, why: "מדידה מחדש של הטבה מוגדרת: OCI (סעיף 57(ד))." },
       { q: "למה ירידת ריבית בסוף השנה לא משנה את עלות השירות של אותה שנה?", options: ["כי השירות נמדד לפי תחילת השנה, והשינוי נתפס ב-P.N.", "כי השירות לא מהוון", "כי היא משנה, רק מעט", "כי השירות נמדד בשנה הבאה"], answer: 0, why: "זה התפקיד של ה-P.N." },
