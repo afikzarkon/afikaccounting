@@ -1,11 +1,11 @@
-import { FileText, Handshake, Plane, Store } from "lucide-react";
+import { Eye, EyeOff, FileText, Handshake, Plane, Store } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
 import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
-import { CLOSING, CLOSING_EXTRA, SIMPLE_BANK, SIMPLE_PV } from "@/lib/study/ias19/lessons/map";
+import { CLOSING, CLOSING_EXTRA, SIMPLE_BANK, SIMPLE_PV, WHY_GRANT, WHY_PER_YEAR } from "@/lib/study/ias19/lessons/map";
 import { lessonRef, lessonsRef, STAGES } from "@/lib/study/ias19/shared";
 import { Bridge, ExplainTask, HintLadder, Ladder, MapBranch, MindMap, T19 } from "./ias19-ui";
-import { BankStatement, PvSlide, Staircase, Timeline, TwoPanel } from "./ias19-visuals";
+import { BankStatement, PvSlide, Staircase, Timeline, TwoPanel, YearBars } from "./ias19-visuals";
 import { MiniQuiz, SortQuiz } from "./inventory-interactive";
 import { Sorted, Story } from "./inventory-teach";
 import { Money, Rule, Stepper } from "./ui";
@@ -64,6 +64,61 @@ const DRAWERS = (
 export const IAS19_BASICS_SCREENS: Record<string, ScreenContent> = {
   // ---------------------------------------------------------------------------
   // Lesson 1: the map.
+  "emp-map-why": {
+    lead: "תקן אחד לכל מה שחברה נותנת לעובדים, כדי שהעלות תירשם כשהיא נוצרת.",
+    body: (
+      <>
+        <P>IAS 19 הוא תקן חשבונאות בינלאומי. הוא קובע איך חברה מדווחת על כל מה שהיא נותנת לעובדים בתמורה לעבודה.</P>
+        <P>הוא לא קובע כמה לשלם. הוא קובע מתי לרשום את העלות בדוחות, ובכמה.</P>
+        <P>משכורת של החודש פשוטה. הקושי הוא בהבטחות לעתיד: מענק בפרישה, פנסיה, בונוס בעוד שנתיים.</P>
+        <Part title="הבעיה: מה קורה בלי התקן">
+          <P>
+            חברה מבטיחה לעובד מענק של <Money v={WHY_GRANT.grant} /> אחרי {WHY_GRANT.years} שנות עבודה. אם רושמים הוצאה רק כשמשלמים, ארבע שנים אין הוצאה בכלל.
+          </P>
+          <P>ובשנה החמישית נופלת כל ההוצאה בבת אחת. אבל העובד עבד בכל חמש השנים, והעלות שייכת לכל אחת מהן.</P>
+          <YearBars
+            label={`הוצאה בכל שנה: בלי התקן, אפס בשנים 1 עד 4 ו-${WHY_GRANT.grant} בשנה 5. עם IAS 19, ${WHY_PER_YEAR} בכל אחת מחמש השנים`}
+            title="ההוצאה בכל שנה, בשתי הדרכים"
+            series={[
+              { name: "בלי התקן: רק כשמשלמים", values: Array.from({ length: WHY_GRANT.years }, (_, k) => (k === WHY_GRANT.years - 1 ? WHY_GRANT.grant : 0)), tone: "danger" },
+              { name: "עם IAS 19: בכל שנת עבודה", values: Array(WHY_GRANT.years).fill(WHY_PER_YEAR), tone: 1 },
+            ]}
+            note={
+              <>
+                עם התקן: <Money v={WHY_PER_YEAR} /> בכל שנה. לפשטות, עדיין בלי ריבית; את ההיוון נוסיף בהמשך.
+              </>
+            }
+          />
+        </Part>
+        <Part title="למה זה חשוב">
+          <P>מי שקורא את הדוחות רוצה לדעת כמה עלתה השנה באמת, וכמה החברה חייבת. בלי התקן הוא טועה בשני הדברים.</P>
+          <TwoPanel
+            label="בלי התקן: בשנים 1 עד 4 הרווח נראה גבוה מדי והחוב לעובד לא מופיע במאזן, ובשנה 5 יש הפתעה. עם IAS 19: כל שנה נושאת את העלות שלה והחוב מופיע במאזן"
+            panels={[
+              { title: "בלי התקן", icon: <EyeOff />, steps: ["שנים 1–4: הרווח נראה גבוה מדי", "החוב לעובד לא מופיע במאזן", "שנה 5: הפסד בהפתעה"], verdict: "תמונה מטעה", tone: "danger" },
+              { title: "עם IAS 19", icon: <Eye />, steps: ["כל שנה נושאת את העלות שלה", "החוב מופיע במאזן, וגדל עם העבודה", "אין הפתעות"], verdict: "תמונה נכונה", tone: 1 },
+            ]}
+          />
+        </Part>
+        <Rule>על רגל אחת: IAS 19 דואג שעלות העובדים תירשם בשנה שבה עבדו, ושהחוב אליהם יופיע במאזן, גם כשהתשלום רחוק.</Rule>
+        <Remember>לכל חברה עם עובדים יש הטבות עובד. לכן התקן נוגע כמעט בכל חברה, ובכל דוח כספי.</Remember>
+      </>
+    ),
+    check: quiz("emp-map-why", [
+      {
+        q: "מה IAS 19 קובע?",
+        options: ["מתי ובכמה רושמים בדוחות את עלות ההטבות לעובדים", "כמה החברה חייבת לשלם לעובדים", "איך מחשבים מס הכנסה לעובד", "מי זכאי לפנסיה לפי החוק"],
+        answer: 0,
+        why: "התקן לא קובע את ההטבה עצמה. הוא קובע איך מדווחים עליה.",
+      },
+      {
+        q: "חברה רושמת הוצאה על מענק פרישה רק ביום התשלום. מה הבעיה?",
+        options: ["בשנים שבהן עבדו הרווח נראה גבוה מדי, והחוב לא מופיע במאזן", "אין בעיה, ככה זה שמרני", "ההוצאה הכוללת יוצאת גדולה יותר", "העובד מקבל פחות כסף"],
+        answer: 0,
+        why: "העלות שייכת לשנים שבהן עבדו. רישום ביום התשלום מסתיר אותה עד אז.",
+      },
+    ]),
+  },
   "emp-map-welcome": {
     lead: "כל הקורס יוצא מארבעה סוגי הטבות, ועיקרון אחד מחבר את כולם.",
     body: (

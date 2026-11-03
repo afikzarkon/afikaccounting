@@ -12,6 +12,9 @@ export const CLOSING_EXTRA = CLOSING.stayToEnd - CLOSING.leaveEarly;
 /** "IAS 19 in a minute and a half": 100 ₪ three years away, and the debt's bank statement — round numbers, no calculation asked. */
 export const SIMPLE_PV = { fv: 100, i: 0.1, n: 3 };
 export const SIMPLE_BANK = { opening: 1_000, service: 100, interest: 50, paid: 30 };
+/** The opening screen: a grant paid after five years of work — booked when paid, against booked as the work is done (no discounting yet). */
+export const WHY_GRANT = { grant: 100_000, years: 5 };
+export const WHY_PER_YEAR = WHY_GRANT.grant / WHY_GRANT.years;
 
 /** Ten benefits to sort, without computing anything — and the kind of each. */
 export const TEN: { id: string; text: string; kind: number; why: string }[] = [
@@ -69,9 +72,10 @@ export const MAP: StudyModule = {
   course: COURSE,
   n: 1,
   title: "המפה הגדולה: ארבעת סוגי ההטבות והעיקרון המרכזי",
-  description: "מפת הקורס והעיקרון שמאחורי הכול: עבודה של היום יוצרת התחייבות היום. אחר כך ארבעת סוגי ההטבות, ארבע שאלות מיון, ומיון של אחת־עשרה הטבות בלי מחשבון.",
+  description: "מה זה IAS 19 ולמה צריך אותו. אחר כך מפת הקורס והעיקרון שמאחורי הכול: עבודה של היום יוצרת התחייבות היום. אחר כך ארבעת סוגי ההטבות, ארבע שאלות מיון, ומיון של אחת־עשרה הטבות בלי מחשבון.",
   goal: "לסווג כל הטבה לאחד מארבעת הסוגים, ולהסביר מתי נרשמת התחייבות ומתי נרשמת הוצאה.",
   outcomes: [
+    "להסביר במשפט אחד מה IAS 19 קובע, ולמה בלעדיו הדוחות מטעים",
     "להסביר למה הטבה שתשולם בעוד שנים נרשמת כבר בשנה שבה עבדו",
     "לזהות את ארבעת סוגי ההטבות ואת הסעיף של כל אחד בתקן",
     "למיין הטבה בארבע שאלות, לפי הסדר",
@@ -79,6 +83,7 @@ export const MAP: StudyModule = {
   ],
   backHref: COURSE_HREF,
   screens: [
+    { id: "emp-map-why", title: "IAS 19 על רגל אחת: מה זה ולמה צריך אותו" },
     { id: "emp-map-welcome", title: "מה נלמד בקורס, ואיפה הכול במפה" },
     { id: "emp-map-principle", title: "העיקרון: עבודה של היום, התחייבות של היום" },
     { id: "emp-map-simple", title: "IAS 19 בדקה וחצי" },

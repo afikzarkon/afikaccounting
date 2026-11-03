@@ -106,4 +106,8 @@ describe("before we start: the primer, and the glossary", () => {
     const ids = IAS19_LESSONS[0].screens.map((s) => s.id);
     assert.equal(ids[ids.indexOf("emp-map-principle") + 1], "emp-map-simple");
   });
+
+  it("the course opens on what IAS 19 is and why it is needed", () => {
+    assert.equal(IAS19_LESSONS[0].screens[0].id, "emp-map-why");
+  });
 });
