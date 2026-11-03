@@ -1,13 +1,14 @@
-import { ArrowLeft, Layers, Printer } from "lucide-react";
+import { Printer } from "lucide-react";
 import { balancesOf, ledger, statements, trialBalance } from "@/lib/learn/basics";
 import { ALMOG } from "@/lib/learn/basics-exam";
 import { ZAYIT, RIMON, SIGAL } from "@/lib/learn/worksheet";
 import { Given } from "./credit";
 import { Glossary } from "./glossary";
+import { Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { PrintButton } from "./print-button";
 import { Tabs } from "./tabs";
-import { Calc, KeyCard, Money, Rule, Stepper, TBTable } from "./ui";
+import { Calc, Money, Rule, Stepper, TBTable } from "./ui";
 import { Reveal, TryFirst } from "./year";
 import { WorksheetWalk } from "./worksheet";
 import { WorksheetGame } from "./worksheet-game";
@@ -55,18 +56,14 @@ export const FINAL_SCREENS: Record<string, ScreenContent> = {
     lead: "גיליון רב-טורי מוביל, בטבלה אחת, ממאזן הבוחן לפני ההתאמות ועד רווח השנה ויתרת העודפים בסוף השנה.",
     body: (
       <>
-        <KeyCard icon={<Layers className="h-5 w-5" />}>כל מה שלמדנו עד עכשיו נועד להגיע לרגע הזה: מרכזים הכול בגיליון אחד.</KeyCard>
-        <ol className="flex flex-wrap items-stretch gap-2 [column-span:all]">
+        <p>כל מה שלמדנו עד עכשיו נועד להגיע לרגע הזה: מרכזים הכול בגיליון אחד. העמודות שלו, לפי הסדר:</p>
+        <ol className="max-w-[70ch] space-y-1.5">
           {COLUMNS.map(([title, what], i) => (
-            <li key={title} className="flex min-w-0 flex-[1_1_10rem] items-center gap-2">
-              <div className="h-full flex-1 rounded-xl border border-line bg-surface px-3 py-2.5">
-                <p className="flex items-center gap-1.5 text-[15px] font-bold text-fg">
-                  <span className="num grid h-6 w-6 place-items-center rounded-full bg-accent text-[12px] text-accent-fg">{i + 1}</span>
-                  {title}
-                </p>
-                <p className="mt-1 text-[13.5px] text-muted">{what}</p>
-              </div>
-              {i < COLUMNS.length - 1 && <ArrowLeft className="h-4 w-4 shrink-0 text-subtle max-sm:hidden" aria-hidden />}
+            <li key={title} className="flex items-baseline gap-2.5">
+              <span className="num grid h-6 w-6 shrink-0 place-items-center self-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
+              <span>
+                <strong className="text-fg">{title}</strong> — {what}
+              </span>
             </li>
           ))}
         </ol>
@@ -74,7 +71,7 @@ export const FINAL_SCREENS: Record<string, ScreenContent> = {
           <strong>מה מקבלים בשאלה:</strong> מאזן בוחן לפני התאמות, ורשימת עובדות — מה קרה ומה לא נרשם. <strong>מה מבקשים:</strong> לבנות את הגיליון, ולהגיע לרווח השנה
           ולעודפי הסגירה.
         </p>
-        <Rule>מאזן בוחן לפני התאמות + התאמות = מאזן בוחן סופי. ממנו: תוצאתי ← רווח השנה; מאזני ← עם עודפי הסגירה, מאוזן.</Rule>
+        <Remember>מאזן בוחן לפני התאמות + התאמות = מאזן בוחן סופי. ממנו: תוצאתי ← רווח השנה; מאזני ← עם עודפי הסגירה, מאוזן.</Remember>
       </>
     ),
   },
@@ -82,7 +79,7 @@ export const FINAL_SCREENS: Record<string, ScreenContent> = {
   "ws-question": {
     body: (
       <Given title={`נתון: ${RIMON.name} — מאזן בוחן ליום ${RIMON.date}, לפני פקודות התאמה`} asks={<>גיליון רב-טורי ליום {RIMON.date}, רווח השנה ועודפי הסגירה.</>}>
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-4">
           <TBTable tb={trialBalance(RIMON.preliminary)} caption="מאזן בוחן לפני התאמות" />
           <div>
             <p className="mb-1.5 font-bold">מידע נוסף לסוף השנה:</p>
@@ -107,25 +104,17 @@ export const FINAL_SCREENS: Record<string, ScreenContent> = {
 
   "ws-game": {
     lead: `עכשיו תורכם, עם חברה חדשה — ${SIGAL.name}. ממיינים את המאזן הראשוני (אפשר נגד השעון), רושמים ומשבצים כל פקודת התאמה, ומגיעים לרווח השנה.`,
-    body: (
-      <div className="[column-span:all]">
-        <WorksheetGame c={SIGAL} />
-      </div>
-    ),
+    body: <WorksheetGame c={SIGAL} />,
   },
 
   "ws-game-hard": {
     lead: `אותו משחק, ברמה של בחינה — ${ZAYIT.name}: יתרה אחת במאזן לא נתונה, פקודה מורכבת, פקודת תיקון, ונתונים שצריך לחשב לפני שרושמים. ובסוף — גם רווח השנה וגם עודפי הסגירה.`,
-    body: (
-      <div className="[column-span:all]">
-        <WorksheetGame c={ZAYIT} />
-      </div>
-    ),
+    body: <WorksheetGame c={ZAYIT} />,
   },
   "ws-exam": {
     lead: `השאלה המסכמת של הקורס, ברמת בחינה — ${ALMOG.name}: שלוש יתרות חסרות, חוזים שמתחדשים ונגמרים, תיקונים, הפסדי אשראי ומלאי. כל נושא בקורס, בשאלה אחת. פתרו כל שלב לבד, ורק אז פתחו.`,
     body: (
-      <div className="space-y-4 [column-span:all]">
+      <>
         <Given title={`נתון: ${ALMOG.name} — מאזן בוחן ראשוני ליום ${ALMOG.date}`} asks={<>השלמת שלוש היתרות החסרות, פקודות התאמה ותיקון, מאזן בוחן סופי, רווח השנה ועודפי הסגירה.</>}>
           <ExamGiven />
         </Given>
@@ -163,8 +152,8 @@ export const FINAL_SCREENS: Record<string, ScreenContent> = {
             },
           ]}
         />
-        <KeyCard>ארבע מלכודות בשאלה: ההפרשה אחרי התיקון והמחיקה · ריבית חצי שנתית · השכירות שנגמרה מתאפסת · העודפים — רק אחרי שאר היתרות.</KeyCard>
-      </div>
+        <Remember>ארבע מלכודות בשאלה: ההפרשה אחרי התיקון והמחיקה · ריבית חצי שנתית · השכירות שנגמרה מתאפסת · העודפים — רק אחרי שאר היתרות.</Remember>
+      </>
     ),
   },
 };

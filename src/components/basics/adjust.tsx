@@ -1,5 +1,6 @@
-import { Banknote, ClipboardList } from "lucide-react";
+import { Banknote } from "lucide-react";
 import { ACCRUAL, balancesOf, costOfSales, type Entry, interestFor, ledger, COGS_CASE, ODD, ODD_RESULTS, PERIOD, SHACHAR, round2, statements, trialBalance } from "@/lib/learn/basics";
+import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { cn } from "@/lib/utils";
 import { AdjustedTrialBalance, type Move } from "./adjusted-tb";
@@ -7,7 +8,7 @@ import { MiniQuiz } from "./inventory-interactive";
 import { EntryViews } from "./entry-views";
 import { TCardsDialog } from "./t-dialog";
 import { Posted } from "./t-accounts";
-import { Calc, JE, KeyCard, Money, Rule, StatementsView, type Step, Stepper, TBTable } from "./ui";
+import { Calc, JE, Money, Rule, StatementsView, type Step, Stepper, TBTable } from "./ui";
 
 const EXAMPLE_FINAL = balancesOf(ledger(SHACHAR.adjustments, SHACHAR.preliminary));
 const EXAMPLE_S = statements(EXAMPLE_FINAL);
@@ -53,16 +54,16 @@ function Timeline({ segments, cash, cashAt }: { segments: Segment[]; cash: strin
   );
 }
 
-/** One cut-off case: how it differs from the one before, the story, the sum written out, and the adjustment with its cards. */
+/** One cut-off case: how it differs from the one before, the story, the sum written out, the adjustment with its cards — and how the account's balance behaves, last. */
 function CutoffStep({
-  analogy,
+  picture,
   diff,
   story,
   timeline,
   calc,
   views,
 }: {
-  analogy: React.ReactNode;
+  picture: Picture;
   diff: React.ReactNode;
   story: React.ReactNode;
   timeline: React.ReactNode;
@@ -71,15 +72,16 @@ function CutoffStep({
 }) {
   return (
     <>
-      {analogy}
       <p className="rounded-lg bg-fg/[0.04] px-3 py-2 text-[14px] text-fg">
         <span className="me-1.5 rounded-md bg-fg px-1.5 py-0.5 text-[11px] font-bold text-surface">במה שונה</span>
         {diff}
       </p>
+      <Analogy {...picture} />
       <p>{story}</p>
       {timeline}
       {calc}
       {views}
+      <Remember>{picture.rule}</Remember>
     </>
   );
 }
@@ -157,7 +159,7 @@ const PICTURES: Record<"prepaid" | "accrued" | "unearned" | "receivable", Pictur
 };
 
 /** The everyday picture of a cut-off account: the story, its entries, the card, and its balance after each entry. */
-function Analogy({ title, story, account, entries, rule }: Picture) {
+function Analogy({ title, story, account, entries }: Picture) {
   const card = ledger(entries).find((t) => t.account === account)!;
   const after = entries.map((_, i) => balancesOf(ledger(entries.slice(0, i + 1)))[account] ?? 0);
   return (
@@ -187,7 +189,6 @@ function Analogy({ title, story, account, entries, rule }: Picture) {
           </span>
         ))}
       </p>
-      <p className="rounded-lg bg-surface px-3 py-2 text-[14.5px] font-semibold text-fg">{rule}</p>
     </section>
   );
 }
@@ -249,7 +250,7 @@ const cutoff: Step[] = [
     title: "1. הוצאות מראש — נכס",
     body: (
       <CutoffStep
-        analogy={<Analogy {...PICTURES.prepaid} />}
+        picture={PICTURES.prepaid}
         diff="הראשון: הכסף יצא לפני שנהנינו."
         story={
           <>
@@ -280,7 +281,7 @@ const cutoff: Step[] = [
     title: "2. הוצאות לשלם — התחייבות",
     body: (
       <CutoffStep
-        analogy={<Analogy {...PICTURES.accrued} />}
+        picture={PICTURES.accrued}
         diff="ההפך מהקודם: כבר נהנינו, והכסף עוד לא יצא."
         story={
           <>
@@ -307,7 +308,7 @@ const cutoff: Step[] = [
     title: "3. הכנסות מראש — התחייבות",
     body: (
       <CutoffStep
-        analogy={<Analogy {...PICTURES.unearned} />}
+        picture={PICTURES.unearned}
         diff="המראה של הוצאות מראש, בצד ההכנסות: הכסף נכנס לפני שנתנו את השירות."
         story={
           <>
@@ -336,7 +337,7 @@ const cutoff: Step[] = [
     title: "4. הכנסות לקבל — נכס",
     body: (
       <CutoffStep
-        analogy={<Analogy {...PICTURES.receivable} />}
+        picture={PICTURES.receivable}
         diff="המראה של הוצאות לשלם: כבר הרווחנו, והכסף עוד לא נכנס."
         story={
           <>
@@ -436,7 +437,7 @@ const odd = (text: string, dr: string, cr: string, amount: number): Entry => ({ 
 /** One odd-month case: the story, the regular month and the odd one, and the adjustment. */
 function OddCase({ n, title, story, steps, entry }: { n: number; title: string; story: React.ReactNode; steps: React.ReactNode[]; entry: Entry }) {
   return (
-    <li className="grid gap-3 rounded-2xl border border-line bg-surface p-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+    <li className="space-y-3 rounded-2xl border border-line bg-surface p-4">
       <div className="space-y-2">
         <p className="flex items-center gap-2 text-[16px] font-bold text-fg">
           <span className="num grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent text-[13px] font-bold text-accent-fg">{n}</span>
@@ -462,44 +463,40 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
     lead: "״הוצאות ביטוח מראש״, ״הוצאות שכר לשלם״ — נשמעים כמו הוצאות, אבל הם בכלל חשבונות מאזניים: נכס או התחייבות. איך זה ייתכן?",
     body: (
       <>
-        <section className="space-y-2 rounded-2xl border border-line bg-surface-2/60 p-4">
-          <h3 className="text-lg font-semibold text-fg">תקופה חשבונאית ועקרון ההקבלה</h3>
+        <p>
+          <strong>תקופה חשבונאית ועקרון ההקבלה.</strong> העסק לא עוצר ב-31.12 — אבל הדוחות כן. לכן מחלקים את חיי העסק ל<strong>תקופות דיווח</strong>: שנה, חצי
+          שנה או רבעון. בכל תקופה רושמים רק את ההכנסות וההוצאות ששייכות לה.
+        </p>
+        <p>
+          <strong>עקרון ההקבלה</strong> אומר: הוצאה נרשמת באותה תקופה כמו ההכנסה שהיא עזרה לייצר. רק כך רואים כמה כל שנה באמת הרוויחה. חסרה הוצאה של השנה?
+          משלימים. נרשמה הוצאה של השנה הבאה? מוציאים. ארבעת חשבונות החתך הם הכלים שבהם עושים את זה.
+        </p>
+        <Part title="השם מטעה — אם קוראים רק את המילה הראשונה">
           <p>
-            העסק לא עוצר ב-31.12 — אבל הדוחות כן. לכן מחלקים את חיי העסק ל<strong>תקופות דיווח</strong>: שנה, חצי שנה או רבעון. בכל תקופה רושמים רק את ההכנסות
-            וההוצאות ששייכות לה.
+            המילה הראשונה אומרת <strong>מאיפה</strong> החשבון בא: מהוצאה או מהכנסה. המילה האחרונה — <strong>מראש</strong>, <strong>לשלם</strong>,{" "}
+            <strong>לקבל</strong> — אומרת
+            <strong> מה הוא עכשיו</strong>: משהו ששייך לשנה הבאה, או כסף שעוד חייבים לנו או שאנחנו חייבים. ולכן הוא במאזן:
+          </p>
+          <ul className="divide-y divide-line">
+            {NAMES.map(([from, word, kind]) => (
+              <li key={word + from} className="flex items-center justify-between gap-2 py-2">
+                <span className="text-[15.5px]">
+                  <span className="text-subtle">{from} </span>
+                  <strong className="text-fg">{word}</strong>
+                </span>
+                <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-[12px] font-bold", kind === "נכס" ? "bg-debit/10 text-debit" : "bg-credit/10 text-credit")}>{kind} · מאזני</span>
+              </li>
+            ))}
+          </ul>
+        </Part>
+        <Part title="למה צריך אותם: חותכים את השנה ב-31.12">
+          <p>
+            הרווח של שנה צריך לספור רק את ההכנסות וההוצאות <strong>של אותה שנה</strong> — זה הבסיס המצטבר. אבל הכסף לא תמיד זז באותה שנה: לפעמים משלמים מראש על
+            השנה הבאה, ולפעמים משלמים רק אחרי שהשנה נגמרה. לכן בסוף השנה עוצרים, ״חותכים״ ב-31.12, ומתקנים: מה ששייך לשנה הבאה מוציאים מהרווח של השנה, ומה שחסר
+            — מוסיפים. ההפרש לא נעלם: הוא יושב בינתיים במאזן, בחשבון חתך, ועובר איתנו לשנה הבאה.
           </p>
           <p>
-            <strong>עקרון ההקבלה</strong> אומר: הוצאה נרשמת באותה תקופה כמו ההכנסה שהיא עזרה לייצר. רק כך רואים כמה כל שנה באמת הרוויחה. חסרה הוצאה של השנה?
-            משלימים. נרשמה הוצאה של השנה הבאה? מוציאים. ארבעת חשבונות החתך הם הכלים שבהם עושים את זה.
-          </p>
-        </section>
-        <h3 className="text-lg font-semibold text-fg">השם מטעה — אם קוראים רק את המילה הראשונה</h3>
-        <p>
-          המילה הראשונה אומרת <strong>מאיפה</strong> החשבון בא: מהוצאה או מהכנסה. המילה האחרונה — <strong>מראש</strong>, <strong>לשלם</strong>, <strong>לקבל</strong> — אומרת
-          <strong> מה הוא עכשיו</strong>: משהו ששייך לשנה הבאה, או כסף שעוד חייבים לנו או שאנחנו חייבים. ולכן הוא במאזן:
-        </p>
-        <ul className="grid gap-2 sm:grid-cols-2">
-          {NAMES.map(([from, word, kind]) => (
-            <li key={word + from} className="flex items-center justify-between gap-2 rounded-xl border border-line bg-surface px-3.5 py-2.5">
-              <span className="text-[15.5px]">
-                <span className="text-subtle">{from} </span>
-                <strong className="text-fg">{word}</strong>
-              </span>
-              <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-[12px] font-bold", kind === "נכס" ? "bg-debit/10 text-debit" : "bg-credit/10 text-credit")}>{kind} · מאזני</span>
-            </li>
-          ))}
-        </ul>
-
-        <h3 className="pt-1 text-lg font-semibold text-fg">למה צריך אותם: חותכים את השנה ב-31.12</h3>
-        <p>
-          הרווח של שנה צריך לספור רק את ההכנסות וההוצאות <strong>של אותה שנה</strong> — זה הבסיס המצטבר. אבל הכסף לא תמיד זז באותה שנה: לפעמים משלמים מראש על
-          השנה הבאה, ולפעמים משלמים רק אחרי שהשנה נגמרה. לכן בסוף השנה עוצרים, ״חותכים״ ב-31.12, ומתקנים: מה ששייך לשנה הבאה מוציאים מהרווח של השנה, ומה שחסר —
-          מוסיפים. ההפרש לא נעלם: הוא יושב בינתיים במאזן, בחשבון חתך, ועובר איתנו לשנה הבאה.
-        </p>
-
-        <div className="space-y-3 rounded-2xl border border-line bg-surface-2/60 p-4">
-          <p className="font-semibold text-fg">
-            דוגמה: ב-1.11 שילמתם <Money v={RENT.paid} /> שכירות על שנה שלמה, ורשמתם הכול כהוצאה.
+            <strong>דוגמה: ב-1.11 שילמתם <Money v={RENT.paid} /> שכירות על שנה שלמה, ורשמתם הכול כהוצאה.</strong>
           </p>
           <div className="flex overflow-hidden rounded-lg text-center text-[13px] font-semibold" aria-hidden>
             <span className="bg-accent py-2 text-accent-fg" style={{ flex: RENT.thisYear }}>
@@ -509,7 +506,7 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
               {12 - RENT.thisYear} חודשים בשנה הבאה
             </span>
           </div>
-          <ul className="space-y-1.5 text-[15px]">
+          <ul className="list-disc space-y-1 ps-5 marker:text-subtle">
             <li>
               עד 31.12 עברו {RENT.thisYear} חודשים: <Money v={rentThisYear} /> הם <strong>הוצאה של השנה</strong> — בדוח רווח והפסד.
             </li>
@@ -518,8 +515,11 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
               <strong>״הוצאות שכירות מראש״</strong>.
             </li>
           </ul>
-          <p className="text-[14.5px] text-muted">אותו היגיון עובד בכל הכיוונים: הוצאה או הכנסה, כסף שזז מראש או כסף שעוד לא זז — ויוצאים בדיוק ארבעת חשבונות החתך שלמעלה. במסכים הבאים, כל אחד בנפרד.</p>
-        </div>
+          <p>
+            אותו היגיון עובד בכל הכיוונים: הוצאה או הכנסה, כסף שזז מראש או כסף שעוד לא זז — ויוצאים בדיוק ארבעת חשבונות החתך שלמעלה. במסכים הבאים, כל אחד בנפרד.
+          </p>
+        </Part>
+        <Remember>הוצאות מראש והכנסות לקבל — נכסים. הוצאות לשלם והכנסות מראש — התחייבויות.</Remember>
       </>
     ),
     check: (
@@ -614,21 +614,17 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
   "adj-example": {
     body: (
       <>
-        {/* What the example starts from, and why it needs fixing — before the walkthrough. Spans both columns on a wide screen. */}
-        <div className="space-y-2 rounded-2xl border-2 border-amber-500/50 bg-amber-500/[0.08] px-4 py-3.5 [column-span:all]">
-          <p className="flex items-center gap-2 text-[16px] font-bold text-fg">
-            <ClipboardList className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden /> מה נתון, ומה עושים
-          </p>
-          <p className="text-[15px] leading-relaxed text-fg">
-            <strong>נתון: מאזן בוחן ליום 31.12, לפני פקודות התאמה וחתך.</strong> במהלך השנה הנהלת החשבונות רשמה פקודות יומן שלא לפי הכללים של חשבונות החתך —
-            כאילו כל תשלום וכל תקבול שייכים כולם לשנה הנוכחית, אף שחלקם משמשים גם שנים אחרות.
-          </p>
-          <p className="text-[15px] leading-relaxed text-fg">
-            <strong>מה עושים:</strong> בדוגמה שלפניכם נתקן את החשבונות הרשומים — לכל סעיף נבצע פקודת התאמה וחתך, כך שכל שנה תישא רק את מה ששייך לה. ובסוף —
-            נרשום את מלאי הסגירה שנספר במחסן.
-          </p>
-        </div>
+        {/* What the example starts from, and why it needs fixing — before the walkthrough. */}
+        <p>
+          <strong>נתון: מאזן בוחן ליום 31.12, לפני פקודות התאמה וחתך.</strong> במהלך השנה הנהלת החשבונות רשמה פקודות יומן שלא לפי הכללים של חשבונות החתך —
+          כאילו כל תשלום וכל תקבול שייכים כולם לשנה הנוכחית, אף שחלקם משמשים גם שנים אחרות.
+        </p>
+        <p>
+          <strong>מה עושים:</strong> בדוגמה שלפניכם נתקן את החשבונות הרשומים — לכל סעיף נבצע פקודת התאמה וחתך, כך שכל שנה תישא רק את מה ששייך לה. ובסוף —
+          נרשום את מלאי הסגירה שנספר במחסן.
+        </p>
         <Stepper label={`${SHACHAR.name} · ${SHACHAR.date}`} steps={example} />
+        <Remember>לפני התאמה בודקים מה כבר נרשם: כהוצאה או כנכס? הכיוון של הפקודה תלוי בזה.</Remember>
       </>
     ),
   },
@@ -637,47 +633,44 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
     lead: "מה שלא נמכר עד סוף השנה אינו הוצאה של השנה: סופרים אותו, מוציאים אותו מהעלות, ורושמים אותו כנכס.",
     body: (
       <>
-        <div className="grid gap-3 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-          <div className="rounded-2xl border-2 border-accent/40 bg-surface p-4" role="math" aria-label="עלות המכר שווה מלאי פתיחה ועוד קניות פחות מלאי סגירה">
-            <p className="text-[18px] font-extrabold text-fg">עלות המכר =</p>
-            <ul className="mt-2 space-y-1.5 text-[15.5px]">
-              {(
-                [
-                  ["", "יתרת פתיחה מלאי", COGS_CASE.opening],
-                  ["+", "קניות השנה", COGS_CASE.purchases],
-                  ["−", "מלאי סגירה", COGS_CASE.closing],
-                ] as [string, string, number][]
-              ).map(([op, t, v]) => (
-                <li key={t} className="flex items-center gap-2">
-                  <span className="w-5 text-center text-lg font-bold text-accent">{op}</span>
-                  <span className="flex-1 font-medium text-fg">{t}</span>
-                  <Money v={v} plain className="text-muted" />
-                </li>
-              ))}
-            </ul>
-            <p className="mt-2 flex items-center gap-2 border-t-2 border-fg/70 pt-2 font-bold">
-              <span className="w-5" />
-              <span className="flex-1">עלות המכר ב{COGS_CASE.name}, {COGS_CASE.year}</span>
-              <Money v={costOfSales(COGS_CASE)} plain />
-            </p>
-          </div>
-          <div className="space-y-2">
-            <KeyCard>מלאי הסגירה נמדד לפי הנמוך מבין העלות לבין שווי המימוש נטו.</KeyCard>
-            <p className="text-[14.5px]">
-              שווי מימוש נטו = מה שנקבל במכירה, פחות מה שיעלה למכור. ב{COGS_CASE.name} עלות מלאי הסגירה <Money v={COGS_CASE.closing} />:
-            </p>
-            <ul className="space-y-1 text-[14px]">
-              <li className="rounded-lg bg-surface-2/70 px-3 py-1.5">
-                שווי מימוש <Money v={COGS_NRV_HIGH} /> ← רושמים <strong><Money v={Math.min(COGS_CASE.closing, COGS_NRV_HIGH)} /></strong> (העלות)
+        <div className="rounded-2xl border-2 border-accent/40 bg-surface p-4" role="math" aria-label="עלות המכר שווה מלאי פתיחה ועוד קניות פחות מלאי סגירה">
+          <p className="text-[18px] font-extrabold text-fg">עלות המכר =</p>
+          <ul className="mt-2 space-y-1.5 text-[15.5px]">
+            {(
+              [
+                ["", "יתרת פתיחה מלאי", COGS_CASE.opening],
+                ["+", "קניות השנה", COGS_CASE.purchases],
+                ["−", "מלאי סגירה", COGS_CASE.closing],
+              ] as [string, string, number][]
+            ).map(([op, t, v]) => (
+              <li key={t} className="flex items-center gap-2">
+                <span className="w-5 text-center text-lg font-bold text-accent">{op}</span>
+                <span className="flex-1 font-medium text-fg">{t}</span>
+                <Money v={v} plain className="text-muted" />
               </li>
-              <li className="rounded-lg bg-surface-2/70 px-3 py-1.5">
-                אילו היה <Money v={COGS_NRV_LOW} /> ← היינו רושמים <strong><Money v={Math.min(COGS_CASE.closing, COGS_NRV_LOW)} /></strong>, ועלות המכר הייתה עולה ב-
-                <Money v={COGS_CASE.closing - COGS_NRV_LOW} />
-              </li>
-            </ul>
-          </div>
+            ))}
+          </ul>
+          <p className="mt-2 flex items-center gap-2 border-t-2 border-fg/70 pt-2 font-bold">
+            <span className="w-5" />
+            <span className="flex-1">עלות המכר ב{COGS_CASE.name}, {COGS_CASE.year}</span>
+            <Money v={costOfSales(COGS_CASE)} plain />
+          </p>
         </div>
+        <p>
+          <strong>מלאי הסגירה נמדד לפי הנמוך מבין העלות לבין שווי המימוש נטו.</strong> שווי מימוש נטו = מה שנקבל במכירה, פחות מה שיעלה למכור. ב{COGS_CASE.name}{" "}
+          עלות מלאי הסגירה <Money v={COGS_CASE.closing} />:
+        </p>
+        <ul className="list-disc space-y-1 ps-5 marker:text-subtle">
+          <li>
+            שווי מימוש <Money v={COGS_NRV_HIGH} /> ← רושמים <strong><Money v={Math.min(COGS_CASE.closing, COGS_NRV_HIGH)} /></strong> (העלות)
+          </li>
+          <li>
+            אילו היה <Money v={COGS_NRV_LOW} /> ← היינו רושמים <strong><Money v={Math.min(COGS_CASE.closing, COGS_NRV_LOW)} /></strong>, ועלות המכר הייתה עולה ב-
+            <Money v={COGS_CASE.closing - COGS_NRV_LOW} />
+          </li>
+        </ul>
         <Posted entries={[COGS_ENTRY]} at={0} note="שני חשבונות באותו סכום: הנכס שבמחסן, והקטנת העלות ברווח והפסד. בשנה הבאה זה מלאי הפתיחה." />
+        <Remember>עלות המכר = מלאי פתיחה + קניות − מלאי סגירה. המלאי — בנמוך מבין עלות לשווי מימוש נטו.</Remember>
       </>
     ),
     check: (
@@ -696,8 +689,7 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
     lead: "״ההוצאה מתפלגת באופן שווה — למעט…״. כשהחודש האחרון שונה מהשאר, מוצאים קודם חודש רגיל ממה שכבר נרשם, ורק אז מתקנים את החודש החריג.",
     body: (
       <>
-        <KeyCard>חודש רגיל = מה שנרשם ÷ מספר החודשים שנרשמו. לא ÷ 12.</KeyCard>
-        <ol className="space-y-3 [column-span:all]">
+        <ol className="space-y-3">
           <OddCase
             n={1}
             title={`העלאת שכר של ${pct(ODD.raise.rate)} מדצמבר`}
@@ -729,6 +721,7 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
             entry={odd("טלפון נובמבר–דצמבר", "הוצאות טלפון", "הוצאות טלפון לשלם", ODD_RESULTS.phone.missing)}
           />
         </ol>
+        <Remember>חודש רגיל = מה שנרשם ÷ מספר החודשים שנרשמו. לא ÷ 12.</Remember>
       </>
     ),
     check: (
@@ -758,8 +751,7 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
     lead: "לפני שמכפילים, קוראים: הריבית לשנה — או לחצי שנה? אותו מספר באחוזים יכול להיות פי שניים כסף.",
     body: (
       <>
-        <KeyCard>ריבית = קרן × שיעור × (החודשים שעברו ÷ החודשים בתקופה של השיעור).</KeyCard>
-        <div className="grid gap-3 md:grid-cols-2 [column-span:all]">
+        <div className="grid gap-3 md:grid-cols-2">
           <section className="space-y-2 rounded-2xl border border-line bg-surface p-4">
             <p className="text-[15px] font-bold text-fg">ריבית חצי שנתית של {pct(PERIOD.halfYear.rate)}</p>
             <p className="text-[14.5px]">
@@ -777,8 +769,7 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
             </Calc>
           </section>
         </div>
-        <section className="space-y-2">
-          <h3 className="text-lg font-semibold text-fg">ובצד ההכנסות: הלוואה שנתנו</h3>
+        <Part title="ובצד ההכנסות: הלוואה שנתנו">
           <p>
             ב-1.1 החברה הלוותה לספק <Money v={PERIOD.lent.amount} />. הריבית — <Money v={PERIOD.lent.perHalf} /> לכל חצי שנה — מתקבלת פעמיים: ב-30.6 על ינואר–יוני, וב-1.1
             בשנה הבאה על יולי–דצמבר. רק התקבול של 30.6 נרשם.
@@ -787,7 +778,8 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
             entry={odd("31.12 · ריבית יולי–דצמבר, שתתקבל ב-1.1", "הכנסות ריבית לקבל", "הכנסות ריבית", PERIOD.lent.perHalf)}
             note="הכסף מגיע ב-1.1, אבל הוא על חודשים של השנה הזו — הכנסה של השנה, ובינתיים נכס. סך הכנסות הריבית של השנה: פעמיים 900."
           />
-        </section>
+        </Part>
+        <Remember>ריבית = קרן × שיעור × (החודשים שעברו ÷ החודשים בתקופה של השיעור).</Remember>
       </>
     ),
     check: (

@@ -1,5 +1,6 @@
 import { Dumbbell, Landmark, PiggyBank, Trophy } from "lucide-react";
 import type { ReactNode } from "react";
+import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
 import { BACK, BACK_A, BACK_ACCRUED, BACK_OBLIGATION, BACK_WRONG, BACK_WRONG_OBLIGATION, FRONT, FRONT_ACCRUED, FRONT_OBLIGATION, FRONT_WRONG, FRONT_WRONG_OBLIGATION, LATE, LATE_ROWS, LATE_TOTAL } from "@/lib/study/ias19/lessons/attribute";
@@ -10,7 +11,7 @@ import { Bridge, ExplainTask, HintLadder, MapBranch, Recipe5, RollForward, T19 }
 import { MiniQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { RollSchedule } from "./roll-schedule";
-import { Card, KeyCard, Money, Rule, Stepper, Wide } from "./ui";
+import { Money, Rule, Stepper } from "./ui";
 
 /** The employee-benefits course, lessons 5–7: measuring at one date, attribution to years of service, and a year's roll-forward. */
 
@@ -64,9 +65,9 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
           <T19 he="שיעור ההיוון" en="Discount rate" par="83" /> הוא התשואה, בסוף התקופה, על אגרות חוב קונצרניות באיכות גבוהה. רק כשאין לאג״ח כאלה שוק עמוק משתמשים בממשלתיות. בישראל השוק
           עמוק — ולכן כששאלה נותנת גם תשואה ממשלתית, היא בדרך כלל מסיחה.
         </P>
-        <Card title="שאלה עם שלוש עמודות של תאריכים">
-          <p>בשאלה אחת יכולים להופיע שיעורים לכמה תאריכים. לכל מדידה — השיעור של התאריך שלה. לפתיחה — של תחילת השנה, לסגירה — של סוף השנה.</p>
-        </Card>
+        <P>
+          <strong>שאלה עם שלוש עמודות של תאריכים:</strong> בשאלה אחת יכולים להופיע שיעורים לכמה תאריכים. לכל מדידה — השיעור של התאריך שלה. לפתיחה — של תחילת השנה, לסגירה — של סוף השנה.
+        </P>
       </>
     ),
     check: quiz("emp-measure-rate", [
@@ -78,10 +79,10 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <Recipe5 />
-        <Rule>
+        <Remember>
           מתכון 5 הצעדים: ① הטבה לשנת שירות אחת, בשכר הצפוי בפרישה. ② שנות שירות שנצברו עד תאריך המדידה. ③ עובדים צפויים — מספר העובדים כפול ההסתברות שיקבלו. ④ n — שנים מתאריך המדידה ועד
           התשלום (לא שנות השירות). ⑤ i — התשואה הקונצרנית בתאריך המדידה.
-        </Rule>
+        </Remember>
       </>
     ),
     check: quiz("emp-measure-recipe", [
@@ -99,18 +100,16 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
             {VP.served} שנים, והתשואה הקונצרנית {pct(VP.rate)}.
           </p>
         </Story>
-        <Wide>
-          <Stepper
-            label="חמשת הצעדים"
-            steps={[
-              { title: "① הטבה לשנה", body: <p>{pct(VP.share)} × <Money v={VP.salary} plain /> × <L>{1 + VP.growth}^{VP.yearsToRetire}</L> = <strong><M v={VP_PER_YEAR} /></strong> — בשכר הצפוי בפרישה.</p> },
-              { title: "② שנות שירות", body: <p>{VP.served} שנים: <M v={VP_PER_YEAR} /> × {VP.served} = <M v={VP_ACCRUED} /> נצברו.</p> },
-              { title: "③ עובדים צפויים", body: <p>עובדת אחת, והיא צפויה להגיע לפרישה: 1.</p> },
-              { title: "④ n", body: <p>מ-{VP.date} עד הפרישה: <strong>{VP.yearsToRetire}</strong> שנים — לא {VP.served} השנים שעברו.</p> },
-              { title: "⑤ i, והתוצאה", body: <Recipe5 values={[<M key="1" v={VP_PER_YEAR} />, VP.served, 1, VP.yearsToRetire, pct(VP.rate)]} result={<strong><M v={VP_OBLIGATION} /></strong>} /> },
-            ]}
-          />
-        </Wide>
+        <Stepper
+          label="חמשת הצעדים"
+          steps={[
+            { title: "① הטבה לשנה", body: <p>{pct(VP.share)} × <Money v={VP.salary} plain /> × <L>{1 + VP.growth}^{VP.yearsToRetire}</L> = <strong><M v={VP_PER_YEAR} /></strong> — בשכר הצפוי בפרישה.</p> },
+            { title: "② שנות שירות", body: <p>{VP.served} שנים: <M v={VP_PER_YEAR} /> × {VP.served} = <M v={VP_ACCRUED} /> נצברו.</p> },
+            { title: "③ עובדים צפויים", body: <p>עובדת אחת, והיא צפויה להגיע לפרישה: 1.</p> },
+            { title: "④ n", body: <p>מ-{VP.date} עד הפרישה: <strong>{VP.yearsToRetire}</strong> שנים — לא {VP.served} השנים שעברו.</p> },
+            { title: "⑤ i, והתוצאה", body: <Recipe5 values={[<M key="1" v={VP_PER_YEAR} />, VP.served, 1, VP.yearsToRetire, pct(VP.rate)]} result={<strong><M v={VP_OBLIGATION} /></strong>} /> },
+          ]}
+        />
       </>
     ),
   },
@@ -118,7 +117,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
     lead: "משנים נתון אחד, ושואלים איזה צעד הוא משנה.",
     body: (
       <>
-        <Card title="א. הפרישה נדחית בשנתיים, והריבית יורדת">
+        <Part title="א. הפרישה נדחית בשנתיים, והריבית יורדת">
           <HintLadder
             task={
               <>
@@ -136,8 +135,8 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
               </>,
             ]}
           />
-        </Card>
-        <Card title="ב. קבוצה של עובדים">
+        </Part>
+        <Part title="ב. קבוצה של עובדים">
           <HintLadder
             task={
               <>
@@ -157,7 +156,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
               </>,
             ]}
           />
-        </Card>
+        </Part>
       </>
     ),
   },
@@ -215,13 +214,13 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
     lead: "תקרה מקצרת את חלון הצבירה — היא לא מכווצת את הסכום לשנה. וזכאות שמתחילה מאוחר — סופרים רק ממנה.",
     body: (
       <>
-        <Card title="תקרה">
-          <p>אם יש תקרה, ההטבה הצפויה נחתכת בתקרה, וחלון הצבירה נגמר בשנה שבה מגיעים אליה. השנים שאחריה לא מוסיפות דבר — ולכן הסכום לשנה לא קטן, אלא החלון קצר יותר.</p>
-        </Card>
-        <Card title="זכאות שמתחילה מגיל או מוותק">
-          <p>אם השירות מקנה זכאות רק מגיל מסוים, או רק אחרי ותק מסוים, השנים שלפני כן אינן נספרות.</p>
-        </Card>
-        <KeyCard>ובכל מקרה: ההיוון (צעד ④) הוא תמיד על השנים עד התשלום — לא על חלון הצבירה.</KeyCard>
+        <P>
+          <strong>תקרה:</strong> אם יש תקרה, ההטבה הצפויה נחתכת בתקרה, וחלון הצבירה נגמר בשנה שבה מגיעים אליה. השנים שאחריה לא מוסיפות דבר — ולכן הסכום לשנה לא קטן, אלא החלון קצר יותר.
+        </P>
+        <P>
+          <strong>זכאות שמתחילה מגיל או מוותק:</strong> אם השירות מקנה זכאות רק מגיל מסוים, או רק אחרי ותק מסוים, השנים שלפני כן אינן נספרות.
+        </P>
+        <Remember>ובכל מקרה: ההיוון (צעד ④) הוא תמיד על השנים עד התשלום — לא על חלון הצבירה.</Remember>
       </>
     ),
     check: quiz("emp-attr-cap", [
@@ -281,7 +280,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
     lead: "מענק שקופץ בשנים המאוחרות — קו ישר; זכאות שמתחילה מאוחר — סופרים רק ממנה.",
     body: (
       <>
-        <Card title="א. מענק שקופץ">
+        <Part title="א. מענק שקופץ">
           <HintLadder
             task={
               <>
@@ -301,8 +300,8 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
               </>,
             ]}
           />
-        </Card>
-        <Card title="ב. זכאות מגיל 47">
+        </Part>
+        <Part title="ב. זכאות מגיל 47">
           <p className="text-[14.5px]">
             מענק של <Money v={LATE.grant} /> בפרישה בגיל {LATE.retire}; השירות מקנה זכאות רק מגיל {LATE.countsFrom}. שיעור {pct(LATE.rate)}.
           </p>
@@ -312,16 +311,14 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
               "לכל עובד: מאיזה גיל הוא צובר, ועל כמה שנים נפרש המענק?",
               "שאלה (ג): הצבירה מהמאוחר מבין גיל ההתחלה לגיל 47, ועד הפרישה.",
               <>עובד א׳: צובר מגיל {LATE_ROWS[0].from}, על {LATE_ROWS[0].window} שנים — <Money v={LATE_ROWS[0].perYear} /> לשנה.</>,
-              <Wide key="t">
-                <DataTable
-                  head={["עובד", "צובר מגיל", "לשנה", "נספרו", "n", "הסתברות", "התחייבות"]}
-                  rows={LATE.people.map((p, k) => [p.id, LATE_ROWS[k].from, LATE_ROWS[k].perYear, LATE_ROWS[k].served, LATE_ROWS[k].n, pct(p.stay), Math.round(LATE_ROWS[k].obligation)])}
-                  foot={["סה״כ", "", "", "", "", "", Math.round(LATE_TOTAL)]}
-                />
-              </Wide>,
+              <DataTable key="t"
+                head={["עובד", "צובר מגיל", "לשנה", "נספרו", "n", "הסתברות", "התחייבות"]}
+                rows={LATE.people.map((p, k) => [p.id, LATE_ROWS[k].from, LATE_ROWS[k].perYear, LATE_ROWS[k].served, LATE_ROWS[k].n, pct(p.stay), Math.round(LATE_ROWS[k].obligation)])}
+                foot={["סה״כ", "", "", "", "", "", Math.round(LATE_TOTAL)]}
+              />,
             ]}
           />
-        </Card>
+        </Part>
       </>
     ),
   },
@@ -364,7 +361,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
   "emp-roll-lines": {
     lead: "ארבע שורות מסבירות את השנה — ריבית, שירות, תשלומים, סגירה — והחמישית, P.N., היא מה שנשאר.",
     body: (
-      <Wide className="space-y-4">
+      <>
         <DataTable
           head={["שורה", "מה היא אומרת"]}
           rows={[
@@ -376,7 +373,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
           ]}
         />
         <RollSchedule />
-      </Wide>
+      </>
     ),
     check: quiz("emp-roll-lines", [
       { q: "פתיחה 4,000; שיעור תחילת השנה 5%; שירות 600; סגירה 4,950. מה ה-P.N.?", options: ["150 — הפסד", "150 — רווח", "350", "0"], answer: 0, why: "4,950 − 4,000 − 200 − 600 = 150: ההתחייבות גדלה מעבר לצפוי." },
@@ -387,17 +384,15 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
     lead: "ריבית ושירות — לפי תחילת השנה; הסגירה — לפי סופה. וה-n של השירות נספר מסוף השנה.",
     body: (
       <>
-        <Wide>
-          <DataTable
-            head={["שורה", "ריבית", "n"]}
-            rows={[
-              ["פתיחה", "השיעור שבו נמדדה בסוף השנה הקודמת", "מתחילת השנה עד התשלום"],
-              ["ריבית", "תחילת השנה", "שנה שלמה"],
-              ["עלות שירות", "תחילת השנה", "מסוף השנה עד התשלום"],
-              ["סגירה", "סוף השנה", "מסוף השנה עד התשלום"],
-            ]}
-          />
-        </Wide>
+        <DataTable
+          head={["שורה", "ריבית", "n"]}
+          rows={[
+            ["פתיחה", "השיעור שבו נמדדה בסוף השנה הקודמת", "מתחילת השנה עד התשלום"],
+            ["ריבית", "תחילת השנה", "שנה שלמה"],
+            ["עלות שירות", "תחילת השנה", "מסוף השנה עד התשלום"],
+            ["סגירה", "סוף השנה", "מסוף השנה עד התשלום"],
+          ]}
+        />
         <P>למה השינוי בריבית לא משפיע על עלות השירות של אותה שנה? כי השירות נמדד לפי הנחות תחילת השנה, והשינוי נתפס — כולו — ב-P.N.</P>
       </>
     ),
@@ -414,17 +409,15 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
           הכלל: פתיחה + ריבית + עלות שירות − תשלומים + P.N. = סגירה, ולכן P.N. = סגירה − פתיחה − ריבית − שירות + תשלומים. ריבית ועלות שירות — בשיעור תחילת השנה; סגירה — בשיעור סוף השנה; n של
           עלות השירות — עד סוף השנה.
         </Rule>
-        <Wide>
-          <DataTable
-            head={["שורה", "חובה", "זכות"]}
-            rows={[
-              ["עלות שירות", "הוצאות שכר", "התחייבות"],
-              ["ריבית", "הוצאות מימון", "התחייבות"],
-              ["P.N. (הפסד)", "קרן הון — מדידה מחדש (OCI)", "התחייבות"],
-              ["תשלום", "התחייבות", "מזומן"],
-            ]}
-          />
-        </Wide>
+        <DataTable
+          head={["שורה", "חובה", "זכות"]}
+          rows={[
+            ["עלות שירות", "הוצאות שכר", "התחייבות"],
+            ["ריבית", "הוצאות מימון", "התחייבות"],
+            ["P.N. (הפסד)", "קרן הון — מדידה מחדש (OCI)", "התחייבות"],
+            ["תשלום", "התחייבות", "מזומן"],
+          ]}
+        />
       </>
     ),
     check: quiz("emp-roll-rule", [{ q: "רישום של P.N. הפסד:", options: ["ח׳ קרן הון (OCI), ז׳ התחייבות", "ח׳ הוצאות שכר, ז׳ התחייבות", "ח׳ התחייבות, ז׳ קרן הון", "ח׳ הוצאות מימון, ז׳ מזומן"], answer: 0, why: "הפסד מגדיל את ההתחייבות, ונרשם ב-OCI." }]),
@@ -439,72 +432,70 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
             {pct(CF.rateStart)} בתחילת {CF.from}, {pct(CF.rateEnd1)} בסוף {CF.from}.
           </p>
         </Story>
-        <Wide>
-          <Stepper
-            label="שנתיים במעגל"
-            steps={[
-              {
-                title: `${CF.from}: הצבירה לשנה`,
-                body: (
+        <Stepper
+          label="שנתיים במעגל"
+          steps={[
+            {
+              title: `${CF.from}: הצבירה לשנה`,
+              body: (
+                <p>
+                  {pct(CF.share)} × <Money v={CF.salary} plain /> × <L>{1 + CF.growth}^{n1}</L> = <strong><M v={CF_PER_YEAR} /></strong> לכל שנת שירות.
+                </p>
+              ),
+            },
+            {
+              title: `${CF.from}: המעגל`,
+              body: (
+                <RollForward
+                  title={`סמנכ״ל כספים — ${CF.from}`}
+                  rows={[
+                    { label: "יתרת פתיחה", value: 0, kind: "balance", how: "אין — שנה ראשונה" },
+                    { label: "עלות ריבית", value: 0, how: "אין על מה" },
+                    { label: "עלות שירות", value: Y1.service, how: `${pct(CF.rateStart)}, n = ${n1}` },
+                    { label: "P.N. — הפסד", value: Y1_PN, kind: "pn", how: "הריבית ירדה" },
+                    { label: "יתרת סגירה", value: Y1.closing, kind: "balance", how: `${pct(CF.rateEnd1)}, n = ${n1}` },
+                  ]}
+                />
+              ),
+            },
+            {
+              title: `${CF.from + 1}: בלי שינוי בהנחות`,
+              body: (
+                <RollForward
+                  title={`סמנכ״ל כספים — ${CF.from + 1}`}
+                  rows={[
+                    { label: "יתרת פתיחה", value: Y1.closing, kind: "balance" },
+                    { label: "עלות ריבית", value: Y2.interest, how: `${pct(CF.rateEnd1)} × הפתיחה` },
+                    { label: "עלות שירות", value: Y2.service, how: `${pct(CF.rateEnd1)}, n = ${n1 - 1}` },
+                    { label: "P.N.", value: Y2.pn, kind: "pn", how: "שום הנחה לא השתנתה" },
+                    { label: "יתרת סגירה", value: Y2.closing, kind: "balance", how: `2 שנים, ${pct(CF.rateEnd1)}, n = ${n1 - 1}` },
+                  ]}
+                />
+              ),
+            },
+            {
+              title: `${CF.from + 1}: ההנחות השתנו`,
+              body: (
+                <div className="space-y-2">
                   <p>
-                    {pct(CF.share)} × <Money v={CF.salary} plain /> × <L>{1 + CF.growth}^{n1}</L> = <strong><M v={CF_PER_YEAR} /></strong> לכל שנת שירות.
+                    בסוף {CF.from + 1} מתברר: הפרישה תהיה ב-31.12.{CHANGED.retire} (עוד שנה של עליית שכר), והשיעור ירד ל-{pct(CHANGED.rateEnd)}. ריבית ושירות לא זזים — הם לפי תחילת השנה. רק
+                    הסגירה: 2 × <M v={CHANGED_PER_YEAR} /> ÷ <L>{1 + CHANGED.rateEnd}^{CHANGED.retire - CF.from - 1}</L> = <M v={CHANGED_CLOSING} />.
                   </p>
-                ),
-              },
-              {
-                title: `${CF.from}: המעגל`,
-                body: (
-                  <RollForward
-                    title={`סמנכ״ל כספים — ${CF.from}`}
-                    rows={[
-                      { label: "יתרת פתיחה", value: 0, kind: "balance", how: "אין — שנה ראשונה" },
-                      { label: "עלות ריבית", value: 0, how: "אין על מה" },
-                      { label: "עלות שירות", value: Y1.service, how: `${pct(CF.rateStart)}, n = ${n1}` },
-                      { label: "P.N. — הפסד", value: Y1_PN, kind: "pn", how: "הריבית ירדה" },
-                      { label: "יתרת סגירה", value: Y1.closing, kind: "balance", how: `${pct(CF.rateEnd1)}, n = ${n1}` },
-                    ]}
-                  />
-                ),
-              },
-              {
-                title: `${CF.from + 1}: בלי שינוי בהנחות`,
-                body: (
-                  <RollForward
-                    title={`סמנכ״ל כספים — ${CF.from + 1}`}
-                    rows={[
-                      { label: "יתרת פתיחה", value: Y1.closing, kind: "balance" },
-                      { label: "עלות ריבית", value: Y2.interest, how: `${pct(CF.rateEnd1)} × הפתיחה` },
-                      { label: "עלות שירות", value: Y2.service, how: `${pct(CF.rateEnd1)}, n = ${n1 - 1}` },
-                      { label: "P.N.", value: Y2.pn, kind: "pn", how: "שום הנחה לא השתנתה" },
-                      { label: "יתרת סגירה", value: Y2.closing, kind: "balance", how: `2 שנים, ${pct(CF.rateEnd1)}, n = ${n1 - 1}` },
-                    ]}
-                  />
-                ),
-              },
-              {
-                title: `${CF.from + 1}: ההנחות השתנו`,
-                body: (
-                  <div className="space-y-2">
-                    <p>
-                      בסוף {CF.from + 1} מתברר: הפרישה תהיה ב-31.12.{CHANGED.retire} (עוד שנה של עליית שכר), והשיעור ירד ל-{pct(CHANGED.rateEnd)}. ריבית ושירות לא זזים — הם לפי תחילת השנה. רק
-                      הסגירה: 2 × <M v={CHANGED_PER_YEAR} /> ÷ <L>{1 + CHANGED.rateEnd}^{CHANGED.retire - CF.from - 1}</L> = <M v={CHANGED_CLOSING} />.
-                    </p>
-                    <p>
-                      P.N. = <M v={CHANGED_CLOSING} /> − <M v={Y2.closing} /> = <strong><M v={CHANGED_PN} /></strong> הפסד ל-OCI.
-                    </p>
-                  </div>
-                ),
-              },
-            ]}
-          />
-        </Wide>
+                  <p>
+                    P.N. = <M v={CHANGED_CLOSING} /> − <M v={Y2.closing} /> = <strong><M v={CHANGED_PN} /></strong> הפסד ל-OCI.
+                  </p>
+                </div>
+              ),
+            },
+          ]}
+        />
       </>
     ),
   },
   "emp-roll-together": {
     lead: "כשמשתנה רק הנחה של סוף השנה, משתנה רק הסגירה — וכל ההפרש עובר ל-P.N.",
     body: (
-      <Card title="רק הריבית יורדת">
+      <Part title="רק הריבית יורדת">
         <HintLadder
           task={
             <>
@@ -522,7 +513,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
             </>,
           ]}
         />
-      </Card>
+      </Part>
     ),
   },
   "emp-roll-master": {

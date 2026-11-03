@@ -1,4 +1,5 @@
-import { Callout, DataTable, JournalEntry, Num } from "@/components/study/blocks";
+import { DataTable, JournalEntry, Num } from "@/components/study/blocks";
+import { Part, Remember } from "@/components/study-mode/screen-parts";
 import { solveExchange } from "@/lib/learn/exchange";
 import { EXAMPLE, EXCHANGE_DATE, exchangeLines } from "./entries";
 
@@ -31,13 +32,10 @@ const NET_RULES = [
 export function ExchangeJournalSection() {
   return (
     <>
-      <div className="card p-5">
-        <p className="text-[17px] font-semibold text-fg">שתי דרכים לרשום את אותה החלפה</p>
-        <p className="mt-1 text-[15px] text-fg/90">
-          הפקודה <strong>המלאה</strong> סוגרת בנפרד את העלות המקורית ואת הפחת הנצבר של הנכס הישן. הפקודה <strong>המקוצרת</strong> סוגרת את שניהם
-          בבת אחת — דרך הערך בספרים. שתיהן נותנות בדיוק אותה תוצאה בדוחות. לפני כל אחת מהן רושמים את פחת הנכס הישן עד יום ההחלפה.
-        </p>
-      </div>
+      <p>
+        <strong>שתי דרכים לרשום את אותה החלפה.</strong> הפקודה <strong>המלאה</strong> סוגרת בנפרד את העלות המקורית ואת הפחת הנצבר של הנכס הישן. הפקודה <strong>המקוצרת</strong> סוגרת את שניהם
+        בבת אחת — דרך הערך בספרים. שתיהן נותנות בדיוק אותה תוצאה בדוחות. לפני כל אחת מהן רושמים את פחת הנכס הישן עד יום ההחלפה.
+      </p>
 
       <div className="grid gap-4 xl:grid-cols-2">
         <div className="card p-5">
@@ -73,18 +71,16 @@ export function ExchangeJournalSection() {
         </div>
       </div>
 
-      <div className="card p-5">
-        <p className="text-[17px] font-semibold text-fg">ואם אין מהות מסחרית?</p>
-        <p className="mt-1 text-[15px] text-fg/90">
+      <Part title="ואם אין מהות מסחרית?">
+        <p>
           אותה פקודה בדיוק — בלי שורת רווח או הפסד. הנכס החדש נרשם לפי הערך בספרים של הישן ועוד המזומן ששולם: <Num v={WITH.bookValue} /> +{" "}
           <Num v={EXAMPLE.cashPaid} /> = <Num v={WITHOUT.newCost} />.
         </p>
         <JournalEntry title="החלפה ללא מהות מסחרית — פקודה מלאה" date={EXCHANGE_DATE} lines={exchangeLines(WITHOUT_X, WITHOUT, "full")} />
-      </div>
+      </Part>
 
-      <div className="card p-5">
-        <p className="text-[17px] font-semibold text-fg">ואם ידוע רק השווי ההוגן של הנכס שהתקבל?</p>
-        <p className="mt-1 text-[15px] text-fg/90">
+      <Part title="ואם ידוע רק השווי ההוגן של הנכס שהתקבל?">
+        <p>
           הנכס החדש נרשם לפי השווי שלו — <Num v={EXAMPLE.fairValueReceived} />. השווי של הנכס שנמסר נגזר ממנו: <Num v={EXAMPLE.fairValueReceived} /> −{" "}
           <Num v={EXAMPLE.cashPaid} /> = <Num v={RECEIVED.fairValueGiven!} />, והרווח: <Num v={RECEIVED.fairValueGiven!} /> − <Num v={RECEIVED.bookValue} /> ={" "}
           <Num v={RECEIVED.gain} />.
@@ -93,15 +89,16 @@ export function ExchangeJournalSection() {
           <JournalEntry title="לפי השווי של הנכס שהתקבל — פקודה מלאה" date={EXCHANGE_DATE} lines={exchangeLines(RECEIVED_X, RECEIVED, "full")} />
           <JournalEntry title="לפי השווי של הנכס שהתקבל — פקודה מקוצרת" date={EXCHANGE_DATE} lines={exchangeLines(RECEIVED_X, RECEIVED, "net")} />
         </div>
-      </div>
+      </Part>
 
-      <Callout kind="check" title="איך יודעים שהפקודה נכונה">
-        <ul className="list-inside list-disc space-y-1">
+      <Remember>
+        <p>איך יודעים שהפקודה נכונה:</p>
+        <ul className="list-inside list-disc space-y-1 font-medium">
           <li>הפקודה מאוזנת: סך החובה שווה לסך הזכות.</li>
           <li>אחרי הרישום לא נשארת יתרה בחשבונות הנכס הישן — לא בעלות ולא בפחת הנצבר.</li>
           <li>שורת הרווח או ההפסד מופיעה רק כשיש מהות מסחרית.</li>
         </ul>
-      </Callout>
+      </Remember>
     </>
   );
 }

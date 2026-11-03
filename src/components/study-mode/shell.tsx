@@ -298,17 +298,11 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
       title: m.screens[place.sub].title,
       clip: videoAt(m.videos, m.screens[place.sub].id),
       content: (
-        <div className="space-y-4">
-          {s.lead && (
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-l from-accent-soft via-accent-soft/40 to-transparent py-4 ps-5 pe-4 ring-1 ring-accent/20 sm:py-5 sm:ps-6">
-              <span className="absolute inset-y-0 start-0 w-1 bg-accent" aria-hidden />
-              <p className="text-[12px] font-bold text-accent">העיקרון</p>
-              <div className="mt-1 text-[18px] leading-snug font-semibold text-fg sm:text-[20px]">{s.lead}</div>
-            </div>
-          )}
-          {/* On a wide screen the screen's blocks flow into two columns, each block whole, so the width fills instead of stretching the lines;
-              a wide widget (a walkthrough, the entry-to-cards arrows) spans both. */}
-          <div className="space-y-4 text-[16px] leading-[1.75] text-fg/90 [&>p]:max-w-[70ch] xl:columns-2 xl:gap-x-6 xl:space-y-0 xl:[&>*]:mb-4 xl:[&>*]:break-inside-avoid">{s.body}</div>
+        <div className="space-y-5">
+          {/* The screen's idea in one line, under its title: an opening, not a banner competing with the content. */}
+          {s.lead && <div className="max-w-[70ch] text-[17px] leading-relaxed text-muted sm:text-[18px]">{s.lead}</div>}
+          {/* One column, read top to bottom: explanation, example, a deeper look, the takeaway. Side by side only inside a block that compares. */}
+          <div className="space-y-5 text-[16px] leading-[1.75] text-fg/90 [&>p]:max-w-[70ch]">{s.body}</div>
         </div>
       ),
     };

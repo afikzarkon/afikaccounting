@@ -3,9 +3,10 @@ import type { ReactNode } from "react";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { CLEANING, type FixCase, FIXES, MULTI, MULTI_RESULTS, OLD_CONTRACT, OLD_RESULTS } from "@/lib/learn/basics-review";
 import type { Entry } from "@/lib/learn/basics";
+import { Remember } from "@/components/study-mode/screen-parts";
 import { cn } from "@/lib/utils";
 import { MiniQuiz } from "./inventory-interactive";
-import { Calc, JE, KeyCard, Money, Stepper } from "./ui";
+import { Calc, JE, Money, Stepper } from "./ui";
 
 const two = (id: string, text: string, dr: string, cr: string, amount: number): Entry => ({ id, text, lines: [{ account: dr, dr: amount }, { account: cr, cr: amount }] });
 
@@ -57,25 +58,22 @@ export const REVIEW_SCREENS: Record<string, ScreenContent> = {
     lead: "מאזן בוחן ראשוני הוא מה שנרשם במהלך השנה: חלק נכון, חלק שגוי, וחלק חסר. לכל נתון בשאלה שואלים שלוש שאלות — תמיד באותו סדר.",
     body: (
       <>
-        <ol className="grid gap-2 sm:grid-cols-3 [column-span:all]">
+        <ol className="max-w-[70ch] space-y-1.5">
           {[
             ["מה נרשם?", "מחפשים בסיפור ובמאזן הבוחן מה כבר בספרים."],
             ["מה היה צריך?", "מחשבים לפי מה שקרה באמת עד 31.12."],
             ["התיקון = צריך פחות נרשם", "מה שחסר — מוסיפים. מה שעודף — מוציאים."],
           ].map(([t, d], i) => (
-            <li key={t} className="rounded-2xl border border-line bg-surface px-3.5 py-3">
-              <span className="flex items-center gap-2">
-                <span className="num grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent text-[13px] font-bold text-accent-fg">{i + 1}</span>
-                <span className="text-[15px] font-bold text-fg">{t}</span>
+            <li key={t} className="flex items-baseline gap-2.5">
+              <span className="num grid h-6 w-6 shrink-0 place-items-center self-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
+              <span>
+                <strong className="text-fg">{t}</strong> — {d}
               </span>
-              <span className="mt-1 block text-[14px] text-fg/85">{d}</span>
             </li>
           ))}
         </ol>
-        <div className="[column-span:all]">
-          <ThreeWay c={CLEANING} />
-        </div>
-        <KeyCard>שני מקרי קצה: לא נרשם כלום — התיקון הוא כל מה שצריך. הכול נרשם נכון — אין תיקון.</KeyCard>
+        <ThreeWay c={CLEANING} />
+        <Remember>שני מקרי קצה: לא נרשם כלום — התיקון הוא כל מה שצריך. הכול נרשם נכון — אין תיקון.</Remember>
       </>
     ),
     check: (
@@ -99,7 +97,7 @@ export const REVIEW_SCREENS: Record<string, ScreenContent> = {
     lead: "השאלה הראשונה על כל סעיף חתך: מתי נחתם החוזה, ומה כבר נרשם? מאזן הבוחן עצמו נותן את הרמז.",
     body: (
       <>
-        <div className="overflow-x-auto rounded-2xl border border-line [column-span:all]">
+        <div className="overflow-x-auto rounded-2xl border border-line">
           <table className="w-full min-w-[40rem] text-[14px]">
             <thead className="bg-surface-2/70 text-[12.5px] text-muted">
               <tr>
@@ -122,21 +120,19 @@ export const REVIEW_SCREENS: Record<string, ScreenContent> = {
             </tbody>
           </table>
         </div>
-        <section className="space-y-2.5">
-          <h3 className="text-lg font-semibold text-fg">דוגמה: חוזה ישן</h3>
-          <p>
-            ב-{OLD_CONTRACT.start} שולמו <Money v={OLD_CONTRACT.paid} /> על ביטוח ל-{OLD_CONTRACT.months} חודשים. במאזן הבוחן הראשוני של 31.12.2025 מופיע ״הוצאות ביטוח מראש{" "}
+        <p>
+          <strong>דוגמה: חוזה ישן.</strong> ב-{OLD_CONTRACT.start} שולמו <Money v={OLD_CONTRACT.paid} /> על ביטוח ל-{OLD_CONTRACT.months} חודשים. במאזן הבוחן הראשוני של 31.12.2025 מופיע ״הוצאות ביטוח מראש{" "}
             <Money v={OLD_RESULTS.balance2024} />״ — ואין הוצאות ביטוח בכלל.
-          </p>
-          <Calc>
-            ביטוח לחודש: <Money v={OLD_CONTRACT.paid} /> ÷ {OLD_CONTRACT.months} = <Money v={OLD_RESULTS.month} />. ב-2024 נוצלו {OLD_CONTRACT.monthsIn2024} חודשים, ונשארו{" "}
-            <Money v={OLD_RESULTS.balance2024} /> — בדיוק היתרה במאזן. סימן שב-2025 עוד לא נרשם כלום.
-          </Calc>
-          <JE
-            entry={two("31.12", "ההתאמה: 12 החודשים של 2025", "הוצאות ביטוח", "הוצאות ביטוח מראש", OLD_RESULTS.expense2025)}
-            note={<>נשארים <Money v={OLD_RESULTS.left} /> — ינואר עד מרץ 2026.</>}
-          />
-        </section>
+      </p>
+        <Calc>
+          ביטוח לחודש: <Money v={OLD_CONTRACT.paid} /> ÷ {OLD_CONTRACT.months} = <Money v={OLD_RESULTS.month} />. ב-2024 נוצלו {OLD_CONTRACT.monthsIn2024} חודשים, ונשארו{" "}
+          <Money v={OLD_RESULTS.balance2024} /> — בדיוק היתרה במאזן. סימן שב-2025 עוד לא נרשם כלום.
+        </Calc>
+        <JE
+          entry={two("31.12", "ההתאמה: 12 החודשים של 2025", "הוצאות ביטוח", "הוצאות ביטוח מראש", OLD_RESULTS.expense2025)}
+          note={<>נשארים <Money v={OLD_RESULTS.left} /> — ינואר עד מרץ 2026.</>}
+        />
+        <Remember>יש ״מראש״ ואין שורה תוצאתית? חוזה ישן: היתרה של סוף השנה הקודמת.</Remember>
       </>
     ),
     check: (
@@ -160,63 +156,66 @@ export const REVIEW_SCREENS: Record<string, ScreenContent> = {
     lead: "חוזה שמתחדש, חוזה שנגמר, ויתרה שלא נתונה — כולם נפתרים בשתי נוסחאות: כמה עולה חודש, וכמה חודשים נשארו.",
     body: (
       <>
-        <div className="grid gap-2 sm:grid-cols-2 [column-span:all]">
-          <KeyCard>תשלום לחודש = הסכום ששולם ÷ חודשי החוזה</KeyCard>
-          <KeyCard>יתרת ״מראש״ = תשלום לחודש × החודשים שנשארו</KeyCard>
-        </div>
-        <div className="[column-span:all]">
-          <Stepper
-            label="שלושה חוזים לאורך שנים"
-            steps={[
-              {
-                title: "1 · חוזה שמתחדש",
-                body: (
-                  <>
-                    <p>
-                      מאז {MULTI.renewal.firstYear} החברה משלמת מראש על ביטוח לשלוש שנים, <Money v={MULTI.renewal.monthly} /> לחודש, ורושמת את התשלום כ״מראש״. החוזה מתחדש
-                      בכל פעם שהוא נגמר. מה ההתאמה ל-31.12.{MULTI.renewal.year}?
-                    </p>
-                    <Calc>
-                      המחזורים: 2017–2019, 2020–2022, <strong>2023–2025</strong>. ב-1.1.{R.renewal.start} שולמו <Money v={R.renewal.paid} />. אחרי 2023 ו-2024 נשארו{" "}
-                      <Money v={R.renewal.opening} /> — זו היתרה במאזן הבוחן.
-                    </Calc>
-                    <JE entry={two("31.12", `ההתאמה: 12 החודשים של ${MULTI.renewal.year}`, "הוצאות ביטוח", "הוצאות ביטוח מראש", R.renewal.expense)} note="המחזור נגמר: היתרה מתאפסת, וב-1.1.2026 יתחדש החוזה." />
-                  </>
-                ),
-              },
-              {
-                title: "2 · חוזה שנגמר ולא חודש",
-                body: (
-                  <>
-                    <p>
-                      ב-{MULTI.expired.start} שולמו <Money v={MULTI.expired.paid} /> על שכירות לשנתיים. החוזה נגמר ב-{MULTI.expired.end} ולא חודש. במאזן הבוחן: ״הוצאות שכירות
-                      מראש <Money v={R.expired.opening} />״.
-                    </p>
-                    <Calc>
-                      <Money v={R.expired.month} /> לחודש × {MULTI.expired.leftAfter2024} החודשים שנשארו אחרי 2024 = <Money v={R.expired.opening} />. כולם עברו ב-2025.
-                    </Calc>
-                    <JE entry={two("31.12", "ההתאמה: כל היתרה עוברת להוצאה", "הוצאות שכירות", "הוצאות שכירות מראש", R.expired.opening)} note="אחרי שהחוזה נגמר לא נשאר כלום ״מראש״. היתרה מתאפסת." />
-                  </>
-                ),
-              },
-              {
-                title: "3 · היתרה במאזן הבוחן: ״?״",
-                body: (
-                  <>
-                    <p>
-                      חוזה פרסום מ-{MULTI.unknown.start} עד {MULTI.unknown.end}, ששולמו עליו <Money v={MULTI.unknown.paid} /> ונרשמו כ״מראש״. במאזן הבוחן של 31.12.2025 היתרה מופיעה
-                      כ-״?״.
-                    </p>
-                    <Calc result={<Money v={R.unknown.opening} />}>
-                      <Money v={R.unknown.month} /> לחודש. ב-2024 נוצלו {MULTI.unknown.usedIn2024} חודשים (יוני–דצמבר), ונשארו {MULTI.unknown.months - MULTI.unknown.usedIn2024} חודשים: ״?״
-                    </Calc>
-                    <JE entry={two("31.12", "ההתאמה: 12 החודשים של 2025", "הוצאות פרסום", "הוצאות פרסום מראש", R.unknown.expense)} note={<>נשארים <Money v={R.unknown.closing} /> — ינואר עד מאי 2026.</>} />
-                  </>
-                ),
-              },
-            ]}
-          />
-        </div>
+        <ul className="list-disc space-y-1 ps-5 marker:text-subtle">
+          <li>
+            <strong>תשלום לחודש</strong> = הסכום ששולם ÷ חודשי החוזה
+          </li>
+          <li>
+            <strong>יתרת ״מראש״</strong> = תשלום לחודש × החודשים שנשארו
+          </li>
+        </ul>
+        <Stepper
+          label="שלושה חוזים לאורך שנים"
+          steps={[
+            {
+              title: "1 · חוזה שמתחדש",
+              body: (
+                <>
+                  <p>
+                    מאז {MULTI.renewal.firstYear} החברה משלמת מראש על ביטוח לשלוש שנים, <Money v={MULTI.renewal.monthly} /> לחודש, ורושמת את התשלום כ״מראש״. החוזה מתחדש
+                    בכל פעם שהוא נגמר. מה ההתאמה ל-31.12.{MULTI.renewal.year}?
+                  </p>
+                  <Calc>
+                    המחזורים: 2017–2019, 2020–2022, <strong>2023–2025</strong>. ב-1.1.{R.renewal.start} שולמו <Money v={R.renewal.paid} />. אחרי 2023 ו-2024 נשארו{" "}
+                    <Money v={R.renewal.opening} /> — זו היתרה במאזן הבוחן.
+                  </Calc>
+                  <JE entry={two("31.12", `ההתאמה: 12 החודשים של ${MULTI.renewal.year}`, "הוצאות ביטוח", "הוצאות ביטוח מראש", R.renewal.expense)} note="המחזור נגמר: היתרה מתאפסת, וב-1.1.2026 יתחדש החוזה." />
+                </>
+              ),
+            },
+            {
+              title: "2 · חוזה שנגמר ולא חודש",
+              body: (
+                <>
+                  <p>
+                    ב-{MULTI.expired.start} שולמו <Money v={MULTI.expired.paid} /> על שכירות לשנתיים. החוזה נגמר ב-{MULTI.expired.end} ולא חודש. במאזן הבוחן: ״הוצאות שכירות
+                    מראש <Money v={R.expired.opening} />״.
+                  </p>
+                  <Calc>
+                    <Money v={R.expired.month} /> לחודש × {MULTI.expired.leftAfter2024} החודשים שנשארו אחרי 2024 = <Money v={R.expired.opening} />. כולם עברו ב-2025.
+                  </Calc>
+                  <JE entry={two("31.12", "ההתאמה: כל היתרה עוברת להוצאה", "הוצאות שכירות", "הוצאות שכירות מראש", R.expired.opening)} note="אחרי שהחוזה נגמר לא נשאר כלום ״מראש״. היתרה מתאפסת." />
+                </>
+              ),
+            },
+            {
+              title: "3 · היתרה במאזן הבוחן: ״?״",
+              body: (
+                <>
+                  <p>
+                    חוזה פרסום מ-{MULTI.unknown.start} עד {MULTI.unknown.end}, ששולמו עליו <Money v={MULTI.unknown.paid} /> ונרשמו כ״מראש״. במאזן הבוחן של 31.12.2025 היתרה מופיעה
+                    כ-״?״.
+                  </p>
+                  <Calc result={<Money v={R.unknown.opening} />}>
+                    <Money v={R.unknown.month} /> לחודש. ב-2024 נוצלו {MULTI.unknown.usedIn2024} חודשים (יוני–דצמבר), ונשארו {MULTI.unknown.months - MULTI.unknown.usedIn2024} חודשים: ״?״
+                  </Calc>
+                  <JE entry={two("31.12", "ההתאמה: 12 החודשים של 2025", "הוצאות פרסום", "הוצאות פרסום מראש", R.unknown.expense)} note={<>נשארים <Money v={R.unknown.closing} /> — ינואר עד מאי 2026.</>} />
+                </>
+              ),
+            },
+          ]}
+        />
+        <Remember>יתרת ״מראש״ = תשלום לחודש × החודשים שנשארו. חוזה שנגמר — מתאפס.</Remember>
       </>
     ),
     check: (
@@ -240,10 +239,8 @@ export const REVIEW_SCREENS: Record<string, ScreenContent> = {
     lead: "לפעמים הסכום נכון, אבל אחד החשבונות שגוי. התיקון לא מבטל את כל הפקודה — הוא רק מזיז את הסכום מהחשבון השגוי לנכון.",
     body: (
       <>
-        <KeyCard>חשבון שמופיע גם במה שנרשם וגם במה שצריך — באותו צד ובאותו סכום — לא משתתף בתיקון.</KeyCard>
-        <div className="[column-span:all]">
-          <Stepper label="חמש טעויות שחוזרות בשאלות" steps={FIXES.map((c, i) => ({ title: `${i + 1} · ${c.title}`, body: <ThreeWay c={c} /> }))} />
-        </div>
+        <Stepper label="חמש טעויות שחוזרות בשאלות" steps={FIXES.map((c, i) => ({ title: `${i + 1} · ${c.title}`, body: <ThreeWay c={c} /> }))} />
+        <Remember>חשבון שמופיע גם במה שנרשם וגם במה שצריך — באותו צד ובאותו סכום — לא משתתף בתיקון.</Remember>
       </>
     ),
     check: (
@@ -267,9 +264,9 @@ export const REVIEW_SCREENS: Record<string, ScreenContent> = {
     lead: "שאלה שחוזרת בבחינות: מה הטעות עשתה לרווח? התשובה פשוטה — רק טעות שנוגעת בחשבון תוצאתי משנה את הרווח.",
     body: (
       <>
-        <ul className="grid gap-2 [column-span:all]">
+        <ul className="divide-y divide-line">
           {FIXES.map((c) => (
-            <li key={c.id} className="grid items-center gap-2 rounded-2xl border border-line bg-surface px-3.5 py-2.5 sm:grid-cols-[minmax(0,1.3fr)_auto_minmax(0,1.6fr)]">
+            <li key={c.id} className="grid items-center gap-2 py-2.5 sm:grid-cols-[minmax(0,1.3fr)_auto_minmax(0,1.6fr)]">
               <span className="text-[15px] font-semibold text-fg">{c.title}</span>
               <span
                 className={cn(
@@ -286,7 +283,7 @@ export const REVIEW_SCREENS: Record<string, ScreenContent> = {
             </li>
           ))}
         </ul>
-        <KeyCard>השאלה לבדיקה: האם התיקון נוגע בהכנסה או בהוצאה? לא — הרווח לא זז.</KeyCard>
+        <Remember>השאלה לבדיקה: האם התיקון נוגע בהכנסה או בהוצאה? לא — הרווח לא זז.</Remember>
       </>
     ),
     check: (

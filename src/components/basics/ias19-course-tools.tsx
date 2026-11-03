@@ -1,5 +1,6 @@
 import { CreditCard, PiggyBank } from "lucide-react";
 import type { ReactNode } from "react";
+import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { partRate, pv, simplePart } from "@/lib/learn/ias19";
 import { HOOK, SOLVED, SOLVED_PART, SOLVED_PV, SOLVED_ROLL, TOGETHER, TOGETHER_PART, TOGETHER_PV, TOGETHER_ROLL } from "@/lib/study/ias19/lessons/toolkit";
@@ -7,7 +8,7 @@ import { lessonRef } from "@/lib/study/ias19/shared";
 import { Bridge, ExplainTask, HintLadder, MapBranch, RollForward, T19 } from "./ias19-ui";
 import { MiniQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
-import { Card, Frac, KeyCard, Money, Rule, Stepper, Wide } from "./ui";
+import { Frac, Money, Stepper } from "./ui";
 
 /** The employee-benefits course, lesson 2: the toolkit — present value, interest for part of a year, and the roll-forward. */
 
@@ -45,13 +46,11 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
         <div className="flex flex-wrap items-center justify-center gap-2 rounded-xl bg-surface px-4 py-3 text-[18px] font-semibold ring-1 ring-accent/40">
           PV = <Frac top="FV" bottom={<L>(1 + i)ⁿ</L>} />
         </div>
-        <Card title="בסיפור מהמסך הקודם">
-          <p>
-            <Money v={HOOK.amount} /> בעוד {HOOK.years} שנים, בריבית {pct(HOOK.rate)}: <Money v={HOOK.amount} plain /> ÷ <L>{1 + HOOK.rate}</L>
+        <P>
+          <strong>בסיפור מהמסך הקודם:</strong> <Money v={HOOK.amount} /> בעוד {HOOK.years} שנים, בריבית {pct(HOOK.rate)}: <Money v={HOOK.amount} plain /> ÷ <L>{1 + HOOK.rate}</L>
             <sup>{HOOK.years}</sup> = <strong><Money v={Math.round(pv(HOOK.amount, HOOK.rate, HOOK.years))} /></strong>. זה מה שהם שווים היום.
-          </p>
-        </Card>
-        <Rule>n הוא מספר השנים מהיום ועד התשלום — לא מספר השנים שכבר עברו.</Rule>
+        </P>
+        <Remember>n הוא מספר השנים מהיום ועד התשלום — לא מספר השנים שכבר עברו.</Remember>
       </>
     ),
     check: quiz("emp-tool-pv", [
@@ -69,15 +68,13 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
         <div className="flex flex-wrap items-center justify-center gap-2 rounded-xl bg-surface px-4 py-3 text-[17px] font-semibold ring-1 ring-accent/40">
           ריבית = יתרה × (<L>(1 + i)^(m/12) − 1</L>)
         </div>
-        <Card title="רבעון בריבית שנתית 8%">
-          <p>
-            ריבית דריבית: <L>1.08^(3/12) − 1</L> = <strong>{pct(partRate(0.08, 3), 4)}</strong>. ריבית פשוטה הייתה נותנת <L>8% × 3/12</L> = {pct(simplePart(0.08, 3))}. ההפרש קטן — אבל
-            רק הראשון נכון.
-          </p>
-        </Card>
         <P>
-          ותשלום באמצע השנה? מיום התשלום החוב קטן, ולכן אין עליו ריבית עד סוף התקופה. מחשבים ריבית על כל היתרה, ומפחיתים את הריבית על התשלום מיום שולם.
+          <strong>רבעון בריבית שנתית 8%:</strong> ריבית דריבית: <L>1.08^(3/12) − 1</L> = <strong>{pct(partRate(0.08, 3), 4)}</strong>. ריבית פשוטה הייתה נותנת <L>8% × 3/12</L> ={" "}
+          {pct(simplePart(0.08, 3))}. ההפרש קטן — אבל רק הראשון נכון.
         </P>
+        <Part title="ותשלום באמצע השנה?">
+          <P>מיום התשלום החוב קטן, ולכן אין עליו ריבית עד סוף התקופה. מחשבים ריבית על כל היתרה, ומפחיתים את הריבית על התשלום מיום שולם.</P>
+        </Part>
       </>
     ),
     check: quiz("emp-tool-part", [
@@ -95,13 +92,14 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
         <P>
           כשכל השורות ידועות חוץ מאחת, מוצאים אותה מהמעגל. בהטבה מוגדרת השורה הזו היא בדרך כלל <strong>P.N.</strong> — מה שנשאר אחרי שהסברנו כל רכיב.
         </P>
-        <Card title="מוסכמת הסימנים">
-          <p>בחוברות ובקבצי אקסל ההתחייבות נרשמת במינוס, ותשלום בפלוס — כי תשלום מקטין את ההתחייבות. פונקציית PV באקסל מחזירה מינוס; זו לא טעות, רק מהפכים סימן.</p>
-        </Card>
-        <Rule>
+        <P>
+          <strong>מוסכמת הסימנים:</strong> בחוברות ובקבצי אקסל ההתחייבות נרשמת במינוס, ותשלום בפלוס — כי תשלום מקטין את ההתחייבות. פונקציית PV באקסל מחזירה מינוס; זו לא טעות, רק
+          מהפכים סימן.
+        </P>
+        <Remember>
           כלל המעגל: פתיחה + הוצאות ושינויים − תשלומים + P.N. = סגירה; כל רכיב אפשר לגלות אם כל השאר ידועים. כלל הריבית (<span dir="ltr">IAS 19.123</span>): יתרה × ((1+i)^(m/12) − 1),
           ותשלום באמצע השנה מקטין את הריבית על התקופה שנשארה.
-        </Rule>
+        </Remember>
       </>
     ),
     check: quiz("emp-tool-roll", [
@@ -112,7 +110,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
   "emp-tool-solved": {
     lead: "כל אחד משלושת הכלים הוא חישוב של שורה אחת — וחוזרים עליו בכל שאלה.",
     body: (
-      <Wide>
+      <>
         <Stepper
           label="שלוש מיני־דוגמאות"
           steps={[
@@ -158,14 +156,14 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
             },
           ]}
         />
-      </Wide>
+      </>
     ),
   },
   "emp-tool-together": {
     lead: "פותרים לבד, ופותחים רמז רק כשנתקעים: קודם שאלה מכוונת, אחר כך הכלל, השורה הראשונה — והפתרון.",
     body: (
       <>
-        <Card title="א. ערך נוכחי">
+        <Part title="א. ערך נוכחי">
           <HintLadder
             task={
               <>
@@ -184,8 +182,8 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
               </>,
             ]}
           />
-        </Card>
-        <Card title="ב. ריבית עם תשלום באמצע השנה">
+        </Part>
+        <Part title="ב. ריבית עם תשלום באמצע השנה">
           <HintLadder
             task={
               <>
@@ -203,8 +201,8 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
               </>,
             ]}
           />
-        </Card>
-        <Card title="ג. מעגל">
+        </Part>
+        <Part title="ג. מעגל">
           <HintLadder
             task={
               <>
@@ -215,7 +213,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
                 <Money v={TOGETHER.roll.closing} plain /> − <Money v={TOGETHER.roll.opening} plain /> + <Money v={TOGETHER.roll.payments} plain />
               </>, <><Money v={TOGETHER_ROLL} /></>]}
           />
-        </Card>
+        </Part>
       </>
     ),
   },
@@ -223,13 +221,13 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
     lead: "שלושה כלים — ואותם נפעיל בכל שיעור מכאן והלאה.",
     body: (
       <>
+        <P>
+          את שלושת הכלים לא צריך לזכור כנוסחאות נפרדות: <strong>להחזיר להיום</strong>, <strong>להוסיף ריבית לחלק מהשנה</strong>, <strong>לסגור מעגל</strong>.
+        </P>
         <ExplainTask
           task="הסבירו לחבר, בדקה, למה הריבית על חצי שנה אינה חצי מהריבית השנתית."
           model="ריבית שנתית מניחה שהריבית של החצי הראשון כבר מצטרפת לקרן ומרוויחה ריבית בחצי השני. לכן שיעור של חצי שנה, כפול עצמו, צריך לתת את השיעור השנתי — והוא קצת פחות מהחצי: (1+i)^0.5 − 1."
         />
-        <KeyCard>
-          את שלושת הכלים לא צריך לזכור כנוסחאות נפרדות: <strong>להחזיר להיום</strong>, <strong>להוסיף ריבית לחלק מהשנה</strong>, <strong>לסגור מעגל</strong>.
-        </KeyCard>
         <Bridge summary="ארגז הכלים הוא ערך נוכחי, ריבית על חלק משנה ומעגל.">
           ההטבה הראשונה במפה היא דווקא זו שבה לא מהוונים בכלל. למה? {lessonRef("ias19-short")}.
         </Bridge>

@@ -1,5 +1,6 @@
-import { Backpack, CalendarDays, Coins, ShieldCheck } from "lucide-react";
+import { Backpack, CalendarDays, Coins } from "lucide-react";
 import type { ReactNode } from "react";
+import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
 import { DC, DC_PAID, DC_VAR, DC_VAR_YEAR, DC_YEAR, INSURED, INSURED_EXPENSE } from "@/lib/study/ias19/lessons/dc";
@@ -23,7 +24,7 @@ import { lessonRef, lessonsRef, pct } from "@/lib/study/ias19/shared";
 import { Bridge, ExplainTask, HintLadder, MapBranch, RollForward, T19 } from "./ias19-ui";
 import { MiniQuiz } from "./inventory-interactive";
 import { Sorted, Story } from "./inventory-teach";
-import { Card, JE, KeyCard, Money, Rule, Stepper, Wide } from "./ui";
+import { Card, JE, Money, Stepper } from "./ui";
 
 /** The employee-benefits course, lessons 3–4: short-term benefits, and defined contribution against defined benefit. */
 
@@ -68,23 +69,21 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
     lead: "היעדרות שנצברת יוצרת הפרשה על מה שצפוי להיות מנוצל — ובמבשילה, גם על מה שישולם לעוזבים.",
     body: (
       <>
-        <Wide>
-          <DataTable
-            head={["", "מה זה", "מתי מכירים"]}
-            rows={[
-              [<T19 key="a" he="לא נצברת" en="Non-accumulating" />, "חג, מחלה שלא עוברת, חופשת לידה, מילואים", "רק כשההיעדרות קורית (סעיפים 13ב, 18)"],
-              [<T19 key="b" he="נצברת" en="Accumulating" />, "ימים שעוברים לשנה הבאה", "הפרשה על מה שצפוי להיות מנוצל (סעיפים 15–16)"],
-              [<T19 key="c" he="מבשילה" en="Vesting" />, "בעזיבה משלמים על הצבירה", "גם ימי העוזבים הצפויים בהפרשה"],
-              [<T19 key="d" he="לא מבשילה" en="Non-vesting" />, "בעזיבה — כלום", "רק ימים שצפויים להיות מנוצלים"],
-            ]}
-          />
-        </Wide>
-        <Card title="LIFO: מה מנוצל קודם">
-          <p>
+        <DataTable
+          head={["", "מה זה", "מתי מכירים"]}
+          rows={[
+            [<T19 key="a" he="לא נצברת" en="Non-accumulating" />, "חג, מחלה שלא עוברת, חופשת לידה, מילואים", "רק כשההיעדרות קורית (סעיפים 13ב, 18)"],
+            [<T19 key="b" he="נצברת" en="Accumulating" />, "ימים שעוברים לשנה הבאה", "הפרשה על מה שצפוי להיות מנוצל (סעיפים 15–16)"],
+            [<T19 key="c" he="מבשילה" en="Vesting" />, "בעזיבה משלמים על הצבירה", "גם ימי העוזבים הצפויים בהפרשה"],
+            [<T19 key="d" he="לא מבשילה" en="Non-vesting" />, "בעזיבה — כלום", "רק ימים שצפויים להיות מנוצלים"],
+          ]}
+        />
+        <Part title="LIFO: מה מנוצל קודם">
+          <P>
             עובד שיש לו ימים צבורים ומנצל השנה ימים — מנצל <strong>קודם את הזכאות של השנה</strong>, ורק אחר כך את היתרה מהעבר. לכן מי שניצל פחות מהזכאות השנתית לא נגע בצבור, והצבור
             עלול לפקוע.
-          </p>
-        </Card>
+          </P>
+        </Part>
       </>
     ),
     check: quiz("emp-short-absence", [
@@ -101,10 +100,12 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
           הסכום <strong>באופן מהימן</strong>: נוסחה בתנאי התוכנית, סכום שנקבע לפני אישור הדוחות, או דפוס קבוע מהעבר.
         </P>
         <P>ובונוס על רווחים של כמה שנים? הוא כבר לא לזמן קצר — השירות של השנה הראשונה ישולם מאוחר מדי.</P>
-        <Rule>
+        <P>
+          <strong>עלות יום</strong> = שכר ÷ ימי עבודה × (1 + תוספות המעסיק שחלות על הרכיב הזה).
+        </P>
+        <Remember>
           הכלל: הפרשה בסוף השנה = (ימי הצבירה שצפוי לנצל + ימי הצבירה של עוזבים צפויים, אם ההיעדרות מבשילה) × עלות יום. ההוצאה היא ה-P.N. של המעגל: סגירה − פתיחה + תשלומים.
-        </Rule>
-        <KeyCard icon={<Coins className="h-5 w-5" />}>עלות יום = שכר ÷ ימי עבודה × (1 + תוספות המעסיק שחלות על הרכיב הזה).</KeyCard>
+        </Remember>
       </>
     ),
     check: quiz("emp-short-bonus", [
@@ -125,57 +126,55 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
             {SICK.usedMore.days} ימים, ו-{SICK.usedLess.staff} ניצלו {SICK.usedLess.days}.
           </p>
         </Story>
-        <Wide>
-          <Stepper
-            label="ימי מחלה — המעגל"
-            steps={[
-              {
-                title: "1. פתיחה",
-                body: (
+        <Stepper
+          label="ימי מחלה — המעגל"
+          steps={[
+            {
+              title: "1. פתיחה",
+              body: (
+                <p>
+                  לא מבשילים: העוזבים לא יקבלו כלום. מפרישים רק לנשארים: {stayers} × {SICK.carried.days} × <Money v={SICK.dayCost} plain /> = <strong><Money v={SICK_OPENING} /></strong>.
+                </p>
+              ),
+            },
+            {
+              title: "2. תשלומים",
+              body: (
+                <p>
+                  <Money v={SICK.dayCost} plain /> × ({SICK.usedMore.staff} × {SICK.usedMore.days} + {SICK.usedLess.staff} × {SICK.usedLess.days}) = <strong><Money v={SICK_PAID} /></strong>.
+                </p>
+              ),
+            },
+            {
+              title: "3. סגירה — LIFO",
+              body: (
+                <p>
+                  מי שניצל {SICK.usedMore.days} ניצל את כל {SICK.entitlement} הימים של השנה ועוד יום מהצבור; שאר הצבור שלו פקע. מי שניצל {SICK.usedLess.days} השאיר {SICK_LEFT} יום מהשנה:{" "}
+                  {SICK.usedLess.staff} × {SICK_LEFT} × <Money v={SICK.dayCost} plain /> = <strong><Money v={SICK_CLOSING} /></strong>.
+                </p>
+              ),
+            },
+            {
+              title: "4. ההוצאה — המספר שמאזן",
+              body: (
+                <div className="space-y-3">
                   <p>
-                    לא מבשילים: העוזבים לא יקבלו כלום. מפרישים רק לנשארים: {stayers} × {SICK.carried.days} × <Money v={SICK.dayCost} plain /> = <strong><Money v={SICK_OPENING} /></strong>.
+                    <Money v={SICK_CLOSING} plain /> − <Money v={SICK_OPENING} plain /> + <Money v={SICK_PAID} plain /> = <strong><Money v={SICK_EXPENSE} /></strong>.
                   </p>
-                ),
-              },
-              {
-                title: "2. תשלומים",
-                body: (
-                  <p>
-                    <Money v={SICK.dayCost} plain /> × ({SICK.usedMore.staff} × {SICK.usedMore.days} + {SICK.usedLess.staff} × {SICK.usedLess.days}) = <strong><Money v={SICK_PAID} /></strong>.
-                  </p>
-                ),
-              },
-              {
-                title: "3. סגירה — LIFO",
-                body: (
-                  <p>
-                    מי שניצל {SICK.usedMore.days} ניצל את כל {SICK.entitlement} הימים של השנה ועוד יום מהצבור; שאר הצבור שלו פקע. מי שניצל {SICK.usedLess.days} השאיר {SICK_LEFT} יום מהשנה:{" "}
-                    {SICK.usedLess.staff} × {SICK_LEFT} × <Money v={SICK.dayCost} plain /> = <strong><Money v={SICK_CLOSING} /></strong>.
-                  </p>
-                ),
-              },
-              {
-                title: "4. ההוצאה — המספר שמאזן",
-                body: (
-                  <div className="space-y-3">
-                    <p>
-                      <Money v={SICK_CLOSING} plain /> − <Money v={SICK_OPENING} plain /> + <Money v={SICK_PAID} plain /> = <strong><Money v={SICK_EXPENSE} /></strong>.
-                    </p>
-                    <RollForward pnTo="רווח והפסד"
-                      title="הפרשה לימי מחלה"
-                      rows={[
-                        { label: "יתרת פתיחה", value: SICK_OPENING, kind: "balance" },
-                        { label: "תשלומים", value: -SICK_PAID },
-                        { label: "הוצאה (P.N.)", value: SICK_EXPENSE, kind: "pn", how: "בלי היוון — סגירה − פתיחה + תשלומים" },
-                        { label: "יתרת סגירה", value: SICK_CLOSING, kind: "balance" },
-                      ]}
-                    />
-                  </div>
-                ),
-              },
-            ]}
-          />
-        </Wide>
+                  <RollForward pnTo="רווח והפסד"
+                    title="הפרשה לימי מחלה"
+                    rows={[
+                      { label: "יתרת פתיחה", value: SICK_OPENING, kind: "balance" },
+                      { label: "תשלומים", value: -SICK_PAID },
+                      { label: "הוצאה (P.N.)", value: SICK_EXPENSE, kind: "pn", how: "בלי היוון — סגירה − פתיחה + תשלומים" },
+                      { label: "יתרת סגירה", value: SICK_CLOSING, kind: "balance" },
+                    ]}
+                  />
+                </div>
+              ),
+            },
+          ]}
+        />
       </>
     ),
   },
@@ -183,7 +182,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
     lead: "כשהימים מבשילים, גם ימי העוזבים נכנסים להפרשה — ובבונוס, ההפרש בין האומדן לתשלום הוא הוצאת השנה.",
     body: (
       <>
-        <Card title="א. אותה רשת, אבל הימים מבשילים">
+        <Part title="א. אותה רשת, אבל הימים מבשילים">
           <HintLadder
             task={
               <>
@@ -203,8 +202,8 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
               </>,
             ]}
           />
-        </Card>
-        <Card title="ב. בונוס לפי נוסחה">
+        </Part>
+        <Part title="ב. בונוס לפי נוסחה">
           <HintLadder
             task={
               <>
@@ -225,7 +224,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
               </>,
             ]}
           />
-        </Card>
+        </Part>
       </>
     ),
   },
@@ -270,7 +269,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
     lead: "בהפקדה מוגדרת החברה מעבירה סכום קבוע ונפטרת; בהטבה מוגדרת היא מבטיחה את ההטבה עצמה.",
     body: (
       <>
-        <Wide className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <Card title={<T19 he="הפקדה מוגדרת" en="Defined Contribution, DC" par="28" />}>
             <p>החברה מעבירה סכום קבוע לקרן נפרדת, ואין לה שום מחויבות נוספת. כמה העובד יקבל בסוף — תלוי בתשואת הקרן. הסיכון על העובד.</p>
             <p className="text-[14px] text-muted">בישראל: פנסיה צוברת, ורכיב הפיצויים אצל עובדים שחתומים על סעיף 14 לחוק פיצויי פיטורין.</p>
@@ -279,7 +278,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
             <p>החברה מתחייבת להטבה עצמה — סכום לפי נוסחה. הסיכון האקטוארי (תמותה, עליית שכר, תשואה) עליה, גם כשקרן חיצונית משלמת בפועל.</p>
             <p className="text-[14px] text-muted">בישראל: פיצויים מלאים לפי משכורת אחרונה, מענקי פרישה, פנסיה תקציבית.</p>
           </Card>
-        </Wide>
+        </div>
       </>
     ),
     check: quiz("emp-dc-two", [
@@ -309,11 +308,11 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
     lead: "בהפקדה מוגדרת ההוצאה היא ההפקדה המגיעה על השנה; מה שעוד לא הועבר — התחייבות.",
     body: (
       <>
-        <Rule>
-          הכלל (<span dir="ltr">IAS 19.51–52</span>): הוצאה = ההפקדה המגיעה בגין שירות התקופה. ההפרש מול מה ששולם הוא התחייבות (או נכס, אם שילמו יותר). בלי היוון — אלא אם ההפקדה צפויה
-          להשתלם יותר מ-12 חודשים אחרי סוף השנה.
-        </Rule>
-        <KeyCard icon={<ShieldCheck className="h-5 w-5" />}>אין כאן מדידה אקטוארית, אין ריבית ואין P.N. ההפקדה המוגדרת היא העלה הקל בענף.</KeyCard>
+        <P>
+          <strong>הכלל</strong> (<span dir="ltr">IAS 19.51–52</span>): הוצאה = ההפקדה המגיעה בגין שירות התקופה. ההפרש מול מה ששולם הוא התחייבות (או נכס, אם שילמו יותר). בלי היוון —
+          אלא אם ההפקדה צפויה להשתלם יותר מ-12 חודשים אחרי סוף השנה.
+        </P>
+        <Remember>אין כאן מדידה אקטוארית, אין ריבית ואין P.N. ההפקדה המוגדרת היא העלה הקל בענף.</Remember>
       </>
     ),
     check: quiz("emp-dc-record", [
@@ -361,7 +360,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
     lead: "שכר אחר — אותה דרך; ומבטח שקיבל את כל הסיכון הופך את התוכנית להפקדה מוגדרת.",
     body: (
       <>
-        <Card title="א. שכר אחר">
+        <Part title="א. שכר אחר">
           <HintLadder
             task={
               <>
@@ -370,8 +369,8 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
             }
             hints={["מה מגיע על כל השנה — ומה מזה כבר הועבר?", "הכלל: הוצאה = ההפקדה המגיעה; ההפרש — זכאים.", <>הוצאה: <Money v={DC_VAR.payroll} plain /> × {pct(DC_VAR.rate)} = <Money v={DC_VAR_YEAR.expense} />.</>, <>זכאים <Money v={DC_VAR_YEAR.liability} />; מזומן <Money v={DC_VAR_YEAR.expense - DC_VAR_YEAR.liability} />.</>]}
           />
-        </Card>
-        <Card title="ב. מבטח שלקח את הסיכון">
+        </Part>
+        <Part title="ב. מבטח שלקח את הסיכון">
           <HintLadder
             task={
               <>
@@ -380,7 +379,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
             }
             hints={["האם לחברה יש מחויבות כלשהי מעבר לפרמיה?", "המבחן: מי נושא בסיכון — המבטח. הפקדה מוגדרת.", <>הוצאה = הפרמיה: <Money v={INSURED.payroll} plain /> × {pct(INSURED.premium)} = <Money v={INSURED_EXPENSE} />.</>, <>מעגל: פתיחה 0, הוצאה <Money v={INSURED_EXPENSE} plain />, תשלום <Money v={INSURED_EXPENSE} plain />, סגירה 0.</>]}
           />
-        </Card>
+        </Part>
       </>
     ),
   },

@@ -1,4 +1,3 @@
-import { Lightbulb } from "lucide-react";
 import type { ReactNode } from "react";
 import { Tex } from "@/components/study/math";
 import { type CheckItem, ExamChecklist } from "./widgets";
@@ -83,37 +82,27 @@ const CHECKLIST: CheckItem[] = [
 export function ExamTipsSection() {
   return (
     <>
-      <div className="flex items-center gap-3">
-        <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
-          <Lightbulb className="h-5 w-5" />
-        </span>
-        <div>
-          <h3 className="text-xl font-semibold text-fg">טיפים מזהב — הטעויות שעולות הכי הרבה נקודות</h3>
-          <p className="text-sm text-muted">בכל כרטיס: מה כותבים בטעות, ומה נכון.</p>
-        </div>
-      </div>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <p>
+        <strong>הטעויות שעולות הכי הרבה נקודות.</strong> בכל אחת: מה כותבים בטעות, ומה נכון.
+      </p>
+      <ol className="max-w-[70ch] divide-y divide-line">
         {TIPS.map((t, i) => (
-          <article key={t.title} className="card flex flex-col overflow-hidden">
-            <p className="flex items-start gap-2.5 px-4 pt-4 text-[15px] font-semibold text-fg">
-              <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-amber-500/15 text-xs font-bold text-amber-700 dark:text-amber-400">
-                {i + 1}
-              </span>
+          <li key={t.title} className="space-y-1 py-3">
+            <p className="flex items-start gap-2.5 font-semibold text-fg">
+              <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
               {t.title}
             </p>
-            <div className="mt-3 flex-1 space-y-2 px-4 pb-4 text-[13.5px] leading-relaxed">
-              <p className="rounded-lg border border-danger/25 bg-danger/[0.05] px-3 py-2 text-fg/85">
-                <span className="font-semibold text-danger">✗ טעות: </span>
-                {t.wrong}
-              </p>
-              <p className="rounded-lg border border-success/25 bg-success/[0.06] px-3 py-2 text-fg/85">
-                <span className="font-semibold text-success">✓ נכון: </span>
-                {t.right}
-              </p>
-            </div>
-          </article>
+            <p className="ps-8.5 text-[15px] text-fg/85">
+              <span className="font-semibold text-danger">✗ טעות: </span>
+              {t.wrong}
+            </p>
+            <p className="ps-8.5 text-[15px] text-fg/85">
+              <span className="font-semibold text-success">✓ נכון: </span>
+              {t.right}
+            </p>
+          </li>
         ))}
-      </div>
+      </ol>
       <ExamChecklist items={CHECKLIST} />
     </>
   );

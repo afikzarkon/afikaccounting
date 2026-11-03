@@ -1,4 +1,5 @@
 import { Printer } from "lucide-react";
+import { Deeper, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
 import { explainPeriod, explainSolve, m, pc } from "@/lib/learn/inventory-explain";
@@ -6,11 +7,11 @@ import { cn } from "@/lib/utils";
 import { GALYAM_GP, galyam, PRACTICE } from "@/lib/learn/inventory-examples";
 import { InventoryCalculator } from "./inventory-calculator";
 import { AnswerCheck, SortQuiz, TryInCalc } from "./inventory-interactive";
-import { ChainChips, MoreDialog } from "./inventory-teach";
+import { ChainChips } from "./inventory-teach";
 import { TraceStepView, TraceView } from "./inventory-trace";
 import { PrintButton } from "./print-button";
 import { Tabs } from "./tabs";
-import { Card, KeyCard, Rule, type Step, Stepper, Wide } from "./ui";
+import { Card, type Step, Stepper } from "./ui";
 
 // The full question (Gal-Yam) also supplies the examples for the routine.
 const G = galyam();
@@ -258,38 +259,34 @@ export const EXAM_SCREENS: Record<string, ScreenContent> = {
     lead: "שאלת מלאי בנויה מארבעה חלקים: כותרת, טבלת נתונים, נתונים נוספים ו״נדרש״. רוב הנקודות מתחבאות בנתונים הנוספים.",
     body: (
       <>
-        <Wide>
-          <ol className="space-y-2 rounded-2xl border border-line bg-surface p-3" aria-label="חלקי שאלת מלאי">
-            {ANATOMY.map((a, i) => (
-              <li key={a.part} className={cn("grid gap-1 rounded-xl border-2 border-dashed p-3 sm:grid-cols-[9rem_minmax(0,1fr)_minmax(0,1fr)] sm:items-center sm:gap-3", a.tone)}>
-                <span className="flex items-center gap-2 font-bold text-fg">
-                  <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[12px] text-accent-fg">{i + 1}</span>
-                  {a.part}
-                </span>
-                <span className="text-[14px] text-muted">{a.what}</span>
-                <span className="text-[14.5px] text-fg">{a.why}</span>
-              </li>
-            ))}
+        <ol className="space-y-2 rounded-2xl border border-line bg-surface p-3" aria-label="חלקי שאלת מלאי">
+          {ANATOMY.map((a, i) => (
+            <li key={a.part} className={cn("grid gap-1 rounded-xl border-2 border-dashed p-3 sm:grid-cols-[9rem_minmax(0,1fr)_minmax(0,1fr)] sm:items-center sm:gap-3", a.tone)}>
+              <span className="flex items-center gap-2 font-bold text-fg">
+                <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[12px] text-accent-fg">{i + 1}</span>
+                {a.part}
+              </span>
+              <span className="text-[14px] text-muted">{a.what}</span>
+              <span className="text-[14.5px] text-fg">{a.why}</span>
+            </li>
+          ))}
+        </ol>
+        <Deeper title="סוגי השאלות שחוזרים">
+          <ol className="list-inside list-[hebrew] space-y-1.5">
+            <li>שאלה פתוחה בשני חלקים — הערכת מלאי, ואחר כך נעלם או ביטוח.</li>
+            <li>סעיף מלאי בתוך גיליון רב-טורי: &quot;עלות 700,000, שווי מימוש נטו 660,000&quot; ← מלאי הסגירה 660,000, וההפרש לעלות המכר.</li>
+            <li>שאלות אמריקאיות עם חישוב מאחורי כל היגד.</li>
+            <li>שאלות תיאורטיות קצרות.</li>
           </ol>
-        </Wide>
-        <KeyCard>קוראים קודם את ה״נדרש״, אחר כך את הנתונים הנוספים — ורק אז מתחילים לחשב.</KeyCard>
-        <div className="flex flex-wrap gap-2">
-          <MoreDialog label="סוגי השאלות שחוזרים">
-            <ol className="list-inside list-[hebrew] space-y-1.5">
-              <li>שאלה פתוחה בשני חלקים — הערכת מלאי, ואחר כך נעלם או ביטוח.</li>
-              <li>סעיף מלאי בתוך גיליון רב-טורי: &quot;עלות 700,000, שווי מימוש נטו 660,000&quot; ← מלאי הסגירה 660,000, וההפרש לעלות המכר.</li>
-              <li>שאלות אמריקאיות עם חישוב מאחורי כל היגד.</li>
-              <li>שאלות תיאורטיות קצרות.</li>
-            </ol>
-          </MoreDialog>
-          <MoreDialog label="ניהול זמן וניקוד">
-            <ul className="list-inside list-disc space-y-1.5">
-              <li>שאלת מלאי פתוחה שווה בדרך כלל רבע מהמבחן — אל תיתקעו על סעיף אחד.</li>
-              <li>כתבו נוסחה לפני המספרים, ורשמו כל הנחה שהנחתם — מקבלים ניקוד על היגיון.</li>
-              <li>נעלם תוקע? המשיכו בדוח עם תא ריק — משוואה אחרת תפתור אותו.</li>
-            </ul>
-          </MoreDialog>
-        </div>
+        </Deeper>
+        <Deeper title="ניהול זמן וניקוד">
+          <ul className="list-inside list-disc space-y-1.5">
+            <li>שאלת מלאי פתוחה שווה בדרך כלל רבע מהמבחן — אל תיתקעו על סעיף אחד.</li>
+            <li>כתבו נוסחה לפני המספרים, ורשמו כל הנחה שהנחתם — מקבלים ניקוד על היגיון.</li>
+            <li>נעלם תוקע? המשיכו בדוח עם תא ריק — משוואה אחרת תפתור אותו.</li>
+          </ul>
+        </Deeper>
+        <Remember>קוראים קודם את ה״נדרש״, אחר כך את הנתונים הנוספים — ורק אז מתחילים לחשב.</Remember>
       </>
     ),
   },
@@ -297,9 +294,7 @@ export const EXAM_SCREENS: Record<string, ScreenContent> = {
     lead: "שגרה של שמונה צעדים, באותו סדר בכל שאלה: מה מבקשים, מה נתון, באיזו שיטה — ורק אז מחשבים.",
     body: (
       <>
-        <Wide>
-          <ChainChips items={STEPS.map((s) => s.title)} />
-        </Wide>
+        <ChainChips items={STEPS.map((s) => s.title)} />
         <Stepper label="שגרת שמונה הצעדים" steps={routineSteps} />
       </>
     ),
@@ -321,7 +316,7 @@ export const EXAM_SCREENS: Record<string, ScreenContent> = {
           </ul>
           <p className="font-semibold">נדרש: מלאי הסגירה בספרים, עלות המכר, ומחיר המכירה ב-10.3.</p>
         </Card>
-        <KeyCard>לפני שממשיכים: מה נדרש? איזה נתון נוסף משנה מה? באיזו שיטה? במסך הבא — הפתרון, צעד אחר צעד.</KeyCard>
+        <Remember>לפני שממשיכים: מה נדרש? איזה נתון נוסף משנה מה? באיזו שיטה? במסך הבא — הפתרון, צעד אחר צעד.</Remember>
       </>
     ),
   },
@@ -330,22 +325,18 @@ export const EXAM_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <Stepper label="גל-ים · הפתרון" steps={solveSteps} />
-        <Rule>
-          מלאי סגירה בספרים: {m(G.result.closingCarrying)} ₪ · עלות המכר: {m(G.result.cogs)} ₪ · מחיר המכירה ב-10.3: {m(G.solved.values.price)} ₪.
-        </Rule>
         <div className="flex flex-wrap gap-2">
           <TryInCalc id="galyam" label="פתחו את השאלה הזו במחשבון" />
         </div>
+        <Remember>
+          מלאי סגירה בספרים: {m(G.result.closingCarrying)} ₪ · עלות המכר: {m(G.result.cogs)} ₪ · מחיר המכירה ב-10.3: {m(G.solved.values.price)} ₪.
+        </Remember>
       </>
     ),
   },
   "inv-calc": {
     lead: "פתרתם שאלה? הזינו את הנתונים — והמחשבון מראה את כל הדרך, צעד אחר צעד. כל דוגמה מהשיעורים נטענת אליו בלחיצה.",
-    body: (
-      <Wide>
-        <InventoryCalculator />
-      </Wide>
-    ),
+    body: <InventoryCalculator />,
   },
 };
 

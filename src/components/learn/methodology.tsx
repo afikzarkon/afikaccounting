@@ -1,20 +1,8 @@
-import {
-  BookOpenCheck,
-  CalendarCheck,
-  CircleCheck,
-  CircleX,
-  ClipboardList,
-  GitBranch,
-  Hourglass,
-  Landmark,
-  LineChart,
-  ListChecks,
-  Percent,
-  Receipt,
-} from "lucide-react";
+import { BookOpenCheck, CircleCheck, CircleX } from "lucide-react";
 import { Callout, DataTable, Dt, JournalEntry, Num } from "@/components/study/blocks";
 import { Formula, Tex } from "@/components/study/math";
-import { StepCard, texNum } from "@/components/study/ui";
+import { StepPart } from "@/components/learn/step-part";
+import { texNum } from "@/components/study/ui";
 import {
   MACHINE,
   MACHINE_ANNUAL,
@@ -99,23 +87,20 @@ const CHANGES: [string, string][] = [
 export function MethodologySection() {
   return (
     <>
-      <div className="card p-5">
-        <p className="text-xs font-semibold text-accent">דרכים לפתור שאלה — במבט אחד</p>
-        <p className="mt-1 text-[15px] text-fg/90">
-          כל שאלה על רכוש קבוע — פשוטה או מסובכת — נפתרת באותם שלבים, באותו הסדר. לאורך כל הדרך נפתור שאלה אחת מלאה (בשלב 1): מכונה שהוזמנה
-          ושולמה ב-<Dt>{MACHINE.orderDate}</Dt> ונכנסה לשימוש ב-<Dt>{MACHINE.readyDate}</Dt>. כל מספר בכל שלב מגיע מהשאלה הזו.
-        </p>
-        <ol className="mt-4 grid gap-2 sm:grid-cols-3">
-          {STEPS.map((s, i) => (
-            <li key={s} className="flex items-center gap-2 rounded-xl border border-line bg-surface-2/50 px-3 py-2.5 text-sm font-medium text-fg">
-              <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold text-accent-fg">{i + 1}</span>
-              {s}
-            </li>
-          ))}
-        </ol>
-      </div>
+      <p>
+        כל שאלה על רכוש קבוע — פשוטה או מסובכת — נפתרת באותם שלבים, באותו הסדר. לאורך כל הדרך נפתור שאלה אחת מלאה (בשלב 1): מכונה שהוזמנה ושולמה
+        ב-<Dt>{MACHINE.orderDate}</Dt> ונכנסה לשימוש ב-<Dt>{MACHINE.readyDate}</Dt>. כל מספר בכל שלב מגיע מהשאלה הזו.
+      </p>
+      <ol className="max-w-[70ch] space-y-1.5">
+        {STEPS.map((s, i) => (
+          <li key={s} className="flex items-center gap-2.5">
+            <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
+            {s}
+          </li>
+        ))}
+      </ol>
 
-      <StepCard step={1} title="רישום כל הנתונים הבסיסיים בשאלה" lead="טבלה אחת בצד הדף, לפני שמחשבים משהו" icon={<ClipboardList className="h-5 w-5" />}>
+      <StepPart step={1} title="רישום כל הנתונים הבסיסיים בשאלה" lead="טבלה אחת בצד הדף, לפני שמחשבים משהו">
         <p>
           שאלות מבחן מפזרות נתונים לאורך כמה פסקאות, ולפעמים הנתון החשוב ביותר מופיע בשורה תמימה בסוף. עוברים על השאלה פעם אחת ורושמים כל
           נתון במקום קבוע — כך שום דבר לא נשכח, והבודק יכול לעקוב אחרי הפתרון. זו השאלה שנפתור לאורך כל תשעת השלבים:
@@ -173,9 +158,9 @@ export function MethodologySection() {
             ["נדרשי השאלה", `עלות; פחת ולוח פחת; פקודות יומן ל-${Y1} ול-${Y2}; הצגה במאזן ובדוח רווח והפסד`],
           ]}
         />
-      </StepCard>
+      </StepPart>
 
-      <StepCard step={2} title="מועד הכניסה לשימוש" lead="מתי הנכס מוכן לפעול כפי שההנהלה התכוונה — לא מתי שילמו עליו" icon={<CalendarCheck className="h-5 w-5" />}>
+      <StepPart step={2} title="מועד הכניסה לשימוש" lead="מתי הנכס מוכן לפעול כפי שההנהלה התכוונה — לא מתי שילמו עליו">
         <p>
           לפי <strong>סעיף 55 לתקן</strong>, הפחת מתחיל כשהנכס <strong>זמין לשימוש</strong>: נמצא במיקום ובמצב הדרושים כדי לפעול באופן
           שההנהלה התכוונה. התקן מתעניין ביכולת של הנכס להפיק הטבות, לא בתזרים המזומנים — ולכן מועד התשלום, מועד ההזמנה ואפילו מועד
@@ -187,9 +172,9 @@ export function MethodologySection() {
             מי שמחשב 11 חודשי פחת (מפברואר) במקום {MONTHS} (מאפריל) מאבד את כל הלוח. סמנו בטקסט השאלה כל תאריך, ושאלו על כל אחד: האם <em>בתאריך הזה</em> הנכס כבר יכול לעבוד?
           </p>
         </Callout>
-      </StepCard>
+      </StepPart>
 
-      <StepCard step={3} title="שיטת הפחת" lead="השיטה משקפת את הדרך שבה הנכס מפיק הטבות" icon={<LineChart className="h-5 w-5" />}>
+      <StepPart step={3} title="שיטת הפחת" lead="השיטה משקפת את הדרך שבה הנכס מפיק הטבות">
         <p>
           לפי <strong>סעיף 60</strong>, שיטת הפחת צריכה לשקף את דפוס הצריכה של ההטבות מהנכס. במבחן השיטה כמעט תמיד נתונה — המשימה היא לזהות
           אותה ולדעת מה היא משנה בחישוב:
@@ -221,9 +206,9 @@ export function MethodologySection() {
         <p>
           את כל ארבע השיטות, עם לוח נוסחאות צמוד, אפשר לנסות ב<a href="#simulator" className="font-medium text-accent hover:underline">סימולטור הפחת</a>.
         </p>
-      </StepCard>
+      </StepPart>
 
-      <StepCard step={4} title="מציאת עלות הנכס" lead="מה נכנס לעלות הנכס, ומה נזקף מיד לרווח והפסד" icon={<Receipt className="h-5 w-5" />}>
+      <StepPart step={4} title="מציאת עלות הנכס" lead="מה נכנס לעלות הנכס, ומה נזקף מיד לרווח והפסד">
         <p>
           העיקרון: נכללות רק עלויות <strong>שניתן לייחס במישרין</strong> להבאת הנכס למיקום ולמצב הדרושים לפעולתו (סעיף 16). כל מה שקורה{" "}
           <em>אחרי</em> שהנכס מוכן, או שקשור לעסק ולא לנכס — הוצאה.
@@ -250,9 +235,9 @@ export function MethodologySection() {
             </span>,
           ]}
         />
-      </StepCard>
+      </StepPart>
 
-      <StepCard step={5} title="אורך חיים וערך גרט" lead="על פני כמה זמן מפחיתים, ואיזה חלק מהעלות לא מפחיתים בכלל" icon={<Hourglass className="h-5 w-5" />}>
+      <StepPart step={5} title="אורך חיים וערך גרט" lead="על פני כמה זמן מפחיתים, ואיזה חלק מהעלות לא מפחיתים בכלל">
         <p>
           <strong>אורך החיים</strong> הוא התקופה שהחברה מצפה להשתמש בנכס — לא כמה זמן הוא מחזיק פיזית. <strong>ערך הגרט</strong> הוא מה
           שהחברה מצפה לקבל על הנכס בסוף השימוש, נטו מעלויות המימוש. את הגרט לא מפחיתים, ולכן הסכום שמתפזר על פני החיים הוא:
@@ -265,9 +250,9 @@ export function MethodologySection() {
           זהו הבסיס של קו ישר, סכום ספרות השנים ויחידות התפוקה. <strong>יוצאת הדופן: יתרה פוחתת</strong> — שם השיעור מוחל על היתרה בספרים
           המלאה, והגרט כבר מגולם בשיעור עצמו (ראו את הסימולטור).
         </p>
-      </StepCard>
+      </StepPart>
 
-      <StepCard step={6} title="המודל החשבונאי" lead="מודל העלות או מודל הערכה מחדש — לכל קבוצת נכסים" icon={<Landmark className="h-5 w-5" />}>
+      <StepPart step={6} title="המודל החשבונאי" lead="מודל העלות או מודל הערכה מחדש — לכל קבוצת נכסים">
         <p>
           לפי <strong>סעיף 29</strong>, החברה בוחרת מודל אחד לכל קבוצה של רכוש קבוע (מבנים, מכונות, כלי רכב...) ומיישמת אותו על כל הנכסים
           בקבוצה. המודל קובע איך הנכס נמדד אחרי ההכרה הראשונית:
@@ -286,9 +271,9 @@ export function MethodologySection() {
           </div>
         </div>
         <p>בדוגמה שלנו: מודל העלות, ולכן היתרה בספרים היא פשוט העלות פחות הפחת הנצבר.</p>
-      </StepCard>
+      </StepPart>
 
-      <StepCard step={7} title="שינויים שקרו במהלך חיי הנכס" lead="כל אירוע שדורש מתן ביטוי חשבונאי — ומה עושים איתו" icon={<GitBranch className="h-5 w-5" />}>
+      <StepPart step={7} title="שינויים שקרו במהלך חיי הנכס" lead="כל אירוע שדורש מתן ביטוי חשבונאי — ומה עושים איתו">
         <p>מסמנים בשאלה כל אירוע שקרה אחרי הכניסה לשימוש. כל אחד מהם משנה את הנתונים מאותו מועד והלאה:</p>
         <DataTable head={["אירוע", "מה עושים בפתרון"]} rows={CHANGES} />
         <Callout title="מחלקים את ציר הזמן בכל אירוע">
@@ -302,9 +287,9 @@ export function MethodologySection() {
             .
           </p>
         </Callout>
-      </StepCard>
+      </StepPart>
 
-      <StepCard step={8} title="תחילת ההפחתה — כמה חודשים בשנה הראשונה" lead="סופרים חודשים מלאים מחודש הכניסה לשימוש ועד סוף השנה" icon={<Percent className="h-5 w-5" />}>
+      <StepPart step={8} title="תחילת ההפחתה — כמה חודשים בשנה הראשונה" lead="סופרים חודשים מלאים מחודש הכניסה לשימוש ועד סוף השנה">
         <p>
           כל שנת חיים של הנכס היא <strong>שנה מלאה של 12 חודשים</strong> שמתחילה בחודש הכניסה לשימוש — אבל שנת הכספים מתחילה בינואר. לכן
           בשנת הכספים הראשונה מפחיתים רק את החודשים מחודש הכניסה (כולל) ועד דצמבר, ואת שאר החודשים של אותה שנת חיים — בשנת הכספים הבאה.
@@ -324,9 +309,9 @@ export function MethodologySection() {
             את המוסכמה (חצי חודש או חודש שלם).
           </p>
         </Callout>
-      </StepCard>
+      </StepPart>
 
-      <StepCard step={9} title="נדרשי השאלה" lead="קוראים שוב מה בדיוק מבקשים — ועונים על כל סעיף בנפרד" icon={<ListChecks className="h-5 w-5" />}>
+      <StepPart step={9} title="נדרשי השאלה" lead="קוראים שוב מה בדיוק מבקשים — ועונים על כל סעיף בנפרד">
         <p>
           לפני שכותבים תשובה, חוזרים לנדרשי השאלה ומסמנים כל סעיף. מציגים בדיוק את מה שנדרש — אבל מחשבים תמיד דרך הלוח, שנה אחרי שנה,
           עד השנה המבוקשת. הנדרשים הנפוצים:
@@ -357,8 +342,8 @@ export function MethodologySection() {
         <p>
           <strong>נדרש 3 — פקודות יומן:</strong>
         </p>
-        <div className="my-4 rounded-2xl bg-linear-to-br from-[#0b1d4a] to-[#060d22] p-1 shadow-card ring-1 ring-white/10">
-          <div className="grid gap-1 rounded-xl bg-surface p-1 xl:grid-cols-3">
+        <div>
+          <div className="space-y-3">
             <JournalEntry
               title="רכישת המכונה והוצאות ההקמה (במזומן)"
               date={MACHINE.readyDate}
@@ -435,7 +420,7 @@ export function MethodologySection() {
           <BookOpenCheck className="h-4 w-4 shrink-0 text-accent" />
           בסוף כל תרגיל — עברו על הצ׳ק-ליסט בלשונית <a href="#exam" className="font-medium text-accent hover:underline">טיפים למבחן</a>.
         </p>
-      </StepCard>
+      </StepPart>
     </>
   );
 }

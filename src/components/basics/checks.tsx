@@ -2,10 +2,11 @@ import { ArrowLeft, Banknote, CalendarClock, Undo2 } from "lucide-react";
 import type { ReactNode } from "react";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { CHECKS, SPLIT } from "@/lib/learn/basics";
+import { Part, Remember } from "@/components/study-mode/screen-parts";
 import { cn } from "@/lib/utils";
 import { JournalCheck } from "./journal-check";
 import { Posted } from "./t-accounts";
-import { JE, KeyCard, Money, Stepper, Term } from "./ui";
+import { JE, Money, Stepper, Term } from "./ui";
 
 // The three kinds of cheque, each by the one question that matters: when does the money move?
 const KINDS: { icon: ReactNode; name: string; when: string; got: string; gave: string; tone: "cash" | "later" | "back" }[] = [
@@ -52,7 +53,7 @@ export const CHECKS_SCREENS: Record<string, ScreenContent> = {
     lead: "צ׳ק הוא אמצעי תשלום, לא חשבון — אין חשבון בשם ״צ׳קים״. בכל צ׳ק שואלים שאלה אחת: מתי הכסף באמת זז?",
     body: (
       <>
-        <ul className="grid gap-2 md:grid-cols-3 [column-span:all]">
+        <ul className="grid gap-2 md:grid-cols-3">
           {KINDS.map((k) => (
             <li
               key={k.name}
@@ -81,7 +82,9 @@ export const CHECKS_SCREENS: Record<string, ScreenContent> = {
             </li>
           ))}
         </ul>
-        <KeyCard>צ׳ק דחוי מתנהג בדיוק כמו אשראי. ביום הפירעון רק החוב נסגר מול המזומן — אין הכנסה או הוצאה חדשה.</KeyCard>
+        <p>
+          <strong>צ׳ק דחוי מתנהג בדיוק כמו אשראי.</strong> ביום הפירעון רק החוב נסגר מול המזומן — אין הכנסה או הוצאה חדשה.
+        </p>
         <p>
           עכשיו הכול בסיפור אחד: חנות כלי בית באביב. עברו צעד אחר צעד, ושימו לב לכרטיס <strong>לקוחות</strong> — הוא נסגר, נפתח שוב כשהצ׳ק חוזר, ונסגר שוב בסוף.
         </p>
@@ -89,10 +92,11 @@ export const CHECKS_SCREENS: Record<string, ScreenContent> = {
           label="חנות כלי הבית · צ׳קים מכל הסוגים"
           steps={CHECKS.run.map((x, i) => ({ title: `${x.date} · ${x.text}`, body: <Posted entries={CHECKS.run} at={i} title="פקודת היומן" /> }))}
         />
-        <p className="rounded-xl border border-amber-500/40 bg-amber-500/[0.08] px-4 py-2.5 text-[15px]">
+        <p>
           <strong>צ׳ק שחזר</strong> לא מבטל את המכירה: הסחורה נמסרה, ורק הגבייה נכשלה. לכן מחזירים רק את מה שקרה ביום הפירעון — ח׳ לקוחות / ז׳ מזומן. ה
           <Term he="עמלה" /> שהבנק גבה היא הוצאה של העסק.
         </p>
+        <Remember>צ׳ק דחוי = אשראי עד יום הפירעון. צ׳ק שחזר = פקודה הפוכה לפירעון, ועמלת הבנק — הוצאה.</Remember>
       </>
     ),
     check: (
@@ -126,13 +130,13 @@ export const CHECKS_SCREENS: Record<string, ScreenContent> = {
     lead: "בדרך כלל המקדמה לא מכסה את כל העסקה. כשהסחורה מגיעה, מפרקים את המחיר לפי האופן שבו שולם כל חלק.",
     body: (
       <>
-        <KeyCard>צד אחד של הפקודה הוא העסקה כולה. בצד השני — שורה לכל אופן תשלום. והמקדמה? היא נסגרת בסכום שנוצל ממנה.</KeyCard>
         <p>
           צ׳ק דחוי ואשראי לאותו ספק (או לאותו לקוח) נרשמים באותו חשבון: שניהם חוב שעוד לא נפרע. לכן מותר — ונוח — לחבר אותם לשורה אחת.
         </p>
-        <section className="space-y-3">
-          <h3 className="text-lg font-semibold text-fg">קנייה: חלק מהמקדמה, חלק בצ׳ק, חלק באשראי</h3>
-          <Breakdown
+        <p>
+          <strong>קנייה: חלק מהמקדמה, חלק בצ׳ק, חלק באשראי</strong>
+        </p>
+        <Breakdown
           label="הקנייה מהספק"
           total={50_000}
           parts={[
@@ -141,22 +145,21 @@ export const CHECKS_SCREENS: Record<string, ScreenContent> = {
             { name: "אשראי", amount: 20_000, account: "ספקים" },
           ]}
         />
-          <JE entry={SPLIT.purchase} />
-        </section>
-        <section className="space-y-3">
-          <h3 className="text-lg font-semibold text-fg">מכירה: אותו היגיון, מהצד השני</h3>
+        <JE entry={SPLIT.purchase} />
+        <Part title="מכירה: אותו היגיון, מהצד השני">
           <Breakdown
-          label="המכירה ללקוח"
-          total={26_000}
-          parts={[
-            { name: "מהמקדמה", amount: 6_000, account: "מקדמות מלקוחות" },
-            { name: "מזומן", amount: 4_000, account: "מזומן" },
-            { name: "צ׳ק דחוי", amount: 5_000, account: "לקוחות" },
-            { name: "אשראי", amount: 11_000, account: "לקוחות" },
-          ]}
-        />
+            label="המכירה ללקוח"
+            total={26_000}
+            parts={[
+              { name: "מהמקדמה", amount: 6_000, account: "מקדמות מלקוחות" },
+              { name: "מזומן", amount: 4_000, account: "מזומן" },
+              { name: "צ׳ק דחוי", amount: 5_000, account: "לקוחות" },
+              { name: "אשראי", amount: 11_000, account: "לקוחות" },
+            ]}
+          />
           <JE entry={SPLIT.sale} />
-        </section>
+        </Part>
+        <Remember>צד אחד של הפקודה הוא העסקה כולה. בצד השני — שורה לכל אופן תשלום. והמקדמה? היא נסגרת בסכום שנוצל ממנה.</Remember>
       </>
     ),
     check: (

@@ -1,6 +1,7 @@
 import { Laptop, Receipt } from "lucide-react";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { ScreenLink } from "@/components/study-mode/screen-link";
+import { Remember } from "@/components/study-mode/screen-parts";
 import { SIMPLE } from "@/lib/study/basics/shared";
 import { ActionFinder } from "./action-finder";
 import { EquationWidget } from "./equation-widget";
@@ -9,7 +10,7 @@ import { JournalCheck } from "./journal-check";
 import { MiniQuiz } from "./inventory-interactive";
 import { EntryFlow } from "./entry-flow";
 import { TIntro } from "./t-accounts";
-import { Card, Money, Term } from "./ui";
+import { Money, Term } from "./ui";
 
 // Expense or investment, row by row: what it is, where it is reported, what it does to profit on the day it is paid.
 const EXPENSE_VS_ASSET: [string, string, string][] = [
@@ -47,6 +48,7 @@ export const ENTRIES_SCREENS: Record<string, ScreenContent> = {
           כל פעולה משנה את המשוואה בשני מקומות לפחות, והיא תמיד נשארת מאוזנת. נסו כאן על ארבע הפעולות הראשונות של עסק קטן. את העסק כולו, עם כרטיסי ה-T, תראו בהמשך השיעור — ב<ScreenLink id="lab" />.
         </p>
         <EquationWidget count={4} />
+        <Remember>נכסים = התחייבויות + הון — אחרי כל פעולה, תמיד.</Remember>
       </>
     ),
     check: (
@@ -98,19 +100,19 @@ export const ENTRIES_SCREENS: Record<string, ScreenContent> = {
             </div>
           ))}
         </div>
-        <Card title="דוגמה: סדנת הנרות שילמה באפריל 12,500 ₪">
-          <p>
-            <Money v={3_500} /> שכירות לחודש, ו-<Money v={9_000} /> על מכונה להמסת שעווה. באותו חודש היא מכרה נרות ב-<Money v={8_000} />.
-          </p>
-          <ul className="list-disc space-y-1 ps-5 marker:text-subtle">
-            <li>
-              השכירות של אפריל נגמרה באפריל — הוצאה. הרווח: <Money v={8_000} /> − <Money v={3_500} /> = <strong><Money v={4_500} /></strong>.
-            </li>
-            <li>המכונה לא נכנסת לחישוב הרווח: <Money v={9_000} /> בחשבון הפכו למכונה ששווה <Money v={9_000} />. לעסק יש אותו שווי — רק בצורה אחרת.</li>
-            <li>מי שהיה רושם גם את המכונה כהוצאה היה מראה הפסד של <Money v={4_500} /> — בחודש שבו הסדנה בכלל הרוויחה.</li>
-          </ul>
-        </Card>
+        <p>
+          <strong>דוגמה: סדנת הנרות שילמה באפריל 12,500 ₪.</strong> <Money v={3_500} /> שכירות לחודש, ו-<Money v={9_000} /> על מכונה להמסת שעווה. באותו חודש היא
+          מכרה נרות ב-<Money v={8_000} />.
+        </p>
+        <ul className="list-disc space-y-1 ps-5 marker:text-subtle">
+          <li>
+            השכירות של אפריל נגמרה באפריל — הוצאה. הרווח: <Money v={8_000} /> − <Money v={3_500} /> = <strong><Money v={4_500} /></strong>.
+          </li>
+          <li>המכונה לא נכנסת לחישוב הרווח: <Money v={9_000} /> בחשבון הפכו למכונה ששווה <Money v={9_000} />. לעסק יש אותו שווי — רק בצורה אחרת.</li>
+          <li>מי שהיה רושם גם את המכונה כהוצאה היה מראה הפסד של <Money v={4_500} /> — בחודש שבו הסדנה בכלל הרוויחה.</li>
+        </ul>
         <ExpenseSorter />
+        <Remember>ימשיך לעבוד בשבילנו גם בשנה הבאה? השקעה — נכס. נגמר עכשיו? הוצאה.</Remember>
       </>
     ),
   },
@@ -133,6 +135,7 @@ export const ENTRIES_SCREENS: Record<string, ScreenContent> = {
           הנה <strong>פקודה פשוטה</strong> — חשבון אחד בכל צד. והחיצים מראים לאן עוברת כל שורה שלה:
         </p>
         <EntryFlow entry={SIMPLE} note="לסדנה נכנס חודש שימוש בחלל העבודה (חובה), ויצא ממנה כסף (זכות)." aside={<TIntro />} />
+        <Remember>מה שנכנס לעסק — חובה; מה שיצא ממנו — זכות. ובכל פקודה: סך החובה = סך הזכות.</Remember>
       </>
     ),
     check: (
@@ -153,18 +156,17 @@ export const ENTRIES_SCREENS: Record<string, ScreenContent> = {
     lead: "כמעט כל פקודה מתחילה בשאלה אחת: מתי הכסף זז — היום, אחר כך, או לפני? התשובה כבר אומרת לכם את רוב הפקודה.",
     body: (
       <>
-        <p className="[column-span:all]">כשהכסף יזוז רק אחר כך, יש בינתיים חוב. לכל צד של חוב יש שם קבוע:</p>
-        <dl className="grid grid-cols-2 gap-2 lg:grid-cols-4 [column-span:all]">
+        <p>כשהכסף יזוז רק אחר כך, יש בינתיים חוב. לכל צד של חוב יש שם קבוע:</p>
+        <dl className="divide-y divide-line">
           {TERMS.map(([t, d]) => (
-            <div key={t} className="rounded-xl border border-line bg-surface px-3 py-2">
-              <dt className="text-[14px] font-bold text-fg">{t}</dt>
-              <dd className="text-[12.5px] leading-snug text-muted">{d}</dd>
+            <div key={t} className="grid gap-x-4 py-2 sm:grid-cols-[6rem_minmax(0,1fr)]">
+              <dt className="text-[15px] font-bold text-fg">{t}</dt>
+              <dd className="text-[15px] text-muted">{d}</dd>
             </div>
           ))}
         </dl>
-        <div className="[column-span:all]">
-          <ActionFinder />
-        </div>
+        <ActionFinder />
+        <Remember>עסקה נרשמת כשהיא קורית, לא כשהכסף עובר: בינתיים — לקוחות או ספקים. מקדמה היא חוב עד האספקה.</Remember>
       </>
     ),
   },

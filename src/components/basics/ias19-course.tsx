@@ -1,12 +1,13 @@
-import { Plane, Scale, Store } from "lucide-react";
+import { Plane, Store } from "lucide-react";
 import type { ReactNode } from "react";
+import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { CLOSING, CLOSING_EXTRA } from "@/lib/study/ias19/lessons/map";
 import { lessonRef, lessonsRef, STAGES } from "@/lib/study/ias19/shared";
 import { Bridge, ExplainTask, HintLadder, Ladder, MapBranch, MindMap, T19 } from "./ias19-ui";
 import { MiniQuiz, SortQuiz } from "./inventory-interactive";
 import { Sorted, Story } from "./inventory-teach";
-import { Card, KeyCard, Money, Rule, Stepper, Wide } from "./ui";
+import { Money, Rule, Stepper } from "./ui";
 
 /**
  * The employee-benefits course, lesson 1: the map, the principle and the four
@@ -27,6 +28,14 @@ const KIND_OPTIONS: [string, string][] = [
 /** A paragraph on one idea. */
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
 
+/** One kind of benefit in the list of four: its name, then what makes it that kind. */
+const Kind = ({ title, children }: { title: ReactNode; children: ReactNode }) => (
+  <div className="py-2.5">
+    <dt className="text-[16px] font-bold text-fg">{title}</dt>
+    <dd className="mt-0.5 text-[15px] text-fg/90">{children}</dd>
+  </div>
+);
+
 export const IAS19_BASICS_SCREENS: Record<string, ScreenContent> = {
   // ---------------------------------------------------------------------------
   // Lesson 1: the map.
@@ -39,23 +48,23 @@ export const IAS19_BASICS_SCREENS: Record<string, ScreenContent> = {
           <p>האם החברה צריכה לרשום משהו בספרים כבר השנה? מי צודק — ״ההוצאה היא כשמשלמים״, או ״ההוצאה היא כשהעבודה נעשתה״? שמרו את התשובה שלכם; נחזור אליה במסך הבא.</p>
         </Story>
         <MapBranch lesson="ias19-map">זה הגזע של המפה: ארבעה ענפים — ארבעה סוגי הטבות — ועוד ענף של כלים. כל שיעור בקורס יוצא מאחד מהם.</MapBranch>
-        <Wide>
-          <MindMap />
-        </Wide>
-        <Wide className="grid gap-3 sm:grid-cols-2">
+        <MindMap />
+        <ol className="max-w-[70ch] space-y-1.5">
           {STAGES.map((s) => (
-            <div key={s.n} className={s.core ? "rounded-xl border-2 border-accent/50 bg-accent-soft/40 p-3.5" : "rounded-xl border border-line bg-surface p-3.5"}>
-              <p className="flex items-center gap-2 font-semibold text-fg">
-                <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{s.n}</span>
-                שלב {s.n}: {s.title}
-              </p>
-              <p className="mt-1 text-[14px] text-fg/85">{lessonsRef(s.lessons[0], s.lessons[s.lessons.length - 1])}</p>
-            </div>
+            <li key={s.n} className="flex items-baseline gap-2.5">
+              <span className="num grid h-6 w-6 shrink-0 place-items-center self-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{s.n}</span>
+              <span>
+                <strong className={s.core ? "text-accent" : "text-fg"}>
+                  שלב {s.n}: {s.title}
+                </strong>{" "}
+                — {lessonsRef(s.lessons[0], s.lessons[s.lessons.length - 1])}
+              </span>
+            </li>
           ))}
-        </Wide>
-        <KeyCard>
+        </ol>
+        <Remember>
           {lessonsRef("ias19-measure", "ias19-present")} הם שרשרת אחת: כל שיעור נשען על הקודם, ולכן לא מדלגים בה. אין בשיעור הזה אף מספר — רק מיון.
-        </KeyCard>
+        </Remember>
       </>
     ),
   },
@@ -105,21 +114,13 @@ export const IAS19_BASICS_SCREENS: Record<string, ScreenContent> = {
     lead: "כל הטבה נופלת לאחד מארבעה סוגים, לפי מתי ולמה היא משולמת.",
     body: (
       <>
-        <Wide className="grid gap-3 sm:grid-cols-2">
-          <Card title={<T19 he="הטבות לזמן קצר" en="Short-term" par="9" />}>
-            <p>צפויות להיות מסולקות במלואן עד 12 חודשים אחרי סוף השנה שבה העובד נתן את השירות. משכורת, חופשה, מחלה, בונוס שנתי.</p>
-          </Card>
-          <Card title={<T19 he="הטבות לאחר סיום העסקה" en="Post-employment" par="26" />}>
-            <p>משולמות אחרי שהעבודה נגמרת: פנסיה, מענק פרישה, מתנה ביום הפרישה. זה הענף הגדול של הקורס.</p>
-          </Card>
-          <Card title={<T19 he="הטבות אחרות לזמן ארוך" en="Other long-term" par="153" />}>
-            <p>משולמות בזמן העבודה, אבל לא תוך 12 חודשים מסוף שנת השירות: שבתון, מענק ותק, בונוס רב־שנתי.</p>
-          </Card>
-          <Card title={<T19 he="הטבות בגין פיטורין" en="Termination" par="159" />}>
-            <p>נוצרות מההחלטה לסיים את ההעסקה — של החברה, או הסכמה של העובד להצעה שלה — ולא מהעבודה עצמה.</p>
-          </Card>
-        </Wide>
-        <KeyCard icon={<Scale className="h-5 w-5" />}>שני דברים קובעים את הסוג: מתי משלמים (ביחס לשנת השירות ולסיום ההעסקה), ולמה משלמים (בגלל העבודה, או בגלל ההחלטה לסיים אותה).</KeyCard>
+        <dl className="divide-y divide-line">
+          <Kind title={<T19 he="הטבות לזמן קצר" en="Short-term" par="9" />}>צפויות להיות מסולקות במלואן עד 12 חודשים אחרי סוף השנה שבה העובד נתן את השירות. משכורת, חופשה, מחלה, בונוס שנתי.</Kind>
+          <Kind title={<T19 he="הטבות לאחר סיום העסקה" en="Post-employment" par="26" />}>משולמות אחרי שהעבודה נגמרת: פנסיה, מענק פרישה, מתנה ביום הפרישה. זה הענף הגדול של הקורס.</Kind>
+          <Kind title={<T19 he="הטבות אחרות לזמן ארוך" en="Other long-term" par="153" />}>משולמות בזמן העבודה, אבל לא תוך 12 חודשים מסוף שנת השירות: שבתון, מענק ותק, בונוס רב־שנתי.</Kind>
+          <Kind title={<T19 he="הטבות בגין פיטורין" en="Termination" par="159" />}>נוצרות מההחלטה לסיים את ההעסקה — של החברה, או הסכמה של העובד להצעה שלה — ולא מהעבודה עצמה.</Kind>
+        </dl>
+        <Remember>שני דברים קובעים את הסוג: מתי משלמים (ביחס לשנת השירות ולסיום ההעסקה), ולמה משלמים (בגלל העבודה, או בגלל ההחלטה לסיים אותה).</Remember>
       </>
     ),
     check: quiz("emp-map-types", [
@@ -140,7 +141,7 @@ export const IAS19_BASICS_SCREENS: Record<string, ScreenContent> = {
             { q: "אף אחת מהקודמות?", yes: "אחרת לזמן ארוך" },
           ]}
         />
-        <Rule>הסדר חשוב: שאלת הפיטורין קודמת, כי גם פיצוי פיטורין משולם לפעמים תוך שנה — ובכל זאת הוא לא ״קצר״, אלא סוג משלו.</Rule>
+        <Remember>הסדר חשוב: שאלת הפיטורין קודמת, כי גם פיצוי פיטורין משולם לפעמים תוך שנה — ובכל זאת הוא לא ״קצר״, אלא סוג משלו.</Remember>
       </>
     ),
     check: quiz("emp-map-ladder", [
@@ -168,41 +169,39 @@ export const IAS19_BASICS_SCREENS: Record<string, ScreenContent> = {
           </p>
           <p className="text-[14px] text-muted">כאן רק מסווגים. את הסכומים עצמם נחשב ב{lessonRef("ias19-other")}.</p>
         </Story>
-        <Wide>
-          <Stepper
-            label="סיווג התשלומים"
-            steps={[
-              {
-                title: "מה מפעיל את התשלום?",
-                body: <p>ההחלטה לסגור. בלי ההחלטה אף אחד לא היה מקבל דבר. זה סימן ראשון לפיטורין — שאלה 1 בסולם.</p>,
-              },
-              {
-                title: "החלק שכל אחד מקבל",
-                body: (
-                  <p>
-                    <Money v={CLOSING.leaveEarly} /> מגיעים לכל עובד בכל מקרה — מי שעוזב מוקדם ומי שנשאר. הם נוצרו מההחלטה, ולא נצברו בעבודה: <strong>הטבה בגין פיטורין</strong>.
-                  </p>
-                ),
-              },
-              {
-                title: "התוספת למי שנשאר",
-                body: (
-                  <p>
-                    מי שנשאר מקבל עוד <Money v={CLOSING_EXTRA} />, רק אם ימשיך לעבוד עד הסגירה. התוספת היא תמורה לשירות שעוד יינתן — <strong>הטבה בגין שירות</strong>, לא פיטורין (<span dir="ltr">IAS 19.162</span>).
-                  </p>
-                ),
-              },
-              {
-                title: "מתי נרשם כל חלק",
-                body: (
-                  <p>
-                    את חלק הפיטורין מכירים כבר עכשיו, כשההחלטה סופית. את התוספת מכירים במהלך השנה הבאה — בשנה שבה העובדים עובדים כדי להרוויח אותה.
-                  </p>
-                ),
-              },
-            ]}
-          />
-        </Wide>
+        <Stepper
+          label="סיווג התשלומים"
+          steps={[
+            {
+              title: "מה מפעיל את התשלום?",
+              body: <p>ההחלטה לסגור. בלי ההחלטה אף אחד לא היה מקבל דבר. זה סימן ראשון לפיטורין — שאלה 1 בסולם.</p>,
+            },
+            {
+              title: "החלק שכל אחד מקבל",
+              body: (
+                <p>
+                  <Money v={CLOSING.leaveEarly} /> מגיעים לכל עובד בכל מקרה — מי שעוזב מוקדם ומי שנשאר. הם נוצרו מההחלטה, ולא נצברו בעבודה: <strong>הטבה בגין פיטורין</strong>.
+                </p>
+              ),
+            },
+            {
+              title: "התוספת למי שנשאר",
+              body: (
+                <p>
+                  מי שנשאר מקבל עוד <Money v={CLOSING_EXTRA} />, רק אם ימשיך לעבוד עד הסגירה. התוספת היא תמורה לשירות שעוד יינתן — <strong>הטבה בגין שירות</strong>, לא פיטורין (<span dir="ltr">IAS 19.162</span>).
+                </p>
+              ),
+            },
+            {
+              title: "מתי נרשם כל חלק",
+              body: (
+                <p>
+                  את חלק הפיטורין מכירים כבר עכשיו, כשההחלטה סופית. את התוספת מכירים במהלך השנה הבאה — בשנה שבה העובדים עובדים כדי להרוויח אותה.
+                </p>
+              ),
+            },
+          ]}
+        />
         <Sorted
           columns={[
             { title: "פיטורין — נרשם עכשיו", tone: "neutral", items: [<>החלק שכל עובד מקבל: <Money v={CLOSING.leaveEarly} /></>] },
@@ -236,7 +235,7 @@ export const IAS19_BASICS_SCREENS: Record<string, ScreenContent> = {
           KIND_OPTIONS,
           "מיינו את חמשת המקרים",
         )}
-        <Card title="המקרה הקשה, עם סולם רמזים">
+        <Part title="המקרה הקשה, עם סולם רמזים">
           <HintLadder
             task="עובד יקבל מענק ותק של משכורת חודשית כשישלים 10 שנות עבודה, והוא ימשיך לעבוד אחריו. סווגו."
             hints={[
@@ -246,7 +245,7 @@ export const IAS19_BASICS_SCREENS: Record<string, ScreenContent> = {
               "שאלה 3: הוא משולם בזמן העבודה, לא אחריה. נשארת שאלה 4 — הטבה אחרת לזמן ארוך.",
             ]}
           />
-        </Card>
+        </Part>
       </>
     ),
   },

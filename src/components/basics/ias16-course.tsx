@@ -1,5 +1,5 @@
-import { Building2, CalendarClock, ClipboardCheck, Cog, Factory, HandCoins, Layers, Package, Truck } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
+import { Deeper, Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
 import { bodyCharge, computerCharge, motorCharge, partCost, PARTS, PARTS_COST } from "@/lib/study/ias16/lessons/components";
@@ -9,8 +9,8 @@ import { DB, DB_RATE, SYD, SYD_FISCAL } from "@/lib/study/ias16/lessons/methods"
 import { READY, TRUCK } from "@/lib/study/ias16/lessons/straight";
 import { FIRST_SL, SPREAD } from "@/lib/study/ias16/lessons/what";
 import { MiniQuiz, SortQuiz } from "./inventory-interactive";
-import { MoreDialog, Reveal, Sorted, Story } from "./inventory-teach";
-import { Card, Formula, Frac, JE, KeyCard, Money, ReportTag, Rule, type Step, Stepper, Wide } from "./ui";
+import { Reveal, Sorted } from "./inventory-teach";
+import { Card, Formula, Frac, JE, Money, ReportTag, Rule, type Step, Stepper, Wide } from "./ui";
 
 /**
  * The concept screens the twelve-lesson fixed-assets course added to the ones
@@ -117,10 +117,11 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "לפני המושגים — מפה: מה נלמד בקורס, באיזה סדר, והחברה שתלווה אותנו לאורכו.",
     body: (
       <>
-        <Story icon={<ClipboardCheck />} title="מה שאלת רכוש קבוע במבחן מבקשת">
-          <p>חברה קונה מכונות, מבנים וכלי רכב, ומשתמשת בהם שנים. צריך לקבוע בכמה לרשום כל נכס, כמה פחת להוציא בכל שנה ומה הערך שלו בספרים — ומה קורה כשמשפצים אותו, מוכרים אותו, מחליפים אותו או מעריכים אותו מחדש.</p>
-        </Story>
-        <Wide className="grid gap-3 sm:grid-cols-2">
+        <p>
+          <strong>מה שאלת רכוש קבוע במבחן מבקשת.</strong> חברה קונה מכונות, מבנים וכלי רכב, ומשתמשת בהם שנים. צריך לקבוע בכמה לרשום כל נכס, כמה פחת להוציא בכל שנה ומה
+          הערך שלו בספרים — ומה קורה כשמשפצים אותו, מוכרים אותו, מחליפים אותו או מעריכים אותו מחדש.
+        </p>
+        <ol className="max-w-[70ch] space-y-2.5">
           {(
             [
               ["שיעורים 1–3 · לזהות, ולבנות את הטבלה", "מהו רכוש קבוע, מה נכנס לעלות שלו — וארבע המילים של כל נכס בטבלה אחת: עלות, הוצאות פחת, פחת נצבר ועלות מופחתת."],
@@ -129,27 +130,27 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
               ["שיעורים 10–14 · הערכה מחדש, ולרמת מבחן", "הערכה מחדש לקרקע ולנכס שמופחת, דף הפתרון, שאלות עם נעלמים — ושלוש שאלות מלאות ברמת מבחן."],
             ] as const
           ).map(([t, d], i) => (
-            <div key={t} className="rounded-xl border border-line bg-surface p-3.5">
-              <p className="flex items-center gap-2 font-semibold text-fg">
-                <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
-                {t}
-              </p>
-              <p className="mt-1 text-[14.5px] text-fg/85">{d}</p>
-            </div>
+            <li key={t} className="flex items-baseline gap-2.5">
+              <span className="num grid h-6 w-6 shrink-0 place-items-center self-start rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
+              <span>
+                <strong className="text-fg">{t}</strong> — {d}
+              </span>
+            </li>
           ))}
-        </Wide>
-        <Card title="בשיעור הזה">
-          <ul className="list-inside list-disc space-y-1 text-[15px]">
+        </ol>
+        <div className="space-y-1.5">
+          <p className="font-semibold text-fg">בשיעור הזה:</p>
+          <ul className="list-inside list-disc space-y-1">
             <li>למה מכונה אינה הוצאה של השנה שבה נקנתה</li>
             <li>נוסחת הקו הישר — הפחת הראשון שלכם</li>
             <li>מהו רכוש קבוע לפי התקן, ומתי מכירים בו</li>
             <li>רכוש קבוע, מלאי או הוצאה?</li>
           </ul>
-        </Card>
-        <Story icon={<Factory />} title="מאפיית הגליל בע״מ — החברה שתלווה אותנו">
+        </div>
+        <Part title="מאפיית הגליל בע״מ — החברה שתלווה אותנו">
           <p>שלושה נכסים: תנור, מבנה על קרקע ומשאית חלוקה. נבנה להם טבלה בשיעור 3, נמכור את המשאית בשיעור 7, נשדרג את התנור בשיעור 8 — ובשיעור 12 נראה את כולם יחד בדוחות.</p>
-        </Story>
-        <KeyCard>כל שיעור בנוי אותו דבר: בפתיחה — מה המטרה ומה תדעו לעשות בסופו; אחר כך מושגים קצרים, אחד בכל מסך, עם בדיקה קטנה אחרי כל אחד — ואז תרגול, שאלה הפוכה אחת לפחות, וסיכום. מה שצריך לדעת מראש: רק חובה וזכות.</KeyCard>
+        </Part>
+        <Remember>כל שיעור בנוי אותו דבר: בפתיחה — מה המטרה ומה תדעו לעשות בסופו; אחר כך מושגים קצרים, אחד בכל מסך, עם בדיקה קטנה אחרי כל אחד — ואז תרגול, שאלה הפוכה אחת לפחות, וסיכום. מה שצריך לדעת מראש: רק חובה וזכות.</Remember>
       </>
     ),
   },
@@ -157,12 +158,11 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "מכונה שתשמש ארבע שנים לא נצרכת בשנה אחת. לכן העלות שלה לא נרשמת כהוצאה ביום הקנייה — היא נפרסת על השנים שבהן המכונה מייצרת הכנסות.",
     body: (
       <>
-        <Story icon={<Factory />} title={`מכונה ב-${n(SPREAD.cost)} ₪ שתשמש ${SPREAD.life} שנים`}>
-          <p>
-            בכל שנה היא מייצרת הכנסות של <Money v={SPREAD.revenue} />. מה יקרה לרווח אם כל העלות תירשם כהוצאה בשנה הראשונה — ומה אם נפרוס אותה?
-          </p>
-        </Story>
-        <Wide className="grid gap-3">
+        <p>
+          <strong>{`מכונה ב-${n(SPREAD.cost)} ₪ שתשמש ${SPREAD.life} שנים.`}</strong> בכל שנה היא מייצרת הכנסות של <Money v={SPREAD.revenue} />. מה יקרה לרווח אם כל
+          העלות תירשם כהוצאה בשנה הראשונה — ומה אם נפרוס אותה?
+        </p>
+        <div className="grid gap-3">
           <Card title="✗ הכול כהוצאה בשנה הראשונה" className="border-danger/40">
             <DataTable
               head={["שנה", "הכנסות", "הוצאה", "רווח"]}
@@ -182,8 +182,8 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
               <Money v={SPREAD.revenue - SPREAD.cost / SPREAD.life} /> — בכל שנה.
             </p>
           </Card>
-        </Wide>
-        <KeyCard>זה עיקרון ההקבלה: הוצאה נרשמת יחד עם ההכנסה שהיא יצרה. החלק של הנכס שנצרך בכל שנה נקרא פחת.</KeyCard>
+        </div>
+        <Remember>זה עיקרון ההקבלה: הוצאה נרשמת יחד עם ההכנסה שהיא יצרה. החלק של הנכס שנצרך בכל שנה נקרא פחת.</Remember>
       </>
     ),
     check: quiz("ppe-matching", [
@@ -205,37 +205,33 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "יש כמה שיטות לחשב פחת. הנפוצה ביותר היא קו ישר: כל שנה מלאה מקבלת אותו פחת. עד שיעור 5 — כל חישוב פחת בקורס הוא בקו ישר.",
     body: (
       <>
-        <Wide>
-          <Formula
-            title="קו ישר"
-            when={`מכונה ב-${n(FIRST_SL.cost)} ₪ תשמש ${FIRST_SL.life} שנים, ובסופן תימכר כגרוטאה ב-${n(FIRST_SL.salvage)} ₪.`}
-            formula={
-              <>
-                פחת שנתי = <Frac top="עלות − ערך גרט" bottom="שנות חיים" />
-              </>
-            }
-            example={
-              <>
-                <Frac top={<><Money v={FIRST_SL.cost} plain /> − <Money v={FIRST_SL.salvage} plain /></>} bottom={FIRST_SL.life} /> = <Money v={(FIRST_SL.cost - FIRST_SL.salvage) / FIRST_SL.life} />
-              </>
-            }
-          />
-        </Wide>
-        <Wide>
-          <DataTable
-            head={["בנוסחה", "מה זה", "בדוגמה"]}
-            rows={[
-              ["עלות", "מה שהנכס עלה — בשיעור 2 נראה בדיוק מה נכנס אליה", FIRST_SL.cost],
-              ["ערך גרט", "מה שצפוי להתקבל על הנכס בסוף השימוש; אם לא נאמר — אפס", FIRST_SL.salvage],
-              ["שנות חיים", "כמה שנים הנכס ישמש את החברה", FIRST_SL.life],
-            ]}
-          />
-        </Wide>
-        <KeyCard>מפחיתים רק את מה שבאמת ייצרך — העלות פחות ערך הגרט — ומחלקים אותו שווה בשווה בין השנים. בסוף החיים נשאר בספרים בדיוק ערך הגרט.</KeyCard>
-        <MoreDialog label="ושיטות אחרות?">
+        <Formula
+          title="קו ישר"
+          when={`מכונה ב-${n(FIRST_SL.cost)} ₪ תשמש ${FIRST_SL.life} שנים, ובסופן תימכר כגרוטאה ב-${n(FIRST_SL.salvage)} ₪.`}
+          formula={
+            <>
+              פחת שנתי = <Frac top="עלות − ערך גרט" bottom="שנות חיים" />
+            </>
+          }
+          example={
+            <>
+              <Frac top={<><Money v={FIRST_SL.cost} plain /> − <Money v={FIRST_SL.salvage} plain /></>} bottom={FIRST_SL.life} /> = <Money v={(FIRST_SL.cost - FIRST_SL.salvage) / FIRST_SL.life} />
+            </>
+          }
+        />
+        <DataTable
+          head={["בנוסחה", "מה זה", "בדוגמה"]}
+          rows={[
+            ["עלות", "מה שהנכס עלה — בשיעור 2 נראה בדיוק מה נכנס אליה", FIRST_SL.cost],
+            ["ערך גרט", "מה שצפוי להתקבל על הנכס בסוף השימוש; אם לא נאמר — אפס", FIRST_SL.salvage],
+            ["שנות חיים", "כמה שנים הנכס ישמש את החברה", FIRST_SL.life],
+          ]}
+        />
+        <Deeper title="ושיטות אחרות?">
           <p>יתרה פוחתת, סכום ספרות השנים ויחידות תפוקה — כל אחת מחלקת את אותו סכום אחרת בין השנים. נלמד אותן בשיעור 5.</p>
           <p>לפעמים השאלה נותנת שיעור באחוזים במקום שנות חיים — למשל 25% לשנה, שהם 4 שנים. בשיעור 4 נראה גם את זה, וגם שנה שבה הנכס עבד רק חלק ממנה.</p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>מפחיתים רק את מה שבאמת ייצרך — העלות פחות ערך הגרט — ומחלקים אותו שווה בשווה בין השנים. בסוף החיים נשאר בספרים בדיוק ערך הגרט.</Remember>
       </>
     ),
     check: quiz("ppe-sl-first", [
@@ -257,12 +253,11 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "את הפחת רושמים בסוף כל שנה בפקודה אחת: ח׳ הוצאות פחת / ז׳ פחת נצבר. הוצאות פחת הן חשבון תוצאתי, שמתחיל כל שנה מאפס; פחת נצבר הוא חשבון מאזני, שמצטבר משנה לשנה ומקטין את הנכס.",
     body: (
       <>
-        <Story icon={<Factory />} title={`אותה מכונה: ${n(FIRST_SL.cost)} ₪, ערך גרט ${n(FIRST_SL.salvage)} ₪, ${FIRST_SL.life} שנים`}>
-          <p>
-            הפחת השנתי, מהמסך הקודם: <Money v={FIRST_SL.annual} />. אלה שתי הפקודות שהמכונה מקבלת — אחת ביום הקנייה, ואחת בסוף כל שנה.
-          </p>
-        </Story>
-        <Wide className="grid gap-3 md:grid-cols-2">
+        <p>
+          <strong>{`אותה מכונה: ${n(FIRST_SL.cost)} ₪, ערך גרט ${n(FIRST_SL.salvage)} ₪, ${FIRST_SL.life} שנים.`}</strong> הפחת השנתי, מהמסך הקודם:{" "}
+          <Money v={FIRST_SL.annual} />. אלה שתי הפקודות שהמכונה מקבלת — אחת ביום הקנייה, ואחת בסוף כל שנה.
+        </p>
+        <div className="grid gap-3 md:grid-cols-2">
           <JE
             entry={{ id: "1", text: "ביום הקנייה", lines: [{ account: "מכונה", dr: FIRST_SL.cost }, { account: "ספקים", cr: FIRST_SL.cost }] }}
             note="רק המאזן משתנה: נכס נכנס, התחייבות לספק נוצרת. ברווח והפסד — כלום."
@@ -271,7 +266,7 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
             entry={{ id: "2", text: "בסוף כל שנה", lines: [{ account: "הוצאות פחת", dr: FIRST_SL.annual }, { account: "פחת נצבר", cr: FIRST_SL.annual }] }}
             note="החלק של המכונה שנצרך השנה עובר להוצאות."
           />
-        </Wide>
+        </div>
         <Wide>
           <DataTable
             head={["חשבון", "סוג", "איפה בדוחות", "משנה לשנה"]}
@@ -289,11 +284,11 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
             rows={Array.from({ length: FIRST_SL.life }, (_, i) => [`${i + 1}`, FIRST_SL.annual, FIRST_SL.annual * (i + 1), FIRST_SL.cost - FIRST_SL.annual * (i + 1)])}
           />
         </Wide>
-        <KeyCard>ערך בספרים = עלות − פחת נצבר. ההוצאה זהה בכל שנה; הפחת הנצבר גדל, והערך בספרים יורד — עד ערך הגרט.</KeyCard>
-        <MoreDialog label="למה לא מזכים את המכונה ישירות?">
+        <Deeper title="למה לא מזכים את המכונה ישירות?">
           <p>כך העלות המקורית נשארת גלויה בספרים, ולידה רואים כמה ממנה כבר נצרך. במאזן מציגים את שתיהן: מכונה {n(FIRST_SL.cost)}, פחות פחת נצבר — ומתחת, הערך בספרים.</p>
           <p>פחת נצבר הוא ״נכס בניכוי״: חשבון מאזני עם יתרת זכות, שכל תפקידו להקטין נכס אחר.</p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>ערך בספרים = עלות − פחת נצבר. ההוצאה זהה בכל שנה; הפחת הנצבר גדל, והערך בספרים יורד — עד ערך הגרט.</Remember>
       </>
     ),
     check: quiz("ppe-dep-entry", [
@@ -323,14 +318,14 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
             ]}
           />
         </Wide>
-        <KeyCard>
-          השאלה אינה ״האם הפריט מייצר הכנסה בעצמו?״, אלא ״האם בלעדיו אפשר להפיק את ההטבות?״. פריט שבלעדיו נכסים אחרים לא יפעלו — עומד בתנאי.
-        </KeyCard>
-        <MoreDialog label="חלקי חילוף, ומה נחשב ״פריט״">
+        <Deeper title="חלקי חילוף, ומה נחשב ״פריט״">
           <p>חלקי חילוף, ציוד גיבוי וציוד עזר הם רכוש קבוע כשהם עומדים בהגדרה — ישמשו יותר מתקופה אחת. אחרת הם מלאי, ונרשמים כהוצאה כשנצרכים.</p>
           <p>התקן לא קובע מהו ״פריט״: מטוס יכול להיות פריט אחד, או גוף, מנועים ומושבים. פריטים קטנים שאינם משמעותיים לחוד אפשר לקבץ יחד.</p>
           <p>התקן לא חל על רכוש קבוע שמוחזק למכירה, נכסים ביולוגיים לחקלאות וזכויות למינרלים — לכל אלה תקן משלהם.</p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>
+          השאלה אינה ״האם הפריט מייצר הכנסה בעצמו?״, אלא ״האם בלעדיו אפשר להפיק את ההטבות?״. פריט שבלעדיו נכסים אחרים לא יפעלו — עומד בתנאי.
+        </Remember>
       </>
     ),
     check: quiz("ppe-recognition", [
@@ -372,7 +367,6 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "עלות הנכס היא כל מה שהיה צריך כדי להביא אותו למקומו ולמצב שבו יפעל כפי שהתכוונה ההנהלה — ולא שקל יותר.",
     body: (
       <>
-        <KeyCard>לכל תשלום שואלים: האם בלעדיו הנכס היה מגיע לכאן ופועל? אם לא — זה עלות. אם כן — זו הוצאה.</KeyCard>
         <Wide>
           <Sorted
             columns={[
@@ -385,10 +379,11 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
             ]}
           />
         </Wide>
-        <MoreDialog label="מתי ההיוון נעצר">
+        <Deeper title="מתי ההיוון נעצר">
           <p>ברגע שהנכס מוכן לפעול כפי שהתכוונה ההנהלה — מפסיקים להוסיף לו עלויות, גם אם עוד לא התחילו להשתמש בו, וגם אם הוא עובד בפחות מתפוקה מלאה.</p>
           <p>הכנסות והוצאות מפעילות צדדית בזמן ההקמה (למשל חניון באתר הבנייה) הולכות לרווח והפסד — לא לעלות.</p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>לכל תשלום שואלים: האם בלעדיו הנכס היה מגיע לכאן ופועל? אם לא — זה עלות. אם כן — זו הוצאה.</Remember>
       </>
     ),
     check: quiz("ppe-cost-rule", [
@@ -410,9 +405,9 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "בונים את עלות המכונה שורה אחר שורה: כל תשלום נכנס לעלות, או נשאר בחוץ כהוצאה — עם הסיבה.",
     body: (
       <>
-        <Story icon={<Cog />} title="מכבש חדש למפעל">
-          <p>על השולחן עשרה תשלומים. נעבור עליהם אחד-אחד:</p>
-        </Story>
+        <p>
+          <strong>מכבש חדש למפעל.</strong> על השולחן עשרה תשלומים. נעבור עליהם אחד-אחד:
+        </p>
         <Reveal
           steps={keyed([
             <>
@@ -438,7 +433,7 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
             </>,
           ])}
         />
-        <KeyCard>תשלום אחד יכול להתפצל: החלק שהביא את הנכס למצבו — עלות; החלק שקדם לו או בא אחריו — הוצאה.</KeyCard>
+        <Remember>תשלום אחד יכול להתפצל: החלק שהביא את הנכס למצבו — עלות; החלק שקדם לו או בא אחריו — הוצאה.</Remember>
       </>
     ),
     check: quiz("ppe-cost-build", [
@@ -460,11 +455,10 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "גם במבנה — כל עלות ישירה של הרכישה נכנסת: מס רכישה ושכר טרחה. ועיקרון שאסור לפספס: לקרקע אין פחת. כשמחשבים פחת, קודם מורידים ממנה את הקרקע.",
     body: (
       <>
-        <Story icon={<Building2 />} title={`חנות ב-${n(SHOP.price)} ₪`}>
-          <p>
-            מס רכישה {SHOP.purchaseTax * 100}% (לא מוחזר), שכר טרחת עורך דין {SHOP.lawyer * 100}%, ו-{SHOP.land * 100}% מהנכס מיוחסים לקרקע.
-          </p>
-        </Story>
+        <p>
+          <strong>{`חנות ב-${n(SHOP.price)} ₪.`}</strong> מס רכישה {SHOP.purchaseTax * 100}% (לא מוחזר), שכר טרחת עורך דין {SHOP.lawyer * 100}%, ו-{SHOP.land * 100}%
+          מהנכס מיוחסים לקרקע.
+        </p>
         <Reveal
           steps={keyed([
             <>
@@ -478,7 +472,6 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
             </>,
           ])}
         />
-        <KeyCard>לקרקע אין פחת, ואסור להפחית אותה: היא לא מתבלה ולא נצרכת, ואורך החיים שלה אינו מוגבל. מחשבים פחת רק על המבנה — העלות פחות הקרקע.</KeyCard>
         <Wide>
           <Formula
             title="מאיזה סכום מפחיתים"
@@ -492,9 +485,10 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
             note="אם יש ערך גרט למבנה — מורידים גם אותו, כמו בכל נכס."
           />
         </Wide>
-        <MoreDialog label="על איזה סכום חל האחוז של הקרקע?">
+        <Deeper title="על איזה סכום חל האחוז של הקרקע?">
           <p>על העלות כולה — כולל מס הרכישה ושכר הטרחה — אלא אם השאלה אומרת אחרת.</p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>לקרקע אין פחת, ואסור להפחית אותה: היא לא מתבלה ולא נצרכת, ואורך החיים שלה אינו מוגבל. מחשבים פחת רק על המבנה — העלות פחות הקרקע.</Remember>
       </>
     ),
     check: quiz("ppe-cost-building", [
@@ -516,21 +510,14 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "שתי מלכודות במחיר: תשלום שנדחה מעבר לאשראי רגיל — העלות היא מחיר המזומן; ונכס שהחברה בונה לעצמה — בלי רווח פנימי ובלי בזבוז.",
     body: (
       <>
-        <Wide className="grid gap-3 md:grid-cols-2">
-          <Card title={<span className="flex items-center gap-2"><HandCoins className="h-5 w-5 text-accent" aria-hidden /> תשלום נדחה</span>}>
-            <p>
-              מחיר במזומן <Money v={LATE.cash} />, ישולם בעוד שנתיים <Money v={LATE.paid} />.
-            </p>
-            <p>
-              עלות: <Money v={LATE.cash} />. ההפרש — <Money v={LATE.paid - LATE.cash} /> — הוצאות מימון לאורך התקופה.
-            </p>
-          </Card>
-          <Card title={<span className="flex items-center gap-2"><Package className="h-5 w-5 text-accent" aria-hidden /> נכס שבונים לבד</span>}>
-            <p>אותם כללים כמו בקנייה: חומרים, עבודה ועלויות ישירות.</p>
-            <p>בלי רווח פנימי, ובלי סכומים חריגים של חומרים או עבודה שבוזבזו.</p>
-          </Card>
-        </Wide>
-        <KeyCard>המחיר במזומן הוא מה שהנכס עלה; כל מה שמעבר לו הוא מחיר הכסף — לא מחיר הנכס.</KeyCard>
+        <p>
+          <strong>תשלום נדחה.</strong> מחיר במזומן <Money v={LATE.cash} />, ישולם בעוד שנתיים <Money v={LATE.paid} />. עלות: <Money v={LATE.cash} />. ההפרש —{" "}
+          <Money v={LATE.paid - LATE.cash} /> — הוצאות מימון לאורך התקופה.
+        </p>
+        <p>
+          <strong>נכס שבונים לבד.</strong> אותם כללים כמו בקנייה: חומרים, עבודה ועלויות ישירות. בלי רווח פנימי, ובלי סכומים חריגים של חומרים או עבודה שבוזבזו.
+        </p>
+        <Remember>המחיר במזומן הוא מה שהנכס עלה; כל מה שמעבר לו הוא מחיר הכסף — לא מחיר הנכס.</Remember>
       </>
     ),
     check: quiz("ppe-cost-credit", [
@@ -571,18 +558,21 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "פחת מתחיל ביום שבו הנכס זמין לשימוש — במקומו ובמצב שבו הוא יכול לפעול — לא ביום הקנייה, ולא ביום שבו באמת התחילו להשתמש בו.",
     body: (
       <>
-        <Story icon={<CalendarClock />} title={`מכונה ב-${n(READY.cost)} ₪, ${READY.life} שנים`}>
+        <div className="space-y-1.5">
+          <p>
+            <strong>דוגמה.</strong> {`מכונה ב-${n(READY.cost)} ₪, ${READY.life} שנים:`}
+          </p>
           <ol className="list-inside list-decimal space-y-1">
             <li>1.{READY.bought} — נקנתה ושולמה.</li>
             <li>1.{READY.ready} — הותקנה ונבדקה: זמינה לשימוש.</li>
             <li>1.{READY.used} — אחרי שביתה, התחילה לייצר.</li>
           </ol>
-        </Story>
-        <Rule>
-          פחת השנה: מ-1.{READY.ready} — {13 - READY.ready} חודשים: <Money v={READY.cost / READY.life} plain /> × {13 - READY.ready}/12 ={" "}
+        </div>
+        <p>
+          <strong>פחת השנה:</strong> מ-1.{READY.ready} — {13 - READY.ready} חודשים: <Money v={READY.cost / READY.life} plain /> × {13 - READY.ready}/12 ={" "}
           <Money v={((READY.cost / READY.life) * (13 - READY.ready)) / 12} />
-        </Rule>
-        <KeyCard>הפחת מודד את הזמן שבו הנכס יכול לשרת. גם כשהוא עומד מושבת, או כשמחכים ללקוחות — הוא ממשיך להתבלות, והפחת ממשיך.</KeyCard>
+        </p>
+        <Remember>הפחת מודד את הזמן שבו הנכס יכול לשרת. גם כשהוא עומד מושבת, או כשמחכים ללקוחות — הוא ממשיך להתבלות, והפחת ממשיך.</Remember>
       </>
     ),
     check: quiz("ppe-available", [
@@ -611,10 +601,10 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
         <Wide>
           <DataTable head={["שנות חיים", "שיעור לשנה"]} rows={[2, 4, 5, 8, 10, 20, 25].map((y) => [`${y}`, `${n(100 / y)}%`])} />
         </Wide>
-        <KeyCard>השיעור הוא החלק מהעלות שנצרך בכל שנה: 25% לשנה — רבע בכל שנה, ולכן ארבע שנים.</KeyCard>
-        <Rule>
+        <p>
           כשנתון שיעור, הפחת השנתי בקו ישר = עלות × שיעור. למשל <Money v={TRUCK.cost} plain /> × {TRUCK.rate * 100}% = <Money v={truckAnnual} /> — בדיוק כמו <Money v={TRUCK.cost} plain /> ÷ {1 / TRUCK.rate}.
-        </Rule>
+        </p>
+        <Remember>השיעור הוא החלק מהעלות שנצרך בכל שנה: 25% לשנה — רבע בכל שנה, ולכן ארבע שנים.</Remember>
       </>
     ),
     check: quiz("ppe-rate", [
@@ -636,11 +626,10 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "בקו ישר כל שנה מלאה מקבלת אותו פחת: (עלות − ערך גרט) ÷ שנות החיים. שנה חלקית — לפי החודשים; שיעור באחוזים — כפול העלות.",
     body: (
       <>
-        <Story icon={<Truck />} title={`משאית ב-${n(TRUCK.cost)} ₪, ${TRUCK.rate * 100}% לשנה, מ-1.${TRUCK.startMonth}.${TRUCK.year}`}>
-          <p>
-            {TRUCK.rate * 100}% לשנה = {1 / TRUCK.rate} שנות חיים, בלי ערך גרט.
-          </p>
-        </Story>
+        <p>
+          <strong>{`משאית ב-${n(TRUCK.cost)} ₪, ${TRUCK.rate * 100}% לשנה, מ-1.${TRUCK.startMonth}.${TRUCK.year}.`}</strong> {TRUCK.rate * 100}% לשנה = {1 / TRUCK.rate} שנות
+          חיים, בלי ערך גרט.
+        </p>
         <Wide className="grid gap-3 md:grid-cols-2">
           <Formula
             title="שנות חיים נתונות"
@@ -673,15 +662,15 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
         <Wide>
           <DataTable head={["שנה", "פחת השנה", "פחת נצבר", "עלות מופחתת"]} rows={truckRows} />
         </Wide>
-        <KeyCard>
-          הפחת הנצבר הוא סכום כל הפחת עד היום, והוא לעולם לא עובר את הסכום בר-הפחת. עלות מופחתת = עלות − פחת נצבר; בסוף החיים היא שווה לערך הגרט.
-        </KeyCard>
-        <MoreDialog label="הפקודה, ואיך מחשבים פחת נצבר ישירות">
+        <Deeper title="הפקודה, ואיך מחשבים פחת נצבר ישירות">
           <p>בכל סוף שנה: ח׳ הוצאות פחת / ז׳ פחת נצבר. הפחת הנצבר הוא חשבון מאזני בזכות, שמקטין את הנכס.</p>
           <p>
             פחת נצבר ישירות: פחת שנתי × מספר השנים מיום הזמינות. כאן, ב-31.12.{TRUCK.year + 2}: {n(truckAnnual)} × 2.5 = {n(truckAnnual * 2.5)} ₪.
           </p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>
+          הפחת הנצבר הוא סכום כל הפחת עד היום, והוא לעולם לא עובר את הסכום בר-הפחת. עלות מופחתת = עלות − פחת נצבר; בסוף החיים היא שווה לערך הגרט.
+        </Remember>
       </>
     ),
     check: quiz("ppe-sl", [
@@ -703,22 +692,23 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "לקרקע אין אורך חיים מוגבל, ולכן היא לא מופחתת. כשנקנים קרקע ומבנה יחד — מפרידים ביניהם ביום הרכישה, ומפחיתים רק את המבנה.",
     body: (
       <>
-        <Story icon={<Building2 />} title="מבנה משרדים ב-300,000 ₪; שליש מהמחיר מיוחס לקרקע; 20 שנה">
-          <Reveal
-            steps={keyed([
-              <>
-                קרקע: <Money v={100_000} /> — נשארת בעלותה.
-              </>,
-              <>
-                מבנה: <Money v={200_000} /> ÷ 20 = <Money v={10_000} /> פחת לשנה.
-              </>,
-              <>
-                אחרי שנתיים: קרקע <Money v={100_000} plain /> + מבנה <Money v={180_000} plain /> = <Money v={280_000} /> בספרים.
-              </>,
-            ])}
-          />
-        </Story>
-        <KeyCard>טעות נפוצה: לחלק את כל המחיר בשנות החיים. קודם מוציאים את הקרקע — ורק אז מחשבים פחת.</KeyCard>
+        <p>
+          <strong>דוגמה.</strong> מבנה משרדים ב-300,000 ₪; שליש מהמחיר מיוחס לקרקע; 20 שנה.
+        </p>
+        <Reveal
+          steps={keyed([
+            <>
+              קרקע: <Money v={100_000} /> — נשארת בעלותה.
+            </>,
+            <>
+              מבנה: <Money v={200_000} /> ÷ 20 = <Money v={10_000} /> פחת לשנה.
+            </>,
+            <>
+              אחרי שנתיים: קרקע <Money v={100_000} plain /> + מבנה <Money v={180_000} plain /> = <Money v={280_000} /> בספרים.
+            </>,
+          ])}
+        />
+        <Remember>טעות נפוצה: לחלק את כל המחיר בשנות החיים. קודם מוציאים את הקרקע — ורק אז מחשבים פחת.</Remember>
       </>
     ),
     check: quiz("ppe-land", [
@@ -742,11 +732,10 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "ביתרה פוחתת מכפילים שיעור קבוע בערך בספרים של תחילת השנה — ולכן הפחת גבוה בהתחלה ויורד משנה לשנה. את ערך הגרט לא מנכים מהבסיס.",
     body: (
       <>
-        <Story icon={<Layers />} title={`נכס ב-${n(DB.cost)} ₪, ערך גרט ${n(DB.salvage)} ₪, ${DB.life} שנים`}>
-          <p>
-            השיעור שמביא את הנכס בדיוק לגרט: 1 − ({n(DB.salvage)} ÷ {n(DB.cost)})^(1/{DB.life}) = {Math.round(DB_RATE * 100)}%.
-          </p>
-        </Story>
+        <p>
+          <strong>{`נכס ב-${n(DB.cost)} ₪, ערך גרט ${n(DB.salvage)} ₪, ${DB.life} שנים.`}</strong> השיעור שמביא את הנכס בדיוק לגרט: 1 − ({n(DB.salvage)} ÷ {n(DB.cost)})^(1/
+          {DB.life}) = {Math.round(DB_RATE * 100)}%.
+        </p>
         <Wide>
           <Formula
             title="יתרה פוחתת"
@@ -768,10 +757,10 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
         <Wide>
           <DataTable head={["", "ערך בתחילת השנה", "פחת", "ערך בסוף השנה"]} rows={dbRows} />
         </Wide>
-        <KeyCard>השיעור חל על מה שנשאר, לא על העלות. הגרט כבר ״בפנים״ — בנוסחת השיעור — ולכן לא מורידים אותו שוב.</KeyCard>
-        <MoreDialog label="כשהשיעור נתון בשאלה">
+        <Deeper title="כשהשיעור נתון בשאלה">
           <p>לפעמים השאלה פשוט נותנת שיעור (למשל 30%). אז: שנה 1 — עלות × 30%; שנה 2 — (עלות − פחת שנה 1) × 30%, וכן הלאה.</p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>השיעור חל על מה שנשאר, לא על העלות. הגרט כבר ״בפנים״ — בנוסחת השיעור — ולכן לא מורידים אותו שוב.</Remember>
       </>
     ),
     check: quiz("ppe-db", [
@@ -793,11 +782,10 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "בסכום ספרות השנים מחלקים את הסכום בר-הפחת לפי משקלות: n, n−1, …, 1 (יורד) או 1, 2, …, n (עולה), חלקי סכום כל המשקלות.",
     body: (
       <>
-        <Story icon={<Layers />} title={`סכום בר-פחת ${n(DB.cost - DB.salvage)} ₪, ${DB.life} שנים`}>
-          <p>
-            סכום הספרות: {Array.from({ length: DB.life }, (_, i) => i + 1).join(" + ")} = {(DB.life * (DB.life + 1)) / 2}.
-          </p>
-        </Story>
+        <p>
+          <strong>{`סכום בר-פחת ${n(DB.cost - DB.salvage)} ₪, ${DB.life} שנים.`}</strong> סכום הספרות: {Array.from({ length: DB.life }, (_, i) => i + 1).join(" + ")} ={" "}
+          {(DB.life * (DB.life + 1)) / 2}.
+        </p>
         <Wide>
           <Formula
             title="סכום ספרות השנים"
@@ -832,7 +820,7 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
             foot={["סה״כ", DB.cost - DB.salvage, DB.cost - DB.salvage]}
           />
         </Wide>
-        <KeyCard>יורד — הנכס מתבלה מהר בהתחלה; עולה — הבלאי גדל עם השנים. בשתיהן הגרט מנוכה מהבסיס, וסך הפחת שווה לסכום בר-הפחת.</KeyCard>
+        <Remember>יורד — הנכס מתבלה מהר בהתחלה; עולה — הבלאי גדל עם השנים. בשתיהן הגרט מנוכה מהבסיס, וסך הפחת שווה לסכום בר-הפחת.</Remember>
       </>
     ),
     check: quiz("ppe-syd", [
@@ -854,11 +842,10 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "כשהנכס נכנס באמצע שנה, שנות החיים לא מתלכדות עם שנות הכספים: מחשבים פחת לכל שנת חיים, ומחלקים אותה בין שתי שנות כספים לפי חודשים.",
     body: (
       <>
-        <Story icon={<CalendarClock />} title={`נכס ב-${n(SYD.cost)} ₪, ${SYD.life} שנים, סכום ספרות יורד, מ-1.${SYD.startMonth}`}>
-          <p>
-            שנת חיים 1 (מונה {SYD.life}): <Money v={sydLife(1)} />. שנת חיים 2 (מונה {SYD.life - 1}): <Money v={sydLife(2)} />.
-          </p>
-        </Story>
+        <p>
+          <strong>{`נכס ב-${n(SYD.cost)} ₪, ${SYD.life} שנים, סכום ספרות יורד, מ-1.${SYD.startMonth}.`}</strong> שנת חיים 1 (מונה {SYD.life}): <Money v={sydLife(1)} />.
+          שנת חיים 2 (מונה {SYD.life - 1}): <Money v={sydLife(2)} />.
+        </p>
         <Wide>
           <Formula
             title="שנת כספים שמתחלקת בין שתי שנות חיים"
@@ -894,7 +881,7 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
             <>וכך הלאה: כל שנת כספים לוקחת סוף של שנת חיים אחת ותחילה של הבאה.</>,
           ])}
         />
-        <KeyCard>אותו דבר ביתרה פוחתת. רק בקו ישר זה לא משנה — כל החודשים שווים.</KeyCard>
+        <Remember>אותו דבר ביתרה פוחתת. רק בקו ישר זה לא משנה — כל החודשים שווים.</Remember>
       </>
     ),
     check: quiz("ppe-syd-part", [
@@ -932,18 +919,17 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
             }
           />
         </Wide>
-        <Story icon={<Factory />} title="אותה מכונה, ארבע שנים">
-          <DataTable
-            head={["שנה", "יחידות", "פחת"]}
-            rows={[50_000, 20_000, 25_000, 5_000].map((u, i) => [`${i + 1}`, u, (510_000 * u) / 100_000])}
-            foot={["סה״כ", 100_000, 510_000]}
-          />
-        </Story>
-        <KeyCard>השיטה הכי מדויקת להקבלה — כשאפשר לאמוד את התפוקה. תאריך הכניסה לא משנה; רק כמה ייצרו.</KeyCard>
-        <MoreDialog label="ומה אסור? ומה כשהמכונה עומדת?">
+        <DataTable
+          caption="אותה מכונה, ארבע שנים"
+          head={["שנה", "יחידות", "פחת"]}
+          rows={[50_000, 20_000, 25_000, 5_000].map((u, i) => [`${i + 1}`, u, (510_000 * u) / 100_000])}
+          foot={["סה״כ", 100_000, 510_000]}
+        />
+        <Deeper title="ומה אסור? ומה כשהמכונה עומדת?">
           <p>אסור להפחית לפי הכנסות מהנכס: הכנסות תלויות גם במחירים ובמכירות, לא רק בשימוש בנכס.</p>
           <p>בקו ישר הפחת ממשיך גם כשהנכס עומד מושבת. כאן הפחת תלוי בתפוקה בפועל — אז בחודשים בלי ייצור הוא יוצא אפס. זה לא חריג לכלל: השיטה עצמה מודדת את הצריכה לפי השימוש.</p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>השיטה הכי מדויקת להקבלה — כשאפשר לאמוד את התפוקה. תאריך הכניסה לא משנה; רק כמה ייצרו.</Remember>
       </>
     ),
     check: quiz("ppe-units", [
@@ -967,9 +953,9 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "כשלחלקים משמעותיים של נכס יש אורך חיים או דפוס בלאי שונה, כל חלק מופחת לחוד. בדוחות — הנכס עדיין שורה אחת.",
     body: (
       <>
-        <Story icon={<Cog />} title="מטוס">
-          <p>הגוף ישמש 25 שנה, המנועים — 10, והמושבים יוחלפו כל 5 שנים. פחת אחד לכל המטוס היה מפחית את המושבים לאט מדי ואת הגוף מהר מדי.</p>
-        </Story>
+        <p>
+          <strong>מטוס.</strong> הגוף ישמש 25 שנה, המנועים — 10, והמושבים יוחלפו כל 5 שנים. פחת אחד לכל המטוס היה מפחית את המושבים לאט מדי ואת הגוף מהר מדי.
+        </p>
         <Wide>
           <Sorted
             columns={[
@@ -978,7 +964,7 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
             ]}
           />
         </Wide>
-        <KeyCard>הפיצול הוא כלי לחישוב הפחת בלבד. במאזן מוצגת המכונה — עלות כוללת, פחת נצבר כולל.</KeyCard>
+        <Remember>הפיצול הוא כלי לחישוב הפחת בלבד. במאזן מוצגת המכונה — עלות כוללת, פחת נצבר כולל.</Remember>
       </>
     ),
     check: quiz("ppe-components", [
@@ -1000,11 +986,11 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "שאלת רכיבים נפתרת בשלושה צעדים: עלות המכונה כולה וחלוקתה, פחת לכל רכיב בשיטה שלו, וחיבור לשורה אחת.",
     body: (
       <>
-        <Story icon={<Cog />} title={`מכונה: מחיר ${n(PARTS.price)}, הובלה ${n(PARTS.transport)}, התקנה ${n(PARTS.install)}`}>
-          <p>מנוע, גוף ומחשב בקרה — שלוש שיטות.</p>
-        </Story>
+        <p>
+          <strong>{`מכונה: מחיר ${n(PARTS.price)}, הובלה ${n(PARTS.transport)}, התקנה ${n(PARTS.install)}.`}</strong> מנוע, גוף ומחשב בקרה — שלוש שיטות.
+        </p>
         <Stepper label="מכונה בשלושה רכיבים" steps={componentSteps} />
-        <KeyCard>החלוקה באחוזים חלה על העלות המלאה — כולל ההובלה וההתקנה — לא על מחיר הקנייה בלבד.</KeyCard>
+        <Remember>החלוקה באחוזים חלה על העלות המלאה — כולל ההובלה וההתקנה — לא על מחיר הקנייה בלבד.</Remember>
       </>
     ),
     check: quiz("ppe-components-table", [
@@ -1045,7 +1031,7 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
             <>שנים: (180,000 − 20,000) ÷ 16,000 = 10.</>,
           ])}
         />
-        <KeyCard>הטעות הנפוצה: לשכוח שהפחת הנתון הוא של שנה חלקית. קודם משלימים לשנה מלאה — ורק אז מחלקים.</KeyCard>
+        <Remember>הטעות הנפוצה: לשכוח שהפחת הנתון הוא של שנה חלקית. קודם משלימים לשנה מלאה — ורק אז מחלקים.</Remember>
       </>
     ),
     check: quiz("ppe-components-back", [
@@ -1069,25 +1055,26 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "במכירה ״מוכרים״ את הערך בספרים: התמורה נטו פחות הערך בספרים ביום המכירה היא רווח (או הפסד) הון.",
     body: (
       <>
-        <Story icon={<HandCoins />} title={`מכונה ב-${n(SOLD.cost)} ₪, ${SOLD.life} שנים, נמכרה בסוף השנה ה-${SOLD.years} ב-${n(SOLD.price)} ₪`}>
-          <Reveal
-            steps={keyed([
-              <>
-                פחת נצבר: <Money v={(SOLD.cost / SOLD.life) * SOLD.years} />; ערך בספרים: <Money v={SOLD.cost - (SOLD.cost / SOLD.life) * SOLD.years} />.
-              </>,
-              <>
-                רווח הון: <Money v={SOLD.price} plain /> − <Money v={SOLD.cost - (SOLD.cost / SOLD.life) * SOLD.years} plain /> = <Money v={SOLD_GAIN} />.
-              </>,
-              <>
-                הפקודה: ח׳ מזומן {n(SOLD.price)}, ח׳ פחת נצבר {n((SOLD.cost / SOLD.life) * SOLD.years)} / ז׳ מכונה {n(SOLD.cost)}, ז׳ רווח הון {n(SOLD_GAIN)}.
-              </>,
-            ])}
-          />
-        </Story>
-        <KeyCard>הנכס יוצא מהספרים כולו: העלות שלו בזכות, והפחת שנצבר עליו בחובה. מה שנשאר כדי לאזן — הרווח או ההפסד.</KeyCard>
-        <MoreDialog label="תמורה נטו">
+        <p>
+          <strong>דוגמה.</strong> {`מכונה ב-${n(SOLD.cost)} ₪, ${SOLD.life} שנים, נמכרה בסוף השנה ה-${SOLD.years} ב-${n(SOLD.price)} ₪.`}
+        </p>
+        <Reveal
+          steps={keyed([
+            <>
+              פחת נצבר: <Money v={(SOLD.cost / SOLD.life) * SOLD.years} />; ערך בספרים: <Money v={SOLD.cost - (SOLD.cost / SOLD.life) * SOLD.years} />.
+            </>,
+            <>
+              רווח הון: <Money v={SOLD.price} plain /> − <Money v={SOLD.cost - (SOLD.cost / SOLD.life) * SOLD.years} plain /> = <Money v={SOLD_GAIN} />.
+            </>,
+            <>
+              הפקודה: ח׳ מזומן {n(SOLD.price)}, ח׳ פחת נצבר {n((SOLD.cost / SOLD.life) * SOLD.years)} / ז׳ מכונה {n(SOLD.cost)}, ז׳ רווח הון {n(SOLD_GAIN)}.
+            </>,
+          ])}
+        />
+        <Deeper title="תמורה נטו">
           <p>מהמחיר מורידים את העלויות הישירות של המכירה (עמלת תיווך, פירוק). רווח הון מוצג ברווח או הפסד — לא בהכנסות ממכירות.</p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>הנכס יוצא מהספרים כולו: העלות שלו בזכות, והפחת שנצבר עליו בחובה. מה שנשאר כדי לאזן — הרווח או ההפסד.</Remember>
       </>
     ),
     check: quiz("ppe-sale", [
@@ -1109,23 +1096,24 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "לפני שמחשבים רווח — רושמים פחת עד יום המכירה. ערך בספרים של תחילת השנה הוא ערך של יום אחר.",
     body: (
       <>
-        <Story icon={<Truck />} title={`משאית ב-${n(TRUCK_SALE.cost)} ₪, ${TRUCK_SALE.rate * 100}% לשנה, מ-1.7.2021; נמכרה ב-31.12.2023 ב-${n(TRUCK_SALE.price)} ₪`}>
-          <Reveal
-            steps={keyed([
-              <>
-                פחת 2021 (חצי שנה) <Money v={TRUCK_SALE.cost * TRUCK_SALE.rate * 0.5} plain />, 2022 <Money v={TRUCK_SALE.cost * TRUCK_SALE.rate} plain />, 2023 עד המכירה{" "}
-                <Money v={TRUCK_SALE.cost * TRUCK_SALE.rate} plain />.
-              </>,
-              <>
-                פחת נצבר: <Money v={TRUCK_SALE.cost * TRUCK_SALE.rate * TRUCK_SALE.years} />; ערך בספרים: <Money v={TRUCK_SALE.cost * (1 - TRUCK_SALE.rate * TRUCK_SALE.years)} />.
-              </>,
-              <>
-                הפסד הון: <Money v={TRUCK_SALE.cost * (1 - TRUCK_SALE.rate * TRUCK_SALE.years)} plain /> − <Money v={TRUCK_SALE.price} plain /> = <Money v={TRUCK_LOSS} />.
-              </>,
-            ])}
-          />
-        </Story>
-        <KeyCard>שנת מכירה באמצע השנה = פחת עד המכירה, ואז גריעה. גם בממוצעים בשאלות הצגת דוחות — הנכס שנמכר מפחית עד יום המכירה.</KeyCard>
+        <p>
+          <strong>דוגמה.</strong> {`משאית ב-${n(TRUCK_SALE.cost)} ₪, ${TRUCK_SALE.rate * 100}% לשנה, מ-1.7.2021; נמכרה ב-31.12.2023 ב-${n(TRUCK_SALE.price)} ₪.`}
+        </p>
+        <Reveal
+          steps={keyed([
+            <>
+              פחת 2021 (חצי שנה) <Money v={TRUCK_SALE.cost * TRUCK_SALE.rate * 0.5} plain />, 2022 <Money v={TRUCK_SALE.cost * TRUCK_SALE.rate} plain />, 2023 עד המכירה{" "}
+              <Money v={TRUCK_SALE.cost * TRUCK_SALE.rate} plain />.
+            </>,
+            <>
+              פחת נצבר: <Money v={TRUCK_SALE.cost * TRUCK_SALE.rate * TRUCK_SALE.years} />; ערך בספרים: <Money v={TRUCK_SALE.cost * (1 - TRUCK_SALE.rate * TRUCK_SALE.years)} />.
+            </>,
+            <>
+              הפסד הון: <Money v={TRUCK_SALE.cost * (1 - TRUCK_SALE.rate * TRUCK_SALE.years)} plain /> − <Money v={TRUCK_SALE.price} plain /> = <Money v={TRUCK_LOSS} />.
+            </>,
+          ])}
+        />
+        <Remember>שנת מכירה באמצע השנה = פחת עד המכירה, ואז גריעה. גם בממוצעים בשאלות הצגת דוחות — הנכס שנמכר מפחית עד יום המכירה.</Remember>
       </>
     ),
     check: quiz("ppe-sale-date", [
@@ -1147,11 +1135,10 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "כשנמכר רק חלק מקבוצה — גורעים רק את החלק: העלות של מה שנמכר, והפחת שנצבר עליו. שאר הקבוצה נשארת כמו שהיא.",
     body: (
       <>
-        <Story icon={<Package />} title={`${GROUP.units} מחשבים זהים, ${n(GROUP.each)} ₪ כל אחד, ${GROUP.life} שנים`}>
-          <p>
-            אחרי {GROUP.years} שנים נמכרו {GROUP.sold} ב-<Money v={GROUP.price} />.
-          </p>
-        </Story>
+        <p>
+          <strong>{`${GROUP.units} מחשבים זהים, ${n(GROUP.each)} ₪ כל אחד, ${GROUP.life} שנים.`}</strong> אחרי {GROUP.years} שנים נמכרו {GROUP.sold} ב-
+          <Money v={GROUP.price} />.
+        </p>
         <Reveal
           steps={keyed([
             <>
@@ -1165,7 +1152,7 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
             </>,
           ])}
         />
-        <KeyCard>חלק יחסי: אם נמכרו מחצית מהיחידות הזהות — נגרעות מחצית העלות ומחצית הפחת הנצבר.</KeyCard>
+        <Remember>חלק יחסי: אם נמכרו מחצית מהיחידות הזהות — נגרעות מחצית העלות ומחצית הפחת הנצבר.</Remember>
       </>
     ),
     check: quiz("ppe-sale-part", [
@@ -1187,9 +1174,10 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "בשאלות גיליון עבודה ומאזן בוחן, רכוש קבוע מגיע כשורות עם סימני שאלה: עלות, פחת נצבר והוצאות פחת. ממלאים אותן באותם כללים — ומוסיפים פקודות שלא נרשמו.",
     body: (
       <>
-        <Story icon={<Layers />} title="מאזן בוחן לפני פקודות התאמה, 31.12.2023">
-          <p>10 מחשבים נקנו ב-1.1.2021 ב-120,000 ₪ (4 שנים); 5 נמכרו ב-31.12.2023 ב-30,000 ₪ — והמכירה עוד לא נרשמה. שתי מכונות: 250,000 ₪ מ-1.1.2023 ו-360,000 ₪ מ-1.7.2023, 5 שנים.</p>
-        </Story>
+        <p>
+          <strong>מאזן בוחן לפני פקודות התאמה, 31.12.2023.</strong> 10 מחשבים נקנו ב-1.1.2021 ב-120,000 ₪ (4 שנים); 5 נמכרו ב-31.12.2023 ב-30,000 ₪ — והמכירה עוד לא
+          נרשמה. שתי מכונות: 250,000 ₪ מ-1.1.2023 ו-360,000 ₪ מ-1.7.2023, 5 שנים.
+        </p>
         <Reveal
           steps={keyed([
             <>פחת נצבר על המחשבים בפתיחה: 120,000 ÷ 4 × 2 = 60,000 ₪. פחת 2023 לכל העשרה: 30,000 ₪.</>,
@@ -1198,7 +1186,7 @@ export const IAS16_COURSE_SCREENS: Record<string, ScreenContent> = {
             <>יתרות מתוקנות: מחשבים — עלות 60,000, פחת נצבר 45,000; מכונות — עלות 610,000, פחת נצבר 86,000.</>,
           ])}
         />
-        <KeyCard>הסדר בגיליון: קודם הפחת של השנה לכל הנכסים (כולל אלה שנמכרו — עד המכירה), ורק אחר כך פקודת המכירה.</KeyCard>
+        <Remember>הסדר בגיליון: קודם הפחת של השנה לכל הנכסים (כולל אלה שנמכרו — עד המכירה), ורק אחר כך פקודת המכירה.</Remember>
       </>
     ),
     check: quiz("ppe-worksheet", [

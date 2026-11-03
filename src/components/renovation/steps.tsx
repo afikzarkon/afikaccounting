@@ -1,7 +1,7 @@
-import { CalendarCheck, Calculator, History, PlusCircle, SlidersHorizontal } from "lucide-react";
 import { Callout, DataTable, JournalEntry, n, Num } from "@/components/study/blocks";
 import { Formula } from "@/components/study/math";
-import { StepCard, texNum } from "@/components/study/ui";
+import { StepPart } from "@/components/learn/step-part";
+import { texNum } from "@/components/study/ui";
 import { solveRenovation } from "@/lib/learn/renovation";
 import { capitaliseLines, catchUpLines, dateOf, SL_EX, yearEndLines } from "./data";
 
@@ -20,24 +20,21 @@ const STEPS = ["זיהוי תאריך השיפוץ", "עדכון פחת עד ת�
 export function RenovationStepsSection() {
   return (
     <>
-      <div className="card p-5">
-        <p className="text-xs font-semibold text-accent">דרכים לפתור שאלת שיפוץ — במבט אחד</p>
-        <p className="mt-1 text-[15px] text-fg/90">
-          כל שאלה על שיפוץ מהותי נפתרת באותם חמישה שלבים, באותו הסדר. לאורך הדרך נפתור דוגמה אחת: נכס שנרכש ב-1.1.{X.firstYear} בעלות{" "}
-          <Num v={X.cost} /> ₪, לאורך חיים של {X.life} שנים, ללא גרט, בקו ישר. ב-{RENO_DATE} (כעבור {ELAPSED} שנים) בוצע בו שיפוץ מהותי בעלות{" "}
-          <Num v={X.renoCost} /> ₪, שהאריך את אורך החיים הנותר ל-{X.newLife} שנים מיום השיפוץ, ונקבע ערך גרט חדש של <Num v={X.newSalvage} /> ₪.
-        </p>
-        <ol className="mt-4 grid gap-2 sm:grid-cols-5">
-          {STEPS.map((s, i) => (
-            <li key={s} className="flex items-center gap-2 rounded-xl border border-line bg-surface-2/50 px-3 py-2.5 text-sm font-medium text-fg">
-              <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold text-accent-fg">{i + 1}</span>
-              {s}
-            </li>
-          ))}
-        </ol>
-      </div>
+      <p>
+        כל שאלה על שיפוץ מהותי נפתרת באותם חמישה שלבים, באותו הסדר. לאורך הדרך נפתור דוגמה אחת: נכס שנרכש ב-1.1.{X.firstYear} בעלות{" "}
+        <Num v={X.cost} /> ₪, לאורך חיים של {X.life} שנים, ללא גרט, בקו ישר. ב-{RENO_DATE} (כעבור {ELAPSED} שנים) בוצע בו שיפוץ מהותי בעלות{" "}
+        <Num v={X.renoCost} /> ₪, שהאריך את אורך החיים הנותר ל-{X.newLife} שנים מיום השיפוץ, ונקבע ערך גרט חדש של <Num v={X.newSalvage} /> ₪.
+      </p>
+      <ol className="max-w-[70ch] space-y-1.5">
+        {STEPS.map((s, i) => (
+          <li key={s} className="flex items-center gap-2.5">
+            <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
+            {s}
+          </li>
+        ))}
+      </ol>
 
-      <StepCard step={1} title="זיהוי תאריך השיפוץ" lead="בתחילת השנה או במהלכה?" icon={<CalendarCheck className="h-5 w-5" />}>
+      <StepPart step={1} title="זיהוי תאריך השיפוץ" lead="בתחילת השנה או במהלכה?">
         <p>
           התאריך קובע איך נראית שנת השיפוץ. שיפוץ ב-1 בינואר פשוט: כל השנה כבר מחושבת לפי הנתונים החדשים. שיפוץ <strong>במהלך השנה</strong> מפצל
           אותה לשניים — חלק לפי הנתונים הישנים, וחלק לפי החדשים.
@@ -50,9 +47,9 @@ export function RenovationStepsSection() {
             ["אחרי השיפוץ", "יולי עד דצמבר", `${R.monthsAfter}`, "הערך המותאם והאומדנים החדשים"],
           ]}
         />
-      </StepCard>
+      </StepPart>
 
-      <StepCard step={2} title="עדכון פחת עד תאריך השיפוץ" lead="פחת יחסי מתחילת השנה ועד יום השיפוץ — ורק אז מוסיפים" icon={<History className="h-5 w-5" />}>
+      <StepPart step={2} title="עדכון פחת עד תאריך השיפוץ" lead="פחת יחסי מתחילת השנה ועד יום השיפוץ — ורק אז מוסיפים">
         <Formula
           tex={String.raw`\text{פחת שנתי מקורי} = \frac{\text{עלות} - \text{גרט}}{\text{אורך חיים}} = \frac{${texNum(X.cost)} - ${texNum(X.salvage)}}{${X.life}} = ${texNum(OLD_ANNUAL)}`}
         />
@@ -64,9 +61,9 @@ export function RenovationStepsSection() {
           tex={String.raw`\text{ערך בספרים ליום השיפוץ} = \text{עלות מקורית} - \text{פחת נצבר מעודכן} = ${texNum(X.cost)} - ${texNum(R.accumulatedAtReno)} = ${texNum(R.carryingAtReno)}`}
         />
         <JournalEntry title={`פחת ינואר עד יוני ${X.renoYear}`} date={`30.6.${X.renoYear}`} lines={catchUpLines(R)} />
-      </StepCard>
+      </StepPart>
 
-      <StepCard step={3} title="הוספת עלות השיפוץ לערך בספרים" lead="השיפוץ נכנס לנכס, והערך בספרים גדל" icon={<PlusCircle className="h-5 w-5" />}>
+      <StepPart step={3} title="הוספת עלות השיפוץ לערך בספרים" lead="השיפוץ נכנס לנכס, והערך בספרים גדל">
         <Formula
           tex={String.raw`\text{ערך בספרים מותאם} = \text{ערך בספרים ליום השיפוץ} + \text{עלות השיפוץ} = ${texNum(R.carryingAtReno)} + ${texNum(X.renoCost)} = ${texNum(R.adjusted)}`}
         />
@@ -74,9 +71,9 @@ export function RenovationStepsSection() {
         <p className="text-sm text-muted">
           בספרים: עלות <Num v={X.cost + X.renoCost} /> (מקורית ועוד שיפוץ), פחת נצבר <Num v={R.accumulatedAtReno} /> — ערך בספרים <Num v={R.adjusted} />.
         </p>
-      </StepCard>
+      </StepPart>
 
-      <StepCard step={4} title="בחינת שינוי באומדנים" lead="אורך חיים, ערך גרט ושיטת פחת — מה השתנה בעקבות השיפוץ?" icon={<SlidersHorizontal className="h-5 w-5" />}>
+      <StepPart step={4} title="בחינת שינוי באומדנים" lead="אורך חיים, ערך גרט ושיטת פחת — מה השתנה בעקבות השיפוץ?">
         <DataTable
           head={["אומדן", "לפני השיפוץ", "אחרי השיפוץ"]}
           rows={[
@@ -91,9 +88,9 @@ export function RenovationStepsSection() {
             רק מחשבים מחדש מיום השיפוץ.
           </p>
         </Callout>
-      </StepCard>
+      </StepPart>
 
-      <StepCard step={5} title="חישוב הפחת מיום השיפוץ ואילך" lead="הערך המותאם, פחות הגרט החדש, על פני יתרת אורך החיים" icon={<Calculator className="h-5 w-5" />}>
+      <StepPart step={5} title="חישוב הפחת מיום השיפוץ ואילך" lead="הערך המותאם, פחות הגרט החדש, על פני יתרת אורך החיים">
         <Formula
           tex={String.raw`\text{פחת שנתי חדש} = \frac{\text{ערך בספרים מותאם} - \text{גרט חדש}}{\text{יתרת אורך החיים}} = \frac{${texNum(R.adjusted)} - ${texNum(X.newSalvage)}}{${X.newLife}} = ${texNum(NEW_ANNUAL)}`}
         />
@@ -107,7 +104,7 @@ export function RenovationStepsSection() {
             &quot;דוגמאות לפי שיטות&quot;.
           </p>
         </Callout>
-      </StepCard>
+      </StepPart>
     </>
   );
 }

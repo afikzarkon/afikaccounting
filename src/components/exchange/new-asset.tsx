@@ -1,7 +1,8 @@
-import { CalendarClock } from "lucide-react";
+import { Part } from "@/components/study-mode/screen-parts";
 import { Callout, DataTable, JournalEntry, Num } from "@/components/study/blocks";
 import { Formula } from "@/components/study/math";
-import { StepCard, texNum } from "@/components/study/ui";
+import { StepPart } from "@/components/learn/step-part";
+import { texNum } from "@/components/study/ui";
 import { solveExchange } from "@/lib/learn/exchange";
 import { EXAMPLE, EXCHANGE_YEAR, YEAR_END, yearEndLines } from "./entries";
 
@@ -12,11 +13,11 @@ const RECEIVED = solveExchange({ ...EXAMPLE, basis: "received" });
 export function NewAssetSection() {
   return (
     <>
-      <StepCard
+      <StepPart
         step={4}
         title="המשך השנה: פחת הנכס החדש עד 31 בדצמבר"
         lead="הנכס החדש מתחיל דף חדש — עם הנתונים שלו בלבד"
-        icon={<CalendarClock className="h-5 w-5" />}
+       
       >
         <p>מיום ההחלפה הנכס הישן כבר לא קיים בספרים. את הנכס החדש מפחיתים מיום ההחלפה ועד סוף השנה:</p>
         <ul className="list-inside list-disc space-y-1">
@@ -49,11 +50,10 @@ export function NewAssetSection() {
             והפסד, רק בהדרגה.
           </p>
         </Callout>
-      </StepCard>
+      </StepPart>
 
-      <div className="card p-5">
-        <p className="text-[17px] font-semibold text-fg">התמונה המלאה של שנת {EXCHANGE_YEAR} (יש מהות מסחרית)</p>
-        <div className="mt-2 grid gap-3 md:grid-cols-2">
+      <Part title={`התמונה המלאה של שנת ${EXCHANGE_YEAR} (יש מהות מסחרית)`}>
+        <div className="grid gap-3 md:grid-cols-2">
           <DataTable
             caption={`הצגה תוצאתית לשנת ${EXCHANGE_YEAR}`}
             head={["סעיף", "סכום"]}
@@ -77,7 +77,7 @@ export function NewAssetSection() {
         <p className="text-sm text-muted">
           סך הוצאות הפחת בשנת ההחלפה: <Num v={WITH.depToDate} /> + <Num v={WITH.newDep} /> = <Num v={WITH.totalDep} />.
         </p>
-      </div>
+      </Part>
     </>
   );
 }

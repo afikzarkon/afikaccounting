@@ -1,4 +1,5 @@
-import { Callout, DataTable, JournalEntry, Num } from "@/components/study/blocks";
+import { DataTable, JournalEntry, Num } from "@/components/study/blocks";
+import { Remember } from "@/components/study-mode/screen-parts";
 import { Roll } from "@/components/study/ledger";
 import { Formula } from "@/components/study/math";
 import { texNum } from "@/components/study/ui";
@@ -16,46 +17,29 @@ const YEARS = [...R.events.map((e) => e.year), R.events.at(-1)!.year + 1];
 export function YearlyRevaluationSection() {
   return (
     <>
-      <div className="card p-5">
-        <p className="text-xs font-semibold text-accent">הנתונים</p>
-        <p className="mt-1 text-[15px] leading-relaxed text-fg/90">
-          ב-1.1.{X.firstYear} נקנה מבנה עם הקרקע שעליו ב-<Num v={X.cost + YEARLY_LAND.cost} /> ₪: הקרקע <Num v={YEARLY_LAND.cost} /> ₪ והמבנה <Num v={X.cost} /> ₪.
-          אורך החיים של המבנה {X.life} שנים, ערך גרט <Num v={X.salvage} /> ₪, קו ישר. החברה מעריכה מחדש <strong>בכל 31.12</strong> — גם את המבנה וגם את
-          הקרקע — ומעבירה את הקרן לעודפים בקצב הפחת.
-        </p>
-        <DataTable
-          caption="השווי ההוגן בכל 31.12"
-          head={["31.12", "מבנה", "קרקע"]}
-          rows={R.events.map((e, i) => [String(e.year), e.fairValue, LAND_ROWS[i].fairValue])}
-        />
-      </div>
+      <p>
+        <strong>הנתונים.</strong> ב-1.1.{X.firstYear} נקנה מבנה עם הקרקע שעליו ב-<Num v={X.cost + YEARLY_LAND.cost} /> ₪: הקרקע <Num v={YEARLY_LAND.cost} /> ₪ והמבנה{" "}
+        <Num v={X.cost} /> ₪. אורך החיים של המבנה {X.life} שנים, ערך גרט <Num v={X.salvage} /> ₪, קו ישר. החברה מעריכה מחדש <strong>בכל 31.12</strong> — גם
+        את המבנה וגם את הקרקע — ומעבירה את הקרן לעודפים בקצב הפחת.
+      </p>
+      <DataTable
+        caption="השווי ההוגן בכל 31.12"
+        head={["31.12", "מבנה", "קרקע"]}
+        rows={R.events.map((e, i) => [String(e.year), e.fairValue, LAND_ROWS[i].fairValue])}
+      />
 
-      <div className="grid gap-3 lg:grid-cols-2">
-        <div className="card p-5">
-          <p className="text-sm font-semibold text-fg">הנוסחה לפחת אחרי כל הערכה</p>
-          <Formula tex={String.raw`\text{פחת שנתי} = \frac{\text{שווי הוגן של המבנה} - \text{גרט}}{\text{יתרת אורך החיים}}`} />
-          <p className="text-[13.5px] text-fg/90">
-            הסכום בר-הפחת הוא <strong>השווי ההוגן פחות הגרט</strong> — את הגרט לא מפחיתים אף פעם. ו<strong>הקרקע לא נכנסת</strong>: היא לא מופחתת, אז רק
-            השווי של המבנה נכנס למונה.
-          </p>
-        </div>
-        <div className="card p-5">
-          <p className="text-sm font-semibold text-fg">הנוסחה להעברה לעודפים בקצב הפחת</p>
-          <Formula tex={String.raw`\text{העברה שנתית} = \frac{\text{יתרת קרן ההערכה מחדש של המבנה}}{\text{יתרת אורך החיים}}`} />
-          <p className="text-[13.5px] text-fg/90">
-            הקרן &quot;מתממשת&quot; לאורך השנים שנשארו, באותו קצב שבו המבנה מופחת. בקו ישר זה יוצא בדיוק אותו סכום כמו{" "}
-            <strong>פחת לפי השווי ההוגן פחות פחת לפי העלות</strong> — ושתי הדרכים מוצגות בכל שנה למטה. קרן הקרקע לא מועברת: הקרקע לא מופחתת.
-          </p>
-        </div>
-      </div>
-
-      <Callout kind="warn" title="שלוש טעויות שחוזרות בכל מבחן">
-        <ul className="list-inside list-disc space-y-1">
-          <li>שוכחים להוריד את הגרט מהשווי ההוגן לפני שמחלקים ביתרת החיים.</li>
-          <li>מכניסים את הקרקע לבסיס הפחת — היא לא מופחתת, גם אחרי הערכה מחדש.</li>
-          <li>מעבירים לעודפים גם את קרן הקרקע — היא נשארת בהון עד שהקרקע נמכרת או נגרעת.</li>
-        </ul>
-      </Callout>
+      <p className="font-semibold text-fg">הנוסחה לפחת אחרי כל הערכה:</p>
+      <Formula tex={String.raw`\text{פחת שנתי} = \frac{\text{שווי הוגן של המבנה} - \text{גרט}}{\text{יתרת אורך החיים}}`} />
+      <p>
+        הסכום בר-הפחת הוא <strong>השווי ההוגן פחות הגרט</strong> — את הגרט לא מפחיתים אף פעם. ו<strong>הקרקע לא נכנסת</strong>: היא לא מופחתת, אז רק השווי
+        של המבנה נכנס למונה.
+      </p>
+      <p className="font-semibold text-fg">הנוסחה להעברה לעודפים בקצב הפחת:</p>
+      <Formula tex={String.raw`\text{העברה שנתית} = \frac{\text{יתרת קרן ההערכה מחדש של המבנה}}{\text{יתרת אורך החיים}}`} />
+      <p>
+        הקרן &quot;מתממשת&quot; לאורך השנים שנשארו, באותו קצב שבו המבנה מופחת. בקו ישר זה יוצא בדיוק אותו סכום כמו{" "}
+        <strong>פחת לפי השווי ההוגן פחות פחת לפי העלות</strong> — ושתי הדרכים מוצגות בכל שנה למטה. קרן הקרקע לא מועברת: הקרקע לא מופחתת.
+      </p>
 
       <ol className="space-y-4">
         {YEARS.map((year) => {
@@ -166,6 +150,15 @@ export function YearlyRevaluationSection() {
           .filter((x) => x.year <= YEARS.at(-1)!)
           .map((x) => [String(x.year), r2(x.dep), r2(x.costDep), r2(x.transfer) || "—", r2(x.revaluation) || "—", r2(x.closing), r2(x.surplus)])}
       />
+
+      <Remember>
+        <p>שלוש טעויות שחוזרות בכל מבחן:</p>
+        <ul className="list-inside list-disc space-y-1 font-medium">
+          <li>שוכחים להוריד את הגרט מהשווי ההוגן לפני שמחלקים ביתרת החיים.</li>
+          <li>מכניסים את הקרקע לבסיס הפחת — היא לא מופחתת, גם אחרי הערכה מחדש.</li>
+          <li>מעבירים לעודפים גם את קרן הקרקע — היא נשארת בהון עד שהקרקע נמכרת או נגרעת.</li>
+        </ul>
+      </Remember>
     </>
   );
 }

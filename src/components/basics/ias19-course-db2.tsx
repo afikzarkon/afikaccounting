@@ -1,5 +1,6 @@
-import { Briefcase, FileSearch, Inbox, Lock, Wallet } from "lucide-react";
+import { Briefcase, Inbox, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
+import { Deeper, Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
 import { CTO, CTO_OPENING, CTO_YEAR, RETIRE, RETIRE_PAID, RETIRE_PN, SETTLE, SETTLE_GAIN, SMALL, SMALL_LOSS } from "@/lib/study/ias19/lessons/amend";
@@ -30,7 +31,7 @@ import { lessonRef, lessonsRef, pct } from "@/lib/study/ias19/shared";
 import { Bridge, DestTag, ExplainTask, HintLadder, MapBranch, RollForward, T19 } from "./ias19-ui";
 import { MiniQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
-import { Card, JE, KeyCard, Money, Rule, Stepper, Wide } from "./ui";
+import { Card, JE, Money, Rule, Stepper } from "./ui";
 
 /** The employee-benefits course, lessons 8–10: an amendment mid-year and settlement, plan assets and the ceiling, presentation and reverse engineering. */
 
@@ -80,14 +81,14 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
     lead: "סילוק — תשלום מחוץ לתנאים שמבטל את ההתחייבות — לרווח והפסד; פרישה לפי התנאים, גם מוקדמת — P.N. ב-OCI.",
     body: (
       <>
-        <Wide className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <Card title={<T19 he="סילוק" en="Settlement" par="109–111" />}>
             <p>החברה משלמת סכום כדי להיפטר מההתחייבות, בהסכם שאינו לפי תנאי התוכנית. הרווח או ההפסד: יתרת ההתחייבות פחות התשלום — לרווח והפסד.</p>
           </Card>
           <Card title="פרישה בלתי צפויה">
             <p>העובד עוזב ומקבל בדיוק מה שמגיע לו לפי התוכנית — רק מוקדם מהצפוי. זה לא סילוק: ההפרש בין היתרה לתשלום הוא שינוי אומדן — P.N. ב-OCI.</p>
           </Card>
-        </Wide>
+        </div>
       </>
     ),
     check: quiz("emp-amend-settle", [
@@ -115,57 +116,55 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
             <Money v={CTO.newPerYear} /> לשנה — גם על העבר — והשיעור יורד ל-{pct(CTO.rateAmend)}, ונשאר כך עד סוף השנה.
           </p>
         </Story>
-        <Wide>
-          <Stepper
-            label="שנה מפוצלת"
-            steps={[
-              { title: "פתיחה", body: <p><Money v={CTO.oldPerYear} plain /> × 1 ÷ <L>{1 + CTO.rateEnd2023}^{n5}</L> = <strong><M v={CTO_OPENING} /></strong>.</p> },
-              {
-                title: "(א) שירות שוטף, שתי תקופות",
-                body: (
-                  <div className="space-y-1.5">
-                    <p>עד התיקון: <Money v={CTO.oldPerYear / 2} plain /> ÷ <L>{1 + CTO.rateEnd2023}^{n5 - 0.5}</L> = <M v={CTO_YEAR.serviceBefore} /> — מהוון מ-30.6, בשיעור של תחילת התקופה.</p>
-                    <p>אחרי: <Money v={CTO.newPerYear / 2} plain /> ÷ <L>{1 + CTO.rateAmend}^{n5 - 1}</L> = <M v={CTO_YEAR.serviceAfter} />. סה״כ <strong><M v={CTO_YEAR.service} /></strong>.</p>
-                  </div>
-                ),
-              },
-              {
-                title: "(ב) שירות עבר ב-1.7",
-                body: (
-                  <div className="space-y-1.5">
-                    <p>1.5 שנות שירות. לפני: <Money v={CTO.oldPerYear * 1.5} plain /> ÷ <L>{1 + CTO.rateAmend}^{n5 - 0.5}</L> = <M v={CTO_YEAR.pastBefore} />.</p>
-                    <p>אחרי: <Money v={CTO.newPerYear * 1.5} plain /> ÷ <L>{1 + CTO.rateAmend}^{n5 - 0.5}</L> = <M v={CTO_YEAR.pastAfter} />. הפרש: <strong><M v={CTO_YEAR.pastService} /></strong> — לרווח והפסד.</p>
-                  </div>
-                ),
-              },
-              {
-                title: "(ג) ריבית, שתי תקופות",
-                body: (
-                  <p>
-                    <M v={CTO_OPENING} /> × (<L>{1 + CTO.rateEnd2023}^0.5 − 1</L>) = <M v={CTO_YEAR.interestBefore} />, ועוד <M v={CTO_YEAR.pastAfter} /> × (<L>{1 + CTO.rateAmend}^0.5 − 1</L>) = <M v={CTO_YEAR.interestAfter} />. סה״כ{" "}
-                    <strong><M v={CTO_YEAR.interest} /></strong>.
-                  </p>
-                ),
-              },
-              {
-                title: "סגירה, והמעגל",
-                body: (
-                  <RollForward
-                    title={`מנהל הטכנולוגיה — ${CTO.from + 1}`}
-                    rows={[
-                      { label: "יתרת פתיחה", value: CTO_OPENING, kind: "balance", how: `${pct(CTO.rateEnd2023)}, n = ${n5}` },
-                      { label: "עלות ריבית", value: CTO_YEAR.interest, how: `חצי שנה ${pct(CTO.rateEnd2023)} על הפתיחה, חצי ${pct(CTO.rateAmend)} על היתרה אחרי התיקון` },
-                      { label: "עלות שירות שוטף", value: CTO_YEAR.service, how: `חצי ${pct(CTO.rateEnd2023)} (n = ${n5 - 0.5}), חצי ${pct(CTO.rateAmend)} (n = ${n5 - 1})` },
-                      { label: "עלות שירות עבר", value: CTO_YEAR.pastService, how: `${pct(CTO.rateAmend)}, n = ${n5 - 0.5}, ביום התיקון` },
-                      { label: "P.N. — הפסד", value: CTO_YEAR.pn, kind: "pn", how: "בלי עיגולי ביניים" },
-                      { label: "יתרת סגירה", value: CTO_YEAR.closing, kind: "balance", how: `2 × ${CTO.newPerYear.toLocaleString("en-US")}, ${pct(CTO.rateAmend)}, n = ${n5 - 1}` },
-                    ]}
-                  />
-                ),
-              },
-            ]}
-          />
-        </Wide>
+        <Stepper
+          label="שנה מפוצלת"
+          steps={[
+            { title: "פתיחה", body: <p><Money v={CTO.oldPerYear} plain /> × 1 ÷ <L>{1 + CTO.rateEnd2023}^{n5}</L> = <strong><M v={CTO_OPENING} /></strong>.</p> },
+            {
+              title: "(א) שירות שוטף, שתי תקופות",
+              body: (
+                <div className="space-y-1.5">
+                  <p>עד התיקון: <Money v={CTO.oldPerYear / 2} plain /> ÷ <L>{1 + CTO.rateEnd2023}^{n5 - 0.5}</L> = <M v={CTO_YEAR.serviceBefore} /> — מהוון מ-30.6, בשיעור של תחילת התקופה.</p>
+                  <p>אחרי: <Money v={CTO.newPerYear / 2} plain /> ÷ <L>{1 + CTO.rateAmend}^{n5 - 1}</L> = <M v={CTO_YEAR.serviceAfter} />. סה״כ <strong><M v={CTO_YEAR.service} /></strong>.</p>
+                </div>
+              ),
+            },
+            {
+              title: "(ב) שירות עבר ב-1.7",
+              body: (
+                <div className="space-y-1.5">
+                  <p>1.5 שנות שירות. לפני: <Money v={CTO.oldPerYear * 1.5} plain /> ÷ <L>{1 + CTO.rateAmend}^{n5 - 0.5}</L> = <M v={CTO_YEAR.pastBefore} />.</p>
+                  <p>אחרי: <Money v={CTO.newPerYear * 1.5} plain /> ÷ <L>{1 + CTO.rateAmend}^{n5 - 0.5}</L> = <M v={CTO_YEAR.pastAfter} />. הפרש: <strong><M v={CTO_YEAR.pastService} /></strong> — לרווח והפסד.</p>
+                </div>
+              ),
+            },
+            {
+              title: "(ג) ריבית, שתי תקופות",
+              body: (
+                <p>
+                  <M v={CTO_OPENING} /> × (<L>{1 + CTO.rateEnd2023}^0.5 − 1</L>) = <M v={CTO_YEAR.interestBefore} />, ועוד <M v={CTO_YEAR.pastAfter} /> × (<L>{1 + CTO.rateAmend}^0.5 − 1</L>) = <M v={CTO_YEAR.interestAfter} />. סה״כ{" "}
+                  <strong><M v={CTO_YEAR.interest} /></strong>.
+                </p>
+              ),
+            },
+            {
+              title: "סגירה, והמעגל",
+              body: (
+                <RollForward
+                  title={`מנהל הטכנולוגיה — ${CTO.from + 1}`}
+                  rows={[
+                    { label: "יתרת פתיחה", value: CTO_OPENING, kind: "balance", how: `${pct(CTO.rateEnd2023)}, n = ${n5}` },
+                    { label: "עלות ריבית", value: CTO_YEAR.interest, how: `חצי שנה ${pct(CTO.rateEnd2023)} על הפתיחה, חצי ${pct(CTO.rateAmend)} על היתרה אחרי התיקון` },
+                    { label: "עלות שירות שוטף", value: CTO_YEAR.service, how: `חצי ${pct(CTO.rateEnd2023)} (n = ${n5 - 0.5}), חצי ${pct(CTO.rateAmend)} (n = ${n5 - 1})` },
+                    { label: "עלות שירות עבר", value: CTO_YEAR.pastService, how: `${pct(CTO.rateAmend)}, n = ${n5 - 0.5}, ביום התיקון` },
+                    { label: "P.N. — הפסד", value: CTO_YEAR.pn, kind: "pn", how: "בלי עיגולי ביניים" },
+                    { label: "יתרת סגירה", value: CTO_YEAR.closing, kind: "balance", how: `2 × ${CTO.newPerYear.toLocaleString("en-US")}, ${pct(CTO.rateAmend)}, n = ${n5 - 1}` },
+                  ]}
+                />
+              ),
+            },
+          ]}
+        />
       </>
     ),
   },
@@ -173,7 +172,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
     lead: "אותה יתרה — שלוש דרכים לצאת ממנה: סילוק (רווח והפסד), פרישה לפי התנאים (OCI), וביטול תוכנית בתשלום (סילוק).",
     body: (
       <>
-        <Card title="א. סילוק">
+        <Part title="א. סילוק">
           <HintLadder
             task={
               <>
@@ -200,8 +199,8 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
               />,
             ]}
           />
-        </Card>
-        <Card title="ב. פרישה בלתי צפויה">
+        </Part>
+        <Part title="ב. פרישה בלתי צפויה">
           <HintLadder
             task={
               <>
@@ -210,8 +209,8 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
             }
             hints={["האם התשלום חורג מתנאי התוכנית?", "לא — זו פרישה לפי התנאים, ולכן אין סילוק.", <>ההפרש: <Money v={RETIRE_PAID} plain /> − <M v={CTO_YEAR.closing} /></>, <><strong><M v={RETIRE_PN} /></strong> הפסד — P.N. ב-OCI.</>]}
           />
-        </Card>
-        <Card title="ג. ביטול תוכנית קטנה">
+        </Part>
+        <Part title="ג. ביטול תוכנית קטנה">
           <HintLadder
             task={
               <>
@@ -220,7 +219,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
             }
             hints={["האם הביטול הוא לפי תנאי התוכנית?", "לא — זו עסקה שמבטלת את ההתחייבות: סילוק.", <>הפסד: <Money v={SMALL.paid} plain /> − <Money v={SMALL.books} plain /></>, <><strong><Money v={SMALL_LOSS} /></strong> הפסד מסילוק, לרווח והפסד. אילו התפטר מיוזמתו ויצא לפי התנאים — זו פרישה בלתי צפויה: P.N. ב-OCI.</>]}
           />
-        </Card>
+        </Part>
       </>
     ),
   },
@@ -265,25 +264,23 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
           <T19 he="נכסי תכנית" en="Plan assets" par="8, 113" /> הם כסף וניירות ערך בקרן נפרדת מהחברה, שנועדו רק לתשלום הטבות עובד ואינם זמינים לנושי החברה. מנכים אותם מההתחייבות:{" "}
           <strong>התחייבות נטו = התחייבות פחות שווי הוגן של הנכסים</strong>.
         </P>
-        <Wide>
-          <DataTable
-            head={["שורה במעגל הנכסים", "איך"]}
-            rows={[
-              ["הכנסות ריבית", "באותו שיעור היוון של ההתחייבות, ובאותו פיצול תקופות (סעיף 125); הפקדה באמצע שנה — ריבית מיומה"],
-              ["הפקדות", "מה שהחברה העבירה לקרן"],
-              ["הטבות ששולמו מהקרן", "רק מה שיצא מהנכסים — לא מה שהחברה שילמה מהקופה שלה"],
-              ["P.N.", "התשואה בפועל מעבר להכנסות הריבית (סעיף 127) — ל-OCI"],
-            ]}
-          />
-        </Wide>
-        <Card title="הערה: איך מחשבים כשהשיעור השתנה באמצע השנה">
-          <p className="text-[14.5px]">
+        <DataTable
+          head={["שורה במעגל הנכסים", "איך"]}
+          rows={[
+            ["הכנסות ריבית", "באותו שיעור היוון של ההתחייבות, ובאותו פיצול תקופות (סעיף 125); הפקדה באמצע שנה — ריבית מיומה"],
+            ["הפקדות", "מה שהחברה העבירה לקרן"],
+            ["הטבות ששולמו מהקרן", "רק מה שיצא מהנכסים — לא מה שהחברה שילמה מהקופה שלה"],
+            ["P.N.", "התשואה בפועל מעבר להכנסות הריבית (סעיף 127) — ל-OCI"],
+          ]}
+        />
+        <Deeper title="הערה: איך מחשבים כשהשיעור השתנה באמצע השנה">
+          <p>
             הכלל (<span dir="ltr">IAS 19.125</span>): הכנסות הריבית על הפתיחה ועל הפקדה באמצע שנה — באותו שיעור ובאותו פיצול תקופות כמו ההתחייבות. בקרן שבה{" "}
             <Money v={SPLIT.opening} /> בפתיחה, שיעור {pct(SPLIT.periods[0].i)} עד 30.6 ו-{pct(SPLIT.periods[1].i)} מ-1.7, והפקדה של <Money v={SPLIT.contribution} /> ב-1.7 — הכנסות הריבית לפי הכלל{" "}
             <strong>{SPLIT_INTEREST.total.toLocaleString("en-US", { maximumFractionDigits: 2 })}</strong>. יש מרצים שמחשבים את הפתיחה בשיעור הראשון לשנה שלמה ({SPLIT_OTHER.toLocaleString("en-US", { maximumFractionDigits: 2 })}); כאן
             מלמדים את הכלל — וכדאי לברר מה מקובל אצל המרצה שלכם.
           </p>
-        </Card>
+        </Deeper>
       </>
     ),
     check: quiz("emp-assets-what", [
@@ -299,7 +296,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
           <T19 he="תקרת נכס" en="Asset ceiling" par="64" />: כשהנכסים גדולים מההתחייבות, החברה מכירה בעודף רק עד הערך הנוכחי של מה שהיא יכולה להשתמש בו — החזר מהקרן, או הקטנת הפקדות עתידיות
           (<span dir="ltr">IFRIC 14</span>). מה שמעבר לזה נשרף — ב-OCI, בצד הנכסים.
         </P>
-        <KeyCard icon={<Lock className="h-5 w-5" />}>כסף שנעול אצל נאמן, שמחזיר רק לפי שיקול דעתו — אינו עודף שהחברה שולטת בו. התקרה: אפס.</KeyCard>
+        <Remember>כסף שנעול אצל נאמן, שמחזיר רק לפי שיקול דעתו — אינו עודף שהחברה שולטת בו. התקרה: אפס.</Remember>
       </>
     ),
     check: quiz("emp-assets-ceiling", [
@@ -328,7 +325,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
             שינוי בהנחות. בקרן: <Money v={PLAN.assets.opening} /> ב-31.12.2023, הפקדה של <Money v={PLAN.assets.contribution} /> ב-1.4.2024, ושווי הוגן <Money v={PLAN.assets.closing} /> בסוף 2024.
           </p>
         </Story>
-        <Wide className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-2">
           <RollForward
             title="התחייבות — 2024"
             rows={[
@@ -349,20 +346,18 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
               { label: "שווי הוגן בסגירה", value: PLAN.assets.closing, kind: "balance" },
             ]}
           />
-        </Wide>
-        <Wide>
-          <DataTable
-            head={["", "סכום", "איפה"]}
-            rows={[
-              ["עלות שירות", Math.round(PLAN_EFFECT.salary), <DestTag key="a" to="pl" />],
-              ["ריבית נטו (עלות פחות הכנסה)", Math.round(PLAN_EFFECT.netInterest), <DestTag key="b" to="pl" />],
-              ["P.N. של הנכסים", Math.round(PLAN_EFFECT.oci), <DestTag key="c" to="oci" />],
-              ["התחייבות נטו, 31.12.2024", Math.round(PLAN_EFFECT.net), <DestTag key="d" to="bs" />],
-            ]}
-            foot={["סך הרווח הכולל", Math.round(PLAN_EFFECT.total), ""]}
-            caption="השפעת 2024 — בסוגריים: הוצאה או הפסד"
-          />
-        </Wide>
+        </div>
+        <DataTable
+          head={["", "סכום", "איפה"]}
+          rows={[
+            ["עלות שירות", Math.round(PLAN_EFFECT.salary), <DestTag key="a" to="pl" />],
+            ["ריבית נטו (עלות פחות הכנסה)", Math.round(PLAN_EFFECT.netInterest), <DestTag key="b" to="pl" />],
+            ["P.N. של הנכסים", Math.round(PLAN_EFFECT.oci), <DestTag key="c" to="oci" />],
+            ["התחייבות נטו, 31.12.2024", Math.round(PLAN_EFFECT.net), <DestTag key="d" to="bs" />],
+          ]}
+          foot={["סך הרווח הכולל", Math.round(PLAN_EFFECT.total), ""]}
+          caption="השפעת 2024 — בסוגריים: הוצאה או הפסד"
+        />
         <p className="text-[14px] text-muted">
           התחייבות נטו בפתיחה: <M v={PLAN_OPENING} /> − <Money v={PLAN.assets.opening} plain /> = <M v={PLAN_OPENING - PLAN.assets.opening} />.
         </p>
@@ -372,7 +367,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
   "emp-assets-together": {
     lead: "כשיש עודף — בודקים תקרה בכל תאריך, ומשחזרים את השיעור מההתחייבות.",
     body: (
-      <Card title="עודף, ותקרה של 5% מההתחייבות">
+      <Part title="עודף, ותקרה של 5% מההתחייבות">
         <HintLadder
           task={
             <>
@@ -401,7 +396,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
             </span>,
           ]}
         />
-      </Card>
+      </Part>
     ),
   },
   "emp-assets-master": {
@@ -439,17 +434,15 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
     lead: "שירות, שירות עבר, סילוק וריבית נטו — לרווח והפסד; כל המדידות מחדש — ל-OCI; היתרה נטו — למאזן.",
     body: (
       <>
-        <Wide>
-          <DataTable
-            head={["שורה", "כתובת", "הערה"]}
-            rows={[
-              ["עלות שירות שוטף, שירות עבר, סילוק", <DestTag key="a" to="pl" />, "בסעיף השכר של המחלקה: ייצור — עלות המכר; מכירות — מכירה ושיווק; הנהלה — הנהלה וכלליות"],
-              [<T19 key="b" he="ריבית נטו" en="Net interest" par="123" />, <DestTag key="b2" to="pl" />, "הכנסות ריבית על הנכסים פחות עלות ריבית — במימון או בשכר, לפי המדיניות"],
-              [<T19 key="c" he="מדידה מחדש" en="Remeasurement" par="120, 122" />, <DestTag key="c2" to="oci" />, "P.N. של ההתחייבות, P.N. של הנכסים, השפעת התקרה — ולא חוזרת לרווח והפסד"],
-              ["התחייבות נטו או נכס נטו", <DestTag key="d" to="bs" />, "שורה אחת"],
-            ]}
-          />
-        </Wide>
+        <DataTable
+          head={["שורה", "כתובת", "הערה"]}
+          rows={[
+            ["עלות שירות שוטף, שירות עבר, סילוק", <DestTag key="a" to="pl" />, "בסעיף השכר של המחלקה: ייצור — עלות המכר; מכירות — מכירה ושיווק; הנהלה — הנהלה וכלליות"],
+            [<T19 key="b" he="ריבית נטו" en="Net interest" par="123" />, <DestTag key="b2" to="pl" />, "הכנסות ריבית על הנכסים פחות עלות ריבית — במימון או בשכר, לפי המדיניות"],
+            [<T19 key="c" he="מדידה מחדש" en="Remeasurement" par="120, 122" />, <DestTag key="c2" to="oci" />, "P.N. של ההתחייבות, P.N. של הנכסים, השפעת התקרה — ולא חוזרת לרווח והפסד"],
+            ["התחייבות נטו או נכס נטו", <DestTag key="d" to="bs" />, "שורה אחת"],
+          ]}
+        />
         <P>וקרן ההון (OCI מצטבר)? היא מצטברת מכל השנים — מנתוני שנה אחת אי אפשר לחשב אותה.</P>
       </>
     ),
@@ -463,20 +456,18 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>כשהשאלה נותנת ביאור של השנה הקודמת, היא בעצם נותנת מעגל שלם. מתוכו מחלצים את מה שלא נאמר במפורש:</P>
-        <Wide>
-          <DataTable
-            head={["מה מחלצים", "איך", "מתי מותר"]}
-            rows={[
-              ["שיעור ההיוון", "עלות ריבית ÷ יתרת פתיחה", "רק כשלא היו תשלומים או שינוי באמצע השנה — ובלי לעגל"],
-              ["חלק הקרן בתשלומים", "הטבות ששולמו מהקרן ÷ כל ההטבות ששולמו", "תמיד"],
-              ["שיעור ההפקדה", "ההפקדה ÷ השכר של כל מי שהועסק ביום ההפקדה", "כולל מי שעזב אחר כך"],
-              ["תוספת להטבה", "שירות עבר ÷ ההתחייבות לפני התיקון", "באותו יום ובאותו שיעור"],
-            ]}
-          />
-        </Wide>
-        <KeyCard icon={<FileSearch className="h-5 w-5" />}>
+        <DataTable
+          head={["מה מחלצים", "איך", "מתי מותר"]}
+          rows={[
+            ["שיעור ההיוון", "עלות ריבית ÷ יתרת פתיחה", "רק כשלא היו תשלומים או שינוי באמצע השנה — ובלי לעגל"],
+            ["חלק הקרן בתשלומים", "הטבות ששולמו מהקרן ÷ כל ההטבות ששולמו", "תמיד"],
+            ["שיעור ההפקדה", "ההפקדה ÷ השכר של כל מי שהועסק ביום ההפקדה", "כולל מי שעזב אחר כך"],
+            ["תוספת להטבה", "שירות עבר ÷ ההתחייבות לפני התיקון", "באותו יום ובאותו שיעור"],
+          ]}
+        />
+        <Remember>
           שיעור שמשוחזר ממספרי ביאור לא מעגלים. אם יוצא 4.4987% — משתמשים ב-4.4987%, לא ב-4.5%. שתי גרסאות פתרון יכולות להיבדל ביחידות בודדות רק בגלל עיגול השיעור; בדקו מה המרצה שלכם מבקש.
-        </KeyCard>
+        </Remember>
       </>
     ),
     check: quiz("emp-present-reverse", [
@@ -504,59 +495,57 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
             {pct(AMENDED.rateEnd)}. הקרן כמו קודם: <Money v={PLAN.assets.opening} /> בפתיחה, <Money v={PLAN.assets.contribution} /> ב-1.4, <Money v={PLAN.assets.closing} /> בסוף.
           </p>
         </Story>
-        <Wide>
-          <Stepper
-            label="תיקון והצגה"
-            steps={[
-              {
-                title: "ההתחייבות",
-                body: (
-                  <RollForward
-                    title="התחייבות — 2024"
-                    rows={[
-                      { label: "יתרת פתיחה", value: PLAN_OPENING, kind: "balance" },
-                      { label: "עלות ריבית", value: AM_YEAR.interest, how: `${Math.round(AM_YEAR.interestBefore)} (חצי שנה, ${pct(PLAN.rate)}) + ${Math.round(AM_YEAR.interestAfter)} (חצי שנה, ${pct(AMENDED.rateAfter)}, על היתרה אחרי התיקון)` },
-                      { label: "עלות שירות שוטף", value: AM_YEAR.service, how: `${Math.round(AM_YEAR.serviceBefore)} (n = ${PLAN.n - 0.5}) + ${Math.round(AM_YEAR.serviceAfter)} (n = ${PLAN.n - 1})` },
-                      { label: "עלות שירות עבר", value: AM_YEAR.pastService, how: `${Math.round(AM_YEAR.pastAfter)} − ${Math.round(AM_YEAR.pastBefore)}, ${pct(AMENDED.rateAfter)}, n = ${PLAN.n - 0.5}` },
-                      { label: "P.N. — הפסד", value: AM_YEAR.pn, kind: "pn" },
-                      { label: "יתרת סגירה", value: AM_YEAR.closing, kind: "balance", how: `2 × ${AMENDED.newPerYear.toLocaleString("en-US")}, ${pct(AMENDED.rateEnd)}, n = ${PLAN.n - 1}` },
-                    ]}
-                  />
-                ),
-              },
-              {
-                title: "הנכסים — באותו פיצול",
-                body: (
-                  <RollForward side="debit"
-                    title="נכסי תכנית — 2024"
-                    rows={[
-                      { label: "יתרת פתיחה", value: PLAN.assets.opening, kind: "balance" },
-                      { label: "הכנסות ריבית", value: AM_ASSETS.interest, how: `${AM_ASSETS_PARTS.parts[0].toFixed(0)} עד 30.6 (${pct(PLAN.rate)}, כולל ההפקדה לרבעון) + ${AM_ASSETS_PARTS.parts[1].toFixed(0)} מ-1.7 (${pct(AMENDED.rateAfter)})` },
-                      { label: "הפקדות", value: PLAN.assets.contribution },
-                      { label: "P.N. — רווח", value: AM_ASSETS.pn, kind: "pn" },
-                      { label: "שווי הוגן בסגירה", value: PLAN.assets.closing, kind: "balance" },
-                    ]}
-                  />
-                ),
-              },
-              {
-                title: "הדוחות",
-                body: (
-                  <DataTable
-                    head={["", "סכום", "איפה"]}
-                    rows={[
-                      ["שכר: שירות שוטף + שירות עבר", Math.round(AM_EFFECT.salary), <DestTag key="a" to="pl" />],
-                      ["ריבית נטו", Math.round(AM_EFFECT.netInterest), <DestTag key="b" to="pl" />],
-                      ["מדידה מחדש נטו", Math.round(AM_EFFECT.oci), <DestTag key="c" to="oci" />],
-                      ["התחייבות נטו", Math.round(AM_EFFECT.net), <DestTag key="d" to="bs" />],
-                    ]}
-                    caption="בסוגריים: הוצאה או הפסד. קרן ההון אינה ניתנת לחישוב — אין נתונים על השנים הקודמות."
-                  />
-                ),
-              },
-            ]}
-          />
-        </Wide>
+        <Stepper
+          label="תיקון והצגה"
+          steps={[
+            {
+              title: "ההתחייבות",
+              body: (
+                <RollForward
+                  title="התחייבות — 2024"
+                  rows={[
+                    { label: "יתרת פתיחה", value: PLAN_OPENING, kind: "balance" },
+                    { label: "עלות ריבית", value: AM_YEAR.interest, how: `${Math.round(AM_YEAR.interestBefore)} (חצי שנה, ${pct(PLAN.rate)}) + ${Math.round(AM_YEAR.interestAfter)} (חצי שנה, ${pct(AMENDED.rateAfter)}, על היתרה אחרי התיקון)` },
+                    { label: "עלות שירות שוטף", value: AM_YEAR.service, how: `${Math.round(AM_YEAR.serviceBefore)} (n = ${PLAN.n - 0.5}) + ${Math.round(AM_YEAR.serviceAfter)} (n = ${PLAN.n - 1})` },
+                    { label: "עלות שירות עבר", value: AM_YEAR.pastService, how: `${Math.round(AM_YEAR.pastAfter)} − ${Math.round(AM_YEAR.pastBefore)}, ${pct(AMENDED.rateAfter)}, n = ${PLAN.n - 0.5}` },
+                    { label: "P.N. — הפסד", value: AM_YEAR.pn, kind: "pn" },
+                    { label: "יתרת סגירה", value: AM_YEAR.closing, kind: "balance", how: `2 × ${AMENDED.newPerYear.toLocaleString("en-US")}, ${pct(AMENDED.rateEnd)}, n = ${PLAN.n - 1}` },
+                  ]}
+                />
+              ),
+            },
+            {
+              title: "הנכסים — באותו פיצול",
+              body: (
+                <RollForward side="debit"
+                  title="נכסי תכנית — 2024"
+                  rows={[
+                    { label: "יתרת פתיחה", value: PLAN.assets.opening, kind: "balance" },
+                    { label: "הכנסות ריבית", value: AM_ASSETS.interest, how: `${AM_ASSETS_PARTS.parts[0].toFixed(0)} עד 30.6 (${pct(PLAN.rate)}, כולל ההפקדה לרבעון) + ${AM_ASSETS_PARTS.parts[1].toFixed(0)} מ-1.7 (${pct(AMENDED.rateAfter)})` },
+                    { label: "הפקדות", value: PLAN.assets.contribution },
+                    { label: "P.N. — רווח", value: AM_ASSETS.pn, kind: "pn" },
+                    { label: "שווי הוגן בסגירה", value: PLAN.assets.closing, kind: "balance" },
+                  ]}
+                />
+              ),
+            },
+            {
+              title: "הדוחות",
+              body: (
+                <DataTable
+                  head={["", "סכום", "איפה"]}
+                  rows={[
+                    ["שכר: שירות שוטף + שירות עבר", Math.round(AM_EFFECT.salary), <DestTag key="a" to="pl" />],
+                    ["ריבית נטו", Math.round(AM_EFFECT.netInterest), <DestTag key="b" to="pl" />],
+                    ["מדידה מחדש נטו", Math.round(AM_EFFECT.oci), <DestTag key="c" to="oci" />],
+                    ["התחייבות נטו", Math.round(AM_EFFECT.net), <DestTag key="d" to="bs" />],
+                  ]}
+                  caption="בסוגריים: הוצאה או הפסד. קרן ההון אינה ניתנת לחישוב — אין נתונים על השנים הקודמות."
+                />
+              ),
+            },
+          ]}
+        />
       </>
     ),
   },
@@ -564,13 +553,13 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
     lead: "המדיניות קובעת רק איפה בתוך רווח והפסד — לא את הסך; וביאור של שנה קודמת מגלה מה השאלה לא אמרה.",
     body: (
       <>
-        <Card title="א. מדיניות אחרת">
+        <Part title="א. מדיניות אחרת">
           <HintLadder
             task="אותה שנה, אבל החברה מציגה את הריבית הנטו בהוצאות השכר. מה משתנה?"
             hints={["האם המדיניות משנה את הסכומים, או רק את השורה?", "רק את השורה. הסך ברווח והפסד — זהה.", <>שכר: <Money v={-AM_EFFECT.salary} plain /> + <Money v={-AM_EFFECT.netInterest} plain /></>, <>= <M v={-AM_EFFECT.pl} /> בשכר, ובמימון — אפס.</>]}
           />
-        </Card>
-        <Card title="ב. ביאור של שנה קודמת (אלפי ₪)">
+        </Part>
+        <Part title="ב. ביאור של שנה קודמת (אלפי ₪)">
           <p className="text-[14.5px]">
             רשת מלונות — הביאור לשנה שעברה: יתרת פתיחה {NOTE.openingLast.toLocaleString("en-US")}, עלות ריבית {NOTE.interestLast.toLocaleString("en-US")}, הטבות ששולמו {NOTE.paidLast.toLocaleString("en-US")} (מהן מהקרן{" "}
             {NOTE.paidFromAssetsLast.toLocaleString("en-US")}), הפקדה לקרן {NOTE.contributionLast.toLocaleString("en-US")}, ושירות עבר {NOTE.pastServiceLast} (תוספת לדרג א׳ בסוף השנה). כל התשלומים והתיקון —
@@ -593,7 +582,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
               </span>,
             ]}
           />
-        </Card>
+        </Part>
       </>
     ),
   },

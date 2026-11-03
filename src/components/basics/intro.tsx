@@ -1,9 +1,10 @@
-import { Building2, Check, Globe, Languages, ShieldCheck, X } from "lucide-react";
+import { Check, Globe, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Deeper, Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { MiniQuiz } from "./inventory-interactive";
 import { GrammarWidget, TranslatorWidget } from "./language-widgets";
-import { KeyCard, Money, Rule, SideChip, Term } from "./ui";
+import { Money, SideChip, Term } from "./ui";
 
 // Itai, a nurse who freelances on weekends: a household described the way a business is. Illustrative figures; income and expenses are for a whole year.
 const HOME = {
@@ -83,16 +84,18 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
             </div>
           ))}
         </div>
-        <p className="font-semibold text-fg">ועם מי מדברים בשפה הזו? עם כל מי שרוצה להבין את העסק:</p>
-        <ul className="grid gap-2 sm:grid-cols-2">
-          {READERS.map((r) => (
-            <li key={r.who} className="rounded-xl border border-line bg-surface px-3 py-2.5">
-              <p className="text-[15px] font-bold text-fg">{r.who}</p>
-              <p className="text-[14px] text-muted">{r.asks}</p>
-            </li>
-          ))}
-        </ul>
-        <KeyCard icon={<Languages className="h-5 w-5" />}>מי שמדבר את השפה הזו שוטף — מבין כל עסק, ויכול לספר על כל עסק.</KeyCard>
+        <Part title="ועם מי מדברים בשפה הזו?">
+          <p>עם כל מי שרוצה להבין את העסק, וכל אחד שואל משהו אחר:</p>
+          <dl className="divide-y divide-line">
+            {READERS.map((r) => (
+              <div key={r.who} className="grid gap-x-4 py-2 sm:grid-cols-[8rem_minmax(0,1fr)]">
+                <dt className="text-[15px] font-bold text-fg">{r.who}</dt>
+                <dd className="text-[15px] text-muted">{r.asks}</dd>
+              </div>
+            ))}
+          </dl>
+        </Part>
+        <Remember>מי שמדבר את השפה הזו שוטף — מבין כל עסק, ויכול לספר על כל עסק.</Remember>
       </>
     ),
   },
@@ -106,20 +109,17 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
           מה שקרה. כך לכל עסק יש אותו דקדוק, ואפשר לסמוך על הדוחות ולהשוות ביניהם.
         </p>
         <GrammarWidget />
-        <div className="space-y-2 rounded-2xl border border-line bg-surface p-4">
-          <p className="flex items-center gap-2 text-[15px] font-bold text-fg">
-            <Globe className="h-4.5 w-4.5 text-accent" aria-hidden /> הדקדוק הבינלאומי: IFRS
-          </p>
-          <p className="text-[14.5px]">
+        <Deeper icon={<Globe />} title="הדקדוק הבינלאומי: IFRS, ומה עושים בישראל">
+          <p>
             את <Term he="IFRS" /> כותבת הוועדה לתקני חשבונאות בינלאומיים (IASB), והוא מחייב חברות ביותר מ-140 מדינות. כל תקן עוסק בנושא אחד — למשל{" "}
             <span dir="ltr">IAS 2</span> במלאי ו-<span dir="ltr">IAS 16</span> ברכוש קבוע, כמו תנור השריפה של שני הסטודיואים.
           </p>
-          <p className="text-[14.5px]">
+          <p>
             <strong>ובישראל?</strong> חברות ציבוריות (שהמניות שלהן נסחרות בבורסה) מדווחות לפי IFRS. חברות פרטיות יכולות לדווח גם לפי התקנים הישראליים. בארה״ב
             יש דקדוק משלהם: US GAAP. בקורס הזה לומדים לפי IFRS.
           </p>
-        </div>
-        <Rule>תקני החשבונאות קובעים איך מודדים ומציגים. כמה מס משלמים — את זה קובעים חוקי המס.</Rule>
+        </Deeper>
+        <Remember>תקני החשבונאות קובעים איך מודדים ומציגים. כמה מס משלמים — את זה קובעים חוקי המס.</Remember>
       </>
     ),
   },
@@ -128,25 +128,22 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
     lead: "וזו כל העבודה, במשפט אחד: לוקחים את מה שקורה בעסק — מבולגן, אנושי, יום-יומי — ומתרגמים אותו לדוחות מסודרים שכל אחד יכול לקרוא.",
     body: (
       <>
-        <ol className="grid gap-2 sm:grid-cols-3">
+        <ol className="max-w-[70ch] space-y-1.5">
           {[
             ["אירוע", "קורה משהו בעסק: מכירה, תשלום, הלוואה."],
             ["רישום", "מתרגמים אותו: אילו חשבונות השתנו, ובכמה."],
             ["דוחות", "בסוף התקופה מחברים את כל הרישומים לשני דוחות."],
           ].map(([t, d], i) => (
-            <li key={t} className="rounded-xl border border-line bg-surface px-3 py-2.5">
-              <p className="flex items-center gap-2 text-[15px] font-bold text-fg">
-                <span className="num grid h-6 w-6 place-items-center rounded-full bg-accent text-[12px] text-accent-fg">{i + 1}</span>
-                {t}
-              </p>
-              <p className="mt-0.5 text-[14px] text-muted">{d}</p>
+            <li key={t} className="flex items-baseline gap-2.5">
+              <span className="num grid h-6 w-6 shrink-0 place-items-center self-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
+              <span>
+                <strong className="text-fg">{t}</strong> — {d}
+              </span>
             </li>
           ))}
         </ol>
         <TranslatorWidget />
-        <p className="text-[15px] text-muted">
-          שימו לב להלוואה: נכנס כסף, אבל הרווח לא זז. זה ההבדל הראשון בין מי שמדבר את השפה למי שלא — ועוד נחזור אליו הרבה.
-        </p>
+        <Remember>הלוואה מכניסה כסף, אבל הרווח לא זז. זה ההבדל הראשון בין מי שמדבר את השפה למי שלא — ועוד נחזור אליו הרבה.</Remember>
       </>
     ),
   },
@@ -175,7 +172,6 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
           />
           <Mini
             report="מאזן"
-            above="מה המצב הכלכלי שלו: נכסים, חובות והון"
             tag="ביום מסוים — כאן, 31.12"
             title="מה יש לו, וממי זה הגיע?"
             cols={[
@@ -193,23 +189,25 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
             }
           />
         </div>
-        <h3 className="pt-1 text-lg font-semibold text-fg [column-span:all]">ובחברה אמיתית? ארבעה דוחות</h3>
-        <p className="[column-span:all]">
-          חברה מגישה בכל שנה ארבעה דוחות כספיים. שני הראשונים הם אלה שראיתם אצל איתי — והם הבסיס לכל השאר. בקורס הזה בונים אותם. את שני האחרים מחשבים מהם, ונכיר
-          אותם בקורסים הבאים.
-        </p>
-        <ul className="grid gap-2 sm:grid-cols-2 [column-span:all]">
-          {STATEMENTS.map((x) => (
-            <li key={x.name} className={cn("rounded-xl border px-3.5 py-2.5", x.here ? "border-accent/40 bg-accent-soft/50" : "border-line bg-surface")}>
-              <span className="flex flex-wrap items-center gap-2">
-                <span className="text-[15px] font-bold text-fg">{x.name}</span>
-                <span className="rounded-full bg-surface-2 px-2 py-px text-[11px] font-semibold text-muted">{x.when}</span>
-                {x.here && <span className="rounded-full bg-accent px-2 py-px text-[11px] font-bold text-accent-fg">בונים בקורס</span>}
-              </span>
-              <span className="mt-1 block text-[14px] text-fg/85">{x.asks}</span>
-            </li>
-          ))}
-        </ul>
+        <Part title="ובחברה אמיתית? ארבעה דוחות">
+          <p>
+            חברה מגישה בכל שנה ארבעה דוחות כספיים. שני הראשונים הם אלה שראיתם אצל איתי — והם הבסיס לכל השאר. בקורס הזה בונים אותם. את שני האחרים מחשבים מהם,
+            ונכיר אותם בקורסים הבאים.
+          </p>
+          <ul className="divide-y divide-line">
+            {STATEMENTS.map((x) => (
+              <li key={x.name} className="py-2">
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className={cn("text-[15px] font-bold", x.here ? "text-fg" : "text-fg/70")}>{x.name}</span>
+                  <span className="rounded-full bg-surface-2 px-2 py-px text-[11px] font-semibold text-muted">{x.when}</span>
+                  {x.here && <span className="rounded-full bg-accent px-2 py-px text-[11px] font-bold text-accent-fg">בונים בקורס</span>}
+                </span>
+                <span className="mt-0.5 block text-[14.5px] text-muted">{x.asks}</span>
+              </li>
+            ))}
+          </ul>
+        </Part>
+        <Remember>רווח והפסד מספר על תקופה; המאזן מצלם יום אחד.</Remember>
       </>
     ),
     check: (
@@ -247,30 +245,24 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
             <X className="h-5 w-5 shrink-0 text-danger" aria-hidden /> ארוחת הערב שהבעלים הזמינה הביתה — לא נרשמת
           </p>
         </div>
-        <KeyCard icon={<Building2 className="h-5 w-5" />}>כשבעלים משקיע כסף בעסק — זה הון.</KeyCard>
-        <p className="text-[15px] text-muted">מבחינת העסק הבעלים הוא צד אחר: העסק קיבל ממנו כסף, ו&quot;חייב&quot; לו אותו.</p>
-
-        <h3 className="pt-1 text-lg font-semibold text-fg [column-span:all]">חברה בע״מ: נפרדת גם בעיני החוק</h3>
-        <p className="[column-span:all]">
-          רוב העסקים שתפגשו בתרגילים הם <Term he="חברה בע״מ" /> — חברה בערבון מוגבל, שמוקמת לפי חוק החברות. לחברה יש ״חיים משפטיים״ משלה: הנכסים שלה, והחובות
-          שלה. הבעלים שלה נקראים <Term he="בעלי מניות" />.
+        <p>
+          מבחינת העסק, הבעלים הוא צד אחר: כשהוא משקיע כסף בעסק, העסק קיבל ממנו כסף ו״חייב״ לו אותו. לכסף הזה קוראים <strong>הון</strong>.
         </p>
-        <div className="grid gap-2 sm:grid-cols-2 [column-span:all]">
-          <div className="rounded-xl border border-line bg-surface px-3.5 py-3">
-            <p className="flex items-center gap-2 text-[15px] font-bold text-fg">
-              <ShieldCheck className="h-5 w-5 shrink-0 text-accent" aria-hidden /> אחריות מוגבלת
-            </p>
-            <p className="mt-1 text-[14px] text-fg/85">
-              אם החברה נכשלת ולא מחזירה את חובותיה, בעלי המניות מפסידים לכל היותר את מה שהשקיעו. הנושים לא יכולים לגבות מהדירה או מהחשבון הפרטי שלהם.
-            </p>
-          </div>
-          <div className="rounded-xl border border-line bg-surface px-3.5 py-3">
-            <p className="text-[15px] font-bold text-fg">הון מניות</p>
-            <p className="mt-1 text-[14px] text-fg/85">
-              בחברה, ההשקעה של הבעלים נקראת <strong>הון מניות</strong>: החברה מנפיקה מניות, ובעלי המניות משלמים עליהן. זה אותו רעיון כמו הון בעלים — רק בשם של חברה.
-            </p>
-          </div>
-        </div>
+        <Part title="חברה בע״מ: נפרדת גם בעיני החוק">
+          <p>
+            רוב העסקים שתפגשו בתרגילים הם <Term he="חברה בע״מ" /> — חברה בערבון מוגבל, שמוקמת לפי חוק החברות. לחברה יש ״חיים משפטיים״ משלה: הנכסים שלה, והחובות
+            שלה. הבעלים שלה נקראים <Term he="בעלי מניות" />.
+          </p>
+          <p>
+            <strong>אחריות מוגבלת.</strong> אם החברה נכשלת ולא מחזירה את חובותיה, בעלי המניות מפסידים לכל היותר את מה שהשקיעו. הנושים לא יכולים לגבות מהדירה או
+            מהחשבון הפרטי שלהם.
+          </p>
+          <p>
+            <strong>הון מניות.</strong> בחברה, ההשקעה של הבעלים נקראת הון מניות: החברה מנפיקה מניות, ובעלי המניות משלמים עליהן. זה אותו רעיון כמו הון בעלים — רק
+            בשם של חברה.
+          </p>
+        </Part>
+        <Remember>העסק נפרד מהבעלים: בספרים שלו נרשם רק מה שקורה לו, וכסף שהבעלים משקיעים בו הוא הון.</Remember>
       </>
     ),
     check: (
@@ -313,6 +305,7 @@ export const INTRO_SCREENS: Record<string, ScreenContent> = {
           <SideColumn side="dr" kinds={DEBIT_KINDS} />
           <SideColumn side="cr" kinds={CREDIT_KINDS} />
         </div>
+        <Remember>״חובה״ ו״זכות״ הם רק שמות של שני צדדים. יתרת חובה במזומן היא כסף שיש לעסק, לא חוב.</Remember>
       </>
     ),
     check: (
@@ -392,8 +385,7 @@ function Mini({ report, tag, above, title, cols, verdict }: { report: string; ta
   );
   return (
     <div className="flex flex-col">
-      {/* The label above the balance sheet; the P&L card keeps the same height of space so the two banners line up. */}
-      <p className={cn("mb-1.5 min-h-5 text-[13px] font-bold text-accent", !above && "max-md:hidden")}>{above && `${above} ↓`}</p>
+      {above && <p className="mb-1.5 text-[13px] font-bold text-accent">{above} ↓</p>}
       <section className="flex flex-1 flex-col overflow-hidden rounded-xl border-2 border-accent/50 bg-surface" aria-label={report}>
         <header className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-accent px-4 py-2.5 text-accent-fg">
           <h3 className="text-xl font-extrabold tracking-tight">{report}</h3>

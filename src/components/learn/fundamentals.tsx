@@ -1,4 +1,5 @@
-import { Num, Topic } from "@/components/study/blocks";
+import { Num } from "@/components/study/blocks";
+import { Part } from "@/components/study-mode/screen-parts";
 import { Formula } from "@/components/study/math";
 import { BookValueSlider } from "./widgets";
 
@@ -38,29 +39,27 @@ const CONCEPTS: { term: string; plain: string; example: string }[] = [
 export function FundamentalsSection() {
   return (
     <>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <dl className="max-w-[70ch] divide-y divide-line">
         {CONCEPTS.map((c) => (
-          <article key={c.term} className="card flex flex-col p-5">
-            <h3 className="text-[17px] font-semibold text-fg">{c.term}</h3>
-            <p className="mt-2 text-[14.5px] leading-relaxed text-fg/90">{c.plain}</p>
-            <div className="mt-auto pt-3">
-              <p className="rounded-lg bg-accent-soft px-3 py-2 text-[13px] leading-relaxed text-fg/85">
-                <span className="font-semibold text-accent">דוגמה מהחיים: </span>
-                {c.example}
-              </p>
-            </div>
-          </article>
+          <div key={c.term} className="space-y-1 py-3">
+            <dt className="text-[16px] font-bold text-fg">{c.term}</dt>
+            <dd>{c.plain}</dd>
+            <dd className="text-[14.5px] text-muted">
+              <span className="font-semibold text-accent">דוגמה מהחיים: </span>
+              {c.example}
+            </dd>
+          </div>
         ))}
-      </div>
+      </dl>
 
-      <Topic title="איך כל המושגים מתחברים — על ציר אחד" refs="סעיפים 6, 50" open>
+      <Part title="איך כל המושגים מתחברים — על ציר אחד">
         <p>
           העלות היא כל הפס. הפחת הנצבר &quot;אוכל&quot; אותו מצד אחד, שנה אחרי שנה; הגרט בקצה השני לעולם לא מופחת. מה שנשאר באמצע ועוד לא
           נאכל, ועוד הגרט — זו היתרה בספרים. בדוגמה: עלות <Num v={300_000} />, גרט <Num v={30_000} />, 5 שנים בקו ישר.
         </p>
         <Formula tex={String.raw`\text{יתרה בספרים} = \text{עלות} - \text{פחת נצבר} \;\ge\; \text{ערך גרט}`} />
         <BookValueSlider cost={300_000} salvage={30_000} life={5} />
-      </Topic>
+      </Part>
     </>
   );
 }
