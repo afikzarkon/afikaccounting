@@ -19,6 +19,7 @@ import {
   grown,
   impliedRate,
   impliedShare,
+  fifo,
   lifo,
   measure,
   partInterest,
@@ -91,6 +92,13 @@ describe("short-term benefits", () => {
     // Six days used of five this year: one carried day, and the rest of the carried balance lapses.
     const l = lifo({ carried: 2, entitlement: 5, used: 6 });
     assert.deepEqual([l.fromCarried, l.carriedLeft], [1, 1]);
+  });
+
+  it("FIFO: the carried days go first, and fewer of them lapse", () => {
+    const at = (used: number) => fifo({ carried: 3, entitlement: 12, used });
+    assert.deepEqual(at(2), { fromCarried: 2, carriedLeft: 1, unusedOwn: 12 });
+    assert.deepEqual(at(8), { fromCarried: 3, carriedLeft: 0, unusedOwn: 7 });
+    assert.deepEqual(at(15), { fromCarried: 3, carriedLeft: 0, unusedOwn: 0 });
   });
 
   it("reference case 6: a bonus by formula, and the cost of a day", () => {

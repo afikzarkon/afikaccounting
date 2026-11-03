@@ -33,6 +33,9 @@ export const FORMULA = {
   stayers: "עובדים − עוזבים צפויים = נשארים",
   lifo: "זכאות השנה − ימים שנוצלו = ימים שנשארו מהשנה",
   lifoOld: "ימים שנוצלו − זכאות השנה = ימים שנוצלו מהצבור",
+  fifoOwn: "ימים שנוצלו − ימים צבורים = ימים שנוצלו מהשנה",
+  fifoLeft: "זכאות השנה − ימים שנוצלו מהשנה = ימים שעוברים לשנה הבאה",
+  earnedLessLapsed: "(ימים שנצברו − ימים שפקעו) × עלות יום = הוצאה",
   bonus: "שיעור הבונוס × הרווח × עובדים צפויים = הפרשה לבונוס",
   bonusPaid: "שיעור הבונוס × הרווח בפועל × עובדים שקיבלו = תשלום",
   bonusCost: "בונוס × (1 + ביטוח לאומי) = עלות הבונוס",
@@ -150,6 +153,16 @@ export const work = {
   stayers: (staff: number, leaving: number): Worked => ({ formula: FORMULA.stayers, numbers: `${staff} − ${leaving} = ${staff - leaving}` }),
   lifo: (entitlement: number, used: number): Worked => ({ formula: FORMULA.lifo, numbers: `${entitlement} − ${used} = ${Math.max(0, entitlement - used)}` }),
   lifoOld: (used: number, entitlement: number): Worked => ({ formula: FORMULA.lifoOld, numbers: `${used} − ${entitlement} = ${Math.max(0, used - entitlement)}` }),
+  /** The quick check of a year's absence expense: the days earned, less the carried days that lapsed, at a day's cost. */
+  earnedLessLapsed: (earned: number, groups: { staff: number; carriedLeft: number }[], dayCost: number): Worked => {
+    const lapsed = groups.reduce((s, g) => s + g.staff * g.carriedLeft, 0);
+    return {
+      formula: FORMULA.earnedLessLapsed,
+      numbers: `(${earned} − (${groups.map((g) => `${g.staff} × ${g.carriedLeft}`).join(" + ")})) × ${cents(dayCost)} = ${money((earned - lapsed) * dayCost)}`,
+    };
+  },
+  fifoOwn: (used: number, carried: number): Worked => ({ formula: FORMULA.fifoOwn, numbers: `${used} − ${carried} = ${Math.max(0, used - carried)}` }),
+  fifoLeft: (entitlement: number, usedOwn: number): Worked => ({ formula: FORMULA.fifoLeft, numbers: `${entitlement} − ${usedOwn} = ${Math.max(0, entitlement - usedOwn)}` }),
   bonus: (share: number, profit: number, heads: number): Worked => ({ formula: FORMULA.bonus, numbers: `${pct(share)} × ${amt(profit)} × ${heads} = ${money(share * profit * heads)}` }),
   bonusPaid: (share: number, profit: number, heads: number): Worked => ({ formula: FORMULA.bonusPaid, numbers: `${pct(share)} × ${amt(profit)} × ${heads} = ${money(share * profit * heads)}` }),
   bonusCost: (amount: number, insurance: number): Worked => ({ formula: FORMULA.bonusCost, numbers: `${amt(amount)} × ${factor(insurance)} = ${money(amount * (1 + insurance))}` }),

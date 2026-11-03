@@ -359,6 +359,17 @@ export function lifo(x: { carried: number; entitlement: number; used: number }) 
   return { fromCarried, carriedLeft: x.carried - fromCarried, unusedOwn };
 }
 
+/**
+ * Days carried forward under FIFO: the carried balance is used first, then
+ * the year's own entitlement. Returns the carried days used and those left
+ * (which lapse at the end of the year), and the year's days left unused.
+ */
+export function fifo(x: { carried: number; entitlement: number; used: number }) {
+  const fromCarried = Math.min(x.carried, x.used);
+  const unusedOwn = Math.max(0, x.entitlement - (x.used - fromCarried));
+  return { fromCarried, carriedLeft: x.carried - fromCarried, unusedOwn };
+}
+
 /** The expense of a short-term benefit: the P.N. of its roll-forward, closing − opening + payments. */
 export const shortTermExpense = (opening: number, payments: number, closing: number) => closing - opening + payments;
 

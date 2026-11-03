@@ -33,7 +33,7 @@ const F = ({ children }: { children: string }) => (
 );
 
 /** A question set out the same way everywhere in the lesson: what we look for, the task, a moment to try, and the full solution behind one button. */
-function Solve({ seek, task, children }: { seek: ReactNode; task: ReactNode; children: ReactNode }) {
+export function Solve({ seek, task, children }: { seek: ReactNode; task: ReactNode; children: ReactNode }) {
   return (
     <div className="space-y-2.5 rounded-2xl border border-line bg-surface p-3.5">
       <p className="flex items-start gap-2 text-[14.5px]">
