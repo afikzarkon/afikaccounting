@@ -56,6 +56,13 @@ export function Timeline({ label, title, from, to, ticks, spans = [], marks = []
   const x = (v: number) => `${((v - from) / (to - from)) * 100}%`;
   const w = (a: number, b: number) => `${((b - a) / (to - from)) * 100}%`;
   const rows = spans.length ? Math.max(...spans.map((s) => s.row ?? 0)) + 1 : 0;
+  // A label near an end hangs inward, so it never spills out of the frame; elsewhere it is centred on its point.
+  const edge = (v: number) => {
+    const f = (v - from) / (to - from);
+    if (f <= 0.12) return "text-start";
+    if (f >= 0.88) return "text-end rtl:translate-x-full ltr:-translate-x-full";
+    return "text-center rtl:translate-x-1/2 ltr:-translate-x-1/2";
+  };
   return (
     <Frame label={label} title={title} note={note}>
       <div className="relative mx-3 pt-1" style={{ paddingBottom: "2.6rem" }}>
@@ -78,14 +85,14 @@ export function Timeline({ label, title, from, to, ticks, spans = [], marks = []
           {ticks.map((t, i) => (
             <span key={i} className="absolute top-0 -translate-y-1/2" style={{ insetInlineStart: x(t.at) }}>
               <span className="block h-3 w-0.5 -translate-x-1/2 bg-fg/60 rtl:translate-x-1/2" />
-              <span className="absolute top-3 w-max max-w-[6.5rem] -translate-x-1/2 text-center text-[11.5px] leading-tight text-muted rtl:translate-x-1/2">{t.label}</span>
+              <span className={cn("absolute top-3 w-max max-w-[6.5rem] text-[11.5px] leading-tight text-muted", edge(t.at))}>{t.label}</span>
             </span>
           ))}
         </div>
         {marks.map((m, i) => (
           <span key={i} className="absolute top-0 bottom-6 w-0 border-s-2 border-dashed" style={{ insetInlineStart: x(m.at), borderColor: toneColor(m.tone ?? "accent") }}>
             <span
-              className={cn("absolute -top-1 w-max max-w-[7rem] -translate-y-full rounded px-1.5 py-0.5 text-center text-[11.5px] font-bold leading-tight text-fg rtl:translate-x-1/2 ltr:-translate-x-1/2", m.strong && "ring-2")}
+              className={cn("absolute -top-1 w-max max-w-[7rem] -translate-y-full rounded px-1.5 py-0.5 text-[11.5px] font-bold leading-tight text-fg", edge(m.at), m.strong && "ring-2")}
               style={{ ...toneStyle(m.tone ?? "accent", 18), ["--tw-ring-color" as string]: toneColor(m.tone ?? "accent") }}
             >
               {m.label}
