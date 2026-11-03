@@ -22,7 +22,7 @@ const BREAK = /(:\s+|;\s+|\s+—\s+|,\s+(?=ולכן|כלומר|ולא\b)|\s+(?=�
 const LEAD = /^((?:ולכן|כלומר|ולא|אז|ואז|כי|ובסוף|ובמספרים)\s+)/;
 
 /** Every operator and bracket held in place, so the terms between them follow left to right. */
-export const ltrMarks = (s: string) => s.replace(/[=+−×÷^()]/g, (op) => `${LRM}${op}${LRM}`);
+export const ltrMarks = (s: string) => s.replace(/[=+−±×÷^()]/g, (op) => `${LRM}${op}${LRM}`);
 
 function wrapClause(clause: string) {
   if (!MATH.test(clause) || clause.includes(LRI)) return clause;

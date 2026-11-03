@@ -584,7 +584,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
             unexplained="ההפתעה: לא הוסבר"
           />
           <p>
-            בחוב לעובדים יש להפתעה שם: <T19 he="מדידה מחדש" par="57(d)" />, ובקורס P.N., המספר המאזן.
+            בחוב לעובדים יש להפתעה שם: <T19 he="מדידה מחדש" par="57(ד)" />, ובקורס P.N., המספר המאזן.
           </p>
         </Story>
         <MapBranch lesson="ias19-rollforward">

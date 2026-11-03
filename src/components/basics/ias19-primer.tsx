@@ -113,7 +113,7 @@ const FIGURE: Record<PrimerId, ReactNode> = {
         { label: "משיכה", v: -LIFE_BANK.withdrawal },
       ]}
       closing={LIFE_BANK.closing}
-      unexplained="עוד לא הוסבר: המספר המאזן"
+      unexplained="P.N.: יכול להיות חיובי או שלילי, לפי שאר הנתונים"
     />
   ),
   "pl-oci": (

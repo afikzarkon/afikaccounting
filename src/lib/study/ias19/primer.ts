@@ -141,13 +141,13 @@ export const PRIMER: PrimerCard[] = [
     title: "מעגל: מיתרת פתיחה ליתרת סגירה",
     needed: ["ias19-toolkit", "ias19-rollforward", "ias19-amend", "ias19-assets", "ias19-present", "ias19-other"],
     taught: `מאפס בשיעור ${LESSON_N["ias19-toolkit"]}, ומתרגלים בכל שיעור מ-${LESSON_N["ias19-rollforward"]} עד ${LESSON_N["ias19-other"]}`,
-    plain: "כמו דף חשבון בנק: יתרת פתיחה, ועוד מה שנכנס, פחות מה שיצא, שווה יתרת סגירה. מה שנשאר בלי הסבר הוא המספר המאזן. בקורס קוראים לו P.N.",
+    plain: "כמו דף חשבון בנק: יתרת פתיחה, ועוד מה שנכנס, פחות מה שיצא, שווה יתרת סגירה. מה שנשאר בלי הסבר נקרא בקורס P.N. הוא יכול להיות חיובי או שלילי, לפי שאר הנתונים.",
     need: "בלי מעגל אי אפשר לפתור כאן תרגילים. החוב לעובדים והקופה מנוהלים כל אחד במעגל משלו, וכמעט כל שאלה מתחילה בבניית מעגל.",
-    life: `בחשבון היו ${fmt(LIFE_BANK.opening)}, הפקדת ${fmt(LIFE_BANK.deposit)}, משכת ${fmt(LIFE_BANK.withdrawal)}, ובדף כתוב ${fmt(LIFE_BANK.closing)}. ${fmt(LIFE_BANK.opening)} + ${fmt(LIFE_BANK.deposit)} − ${fmt(LIFE_BANK.withdrawal)} = ${fmt(LIFE_BANK.opening + LIFE_BANK.deposit - LIFE_BANK.withdrawal)}, ולכן ${fmt(LIFE_BANK.closing - LIFE_BANK.opening - LIFE_BANK.deposit + LIFE_BANK.withdrawal)} עוד לא הוסברו. הם המספר המאזן.`,
-    rule: "פתיחה + מה שנוסף − מה ששולם ± המספר המאזן = סגירה.",
+    life: `בחשבון היו ${fmt(LIFE_BANK.opening)}, הפקדת ${fmt(LIFE_BANK.deposit)}, משכת ${fmt(LIFE_BANK.withdrawal)}, ובדף כתוב ${fmt(LIFE_BANK.closing)}. ${fmt(LIFE_BANK.opening)} + ${fmt(LIFE_BANK.deposit)} − ${fmt(LIFE_BANK.withdrawal)} = ${fmt(LIFE_BANK.opening + LIFE_BANK.deposit - LIFE_BANK.withdrawal)}, ולכן ${fmt(LIFE_BANK.closing - LIFE_BANK.opening - LIFE_BANK.deposit + LIFE_BANK.withdrawal)} עוד לא הוסברו. זה ה-P.N., והפעם הוא חיובי.`,
+    rule: "פתיחה + מה שנוסף − מה ששולם ± P.N. = סגירה.",
     checks: [
       {
-        q: `חוב לעובדים: פתיחה ${PRIMER_ROLL.opening}, ריבית ${PRIMER_ROLL.interest}, עלות שירות ${PRIMER_ROLL.service}, תשלום ${PRIMER_ROLL.payments}, סגירה ${PRIMER_ROLL.closing}. מהו המספר המאזן?`,
+        q: `חוב לעובדים: פתיחה ${PRIMER_ROLL.opening}, ריבית ${PRIMER_ROLL.interest}, עלות שירות ${PRIMER_ROLL.service}, תשלום ${PRIMER_ROLL.payments}, סגירה ${PRIMER_ROLL.closing}. מה ה-P.N.?`,
         options: [`${PRIMER_ROLL_ANSWER}: החוב גדל ב-${PRIMER_ROLL_ANSWER} יותר מהמצופה`, `${PRIMER_ROLL_ANSWER}: החוב קטן ב-${PRIMER_ROLL_ANSWER}`, String(PRIMER_ROLL_EXPECTED), String(PRIMER_ROLL.closing - PRIMER_ROLL.opening)],
         answer: 0,
         why: `${PRIMER_ROLL.opening} + ${PRIMER_ROLL.interest} + ${PRIMER_ROLL.service} − ${PRIMER_ROLL.payments} = ${PRIMER_ROLL_EXPECTED}. בסגירה יש ${PRIMER_ROLL.closing}, ולכן ${PRIMER_ROLL_ANSWER} לא הוסברו: החוב גדל יותר מהמצופה.`,
