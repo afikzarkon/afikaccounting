@@ -166,6 +166,55 @@ export function Staircase({ steps = 6, title, stepLabel = "שנת עבודה", p
 }
 
 // ---------------------------------------------------------------------------
+// Accrual, year by year.
+
+/**
+ * What is accrued at the end of each year, one group of bars a year — one
+ * bar per way of counting — with the cap as a dashed line and the year we
+ * stand in lit. The year 1 group is on the right.
+ */
+export function YearBars({ label, title, series, cap, at, note }: { label: string; title?: ReactNode; series: { name: ReactNode; values: number[]; tone: Tone }[]; cap?: number; at?: number; note?: ReactNode }) {
+  const years = series[0].values.length;
+  const max = Math.max(cap ?? 0, ...series.flatMap((x) => x.values));
+  const H = 9; // rem
+  return (
+    <Frame label={label} title={title} note={note}>
+      <p className="flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-fg">
+        {series.map((x, i) => (
+          <span key={i} className="flex items-center gap-1.5">
+            <span className="inline-block h-3 w-3 rounded-sm border-2" style={toneStyle(x.tone, 35)} />
+            {x.name}
+          </span>
+        ))}
+        {cap !== undefined && (
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-5 border-t-2 border-dashed border-danger" /> תקרה <N v={cap} />
+          </span>
+        )}
+      </p>
+      <div className="relative flex items-end gap-1 border-b-2 border-line-strong" style={{ height: `${H}rem` }}>
+        {cap !== undefined && <span className="absolute inset-x-0 border-t-2 border-dashed border-danger" style={{ bottom: `${(cap / max) * H}rem` }} aria-hidden />}
+        {Array.from({ length: years }, (_, k) => (
+          <div key={k} className={cn("flex h-full min-w-0 flex-1 items-end justify-center gap-px rounded-t", at === k + 1 && "bg-amber-400/15")}>
+            {series.map((x, i) => (
+              <span key={i} className="w-full max-w-4 rounded-t-sm border-2 border-b-0" style={{ height: `${(x.values[k] / max) * H}rem`, ...toneStyle(x.tone, 35) }} />
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-1">
+        {Array.from({ length: years }, (_, k) => (
+          <span key={k} className={cn("min-w-0 flex-1 text-center text-[11px]", at === k + 1 ? "font-bold text-fg" : "text-muted")}>
+            {k + 1}
+          </span>
+        ))}
+      </div>
+      <p className="text-center text-[11.5px] text-muted">שנות עבודה{at ? `; מודגשת השנה שבה עומדים (${at})` : ""}</p>
+    </Frame>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // People.
 
 /** Employees as icons, those expected to leave crossed out; one icon may stand for several. */

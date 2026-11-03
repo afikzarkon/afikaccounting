@@ -1,4 +1,4 @@
-import { accrued, attribution, pv, tiered } from "@/lib/learn/ias19";
+import { accrualPath, accrued, attribution, pv, tiered } from "@/lib/learn/ias19";
 import { examA } from "@/lib/learn/ias19-exams";
 import type { StudyModule, Trap } from "../../types";
 import { calc, choice, COURSE, COURSE_HREF, fmt, pct } from "../shared";
@@ -12,6 +12,8 @@ export const FRONT_OBLIGATION = pv(FRONT_ACCRUED, FRONT.rate, FRONT.n);
 /** What the straight line — wrong here — would have given. */
 export const FRONT_WRONG = (FRONT.cap / FRONT.expected) * FRONT.served;
 export const FRONT_WRONG_OBLIGATION = pv(FRONT_WRONG, FRONT.rate, FRONT.n);
+/** Year by year, both ways — for the bars. */
+export const FRONT_PATH = accrualPath(frontF, FRONT.expected, FRONT.cap);
 
 /** "We solve" (a): later years pay much more — straight line. */
 export const BACK = { early: { upTo: 4, perYear: 3_000 }, later: 6_000, expected: 10, served: 6, n: 4, rate: 0.06 };
@@ -21,6 +23,15 @@ export const BACK_ACCRUED = accrued(BACK_A, backF, BACK.served);
 export const BACK_OBLIGATION = pv(BACK_ACCRUED, BACK.rate, BACK.n);
 export const BACK_WRONG = backF(BACK.served);
 export const BACK_WRONG_OBLIGATION = pv(BACK_WRONG, BACK.rate, BACK.n);
+export const BACK_PATH = accrualPath(backF, BACK.expected);
+
+/** The hook: a free membership after ten stages, the first three worth double — as a share of the whole, both ways. */
+const gym = accrualPath(tiered([{ upTo: 3, perYear: 2 }, { perYear: 1 }]), 10);
+export const GYM_PATH = gym.map((r) => ({ formula: Math.round((r.formula / gym[9].formula) * 100), straight: Math.round((r.straight / gym[9].straight) * 100) }));
+
+/** The cap, drawn: 2,500 a year up to 10,000, over eight years of work — the window ends in year four. */
+export const CAPPED = { perYear: 2_500, cap: 10_000, expected: 8 };
+export const CAPPED_PATH = accrualPath(tiered([{ perYear: CAPPED.perYear }]), CAPPED.expected, CAPPED.cap);
 
 /** "We solve" (b): a grant at 67 for which service counts only from 47; three employees. */
 export const LATE = {

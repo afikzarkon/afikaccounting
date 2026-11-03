@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   absenceProvision,
+  accrualPath,
   accrued,
   amendedYear,
   assetsInterest,
@@ -449,5 +450,16 @@ describe("the figures' helpers", () => {
   it("expected heads: headcount × (1 − leavers)", () => {
     assert.equal(expectedHeads(250, 0.08), 230);
     assert.equal(expectedHeads(40, 0.1), 36);
+  });
+});
+
+describe("accrual, year by year", () => {
+  it("under the formula it follows the tiers and stops at the cap; the straight line spreads the total over the window", () => {
+    const f = tiered([{ upTo: 4, perYear: 3_000 }, { perYear: 1_500 }]);
+    const path = accrualPath(f, 8, 18_000);
+    assert.deepEqual(path.map((r) => r.formula), [3_000, 6_000, 9_000, 12_000, 13_500, 15_000, 16_500, 18_000]);
+    assert.equal(path[4].straight, (18_000 / 8) * 5);
+    const capped = accrualPath(tiered([{ perYear: 2_500 }]), 8, 10_000);
+    assert.deepEqual(capped.map((r) => r.straight), [2_500, 5_000, 7_500, 10_000, 10_000, 10_000, 10_000, 10_000]);
   });
 });

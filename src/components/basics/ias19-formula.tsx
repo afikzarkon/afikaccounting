@@ -164,7 +164,7 @@ export function FormulaFill({
                 <span className="flex items-center gap-1 font-semibold text-fg">
                   <Mark c={terms[k].c} /> {terms[k].sym}
                 </span>
-                {terms[k].from !== undefined && <span className="block text-fg/85">{terms[k].from}</span>}
+                {terms[k].from !== undefined && <bdi className="block text-fg/85">{terms[k].from}</bdi>}
               </li>
             ))}
           </ul>

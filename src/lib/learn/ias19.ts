@@ -154,6 +154,13 @@ export function accrued(a: Attribution, f: BenefitFormula, served: number, cap =
   return a.perYear! * Math.min(served, a.window);
 }
 
+/** What is accrued at the end of each year 1..years, both ways: under the plan's formula (capped) and on a straight line over the window. */
+export function accrualPath(f: BenefitFormula, expected: number, cap = Infinity, years = expected) {
+  const a = attribution(f, expected, cap);
+  const straight = a.total / a.window;
+  return Array.from({ length: years }, (_, k) => ({ year: k + 1, formula: Math.min(f(k + 1), cap), straight: straight * Math.min(k + 1, a.window) }));
+}
+
 // ---------------------------------------------------------------------------
 // A year of the defined benefit obligation, with an amendment in its middle.
 
