@@ -57,7 +57,7 @@ function Slot({ term, id, show, small }: { term: Term; id?: string; show: "sym" 
   return (
     <span
       data-arrow-to={id}
-      className={cn("inline-flex items-baseline gap-1 rounded-lg border-2 px-1.5 py-0.5 font-semibold text-fg", small ? "text-[12px]" : "text-[15px]")}
+      className={cn("inline-flex items-baseline gap-1 rounded-lg border-2 px-1.5 py-0.5 font-semibold text-fg", small ? "text-[13px]" : "text-[15px]")}
       style={tint(term.c)}
     >
       <Mark c={term.c} />
@@ -70,15 +70,16 @@ function Line({ lhs, top, bottom, terms, show, anchors, tail }: { lhs?: ReactNod
   const render = (toks: Tok[]) =>
     toks.map((t, i) =>
       typeof t === "string" ? (
-        <span key={i} className="whitespace-pre text-fg/80" dir="ltr">
+        <span key={i} className="whitespace-pre text-[18px] font-semibold text-fg" dir="ltr">
           {t}
         </span>
       ) : "t" in t ? (
         <Slot key={i} term={terms[t.t]} id={anchors ? t.t : undefined} show={show} />
       ) : (
-        <sup key={i} className="ms-0.5 -translate-y-1">
+        // Raised by the flex row itself, not by <sup>: the reset gives <sup> no line height, and the chip collapsed onto the fraction bar.
+        <span key={i} className="-ms-0.5 -mt-2.5 self-start">
           <Slot term={terms[t.sup]} id={anchors ? t.sup : undefined} show={show} small />
-        </sup>
+        </span>
       ),
     );
   return (
@@ -86,7 +87,7 @@ function Line({ lhs, top, bottom, terms, show, anchors, tail }: { lhs?: ReactNod
       {bottom ? (
         <span className="inline-flex flex-col items-center">
           <span className="flex flex-wrap items-center justify-center gap-1 px-1 pb-1.5">{render(top)}</span>
-          <span className="flex w-full flex-wrap items-center justify-center gap-1 border-t-2 border-fg/70 px-1 pt-1.5" dir="ltr">
+          <span className="flex w-full items-center justify-center gap-1 border-t-2 border-fg/70 px-1 pt-4" dir="ltr">
             {render(bottom)}
           </span>
         </span>
