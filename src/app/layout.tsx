@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Frank_Ruhl_Libre, Geist_Mono, IBM_Plex_Sans_Hebrew } from "next/font/google";
@@ -62,6 +63,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <Suspense fallback={null}>
               <ContentGuard />
             </Suspense>
+            <Analytics />
           </VisibilityProvider>
         </ThemeProvider>
       </body>
