@@ -1,4 +1,4 @@
-import { dayCost, grown, partInterest, partRate, pv, rollForward, shortTermExpense, simplePart } from "@/lib/learn/ias19";
+import { dayCost, type FiveSteps, grown, measure, partInterest, partRate, pv, raised, rollForward, shortTermExpense, simplePart } from "@/lib/learn/ias19";
 import { fmt, pct } from "./shared";
 
 /**
@@ -40,6 +40,13 @@ export const FORMULA = {
   dcPaid: "הוצאה × חודשים שהועברו ÷ 12 = שולם",
   dcPayable: "הוצאה − שולם = זכאים",
   grown: "שכר בשנת הבסיס × (1 + העלאה)^שנים = שכר השנה",
+  // Lesson 5: measuring at one date.
+  measure: "הטבה לשנה × שנות עבודה × עובדים צפויים ÷ (1 + i)^n = התחייבות",
+  perYearGrown: "שיעור ההטבה × שכר היום × (1 + העלאה)^n = הטבה לשנה",
+  perYear: "שיעור ההטבה × השכר הצפוי בפרישה = הטבה לשנה",
+  heads: "עובדים × הסיכוי לקבל = עובדים צפויים",
+  raised: "שכר בהתחלה × (1 + העלאה ראשונה) × (1 + העלאה)^שנים = שכר בפרישה",
+  total: "הטבה לשנה × שנות עבודה = ההטבה בפרישה",
 } as const;
 
 /** A result worked out: the formula, and the same formula with the numbers in and the result. */
@@ -49,6 +56,10 @@ export type Worked = { formula: string; numbers: string };
 const amt = (v: number) => fmt(Math.abs(v) >= 1_000 ? Math.round(v) : v);
 /** The result: to the shekel, or to the agora where the course asks for it (a day's cost). */
 const money = (v: number, agorot = false) => `${fmt(agorot ? Math.round(v * 100) / 100 : Math.round(v))} ₪`;
+/** A count or a number of years: as it is, to two decimals at most (2.5 years, 340 employees). */
+const num = (v: number) => fmt(Math.round(v * 100) / 100);
+/** A salary or a benefit per year: always to the agora, on every line it appears, so a result and the next line that uses it agree. */
+const cents = (v: number) => fmt(Math.round(v * 100) / 100);
 /** 1 + i, never 1.0700000000000001. */
 export const factor = (i: number) => (1 + i).toLocaleString("en-US", { maximumFractionDigits: 6 });
 
@@ -106,7 +117,7 @@ export const work = {
   /** `agorot` when the amount per head came from a line that showed it to the agora (a grown salary). */
   perHead: (amount: number, heads: number, agorot = false): Worked => ({
     formula: FORMULA.perHead,
-    numbers: `${agorot ? fmt(Math.round(amount * 100) / 100) : amt(amount)} × ${heads} = ${money(amount * heads)}`,
+    numbers: `${agorot ? cents(amount) : amt(amount)} × ${heads} = ${money(amount * heads)}`,
   }),
   /** The general roll-forward, closed with all its lines known: it shows the closing balance. */
   roll: (r: { opening: number; added: number; payments: number; pn?: number }): Worked => ({
@@ -116,5 +127,20 @@ export const work = {
   dcExpense: (payroll: number, rate: number): Worked => ({ formula: FORMULA.dcExpense, numbers: `${amt(payroll)} × ${pct(rate)} = ${money(payroll * rate)}` }),
   dcPaid: (expense: number, months: number): Worked => ({ formula: FORMULA.dcPaid, numbers: `${amt(expense)} × ${months} ÷ 12 = ${money((expense * months) / 12)}` }),
   dcPayable: (expense: number, paid: number): Worked => ({ formula: FORMULA.dcPayable, numbers: `${amt(expense)} − ${amt(paid)} = ${money(expense - paid)}` }),
-  grown: (salary: number, g: number, years: number): Worked => ({ formula: FORMULA.grown, numbers: `${amt(salary)} × ${factor(g)}^${years} = ${money(grown(salary, g, years), true)}` }),
+  grown: (salary: number, g: number, years: number): Worked => ({ formula: FORMULA.grown, numbers: `${cents(salary)} × ${factor(g)}^${years} = ${money(grown(salary, g, years), true)}` }),
+  measure: (s: FiveSteps): Worked => ({
+    formula: FORMULA.measure,
+    numbers: `${cents(s.perYear)} × ${num(s.years)} × ${num(s.heads)} ÷ ${factor(s.i)}^${num(s.n)} = ${money(measure(s))}`,
+  }),
+  perYearGrown: (share: number, salary: number, g: number, n: number): Worked => ({
+    formula: FORMULA.perYearGrown,
+    numbers: `${pct(share)} × ${cents(salary)} × ${factor(g)}^${n} = ${money(share * grown(salary, g, n), true)}`,
+  }),
+  perYear: (share: number, finalSalary: number): Worked => ({ formula: FORMULA.perYear, numbers: `${pct(share)} × ${cents(finalSalary)} = ${money(share * finalSalary, true)}` }),
+  heads: (staff: number, p: number): Worked => ({ formula: FORMULA.heads, numbers: `${staff} × ${pct(p)} = ${num(staff * p)}` }),
+  raised: (salary: number, first: number, g: number, years: number): Worked => ({
+    formula: FORMULA.raised,
+    numbers: `${cents(salary)} × ${factor(first)} × ${factor(g)}^${years} = ${money(raised(salary, [first, ...Array(years).fill(g)]), true)}`,
+  }),
+  total: (perYear: number, years: number): Worked => ({ formula: FORMULA.total, numbers: `${cents(perYear)} × ${years} = ${money(perYear * years)}` }),
 };

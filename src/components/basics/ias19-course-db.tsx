@@ -24,10 +24,11 @@ import {
   LATE_ROWS,
   LATE_TOTAL,
 } from "@/lib/study/ias19/lessons/attribute";
-import { GROUP, GROUP_OPENING, groupStep, VP, VP_ACCRUED, VP_LATER, VP_LATER_OBLIGATION, VP_LATER_PER_YEAR, VP_OBLIGATION, VP_PER_YEAR } from "@/lib/study/ias19/lessons/measure";
+import { GROUP, groupStep, VP, VP_ACCRUED, VP_LATER, VP_LATER_PER_YEAR, VP_OBLIGATION, VP_PER_YEAR } from "@/lib/study/ias19/lessons/measure";
 import { CF, CF_PER_YEAR, CHANGED, CHANGED_CLOSING, CHANGED_PER_YEAR, CHANGED_PN, RATE_ONLY_CLOSING, RATE_ONLY_PN, Y1, Y1_PN, Y2 } from "@/lib/study/ias19/lessons/rollforward";
 import { lessonRef, pct } from "@/lib/study/ias19/shared";
-import { FormulaFill, Ltr, type Term } from "./ias19-formula";
+import { FORMULA, said, work } from "@/lib/study/ias19/formulas";
+import { FormulaFill, Ltr, type Term, Work } from "./ias19-formula";
 import { Bridge, ExplainTask, HintLadder, Ladder, MapBranch, Recipe5, RollForward, T19, TwoBuckets } from "./ias19-ui";
 import { BankStatement, Diff, PeopleGrid, Routing, Timeline, WrongRight, YearBars } from "./ias19-visuals";
 import { MiniQuiz } from "./inventory-interactive";
@@ -177,6 +178,17 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <Recipe5 />
+        <Remember>
+          <span className="block">
+            ①, כשנותנים את השכר היום: <L>{FORMULA.perYearGrown}</L>. וכשנותנים את השכר הצפוי בפרישה: <L>{FORMULA.perYear}</L>.
+          </span>
+          <span className="block">
+            ③: <L>{FORMULA.heads}</L>.
+          </span>
+          <span className="block">
+            ④: <L>{FORMULA.n}</L>.
+          </span>
+        </Remember>
         {servedVsN(7, 13, "המלכודת הגדולה: ② סופר אחורה, ④ סופר קדימה")}
         <Remember>② סופר את השנים שכבר עבדו. ④ סופר את השנים שנשארו עד התשלום. לא מחליפים ביניהם.</Remember>
       </>
@@ -203,7 +215,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
           label={`המדידה של הסמנכ״לית: ${Math.round(VP_PER_YEAR)} כפול ${VP.served} כפול 1, חלקי ${1 + VP.rate} בחזקת ${VP.yearsToRetire}`}
           lhs="החוב היום"
           terms={{
-            per: { ...SYMBOLS.per, value: <M v={VP_PER_YEAR} />, from: <>{pct(VP.share)} × <Money v={VP.salary} plain /> × <L>{1 + VP.growth}^{VP.yearsToRetire}</L></> },
+            per: { ...SYMBOLS.per, value: <Money v={VP_PER_YEAR} />, from: <>{pct(VP.share)} × <Money v={VP.salary} plain /> × <L>{1 + VP.growth}^{VP.yearsToRetire}</L></> },
             years: { ...SYMBOLS.years, value: VP.served, from: <>עבדה {VP.served} שנים</> },
             heads: { ...SYMBOLS.heads, value: 1, from: "עובדת אחת, תגיע לפרישה" },
             n: { ...SYMBOLS.n, value: VP.yearsToRetire, from: <>הפרישה בעוד {VP.yearsToRetire} שנים</> },
@@ -213,7 +225,11 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
           bottom={BOTTOM}
           working={[
             <>
-              מונה: <L><M v={VP_PER_YEAR} /> × {VP.served} × 1 = <M v={VP_ACCRUED} /></L> (מה שנצבר).
+              ① ההטבה לשנה, בשכר הצפוי בפרישה:
+              <Work w={work.perYearGrown(VP.share, VP.salary, VP.growth, VP.yearsToRetire)} />
+            </>,
+            <>
+              מונה: <L><Money v={VP_PER_YEAR} plain /> × {VP.served} × 1 = <M v={VP_ACCRUED} /></L> (מה שנצבר).
             </>,
             <>
               מכנה: <L>{1 + VP.rate}^{VP.yearsToRetire}</L>, ההיוון על {VP.yearsToRetire} השנים שנשארו, לא על {VP.served} שעברו.
@@ -238,18 +254,28 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
             }
             hints={[
               "אילו שאלות משתנות כשהפרישה רחוקה יותר?",
-              "① (עוד שנתיים של עליית שכר), ④ (n) ו-⑤ (הריבית). ② ו-③ לא זזים.",
               <>
-                ① = {pct(VP.share)} × <Money v={VP.salary} plain /> × <L>{1 + VP.growth}^{VP_LATER.yearsToRetire}</L> = <M v={VP_LATER_PER_YEAR} />
+                ① (עוד שנתיים של עליית שכר), ④ (n) ו-⑤ (הריבית). ② ו-③ לא זזים. הנוסחה:
+                <span className="block">
+                  <L>{FORMULA.measure}</L>
+                </span>
               </>,
               <>
-                <M v={VP_LATER_PER_YEAR} /> × {VP.served} ÷ <L>{1 + VP_LATER.rate}^{VP_LATER.yearsToRetire}</L> = <strong><M v={VP_LATER_OBLIGATION} /></strong>
+                ①:
+                <Work w={work.perYearGrown(VP.share, VP.salary, VP.growth, VP_LATER.yearsToRetire)} />
+              </>,
+              <>
+                ①:
+                <Work w={work.perYearGrown(VP.share, VP.salary, VP.growth, VP_LATER.yearsToRetire)} />
+                החוב:
+                <Work w={work.measure({ perYear: VP_LATER_PER_YEAR, years: VP.served, heads: 1, n: VP_LATER.yearsToRetire, i: VP_LATER.rate })} />
               </>,
             ]}
           />
         </Part>
         <Part title="ב. קבוצה של עובדים">
           <PeopleGrid total={GROUP.opening.staff} leaving={GROUP.opening.staff - g.heads} title={`${GROUP.opening.staff} עובדים, ${pct(GROUP.opening.stay)} צפויים לקבל`} />
+          <Work w={work.heads(GROUP.opening.staff, GROUP.opening.stay)} />
           <HintLadder
             task={
               <>
@@ -260,12 +286,19 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
             }
             hints={[
               "כמה עובדים באמת יקבלו, וכמה שנים כל אחד צבר?",
-              ltrFormulas(`שאלות ② ו-③: שנתיים, ו-${GROUP.opening.staff} × ${pct(GROUP.opening.stay)}.`),
               <>
-                ① <L>{pct(GROUP.opening.share)} × <Money v={GROUP.opening.finalSalary} plain /> = <Money v={g.perYear} plain /></L>; ② {g.years}; ③ {g.heads}; ④ {g.n}; ⑤ {pct(g.i)} (לא הממשלתית).
+                שאלות ② ו-③: שנתיים, ועובדים כפול הסיכוי:
+                <span className="block">
+                  <L>{FORMULA.heads}</L>
+                </span>
               </>,
               <>
-                <Money v={g.perYear} plain /> × {g.years} × {g.heads} ÷ <L>{1 + g.i}^{g.n}</L> = <strong><M v={GROUP_OPENING} /></strong>
+                ①:
+                <Work w={work.perYear(GROUP.opening.share, GROUP.opening.finalSalary)} />
+                ② {g.years}; ③ {g.heads}, מהציור; ④ {g.n}; ⑤ {pct(g.i)} (לא הממשלתית).
+              </>,
+              <>
+                <Work w={work.measure(g)} />
               </>,
             ]}
           />
@@ -286,14 +319,15 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
             </>
           }
         />
-        <Bridge summary={<><L>החוב = הטבה לשנה × שנות עבודה × עובדים צפויים ÷ (1+i)ⁿ</L>.</>}>מה קורה כשההטבה לא שווה בכל שנה, כשיש תקרה, או כשהזכאות מתחילה רק משנה מסוימת? {lessonRef("ias19-attribute")}.</Bridge>
+        <Bridge summary={<><L>{FORMULA.measure}</L>.</>}>מה קורה כשההטבה לא שווה בכל שנה, כשיש תקרה, או כשהזכאות מתחילה רק משנה מסוימת? {lessonRef("ias19-attribute")}.</Bridge>
       </>
     ),
     check: quiz("emp-measure-master", [
-      { q: "כמה שווים היום 2,000 ₪ שישולמו בעוד 8 שנים, בריבית 4%?", options: ["1,461 ₪", "1,385 ₪", "1,600 ₪", "2,737 ₪"], answer: 0, why: "2,000 ÷ 1.04⁸ = 1,461 ₪." },
-      { q: "שכר היום 24,000 ₪, עולה 2% בשנה, פרישה בעוד 5 שנים, הטבה 5% לשנה. מה ①?", options: ["1,325 ₪", "1,200 ₪", "6,000 ₪", "1,087 ₪"], answer: 0, why: "5% × 24,000 × 1.02⁵ = 1,325 ₪." },
+      { q: "כמה שווים היום 2,000 ₪ שישולמו בעוד 8 שנים, בריבית 4%?", options: ["1,461 ₪", "1,385 ₪", "1,600 ₪", "2,737 ₪"], answer: 0, why: said(work.pv(2_000, 0.04, 8)) },
+      { q: "שכר היום 24,000 ₪, עולה 2% בשנה, פרישה בעוד 5 שנים, הטבה 5% לשנה. מה ①?", options: ["1,325 ₪", "1,200 ₪", "6,000 ₪", "1,087 ₪"], answer: 0, why: said(work.perYearGrown(0.05, 24_000, 0.02, 5)) },
       { q: "ממשלתיות 4.8%, קונצרניות 6.2%. באיזו משתמשים?", options: ["6.2%, כי השוק בישראל עמוק", "4.8%, כי היא בטוחה יותר", "5.5%", "תלוי במשך"], answer: 0, why: "סעיף 83." },
-      { q: "עובד עבד 4 שנים וצפוי לעבוד עוד 10. מה n?", options: ["10", "4", "14", "6"], answer: 0, why: "השנים עד התשלום." },
+      { q: "עובד עבד 4 שנים וצפוי לעבוד עוד 10. מה n?", options: ["10", "4", "14", "6"], answer: 0, why: `השנים עד התשלום.
+${said(work.n(14, 4))}` },
     ]),
   },
 
