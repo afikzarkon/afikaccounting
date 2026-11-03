@@ -1,5 +1,5 @@
 import { Milk, Speaker } from "lucide-react";
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { Deeper, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { ScreenLink } from "@/components/study-mode/screen-link";
@@ -304,8 +304,8 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
         </Story>
         <Sorted
           columns={[
-            { title: "בשיטה תקופתית", tone: "neutral", items: [<>ההורדה ״מגולמת״: מלאי הסגירה נרשם ישר ב-<Money key="c" v={KOL1.closingCarrying} /></>] },
-            { title: "בשיטה תמידית", tone: "neutral", items: [<>פקודה: ח׳ עלות המכר / ז׳ מלאי <Money key="w" v={KOL1.writeDown} plain /></>] },
+            { title: "בשיטה תקופתית", tone: "neutral", items: [<Fragment key="periodic">ההורדה ״מגולמת״: מלאי הסגירה נרשם ישר ב-<Money v={KOL1.closingCarrying} /></Fragment>] },
+            { title: "בשיטה תמידית", tone: "neutral", items: [<Fragment key="perpetual">פקודה: ח׳ עלות המכר / ז׳ מלאי <Money v={KOL1.writeDown} plain /></Fragment>] },
           ]}
         />
         <Deeper title="החישוב המלא">

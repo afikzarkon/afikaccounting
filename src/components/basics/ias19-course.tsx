@@ -1,5 +1,5 @@
 import { Plane, Store } from "lucide-react";
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { CLOSING, CLOSING_EXTRA } from "@/lib/study/ias19/lessons/map";
@@ -204,8 +204,8 @@ export const IAS19_BASICS_SCREENS: Record<string, ScreenContent> = {
         />
         <Sorted
           columns={[
-            { title: "פיטורין — נרשם עכשיו", tone: "neutral", items: [<>החלק שכל עובד מקבל: <Money v={CLOSING.leaveEarly} /></>] },
-            { title: "שירות — נרשם בשנה הבאה", tone: "good", items: [<>התוספת למי שנשאר: <Money v={CLOSING_EXTRA} /></>] },
+            { title: "פיטורין — נרשם עכשיו", tone: "neutral", items: [<Fragment key="early">החלק שכל עובד מקבל: <Money v={CLOSING.leaveEarly} /></Fragment>] },
+            { title: "שירות — נרשם בשנה הבאה", tone: "good", items: [<Fragment key="extra">התוספת למי שנשאר: <Money v={CLOSING_EXTRA} /></Fragment>] },
           ]}
         />
       </>
