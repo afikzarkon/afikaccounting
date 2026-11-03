@@ -13,6 +13,7 @@ import {
   classify,
   dayCost,
   definedContribution,
+  expectedHeads,
   destination,
   grown,
   impliedRate,
@@ -24,6 +25,7 @@ import {
   plainYear,
   presentation,
   pv,
+  pvPath,
   raised,
   recognisedAssets,
   retirementPN,
@@ -431,5 +433,21 @@ describe("other long-term and termination benefits", () => {
     assert.equal(classify({ fromDecisionToTerminate: false, settledWithin12Months: true, afterEmployment: false }), "shortTerm");
     assert.equal(classify({ fromDecisionToTerminate: false, settledWithin12Months: false, afterEmployment: true }), "postEmployment");
     assert.equal(classify({ fromDecisionToTerminate: false, settledWithin12Months: false, afterEmployment: false }), "otherLongTerm");
+  });
+});
+
+describe("the figures' helpers", () => {
+  it("a future amount on its way to today: each year the one after it ÷ (1 + i), today first", () => {
+    const path = pvPath(100, 0.08, 5);
+    assert.equal(path.length, 6);
+    assert.equal(path[5], 100);
+    assert.equal(Math.round(path[0]), 68);
+    for (let k = 0; k < 5; k++) assert.ok(Math.abs(path[k] * 1.08 - path[k + 1]) < 1e-9);
+    assert.equal(Math.round(pvPath(10_000, 0.05, 2)[0]), 9_070);
+  });
+
+  it("expected heads: headcount × (1 − leavers)", () => {
+    assert.equal(expectedHeads(250, 0.08), 230);
+    assert.equal(expectedHeads(40, 0.1), 36);
   });
 });

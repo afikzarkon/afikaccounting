@@ -18,6 +18,12 @@
 /** The value today of an amount paid in n years, discounted at i. */
 export const pv = (fv: number, i: number, n: number) => fv / (1 + i) ** n;
 
+/** What an amount paid in n years is worth at each year on the way to today: index k is k years from today (index n is the amount itself). */
+export const pvPath = (fv: number, i: number, n: number) => Array.from({ length: n + 1 }, (_, k) => pv(fv, i, n - k));
+
+/** Employees expected to stay (and receive): headcount × (1 − the share expected to leave). */
+export const expectedHeads = (heads: number, leaving: number) => heads * (1 - leaving);
+
 /** The rate for m months of a year whose rate is i: compound, not i × m/12 (IAS 19.123). */
 export const partRate = (i: number, months: number) => (1 + i) ** (months / 12) - 1;
 
