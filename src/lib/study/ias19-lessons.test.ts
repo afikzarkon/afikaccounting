@@ -51,12 +51,11 @@ describe("the employee-benefits course", () => {
 });
 
 describe("before we start: the primer, and the glossary", () => {
-  it("six cards with unique ids, three a must and three recommended, each with a self-check", () => {
-    assert.equal(PRIMER.length, 6);
-    assert.equal(new Set(PRIMER.map((c) => c.id)).size, 6);
-    assert.equal(PRIMER.filter((c) => c.level === "must").length, 3);
-    assert.equal(PRIMER.filter((c) => c.level === "recommended").length, 3);
+  it("seven cards with unique ids, each saying why it is needed and with a self-check", () => {
+    assert.equal(PRIMER.length, 7);
+    assert.equal(new Set(PRIMER.map((c) => c.id)).size, 7);
     for (const c of PRIMER) {
+      assert.ok(c.need.trim(), c.id);
       assert.ok(c.checks.length > 0, c.id);
       for (const q of c.checks) assert.ok(q.answer >= 0 && q.answer < q.options.length && new Set(q.options).size === q.options.length, `${c.id}: ${q.q}`);
     }
@@ -77,6 +76,7 @@ describe("before we start: the primer, and the glossary", () => {
     assert.deepEqual(byN("accrual"), [1, 3]);
     assert.deepEqual(byN("journal"), [3, 4, 10]);
     assert.deepEqual(byN("percent"), [3, 5, 6]);
+    assert.deepEqual(byN("obligation"), [1, 3, 11]);
   });
 
   it("the self-checks' answers are the solver's", () => {
@@ -100,11 +100,6 @@ describe("before we start: the primer, and the glossary", () => {
       .flatMap((f) => [...readFileSync(join(dir, f), "utf8").matchAll(/^ {2}"(emp-[\w-]+)": \{/gm)].map((m) => m[1]));
     const listed = IAS19_LESSONS.flatMap((m) => m.screens.map((s) => s.id));
     assert.deepEqual([...defined].sort(), [...listed].sort());
-  });
-
-  it("lesson 1 has the minute-and-a-half screen right after the principle", () => {
-    const ids = IAS19_LESSONS[0].screens.map((s) => s.id);
-    assert.equal(ids[ids.indexOf("emp-map-principle") + 1], "emp-map-simple");
   });
 
   it("the course opens on what IAS 19 is and why it is needed", () => {

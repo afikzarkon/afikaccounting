@@ -36,9 +36,6 @@ export function MindMap({ links, className }: { links?: boolean; className?: str
               <p className="flex flex-wrap items-center gap-x-2 font-bold text-fg">
                 {b.core && <Star className="h-4 w-4 fill-amber-400 text-amber-500" aria-label="הענף המרכזי" />}
                 {b.title}
-                <span className="text-[12px] font-medium text-muted" dir="ltr">
-                  {b.en}
-                </span>
               </p>
               <ul className="mt-1.5 space-y-1">
                 {b.leaves.map((l) => (
@@ -292,35 +289,34 @@ export function TwoBuckets({ pl = ["עלות העבודה של השנה", "הר�
   );
 }
 
-/** A term on its first appearance: Hebrew, English and the paragraph of the standard. */
-export function T19({ he, en, par }: { he: string; en: string; par?: string }) {
+/** A term on its first appearance: its Hebrew name and the paragraph of the standard. */
+export function T19({ he, par }: { he: string; par?: string }) {
   return (
     <span>
-      <strong className="font-semibold text-fg">{he}</strong>{" "}
-      <span className="text-[0.92em] text-muted">
-        (<span dir="ltr">{en}</span>
-        {par && (
-          <>
-            , <span dir="ltr">IAS 19.{par}</span>
-          </>
-        )}
-        )
-      </span>
+      <strong className="font-semibold text-fg">{he}</strong>
+      {par && <span className="text-[0.92em] text-muted"> (סעיף {par})</span>}
     </span>
   );
 }
 
-/** A step down a short sorting ladder. */
-export function Ladder({ steps }: { steps: { q: ReactNode; yes: ReactNode }[] }) {
+/**
+ * A step down a short sorting ladder. Walking one case down it: `answers` says
+ * under each step why it was answered as it was, and `stop` is the step the
+ * case stops at — ringed, with the steps after it dimmed.
+ */
+export function Ladder({ steps, answers, stop }: { steps: { q: ReactNode; yes: ReactNode }[]; answers?: ReactNode[]; stop?: number }) {
   return (
     <ol className="space-y-1.5">
       {steps.map((s, i) => (
-        <li key={i}>
-          <div className="flex items-start gap-2 rounded-xl border border-line bg-surface px-3 py-2">
+        <li key={i} className={cn(stop !== undefined && i > stop && "opacity-40")}>
+          <div className={cn("flex items-start gap-2 rounded-xl border border-line bg-surface px-3 py-2", stop === i && "border-accent ring-2 ring-accent/60")}>
             <span className="num mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
-            <p className="min-w-0 text-[14.5px] text-fg">
-              {s.q} <span className="font-semibold text-accent">כן ← {s.yes}</span>
-            </p>
+            <div className="min-w-0 text-[14.5px] text-fg">
+              <p>
+                {s.q} <span className="font-semibold text-accent">כן ← {s.yes}</span>
+              </p>
+              {answers?.[i] && <p className={cn("mt-1 text-[13.5px]", stop === i ? "font-bold text-accent" : "text-muted")}>{answers[i]}</p>}
+            </div>
           </div>
           {i < steps.length - 1 && <ArrowDown className="mx-auto my-0.5 h-4 w-4 text-subtle" aria-label="לא — לשאלה הבאה" />}
         </li>

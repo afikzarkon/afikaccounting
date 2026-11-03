@@ -586,3 +586,102 @@ export function Fork({ label, question, branches }: { label: string; question: R
     </figure>
   );
 }
+
+// ---------------------------------------------------------------------------
+// The opening lesson: how the standard is split, profit year by year, and the
+// window of the year worked plus one.
+
+/** The standard at the top and its groups under it, each with what belongs there. Stacks on a phone. */
+export function Tree({ label, root, groups }: { label: string; root: ReactNode; groups: { title: ReactNode; examples: ReactNode; tone: Tone }[] }) {
+  return (
+    <figure role="img" aria-label={label} className="space-y-2 rounded-2xl border border-line bg-surface p-3.5">
+      <p className="mx-auto w-fit max-w-full rounded-xl border-2 border-accent bg-accent-soft px-4 py-2 text-center text-[15px] font-bold text-fg">{root}</p>
+      <ArrowDown className="mx-auto h-5 w-5 text-subtle" aria-hidden />
+      <div className="grid gap-2 sm:grid-cols-2">
+        {groups.map((g, i) => (
+          <div key={i} className="rounded-xl border-2 px-3 py-2.5" style={toneStyle(g.tone, 10)}>
+            <p className="text-[14.5px] font-bold text-fg">{g.title}</p>
+            <p className="mt-0.5 text-[13.5px] text-fg/85">{g.examples}</p>
+          </div>
+        ))}
+      </div>
+    </figure>
+  );
+}
+
+/**
+ * Two ways of counting, year by year, one row a year and a total row: each
+ * cell its number and a bar to scale. A cell set apart is ringed.
+ */
+export function YearCompare({ label, title, unit, columns, note }: { label: string; title?: ReactNode; unit?: ReactNode; columns: { name: ReactNode; values: number[]; tone: Tone; hot?: number[] }[]; note?: ReactNode }) {
+  const years = columns[0].values.length;
+  const max = Math.max(...columns.flatMap((c) => c.values));
+  const total = (c: (typeof columns)[number]) => c.values.reduce((a, b) => a + b, 0);
+  return (
+    <Frame label={label} title={title} note={note}>
+      {unit && <p className="text-[12.5px] text-muted">{unit}</p>}
+      <div className="grid gap-x-3 gap-y-1.5 text-[13.5px]" style={{ gridTemplateColumns: `auto repeat(${columns.length}, minmax(0, 1fr))` }}>
+        <span />
+        {columns.map((c, i) => (
+          <span key={i} className="text-[12.5px] font-bold text-fg">
+            {c.name}
+          </span>
+        ))}
+        {Array.from({ length: years }, (_, k) => (
+          <div key={k} className="contents">
+            <span className="self-center text-muted">שנה {k + 1}</span>
+            {columns.map((c, i) => (
+              <span key={i} className={cn("rounded-lg px-2 py-1", c.hot?.includes(k + 1) && "ring-2")} style={{ ["--tw-ring-color" as string]: toneColor(c.tone) }}>
+                <N v={c.values[k]} />
+                <span className="mt-0.5 block h-1.5 rounded-full" style={{ width: `${(c.values[k] / max) * 100}%`, background: toneColor(c.tone) }} />
+              </span>
+            ))}
+          </div>
+        ))}
+        <span className="self-center border-t border-line-strong pt-1 font-bold text-fg">סה״כ</span>
+        {columns.map((c, i) => (
+          <span key={i} className="border-t border-line-strong px-2 pt-1 font-bold text-fg">
+            <N v={total(c)} />
+          </span>
+        ))}
+      </div>
+    </Frame>
+  );
+}
+
+/**
+ * Calendar years across, one row per case: a dot where it starts and a bar to
+ * the date it ends, with both dates written out. Earlier is on the right.
+ */
+export function DateWindows({ label, title, years, rows, note }: { label: string; title?: ReactNode; years: number[]; rows: { start: number; end: number; from: ReactNode; to: ReactNode; tone: Tone }[]; note?: ReactNode }) {
+  const lo = years[0];
+  const span = years.length;
+  const x = (v: number) => `${((v - lo) / span) * 100}%`;
+  return (
+    <Frame label={label} title={title} note={note}>
+      <div className="flex text-center text-[12px] font-bold text-muted">
+        {years.map((y) => (
+          <span key={y} className="flex-1 border-s border-line first:border-s-0">
+            {y}
+          </span>
+        ))}
+      </div>
+      <div className="space-y-2.5">
+        {rows.map((r, i) => (
+          <div key={i}>
+            <p className="text-[13px] text-fg">
+              {r.from} <span className="text-muted">←</span> <strong>{r.to}</strong>
+            </p>
+            <div className="relative mt-1 h-3 rounded-full bg-surface-2">
+              {years.slice(1).map((y) => (
+                <span key={y} className="absolute inset-y-0 border-s border-line" style={{ insetInlineStart: x(y) }} aria-hidden />
+              ))}
+              <span className="absolute inset-y-0 rounded-full border-2" style={{ insetInlineStart: x(r.start), width: `calc(${x(r.end)} - ${x(r.start)})`, ...toneStyle(r.tone, 35) }} />
+              <span className="absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full border-2 border-surface rtl:translate-x-1/2 ltr:-translate-x-1/2" style={{ insetInlineStart: x(r.start), background: toneColor(r.tone) }} aria-hidden />
+            </div>
+          </div>
+        ))}
+      </div>
+    </Frame>
+  );
+}

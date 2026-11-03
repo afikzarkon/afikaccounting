@@ -5,16 +5,18 @@ import { choice, COURSE, COURSE_HREF, lessonRef } from "../shared";
 export const KINDS = ["הטבה לזמן קצר", "הטבה לאחר סיום העסקה", "הטבה אחרת לזמן ארוך", "הטבה בגין פיטורין"] as const;
 const [SHORT, POST, OTHER, TERM] = [0, 1, 2, 3];
 
-/** The worked example: a service centre closing, and two payments that sound alike. */
+/** Lesson 11's termination example: a service centre closing, and two payments that sound alike. */
 export const CLOSING = { leaveEarly: 8_000, stayToEnd: 20_000, staff: 60 };
 export const CLOSING_EXTRA = CLOSING.stayToEnd - CLOSING.leaveEarly;
 
-/** "IAS 19 in a minute and a half": 100 ₪ three years away, and the debt's bank statement — round numbers, no calculation asked. */
+/** The principle screen's two more ideas: 100 ₪ three years away, and the debt's bank statement — round numbers, no calculation asked. */
 export const SIMPLE_PV = { fv: 100, i: 0.1, n: 3 };
 export const SIMPLE_BANK = { opening: 1_000, service: 100, interest: 50, paid: 30 };
-/** The opening screen: a grant paid after five years of work — booked when paid, against booked as the work is done (no discounting yet). */
-export const WHY_GRANT = { grant: 100_000, years: 5 };
+/** The opening screen: a grant paid after five years of work, and the company's profit each year — booked when paid, against booked as the work is done (no discounting yet). */
+export const WHY_GRANT = { grant: 100_000, years: 5, profitBefore: 500_000 };
 export const WHY_PER_YEAR = WHY_GRANT.grant / WHY_GRANT.years;
+export const WHY_PROFIT_CASH = Array.from({ length: WHY_GRANT.years }, (_, k) => WHY_GRANT.profitBefore - (k === WHY_GRANT.years - 1 ? WHY_GRANT.grant : 0));
+export const WHY_PROFIT_ACCRUED = Array.from({ length: WHY_GRANT.years }, () => WHY_GRANT.profitBefore - WHY_PER_YEAR);
 
 /** Ten benefits to sort, without computing anything — and the kind of each. */
 export const TEN: { id: string; text: string; kind: number; why: string }[] = [
@@ -53,7 +55,7 @@ const traps: Trap[] = [
     prompt: "חופשה שנתית צפויה בדרך כלל להיות מנוצלת עד סוף השנה הבאה. השנה, בגלל עומס, עובדים ידחו חלק ממנה בשנה נוספת — באופן חד־פעמי. מה קורה לסיווג?",
     options: ["נשאר הטבה לזמן קצר", "עובר להטבה אחרת לזמן ארוך", "עובר להטבה לאחר סיום העסקה", "לא נרשם כלום עד שינוצל"],
     answer: 0,
-    why: "שינוי זמני בציפייה למועד הניצול אינו משנה את הסיווג (IAS 19.10).",
+    why: "שינוי זמני בציפייה למועד הניצול אינו משנה את הסיווג (סעיף 10).",
     traps: ["", "המלכודת: לשנות סיווג בגלל שנה חריגה אחת. הסיווג נקבע לפי אופי ההטבה, לא לפי שנה חריגה.", "היא נוצלת בזמן העבודה, לא אחריה.", "ההתחייבות קיימת כבר עכשיו — העבודה נעשתה."],
   },
   {
@@ -72,25 +74,23 @@ export const MAP: StudyModule = {
   course: COURSE,
   n: 1,
   title: "המפה הגדולה: ארבעת סוגי ההטבות והעיקרון המרכזי",
-  description: "מה זה IAS 19 ולמה צריך אותו. אחר כך מפת הקורס והעיקרון שמאחורי הכול: עבודה של היום יוצרת התחייבות היום. אחר כך ארבעת סוגי ההטבות, ארבע שאלות מיון, ומיון של אחת־עשרה הטבות בלי מחשבון.",
+  description: "מה זה IAS 19 ולמה צריך אותו, איך הוא מחולק, והעיקרון שמאחורי הכול: עבודה של היום יוצרת התחייבות היום. בסוף ממיינים הטבות לפי תאריכים, בלי מחשבון.",
   goal: "לסווג כל הטבה לאחד מארבעת הסוגים, ולהסביר מתי נרשמת התחייבות ומתי נרשמת הוצאה.",
   outcomes: [
     "להסביר במשפט אחד מה IAS 19 קובע, ולמה בלעדיו הדוחות מטעים",
     "להסביר למה הטבה שתשולם בעוד שנים נרשמת כבר בשנה שבה עבדו",
-    "לזהות את ארבעת סוגי ההטבות ואת הסעיף של כל אחד בתקן",
+    "לזהות את ארבעת סוגי ההטבות, עם דוגמה לכל אחד",
     "למיין הטבה בארבע שאלות, לפי הסדר",
-    "להבחין בין הטבת פיטורין לבין תוספת המותנית בהמשך עבודה",
+    "לקבוע לפי תאריכים אם הטבה היא לזמן קצר, ומה קורה ביום אחד אחרי",
   ],
   backHref: COURSE_HREF,
   screens: [
     { id: "emp-map-why", title: "IAS 19 על רגל אחת: מה זה ולמה צריך אותו" },
-    { id: "emp-map-welcome", title: "מה נלמד בקורס, ואיפה הכול במפה" },
+    { id: "emp-map-welcome", title: "איך התקן מחולק: ארבע קבוצות" },
     { id: "emp-map-principle", title: "העיקרון: עבודה של היום, התחייבות של היום" },
-    { id: "emp-map-simple", title: "IAS 19 בדקה וחצי" },
-    { id: "emp-map-types", title: "ארבעת סוגי ההטבות" },
+    { id: "emp-map-types", title: "איך מבדילים בין הסוגים, עם תאריכים" },
     { id: "emp-map-ladder", title: "הכלל: ארבע שאלות מיון, לפי הסדר" },
-    { id: "emp-map-solved", title: "דוגמה פתורה: מרכז שירות נסגר" },
-    { id: "emp-map-sort", title: "ממיינים יחד: חמישה מקרים מהחיים" },
+    { id: "emp-map-sort", title: "ממיינים: חמישה מקרים ומקרה קשה אחד" },
     { id: "emp-map-master", title: "בדיקת שליטה, וגשר לשיעור הבא" },
   ],
   exercises: TEN.map((x) => choice(x.id, "מיון הטבה", x.text, [...KINDS], x.kind, x.why)),
@@ -99,7 +99,7 @@ export const MAP: StudyModule = {
     "סוג ההטבה נקבע לפי מתי ולמה היא משולמת — והעיקרון: עבודה שנעשתה היום יוצרת התחייבות היום, גם אם התשלום רחוק.",
     "שאלות המיון, לפי הסדר: נוצרה מהחלטה לסיים העסקה? פיטורין. תסולק כולה תוך 12 חודשים מסוף שנת השירות? קצר. משולמת אחרי סיום ההעסקה? לאחר סיום העסקה. אחרת: אחרת לזמן ארוך.",
     "ארבעה סוגים: לזמן קצר (סעיף 9), לאחר סיום העסקה (סעיף 26), אחרות לזמן ארוך (סעיף 153), פיטורין (סעיף 159).",
-    "מחויבות יכולה להיות משפטית — או משתמעת מנוהג (סעיף 4). תשלום מבוסס מניות אינו כאן: הוא ב-IFRS 2.",
+    "מחויבות יכולה להיות משפטית — או משתמעת מנוהג (סעיף 4).",
     `תוספת שמותנית בהמשך עבודה אינה פיטורין — היא תגמול על השירות שעוד יינתן (סעיף 162). בחישוב נפגוש את זה שוב ב${lessonRef("ias19-other")}.`,
   ],
 };

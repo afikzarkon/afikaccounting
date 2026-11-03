@@ -56,7 +56,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>
-          <T19 he="ערך נוכחי" en="Present Value, PV" /> הוא כמה שווה היום סכום שישולם בעתיד.
+          <T19 he="ערך נוכחי" /> הוא כמה שווה היום סכום שישולם בעתיד.
         </P>
         <P>ההפך מחיסכון בבנק: בבנק כל שנה מכפילים ב-(1+i). כאן הולכים אחורה, וכל שנה מחלקים.</P>
         <PvSlide fv={HOOK.amount} i={HOOK.rate} n={HOOK.years} title="הסכום מהסיפור, שנה אחר שנה, חוזר להיום" />
@@ -85,7 +85,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>
-          כשצריך ריבית לכמה חודשים בלבד, מחשבים אותה כמו ריבית דריבית (<span dir="ltr">IAS 19.123</span>). קודם השיעור לתקופה, ואז כפול היתרה.
+          כשצריך ריבית לכמה חודשים בלבד, מחשבים אותה כמו ריבית דריבית (סעיף 123). קודם השיעור לתקופה, ואז כפול היתרה.
         </P>
         <FormulaFill
           label="ריבית לחלק משנה: היתרה כפול אחת ועוד הריבית בחזקת מספר החודשים חלקי 12, פחות אחת"
@@ -135,7 +135,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>
-          <T19 he="מעגל" en="Roll-forward" /> מספר מה קרה ליתרה בשנה. בדיוק כמו דף חשבון בנק:
+          <T19 he="מעגל" /> מספר מה קרה ליתרה בשנה. בדיוק כמו דף חשבון בנק:
         </P>
         <BankStatement
           opening={SOLVED.roll.opening}

@@ -33,24 +33,25 @@ export default async function Ias19Page() {
       <Container className="relative pt-10 pb-16 sm:pt-14">
         <CourseHeader
           trail={[{ label: "שלב 2 · קורסים מתקדמים" }, { label: "הטבות עובד (IAS 19)" }]}
-          title={
-            <>
-              הטבות עובד מהמפה ועד המבחן
-            </>
-          }
+          title="IAS 19: הטבות עובד, מאפס ועד שאלת מבחן"
           lessons={lessons}
         >
           <p>
-            שיעורים אינטראקטיביים, צעד אחר צעד: קודם מיון של ארבעת סוגי ההטבות וארגז כלים קטן, אחר כך ההטבות הפשוטות, ואז הלב של הקורס — הטבה מוגדרת, משיעור לשיעור, עד הצגה
-            בדוחות. בכל שיעור: רעיון מהחיים, כלל אחד, דוגמה פתורה, תרגול עם משוב מיידי ומלכודות.
+            לא צריך לדעת שום דבר על הטבות עובד כדי להתחיל. בשיעור הראשון לומדים לזהות איזו הטבה מונחת לפניכם, ואחר כך עוברים להטבות הפשוטות. משם בונים, שיעור אחרי שיעור, את
+            החישוב של פנסיה ומענקי פרישה. בסוף פותרים לבד שאלה שלמה ברמת מבחן.
+          </p>
+          <p className="mt-2">
+            כל שיעור הוא מסלול קצר שעוברים בקצב שלכם. יש סיפור קטן שפותח את הנושא, תרשים לכל רעיון, דוגמה שפותרים יחד, ותרגילים שמראים מיד איפה טעיתם.
           </p>
         </CourseHeader>
 
         <section id="primer" aria-labelledby="ias19-primer-title" className="mt-10 scroll-mt-24">
           <h2 id="ias19-primer-title" className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-fg">
-            <BookOpenCheck className="h-6 w-6 text-accent" aria-hidden /> לפני שמתחילים: שש הבנות קטנות
+            <BookOpenCheck className="h-6 w-6 text-accent" aria-hidden /> מה צריך לדעת לפני שמתחילים
           </h2>
-          <p className="mt-1 text-[15px] text-muted">שלוש חובה, שלוש מומלצות; כל אחת עם בדיקה של דקה. אם עניתם נכון, ממשיכים לשיעור 1.</p>
+          <p className="mt-1 text-[15px] text-muted">
+            את הדברים האלה צריך להביא איתכם לקורס, כי התרגילים נשענים עליהם כל הזמן. פתחו כל כרטיס וענו על השאלה שבסופו. מה שלא בטוח, כדאי לחזור עליו לפני שיעור 1.
+          </p>
           <div className="mt-4">
             <Primer />
           </div>
