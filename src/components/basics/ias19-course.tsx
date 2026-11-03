@@ -4,8 +4,8 @@ import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { SIMPLE_BANK, SIMPLE_PV, WHY_GRANT, WHY_PER_YEAR, WHY_PROFIT_ACCRUED, WHY_PROFIT_CASH } from "@/lib/study/ias19/lessons/map";
 import { lessonRef } from "@/lib/study/ias19/shared";
-import { Bridge, Ladder, T19 } from "./ias19-ui";
-import { BankStatement, DateWindows, Fork, PvSlide, Staircase, Timeline, Tree, TwoPanel, YearCompare } from "./ias19-visuals";
+import { Bridge, T19 } from "./ias19-ui";
+import { BankStatement, DateWindows, DecisionTree, Fork, PvSlide, Staircase, Timeline, Tree, TwoPanel, YearCompare } from "./ias19-visuals";
 import { MiniQuiz, SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { Money, Rule } from "./ui";
@@ -31,13 +31,16 @@ const KIND_NAMES = ["הטבה לזמן קצר", "הטבה לאחר סיום הע
 /** A paragraph on one idea. */
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
 
-/** The four sorting questions, in their order; the sorting screen walks the hard case down them. */
-const LADDER = [
-  { q: "ההטבה נוצרה מהחלטה לפטר, או מהצעה לפרישה מוקדמת?", yes: "פיטורין" },
-  { q: "משלמים את כולה עד 12 חודשים אחרי סוף שנת העבודה?", yes: "לזמן קצר" },
-  { q: "משלמים אותה אחרי שההעסקה נגמרת?", yes: "לאחר סיום העסקה" },
-  { q: "אף אחת מהקודמות?", yes: "אחרת לזמן ארוך" },
-];
+/** The sorting questions, in their order, and the kind each "yes" lands on; the sorting screen walks the hard case down them. */
+const TREE = {
+  label: "עץ החלטות: נוצרה מהחלטה לסיים את העבודה? כן, פיטורין. אחרת, משולמת כולה עד 12 חודשים מסוף שנת העבודה? כן, לזמן קצר. אחרת, משולמת אחרי שההעסקה נגמרת? כן, לאחר סיום העסקה. אחרת, הטבה אחרת לזמן ארוך",
+  questions: [
+    { q: "ההטבה נוצרה מהחלטה לפטר, או מהצעה לפרישה מוקדמת?", yes: "הטבה בגין פיטורין", tone: "danger" as const },
+    { q: "משלמים את כולה עד 12 חודשים אחרי סוף שנת העבודה?", yes: "הטבה לזמן קצר", tone: 1 as const },
+    { q: "משלמים אותה אחרי שההעסקה נגמרת?", yes: "הטבה לאחר סיום העסקה", tone: 3 as const },
+  ],
+  fallback: { label: "אם כל התשובות ״לא״: הטבה אחרת לזמן ארוך", tone: 4 as const },
+};
 
 export const IAS19_BASICS_SCREENS: Record<string, ScreenContent> = {
   // ---------------------------------------------------------------------------
@@ -261,10 +264,10 @@ export const IAS19_BASICS_SCREENS: Record<string, ScreenContent> = {
     ]),
   },
   "emp-map-ladder": {
-    lead: "ארבע שאלות, תמיד באותו סדר. עוצרים בשאלה הראשונה שעונים עליה ״כן״.",
+    lead: "שלוש שאלות, תמיד באותו סדר. ב״כן״ הראשון יודעים את הסוג. אם כולן ״לא״, נשארה רק אפשרות אחת.",
     body: (
       <>
-        <Ladder steps={LADDER} />
+        <DecisionTree {...TREE} />
         <Remember>שאלת הפיטורין ראשונה: גם פיצוי פיטורין משולם לפעמים תוך שנה, ובכל זאת הוא סוג בפני עצמו.</Remember>
       </>
     ),
@@ -304,15 +307,12 @@ export const IAS19_BASICS_SCREENS: Record<string, ScreenContent> = {
           <details className="group rounded-xl border border-line bg-surface">
             <summary className="cursor-pointer list-none px-3 py-2 text-[14.5px] font-bold text-accent [&::-webkit-details-marker]:hidden">נסו לבד, ואז פתחו את הפתרון</summary>
             <div className="border-t border-line p-3">
-              <Ladder
-                steps={LADDER}
-                stop={3}
-                answers={[
-                  "לא. אף אחד לא החליט לסיים את העבודה.",
-                  "לא. על השנה הראשונה משלמים רק אחרי תשע שנים.",
-                  "לא. משלמים בזמן שהוא עדיין עובד.",
-                  "כן. נשאר רק הסוג הזה: הטבה אחרת לזמן ארוך.",
-                ]}
+              <DecisionTree
+                {...TREE}
+                path={{
+                  stop: 3,
+                  answers: ["לא. אף אחד לא החליט לסיים את העבודה.", "לא. על השנה הראשונה משלמים רק אחרי תשע שנים.", "לא. משלמים בזמן שהוא עדיין עובד."],
+                }}
               />
             </div>
           </details>

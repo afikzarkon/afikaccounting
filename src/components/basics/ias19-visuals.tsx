@@ -685,3 +685,47 @@ export function DateWindows({ label, title, years, rows, note }: { label: string
     </Frame>
   );
 }
+
+/**
+ * A decision tree: questions down the middle, "yes" branching off to the side
+ * into the answer, "no" falling to the next question, and the answer when
+ * every question was "no" at the bottom. Walking one case down it, `path`
+ * says under each question why, and rings where the case stops (index
+ * `questions.length` is the bottom answer); the rest dims. Stacks on a phone.
+ */
+export function DecisionTree({ label, questions, fallback, path }: { label: string; questions: { q: ReactNode; yes: ReactNode; tone: Tone }[]; fallback: { label: ReactNode; tone: Tone }; path?: { answers: ReactNode[]; stop: number } }) {
+  const dim = (i: number) => path !== undefined && i > path.stop;
+  const leaf = (text: ReactNode, tone: Tone, on: boolean) => (
+    <span className={cn("block rounded-xl border-2 px-3 py-2 text-center text-[14px] font-bold text-fg", on && "ring-2 ring-offset-2 ring-offset-surface")} style={{ ...toneStyle(tone, 18), ["--tw-ring-color" as string]: toneColor(tone) }}>
+      {text}
+    </span>
+  );
+  return (
+    <figure role="img" aria-label={label} className="rounded-2xl border border-line bg-surface p-3.5">
+      {questions.map((s, i) => (
+        <div key={i} className={cn(dim(i) && "opacity-35")}>
+          <div className="grid items-center gap-x-2 gap-y-1.5 sm:grid-cols-[minmax(0,1fr)_14rem]">
+            <div className="flex items-start gap-2 rounded-xl border-2 border-line-strong bg-surface-2/50 px-3 py-2.5">
+              <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-fg text-[12px] font-bold text-surface">{i + 1}</span>
+              <div className="min-w-0">
+                <p className="text-[14.5px] font-semibold text-fg">{s.q}</p>
+                {path?.answers[i] && <p className={cn("mt-1 text-[13px]", path.stop === i ? "font-bold text-fg" : "text-muted")}>{path.answers[i]}</p>}
+              </div>
+            </div>
+            <div className={cn("flex items-center gap-1.5 ps-8 sm:ps-0", path !== undefined && i < path.stop && "opacity-35")}>
+              <span className="shrink-0 rounded-full border-2 px-2.5 py-0.5 text-[14.5px] leading-none font-bold text-fg" style={toneStyle(s.tone, 14)}>
+                כן
+              </span>
+              <ArrowRight className="h-4 w-4 shrink-0 rtl:rotate-180" style={{ color: toneColor(s.tone) }} aria-hidden />
+              <div className="min-w-0 flex-1">{leaf(s.yes, s.tone, path?.stop === i)}</div>
+            </div>
+          </div>
+          <div className={cn("flex items-center gap-1.5 py-1 ps-5 text-[13.5px] font-bold text-muted", path !== undefined && path.stop <= i && "invisible")}>
+            <ArrowDown className="h-5 w-5" aria-hidden /> לא
+          </div>
+        </div>
+      ))}
+      <div className={cn("sm:w-[calc(100%-14.5rem)]", dim(questions.length) && "opacity-35")}>{leaf(fallback.label, fallback.tone, path?.stop === questions.length)}</div>
+    </figure>
+  );
+}
