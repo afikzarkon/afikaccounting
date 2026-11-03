@@ -124,7 +124,7 @@ function Card({ c }: { c: PrimerCard }) {
           {c.need}
         </p>
         <p>
-          <strong className="text-fg">מהחיים: </strong>
+          <strong className="text-fg">דוגמה שאתם מכירים: </strong>
           {c.life}
         </p>
         {FIGURE[c.id]}

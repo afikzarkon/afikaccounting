@@ -91,7 +91,7 @@ const traps: Trap[] = [
   },
   {
     id: "bonus-oncosts",
-    prompt: `בונוס של ${fmt(MGR_BONUS.amount)} ₪ למנהלים; עליו חל רק ביטוח לאומי של ${pct(MGR_BONUS.insurance)} (לא פנסיה ולא קרן השתלמות). מה עלות הבונוס?`,
+    prompt: `בונוס של ${fmt(MGR_BONUS.amount)} ₪ למנהלים; עליו חל רק ביטוח לאומי של ${pct(MGR_BONUS.insurance)} (בלי הפרשות נוספות). מה עלות הבונוס?`,
     options: [`${fmt(MGR_BONUS_COST)} ₪`, `${fmt(MGR_BONUS.amount * 1.22)} ₪`, `${fmt(MGR_BONUS.amount)} ₪`, `${fmt(MGR_BONUS.amount * 1.07 * 1.22)} ₪`],
     answer: 0,
     why: "מוסיפים רק את מה שחל על הבונוס בפועל.",
