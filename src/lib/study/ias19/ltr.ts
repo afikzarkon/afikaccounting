@@ -33,9 +33,10 @@ function wrapClause(clause: string) {
   return `${lead}${LRI}${ltrMarks(body)}${PDI}${tail}`;
 }
 
-/** The same text, with each formula clause laid out left to right. ("P.N." ends in a dot, not a sentence.) */
-export function ltrFormulas(s: string) {
+/** The same text, with each formula clause laid out left to right. ("P.N." ends in a dot, not a sentence.) A line break — a formula over its numbers — stays a line break. */
+export function ltrFormulas(s: string): string {
   if (!MATH.test(s)) return s;
+  if (s.includes("\n")) return s.split("\n").map(ltrFormulas).join("\n");
   return s
     .split(/(?<!P\.N\.)(?<=[.?!])\s+/)
     .map((sentence) =>

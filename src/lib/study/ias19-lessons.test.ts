@@ -6,6 +6,7 @@ import { TOPICS } from "../catalog";
 import { STUDY_MODULES } from ".";
 import { IAS19_LESSONS } from "./ias19";
 import { IAS19_GLOSSARY } from "./ias19/glossary";
+import { FORMULA, putIn, said, work } from "./ias19/formulas";
 import { ltrFormulas } from "./ias19/ltr";
 import { MIND_MAP } from "./ias19/map";
 import { PRIMER, PRIMER_NEEDS, PRIMER_PERCENT_ANSWER, PRIMER_PV_ANSWER, PRIMER_ROLL_ANSWER } from "./ias19/primer";
@@ -130,5 +131,29 @@ describe("formulas read left to right: P.N.", () => {
   it("does not take the dot of P.N. for the end of a sentence", () => {
     const out = ltrFormulas("P.N. = סגירה − פתיחה. ולכל שורה, המקום שלה.").replaceAll(String.fromCharCode(0x200e), "");
     assert.equal(out, `${String.fromCharCode(0x2066)}P.N. = סגירה − פתיחה${String.fromCharCode(0x2069)}. ולכל שורה, המקום שלה.`);
+  });
+});
+
+describe("every result is worked: the formula, then the numbers", () => {
+  /** The lessons already written this way; each lesson joins as it is converted. */
+  const WORKED: string[] = ["ias19-toolkit"];
+  const formulas = Object.values(FORMULA) as string[];
+  const plain = (s: string) => s.replaceAll(/[‎⁦⁩]/g, "");
+
+  it("a formula over its numbers stays two lines, each left to right", () => {
+    const out = ltrFormulas(said(work.pv(15_600, 0.07, 6)));
+    assert.deepEqual(plain(out).split("\n"), [FORMULA.pv, "15,600 ÷ 1.07^6 = 10,395 ₪"]);
+    assert.ok(out.split("\n").every((l) => l.startsWith("⁦")));
+    assert.equal(putIn(work.pv(15_600, 0.07, 6)), "15,600 ÷ 1.07^6");
+  });
+
+  it("every calculation's solution shows one of the course's formulas, and a line with the numbers in", () => {
+    for (const m of IAS19_LESSONS.filter((l) => WORKED.includes(l.slug)))
+      for (const x of m.exercises) {
+        if (x.kind !== "number") continue;
+        const lines = x.steps.flatMap((s) => plain(s).split("\n"));
+        assert.ok(lines.some((l) => formulas.includes(l)), `${m.slug}/${x.id}: no formula`);
+        assert.ok(lines.some((l) => /\d.*=\s*[\d,.−-]+/.test(l)), `${m.slug}/${x.id}: no numbers`);
+      }
   });
 });

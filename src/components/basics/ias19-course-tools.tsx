@@ -3,15 +3,16 @@ import type { ReactNode } from "react";
 import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { partRate, pv, simplePart } from "@/lib/learn/ias19";
-import { HOOK, SOLVED, SOLVED_PART, SOLVED_PV, SOLVED_ROLL, TOGETHER, TOGETHER_PART, TOGETHER_PV, TOGETHER_ROLL } from "@/lib/study/ias19/lessons/toolkit";
+import { HOOK, SOLVED, SOLVED_ROLL, TOGETHER } from "@/lib/study/ias19/lessons/toolkit";
 import { lessonRef } from "@/lib/study/ias19/shared";
-import { FormulaFill, Ltr } from "./ias19-formula";
+import { FORMULA, putIn, said, work } from "@/lib/study/ias19/formulas";
+import { FormulaFill, Ltr, Work } from "./ias19-formula";
 import { Bridge, ExplainTask, HintLadder, MapBranch, RollForward, T19 } from "./ias19-ui";
 import { BankStatement, Diff, PvSlide, SplitBar, Timeline, WrongRight } from "./ias19-visuals";
 import { MiniQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { Money, Stepper } from "./ui";
-import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
+import { ltrQuiz } from "@/lib/study/ias19/ltr";
 
 /** The employee-benefits course, lesson 2: the toolkit — present value, interest for part of a year, and the roll-forward. */
 
@@ -78,8 +79,8 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
       </>
     ),
     check: quiz("emp-tool-pv", [
-      { q: "כמה שווים היום 5,000 ₪ שישולמו בעוד שנתיים, בריבית 10%?", options: ["4,132 ₪", "4,000 ₪", "4,545 ₪", "6,050 ₪"], answer: 0, why: "5,000 ÷ 1.1² = 4,132 ₪. 4,545 הוא שנה אחת בלבד; 6,050 הוא כפל במקום חילוק." },
-      { q: "ככל שהתשלום רחוק יותר (n גדול), הערך הנוכחי...", options: ["קטן", "גדל", "לא משתנה", "תלוי בסכום"], answer: 0, why: "מחלקים ביותר פעמים ב-(1+i)." },
+      { q: "כמה שווים היום 5,000 ₪ שישולמו בעוד שנתיים, בריבית 10%?", options: ["4,132 ₪", "4,000 ₪", "4,545 ₪", "6,050 ₪"], answer: 0, why: `${said(work.pv(5_000, 0.1, 2))}\n4,545 הוא שנה אחת בלבד; 6,050 הוא כפל במקום חילוק.` },
+      { q: "ככל שהתשלום רחוק יותר (n גדול), הערך הנוכחי...", options: ["קטן", "גדל", "לא משתנה", "תלוי בסכום"], answer: 0, why: `מחלקים ביותר פעמים ב-(1+i):\n${FORMULA.pv}` },
     ]),
   },
   "emp-tool-part": {
@@ -112,14 +113,20 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
         <WrongRight
           label={`ריבית פשוטה: 8% כפול 3/12, שווה ${pct(simplePart(0.08, 3))}. ריבית דריבית: 1.08 בחזקת 3/12 פחות 1, שווה ${pct(partRate(0.08, 3), 4)}`}
           wrong={
-            <p>
-              ריבית פשוטה: <L>8% × 3/12</L> = <Diff>{pct(simplePart(0.08, 3))}</Diff>
-            </p>
+            <>
+              <p>
+                ריבית פשוטה: <Diff>{pct(simplePart(0.08, 3))}</Diff>
+              </p>
+              <Work w={work.simple(0.08, 3)} />
+            </>
           }
           right={
-            <p>
-              ריבית דריבית: <L>1.08^(3/12) − 1</L> = <Diff>{pct(partRate(0.08, 3), 4)}</Diff>
-            </p>
+            <>
+              <p>
+                ריבית דריבית: <Diff>{pct(partRate(0.08, 3), 4)}</Diff>
+              </p>
+              <Work w={work.partRate(0.08, 3)} />
+            </>
           }
         />
         <Part title="ותשלום באמצע השנה?">
@@ -128,8 +135,8 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
       </>
     ),
     check: quiz("emp-tool-part", [
-      { q: "ריבית שנתית 6%. מה השיעור לחצי שנה?", options: ["2.956%", "3%", "6%", "1.5%"], answer: 0, why: "1.06^0.5 − 1 = 2.956%. 3% הוא ריבית פשוטה." },
-      { q: "יתרה 100,000 ₪ ב-1.1, ובאמצע השנה שולמו 20,000 ₪. על מה מחשבים ריבית?", options: ["על 100,000 לשנה, פחות ריבית על 20,000 לחצי שנה", "על 80,000 לשנה שלמה", "על 100,000 לשנה, בלי קשר לתשלום", "על 120,000"], answer: 0, why: "עד התשלום החוב היה 100,000; ממנו והלאה, 80,000." },
+      { q: "ריבית שנתית 6%. מה השיעור לחצי שנה?", options: ["2.956%", "3%", "6%", "1.5%"], answer: 0, why: `${said(work.partRate(0.06, 6, 3))}\n3% הוא ריבית פשוטה.` },
+      { q: "יתרה 100,000 ₪ ב-1.1, ובאמצע השנה שולמו 20,000 ₪. על מה מחשבים ריבית?", options: ["על 100,000 לשנה, פחות ריבית על 20,000 לחצי שנה", "על 80,000 לשנה שלמה", "על 100,000 לשנה, בלי קשר לתשלום", "על 120,000"], answer: 0, why: `עד התשלום החוב היה 100,000; ממנו והלאה, 80,000.\n${FORMULA.partPaid}` },
     ]),
   },
   "emp-tool-roll": {
@@ -145,15 +152,17 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
           closing={SOLVED.roll.closing}
           unexplained="מה שחסר כדי שיתאזן"
         />
-        <P>כשכל השורות ידועות חוץ מאחת, מוצאים אותה מהמעגל. בהטבה מוגדרת זו בדרך כלל P.N., המספר המאזן.</P>
+        <P>כשכל השורות ידועות חוץ מאחת, מוצאים אותה מהמעגל. כאן החסר הוא ההוצאה:</P>
+        <Work w={work.expense(SOLVED.roll.opening, SOLVED.roll.payments, SOLVED.roll.closing)} />
+        <P>בהטבה מוגדרת השורה החסרה היא בדרך כלל P.N., המספר המאזן.</P>
         <Part title="מוסכמת הסימנים">
           <P>בחוברות ובאקסל החוב נרשם במינוס, ותשלום בפלוס, כי תשלום מקטין את החוב. פונקציית PV באקסל מחזירה מינוס: זו לא טעות, רק הופכים סימן.</P>
         </Part>
-        <Remember><L>פתיחה + מה שנוסף − תשלומים + P.N. = סגירה</L>. כל שורה אפשר לגלות, אם כל השאר ידועות.</Remember>
+        <Remember><L>{FORMULA.roll}</L>. כל שורה אפשר לגלות, אם כל השאר ידועות.</Remember>
       </>
     ),
     check: quiz("emp-tool-roll", [
-      { q: "פתיחה 4,000, הוצאה ?, תשלומים 9,000, סגירה 3,500. מה ההוצאה?", options: ["8,500", "9,500", "500", "16,500"], answer: 0, why: "3,500 − 4,000 + 9,000 = 8,500." },
+      { q: "פתיחה 4,000, הוצאה ?, תשלומים 9,000, סגירה 3,500. מה ההוצאה?", options: ["8,500", "9,500", "500", "16,500"], answer: 0, why: said(work.expense(4_000, 9_000, 3_500)) },
       { q: "באקסל, PV מחזיר −12,000. מה הערך הנוכחי?", options: ["12,000", "−12,000, יש טעות", "0", "אי אפשר לדעת"], answer: 0, why: "המינוס הוא רק כיוון התזרים." },
     ]),
   },
@@ -169,12 +178,9 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
               body: (
                 <div className="space-y-2">
                   <p>
-                    עובד צבר מענק של <Money v={SOLVED.pv.fv} />, שישולם בעוד {SOLVED.pv.years} שנים. ריבית {pct(SOLVED.pv.rate)}. <L>
-                      <Money v={SOLVED.pv.fv} plain /> ÷ {1 + SOLVED.pv.rate}
-                      <sup>{SOLVED.pv.years}</sup> = <strong><Money v={Math.round(SOLVED_PV)} /></strong>
-                    </L>
-                    .
+                    עובד צבר מענק של <Money v={SOLVED.pv.fv} />, שישולם בעוד {SOLVED.pv.years} שנים. ריבית {pct(SOLVED.pv.rate)}. כמה הוא שווה היום?
                   </p>
+                  <Work w={work.pv(SOLVED.pv.fv, SOLVED.pv.rate, SOLVED.pv.years)} />
                   <PvSlide fv={SOLVED.pv.fv} i={SOLVED.pv.rate} n={SOLVED.pv.years} />
                 </div>
               ),
@@ -184,9 +190,12 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
               body: (
                 <div className="space-y-2">
                   {SOLVED.part.map((p, k) => (
-                    <p key={k}>
-                      <Money v={p.balance} plain /> × (<L>{1 + p.rate}^({p.months}/12) − 1</L>) = <strong><Money v={Math.round(SOLVED_PART[k])} /></strong> ל-{p.months} חודשים, בריבית שנתית {pct(p.rate)}.
-                    </p>
+                    <div key={k}>
+                      <p>
+                        יתרה של <Money v={p.balance} />, ריבית שנתית {pct(p.rate)}, ל-{p.months} חודשים:
+                      </p>
+                      <Work w={work.part(p.balance, p.rate, p.months)} />
+                    </div>
                   ))}
                 </div>
               ),
@@ -204,7 +213,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
                     rows={[
                       { label: "יתרת פתיחה", value: SOLVED.roll.opening, kind: "balance" },
                       { label: "תשלומים", value: -SOLVED.roll.payments },
-                      { label: "הוצאה (המספר המאזן)", value: SOLVED_ROLL, kind: "pn", how: "סגירה − פתיחה + תשלומים" },
+                      { label: "הוצאה (המספר המאזן)", value: SOLVED_ROLL, kind: "pn", how: <Work w={work.expense(SOLVED.roll.opening, SOLVED.roll.payments, SOLVED.roll.closing)} /> },
                       { label: "יתרת סגירה", value: SOLVED.roll.closing, kind: "balance" },
                     ]}
                   />
@@ -229,13 +238,14 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
             }
             hints={[
               "מכפילים או מחלקים כשמחזירים סכום מהעתיד להיום?",
-              ltrFormulas("הכלי הראשון: סכום עתידי ÷ (1 + ריבית)^שנים = ערך נוכחי."),
               <>
-                <Money v={TOGETHER.pv.fv} plain /> ÷ <L>{1 + TOGETHER.pv.rate}</L>
-                <sup>{TOGETHER.pv.years}</sup>
+                הכלי הראשון: <L>{FORMULA.pv}</L>
               </>,
               <>
-                <Money v={Math.round(TOGETHER_PV)} />
+                <L>{putIn(work.pv(TOGETHER.pv.fv, TOGETHER.pv.rate, TOGETHER.pv.years))}</L>
+              </>,
+              <>
+                <Work w={work.pv(TOGETHER.pv.fv, TOGETHER.pv.rate, TOGETHER.pv.years)} />
               </>,
             ]}
           />
@@ -257,12 +267,14 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
             }
             hints={[
               "על איזה סכום הייתה ריבית מ-1.5 ועד סוף השנה?",
-              "הכלי השני: ריבית לחלק משנה, על התשלום. שמונה חודשים.",
               <>
-                <Money v={TOGETHER.part.balance} plain /> × {pct(TOGETHER.part.rate)} − <Money v={TOGETHER.part.paid} plain /> × (<L>{1 + TOGETHER.part.rate}^(8/12) − 1</L>)
+                הכלי השני, ריבית לחלק משנה, על התשלום. שמונה חודשים: <L>{FORMULA.partPaid}</L>
               </>,
               <>
-                <Money v={Math.round(TOGETHER_PART)} />
+                <L>{putIn(work.partPaid(TOGETHER.part.balance, TOGETHER.part.rate, TOGETHER.part.paid, 12 - TOGETHER.part.paidMonth))}</L>
+              </>,
+              <>
+                <Work w={work.partPaid(TOGETHER.part.balance, TOGETHER.part.rate, TOGETHER.part.paid, 12 - TOGETHER.part.paidMonth)} />
               </>,
             ]}
           />
@@ -276,12 +288,14 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
             }
             hints={[
               "מה חסר כדי שהמעגל יתאזן?",
-              ltrFormulas("הכלי השלישי: הוצאה = סגירה − פתיחה + תשלומים."),
               <>
-                <Money v={TOGETHER.roll.closing} plain /> − <Money v={TOGETHER.roll.opening} plain /> + <Money v={TOGETHER.roll.payments} plain />
+                הכלי השלישי: <L>{FORMULA.expense}</L>
               </>,
               <>
-                <Money v={TOGETHER_ROLL} />
+                <L>{putIn(work.expense(TOGETHER.roll.opening, TOGETHER.roll.payments, TOGETHER.roll.closing))}</L>
+              </>,
+              <>
+                <Work w={work.expense(TOGETHER.roll.opening, TOGETHER.roll.payments, TOGETHER.roll.closing)} />
               </>,
             ]}
           />
@@ -300,7 +314,8 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
           task="הסבירו לחבר, בדקה, למה הריבית על חצי שנה אינה חצי מהריבית השנתית."
           model={
             <>
-              בריבית שנתית, הריבית של החצי הראשון כבר מצטרפת לקרן ומרוויחה ריבית בחצי השני. לכן שיעור חצי השנה, פעמיים, צריך לתת את השיעור השנתי. והוא קצת פחות מחצי: (1+i)^0.5 − 1.
+              בריבית שנתית, הריבית של החצי הראשון כבר מצטרפת לקרן ומרוויחה ריבית בחצי השני. לכן שיעור חצי השנה, פעמיים, צריך לתת את השיעור השנתי. והוא קצת פחות מחצי:
+              <Work w={work.partRate(0.06, 6, 3)} />
               <span className="mt-2 block">
                 <SplitBar
                   periods={[
@@ -317,10 +332,10 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
       </>
     ),
     check: quiz("emp-tool-master", [
-      { q: "כמה שווים היום 6,000 ₪ בעוד 3 שנים, בריבית 4%?", options: ["5,334 ₪", "5,280 ₪", "5,769 ₪", "6,749 ₪"], answer: 0, why: "6,000 ÷ 1.04³ = 5,334 ₪." },
-      { q: "ריבית שנתית 5%. מה השיעור לרבעון?", options: ["1.2272%", "1.25%", "5%", "1.6667%"], answer: 0, why: "1.05^0.25 − 1 = 1.2272%; 1.25% הוא ריבית פשוטה." },
-      { q: "פתיחה 1,500, ריבית 90, תשלום 400, סגירה 1,400. מה ה-P.N.?", options: ["210, הפסד", "210, רווח", "190", "0"], answer: 0, why: "1,400 − 1,500 − 90 + 400 = 210: החוב גדל יותר ממה שהוסבר." },
-      { q: "בהפרשה לחופשה, למה ההוצאה היא מה שמאזן את המעגל?", options: ["כי כל השאר נתונים, והיא הנעלם", "כי היא שווה לפתיחה", "כי מהוונים אותה", "כי התשלום הוא ההוצאה"], answer: 0, why: "פתיחה, תשלומים וסגירה ידועים; ההוצאה משלימה." },
+      { q: "כמה שווים היום 6,000 ₪ בעוד 3 שנים, בריבית 4%?", options: ["5,334 ₪", "5,280 ₪", "5,769 ₪", "6,749 ₪"], answer: 0, why: said(work.pv(6_000, 0.04, 3)) },
+      { q: "ריבית שנתית 5%. מה השיעור לרבעון?", options: ["1.2272%", "1.25%", "5%", "1.6667%"], answer: 0, why: `${said(work.partRate(0.05, 3))}\n1.25% הוא ריבית פשוטה.` },
+      { q: "פתיחה 1,500, ריבית 90, תשלום 400, סגירה 1,400. מה ה-P.N.?", options: ["210, הפסד", "210, רווח", "190", "0"], answer: 0, why: `${said(work.pnInterest({ opening: 1_500, interest: 90, payments: 400, closing: 1_400 }))}\nהחוב גדל יותר ממה שהוסבר: הפסד.` },
+      { q: "בהפרשה לחופשה, למה ההוצאה היא מה שמאזן את המעגל?", options: ["כי כל השאר נתונים, והיא הנעלם", "כי היא שווה לפתיחה", "כי מהוונים אותה", "כי התשלום הוא ההוצאה"], answer: 0, why: `פתיחה, תשלומים וסגירה ידועים; ההוצאה משלימה.\n${FORMULA.expense}` },
     ]),
   },
 };

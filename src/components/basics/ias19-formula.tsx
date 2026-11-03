@@ -1,4 +1,5 @@
 import { Children, cloneElement, type CSSProperties, Fragment, isValidElement, type ReactNode } from "react";
+import type { Worked } from "@/lib/study/ias19/formulas";
 import { ltrMarks } from "@/lib/study/ias19/ltr";
 import { cn } from "@/lib/utils";
 import { Arrows } from "./ias19-arrows";
@@ -227,6 +228,20 @@ export function Eq({ rows, note }: { rows: { label: ReactNode; f: ReactNode }[];
 /** Every string in a formula (one fragment deep) with its operators held in place. */
 function marked(n: ReactNode): ReactNode {
   return Children.map(n, (c) => (typeof c === "string" ? ltrMarks(c) : isValidElement<{ children?: ReactNode }>(c) && c.type === Fragment ? cloneElement(c, undefined, marked(c.props.children)) : c));
+}
+
+/** A result worked out on a screen: the course's formula, and under it the same with the numbers in — each line read left to right. */
+export function Work({ w }: { w: Worked }) {
+  return (
+    <span className="my-1 block space-y-0.5">
+      <span className="block text-[13.5px] text-muted">
+        <bdi dir="ltr">{marked(w.formula)}</bdi>
+      </span>
+      <span className="block font-semibold text-fg">
+        <bdi dir="ltr">{marked(w.numbers)}</bdi>
+      </span>
+    </span>
+  );
 }
 
 /** A formula inside a Hebrew sentence, read left to right. */
