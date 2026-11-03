@@ -29,13 +29,12 @@ export default async function Ias19Page() {
   const titles = Object.fromEntries(IAS19_LESSONS.map((m) => [m.slug, m.title]));
   return (
     <div className="relative">
-      <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-16 sm:pt-14">
         <CourseHeader
           trail={[{ label: "שלב 2 · קורסים מתקדמים" }, { label: "הטבות עובד (IAS 19)" }]}
           title={
             <>
-              הטבות עובד <span className="text-gradient">מהמפה ועד המבחן</span>
+              הטבות עובד מהמפה ועד המבחן
             </>
           }
           lessons={lessons}

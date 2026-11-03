@@ -1,12 +1,10 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useId } from "react";
 import { cn } from "@/lib/utils";
 
 /** XP as a ring filling up, the number in its middle: the lesson's on its summary, the course's on its page. */
 export function XpRing({ xp, max, className }: { xp: number; max: number; className?: string }) {
-  const id = useId();
   const r = 42;
   const c = 2 * Math.PI * r;
   const share = max ? Math.min(1, xp / max) : 0;
@@ -21,18 +19,12 @@ export function XpRing({ xp, max, className }: { xp: number; max: number; classN
           fill="none"
           strokeWidth="9"
           strokeLinecap="round"
-          stroke={`url(#${id})`}
+          stroke="var(--accent)"
           strokeDasharray={c}
           initial={{ strokeDashoffset: c }}
           animate={{ strokeDashoffset: c * (1 - share) }}
           transition={{ duration: 0.9, ease: "easeOut" }}
         />
-        <defs>
-          <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="var(--accent)" />
-            <stop offset="100%" stopColor="#22d3ee" />
-          </linearGradient>
-        </defs>
       </svg>
       <div className="text-center leading-none">
         <p className="num text-[26px] font-bold text-fg">{xp}</p>

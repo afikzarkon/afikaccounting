@@ -38,7 +38,6 @@ export function Paywall({
   return (
     <section aria-labelledby={id} className="card relative overflow-hidden p-5 sm:p-7">
       <TrackEvent event={{ kind: "paywall_view", target: where, label: title, meta: { tier } }} />
-      <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-40 [mask-image:linear-gradient(to_bottom,black,transparent)]" aria-hidden />
       <div className="relative">
         <div className="flex flex-wrap items-center gap-2">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent-soft text-accent" aria-hidden>

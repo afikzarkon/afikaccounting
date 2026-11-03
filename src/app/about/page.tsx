@@ -36,7 +36,7 @@ export default function AboutPage() {
       <div className="max-w-3xl">
         <p className="text-xs font-semibold text-accent">אודות {site.name}</p>
         <h1 className="mt-3 text-[2.4rem] leading-tight font-bold tracking-tight text-fg sm:text-[3.25rem]">
-          חשבונאות שלומדים <span className="text-gradient">צעד אחר צעד</span>, עד המבחן.
+          חשבונאות שלומדים צעד אחר צעד, עד המבחן.
         </h1>
         <p className="mt-5 text-[17px] leading-relaxed text-muted">
           {site.name} נבנתה לסטודנטים: מי שפוגש חובה וזכות בפעם הראשונה, ומי שמתכונן למבחן במלאי, ברכוש קבוע או בהטבות עובד. במקום הרצאה ארוכה — שיעורים קצרים, תרגול עם משוב

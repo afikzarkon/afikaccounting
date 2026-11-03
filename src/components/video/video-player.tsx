@@ -222,7 +222,7 @@ function Scrubber({
   return (
     <div className="group/scrub relative h-4">
       <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-white/20 transition-all group-hover/scrub:h-1.5">
-        <div className="h-full rounded-full bg-gradient-to-r from-accent to-cyan-400" style={{ width: `${pct}%` }} />
+        <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
       </div>
       {total > 0 &&
         chapters.map((c) =>
@@ -266,10 +266,10 @@ function SimulatedScreen({
       className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden text-center"
       aria-label={playing ? "השהיה" : "ניגון"}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,rgb(79_139_255_/_0.35),transparent_55%),radial-gradient(ellipse_at_80%_80%,rgb(34_211_238_/_0.22),transparent_50%)]" />
-      <div className="bg-grid absolute inset-0 opacity-40 [--grid:rgb(148_163_184_/_0.08)]" />
+      <div className="absolute inset-0 bg-[#0f3d2e]" />
+      <div className="bg-grid absolute inset-0 opacity-40 [--grid:rgb(255_255_255_/_0.06)]" />
       <div className="relative px-8" dir="rtl">
-        <p className="text-[11px] font-semibold text-cyan-300/80">תצוגה מקדימה של השיעור</p>
+        <p className="text-[11px] font-semibold text-[#a9dcc0]">תצוגה מקדימה של השיעור</p>
         <p className="mt-2 text-lg font-semibold text-white sm:text-2xl">{chapter ?? title}</p>
         {chapter && <p className="mt-1 text-sm text-white/60">{title}</p>}
         {!playing && <PlayCircle className="mx-auto mt-6 h-14 w-14 text-white/85 transition group-hover/player:scale-105" />}

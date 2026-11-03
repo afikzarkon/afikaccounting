@@ -54,9 +54,8 @@ export function ReviewSession({
   if (at >= queue.length)
     return (
       <div className="relative overflow-hidden rounded-3xl bg-surface p-8 text-center ring-1 ring-line">
-        <div aria-hidden className="pointer-events-none absolute -end-24 -top-24 h-72 w-72 rounded-full bg-accent/20 blur-3xl" />
         <div className="relative">
-          <span className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-accent to-cyan-500 text-white">
+          <span className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-accent text-accent-fg">
             <Trophy className="h-8 w-8" aria-hidden />
           </span>
           <p className="mt-4 text-[22px] font-bold text-fg">סיימתם את החזרה</p>

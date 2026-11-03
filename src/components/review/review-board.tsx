@@ -52,9 +52,8 @@ export function ReviewBoard({ courses, premium, similarIds }: { courses: ReviewC
   return (
     <div className="space-y-8">
       <div className="relative overflow-hidden rounded-3xl bg-surface p-6 ring-1 ring-line sm:p-8">
-        <div aria-hidden className="pointer-events-none absolute -end-24 -top-24 h-72 w-72 rounded-full bg-accent/20 blur-3xl" />
         <div className="relative flex flex-wrap items-center gap-6">
-          <div className="grid h-24 w-24 shrink-0 place-items-center rounded-3xl bg-gradient-to-br from-accent to-cyan-500 text-white shadow-[0_14px_30px_-14px_var(--accent)]">
+          <div className="grid h-24 w-24 shrink-0 place-items-center rounded-3xl bg-accent text-accent-fg">
             <span className="num text-[38px] leading-none font-bold">{due.length}</span>
           </div>
           <div className="min-w-0 flex-[1_1_16rem]">

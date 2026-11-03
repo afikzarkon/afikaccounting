@@ -18,7 +18,7 @@ export function PracticeIntro({ module: m, onStart }: { module: StudyModule; onS
           <motion.span
             initial={{ rotate: -20, scale: 0.6 }}
             animate={{ rotate: 0, scale: 1 }}
-            className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-accent to-cyan-500 text-white shadow-[0_14px_30px_-14px_var(--accent)]"
+            className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-accent text-accent-fg"
           >
             <GraduationCap className="h-8 w-8" aria-hidden />
           </motion.span>

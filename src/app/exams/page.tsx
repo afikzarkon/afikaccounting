@@ -23,14 +23,13 @@ const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) 
 export default function ExamsPage({ searchParams }: PageProps<"/exams">) {
   return (
     <div className="relative">
-      <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-16 sm:pt-14">
         <div className="flex flex-wrap items-center gap-2">
           <Crown className="h-5 w-5 text-amber-500" aria-hidden />
           <TierBadge tier="exams" />
         </div>
         <h1 className="mt-3 text-[2.2rem] leading-tight font-bold tracking-tight text-fg sm:text-5xl">
-          {EXAMS_HUB.label} — <span className="text-gradient">מתרגלים כמו במבחן</span>
+          {EXAMS_HUB.label} — מתרגלים כמו במבחן
         </h1>
         <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted">
           {EXAMS_LEAD} פותרים לבד, ופותחים את הפתרון שלב אחר שלב — רק כשצריך.

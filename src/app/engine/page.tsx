@@ -17,7 +17,6 @@ export const metadata: Metadata = {
 export default function EnginePage({ searchParams }: PageProps<"/engine">) {
   return (
     <div className="relative">
-      <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-6 sm:pt-14">
         <p className="text-xs font-semibold text-accent">מנוע הפתרונות החשבונאי החכם</p>
         <h1 className="mt-2 text-[2.2rem] leading-tight font-bold tracking-tight text-fg sm:text-5xl">מתרחיש לפתרון מלא</h1>

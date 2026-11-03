@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 const VARIANTS = {
   primary:
-    "bg-accent text-accent-fg shadow-[0_8px_24px_-10px_var(--accent)] hover:brightness-110 active:brightness-95",
+    "bg-accent text-accent-fg hover:brightness-110 active:brightness-95",
   secondary: "bg-surface text-fg border border-line-strong hover:bg-surface-2",
   ghost: "text-muted hover:text-fg hover:bg-surface-2",
   outline: "border border-line-strong text-fg hover:border-accent hover:text-accent",
