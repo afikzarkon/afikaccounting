@@ -10,9 +10,12 @@ export const isGuarded = (pathname: string) => GUARDED.some((p) => pathname === 
 
 const editable = (t: EventTarget | null) => t instanceof HTMLElement && !!t.closest("input, textarea, select, [contenteditable='true']");
 
+/** On the local dev server the guard stays off: the page doesn't blur when focus moves to the editor or a devtool. */
+const DEV = process.env.NODE_ENV === "development";
+
 export function ContentGuardView({ code }: { code: string | null }) {
   const pathname = usePathname();
-  const on = isGuarded(pathname);
+  const on = !DEV && isGuarded(pathname);
 
   useEffect(() => {
     if (!on) return;
