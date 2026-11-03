@@ -6,7 +6,7 @@ import { TOPICS } from "../catalog";
 import { STUDY_MODULES } from ".";
 import { IAS19_LESSONS } from "./ias19";
 import { IAS19_GLOSSARY } from "./ias19/glossary";
-import { FORMULA, putIn, said, work } from "./ias19/formulas";
+import { FORMULA, putIn, said, TOOL, tool, work } from "./ias19/formulas";
 import { ltrFormulas } from "./ias19/ltr";
 import { MIND_MAP } from "./ias19/map";
 import { PRIMER, PRIMER_NEEDS, PRIMER_PERCENT_ANSWER, PRIMER_PV_ANSWER, PRIMER_ROLL_ANSWER } from "./ias19/primer";
@@ -137,7 +137,7 @@ describe("formulas read left to right: P.N.", () => {
 describe("every result is worked: the formula, then the numbers", () => {
   /** The lessons already written this way; each lesson joins as it is converted. */
   const WORKED: string[] = ["ias19-toolkit", "ias19-short", "ias19-dc", "ias19-measure", "ias19-attribute", "ias19-rollforward"];
-  const formulas = Object.values(FORMULA) as string[];
+  const formulas = [...Object.values(FORMULA), ...Object.values(TOOL)] as string[];
   const plain = (s: string) => s.replaceAll(/[‎⁦⁩]/g, "");
 
   it("a formula over its numbers stays two lines, each left to right", () => {
@@ -145,6 +145,18 @@ describe("every result is worked: the formula, then the numbers", () => {
     assert.deepEqual(plain(out).split("\n"), [FORMULA.pv, "15,600 ÷ 1.07^6 = 10,395 ₪"]);
     assert.ok(out.split("\n").every((l) => l.startsWith("⁦")));
     assert.equal(putIn(work.pv(15_600, 0.07, 6)), "15,600 ÷ 1.07^6");
+  });
+
+  it("lesson 2 works every result both ways: the main page's formula, and Excel", () => {
+    const w = tool.pv(8_000, 0.06, 4);
+    assert.equal(w.formula, "FV ÷ (1 + RATE)^YEAR = PV");
+    assert.equal(w.numbers, "8,000 ÷ (1.06)^4 = 6,337 ₪");
+    assert.deepEqual(w.excel, { formula: "=PV(rate;nper;pmt;fv)", numbers: "=PV(6%;4;0;-8000) → 6,337 ₪" });
+    assert.equal(tool.partRate(0.08, 3).numbers, "(1.08)^(3/12) − 1 = 1.9427%");
+    assert.equal(tool.partRate(0.08, 24).numbers, "(1.08)^2 − 1 = 16.64%");
+    assert.equal(tool.part(18_000, 0.05, 8).excel?.numbers, "=FV(5%;8/12;0;-18000)-18000 → 595 ₪");
+    const toolkit = IAS19_LESSONS.find((l) => l.slug === "ias19-toolkit")!;
+    for (const x of toolkit.exercises) if (x.kind === "number") assert.ok(x.steps.some((s) => s.includes("באקסל:")), `${x.id}: no Excel`);
   });
 
   it("every calculation's solution shows one of the course's formulas, and a line with the numbers in", () => {

@@ -232,13 +232,27 @@ function marked(n: ReactNode): ReactNode {
 
 /** A result worked out on a screen: the course's formula, and under it the same with the numbers in — each line read left to right. */
 export function Work({ w }: { w: Worked }) {
+  if (!w.excel) return <WorkLines formula={w.formula} numbers={w.numbers} />;
   return (
-    <span className="my-1 block space-y-0.5">
-      <span className="block text-[13.5px] text-muted">
-        <bdi dir="ltr">{marked(w.formula)}</bdi>
-      </span>
-      <span className="block font-semibold text-fg">
-        <bdi dir="ltr">{marked(w.numbers)}</bdi>
+    <span className="my-1.5 grid gap-2 sm:grid-cols-2">
+      <WorkLines label="בנוסחה" formula={w.formula} numbers={w.numbers} />
+      <WorkLines label="באקסל" formula={w.excel.formula} numbers={w.excel.numbers} mono />
+    </span>
+  );
+}
+
+/** One way of working a result: the general form, then the numbers in. With a label, a small card of its own. */
+function WorkLines({ label, formula, numbers, mono }: { label?: string; formula?: string; numbers: string; mono?: boolean }) {
+  return (
+    <span className={cn("block space-y-0.5", label ? "rounded-lg bg-surface-2/60 px-2.5 py-1.5 ring-1 ring-line" : "my-1")}>
+      {label && <span className="block text-[11.5px] font-bold text-muted">{label}</span>}
+      {formula && (
+        <span className={cn("block text-[13.5px] text-muted", mono && "font-mono text-[12.5px]")}>
+          <bdi dir="ltr">{mono ? formula : marked(formula)}</bdi>
+        </span>
+      )}
+      <span className={cn("block font-semibold text-fg", mono && "font-mono text-[13px]")}>
+        <bdi dir="ltr">{mono ? numbers : marked(numbers)}</bdi>
       </span>
     </span>
   );

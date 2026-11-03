@@ -21,6 +21,8 @@ export const FORMULA = {
   partPaid: "יתרה × i − תשלום × ((1 + i)^(m/12) − 1) = ריבית השנה",
   roll: "פתיחה + מה שנוסף − תשלומים + P.N. = סגירה",
   expense: "סגירה − פתיחה + תשלומים = הוצאה",
+  paymentsST: "פתיחה + הוצאה − סגירה = תשלומים",
+  growth: "יתרת פתיחה + ריבית = יתרת סגירה",
   pnInterest: "סגירה − פתיחה − ריבית + תשלומים = P.N.",
   n: "הוותק ביום התשלום − הוותק היום = n",
   splitYear: "ריבית על הפתיחה − ריבית על התשלום + ריבית אחרי התיקון = ריבית השנה",
@@ -74,7 +76,12 @@ export const FORMULA = {
 } as const;
 
 /** A result worked out: the formula, and the same formula with the numbers in and the result. */
-export type Worked = { formula: string; numbers: string };
+export type Worked = {
+  formula: string;
+  numbers: string;
+  /** The same result in Excel: the function as written, and with the numbers in and what Excel returns. Lesson 2 shows every result both ways. */
+  excel?: { formula?: string; numbers: string };
+};
 
 /** An amount as the course writes it in a working line, with ₪ on the result only: to the shekel, as the line that found it showed it. (A salary, a benefit per year or a day's cost goes through `cents`.) */
 const amt = (v: number) => minus(fmt(Math.round(v) || 0));
@@ -95,7 +102,8 @@ export const factor = (i: number) => (1 + i).toLocaleString("en-US", { maximumFr
 const sumLine = (parts: number[]) => `${parts.map((p) => amt(Math.round(p))).join(" + ")} = ${money(parts.reduce((s, p) => s + p, 0))}`;
 
 /** The worked lines, as one string: the formula, and under it the numbers. Exercise steps, quiz answers and traps take it as it is. */
-export const said = (w: Worked) => `${w.formula}\n${w.numbers}`;
+export const said = (w: Worked) =>
+  w.excel ? `בנוסחה:\n${w.formula}\n${w.numbers}\nבאקסל:\n${w.excel.formula ? `${w.excel.formula}\n` : ""}${w.excel.numbers}` : `${w.formula}\n${w.numbers}`;
 
 /** The numbers put in, without the result — a hint's "first line", before the solution shows the whole working. */
 export const putIn = (w: Worked) => w.numbers.slice(0, w.numbers.lastIndexOf(" = "));
@@ -217,4 +225,82 @@ export const work = {
     numbers: `${amt(service)} + ${amt(interest)} ${signed(pn)} − ${amt(payments)} = ${money(service + interest + pn - payments)}`,
   }),
   paidTotal: (fromFund: number, fromCompany: number): Worked => ({ formula: FORMULA.paidTotal, numbers: `${amt(fromFund)} + ${amt(fromCompany)} = ${money(fromFund + fromCompany)}` }),
+};
+
+// ---------------------------------------------------------------------------
+// Lesson 2, the toolkit: the tools as the course's main page writes them
+// (FV ÷ (1 + RATE)^YEAR = PV, YEAR a part of a year where it is one), and
+// each result both ways — by the formula, and in Excel.
+
+/** A rate as Excel takes it: "6%", "7.5%". */
+const xRate = (i: number) => `${Math.round(i * 1e6) / 1e4}%`;
+/** An amount as typed into Excel: no thousands separator. */
+const xNum = (v: number) => String(Math.round(v * 100) / 100);
+/** (1.06): the base of a power, in its brackets. */
+const base = (i: number) => `(${factor(i)})`;
+
+export const TOOL = {
+  pv: "FV ÷ (1 + RATE)^YEAR = PV",
+  pvExcel: "=PV(rate;nper;pmt;fv)",
+  partRate: "(1 + RATE)^YEAR − 1 = שיעור לתקופה",
+  partRateExcel: "=FV(rate;nper;0;-1)-1",
+  part: "יתרה × ((1 + RATE)^YEAR − 1) = ריבית",
+  partExcel: "=FV(rate;nper;0;-balance)-balance",
+  simple: "RATE × YEAR = שיעור פשוט",
+  simpleOn: "יתרה × RATE × YEAR = ריבית פשוטה",
+  partPaid: "יתרה × RATE − תשלום × ((1 + RATE)^YEAR − 1) = ריבית השנה",
+} as const;
+
+/** YEAR as the course writes it: whole years as they are, months over 12. */
+const year = (months: number) => (months % 12 === 0 ? String(months / 12) : `(${months}/12)`);
+const xYear = (months: number) => (months % 12 === 0 ? String(months / 12) : `${months}/12`);
+
+export const tool = {
+  pv: (fv: number, i: number, n: number): Worked => ({
+    formula: TOOL.pv,
+    numbers: `${amt(fv)} ÷ ${base(i)}^${num(n)} = ${money(pv(fv, i, n))}`,
+    excel: { formula: TOOL.pvExcel, numbers: `=PV(${xRate(i)};${num(n)};0;-${xNum(fv)}) → ${money(pv(fv, i, n))}` },
+  }),
+  /** The rate for `months` of a year whose rate is i — a quarter is 3, two years 24. */
+  partRate: (i: number, months: number, digits = 4): Worked => ({
+    formula: TOOL.partRate,
+    numbers: `${base(i)}^${year(months)} − 1 = ${pct(partRate(i, months), digits)}`,
+    excel: { formula: TOOL.partRateExcel, numbers: `=FV(${xRate(i)};${xYear(months)};0;-1)-1 → ${pct(partRate(i, months), digits)}` },
+  }),
+  part: (balance: number, i: number, months: number): Worked => ({
+    formula: TOOL.part,
+    numbers: `${amt(balance)} × (${base(i)}^${year(months)} − 1) = ${money(partInterest(balance, i, months))}`,
+    excel: { formula: TOOL.partExcel, numbers: `=FV(${xRate(i)};${xYear(months)};0;-${xNum(balance)})-${xNum(balance)} → ${money(partInterest(balance, i, months))}` },
+  }),
+  simple: (i: number, months: number): Worked => ({
+    formula: TOOL.simple,
+    numbers: `${pct(i)} × ${year(months)} = ${pct(simplePart(i, months))}`,
+    excel: { numbers: `=${xRate(i)}*${xYear(months)} → ${pct(simplePart(i, months))}` },
+  }),
+  simpleOn: (balance: number, i: number, months: number): Worked => ({
+    formula: TOOL.simpleOn,
+    numbers: `${amt(balance)} × ${pct(i)} × ${year(months)} = ${money(balance * simplePart(i, months))}`,
+    excel: { numbers: `=${xNum(balance)}*${xRate(i)}*${xYear(months)} → ${money(balance * simplePart(i, months))}` },
+  }),
+  partPaid: (balance: number, i: number, paid: number, monthsLeft: number): Worked => {
+    const r = balance * i - partInterest(paid, i, monthsLeft);
+    return {
+      formula: TOOL.partPaid,
+      numbers: `${amt(balance)} × ${pct(i)} − ${amt(paid)} × (${base(i)}^${year(monthsLeft)} − 1) = ${money(r)}`,
+      excel: { numbers: `=${xNum(balance)}*${xRate(i)}-(FV(${xRate(i)};${xYear(monthsLeft)};0;-${xNum(paid)})-${xNum(paid)}) → ${money(r)}` },
+    };
+  },
+  expense: (opening: number, payments: number, closing: number): Worked => ({
+    ...work.expense(opening, payments, closing),
+    excel: { numbers: `=${xNum(closing)}-${xNum(opening)}+${xNum(payments)} → ${money(shortTermExpense(opening, payments, closing))}` },
+  }),
+  pnInterest: (r: { opening: number; interest: number; payments: number; closing: number }): Worked => ({
+    ...work.pnInterest(r),
+    excel: { numbers: `=${xNum(r.closing)}-${xNum(r.opening)}-${xNum(r.interest)}+${xNum(r.payments)} → ${money(rollForward(r, "pn").pn)}` },
+  }),
+  splitYear: (onOpening: number, onPayment: number, after: number): Worked => ({
+    ...work.splitYear(onOpening, onPayment, after),
+    excel: { numbers: `=${xNum(Math.round(onOpening))}-${xNum(Math.round(onPayment))}+${xNum(Math.round(after))} → ${money(onOpening - onPayment + after)}` },
+  }),
+  n: (atPayment: number, now: number): Worked => ({ ...work.n(atPayment, now), excel: { numbers: `=${atPayment}-${now} → ${atPayment - now}` } }),
 };
