@@ -1,5 +1,4 @@
 import "server-only";
-import { io } from "next/cache";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -21,8 +20,6 @@ export type Profile = {
 export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   if (!isSupabaseConfigured) return null;
   const supabase = await createClient();
-  // Verifying the JWT compares its expiry with the clock, so the read is per request: io() keeps it out of the prerender.
-  await io();
   const { data, error } = await supabase.auth.getClaims();
   if (error || !data?.claims?.sub) return null;
   return { id: data.claims.sub, email: String(data.claims.email ?? "") };
