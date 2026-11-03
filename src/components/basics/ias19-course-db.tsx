@@ -7,10 +7,8 @@ import {
   BACK,
   BACK_A,
   BACK_ACCRUED,
-  BACK_OBLIGATION,
   BACK_PATH,
   BACK_WRONG,
-  BACK_WRONG_OBLIGATION,
   CAPPED,
   CAPPED_PATH,
   FRONT,
@@ -18,7 +16,6 @@ import {
   FRONT_OBLIGATION,
   FRONT_PATH,
   FRONT_WRONG,
-  FRONT_WRONG_OBLIGATION,
   GYM_PATH,
   LATE,
   LATE_ROWS,
@@ -367,6 +364,14 @@ ${said(work.n(14, 4))}` },
           החריג: כשהשנים המאוחרות נותנות הטבה גבוהה מהותית, מחלקים את הכול <T19 he="בקו ישר" par="73" />.
         </P>
         <P>בלי החריג, השנים הראשונות היו מקבלות כמעט כלום, אף שהן חלק מהדרך.</P>
+        <Remember>
+          <span className="block">
+            לפי נוסחת התוכנית: <L>{FORMULA.tiers}</L>.
+          </span>
+          <span className="block">
+            בקו ישר: <L>{FORMULA.straight}</L>, ואז <L>{FORMULA.accrued}</L>.
+          </span>
+        </Remember>
         <YearBars
           label={`מענק שקופץ: ${BACK.early.perYear} לשנה ב-${BACK.early.upTo} השנים הראשונות ו-${BACK.later} אחריהן. לפי הנוסחה השנים הראשונות מקבלות מעט; בקו ישר כל שנה מקבלת אותו חלק`}
           title="מענק שקופץ בשנים המאוחרות"
@@ -397,6 +402,7 @@ ${said(work.n(14, 4))}` },
           cap={CAPPED.cap}
           note="ארבע שנים מגיעים לתקרה. מכאן העמודות לא עולות: החלון קצר יותר, והסכום לשנה לא קטן."
         />
+        <Work w={work.capWindow(CAPPED.cap, CAPPED.perYear)} />
         <P>
           <strong>זכאות שמתחילה מגיל או מוותק:</strong> השנים שלפני כן לא נספרות.
         </P>
@@ -417,12 +423,20 @@ ${said(work.n(14, 4))}` },
           ]}
           marks={[{ at: 31, label: "היום", tone: "accent" }]}
         />
-        <Remember>ובכל מקרה, ההיוון (④) הוא על השנים עד התשלום, לא על חלון הצבירה.</Remember>
+        <Work w={work.counted(31, 35)} />
+        <P>
+          ואורך החלון, כשהזכאות מתחילה מגיל מסוים: <L>{FORMULA.window}</L>.
+        </P>
+        <Remember>
+          ובכל מקרה, ההיוון (④) הוא על השנים עד התשלום, לא על חלון הצבירה: <L>{FORMULA.nAge}</L>.
+        </Remember>
       </>
     ),
     check: quiz("emp-attr-cap", [
-      { q: "הטבה של 2,500 ₪ לכל שנה, עד תקרה של 10,000. אחרי 2 שנים, כמה נצבר?", options: ["5,000, והחלון 4 שנים", "10,000", "2,500", "5,000, והחלון כל שנות העבודה"], answer: 0, why: "החלון נגמר ב-4 שנים; עד אז 2,500 לשנה." },
-      { q: "העובדת התחילה בגיל 26, והזכאות מגיל 35. היום היא בת 31. כמה שנים נספרות?", options: ["0", "5", "9", "4"], answer: 0, why: "עד גיל 35 העבודה לא מקנה זכאות." },
+      { q: "הטבה של 2,500 ₪ לכל שנה, עד תקרה של 10,000. אחרי 2 שנים, כמה נצבר?", options: ["5,000, והחלון 4 שנים", "10,000", "2,500", "5,000, והחלון כל שנות העבודה"], answer: 0, why: `${said(work.capWindow(10_000, 2_500))}
+${said(work.accrued(2_500, 2))}` },
+      { q: "העובדת התחילה בגיל 26, והזכאות מגיל 35. היום היא בת 31. כמה שנים נספרות?", options: ["0", "5", "9", "4"], answer: 0, why: `עד גיל 35 העבודה לא מקנה זכאות.
+${said(work.counted(31, 35))}` },
     ]),
   },
   "emp-attr-rule": {
@@ -437,12 +451,12 @@ ${said(work.n(14, 4))}` },
           ]}
         />
         <Rule>
-          אחרי שלוש השאלות חוזרים לנוסחה: <span dir="ltr">① × ② × ③ ÷ (1+i)ⁿ</span>.
+          אחרי שלוש השאלות חוזרים לנוסחה: <L>{FORMULA.measure}</L>.
         </Rule>
       </>
     ),
     check: quiz("emp-attr-rule", [
-      { q: "ההטבה משולמת בגיל 66, וצוברים אותה על 12 שנים מגיל 42. בגיל 48, מה n?", options: ["18", "6", "12", "24"], answer: 0, why: "מגיל 48 עד התשלום בגיל 66." },
+      { q: "ההטבה משולמת בגיל 66, וצוברים אותה על 12 שנים מגיל 42. בגיל 48, מה n?", options: ["18", "6", "12", "24"], answer: 0, why: said(work.nAge(66, 48)) },
     ]),
   },
   "emp-attr-solved": {
@@ -479,7 +493,14 @@ ${said(work.n(14, 4))}` },
           bottom={BOTTOM}
           working={[
             <>
-              קו ישר (אסור כאן) היה נותן <L><Money v={FRONT.cap} plain /> ÷ {FRONT.expected} × {FRONT.served} = <Money v={FRONT_WRONG} plain /></L>, ומהוון <M v={FRONT_WRONG_OBLIGATION} />: נמוך מדי.
+              מה שנצבר, לפי הנוסחה:
+              <Work w={work.tiers([{ years: FRONT.early.upTo, perYear: FRONT.early.perYear }, { years: FRONT.served - FRONT.early.upTo, perYear: FRONT.later }])} />
+            </>,
+            <>
+              קו ישר (אסור כאן) היה נותן פחות:
+              <Work w={work.straight(FRONT.cap, FRONT.expected)} />
+              <Work w={work.accrued(FRONT.cap / FRONT.expected, FRONT.served)} />
+              <Work w={work.accPv(FRONT_WRONG, FRONT.rate, FRONT.n)} />
             </>,
           ]}
           result={<M v={FRONT_OBLIGATION} />}
@@ -509,13 +530,23 @@ ${said(work.n(14, 4))}` },
             }
             hints={[
               "השנים המאוחרות נותנות יותר או פחות?",
-              "שאלה (א): הרבה יותר. קו ישר על כל שנות הצבירה.",
               <>
-                הטבה כוללת: <L>{BACK.early.upTo} × <Money v={BACK.early.perYear} plain /> + {BACK.expected - BACK.early.upTo} × <Money v={BACK.later} plain /> = <Money v={BACK_A.total} plain /></L>;{" "}
-                <L><Money v={BACK_A.total} plain /> ÷ {BACK.expected} = <M v={BACK_A.perYear!} /></L> לשנה.
+                שאלה (א): הרבה יותר. קו ישר על כל שנות הצבירה:
+                <span className="block">
+                  <L>{FORMULA.straight}</L>
+                </span>
               </>,
               <>
-                <L><M v={BACK_A.perYear!} /> × {BACK.served} = <M v={BACK_ACCRUED} /></L>; <L><M v={BACK_ACCRUED} /> ÷ {1 + BACK.rate}^{BACK.n} = <strong><M v={BACK_OBLIGATION} /></strong></L>. הנוסחה (אסורה כאן) הייתה נותנת <Money v={BACK_WRONG} plain /> ו-<M v={BACK_WRONG_OBLIGATION} />.
+                ההטבה הכוללת:
+                <Work w={work.tiers([{ years: BACK.early.upTo, perYear: BACK.early.perYear }, { years: BACK.expected - BACK.early.upTo, perYear: BACK.later }])} />
+                <Work w={work.straight(BACK_A.total, BACK.expected)} />
+              </>,
+              <>
+                <Work w={work.accrued(BACK_A.perYear!, BACK.served)} />
+                <Work w={work.accPv(BACK_ACCRUED, BACK.rate, BACK.n)} />
+                הנוסחה (אסורה כאן) הייתה נותנת:
+                <Work w={work.tiers([{ years: BACK.early.upTo, perYear: BACK.early.perYear }, { years: BACK.served - BACK.early.upTo, perYear: BACK.later }])} />
+                <Work w={work.accPv(BACK_WRONG, BACK.rate, BACK.n)} />
               </>,
             ]}
           />
@@ -541,16 +572,38 @@ ${said(work.n(14, 4))}` },
             task="שלושה עובדים. מה החוב לכל אחד, ובסך הכול?"
             hints={[
               "לכל עובד: מאיזה גיל הוא צובר, ועל כמה שנים נפרש המענק?",
-              `שאלה (ג): הצבירה מהמאוחר מבין גיל ההתחלה לגיל ${LATE.countsFrom}, ועד הפרישה.`,
               <>
-                עובד א׳: צובר מגיל {LATE_ROWS[0].from}, על {LATE_ROWS[0].window} שנים: <Money v={LATE_ROWS[0].perYear} /> לשנה.
+                שאלה (ג): הצבירה מהמאוחר מבין גיל ההתחלה לגיל {LATE.countsFrom}, ועד הפרישה:
+                <span className="block">
+                  <L>{FORMULA.window}</L>
+                </span>
               </>,
-              <DataTable
+              <>
+                עובד א׳ צובר מגיל {LATE_ROWS[0].from}:
+                <Work w={work.window(LATE.retire, LATE_ROWS[0].from)} />
+                <Work w={work.straight(LATE.grant, LATE_ROWS[0].window)} />
+              </>,
+              <div key="t" className="space-y-2">
+                {LATE.people.map((p, k) => (
+                  <div key={p.id}>
+                    <p className="font-semibold">
+                      עובד {p.id}, צובר מגיל {LATE_ROWS[k].from}:
+                    </p>
+                    <Work w={work.window(LATE.retire, LATE_ROWS[k].from)} />
+                    <Work w={work.straight(LATE.grant, LATE_ROWS[k].window)} />
+                    <Work w={work.counted(p.age, LATE_ROWS[k].from)} />
+                    <Work w={work.nAge(LATE.retire, p.age)} />
+                    <Work w={work.measure({ perYear: LATE_ROWS[k].perYear, years: LATE_ROWS[k].served, heads: p.stay, n: LATE_ROWS[k].n, i: LATE.rate })} />
+                  </div>
+                ))}
+                <Work w={work.peopleTotal(LATE_ROWS.map((r) => r.obligation))} />
+                <DataTable
                 key="t"
                 head={["עובד", "צובר מגיל", "לשנה", "נספרו", "n", "סיכוי", "חוב"]}
                 rows={LATE.people.map((p, k) => [p.id, LATE_ROWS[k].from, LATE_ROWS[k].perYear, LATE_ROWS[k].served, LATE_ROWS[k].n, pct(p.stay), Math.round(LATE_ROWS[k].obligation)])}
                 foot={["סה״כ", "", "", "", "", "", Math.round(LATE_TOTAL)]}
-              />,
+              />
+              </div>,
             ]}
           />
         </Part>
@@ -591,10 +644,12 @@ ${said(work.n(14, 4))}` },
       </>
     ),
     check: quiz("emp-attr-master", [
-      { q: "הטבה של 1,500 ₪ לשנה, עד תקרה של 6,000. אחרי 3 שנים: כמה נצבר, ומה החלון?", options: ["4,500; ארבע שנים", "6,000; שלוש שנים", "4,500; כל שנות העבודה", "1,500; שנה אחת"], answer: 0, why: "מגיעים לתקרה בשנה הרביעית." },
+      { q: "הטבה של 1,500 ₪ לשנה, עד תקרה של 6,000. אחרי 3 שנים: כמה נצבר, ומה החלון?", options: ["4,500; ארבע שנים", "6,000; שלוש שנים", "4,500; כל שנות העבודה", "1,500; שנה אחת"], answer: 0, why: `${said(work.capWindow(6_000, 1_500))}
+${said(work.accrued(1_500, 3))}` },
       { q: "הטבה של 1,000 ₪ ל-5 השנים הראשונות, 5,000 ₪ לכל שנה אחריהן. איזו שיטה?", options: ["קו ישר", "נוסחת התוכנית"], answer: 0, why: "סעיף 73." },
-      { q: "התחיל בגיל 28, זכאות מגיל 35, היום בן 33. כמה שנים נספרות?", options: ["0", "5", "7", "2"], answer: 0, why: "הזכאות עוד לא התחילה." },
-      { q: "משולם בגיל 67, נצבר על 12 שנים מגיל 50. בגיל 55, מה n?", options: ["12", "5", "7", "17"], answer: 0, why: "מגיל 55 עד 67." },
+      { q: "התחיל בגיל 28, זכאות מגיל 35, היום בן 33. כמה שנים נספרות?", options: ["0", "5", "7", "2"], answer: 0, why: `הזכאות עוד לא התחילה.
+${said(work.counted(33, 35))}` },
+      { q: "משולם בגיל 67, נצבר על 12 שנים מגיל 50. בגיל 55, מה n?", options: ["12", "5", "7", "17"], answer: 0, why: said(work.nAge(67, 55)) },
     ]),
   },
 

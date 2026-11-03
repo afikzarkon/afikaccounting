@@ -1,6 +1,7 @@
 import { accrualPath, accrued, attribution, pv, tiered } from "@/lib/learn/ias19";
 import { examA } from "@/lib/learn/ias19-exams";
 import type { StudyModule, Trap } from "../../types";
+import { FORMULA, said, work } from "../formulas";
 import { calc, choice, COURSE, COURSE_HREF, fmt, pct } from "../shared";
 
 /** The worked example: a grant that pays more for early years, with a cap — the plan's formula. */
@@ -83,7 +84,8 @@ const traps: Trap[] = [
     prompt: "מענק של 2,000 ₪ לשנה, עד תקרה של 10,000 ₪. העובד צפוי לעבוד 8 שנים. מה נכון?",
     options: ["ההטבה 10,000, והצבירה נפרסת על 5 שנים", "ההטבה 10,000, והצבירה 1,250 לשנה על 8 שנים", "ההטבה 16,000", "ההטבה 10,000, והצבירה מתחילה בשנה הרביעית"],
     answer: 0,
-    why: "התקרה מקצרת את חלון הצבירה: אחרי 5 שנים כבר הגיעו ל-10,000, והשנים שאחריהן לא מוסיפות דבר.",
+    why: `התקרה מקצרת את חלון הצבירה, והשנים שאחריו לא מוסיפות דבר.
+${said(work.capWindow(10_000, 2_000))}`,
     traps: ["", "המלכודת: לכווץ את הסכום לשנה. השנים שאחרי התקרה לא מקנות כלום.", "התקרה חותכת את ההטבה.", "הצבירה מהשנה הראשונה, עד התקרה."],
   },
   {
@@ -91,7 +93,8 @@ const traps: Trap[] = [
     prompt: "השירות מקנה זכאות רק מגיל 40. עובד התחיל לעבוד בגיל 36, והיום הוא בן 43. כמה שנות שירות נספרות?",
     options: ["3", "7", "4", "0"],
     answer: 0,
-    why: "סופרים רק מהרגע שהשירות מקנה זכאות: מגיל 40 עד 43.",
+    why: `סופרים רק מהרגע שהשירות מקנה זכאות.
+${said(work.counted(43, 40))}`,
     traps: ["", "המלכודת: לספור את כל שנות העבודה. ארבע השנים הראשונות לא מקנות כלום.", "אלה השנים שלא נספרות.", "הוא כבר עבר את גיל 40."],
   },
   {
@@ -99,7 +102,8 @@ const traps: Trap[] = [
     prompt: "מענק של 60,000 ₪ למי שעובד 10 שנים לפחות; נספר על 10 שנים, אבל ישולם בגיל 65 — בעוד 24 שנים מסוף השנה הראשונה. מה נכון?",
     options: ["6,000 לשנה, מהוון 24 שנים", "6,000 לשנה, מהוון 10 שנים", "60,000 מהוון 24 שנים", "2,400 לשנה (60,000 ÷ 25)"],
     answer: 0,
-    why: "מחלקים בחלון הצבירה (10), ומהוונים לפי השנים עד התשלום (24).",
+    why: `מחלקים בחלון הצבירה (10), ומהוונים לפי השנים עד התשלום (24).
+${said(work.straight(60_000, 10))}`,
     traps: ["", "המלכודת: להוון על חלון הצבירה. ההיוון תמיד עד התשלום.", "בשנה הראשונה נצבר רק עשירית.", "החלון הוא 10 שנים — לא כל הדרך לפרישה."],
   },
   {
@@ -107,7 +111,7 @@ const traps: Trap[] = [
     prompt: "קבוצה של 6 עובדים צוברת 3,500 ₪ לשנה לכל אחד, וכל אחד עבד 4 שנים. מה הסכום הצבור של הקבוצה, לפני היוון?",
     options: ["84,000", "14,000", "21,000", "3,500"],
     answer: 0,
-    why: "3,500 × 4 שנים × 6 עובדים.",
+    why: said(work.accruedGroup(3_500, 4, 6)),
     traps: ["", "המלכודת: לשכוח את מספר העובדים.", "שכחתם את שנות השירות.", "זו שנה אחת של עובד אחד."],
   },
 ];
@@ -138,12 +142,19 @@ export const ATTRIBUTE: StudyModule = {
   ],
   exercises: [
     calc("oneoff-2021", "מענק חד־פעמי: שנה ראשונה", `עובד מקבל מענק של ${fmt(ONEOFF.grant)} ₪ אם יעבוד ${ONEOFF.minYears} שנים לפחות ויפרוש בגיל ${ONEOFF.retire}. הוא התחיל ב-1.1.${ONEOFF.from} בגיל ${ONEOFF.startAge}. שיעור ההיוון ב-31.12.${ONEOFF.from}: ${pct(ONEOFF.rates[2021])}. מה ההתחייבות ב-31.12.${ONEOFF.from}?`, oneoffAt(2021).obligation, [
-      `צבירה על ${ONEOFF.minYears} שנים: ${fmt(ONEOFF_PER_YEAR)} ₪ לשנה; נצברה שנה אחת.`,
-      `התשלום בגיל ${ONEOFF.retire}: עוד ${oneoffAt(2021).n} שנים. ${fmt(ONEOFF_PER_YEAR)} ÷ ${1 + ONEOFF.rates[2021]}^${oneoffAt(2021).n} = ${fmt(Math.round(oneoffAt(2021).obligation))} ₪.`,
+      `צוברים על ${ONEOFF.minYears} שנים:
+${said(work.straight(ONEOFF.grant, ONEOFF.minYears))}`,
+      `בסוף ${ONEOFF.from} העובד בן ${ONEOFF.startAge + 1}, והתשלום בגיל ${ONEOFF.retire}:
+${said(work.nAge(ONEOFF.retire, ONEOFF.startAge + 1))}`,
+      `נצברה שנה אחת:
+${said(work.measure({ perYear: ONEOFF_PER_YEAR, years: 1, heads: 1, n: oneoffAt(2021).n, i: ONEOFF.rates[2021] }))}`,
     ]),
     calc("oneoff-2022", "מענק חד־פעמי: שנה שנייה", `מענק של ${fmt(ONEOFF.grant)} ₪ למי שעובד ${ONEOFF.minYears} שנים לפחות ופורש בגיל ${ONEOFF.retire}; העובד התחיל ב-1.1.${ONEOFF.from} בגיל ${ONEOFF.startAge}. שיעור ההיוון ב-31.12.${ONEOFF.from + 1}: ${pct(ONEOFF.rates[2022])}. מה ההתחייבות ב-31.12.${ONEOFF.from + 1}?`, oneoffAt(2022).obligation, [
-      `שתי שנים × ${fmt(ONEOFF_PER_YEAR)} = ${fmt(ONEOFF_PER_YEAR * 2)} ₪; n = ${oneoffAt(2022).n}.`,
-      `${fmt(ONEOFF_PER_YEAR * 2)} ÷ ${1 + ONEOFF.rates[2022]}^${oneoffAt(2022).n} = ${fmt(Math.round(oneoffAt(2022).obligation))} ₪. מחלקים ב-${ONEOFF.minYears}, אבל מהוונים על ${oneoffAt(2022).n}.`,
+      said(work.straight(ONEOFF.grant, ONEOFF.minYears)),
+      said(work.nAge(ONEOFF.retire, ONEOFF.startAge + 2)),
+      `נצברו שתי שנים:
+${said(work.measure({ perYear: ONEOFF_PER_YEAR, years: 2, heads: 1, n: oneoffAt(2022).n, i: ONEOFF.rates[2022] }))}`,
+      `מחלקים ב-${ONEOFF.minYears}, אבל מהוונים על ${oneoffAt(2022).n}.`,
     ]),
     ...ASM.groups.map((g, k) =>
       calc(
@@ -152,21 +163,23 @@ export const ATTRIBUTE: StudyModule = {
         `מחלקת הרכבה: מענק פרישה עם תקרה, שמשויך בקו ישר. לקבוצת העובדים שהתחילו ב-${g.id} (${g.heads} עובדים) נצברים ${fmt(g.grants[0].perYear)} ₪ לשנה לעובד, על ${g.grants[0].window} שנים לכל היותר. ב-1.1.2022 עבדו ${g.served} שנים, והתשלום בעוד ${g.nEnd + 1} שנים; שיעור ההיוון 6%. מה יתרת הפתיחה של הקבוצה?`,
         ASM.year1.rows[k].opening,
         [
-          `נצבר לעובד: ${fmt(g.grants[0].perYear)} × ${Math.min(g.served, g.grants[0].window)} = ${fmt(g.grants[0].perYear * Math.min(g.served, g.grants[0].window))} ₪.`,
-          `× ${g.heads} עובדים ÷ 1.06^${g.nEnd + 1} = ${fmt(Math.round(ASM.year1.rows[k].opening))} ₪.`,
+          `שנים שנספרו: ${Math.min(g.served, g.grants[0].window)} (עבדו ${g.served}, והחלון ${g.grants[0].window}).`,
+          said(work.measure({ perYear: g.grants[0].perYear, years: Math.min(g.served, g.grants[0].window), heads: g.heads, n: g.nEnd + 1, i: 0.06 })),
         ],
       ),
     ).filter((x) => x.kind === "number" && x.answer > 0),
     calc("asm-closing", "מחלקת הרכבה: סגירה", "מחלקת הרכבה, 31.12.2022: כל קבוצה צברה עוד שנה, והתשלום קרוב בשנה. בשיעור 6% — מה יתרת הסגירה של המחלקה (ארבע הקבוצות יחד)?", ASM.year1.closing, [
-      ...ASM.groups.map((g, k) => `קבוצת ${g.id}: ${g.heads} × ${fmt(g.grants[0].perYear)} × ${Math.min(g.served + 1, g.grants[0].window)} ÷ 1.06^${g.nEnd} = ${fmt(Math.round(ASM.year1.rows[k].closing))}.`),
-      `סה״כ ${fmt(Math.round(ASM.year1.closing))} ₪.`,
+      `כל קבוצה לפי ${FORMULA.measure}:`,
+      ...ASM.groups.map((g) => `קבוצת ${g.id}:
+${work.measure({ perYear: g.grants[0].perYear, years: Math.min(g.served + 1, g.grants[0].window), heads: g.heads, n: g.nEnd, i: 0.06 }).numbers}`),
+      said(work.groupsTotal(ASM.year1.rows.map((r) => r.closing))),
     ]),
     choice("pick-method", "שיטת השיוך", "מענק: 1,000 ₪ לכל אחת מ-5 השנים הראשונות, ו-5,000 ₪ לכל שנה אחריהן. איך משייכים?", ["בקו ישר", "לפי נוסחת התוכנית", "רק בשנים 6 ואילך", "לפי השנה האחרונה"], 0, "השנים המאוחרות גבוהות מהותית — קו ישר (סעיף 73)."),
   ],
   traps,
   tips: [
     "קודם מחלקים את ההטבה בין השנים: נוסחה, קו ישר, תקרה או תחילת זכאות. רק אחר כך מהוונים, לפי השנים עד התשלום.",
-    "שלוש שאלות: (א) השנים המאוחרות גבוהות מהותית? קו ישר; אחרת נוסחת התוכנית. (ב) יש תקרה? חותכים בתקרה ומקצרים את החלון. (ג) ממתי השירות מקנה זכאות? סופרים רק משם.",
+    `שלוש שאלות: (א) השנים המאוחרות גבוהות מהותית? קו ישר: ${FORMULA.straight}; אחרת נוסחת התוכנית. (ב) יש תקרה? ${FORMULA.capWindow}. (ג) ממתי השירות מקנה זכאות? ${FORMULA.counted}.`,
     "ברירת המחדל — נוסחת התוכנית (סעיף 71); החריג — קו ישר כשהשנים המאוחרות מניבות הטבה גבוהה מהותית (סעיף 73).",
     "מחלקים בחלון הצבירה, מהוונים על השנים עד התשלום.",
   ],

@@ -47,6 +47,18 @@ export const FORMULA = {
   heads: "עובדים × הסיכוי לקבל = עובדים צפויים",
   raised: "שכר בהתחלה × (1 + העלאה ראשונה) × (1 + העלאה)^שנים = שכר בפרישה",
   total: "הטבה לשנה × שנות עבודה = ההטבה בפרישה",
+  // Lesson 6: attribution.
+  straight: "ההטבה הכוללת ÷ שנות הצבירה = הטבה לשנה",
+  accrued: "הטבה לשנה × שנות עבודה שנספרו = מה שנצבר",
+  accruedGroup: "הטבה לשנה × שנות עבודה × עובדים = מה שנצבר",
+  tiers: "שנים במדרגה הראשונה × הסכום שלה + שנים במדרגה השנייה × הסכום שלה = ההטבה",
+  capWindow: "תקרה ÷ הטבה לשנה = חלון הצבירה",
+  counted: "הגיל היום − הגיל שממנו נספר = שנות עבודה שנספרו",
+  window: "גיל הפרישה − הגיל שממנו נספר = חלון הצבירה",
+  nAge: "גיל התשלום − הגיל היום = n",
+  accPv: "מה שנצבר ÷ (1 + i)^n = התחייבות",
+  groupsTotal: "סכום היתרות של הקבוצות = יתרת המחלקה",
+  peopleTotal: "סכום החובות לכל עובד = החוב הכולל",
 } as const;
 
 /** A result worked out: the formula, and the same formula with the numbers in and the result. */
@@ -62,6 +74,9 @@ const num = (v: number) => fmt(Math.round(v * 100) / 100);
 const cents = (v: number) => fmt(Math.round(v * 100) / 100);
 /** 1 + i, never 1.0700000000000001. */
 export const factor = (i: number) => (1 + i).toLocaleString("en-US", { maximumFractionDigits: 6 });
+
+/** Parts added up, each as an earlier line showed it. */
+const sumLine = (parts: number[]) => `${parts.map((p) => amt(Math.round(p))).join(" + ")} = ${money(parts.reduce((s, p) => s + p, 0))}`;
 
 /** The worked lines, as one string: the formula, and under it the numbers. Exercise steps, quiz answers and traps take it as it is. */
 export const said = (w: Worked) => `${w.formula}\n${w.numbers}`;
@@ -143,4 +158,19 @@ export const work = {
     numbers: `${cents(salary)} × ${factor(first)} × ${factor(g)}^${years} = ${money(raised(salary, [first, ...Array(years).fill(g)]), true)}`,
   }),
   total: (perYear: number, years: number): Worked => ({ formula: FORMULA.total, numbers: `${cents(perYear)} × ${years} = ${money(perYear * years)}` }),
+  straight: (total: number, years: number): Worked => ({ formula: FORMULA.straight, numbers: `${amt(total)} ÷ ${num(years)} = ${money(total / years, true)}` }),
+  accrued: (perYear: number, years: number): Worked => ({ formula: FORMULA.accrued, numbers: `${cents(perYear)} × ${num(years)} = ${money(perYear * years)}` }),
+  accruedGroup: (perYear: number, years: number, heads: number): Worked => ({ formula: FORMULA.accruedGroup, numbers: `${cents(perYear)} × ${num(years)} × ${num(heads)} = ${money(perYear * years * heads)}` }),
+  tiers: (t: { years: number; perYear: number }[]): Worked => ({
+    formula: FORMULA.tiers,
+    numbers: `${t.map((x) => `${num(x.years)} × ${amt(x.perYear)}`).join(" + ")} = ${money(t.reduce((s, x) => s + x.years * x.perYear, 0))}`,
+  }),
+  capWindow: (cap: number, perYear: number): Worked => ({ formula: FORMULA.capWindow, numbers: `${amt(cap)} ÷ ${amt(perYear)} = ${num(cap / perYear)}` }),
+  /** Years counted: none yet when today is before service starts to count. */
+  counted: (age: number, from: number): Worked => ({ formula: FORMULA.counted, numbers: age >= from ? `${age} − ${from} = ${age - from}` : `${age} − ${from} = −${from - age}, כלומר 0` }),
+  window: (retire: number, from: number): Worked => ({ formula: FORMULA.window, numbers: `${retire} − ${from} = ${retire - from}` }),
+  nAge: (payAge: number, age: number): Worked => ({ formula: FORMULA.nAge, numbers: `${payAge} − ${age} = ${payAge - age}` }),
+  accPv: (acc: number, i: number, n: number): Worked => ({ formula: FORMULA.accPv, numbers: `${amt(acc)} ÷ ${factor(i)}^${num(n)} = ${money(pv(acc, i, n))}` }),
+  groupsTotal: (parts: number[]): Worked => ({ formula: FORMULA.groupsTotal, numbers: sumLine(parts) }),
+  peopleTotal: (parts: number[]): Worked => ({ formula: FORMULA.peopleTotal, numbers: sumLine(parts) }),
 };
