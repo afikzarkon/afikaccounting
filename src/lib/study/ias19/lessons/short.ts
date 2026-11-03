@@ -1,5 +1,6 @@
 import { absenceProvision, dayCost, lifo, shortTermExpense } from "@/lib/learn/ias19";
 import type { StudyModule, Trap } from "../../types";
+import { FORMULA, said, work } from "../formulas";
 import { calc, choice, COURSE, COURSE_HREF, fmt, journal, pct } from "../shared";
 
 /** The worked example: sick days that carry forward a year, and do not vest. Used under LIFO. */
@@ -62,7 +63,7 @@ const traps: Trap[] = [
     prompt: "לעובדים 300 ימי מחלה צבורים (לא מבשילים), אבל לפי הניסיון ינוצלו רק 120 מהם. על כמה ימים ההפרשה?",
     options: ["120 ימים", "300 ימים", "0 — מחלה לא נצברת", "180 ימים"],
     answer: 0,
-    why: "בהיעדרות שאינה מבשילה מפרישים רק על מה שצפוי להיות מנוצל (סעיף 16).",
+    why: `בהיעדרות שאינה מבשילה מפרישים רק על מה שצפוי להיות מנוצל (סעיף 16), ובלי ימי העוזבים:\n${FORMULA.absence}`,
     traps: ["", "המלכודת: להפריש על כל הצבירה. ימים שיפקעו לא יעלו לחברה כלום.", "כאן הימים כן עוברים לשנה הבאה — הם נצברים.", "זה מה שלא ינוצל — בדיוק החלק שלא מפרישים עליו."],
   },
   {
@@ -70,7 +71,7 @@ const traps: Trap[] = [
     prompt: "לעובד 12 ימי חופשה בשנה ויום אחד צבור מהשנה הקודמת (פוקע בסוף השנה). הוא ניצל השנה 10 ימים. כמה ימים עוברים לשנה הבאה?",
     options: ["2 ימים מהשנה הנוכחית", "3 ימים", "1 יום מהשנה הקודמת ו-2 מהנוכחית", "0"],
     answer: 0,
-    why: "LIFO: מנצלים קודם את הזכאות של השנה. 10 ימים יצאו מ-12; נשארו 2, והיום הישן פקע.",
+    why: `LIFO: מנצלים קודם את הזכאות של השנה, והיום הישן פקע.\n${said(work.lifo(12, 10))}`,
     traps: ["", "המלכודת: לשכוח ש-LIFO מנצל את הישן אחרון — והוא פוקע.", "היום הישן לא נוצל ופקע בסוף השנה.", "נשארו שני ימים מהזכאות של השנה."],
   },
   {
@@ -94,7 +95,7 @@ const traps: Trap[] = [
     prompt: `בונוס של ${fmt(MGR_BONUS.amount)} ₪ למנהלים; עליו חל רק ביטוח לאומי של ${pct(MGR_BONUS.insurance)} (בלי הפרשות נוספות). מה עלות הבונוס?`,
     options: [`${fmt(MGR_BONUS_COST)} ₪`, `${fmt(MGR_BONUS.amount * 1.22)} ₪`, `${fmt(MGR_BONUS.amount)} ₪`, `${fmt(MGR_BONUS.amount * 1.07 * 1.22)} ₪`],
     answer: 0,
-    why: "מוסיפים רק את מה שחל על הבונוס בפועל.",
+    why: `מוסיפים רק את מה שחל על הבונוס בפועל.\n${said(work.bonusCost(MGR_BONUS.amount, MGR_BONUS.insurance))}`,
     traps: ["", "המלכודת: להוסיף את כל התוספות הסוציאליות של השכר — הן לא חלות על בונוס.", "גם הביטוח הלאומי הוא עלות של המעסיק.", "כפל תוספות — אין לזה בסיס."],
   },
 ];
@@ -126,31 +127,30 @@ export const SHORT: StudyModule = {
   ],
   exercises: [
     calc("day-manager", "עלות יום", `מנהל משתכר ${fmt(GRADES[0].salary)} ₪ בחודש, ${WORKING_DAYS} ימי עבודה בחודש, ותוספות המעסיק על שכרו ${pct(GRADES[0].onCosts)}. מהי עלות יום שלו?`, DAY[0], [
-      "עלות יום = שכר ÷ ימי עבודה × (1 + תוספות המעסיק).",
-      `${fmt(GRADES[0].salary)} ÷ ${WORKING_DAYS} × ${1 + GRADES[0].onCosts} = ${fmt(DAY[0])} ₪.`,
+      said(work.dayCost(GRADES[0].salary, WORKING_DAYS, GRADES[0].onCosts)),
     ]),
     calc("rec-paid", "ימי הבראה: תשלום", `ימי הבראה (${RECREATION.perYear} בשנה, מבשילים, אפשר לנצל עד סוף השנה הבאה). השנה ניצלו ${GRADES[1].staff} טכנאים ${RECREATION.used[1]} ימים כל אחד ו-${GRADES[2].staff} פקידים ${RECREATION.used[2]} ימים; המנהלים לא ניצלו. עלויות יום: טכנאי ${fmt(DAY[1])} ₪, פקיד ${fmt(DAY[2])} ₪. כמה שולם?`, REC_PAID, [
-      `טכנאים: ${GRADES[1].staff} × ${RECREATION.used[1]} × ${fmt(DAY[1])}; פקידים: ${GRADES[2].staff} × ${RECREATION.used[2]} × ${fmt(DAY[2])}.`,
-      `סה״כ ${fmt(REC_PAID)} ₪.`,
+      `טכנאים, ואחריהם פקידים:\n${said(work.days([1, 2].map((k) => ({ staff: GRADES[k].staff, days: RECREATION.used[k], dayCost: DAY[k] }))))}`,
     ]),
     calc("rec-closing", "ימי הבראה: הפרשה בסוף השנה", `ימי הבראה (${RECREATION.perYear} בשנה, מבשילים, עוברים לשנה הבאה). ${GRADES[0].staff} מנהלים לא ניצלו אף יום, ${GRADES[1].staff} טכנאים ניצלו את כל הימים, ו-${GRADES[2].staff} פקידים ניצלו ${RECREATION.used[2]} ימים כל אחד. עלות יום: מנהל ${fmt(DAY[0])} ₪, פקיד ${fmt(DAY[2])} ₪. מה ההפרשה לימי הבראה בסוף השנה?`, REC_CLOSING, [
-      `מנהלים: ${GRADES[0].staff} × ${RECREATION.perYear} × ${fmt(DAY[0])}; פקידים: ${GRADES[2].staff} × ${RECREATION.perYear - RECREATION.used[2]} × ${fmt(DAY[2])}. לטכנאים לא נשאר.`,
-      `סה״כ ${fmt(REC_CLOSING)} ₪ — בלי היוון, כי ינוצלו בתוך השנה הבאה.`,
+      `ימים שנשארו לכל עובד:\n${FORMULA.lifo}\nמנהלים ${RECREATION.perYear} − ${RECREATION.used[0]} = ${RECREATION.perYear - RECREATION.used[0]}; טכנאים ${RECREATION.perYear} − ${RECREATION.used[1]} = ${RECREATION.perYear - RECREATION.used[1]}; פקידים ${RECREATION.perYear} − ${RECREATION.used[2]} = ${RECREATION.perYear - RECREATION.used[2]}`,
+      `מנהלים, ואחריהם פקידים (לטכנאים לא נשאר):\n${said(work.days([0, 2].map((k) => ({ staff: GRADES[k].staff, days: RECREATION.perYear - RECREATION.used[k], dayCost: DAY[k] }))))}`,
+      "בלי היוון, כי ינוצלו בתוך השנה הבאה.",
     ]),
     calc("rec-expense", "ימי הבראה: ההוצאה", `תוכנית ימי הבראה התחילה השנה, ולכן אין יתרת פתיחה. השנה שולמו ${fmt(REC_PAID)} ₪ על ימים שנוצלו, וההפרשה בסוף השנה ${fmt(REC_CLOSING)} ₪. מה הוצאות ההבראה של השנה?`, REC_EXPENSE, [
-      "הוצאה = סגירה − פתיחה + תשלומים.",
-      `${fmt(REC_CLOSING)} − 0 + ${fmt(REC_PAID)} = ${fmt(REC_EXPENSE)} ₪.`,
+      said(work.expense(0, REC_PAID, REC_CLOSING)),
     ]),
     calc("vac-closing", "חופשה ב-LIFO: סגירה", `לכל פקיד ${VACATION.entitlement} ימי חופשה בשנה, ויום אחד צבור מהשנה הקודמת שפוקע בסוף השנה. כל פקיד ניצל ${VACATION.used} ימים. עלות יום ${fmt(DAY[2])} ₪, ${GRADES[2].staff} פקידים. מה ההפרשה בסוף השנה?`, VAC_CLOSING, [
-      `LIFO: ${VACATION.used} הימים יצאו מהזכאות של השנה. נשארו ${vac.unusedOwn} ימים מהשנה, והיום הישן פקע.`,
-      `${GRADES[2].staff} × ${vac.unusedOwn} × ${fmt(DAY[2])} = ${fmt(VAC_CLOSING)} ₪.`,
+      `LIFO: ${VACATION.used} הימים יצאו מהזכאות של השנה, והיום הישן פקע.\n${said(work.lifo(VACATION.entitlement, VACATION.used))}`,
+      said(work.days([{ staff: GRADES[2].staff, days: vac.unusedOwn, dayCost: DAY[2] }])),
     ]),
     calc("vac-expense", "חופשה ב-LIFO: ההוצאה", `ההפרשה בפתיחה (היום הצבור) הייתה ${fmt(VAC_OPENING)} ₪, ושולמו ${fmt(VAC_PAID)} ₪ על ימי החופשה שנוצלו. מה הוצאות החופשה של השנה?`, VAC_EXPENSE, [
-      `${fmt(VAC_CLOSING)} − ${fmt(VAC_OPENING)} + ${fmt(VAC_PAID)} = ${fmt(VAC_EXPENSE)} ₪.`,
+      said(work.expense(VAC_OPENING, VAC_PAID, VAC_CLOSING)),
       "היום שפקע הקטין את ההוצאה: הפרישו עליו, והוא לא נוצל.",
     ]),
     calc("mgr-bonus", "בונוס מנהלים", `בונוס של ${fmt(MGR_BONUS.amount)} ₪ למנהלים, שישולם בפברואר. על הבונוס חל רק ביטוח לאומי של ${pct(MGR_BONUS.insurance)}. מהי ההפרשה?`, MGR_BONUS_COST, [
-      `${fmt(MGR_BONUS.amount)} × ${1 + MGR_BONUS.insurance} = ${fmt(MGR_BONUS_COST)} ₪ — בלי היוון.`,
+      said(work.bonusCost(MGR_BONUS.amount, MGR_BONUS.insurance)),
+      "בלי היוון: הוא ישולם בתוך 12 חודשים.",
     ]),
     choice("maternity", "חופשת לידה", "שתי עובדות ייצאו לחופשת לידה בתשלום בשנה הבאה. כמה הפרשה רושמים השנה?", ["אפס — היא אינה נצברת, ונרשמת כשהיא קורית", "את מלוא שכרן לתקופה", "חצי משכרן", "הערך הנוכחי של שכרן"], 0, "היעדרות שאינה נצברת מוכרת רק כשהיא קורית (סעיף 18)."),
     journal(
@@ -168,7 +168,7 @@ export const SHORT: StudyModule = {
   traps,
   tips: [
     "הטבה לזמן קצר היא סכום לא מהוון, לפי מה שצפוי להשתלם.",
-    "הפרשה בסוף השנה = (ימי הצבירה שצפוי לנצל + ימי הצבירה של עוזבים צפויים, אם ההיעדרות מבשילה) × עלות יום. ההוצאה היא ה-P.N. של המעגל: סגירה − פתיחה + תשלומים.",
+    `${FORMULA.absence}. ההוצאה היא המספר שמאזן את המעגל: ${FORMULA.expense}.`,
     "לא נצברת (חג, מחלה שלא עוברת, חופשת לידה, מילואים): מכירים כשהיא קורית (סעיפים 13ב ו-18). נצברת: מפרישים על מה שצפוי (סעיפים 15–16).",
     "LIFO: קודם מנצלים את הזכאות של השנה, ורק אחר כך את היתרה הישנה.",
     "בונוס ושיתוף ברווחים (סעיף 19): מכירים כשיש מחויבות ואומדן מהימן. מספיק אחד: נוסחה בתוכנית, סכום שנקבע לפני אישור הדוחות, או נוהג מהעבר.",

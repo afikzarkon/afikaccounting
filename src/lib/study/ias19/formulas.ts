@@ -1,4 +1,4 @@
-import { partInterest, partRate, pv, rollForward, shortTermExpense, simplePart } from "@/lib/learn/ias19";
+import { dayCost, partInterest, partRate, pv, rollForward, shortTermExpense, simplePart } from "@/lib/learn/ias19";
 import { fmt, pct } from "./shared";
 
 /**
@@ -24,14 +24,26 @@ export const FORMULA = {
   pnInterest: "סגירה − פתיחה − ריבית + תשלומים = P.N.",
   n: "הוותק ביום התשלום − הוותק היום = n",
   splitYear: "ריבית על הפתיחה − ריבית על התשלום + ריבית אחרי התיקון = ריבית השנה",
+  // Lesson 3: short-term benefits.
+  dayCost: "שכר ÷ ימי עבודה × (1 + תוספות) = עלות יום",
+  absence: "(ימים שצפוי לנצל + ימי העוזבים, אם מבשילה) × עלות יום = הפרשה",
+  days: "עובדים × ימים × עלות יום = עלות הימים",
+  stayers: "עובדים − עוזבים צפויים = נשארים",
+  lifo: "זכאות השנה − ימים שנוצלו = ימים שנשארו מהשנה",
+  lifoOld: "ימים שנוצלו − זכאות השנה = ימים שנוצלו מהצבור",
+  bonus: "שיעור הבונוס × הרווח × עובדים צפויים = הפרשה לבונוס",
+  bonusPaid: "שיעור הבונוס × הרווח בפועל × עובדים שקיבלו = תשלום",
+  bonusCost: "בונוס × (1 + ביטוח לאומי) = עלות הבונוס",
+  perHead: "סכום לעובד × עובדים = סך הכול",
 } as const;
 
 /** A result worked out: the formula, and the same formula with the numbers in and the result. */
 export type Worked = { formula: string; numbers: string };
 
-/** An amount as the course writes it in a working line: rounded to the shekel, with ₪ on the result only. */
-const amt = (v: number) => fmt(v);
-const money = (v: number) => `${fmt(Math.round(v))} ₪`;
+/** An amount as the course writes it in a working line, with ₪ on the result only: a balance to the shekel, as an earlier line showed it; a small amount such as a day's cost to the agora. */
+const amt = (v: number) => fmt(Math.abs(v) >= 1_000 ? Math.round(v) : v);
+/** The result: to the shekel, or to the agora where the course asks for it (a day's cost). */
+const money = (v: number, agorot = false) => `${fmt(agorot ? Math.round(v * 100) / 100 : Math.round(v))} ₪`;
 /** 1 + i, never 1.0700000000000001. */
 export const factor = (i: number) => (1 + i).toLocaleString("en-US", { maximumFractionDigits: 6 });
 
@@ -66,4 +78,25 @@ export const work = {
     formula: FORMULA.splitYear,
     numbers: `${amt(Math.round(onOpening))} − ${amt(Math.round(onPayment))} + ${amt(Math.round(after))} = ${money(onOpening - onPayment + after)}`,
   }),
+  dayCost: (salary: number, workingDays: number, onCosts: number): Worked => ({
+    formula: FORMULA.dayCost,
+    numbers: `${amt(salary)} ÷ ${workingDays} × ${factor(onCosts)} = ${money(dayCost(salary, workingDays, onCosts), true)}`,
+  }),
+  /** The provision at the year's end: the days the stayers are expected to use, and — when the absence vests — the leavers' days too. */
+  absence: (x: { stay: number; leave?: number; days: number; dayCost: number }): Worked => {
+    const groups = [`${x.stay} × ${x.days}`, ...(x.leave ? [`${x.leave} × ${x.days}`] : [])].join(" + ");
+    return { formula: FORMULA.absence, numbers: `(${groups}) × ${amt(x.dayCost)} = ${money((x.stay + (x.leave ?? 0)) * x.days * x.dayCost)}` };
+  },
+  /** Days paid or provided for, group by group, each at its own day's cost. */
+  days: (groups: { staff: number; days: number; dayCost: number }[]): Worked => ({
+    formula: FORMULA.days,
+    numbers: `${groups.map((g) => `${g.staff} × ${g.days} × ${amt(g.dayCost)}`).join(" + ")} = ${money(groups.reduce((s, g) => s + g.staff * g.days * g.dayCost, 0))}`,
+  }),
+  stayers: (staff: number, leaving: number): Worked => ({ formula: FORMULA.stayers, numbers: `${staff} − ${leaving} = ${staff - leaving}` }),
+  lifo: (entitlement: number, used: number): Worked => ({ formula: FORMULA.lifo, numbers: `${entitlement} − ${used} = ${Math.max(0, entitlement - used)}` }),
+  lifoOld: (used: number, entitlement: number): Worked => ({ formula: FORMULA.lifoOld, numbers: `${used} − ${entitlement} = ${Math.max(0, used - entitlement)}` }),
+  bonus: (share: number, profit: number, heads: number): Worked => ({ formula: FORMULA.bonus, numbers: `${pct(share)} × ${amt(profit)} × ${heads} = ${money(share * profit * heads)}` }),
+  bonusPaid: (share: number, profit: number, heads: number): Worked => ({ formula: FORMULA.bonusPaid, numbers: `${pct(share)} × ${amt(profit)} × ${heads} = ${money(share * profit * heads)}` }),
+  bonusCost: (amount: number, insurance: number): Worked => ({ formula: FORMULA.bonusCost, numbers: `${amt(amount)} × ${factor(insurance)} = ${money(amount * (1 + insurance))}` }),
+  perHead: (amount: number, heads: number): Worked => ({ formula: FORMULA.perHead, numbers: `${amt(amount)} × ${heads} = ${money(amount * heads)}` }),
 };

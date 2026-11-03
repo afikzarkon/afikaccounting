@@ -6,7 +6,6 @@ import { DataTable } from "@/components/study/blocks";
 import { DC, DC_PAID, DC_VAR, DC_VAR_YEAR, DC_YEAR, INSURED, INSURED_EXPENSE } from "@/lib/study/ias19/lessons/dc";
 import {
   BONUS,
-  BONUS_EXPENSE,
   BONUS_OPENING,
   BONUS_PAID,
   SICK,
@@ -16,12 +15,12 @@ import {
   SICK_OPENING,
   SICK_PAID,
   VEST,
-  VEST_EXPENSE,
   VEST_OPENING,
   VEST_PAID,
 } from "@/lib/study/ias19/lessons/short";
 import { lessonRef, lessonsRef, pct } from "@/lib/study/ias19/shared";
-import { FormulaFill, Ltr } from "./ias19-formula";
+import { FORMULA, putIn, said, work } from "@/lib/study/ias19/formulas";
+import { FormulaFill, Ltr, Work } from "./ias19-formula";
 import { Bridge, ExplainTask, HintLadder, MapBranch, RollForward, T19 } from "./ias19-ui";
 import { Fork, PeopleGrid, SplitBar, Timeline, TwoPanel } from "./ias19-visuals";
 import { MiniQuiz } from "./inventory-interactive";
@@ -36,6 +35,8 @@ const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) =
 const L = Ltr;
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
 const stayers = SICK.carried.staff - SICK.carried.leavers;
+const vestOpening = work.absence({ stay: stayers, leave: SICK.carried.leavers, days: SICK.carried.days, dayCost: SICK.dayCost });
+const bonusOpening = work.bonus(BONUS.share, BONUS.estimate, BONUS.staff - BONUS.expectedLeavers);
 
 /** Two questions decide how an absence is provided for: does it carry forward, and is it paid on leaving? */
 const ABSENCE_FORK = (
@@ -123,12 +124,15 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
               { title: "2. הצבור מהעבר", steps: ["2 ימים", "רק אחרי שה-8 נגמרו"], verdict: "לא נוצלו? עלולים לפקוע", tone: 4 },
             ]}
           />
+          <P>
+            כמה ימים נשארים מהשנה: <L>{FORMULA.lifo}</L>. ומי שניצל יותר מהזכאות: <L>{FORMULA.lifoOld}</L>.
+          </P>
         </Part>
       </>
     ),
     check: quiz("emp-short-absence", [
       { q: "ימי מחלה עוברים לשנה הבאה, אבל לא משולמים בעזיבה. איך הם מסווגים?", options: ["נצברים ולא מבשילים", "נצברים ומבשילים", "לא נצברים", "לא מבשילים ולא נצברים"], answer: 0, why: "עוברים = נצברים; לא משולמים בעזיבה = לא מבשילים." },
-      { q: "לעובד 8 ימים בשנה ו-2 צבורים. הוא ניצל השנה 9. לפי LIFO, כמה מהצבורים נוצלו?", options: ["1", "2", "0", "9"], answer: 0, why: "8 מהשנה, ועוד יום אחד מהצבור." },
+      { q: "לעובד 8 ימים בשנה ו-2 צבורים. הוא ניצל השנה 9. לפי LIFO, כמה מהצבורים נוצלו?", options: ["1", "2", "0", "9"], answer: 0, why: `8 מהשנה, ועוד יום אחד מהצבור.\n${said(work.lifoOld(9, 8))}` },
     ]),
   },
   "emp-short-bonus": {
@@ -140,6 +144,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
         </P>
         <P>אומדן מהימן: נוסחה בתוכנית, סכום שנקבע לפני אישור הדוחות, או נוהג קבוע מהעבר.</P>
         <PeopleGrid total={BONUS.staff} leaving={BONUS.expectedLeavers} title="בונוס לפי נוסחה: רק מי שצפוי להישאר" />
+        <Work w={work.stayers(BONUS.staff, BONUS.expectedLeavers)} />
         <FormulaFill
           label="ההפרשה לבונוס: שיעור הבונוס כפול הרווח כפול העובדים הצפויים להישאר"
           lhs="הפרשה לבונוס"
@@ -165,12 +170,22 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
           given={false}
           stepwise={false}
         />
-        <Remember><L>הפרשה בסוף השנה = (ימים שצפוי לנצל + ימי העוזבים, אם מבשילה) × עלות יום</L>. ההוצאה: <L>סגירה − פתיחה + תשלומים</L>.</Remember>
+        <Remember>
+          <span className="block">
+            ההפרשה: <L>{FORMULA.absence}</L>.
+          </span>
+          <span className="block">
+            ימים שנוצלו או שמפרישים עליהם, דרג אחר דרג: <L>{FORMULA.days}</L>.
+          </span>
+          <span className="block">
+            ההוצאה: <L>{FORMULA.expense}</L>.
+          </span>
+        </Remember>
       </>
     ),
     check: quiz("emp-short-bonus", [
       { q: "החברה מחליטה על בונוס רק אחרי אישור הדוחות, ואין נוהג. מכירים בו בדוח?", options: ["לא, לא הייתה מחויבות בתאריך הדוח", "כן, תמיד", "כן, כהערכה", "רק אם הרווח גבוה"], answer: 0, why: "בתאריך הדוח לא הייתה מחויבות ולא אומדן." },
-      { q: "פתיחה 10,000, שולמו 50,000, סגירה 12,000. מה ההוצאה?", options: ["52,000", "50,000", "48,000", "72,000"], answer: 0, why: "12,000 − 10,000 + 50,000." },
+      { q: "פתיחה 10,000, שולמו 50,000, סגירה 12,000. מה ההוצאה?", options: ["52,000", "50,000", "48,000", "72,000"], answer: 0, why: said(work.expense(10_000, 50_000, 12_000)) },
     ]),
   },
   "emp-short-solved": {
@@ -189,33 +204,32 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
           </p>
         </Story>
         <PeopleGrid total={SICK.carried.staff} leaving={SICK.carried.leavers} title="מי מקבל הפרשה בפתיחה: רק הנשארים (לא מבשילים)" />
+        <Work w={work.stayers(SICK.carried.staff, SICK.carried.leavers)} />
         <Stepper
           label="ימי מחלה: המעגל"
           steps={[
             {
               title: "1. פתיחה",
               body: (
-                <p>
-                  לא מבשילים: העוזבים לא יקבלו כלום. מפרישים רק לנשארים: <L>{stayers} × {SICK.carried.days} × <Money v={SICK.dayCost} plain /> = <strong><Money v={SICK_OPENING} /></strong></L>.
-                </p>
+                <div className="space-y-1.5">
+                  <p>לא מבשילים: העוזבים לא יקבלו כלום. מפרישים רק לנשארים:</p>
+                  <Work w={work.absence({ stay: stayers, days: SICK.carried.days, dayCost: SICK.dayCost })} />
+                </div>
               ),
             },
             {
               title: "2. תשלומים",
-              body: (
-                <p>
-                  <L><Money v={SICK.dayCost} plain /> × ({SICK.usedMore.staff} × {SICK.usedMore.days} + {SICK.usedLess.staff} × {SICK.usedLess.days}) = <strong><Money v={SICK_PAID} /></strong></L>.
-                </p>
-              ),
+              body: <Work w={work.days([SICK.usedMore, SICK.usedLess].map((g) => ({ ...g, dayCost: SICK.dayCost })))} />,
             },
             {
               title: "3. סגירה, לפי LIFO",
               body: (
                 <div className="space-y-1.5">
                   <p>מי שניצל {SICK.usedMore.days} ניצל את כל {SICK.entitlement} הימים של השנה ועוד יום מהצבור. שאר הצבור שלו פקע.</p>
-                  <p>
-                    מי שניצל {SICK.usedLess.days} השאיר {SICK_LEFT} יום מהשנה: <L>{SICK.usedLess.staff} × {SICK_LEFT} × <Money v={SICK.dayCost} plain /> = <strong><Money v={SICK_CLOSING} /></strong></L>.
-                  </p>
+                  <Work w={work.lifoOld(SICK.usedMore.days, SICK.entitlement)} />
+                  <p>מי שניצל {SICK.usedLess.days} השאיר ימים מהשנה:</p>
+                  <Work w={work.lifo(SICK.entitlement, SICK.usedLess.days)} />
+                  <Work w={work.absence({ stay: SICK.usedLess.staff, days: SICK_LEFT, dayCost: SICK.dayCost })} />
                 </div>
               ),
             },
@@ -223,16 +237,14 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
               title: "4. ההוצאה: המספר המאזן",
               body: (
                 <div className="space-y-3">
-                  <p>
-                    <L><Money v={SICK_CLOSING} plain /> − <Money v={SICK_OPENING} plain /> + <Money v={SICK_PAID} plain /> = <strong><Money v={SICK_EXPENSE} /></strong></L>.
-                  </p>
+                  <Work w={work.expense(SICK_OPENING, SICK_PAID, SICK_CLOSING)} />
                   <RollForward
                     pnTo="רווח והפסד"
                     title="הפרשה לימי מחלה"
                     rows={[
                       { label: "יתרת פתיחה", value: SICK_OPENING, kind: "balance" },
                       { label: "תשלומים", value: -SICK_PAID },
-                      { label: "הוצאה (המספר המאזן)", value: SICK_EXPENSE, kind: "pn", how: "בלי היוון: סגירה − פתיחה + תשלומים" },
+                      { label: "הוצאה (המספר המאזן)", value: SICK_EXPENSE, kind: "pn", how: "בלי היוון" },
                       { label: "יתרת סגירה", value: SICK_CLOSING, kind: "balance" },
                     ]}
                   />
@@ -259,13 +271,22 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
             }
             hints={[
               "למי מפרישים עכשיו בפתיחה: רק לנשארים?",
-              "הכלל: ימים שצפוי לנצל + ימי העוזבים, כי ההיעדרות מבשילה.",
               <>
-                פתיחה: <L>{SICK.carried.staff} × {SICK.carried.days} × <Money v={SICK.dayCost} plain /> = <Money v={VEST_OPENING} /></L>.
+                הכלל, כשההיעדרות מבשילה:
+                <span className="block">
+                  <L>{FORMULA.absence}</L>
+                </span>
               </>,
               <>
-                תשלומים: <L><Money v={SICK_PAID} plain /> + {VEST.left} × {SICK.carried.days} × <Money v={SICK.dayCost} plain /> = <Money v={VEST_PAID} /></L>. סגירה <Money v={SICK_CLOSING} plain /> (כמו קודם).
-                הוצאה: <L><Money v={SICK_CLOSING} plain /> − <Money v={VEST_OPENING} plain /> + <Money v={VEST_PAID} plain /> = <strong><Money v={VEST_EXPENSE} /></strong></L>.
+                פתיחה: <L>{putIn(vestOpening)}</L>
+              </>,
+              <>
+                פתיחה:
+                <Work w={vestOpening} />
+                תשלומים, כולל {VEST.left} העוזבים שקיבלו כסף:
+                <Work w={work.days([SICK.usedMore, SICK.usedLess, { staff: VEST.left, days: SICK.carried.days }].map((g) => ({ ...g, dayCost: SICK.dayCost })))} />
+                סגירה <Money v={SICK_CLOSING} plain />, כמו קודם. ההוצאה:
+                <Work w={work.expense(VEST_OPENING, VEST_PAID, SICK_CLOSING)} />
               </>,
             ]}
           />
@@ -281,13 +302,23 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
             }
             hints={[
               "מי צפוי לקבל: כולם, או רק מי שיישאר?",
-              ltrFormulas("מחויבות ואומדן מהימן: נוסחה × עובדים צפויים."),
               <>
-                פתיחה: <L>({BONUS.staff} − {BONUS.expectedLeavers}) × {pct(BONUS.share)} × <Money v={BONUS.estimate} plain /> = <Money v={BONUS_OPENING} /></L>.
+                מחויבות ואומדן מהימן:
+                <span className="block">
+                  <L>{FORMULA.bonus}</L>
+                </span>
               </>,
               <>
-                תשלום: <L>{BONUS.paidTo} × {pct(BONUS.share)} × <Money v={BONUS.actual} plain /> = <Money v={BONUS_PAID} /></L>; סגירה 0. הוצאה: <L>0 − <Money v={BONUS_OPENING} plain /> +{" "}
-                <Money v={BONUS_PAID} plain /> = <strong><Money v={BONUS_EXPENSE} /></strong></L>: הפער בין האומדן לתשלום.
+                <Work w={work.stayers(BONUS.staff, BONUS.expectedLeavers)} />
+                פתיחה: <L>{putIn(bonusOpening)}</L>
+              </>,
+              <>
+                פתיחה:
+                <Work w={bonusOpening} />
+                תשלום במרץ:
+                <Work w={work.bonusPaid(BONUS.share, BONUS.actual, BONUS.paidTo)} />
+                סגירה 0. ההוצאה היא הפער בין האומדן לתשלום:
+                <Work w={work.expense(BONUS_OPENING, BONUS_PAID, 0)} />
               </>,
             ]}
           />
@@ -312,7 +343,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
       </>
     ),
     check: quiz("emp-short-master", [
-      { q: "מענק לידה של 1,800 ₪ לכל יולדת; השנה ילדו 6 עובדות. מה ההוצאה, ומתי?", options: ["10,800 ₪, כשההיעדרות קורית", "10,800 ₪ מראש, בתחילת השנה", "הערך הנוכחי של 10,800", "אפס"], answer: 0, why: "לא נצבר: מכירים כשקורה." },
+      { q: "מענק לידה של 1,800 ₪ לכל יולדת; השנה ילדו 6 עובדות. מה ההוצאה, ומתי?", options: ["10,800 ₪, כשההיעדרות קורית", "10,800 ₪ מראש, בתחילת השנה", "הערך הנוכחי של 10,800", "אפס"], answer: 0, why: `לא נצבר: מכירים כשקורה.\n${said(work.perHead(1_800, 6))}` },
       { q: "עובד עוזב עם 2 ימים צבורים, וההיעדרות לא מבשילה. מה הוא מקבל?", options: ["כלום, ואין בגינו הפרשה", "פדיון 2 ימים", "פדיון יום אחד", "תלוי בוותק"], answer: 0, why: "לא מבשילה = אין פדיון." },
       { q: "בונוס על רווחים מצטברים של שלוש שנים: לזמן קצר?", options: ["לא", "כן", "רק בשנה השלישית", "רק להנהלה"], answer: 0, why: "על רוב השנים ישלמו יותר מ-12 חודשים אחרי סופן." },
       { q: "סכום הבונוס נקבע אחרי תאריך הדוח. מוכר בדוח?", options: ["רק אם הייתה מחויבות קיימת בתאריך הדוח", "תמיד", "לעולם לא", "רק בדוח של השנה הבאה"], answer: 0, why: "התנאי: מחויבות ואומדן מהימן בתאריך הדוח." },

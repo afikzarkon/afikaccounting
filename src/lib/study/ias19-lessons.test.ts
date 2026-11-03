@@ -136,7 +136,7 @@ describe("formulas read left to right: P.N.", () => {
 
 describe("every result is worked: the formula, then the numbers", () => {
   /** The lessons already written this way; each lesson joins as it is converted. */
-  const WORKED: string[] = ["ias19-toolkit"];
+  const WORKED: string[] = ["ias19-toolkit", "ias19-short"];
   const formulas = Object.values(FORMULA) as string[];
   const plain = (s: string) => s.replaceAll(/[‎⁦⁩]/g, "");
 
