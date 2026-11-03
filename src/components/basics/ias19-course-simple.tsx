@@ -26,7 +26,7 @@ import { Fork, PeopleGrid, SplitBar, Timeline, TwoPanel } from "./ias19-visuals"
 import { MiniQuiz } from "./inventory-interactive";
 import { Sorted, Story } from "./inventory-teach";
 import { Card, JE, Money, Stepper } from "./ui";
-import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
+import { ltrQuiz } from "@/lib/study/ias19/ltr";
 
 /** The employee-benefits course, lessons 3–4: short-term benefits, and defined contribution against defined benefit. */
 
@@ -432,6 +432,17 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
         <P>
           <strong>הכלל</strong> (סעיף 51–52): ההוצאה היא ההפקדה המגיעה על עבודת השנה. מה שעוד לא שולם הוא חוב (ואם שילמו יותר, נכס).
         </P>
+        <Remember>
+          <span className="block">
+            ההוצאה: <L>{FORMULA.dcExpense}</L>.
+          </span>
+          <span className="block">
+            החוב בסוף השנה: <L>{FORMULA.dcPayable}</L>.
+          </span>
+          <span className="block">
+            ושכר שעולה כל שנה: <L>{FORMULA.grown}</L>.
+          </span>
+        </Remember>
         <P>בלי היוון, אלא אם ההפקדה תשולם יותר מ-12 חודשים אחרי סוף השנה.</P>
         <Timeline
           label="ההפקדה של דצמבר עוברת ב-10 בינואר: ההוצאה שייכת לדצמבר, וב-31.12 היא חוב"
@@ -476,9 +487,25 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
         <Stepper
           label="הפקדה מוגדרת"
           steps={[
-            { title: "1. ההוצאה", body: <p><L><Money v={DC.payroll} plain /> × {pct(DC.rate)} = <strong><Money v={DC_YEAR.expense} /></strong></L>.</p> },
-            { title: "2. מה שולם", body: <p>11 חודשים הועברו במהלך השנה: <Money v={DC_PAID} />.</p> },
-            { title: "3. מה נשאר", body: <p>ההפקדה של דצמבר תעבור בינואר: <strong><Money v={DC_YEAR.liability} /></strong>, זכאים.</p> },
+            { title: "1. ההוצאה", body: <Work w={work.dcExpense(DC.payroll, DC.rate)} /> },
+            {
+              title: "2. מה שולם",
+              body: (
+                <>
+                  <p>11 חודשים הועברו במהלך השנה:</p>
+                  <Work w={work.dcPaid(DC_YEAR.expense, 11)} />
+                </>
+              ),
+            },
+            {
+              title: "3. מה נשאר",
+              body: (
+                <>
+                  <p>ההפקדה של דצמבר תעבור בינואר, ועד אז היא זכאים:</p>
+                  <Work w={work.dcPayable(DC_YEAR.expense, DC_PAID)} />
+                </>
+              ),
+            },
             {
               title: "4. הפקודה",
               body: (
@@ -512,7 +539,27 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
                 שכר שנתי <Money v={DC_VAR.payroll} />, הפקדה {pct(DC_VAR.rate)}, הכסף עובר ב-10 לחודש שאחרי. מה ההוצאה, מה שולם ומה הזכאים?
               </>
             }
-            hints={["מה מגיע על כל השנה, ומה מזה כבר הועבר?", ltrFormulas("הכלל: הוצאה = ההפקדה המגיעה; ההפרש הוא זכאים."), <>הוצאה: <L><Money v={DC_VAR.payroll} plain /> × {pct(DC_VAR.rate)} = <Money v={DC_VAR_YEAR.expense} /></L>.</>, <>זכאים <Money v={DC_VAR_YEAR.liability} />; מזומן <Money v={DC_VAR_YEAR.expense - DC_VAR_YEAR.liability} />.</>]}
+            hints={[
+              "מה מגיע על כל השנה, ומה מזה כבר הועבר?",
+              <>
+                הכלל:
+                <span className="block">
+                  <L>{FORMULA.dcExpense}</L>
+                </span>
+                <span className="block">
+                  <L>{FORMULA.dcPayable}</L>
+                </span>
+              </>,
+              <>
+                הוצאה: <L>{putIn(work.dcExpense(DC_VAR.payroll, DC_VAR.rate))}</L>
+              </>,
+              <>
+                <Work w={work.dcExpense(DC_VAR.payroll, DC_VAR.rate)} />
+                <Work w={work.dcPaid(DC_VAR_YEAR.expense, 11)} />
+                <Work w={work.dcPayable(DC_VAR_YEAR.expense, DC_VAR_YEAR.expense - DC_VAR_YEAR.liability)} />
+                בפקודה: הוצאות שכר בחובה; מזומן וזכאים בזכות.
+              </>,
+            ]}
           />
         </Part>
         <Part title="ב. מבטח שלקח את הסיכון">
@@ -530,7 +577,23 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
                 מבטח קיבל על עצמו את כל הסיכון של מענקי הפרישה, והחברה משלמת לו רק פרמיה של {pct(INSURED.premium)} מעלות השכר (<Money v={INSURED.payroll} />). סווגו, וצרו את המעגל.
               </>
             }
-            hints={["יש לחברה מחויבות כלשהי מעבר לפרמיה?", "המבחן: מי נושא בסיכון. המבטח: הפקדה מוגדרת.", <>הוצאה = הפרמיה: <L><Money v={INSURED.payroll} plain /> × {pct(INSURED.premium)} = <Money v={INSURED_EXPENSE} /></L>.</>, <>מעגל: פתיחה 0, הוצאה <Money v={INSURED_EXPENSE} plain />, תשלום <Money v={INSURED_EXPENSE} plain />, סגירה 0.</>]}
+            hints={[
+              "יש לחברה מחויבות כלשהי מעבר לפרמיה?",
+              <>
+                המבחן: מי נושא בסיכון. המבטח, ולכן הפקדה מוגדרת, וההפקדה היא הפרמיה:
+                <span className="block">
+                  <L>{FORMULA.dcExpense}</L>
+                </span>
+              </>,
+              <>
+                הוצאה: <L>{putIn(work.dcExpense(INSURED.payroll, INSURED.premium))}</L>
+              </>,
+              <>
+                <Work w={work.dcExpense(INSURED.payroll, INSURED.premium)} />
+                המעגל, כשהפרמיה שולמה כולה:
+                <Work w={work.roll({ opening: 0, added: INSURED_EXPENSE, payments: INSURED_EXPENSE })} />
+              </>,
+            ]}
           />
         </Part>
       </>

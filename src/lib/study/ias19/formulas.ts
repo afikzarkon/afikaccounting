@@ -1,4 +1,4 @@
-import { dayCost, partInterest, partRate, pv, rollForward, shortTermExpense, simplePart } from "@/lib/learn/ias19";
+import { dayCost, grown, partInterest, partRate, pv, rollForward, shortTermExpense, simplePart } from "@/lib/learn/ias19";
 import { fmt, pct } from "./shared";
 
 /**
@@ -35,6 +35,11 @@ export const FORMULA = {
   bonusPaid: "שיעור הבונוס × הרווח בפועל × עובדים שקיבלו = תשלום",
   bonusCost: "בונוס × (1 + ביטוח לאומי) = עלות הבונוס",
   perHead: "סכום לעובד × עובדים = סך הכול",
+  // Lesson 4: defined contribution.
+  dcExpense: "שכר × שיעור ההפקדה = הוצאה",
+  dcPaid: "הוצאה × חודשים שהועברו ÷ 12 = שולם",
+  dcPayable: "הוצאה − שולם = זכאים",
+  grown: "שכר בשנת הבסיס × (1 + העלאה)^שנים = שכר השנה",
 } as const;
 
 /** A result worked out: the formula, and the same formula with the numbers in and the result. */
@@ -98,5 +103,18 @@ export const work = {
   bonus: (share: number, profit: number, heads: number): Worked => ({ formula: FORMULA.bonus, numbers: `${pct(share)} × ${amt(profit)} × ${heads} = ${money(share * profit * heads)}` }),
   bonusPaid: (share: number, profit: number, heads: number): Worked => ({ formula: FORMULA.bonusPaid, numbers: `${pct(share)} × ${amt(profit)} × ${heads} = ${money(share * profit * heads)}` }),
   bonusCost: (amount: number, insurance: number): Worked => ({ formula: FORMULA.bonusCost, numbers: `${amt(amount)} × ${factor(insurance)} = ${money(amount * (1 + insurance))}` }),
-  perHead: (amount: number, heads: number): Worked => ({ formula: FORMULA.perHead, numbers: `${amt(amount)} × ${heads} = ${money(amount * heads)}` }),
+  /** `agorot` when the amount per head came from a line that showed it to the agora (a grown salary). */
+  perHead: (amount: number, heads: number, agorot = false): Worked => ({
+    formula: FORMULA.perHead,
+    numbers: `${agorot ? fmt(Math.round(amount * 100) / 100) : amt(amount)} × ${heads} = ${money(amount * heads)}`,
+  }),
+  /** The general roll-forward, closed with all its lines known: it shows the closing balance. */
+  roll: (r: { opening: number; added: number; payments: number; pn?: number }): Worked => ({
+    formula: FORMULA.roll,
+    numbers: `${amt(r.opening)} + ${amt(r.added)} − ${amt(r.payments)} + ${amt(r.pn ?? 0)} = ${money(r.opening + r.added - r.payments + (r.pn ?? 0))}`,
+  }),
+  dcExpense: (payroll: number, rate: number): Worked => ({ formula: FORMULA.dcExpense, numbers: `${amt(payroll)} × ${pct(rate)} = ${money(payroll * rate)}` }),
+  dcPaid: (expense: number, months: number): Worked => ({ formula: FORMULA.dcPaid, numbers: `${amt(expense)} × ${months} ÷ 12 = ${money((expense * months) / 12)}` }),
+  dcPayable: (expense: number, paid: number): Worked => ({ formula: FORMULA.dcPayable, numbers: `${amt(expense)} − ${amt(paid)} = ${money(expense - paid)}` }),
+  grown: (salary: number, g: number, years: number): Worked => ({ formula: FORMULA.grown, numbers: `${amt(salary)} × ${factor(g)}^${years} = ${money(grown(salary, g, years), true)}` }),
 };

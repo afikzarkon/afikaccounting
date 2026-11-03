@@ -56,7 +56,7 @@ export function withLtrFormulas(m: StudyModule): StudyModule {
     ...m,
     exercises: m.exercises.map((x) =>
       x.kind === "journal"
-        ? x
+        ? { ...x, entry: { ...x.entry, why: x.entry.why && ltrFormulas(x.entry.why) } }
         : { ...x, prompt: ltrFormulas(x.prompt), steps: many(x.steps), ...(x.kind === "choice" ? { options: many(x.options) } : {}) },
     ),
     traps: m.traps.map((t: Trap) => ({ ...t, prompt: ltrFormulas(t.prompt), options: many(t.options), why: ltrFormulas(t.why), traps: many(t.traps) })),

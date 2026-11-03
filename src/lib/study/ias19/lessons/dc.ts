@@ -1,5 +1,6 @@
-import { definedContribution, raised } from "@/lib/learn/ias19";
+import { definedContribution, grown, raised } from "@/lib/learn/ias19";
 import type { StudyModule, Trap } from "../../types";
+import { FORMULA, said, work } from "../formulas";
 import { calc, choice, COURSE, COURSE_HREF, fmt, journal, lessonsRef, pct } from "../shared";
 
 const KINDS = ["הפקדה מוגדרת", "הטבה מוגדרת"];
@@ -84,13 +85,18 @@ export const DC_LESSON: StudyModule = {
   ],
   exercises: [
     calc("s14-2023", "סעיף 14: הוצאה", `${SECTION14.workers} עובדי ייצור חתומים על סעיף 14. בסוף כל שנה מפקידה החברה לכל עובד את משכורתו החודשית האחרונה. השכר ב-${SECTION14.from} היה ${fmt(SECTION14.salary)} ₪, ועולה ב-${pct(SECTION14.raise)} בכל ינואר. מה ההוצאה של 2023?`, s14(2023), [
-      `שכר 2023: ${fmt(SECTION14.salary)} × ${1 + SECTION14.raise}² = ${fmt(s14(2023) / SECTION14.workers)} ₪.`,
-      `× ${SECTION14.workers} עובדים = ${fmt(s14(2023))} ₪ — וכולו שולם, ולכן אין יתרה במאזן.`,
+      `שכר 2023, אחרי שתי העלאות:\n${said(work.grown(SECTION14.salary, SECTION14.raise, 2023 - SECTION14.from))}`,
+      said(work.perHead(grown(SECTION14.salary, SECTION14.raise, 2023 - SECTION14.from), SECTION14.workers, true)),
+      "כולו שולם, ולכן אין יתרה במאזן.",
     ]),
-    calc("s14-2024", "סעיף 14: השנה הבאה", `${SECTION14.workers} עובדי ייצור חתומים על סעיף 14; בסוף כל שנה מופקדת לכל אחד משכורתו החודשית האחרונה. השכר ב-${SECTION14.from} היה ${fmt(SECTION14.salary)} ₪ ועולה ב-${pct(SECTION14.raise)} בכל ינואר. מה ההוצאה של 2024?`, s14(2024), [`שכר 2024: ${fmt(SECTION14.salary)} × ${1 + SECTION14.raise}³; × ${SECTION14.workers} = ${fmt(s14(2024))} ₪.`]),
+    calc("s14-2024", "סעיף 14: השנה הבאה", `${SECTION14.workers} עובדי ייצור חתומים על סעיף 14; בסוף כל שנה מופקדת לכל אחד משכורתו החודשית האחרונה. השכר ב-${SECTION14.from} היה ${fmt(SECTION14.salary)} ₪ ועולה ב-${pct(SECTION14.raise)} בכל ינואר. מה ההוצאה של 2024?`, s14(2024), [
+      `שכר 2024, אחרי שלוש העלאות:\n${said(work.grown(SECTION14.salary, SECTION14.raise, 2024 - SECTION14.from))}`,
+      said(work.perHead(grown(SECTION14.salary, SECTION14.raise, 2024 - SECTION14.from), SECTION14.workers, true)),
+    ]),
     calc("dc-payable", "הפקדה שטרם הועברה", `שכר שנתי ${fmt(DC_VAR.payroll)} ₪, הפקדת מעסיק ${pct(DC_VAR.rate)}, והכסף עובר ב-10 לחודש שאחרי. מה ההתחייבות ב-31.12?`, DC_VAR_YEAR.liability, [
-      `הוצאה: ${fmt(DC_VAR.payroll)} × ${pct(DC_VAR.rate)} = ${fmt(DC_VAR_YEAR.expense)} ₪; שולמו 11 חודשים.`,
-      `נשארה ההפקדה של דצמבר: ${fmt(DC_VAR_YEAR.liability)} ₪.`,
+      said(work.dcExpense(DC_VAR.payroll, DC_VAR.rate)),
+      `שולמו 11 חודשים:\n${said(work.dcPaid(DC_VAR_YEAR.expense, 11))}`,
+      `מה שנשאר הוא ההפקדה של דצמבר:\n${said(work.dcPayable(DC_VAR_YEAR.expense, DC_VAR_YEAR.expense - DC_VAR_YEAR.liability))}`,
     ]),
     choice("cls-lump", "סיווג", "מענק חד־פעמי בפרישה או בפיטורין לפי שנות ותק, בלי קרן נפרדת.", KINDS, 1, "החברה הבטיחה סכום — הסיכון עליה."),
     choice("cls-trust", "סיווג", "החברה מעבירה כסף לחשבון נאמנות שממנו יקנו מתנות פרישה; אם לא יספיק, החברה תשלים.", KINDS, 1, "חשבון הנאמנות לא מעביר את הסיכון — החברה משלימה."),
@@ -106,14 +112,14 @@ export const DC_LESSON: StudyModule = {
         { account: "מזומן", cr: DC_PAID },
         { account: "זכאים", cr: DC_YEAR.liability },
       ],
-      "ההוצאה היא ההפקדה המגיעה בגין השנה; מה שעוד לא הועבר הוא התחייבות.",
+      `ההוצאה היא ההפקדה המגיעה בגין השנה; מה שעוד לא הועבר הוא התחייבות.\n${said(work.dcExpense(DC.payroll, DC.rate))}\n${said(work.dcPaid(DC_YEAR.expense, 11))}\n${said(work.dcPayable(DC_YEAR.expense, DC_PAID))}`,
       ["הוצאות שכר", "מזומן", "זכאים", "התחייבות בשל הטבה מוגדרת", "הוצאות מימון"],
     ),
   ],
   traps,
   tips: [
     "הפקדה מוגדרת: ההוצאה שווה להפקדה. הטבה מוגדרת: מדידה אקטוארית.",
-    "רישום הפקדה מוגדרת (סעיפים 51–52): הוצאה = ההפקדה המגיעה בגין שירות התקופה; ההפרש מול מה ששולם הוא התחייבות או נכס; בלי היוון, אלא אם ההפקדה תשולם יותר מ-12 חודשים אחרי סוף השנה.",
+    `רישום הפקדה מוגדרת (סעיפים 51–52): ${FORMULA.dcExpense}; ${FORMULA.dcPayable} (ואם שילמו יותר, נכס); בלי היוון, אלא אם ההפקדה תשולם יותר מ-12 חודשים אחרי סוף השנה.`,
     "המבחן הוא מי נושא בסיכון, לא מי משלם. ערבות לתשואה או חובה להשלים פער הופכות תוכנית להטבה מוגדרת (סעיף 29).",
     "בישראל: רכיב הפיצויים לפי סעיף 14 — הפקדה מוגדרת; פיצויים מלאים לפי משכורת אחרונה — הטבה מוגדרת.",
   ],
