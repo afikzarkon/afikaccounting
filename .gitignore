@@ -41,9 +41,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# skills installed with npx skills (local tooling)
-.claude/skills/
-skills-lock.json
+# skills live in .claude/skills/ as real files and are committed, so every
+# computer and cloud session gets them; skills-lock.json records their sources
 
 # private working files (never committed)
 /.private/

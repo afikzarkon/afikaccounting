@@ -14,6 +14,10 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Skills installed locally with npx skills (git-ignored tooling, not the site).
     ".claude/skills/**",
+    ".agents/**",
+    "skills/**",
+    "agent/skills/**",
+    "data/skills/**",
   ]),
 ]);
 
