@@ -1,4 +1,6 @@
 import { dayCost, fifo, lifo, pv, shortTermExpense } from "@/lib/learn/ias19";
+import { solveAbsence } from "@/lib/learn/ias19-absence";
+import { ALON } from "@/lib/learn/ias19-absence-cases";
 import type { StudyModule, Trap } from "../../types";
 import { FORMULA, said, tool, work } from "../formulas";
 import { calc, choice, COURSE, COURSE_HREF, fmt, journal, pct } from "../shared";
@@ -33,156 +35,20 @@ export const DAYCOST_FULL = dayCost(DAYCOST.salary, DAYCOST.days, DAYCOST_RATE);
 export const DANNY = { entitlement: 12, carried: 3, used: [8, 12, 14] };
 /** Under FIFO, a fourth case: using fewer days than were carried, so a carried day still lapses. */
 export const DANNY_FIFO = [2, ...DANNY.used];
-/** Screen 7: the standard's own example (IAS 19.17) — 100 employees, 5 sick days, LIFO, 2 carried on average; 92 use no more than 5 next year, 8 use 6.5. Then 5 expected leavers. */
+/** The standard's own example (IAS 19.17), folded into the opening step: 100 employees, 5 sick days, LIFO, 2 carried on average; 92 use no more than 5 next year, 8 use 6.5. */
 export const EXPECT = { staff: 100, entitlement: 5, carried: 2, dayCost: 500, leavers: 5, groups: [{ staff: 92, use: 5 }, { staff: 8, use: 6.5 }] };
 /** Days a group will take out of its carried balance next year, under LIFO. */
 export const fromCarried = (use: number) => Math.max(0, use - EXPECT.entitlement);
 export const EXPECT_DAYS = EXPECT.groups.reduce((s, g) => s + g.staff * fromCarried(g.use), 0);
-export const EXPECT_LEAVER_DAYS = EXPECT.leavers * EXPECT.carried;
 
-/** Screen 8, full example 1: vacation that vests, LIFO, two groups; all days carried on are expected to be used or paid. */
-export const GAL = { entitlement: 12, carried: 3, dayCost: 500, groups: [{ label: "א", staff: 12, used: 14 }, { label: "ב", staff: 8, used: 9 }] };
-export const GAL_STAFF = GAL.groups.reduce((s, g) => s + g.staff, 0);
-export const GAL_ROWS = GAL.groups.map((g) => ({ ...g, ...lifo({ carried: GAL.carried, entitlement: GAL.entitlement, used: g.used }) }));
-export const GAL_OPENING = GAL_STAFF * GAL.carried * GAL.dayCost;
-export const GAL_PAID = GAL_ROWS.reduce((s, r) => s + r.staff * r.used, 0) * GAL.dayCost;
-export const GAL_CLOSING = GAL_ROWS.reduce((s, r) => s + r.staff * r.unusedOwn, 0) * GAL.dayCost;
-export const GAL_EXPENSE = shortTermExpense(GAL_OPENING, GAL_PAID, GAL_CLOSING);
-export const GAL_EARNED = GAL_STAFF * GAL.entitlement;
-
-/**
- * Screen 9, full example 2: sick days that do not vest, LIFO, a day costed
- * with on-costs. The opening and closing provisions are built on what the
- * company expected; the payments on what happened. Then the same year as if
- * the days vested.
- */
-export const OROT = {
-  entitlement: 6,
-  carried: 2,
-  salary: 9_450,
-  days: 21,
-  onCosts: 0.2,
-  /** Last year's expectation for this year. */
-  opening: [
-    { label: "עוזבים", staff: 4, use: 0, leaves: true },
-    { label: "עד 6 ימים", staff: 30, use: 6, leaves: false },
-    { label: "7 ימים", staff: 6, use: 7, leaves: false },
-  ],
-  /** What happened: three left at the start, the rest used their days. */
-  left: 3,
-  actual: [
-    { label: "א", staff: 25, used: 5 },
-    { label: "ב", staff: 8, used: 8 },
-    { label: "ג", staff: 4, used: 7 },
-  ],
-  /** This year's expectation for next year, for group A — the only one with a day carried on. */
-  closing: [
-    { label: "ינצלו 7 ימים", staff: 10, use: 7, leaves: false },
-    { label: "ינצלו עד 6", staff: 12, use: 6, leaves: false },
-    { label: "יעזבו", staff: 3, use: 0, leaves: true },
-  ],
-};
-export const OROT_DAY = dayCost(OROT.salary, OROT.days, OROT.onCosts);
-export const OROT_STAFF = OROT.opening.reduce((s, g) => s + g.staff, 0);
-/** Carried days a stayer is expected to take next year, under LIFO: what goes beyond the new entitlement, up to what is carried. */
-const extra = (use: number, carried: number) => Math.min(carried, Math.max(0, use - OROT.entitlement));
-export const OROT_ROWS = OROT.actual.map((g) => ({ ...g, ...lifo({ carried: OROT.carried, entitlement: OROT.entitlement, used: g.used }) }));
-/** Group A carries this many days each into next year. */
-export const OROT_CARRY = OROT_ROWS[0].unusedOwn;
-export const OROT_OPEN_ROWS = OROT.opening.map((g) => ({ ...g, perHead: g.leaves ? 0 : extra(g.use, OROT.carried) }));
-export const OROT_CLOSE_ROWS = OROT.closing.map((g) => ({ ...g, perHead: g.leaves ? 0 : extra(g.use, OROT_CARRY) }));
-const sumDays = (rows: { staff: number; perHead: number }[]) => rows.reduce((s, r) => s + r.staff * r.perHead, 0);
-export const OROT_USED_DAYS = OROT_ROWS.reduce((s, r) => s + r.staff * r.used, 0);
-export const OROT_OPENING = sumDays(OROT_OPEN_ROWS) * OROT_DAY;
-export const OROT_PAID = OROT_USED_DAYS * OROT_DAY;
-export const OROT_CLOSING = sumDays(OROT_CLOSE_ROWS) * OROT_DAY;
-export const OROT_EXPENSE = shortTermExpense(OROT_OPENING, OROT_PAID, OROT_CLOSING);
-/** The same year if the days vested: leavers count on all their days, and the three who left were paid theirs. */
-const leaverDays = (rows: { staff: number; leaves: boolean }[], carried: number) => rows.filter((r) => r.leaves).reduce((s, r) => s + r.staff * carried, 0);
-export const OROT_VEST = {
-  openingDays: leaverDays(OROT.opening, OROT.carried) + sumDays(OROT_OPEN_ROWS),
-  paidDays: OROT_USED_DAYS + OROT.left * OROT.carried,
-  closingDays: leaverDays(OROT.closing, OROT_CARRY) + sumDays(OROT_CLOSE_ROWS),
-};
-export const OROT_VEST_EXPENSE = shortTermExpense(OROT_VEST.openingDays * OROT_DAY, OROT_VEST.paidDays * OROT_DAY, OROT_VEST.closingDays * OROT_DAY);
-
-/** Screen 10: a bonus by formula — a share of the year's profit to whoever is still employed on payment day; five expected to leave. Paid on the final profit to those who stayed. */
+/** The bonus screen: a bonus by formula — a share of the year's profit to whoever is still employed on payment day; five expected to leave. Paid on the final profit to those who stayed. */
 export const NOF = { staff: 50, share: 0.00002, estimate: 90_000_000, leavers: 5, actual: 100_000_000, paidTo: 47 };
 export const NOF_OPENING = Math.round(NOF.share * NOF.estimate * (NOF.staff - NOF.leavers));
 export const NOF_PAID = Math.round(NOF.share * NOF.actual * NOF.paidTo);
 export const NOF_EXPENSE = shortTermExpense(NOF_OPENING, NOF_PAID, 0);
 
-/** Screen 11: the order a question is solved in, and the mistakes that cost marks. */
-export const METHOD_STEPS: [string, string][] = [
-  ["סווגו את ההטבה.", "נצברת או לא? אם לא נצברת, אין הפרשה, ורושמים רק כשקורה. אם נצברת: מבשילה או לא?"],
-  ["קבעו את סדר הניצול.", "LIFO, אלא אם השאלה אומרת FIFO במפורש. בדקו גם לכמה זמן הצבור עובר לפני שהוא פוקע."],
-  ["חשבו עלות יום.", "שכר ÷ ימי עבודה × (1 + התוספות שחלות על הרכיב), לפי השכר של השנה."],
-  ["בנו טבלת ימים.", "שורה לכל קבוצת עובדים, ועמודות: עובדים, ניצלו, מימי השנה, מהצבור, צבור שפקע, עובר לשנה הבאה."],
-  ["פתיחה וסגירה לפי הצפי.", "לכל קבוצה: כמה מהימים הצבורים שלה יעלו כסף? במבשילה, העוזבים הצפויים על כל הימים שלהם."],
-  ["תשלומים לפי מה שקרה בפועל.", "הימים שנוצלו, ובמבשילה גם הפדיון לעוזבים."],
-  ["מעגל, הוצאה ורישומים.", "ההוצאה היא השורה החסרה: סגירה − פתיחה + תשלומים. ובלי היוון."],
-];
-export const METHOD_MISTAKES = [
-  "להפריש על כל הימים הצבורים, במקום רק על מה שצפוי להשתלם.",
-  "במבשילה, לשכוח את העוזבים הצפויים. או להפך: בלא מבשילה, להכניס אותם.",
-  "במבשילה, להפריש על כל הימים של הנשארים. גם אצלם הולכים לפי הניצול הצפוי.",
-  "לחשב את התשלומים לפי הצפי, במקום לפי מה שקרה בפועל.",
-  "לעבוד ב-FIFO כשהשאלה לא ביקשה.",
-  "להוסיף לעלות היום תוספות שלא חלות על הרכיב.",
-  "להוון. בהטבה לזמן קצר לא מהוונים.",
-];
-
-/**
- * Screen 12, the closing practice: vacation that vests, FIFO, a day costed
- * with on-costs. Both provisions are built on a partial expectation: under
- * FIFO an employee reaches the carried days up to the days he will use, and
- * an expected leaver is paid for all of them.
- */
-export const YAM = {
-  entitlement: 10,
-  carried: 4,
-  salary: 8_820,
-  days: 21,
-  onCosts: 0.25,
-  /** Last year's expectation for this year. */
-  opening: [
-    { label: "יעזבו", staff: 2, use: 0, leaves: true },
-    { label: "לפחות 4 ימים", staff: 20, use: 4, leaves: false },
-    { label: "2 ימים", staff: 8, use: 2, leaves: false },
-  ],
-  /** What happened: two left on 1 January and were paid their carried days. */
-  left: 2,
-  actual: [
-    { label: "א", staff: 18, used: 11 },
-    { label: "ב", staff: 10, used: 3 },
-  ],
-  /** This year's expectation for next year, by group. */
-  closing: [
-    { group: 0, label: "יעזבו", staff: 2, use: 0, leaves: true },
-    { group: 0, label: "לפחות 3 ימים", staff: 16, use: 3, leaves: false },
-    { group: 1, label: "יעזוב", staff: 1, use: 0, leaves: true },
-    { group: 1, label: "8 ימים", staff: 6, use: 8, leaves: false },
-    { group: 1, label: "4 ימים", staff: 3, use: 4, leaves: false },
-  ],
-};
-export const YAM_STAFF = YAM.opening.reduce((s, g) => s + g.staff, 0);
-export const YAM_DAY = dayCost(YAM.salary, YAM.days, YAM.onCosts);
-/** Carried days that will cost money, per head: all of them for a leaver who vests; under FIFO, as many as a stayer will use. */
-const reached = (carried: number, g: { use: number; leaves: boolean }) => (g.leaves ? carried : Math.min(carried, g.use));
-export const YAM_OPEN_ROWS = YAM.opening.map((g) => ({ ...g, perHead: reached(YAM.carried, g) }));
-export const YAM_ROWS = YAM.actual.map((g) => ({ ...g, ...fifo({ carried: YAM.carried, entitlement: YAM.entitlement, used: g.used }) }));
-export const YAM_CLOSE_ROWS = YAM.closing.map((g) => {
-  const carried = YAM_ROWS[g.group].unusedOwn;
-  return { ...g, groupLabel: YAM_ROWS[g.group].label, carried, perHead: reached(carried, g) };
-});
-const daysOf = (rows: { staff: number; perHead: number }[]) => rows.reduce((s, r) => s + r.staff * r.perHead, 0);
-export const YAM_OPEN_DAYS = daysOf(YAM_OPEN_ROWS);
-export const YAM_CLOSE_DAYS = daysOf(YAM_CLOSE_ROWS);
-export const YAM_PAID_DAYS = YAM.left * YAM.carried + YAM_ROWS.reduce((s, r) => s + r.staff * r.used, 0);
-export const YAM_OPENING = YAM_OPEN_DAYS * YAM_DAY;
-export const YAM_PAID = YAM_PAID_DAYS * YAM_DAY;
-export const YAM_CLOSING = YAM_CLOSE_DAYS * YAM_DAY;
-export const YAM_EXPENSE = shortTermExpense(YAM_OPENING, YAM_PAID, YAM_CLOSING);
+/** The walkthrough's expense in the first assumption, for the journal exercise. */
+const ALON_A = solveAbsence(ALON, "A");
 
 /** The exercises, in the order of the screens. */
 const DAY_Q = { salary: 12_600, days: 21, onCosts: 0.22 };
@@ -255,14 +121,14 @@ const traps: Trap[] = [
   },
 ];
 
-/** Lesson 3: short-term benefits — what they are, absences (accumulating or not, vesting or not), the cost of a day, LIFO and FIFO, the provision by expectation, two full examples, bonuses, a method and a closing practice. */
+/** Lesson 3: short-term benefits — what they are, absences (accumulating or not, vesting or not), the cost of a day, LIFO and FIFO; then how to solve an absence question in six steps, on one company in both assumptions, the traps, bonuses, and four summary exams. */
 export const SHORT: StudyModule = {
   slug: "ias19-short",
   course: COURSE,
   n: 3,
   title: "הטבות לזמן קצר: היעדרויות ובונוסים",
-  description: "מה נחשב הטבה לזמן קצר, ולמה לא מהוונים. היעדרויות נצברות ומבשילות, עלות יום עם התוספות, LIFO ו-FIFO, הפרשה לפי מה שצפוי להשתלם, ובונוסים. שתי דוגמאות מלאות בטבלה ובמעגל, שיטת עבודה, ותרגול מסכם.",
-  goal: "לפתור שאלה מלאה על היעדרויות ובונוסים: עלות יום, טבלת ימים, הפרשה לפי הצפי, תשלומים, והוצאה מהמעגל.",
+  description: "מה נחשב הטבה לזמן קצר, ולמה לא מהוונים. היעדרויות נצברות ומבשילות, עלות יום עם התוספות, LIFO ו-FIFO. אחר כך: איך פותרים שאלה על ימי מחלה בששה שלבים, על תרגיל אחד בשתי ההנחות, המלכודות ותבנית פתרון, בונוסים, וארבעה מבחנים מסכמים.",
+  goal: "לפתור שאלה מלאה על היעדרויות בששה שלבים: סיווג, מה נכנס, פתיחה לפי הצפי, תשלומים לפי מה שקרה, סגירה אחרי ניצול ופקיעה, והוצאה מטבלת התנועה.",
   outcomes: [
     "לזהות הטבה לזמן קצר ולהסביר למה לא מהוונים אותה",
     "להבחין בין היעדרות נצברת ללא נצברת, ובין מבשילה ללא מבשילה",
@@ -279,12 +145,18 @@ export const SHORT: StudyModule = {
     { id: "emp-short-daycost", title: "עלות יום, ומה הן התוספות" },
     { id: "emp-short-lifo", title: "LIFO: קודם הימים של השנה" },
     { id: "emp-short-fifo", title: "FIFO: קודם הימים הצבורים" },
-    { id: "emp-short-expect", title: "ההפרשה לפי הצפי" },
-    { id: "emp-short-full1", title: "דוגמה מלאה 1: ימי חופשה ב-LIFO" },
-    { id: "emp-short-full2", title: "דוגמה מלאה 2: ימי מחלה שלא מבשילים" },
+    { id: "emp-short-map", title: "איך פותרים: ששה שלבים" },
+    { id: "emp-short-classify", title: "שלבים 1–2: סיווג, ומה נכנס להפרשה" },
+    { id: "emp-short-opening", title: "שלב 3: יתרת פתיחה, לפי הצפי" },
+    { id: "emp-short-payments", title: "שלב 4: תשלומים, לפי מה שקרה" },
+    { id: "emp-short-closing", title: "שלב 5: יתרת סגירה, אחרי ניצול ופקיעה" },
+    { id: "emp-short-movement", title: "שלב 6: טבלת התנועה" },
+    { id: "emp-short-traps", title: "מלכודות, ותבנית פתרון" },
     { id: "emp-short-bonus", title: "בונוסים ושיתוף ברווחים" },
-    { id: "emp-short-method", title: "שיטת עבודה לשאלה" },
-    { id: "emp-short-practice", title: "תרגול מסכם: חופשה ב-FIFO" },
+    { id: "emp-short-exam-cap", title: "מבחן מסכם 1: קבוצה שעוברת את היתרה" },
+    { id: "emp-short-exam-leavers", title: "מבחן מסכם 2: עוזבים בתחילת השנה ובסופה" },
+    { id: "emp-short-exam-lapse", title: "מבחן מסכם 3: יתרה ישנה שפוקעת" },
+    { id: "emp-short-exam-average", title: "מבחן מסכם 4: ממוצע, וסגירה לפי צפי" },
   ],
   exercises: [
     choice(
@@ -381,13 +253,13 @@ export const SHORT: StudyModule = {
     journal(
       "provision-entry",
       "רישום ההפרשה",
-      `ההוצאה של השנה על ימי חופשה היא ${fmt(GAL_EXPENSE)} ₪. רשמו אותה ב-31.12.`,
+      `אצל ״אלון״, בהנחה א׳, ההוצאה של השנה על ימי מחלה היא ${fmt(ALON_A.expense)} ₪: הנעלם בטבלת התנועה. רשמו אותה ב-31.12.`,
       [
-        { account: "הוצאות שכר", dr: GAL_EXPENSE },
-        { account: "התחייבות לחופשה והבראה", cr: GAL_EXPENSE },
+        { account: "הוצאות שכר", dr: ALON_A.expense },
+        { account: "התחייבות לימי מחלה", cr: ALON_A.expense },
       ],
-      "ההוצאה נרשמת בשנה שבה עבדו, וההתחייבות לחופשה (ההפרשה) גדלה. כשמשלמים, היא קטנה מול המזומן.",
-      ["הוצאות שכר", "התחייבות לחופשה והבראה", "מזומן", "הוצאות מימון"],
+      "ההוצאה נרשמת בשנה שבה עבדו, וההתחייבות לימי מחלה (ההפרשה) גדלה. כשמשלמים, היא קטנה מול המזומן.",
+      ["הוצאות שכר", "התחייבות לימי מחלה", "מזומן", "הוצאות מימון"],
     ),
   ],
   traps,

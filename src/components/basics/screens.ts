@@ -15,6 +15,7 @@ import { IAS19_BASICS_SCREENS } from "./ias19-course";
 import { IAS19_DB_SCREENS } from "./ias19-course-db";
 import { IAS19_DB2_SCREENS } from "./ias19-course-db2";
 import { IAS19_END_SCREENS } from "./ias19-course-end";
+import { IAS19_SHORT_SCREENS } from "./ias19-course-short";
 import { IAS19_SIMPLE_SCREENS } from "./ias19-course-simple";
 import { IAS19_TOOLS_SCREENS } from "./ias19-course-tools";
 import { ltrLeads } from "@/lib/study/ias19/ltr";
@@ -50,7 +51,7 @@ const SCREENS: Record<string, ScreenContent> = {
   ...IAS16_COURSE_MORE_SCREENS,
   ...IAS16_COURSE_NEW_SCREENS,
   // The employee-benefits course lays every formula in a plain-text lead out left to right.
-  ...ltrLeads({ ...IAS19_BASICS_SCREENS, ...IAS19_TOOLS_SCREENS, ...IAS19_SIMPLE_SCREENS, ...IAS19_DB_SCREENS, ...IAS19_DB2_SCREENS, ...IAS19_END_SCREENS }),
+  ...ltrLeads({ ...IAS19_BASICS_SCREENS, ...IAS19_TOOLS_SCREENS, ...IAS19_SIMPLE_SCREENS, ...IAS19_SHORT_SCREENS, ...IAS19_DB_SCREENS, ...IAS19_DB2_SCREENS, ...IAS19_END_SCREENS }),
 };
 
 /** A lesson's concept screens, in its order. A screen listed in the lesson but missing here fails the build. */

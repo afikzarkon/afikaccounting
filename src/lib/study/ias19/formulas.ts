@@ -35,6 +35,11 @@ export const FORMULA = {
   lifoOld: "ימים שנוצלו − זכאות השנה = ימים שנוצלו מהצבור",
   fifoOwn: "ימים שנוצלו − ימים צבורים = ימים שנוצלו מהשנה",
   fifoLeft: "זכאות השנה − ימים שנוצלו מהשנה = ימים שעוברים לשנה הבאה",
+  /** The guide's six steps: the carried days a group will cost, what was paid per head, what a stayer carries on, and a table's total. */
+  fromBalance: "MIN(יתרה, MAX(0, צפי ניצול − זכאות)) = ימי יתרה לעובד",
+  paidDays: "ימי היעדרות + פדיון = ימים ששולמו לעובד",
+  carryOut: "זכאות − ניצול = יתרה חדשה",
+  dayTotal: "(Σ עובדים × ימים לעובד) × עלות יום = סכום",
   earnedLessLapsed: "(ימים שנצברו − ימים שפקעו) × עלות יום = הוצאה",
   bonus: "שיעור הבונוס × הרווח × עובדים צפויים = הפרשה לבונוס",
   bonusPaid: "שיעור הבונוס × הרווח בפועל × עובדים שקיבלו = תשלום",
@@ -151,6 +156,23 @@ export const work = {
     numbers: `${groups.map((g) => `${g.staff} × ${g.days} × ${cents(g.dayCost)}`).join(" + ")} = ${money(groups.reduce((s, g) => s + g.staff * g.days * g.dayCost, 0))}`,
   }),
   stayers: (staff: number, leaving: number): Worked => ({ formula: FORMULA.stayers, numbers: `${staff} − ${leaving} = ${staff - leaving}` }),
+  fromBalance: (balance: number, use: number, entitlement: number): Worked => ({
+    formula: FORMULA.fromBalance,
+    numbers: `MIN(${num(balance)}, MAX(0, ${num(use)} − ${num(entitlement)})) = ${num(Math.min(balance, Math.max(0, use - entitlement)))}`,
+  }),
+  paidDays: (use: number, payout: number): Worked => ({ formula: FORMULA.paidDays, numbers: `${num(use)} + ${num(payout)} = ${num(use + payout)}` }),
+  carryOut: (entitlement: number, use: number): Worked => ({ formula: FORMULA.carryOut, numbers: `${num(entitlement)} − ${num(use)} = ${num(Math.max(0, entitlement - use))}` }),
+  /** A table's total, as the guide writes it: the days of every group that counts, added, times a day's cost; and the same in Excel. */
+  dayTotal: (groups: { staff: number; days: number }[], dayCost: number): Worked => {
+    const counted = groups.filter((g) => g.staff * g.days > 0);
+    const days = counted.reduce((s, g) => s + g.staff * g.days, 0);
+    const terms = counted.length ? counted.map((g) => `${num(g.staff)} × ${num(g.days)}`).join(" + ") : "0";
+    return {
+      formula: FORMULA.dayTotal,
+      numbers: `(${terms}) × ${cents(dayCost)} = ${money(days * dayCost)}`,
+      excel: { formula: "=SUMPRODUCT(עובדים;ימים לעובד)*עלות יום", numbers: `=SUMPRODUCT(B2:B${counted.length + 1};C2:C${counted.length + 1})*${Math.round(dayCost * 100) / 100} → ${money(days * dayCost)}` },
+    };
+  },
   lifo: (entitlement: number, used: number): Worked => ({ formula: FORMULA.lifo, numbers: `${entitlement} − ${used} = ${Math.max(0, entitlement - used)}` }),
   lifoOld: (used: number, entitlement: number): Worked => ({ formula: FORMULA.lifoOld, numbers: `${used} − ${entitlement} = ${Math.max(0, used - entitlement)}` }),
   /** The quick check of a year's absence expense: the days earned, less the carried days that lapsed, at a day's cost. */
