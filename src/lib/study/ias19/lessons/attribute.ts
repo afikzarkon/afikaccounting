@@ -1,10 +1,11 @@
 import { accrued, attribution, pv, tiered } from "@/lib/learn/ias19";
 import { examA } from "@/lib/learn/ias19-exams";
 import type { StudyModule, Trap } from "../../types";
+import { windowRow, type WindowRule } from "../drills";
 import { calc, choice, COURSE, COURSE_HREF, fmt, pct } from "../shared";
 
 /** The worked example: a grant that pays more for early years, with a cap — the plan's formula. */
-export const FRONT = { early: { upTo: 4, perYear: 3_000 }, later: 1_500, cap: 18_000, expected: 8, served: 5, n: 3, rate: 0.06 };
+export const FRONT = { early: { upTo: 4, perYear: 2_500 }, later: 1_200, cap: 14_800, expected: 8, served: 5, n: 3, rate: 0.06 };
 export const frontF = tiered([{ upTo: FRONT.early.upTo, perYear: FRONT.early.perYear }, { perYear: FRONT.later }]);
 export const FRONT_A = attribution(frontF, FRONT.expected, FRONT.cap);
 export const FRONT_ACCRUED = accrued(FRONT_A, frontF, FRONT.served, FRONT.cap);
@@ -14,7 +15,7 @@ export const FRONT_WRONG = (FRONT.cap / FRONT.expected) * FRONT.served;
 export const FRONT_WRONG_OBLIGATION = pv(FRONT_WRONG, FRONT.rate, FRONT.n);
 
 /** "We solve" (a): later years pay much more — straight line. */
-export const BACK = { early: { upTo: 4, perYear: 3_000 }, later: 6_000, expected: 10, served: 6, n: 4, rate: 0.06 };
+export const BACK = { early: { upTo: 4, perYear: 2_500 }, later: 6_000, expected: 10, served: 6, n: 4, rate: 0.06 };
 export const backF = tiered([{ upTo: BACK.early.upTo, perYear: BACK.early.perYear }, { perYear: BACK.later }]);
 export const BACK_A = attribution(backF, BACK.expected);
 export const BACK_ACCRUED = accrued(BACK_A, backF, BACK.served);
@@ -22,31 +23,28 @@ export const BACK_OBLIGATION = pv(BACK_ACCRUED, BACK.rate, BACK.n);
 export const BACK_WRONG = backF(BACK.served);
 export const BACK_WRONG_OBLIGATION = pv(BACK_WRONG, BACK.rate, BACK.n);
 
-/** "We solve" (b): a grant at 67 for which service counts only from 47; three employees. */
-export const LATE = {
-  grant: 6_000,
-  countsFrom: 47,
-  retire: 67,
+/**
+ * "We solve" (b): a grant with two routes to entitlement — still employed at
+ * 60 after 25 years of service, or at 67 regardless of service — and three
+ * employees, one for each case of IAS 19.73: hired before 35 (counts only
+ * from 35), hired in time to complete 25 years (counts from hire, for 25
+ * years), hired too late (counts from hire to 67).
+ */
+export const DUAL: { rule: WindowRule; rate: number; date: string; people: { id: string; age: number; hireAge: number; stay: number }[] } = {
+  rule: { grant: 4_500, minAge: 60, years: 25, retire: 67 },
   rate: 0.035,
+  date: "31.12.2025",
   people: [
-    { id: "א", age: 50, startedAt: 30, stay: 0.85 },
-    { id: "ב", age: 45, startedAt: 40, stay: 0.9 },
-    { id: "ג", age: 60, startedAt: 55, stay: 0.95 },
+    { id: "א", age: 41, hireAge: 31, stay: 0.8 },
+    { id: "ב", age: 44, hireAge: 39, stay: 0.9 },
+    { id: "ג", age: 63, hireAge: 58, stay: 0.96 },
   ],
 };
-export const latePerson = (p: (typeof LATE.people)[number]) => {
-  const from = Math.max(p.startedAt, LATE.countsFrom);
-  const window = LATE.retire - from;
-  const perYear = LATE.grant / window;
-  const served = Math.max(0, p.age - from);
-  const n = LATE.retire - p.age;
-  return { from, window, perYear, served, accrued: perYear * served, n, obligation: pv(perYear * served, LATE.rate, n) * p.stay };
-};
-export const LATE_ROWS = LATE.people.map(latePerson);
-export const LATE_TOTAL = LATE_ROWS.reduce((s, r) => s + r.obligation, 0);
+export const DUAL_ROWS = DUAL.people.map((p) => windowRow(DUAL.rule, DUAL.rate, p));
+export const DUAL_TOTAL = DUAL_ROWS.reduce((s, r) => s + r.obligation, 0);
 
 /** The exercise (a): a one-off grant for at least twelve years of service, paid at 65 — divided by twelve, discounted to payment. */
-export const ONEOFF = { grant: 90_000, minYears: 12, startAge: 38, retire: 65, from: 2021, rates: { 2021: 0.055, 2022: 0.06 } };
+export const ONEOFF = { grant: 90_000, minYears: 12, startAge: 38, retire: 67, from: 2021, rates: { 2021: 0.055, 2022: 0.06 } };
 export const ONEOFF_PER_YEAR = ONEOFF.grant / ONEOFF.minYears;
 export const oneoffAt = (year: 2021 | 2022) => {
   const served = year - ONEOFF.from + 1;
@@ -61,7 +59,7 @@ export const ASM = A;
 const traps: Trap[] = [
   {
     id: "habit",
-    prompt: "מענק: 1,000 ₪ לכל אחת מ-5 השנים הראשונות, ו-500 ₪ לכל שנה אחריהן. איך משייכים לשנים?",
+    prompt: "מענק: 1,200 ₪ לכל אחת מ-4 השנים הראשונות, ו-600 ₪ לכל שנה אחריהן. איך משייכים לשנים?",
     options: ["לפי נוסחת התוכנית", "בקו ישר — תמיד", "בקו ישר, כי יש שתי מדרגות", "רק בשנה האחרונה"],
     answer: 0,
     why: "קו ישר רק כשהשנים המאוחרות נותנות הטבה גבוהה מהותית. כאן המאוחרות נותנות פחות — נוסחת התוכנית (IAS 19.71).",
@@ -69,27 +67,35 @@ const traps: Trap[] = [
   },
   {
     id: "shrink-cap",
-    prompt: "מענק של 2,000 ₪ לשנה, עד תקרה של 10,000 ₪. העובד צפוי לעבוד 8 שנים. מה נכון?",
-    options: ["ההטבה 10,000, והצבירה נפרסת על 5 שנים", "ההטבה 10,000, והצבירה 1,250 לשנה על 8 שנים", "ההטבה 16,000", "ההטבה 10,000, והצבירה מתחילה בשנה הרביעית"],
+    prompt: "מענק של 2,500 ₪ לשנה, עד תקרה של 12,500 ₪. העובד צפוי לעבוד 9 שנים. מה נכון?",
+    options: ["ההטבה 12,500, והצבירה נפרסת על 5 שנים", "ההטבה 12,500, והצבירה כ-1,389 לשנה על 9 שנים", "ההטבה 22,500", "ההטבה 12,500, והצבירה מתחילה בשנה החמישית"],
     answer: 0,
-    why: "התקרה מקצרת את חלון הצבירה: אחרי 5 שנים כבר הגיעו ל-10,000, והשנים שאחריהן לא מוסיפות דבר.",
+    why: "התקרה מקצרת את חלון הצבירה: אחרי 5 שנים כבר הגיעו ל-12,500, והשנים שאחריהן לא מוסיפות דבר.",
     traps: ["", "המלכודת: לכווץ את הסכום לשנה. השנים שאחרי התקרה לא מקנות כלום.", "התקרה חותכת את ההטבה.", "הצבירה מהשנה הראשונה, עד התקרה."],
   },
   {
     id: "before-eligible",
-    prompt: "השירות מקנה זכאות רק מגיל 40. עובד התחיל לעבוד בגיל 36, והיום הוא בן 43. כמה שנות שירות נספרות?",
-    options: ["3", "7", "4", "0"],
+    prompt: "השירות מקנה זכאות רק מגיל 42. עובד התחיל לעבוד בגיל 37, והיום הוא בן 45. כמה שנות שירות נספרות?",
+    options: ["3", "8", "5", "0"],
     answer: 0,
-    why: "סופרים רק מהרגע שהשירות מקנה זכאות: מגיל 40 עד 43.",
-    traps: ["", "המלכודת: לספור את כל שנות העבודה. ארבע השנים הראשונות לא מקנות כלום.", "אלה השנים שלא נספרות.", "הוא כבר עבר את גיל 40."],
+    why: "סופרים רק מהרגע שהשירות מקנה זכאות: מגיל 42 עד 45.",
+    traps: ["", "המלכודת: לספור את כל שנות העבודה. חמש השנים הראשונות לא מקנות כלום.", "אלה השנים שלא נספרות.", "הוא כבר עבר את גיל 42."],
   },
   {
     id: "discount-window",
-    prompt: "מענק של 60,000 ₪ למי שעובד 10 שנים לפחות; נספר על 10 שנים, אבל ישולם בגיל 65 — בעוד 24 שנים מסוף השנה הראשונה. מה נכון?",
-    options: ["6,000 לשנה, מהוון 24 שנים", "6,000 לשנה, מהוון 10 שנים", "60,000 מהוון 24 שנים", "2,400 לשנה (60,000 ÷ 25)"],
+    prompt: "מענק של 72,000 ₪ למי שעובד 9 שנים לפחות; נספר על 9 שנים, אבל ישולם בגיל 67 — בעוד 26 שנים מסוף השנה הראשונה. מה נכון?",
+    options: ["8,000 לשנה, מהוון 26 שנים", "8,000 לשנה, מהוון 9 שנים", "72,000 מהוון 26 שנים", "2,667 לשנה (72,000 ÷ 27)"],
     answer: 0,
-    why: "מחלקים בחלון הצבירה (10), ומהוונים לפי השנים עד התשלום (24).",
-    traps: ["", "המלכודת: להוון על חלון הצבירה. ההיוון תמיד עד התשלום.", "בשנה הראשונה נצבר רק עשירית.", "החלון הוא 10 שנים — לא כל הדרך לפרישה."],
+    why: "מחלקים בחלון הצבירה (9), ומהוונים לפי השנים עד התשלום (26).",
+    traps: ["", "המלכודת: להוון על חלון הצבירה. ההיוון תמיד עד התשלום.", "בשנה הראשונה נצבר רק תשיעית.", "החלון הוא 10 שנים — לא כל הדרך לפרישה."],
+  },
+  {
+    id: "two-routes",
+    prompt: "מענק למי שמועסק בגיל 60 אחרי 25 שנות שירות, או בגיל 67 בלי קשר לוותק. עובד התחיל לעבוד בגיל 50. על כמה שנים נפרש המענק?",
+    options: ["17 — מגיל 50 עד 67", "25", "10 — מגיל 50 עד 60", "אין התחייבות — הוא לא ישלים 25 שנה"],
+    answer: 0,
+    why: "עד 67 הוא לא ישלים 25 שנה, ולכן יקבל את המענק רק במסלול הגיל — בגיל 67. כל שירותו מוביל לשם: 17 שנים.",
+    traps: ["", "המלכודת: לחלק תמיד בתקופת הוותק הנדרשת. הוא לא יגיע אליה.", "בגיל 60 הוא עוד לא זכאי — רק 10 שנות שירות.", "יש מסלול שני: בגיל 67 הוא זכאי בלי קשר לוותק."],
   },
   {
     id: "group-heads",
@@ -112,7 +118,8 @@ export const ATTRIBUTE: StudyModule = {
   outcomes: [
     "להכריע בין נוסחת התוכנית לקו ישר",
     "לקצר את חלון הצבירה כשיש תקרה",
-    "לספור שנות שירות רק מהרגע שהן מקנות זכאות",
+    "לספור שנות שירות רק מהרגע שהן מקנות זכאות — ולעצור כשהן מפסיקות להוסיף",
+    "לפתור מענק עם שני מסלולים לזכאות (גיל וּותק, או גיל בלבד) לכמה עובדים",
     "להוון לפי השנים עד התשלום, לא לפי חלון הצבירה",
   ],
   backHref: COURSE_HREF,
@@ -120,9 +127,12 @@ export const ATTRIBUTE: StudyModule = {
     { id: "emp-attr-hook", title: "מנוי חינם אחרי 100 אימונים" },
     { id: "emp-attr-formula", title: "נוסחת התוכנית, או קו ישר" },
     { id: "emp-attr-cap", title: "תקרה, וזכאות שמתחילה מאוחר" },
+    { id: "emp-attr-dual", title: "שני מסלולים לזכאות: גיל וּותק, או גיל בלבד" },
     { id: "emp-attr-rule", title: "הכלל: שלוש שאלות לפני כל חישוב" },
+    { id: "emp-attr-template", title: "תבנית פתרון: שאלת ייחוס" },
     { id: "emp-attr-solved", title: "דוגמה פתורה: מענק שנותן יותר בהתחלה" },
-    { id: "emp-attr-together", title: "פותרים יחד: מענק שקופץ, וזכאות מגיל 47" },
+    { id: "emp-attr-together", title: "פותרים יחד: מענק שקופץ, ושלושה עובדים בשני מסלולים" },
+    { id: "emp-attr-drill", title: "מחולל שאלות: ייחוס במספרים חדשים" },
     { id: "emp-attr-master", title: "בדיקת שליטה, וגשר לשיעור הבא" },
   ],
   exercises: [
@@ -150,7 +160,7 @@ export const ATTRIBUTE: StudyModule = {
       ...ASM.groups.map((g, k) => `קבוצת ${g.id}: ${g.heads} × ${fmt(g.grants[0].perYear)} × ${Math.min(g.served + 1, g.grants[0].window)} ÷ 1.06^${g.nEnd} = ${fmt(Math.round(ASM.year1.rows[k].closing))}.`),
       `סה״כ ${fmt(Math.round(ASM.year1.closing))} ₪.`,
     ]),
-    choice("pick-method", "שיטת השיוך", "מענק: 1,000 ₪ לכל אחת מ-5 השנים הראשונות, ו-5,000 ₪ לכל שנה אחריהן. איך משייכים?", ["בקו ישר", "לפי נוסחת התוכנית", "רק בשנים 6 ואילך", "לפי השנה האחרונה"], 0, "השנים המאוחרות גבוהות מהותית — קו ישר (IAS 19.73)."),
+    choice("pick-method", "שיטת השיוך", "מענק: 1,200 ₪ לכל אחת מ-4 השנים הראשונות, ו-4,800 ₪ לכל שנה אחריהן. איך משייכים?", ["בקו ישר", "לפי נוסחת התוכנית", "רק בשנים 6 ואילך", "לפי השנה האחרונה"], 0, "השנים המאוחרות גבוהות מהותית — קו ישר (IAS 19.73)."),
   ],
   traps,
   tips: [
