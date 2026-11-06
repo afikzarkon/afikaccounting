@@ -1,6 +1,7 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { Geist_Mono, Heebo } from "next/font/google";
+import { Frank_Ruhl_Libre, Geist_Mono, IBM_Plex_Sans_Hebrew } from "next/font/google";
 import { ContentGuard } from "@/components/layout/content-guard";
 import { MobileTabBar, MobileTabBarView } from "@/components/layout/continue";
 import { Footer } from "@/components/layout/footer";
@@ -14,8 +15,9 @@ import { site } from "@/lib/site";
 import { getVisibility } from "@/lib/visibility/server";
 import "./globals.css";
 
-// Heebo covers Hebrew and Latin; numbers in tables use Geist Mono.
-const heebo = Heebo({ variable: "--font-heebo", subsets: ["hebrew", "latin"] });
+// Plex Sans Hebrew for reading, Frank Ruhl Libre for headings; numbers in tables use Geist Mono.
+const plex = IBM_Plex_Sans_Hebrew({ variable: "--font-plex", subsets: ["hebrew", "latin"], weight: ["400", "500", "600", "700"] });
+const frank = Frank_Ruhl_Libre({ variable: "--font-frank", subsets: ["hebrew", "latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -26,8 +28,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f5f7fb" },
-    { media: "(prefers-color-scheme: dark)", color: "#050a17" },
+    { media: "(prefers-color-scheme: light)", color: "#f2f5f0" },
+    { media: "(prefers-color-scheme: dark)", color: "#0d1713" },
   ],
 };
 
@@ -35,7 +37,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   // What the admin hid: cached, so the pages stay prerendered; refreshed when it changes.
   const visibility = await getVisibility();
   return (
-    <html lang="he" dir="rtl" suppressHydrationWarning className={`${heebo.variable} ${geistMono.variable} h-full`}>
+    <html lang="he" dir="rtl" suppressHydrationWarning className={`${plex.variable} ${frank.variable} ${geistMono.variable} h-full`}>
       {/* Extensions such as Grammarly add attributes to <body> before React loads. */}
       <body suppressHydrationWarning className="flex min-h-full flex-col">
         <ThemeProvider>
@@ -61,6 +63,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <Suspense fallback={null}>
               <ContentGuard />
             </Suspense>
+            <Analytics />
           </VisibilityProvider>
         </ThemeProvider>
       </body>

@@ -6,21 +6,17 @@ import type { Ias19Slug } from "./shared";
  * opens with it, and every other lesson opens with its branch highlighted.
  */
 export type MapLeaf = { text: string; lesson?: Ias19Slug };
-export type MapBranch = { id: string; title: string; en: string; leaves: MapLeaf[]; lessons: Ias19Slug[]; core?: boolean };
+export type MapBranch = { id: string; title: string; leaves: MapLeaf[]; lessons: Ias19Slug[]; core?: boolean };
 
 export const MIND_MAP: MapBranch[] = [
   {
     id: "short",
-    title: "הטבות לזמן קצר",
-    en: "Short-term",
-    lessons: ["ias19-short"],
+    title: "הטבות לזמן קצר",    lessons: ["ias19-short"],
     leaves: [{ text: "היעדרויות נצברות: מבשילות או לא", lesson: "ias19-short" }, { text: "בונוסים: לפי נוסחה ועזיבות צפויות", lesson: "ias19-short" }],
   },
   {
     id: "post",
-    title: "הטבות לאחר סיום העסקה",
-    en: "Post-employment",
-    core: true,
+    title: "הטבות לאחר סיום העסקה",    core: true,
     lessons: ["ias19-dc", "ias19-measure", "ias19-attribute", "ias19-rollforward", "ias19-amend", "ias19-assets", "ias19-present"],
     leaves: [
       { text: "הפקדה מוגדרת מול הטבה מוגדרת", lesson: "ias19-dc" },
@@ -34,23 +30,17 @@ export const MIND_MAP: MapBranch[] = [
   },
   {
     id: "other",
-    title: "הטבות אחרות לזמן ארוך",
-    en: "Other long-term",
-    lessons: ["ias19-other"],
+    title: "הטבות אחרות לזמן ארוך",    lessons: ["ias19-other"],
     leaves: [{ text: "מענק יובל, שבתון ובונוס רב שנתי", lesson: "ias19-other" }, { text: "אותה מדידה, וכל התנועות לרווח והפסד", lesson: "ias19-other" }],
   },
   {
     id: "termination",
-    title: "הטבות בגין פיטורין",
-    en: "Termination",
-    lessons: ["ias19-other"],
+    title: "הטבות בגין פיטורין",    lessons: ["ias19-other"],
     leaves: [{ text: "מועד ההכרה: המוקדם משני מועדים", lesson: "ias19-other" }, { text: "ללא שיוך לשנות שירות", lesson: "ias19-other" }],
   },
   {
     id: "tools",
-    title: "כלים ומבחן",
-    en: "Toolkit & exam",
-    lessons: ["ias19-map", "ias19-toolkit", "ias19-exams"],
+    title: "כלים ומבחן",    lessons: ["ias19-map", "ias19-toolkit", "ias19-exams"],
     leaves: [
       { text: "מיון ארבעת סוגי ההטבות", lesson: "ias19-map" },
       { text: "ארגז כלים: ערך נוכחי ומעגל", lesson: "ias19-toolkit" },

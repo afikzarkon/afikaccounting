@@ -1,5 +1,5 @@
-import { ArrowLeftRight, Building2, CalendarClock, Cog, Landmark, Printer, Repeat, Scale, Truck, Wrench } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
+import { Deeper, Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
 import { LOGI_Q, logi, PRESS_Q, press } from "@/lib/learn/ias16-exams";
@@ -9,8 +9,8 @@ import { MOTOR, MOTOR_RATE, TANK, TANK_LOSS } from "@/lib/study/ias16/lessons/su
 import { DEAL, FLEET, FLEET_EACH } from "@/lib/study/ias16/lessons/swap";
 import { YEAR, YEAR_DEP } from "@/lib/study/ias16/lessons/worksheet";
 import { AnswerCheck, MiniQuiz } from "./inventory-interactive";
-import { ChainChips, MoreDialog, Reveal, Sorted, Story } from "./inventory-teach";
-import { Card, KeyCard, Money, Rule, type Step, Stepper, Wide } from "./ui";
+import { ChainChips, Reveal, Sorted } from "./inventory-teach";
+import { Card, Money, Rule, type Step, Stepper, Wide } from "./ui";
 
 /** The concept screens of lessons 7–12 of the fixed-assets course: subsequent costs, exchanges, revaluation, the answer sheet and the two exam questions. */
 
@@ -260,11 +260,10 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
     lead: "כשמחליפים חלק של נכס, החלק הישן יוצא מהספרים — עם העלות שלו והפחת שנצבר עליו — והחדש נכנס לעלות. מה שנשאר מהישן הוא הפסד.",
     body: (
       <>
-        <Story icon={<Wrench />} title={`מערכת ייצור ב-${n(TANK.system)} ₪, ${TANK.life} שנים, מופחתת כיחידה אחת`}>
-          <p>
-            מתוך העלות, מכל קרמיקה עלה <Money v={TANK.tank} />. אחרי {TANK.years} שנים המכל נשבר והוחלף בחדש באותו מחיר.
-          </p>
-        </Story>
+        <p>
+          <strong>{`מערכת ייצור ב-${n(TANK.system)} ₪, ${TANK.life} שנים, מופחתת כיחידה אחת.`}</strong> מתוך העלות, מכל קרמיקה עלה <Money v={TANK.tank} />. אחרי{" "}
+          {TANK.years} שנים המכל נשבר והוחלף בחדש באותו מחיר.
+        </p>
         <Reveal
           steps={keyed([
             <>
@@ -278,7 +277,7 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
             </>,
           ])}
         />
-        <KeyCard>גם כשהנכס מופחת כיחידה אחת, את החלק שהוחלף מוציאים. אחרת שני מכלים — הישן והחדש — יושבים בספרים יחד.</KeyCard>
+        <Remember>גם כשהנכס מופחת כיחידה אחת, את החלק שהוחלף מוציאים. אחרת שני מכלים — הישן והחדש — יושבים בספרים יחד.</Remember>
       </>
     ),
     check: quiz("ppe-replace", [
@@ -300,20 +299,18 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
     lead: "אורך חיים, ערך גרט ושיטת פחת הם אומדנים — ובודקים אותם כל שנה. כשהם משתנים, לא מתקנים אחורה: מפחיתים את הערך בספרים על מה שנותר, מעכשיו.",
     body: (
       <>
-        <Story icon={<CalendarClock />} title="מנוע שמופחת לפי שעות — ושיפור באמצע השנה">
-          <p>
-            ערכו בספרים ביום השיפור <Money v={MOTOR.carrying} />, גרט <Money v={MOTOR.salvage} plain />, נותרו {n(MOTOR.hoursLeft)} שעות. השיפור — <Money v={MOTOR.improvement} plain /> — הוסיף{" "}
-            {n(MOTOR.extraHours)} שעות.
-          </p>
-        </Story>
+        <p>
+          <strong>מנוע שמופחת לפי שעות — ושיפור באמצע השנה.</strong> ערכו בספרים ביום השיפור <Money v={MOTOR.carrying} />, גרט <Money v={MOTOR.salvage} plain />, נותרו{" "}
+          {n(MOTOR.hoursLeft)} שעות. השיפור — <Money v={MOTOR.improvement} plain /> — הוסיף {n(MOTOR.extraHours)} שעות.
+        </p>
         <Rule>
           פחת לשעה מעכשיו: (<Money v={MOTOR.carrying} plain /> + <Money v={MOTOR.improvement} plain /> − <Money v={MOTOR.salvage} plain />) ÷ ({n(MOTOR.hoursLeft)} + {n(MOTOR.extraHours)}) ={" "}
           {n(MOTOR_RATE)} ₪
         </Rule>
-        <KeyCard>אחרי שיפוץ או שינוי אומדן — הכול מתחיל מהיום הזה: ערך בספרים, יתרת חיים (או תפוקה), גרט ושיטה מעודכנים.</KeyCard>
-        <MoreDialog label="גם השיטה יכולה להשתנות">
+        <Deeper title="גם השיטה יכולה להשתנות">
           <p>אם אחרי השיפוץ החברה קובעת שיטה אחרת (למשל סכום ספרות במקום קו ישר), מיישמים אותה על הבסיס החדש, על יתרת החיים — שוב, מכאן ולהבא.</p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>אחרי שיפוץ או שינוי אומדן — הכול מתחיל מהיום הזה: ערך בספרים, יתרת חיים (או תפוקה), גרט ושיטה מעודכנים.</Remember>
       </>
     ),
     check: quiz("ppe-estimate", [
@@ -340,21 +337,22 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
         <Wide>
           <ChainChips items={["פחת עד יום ההחלפה", "יש מהות מסחרית?", "אפשר למדוד שווי הוגן?", "עלות הנכס החדש", "רווח או הפסד"]} />
         </Wide>
-        <Story icon={<ArrowLeftRight />} title={`נכס בערך בספרים ${n(DEAL.carrying)} ₪, הוחלף בנכס אחר + ${n(DEAL.cashIn)} ₪ במזומן`}>
-          <DataTable
-            head={["מצב", "עלות הנכס שהתקבל", "רווח"]}
-            rows={[
-              [`מהות מסחרית; שווי מה שנמסר ${n(DEAL.fairGiven)}`, DEAL.fairGiven - DEAL.cashIn, DEAL.fairGiven - DEAL.carrying],
-              [`מהות מסחרית; שווי מה שהתקבל ${n(DEAL.fairReceived)} — ראיה ברורה יותר`, DEAL.fairReceived, DEAL.fairReceived + DEAL.cashIn - DEAL.carrying],
-              ["אין מהות מסחרית", DEAL.carrying - DEAL.cashIn, 0],
-            ]}
-          />
-        </Story>
-        <KeyCard>מזומן שקיבלנו מקטין את עלות הנכס החדש; מזומן ששילמנו מגדיל אותה. הרווח הוא תמיד: שווי מה שנמסר − הערך בספרים שלו.</KeyCard>
-        <MoreDialog label="מהי מהות מסחרית">
+        <p>
+          <strong>דוגמה.</strong> {`נכס בערך בספרים ${n(DEAL.carrying)} ₪, הוחלף בנכס אחר + ${n(DEAL.cashIn)} ₪ במזומן:`}
+        </p>
+        <DataTable
+          head={["מצב", "עלות הנכס שהתקבל", "רווח"]}
+          rows={[
+            [`מהות מסחרית; שווי מה שנמסר ${n(DEAL.fairGiven)}`, DEAL.fairGiven - DEAL.cashIn, DEAL.fairGiven - DEAL.carrying],
+            [`מהות מסחרית; שווי מה שהתקבל ${n(DEAL.fairReceived)} — ראיה ברורה יותר`, DEAL.fairReceived, DEAL.fairReceived + DEAL.cashIn - DEAL.carrying],
+            ["אין מהות מסחרית", DEAL.carrying - DEAL.cashIn, 0],
+          ]}
+        />
+        <Deeper title="מהי מהות מסחרית">
           <p>העסקה משנה באופן משמעותי את התזרימים הצפויים — בסכום, בעיתוי או בסיכון. מזומן בעסקה יכול להעיד על כך, אבל לא בהכרח.</p>
           <p>בלי מהות מסחרית (או בלי שווי הוגן מהימן לשני הנכסים), החלפה ״טכנית״ לא יוצרת רווח: הנכס החדש ממשיך את הערך בספרים של הישן.</p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>מזומן שקיבלנו מקטין את עלות הנכס החדש; מזומן ששילמנו מגדיל אותה. הרווח הוא תמיד: שווי מה שנמסר − הערך בספרים שלו.</Remember>
       </>
     ),
     check: quiz("ppe-swap-rule", [
@@ -383,13 +381,14 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
             <>הנכס שהתקבל: 135,000 − 10,000 = 125,000 ₪.</>,
           ])}
         />
-        <Story icon={<Truck />} title={`${FLEET.given} כלי רכב (${n(FLEET.fairEach)} ₪ כל אחד) + ${n(FLEET.cashOut)} ₪ תמורת ${FLEET.received}`}>
+        <Part title="כמה נכסים בהחלפה אחת">
           <p>
-            מה שנמסר: {FLEET.given} × <Money v={FLEET.fairEach} plain /> + <Money v={FLEET.cashOut} plain /> = <Money v={FLEET.given * FLEET.fairEach + FLEET.cashOut} />; לכל רכב חדש:{" "}
+            <strong>{`${FLEET.given} כלי רכב (${n(FLEET.fairEach)} ₪ כל אחד) + ${n(FLEET.cashOut)} ₪ תמורת ${FLEET.received}.`}</strong> מה שנמסר: {FLEET.given} ×{" "}
+            <Money v={FLEET.fairEach} plain /> + <Money v={FLEET.cashOut} plain /> = <Money v={FLEET.given * FLEET.fairEach + FLEET.cashOut} />; לכל רכב חדש:{" "}
             <Money v={FLEET_EACH} />.
           </p>
-        </Story>
-        <KeyCard>שלוש משוואות מספיקות לכל שאלה: עלות חדש = שווי נמסר ± מזומן; רווח = שווי נמסר − ערך בספרים; ערך בספרים = עלות − פחת נצבר עד היום.</KeyCard>
+        </Part>
+        <Remember>שלוש משוואות מספיקות לכל שאלה: עלות חדש = שווי נמסר ± מזומן; רווח = שווי נמסר − ערך בספרים; ערך בספרים = עלות − פחת נצבר עד היום.</Remember>
       </>
     ),
     check: quiz("ppe-swap-back", [
@@ -421,10 +420,10 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
             <p>שווי הוגן ביום ההערכה − פחת מאז. רלוונטי יותר — אבל דורש אומדן שווי, ומערבב מדידות.</p>
           </Card>
         </Wide>
-        <KeyCard>הבחירה היא לכל קבוצה (קרקעות, מבנים, מכונות…), ולכל הנכסים בה — כדי שאי אפשר יהיה לבחור רק את מה שעלה.</KeyCard>
-        <MoreDialog label="כמה פעמים מעריכים">
+        <Deeper title="כמה פעמים מעריכים">
           <p>בתדירות שמבטיחה שהערך בספרים לא שונה מהותית מהשווי ההוגן: נכס תנודתי — כל שנה; יציב — אולי כל 3–5 שנים. את כל הקבוצה מעריכים באותו מועד.</p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>הבחירה היא לכל קבוצה (קרקעות, מבנים, מכונות…), ולכל הנכסים בה — כדי שאי אפשר יהיה לבחור רק את מה שעלה.</Remember>
       </>
     ),
     check: quiz("ppe-models", [
@@ -446,11 +445,10 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
     lead: "קרקע לא מופחתת, ולכן כל הערכה היא רק הפער לשווי ההוגן: עלייה — לקרן; ירידה — קודם מהקרן, והשאר להפסד; והתאוששות — קודם מבטלת את ההפסד.",
     body: (
       <>
-        <Story icon={<Landmark />} title={`קרקע ב-${n(PLOT.cost)} ₪; אחרי שנה — ${n(PLOT.first)} ₪`}>
-          <p>
-            עלייה ראשונה: ח׳ קרקע {n(PLOT.first - PLOT.cost)} / ז׳ קרן הערכה מחדש {n(PLOT.first - PLOT.cost)}. ומה בשנה שאחרי?
-          </p>
-        </Story>
+        <p>
+          <strong>{`קרקע ב-${n(PLOT.cost)} ₪; אחרי שנה — ${n(PLOT.first)} ₪.`}</strong> עלייה ראשונה: ח׳ קרקע {n(PLOT.first - PLOT.cost)} / ז׳ קרן הערכה מחדש{" "}
+          {n(PLOT.first - PLOT.cost)}. ומה בשנה שאחרי?
+        </p>
         <Wide className="grid gap-3 md:grid-cols-2">
           <Card title={`שווי ${n(PLOT.up)} — עוד עלייה`} className="border-success/40">
             <p>
@@ -476,7 +474,7 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
             </>,
           ])}
         />
-        <KeyCard>קו האפס הוא העלות: מעליה — קרן (רווח כולל אחר); מתחתיה — רווח והפסד. הקרן לעולם לא שלילית.</KeyCard>
+        <Remember>קו האפס הוא העלות: מעליה — קרן (רווח כולל אחר); מתחתיה — רווח והפסד. הקרן לעולם לא שלילית.</Remember>
       </>
     ),
     check: quiz("ppe-land-values", [
@@ -500,11 +498,10 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
     lead: "ביום ההערכה צריך להחליט מה לעשות בפחת הנצבר: לאפס אותו מול העלות (והנכס עומד על השווי ההוגן), או להציג מחדש עלות ופחת נצבר באותו יחס. הערך בספרים יוצא אותו דבר.",
     body: (
       <>
-        <Story icon={<Repeat />} title={`נכס ב-${n(PROP.cost)} ₪, ${PROP.life} שנים; אחרי ${PROP.years} שנים — שווי הוגן ${n(PROP.fairValue)} ₪`}>
-          <p>
-            ערך בספרים לפני: <Money v={propCarrying} />; קרן: <Money v={PROP.fairValue - propCarrying} />.
-          </p>
-        </Story>
+        <p>
+          <strong>{`נכס ב-${n(PROP.cost)} ₪, ${PROP.life} שנים; אחרי ${PROP.years} שנים — שווי הוגן ${n(PROP.fairValue)} ₪.`}</strong> ערך בספרים לפני:{" "}
+          <Money v={propCarrying} />; קרן: <Money v={PROP.fairValue - propCarrying} />.
+        </p>
         <Wide>
           <DataTable
             head={["", "איפוס", "יחסי"]}
@@ -515,9 +512,9 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
             ]}
           />
         </Wide>
-        <KeyCard>
+        <Remember>
           ביחסי מכפילים את העלות ואת הפחת הנצבר ב-(שווי הוגן ÷ ערך בספרים) = {PROP.fairValue / propCarrying}. באיפוס — מוחקים את הפחת הנצבר ומעלים או מורידים את הנכס לשווי ההוגן.
-        </KeyCard>
+        </Remember>
       </>
     ),
     check: quiz("ppe-reset-prop", [
@@ -549,15 +546,15 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
             <p className="text-sm text-muted">קרקע — תמיד כך: היא לא מופחתת.</p>
           </Card>
         </Wide>
-        <Story icon={<Scale />} title="הבדיקה שתופסת כמעט כל טעות (בקצב הפחת)">
+        <Part title="הבדיקה שתופסת כמעט כל טעות (בקצב הפחת)">
           <p>
             מבנה ב-<Money v={CHECK.cost} plain />, קרקע <Money v={CHECK.land} plain />, {CHECK.life} שנה. אחרי {CHECK.years} שנים — שווי <Money v={CHECK.fairValue} plain />.
           </p>
           <p>
             לפי מודל העלות: <Money v={checkCostModel} />. הקרן חייבת להיות <Money v={CHECK.fairValue} plain /> − <Money v={checkCostModel} plain /> = <Money v={CHECK.fairValue - checkCostModel} />.
           </p>
-        </Story>
-        <KeyCard>הסדר בכל סוף שנה: פחת → העברה לעודפים → הערכה מחדש. העברה אחרי ההערכה מחשבת על קרן שכבר השתנתה — וזו טעות.</KeyCard>
+        </Part>
+        <Remember>הסדר בכל סוף שנה: פחת → העברה לעודפים → הערכה מחדש. העברה אחרי ההערכה מחשבת על קרן שכבר השתנתה — וזו טעות.</Remember>
       </>
     ),
     check: quiz("ppe-transfer", [
@@ -579,24 +576,25 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
     lead: "במכירה של נכס משוערך, הרווח נמדד מול הערך בספרים המשוערך — והקרן עוברת לעודפים בפקודה נפרדת. אם השאלה אומרת להעריך לפני המכירה — קודם מעריכים.",
     body: (
       <>
-        <Story icon={<Building2 />} title={`מבנה בערך ${n(SALE.carrying)} ₪, קרן ${n(SALE.surplus)} ₪, נמכר ב-${n(SALE.price)} ₪`}>
-          <Reveal
-            steps={keyed([
-              <>
-                רווח הון: <Money v={SALE.price} plain /> − <Money v={SALE.carrying} plain /> = <Money v={SALE.price - SALE.carrying} />.
-              </>,
-              <>
-                הקרן: ח׳ קרן הערכה מחדש {n(SALE.surplus)} / ז׳ עודפים {n(SALE.surplus)} — לא לרווח.
-              </>,
-            ])}
-          />
-        </Story>
-        <KeyCard>
-          ״ביצעה שערוך לפני המכירה״: קודם פחת עד יום המכירה, אחר כך הערכה לשווי (שהוא בדרך כלל התמורה) — ואז אין רווח, וכל הקרן לעודפים. השאלה תמיד אומרת איזו דרך.
-        </KeyCard>
-        <MoreDialog label="ובהחלפה?">
+        <p>
+          <strong>דוגמה.</strong> {`מבנה בערך ${n(SALE.carrying)} ₪, קרן ${n(SALE.surplus)} ₪, נמכר ב-${n(SALE.price)} ₪.`}
+        </p>
+        <Reveal
+          steps={keyed([
+            <>
+              רווח הון: <Money v={SALE.price} plain /> − <Money v={SALE.carrying} plain /> = <Money v={SALE.price - SALE.carrying} />.
+            </>,
+            <>
+              הקרן: ח׳ קרן הערכה מחדש {n(SALE.surplus)} / ז׳ עודפים {n(SALE.surplus)} — לא לרווח.
+            </>,
+          ])}
+        />
+        <Deeper title="ובהחלפה?">
           <p>אותו דבר: מעריכים אם נדרש, מחשבים רווח מול הערך המשוערך, והקרן — לעודפים. הנכס שהתקבל נכנס בשווי ההוגן, כמו בכל החלפה עם מהות מסחרית.</p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>
+          ״ביצעה שערוך לפני המכירה״: קודם פחת עד יום המכירה, אחר כך הערכה לשווי (שהוא בדרך כלל התמורה) — ואז אין רווח, וכל הקרן לעודפים. השאלה תמיד אומרת איזו דרך.
+        </Remember>
       </>
     ),
     check: quiz("ppe-reval-sale", [
@@ -633,13 +631,11 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
             ]}
           />
         </Wide>
-        <Story icon={<CalendarClock />} title="שלוש מכונות, שנה אחת">
-          <p>
-            א׳ כל השנה (<Money v={YEAR.whole.cost} plain />, {YEAR.whole.life} שנים); ב׳ נקנתה ב-1.7 (<Money v={YEAR.bought.cost} plain />, {YEAR.bought.life}); ג׳ נמכרה ב-1.4 (
-            <Money v={YEAR.sold.cost} plain />, {YEAR.sold.life}). פחת השנה: <Money v={YEAR_DEP} />.
-          </p>
-        </Story>
-        <KeyCard>הטבלה היא התשובה: עמודת ״פחת השנה״ — לרווח והפסד; ״עלות״, ״פחת נצבר״ ו״קרן״ — למאזן.</KeyCard>
+        <p>
+          <strong>שלוש מכונות, שנה אחת.</strong> א׳ כל השנה (<Money v={YEAR.whole.cost} plain />, {YEAR.whole.life} שנים); ב׳ נקנתה ב-1.7 (<Money v={YEAR.bought.cost} plain />,{" "}
+          {YEAR.bought.life}); ג׳ נמכרה ב-1.4 (<Money v={YEAR.sold.cost} plain />, {YEAR.sold.life}). פחת השנה: <Money v={YEAR_DEP} />.
+        </p>
+        <Remember>הטבלה היא התשובה: עמודת ״פחת השנה״ — לרווח והפסד; ״עלות״, ״פחת נצבר״ ו״קרן״ — למאזן.</Remember>
       </>
     ),
     check: quiz("ppe-sheet", [
@@ -670,7 +666,7 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
             ]}
           />
         </Wide>
-        <KeyCard icon={<Printer className="h-5 w-5" />}>ההעברה מהקרן לעודפים היא בתוך ההון: היא מופיעה רק בדוח על השינויים בהון — לא ברווח או הפסד, ולא ברווח הכולל האחר.</KeyCard>
+        <Remember>ההעברה מהקרן לעודפים היא בתוך ההון: היא מופיעה רק בדוח על השינויים בהון — לא ברווח או הפסד, ולא ברווח הכולל האחר.</Remember>
       </>
     ),
     check: quiz("ppe-statements", [
@@ -694,8 +690,9 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
     lead: "שאלה ברמת מבחן. בנו ציר זמן וטבלה לכל רכיב, ופתרו על דף — לפני שאתם פותחים את הפתרון.",
     body: (
       <>
-        <Card title={<span className="flex items-center gap-2"><Cog className="h-5 w-5 text-accent" aria-hidden /> חברת ״הדפוס הירוק״ בע״מ</span>}>
-          <div className="space-y-2 text-[14.5px]">
+        <section className="space-y-2">
+          <p className="font-semibold text-fg">חברת ״הדפוס הירוק״ בע״מ</p>
+          <div className="space-y-2">
             <p>החברה הוקמה ב-1.1.2024 ומיישמת את מודל העלות לגבי המכונות.</p>
             <p>
               <strong>1.</strong> ב-1.1.2024 נקנתה מכונת דפוס ב-{n(PRESS_Q.price)} ₪. הובלה {n(PRESS_Q.transport)} ₪; הרכבה והתקנה {n(PRESS_Q.install)} ₪; עובדי החברה הקדישו {PRESS_Q.staffHours} שעות
@@ -720,7 +717,7 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
             </p>
             <p className="font-semibold">נדרש: (א) עלות המכונה. (ב) הפחת של כל רכיב ב-2024 וב-2025. (ג) יתרות המכונה ב-31.12.2024 וב-31.12.2025 (לפני ההחלפה). (ד) פקודת ההחלפה והרווח. (ה) הסעיפים ברווח או הפסד.</p>
           </div>
-        </Card>
+        </section>
         <AnswerCheck
           answers={[
             { label: "עלות המכונה", value: P.cost, kind: "amount" },
@@ -738,9 +735,9 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <Stepper label="הדפוס הירוק · הפתרון" steps={pressSteps} />
-        <Rule>
+        <Remember>
           עלות <Money v={P.cost} /> · פחת 2024 <Money v={P.dep[0]} /> · פחת 2025 <Money v={P.dep[1]} /> · רווח מההחלפה <Money v={P.gain} />
-        </Rule>
+        </Remember>
       </>
     ),
   },
@@ -748,8 +745,9 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
     lead: "שאלה שנייה, במודל הערכה מחדש: מבנה וקרקע עם קרן לכל אחד, ירידה מתחת לעלות, מכירה — ומשאיות במודל העלות. נסו לבד לפני הפתרון.",
     body: (
       <>
-        <Card title={<span className="flex items-center gap-2"><Building2 className="h-5 w-5 text-accent" aria-hidden /> חברת ״לוגיסטיקה צפונית״ בע״מ</span>}>
-          <div className="space-y-2 text-[14.5px]">
+        <section className="space-y-2">
+          <p className="font-semibold text-fg">חברת ״לוגיסטיקה צפונית״ בע״מ</p>
+          <div className="space-y-2">
             <p>החברה הוקמה ב-1.1.2023.</p>
             <p>
               <strong>1.</strong> ביום הקמתה קנתה מבנה משרדים ב-{n(LOGI_Q.price)} ₪, ושילמה גם מס רכישה {LOGI_Q.purchaseTax * 100}% (לא מוחזר) ושכר טרחה {LOGI_Q.lawyer * 100}%. בכל מועד,{" "}
@@ -772,7 +770,7 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
               נדרש: (א) עלות הנכס והחלוקה לקרקע ולמבנה. (ב) פקודות ההערכה ויתרות הקרן ב-2023 וב-2024. (ג) סעיפי רווח או הפסד ורווח כולל אחר ל-2023–2025. (ד) תוצאת מכירת המשאית ויתרות המשאיות ב-31.12.2025.
             </p>
           </div>
-        </Card>
+        </section>
         <AnswerCheck
           answers={[
             { label: "עלות המבנה (בלי קרקע)", value: L.buildingCost, kind: "amount" },
@@ -791,12 +789,10 @@ export const IAS16_COURSE_MORE_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <Stepper label="לוגיסטיקה צפונית · הפתרון" steps={logiSteps} />
-        <Rule>
+        <p className="text-sm text-muted">את המבנה אפשר לבדוק גם במחשבון ההערכה מחדש (שיעור 11).</p>
+        <Remember>
           קרן 2023 <Money v={L.oci2023} /> · קרן 2024 <Money v={L.surplusBuilding2024} /> · הפסד 2024 <Money v={L.landLoss} /> · רווח מהמכירה <Money v={L.saleGain} />
-        </Rule>
-        <div className="flex flex-wrap gap-2 text-sm text-muted">
-          <Truck className="h-4 w-4" aria-hidden /> את המבנה אפשר לבדוק גם במחשבון ההערכה מחדש (שיעור 11).
-        </div>
+        </Remember>
       </>
     ),
   },

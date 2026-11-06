@@ -87,3 +87,29 @@ export const YEAR_2026 = (() => {
     land: LAND_COST,
   };
 })();
+
+/**
+ * The bakery's property, plant and equipment note for 2026, a column per
+ * class: the cost and the accumulated depreciation each roll from 1.1 to
+ * 31.12 — the truck leaves both on the day of its sale.
+ */
+export const NOTE_2026 = (() => {
+  const year = YEAR_2026.year;
+  const before = year - OVEN.from;
+  const opening = {
+    land: LAND_COST,
+    building: BUILDING_COST,
+    oven: OVEN.cost,
+    van: VAN.cost,
+  };
+  const accOpening = {
+    land: 0,
+    building: BUILDING_ANNUAL * before,
+    oven: ovenRows(before).at(-1)!.accumulated,
+    van: vanRows(before).at(-1)!.accumulated,
+  };
+  const charge = { land: 0, building: BUILDING_ANNUAL, oven: OVEN_ANNUAL, van: VAN_SALE_CHARGE };
+  const disposed = { land: 0, building: 0, oven: 0, van: VAN.cost };
+  const accDisposed = { land: 0, building: 0, oven: 0, van: VAN_ACCUM_AT_SALE };
+  return { year, opening, accOpening, charge, disposed, accDisposed };
+})();

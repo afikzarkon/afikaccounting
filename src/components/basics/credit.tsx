@@ -1,5 +1,6 @@
-import { ClipboardList, Store } from "lucide-react";
+import { ClipboardList } from "lucide-react";
 import type { ReactNode } from "react";
+import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
 import { type Balances, balancesOf, type Entry, ledger, round2, type TAccount } from "@/lib/learn/basics";
@@ -12,7 +13,7 @@ import { FormulaDialog } from "./formula-dialog";
 import { TCardsDialog } from "./t-dialog";
 import { MiniQuiz } from "./inventory-interactive";
 import { Posted } from "./t-accounts";
-import { Calc, Formula, Frac, JE, KeyCard, Money, Rule, type Step, Stepper } from "./ui";
+import { Calc, Formula, Frac, JE, Money, Rule, type Step, Stepper } from "./ui";
 
 const pct = (r: number) => `${round2(r * 100)}%`;
 const f = (v: number) => v.toLocaleString("he-IL");
@@ -252,7 +253,7 @@ function FormulaButton() {
 /** What an example gives and what it asks — the amber box the course opens a full example with. */
 export function Given({ title, children, asks }: { title: ReactNode; children: ReactNode; asks?: ReactNode }) {
   return (
-    <div className="space-y-2 rounded-2xl border-2 border-amber-500/50 bg-amber-500/[0.08] px-4 py-3.5 [column-span:all]">
+    <div className="space-y-2 rounded-2xl border-2 border-amber-500/50 bg-amber-500/[0.08] px-4 py-3.5">
       <p className="flex items-center gap-2 text-[16px] font-bold text-fg">
         <ClipboardList className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden /> {title}
       </p>
@@ -497,7 +498,7 @@ const FORMULA: [string, Tone?][] = [
  */
 function ClosingFormula({ example, found }: { example?: ReactNode; found?: ReactNode }) {
   return (
-    <section className="space-y-2.5 rounded-2xl border-2 border-accent bg-accent-soft/40 p-4 [column-span:all]" aria-label="הנוסחה ליתרת הסגירה של ההפרשה">
+    <section className="space-y-2.5 rounded-2xl border-2 border-accent bg-accent-soft/40 p-4" aria-label="הנוסחה ליתרת הסגירה של ההפרשה">
       <p className="text-[15px] font-bold text-accent">הנוסחה שתלווה אתכם בכל שאלה בהפסדי אשראי</p>
       <p className="rounded-lg bg-surface px-3 py-2.5 text-center text-[16.5px] font-bold leading-relaxed text-fg ring-1 ring-accent/40">
         <span dir="ltr" className="inline-flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1">
@@ -726,30 +727,27 @@ const RULES: { title: string; body: ReactNode }[] = [
   },
 ];
 
-/** The three rules, framed so they can't be missed. */
+/** The three rules, as a numbered list. */
 function MethodBox() {
   return (
-    <section className="overflow-hidden rounded-2xl border-[3px] border-accent bg-surface shadow-[0_12px_30px_-18px_var(--accent)]" aria-labelledby="method-title">
-      <header className="bg-accent px-5 py-3 text-accent-fg">
-        <h3 id="method-title" className="text-xl font-extrabold tracking-tight">
-          מתווה 3 הכללים
-        </h3>
-        <p className="text-sm opacity-90">אותו סדר בכל שאלה — מהקלה ביותר ועד שאלת הבחינה.</p>
-      </header>
-      <ol className="divide-y divide-line">
+    <>
+      <p>
+        <strong>מתווה 3 הכללים.</strong> אותו סדר בכל שאלה — מהקלה ביותר ועד שאלת הבחינה.
+      </p>
+      <ol className="max-w-[70ch] space-y-3">
         {RULES.map((r, i) => (
-          <li key={r.title} className="flex gap-4 px-5 py-3.5">
-            <span className="num grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent text-lg font-bold text-accent-fg">{i + 1}</span>
-            <div className="min-w-0 text-[15px] leading-relaxed text-fg/90">
-              <p className="text-[16px] font-bold text-fg">
+          <li key={r.title} className="flex items-baseline gap-2.5">
+            <span className="num grid h-6 w-6 shrink-0 place-items-center self-start rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
+            <span className="min-w-0">
+              <strong className="text-fg">
                 כלל {i + 1}: {r.title}
-              </p>
-              <div className="mt-0.5">{r.body}</div>
-            </div>
+              </strong>
+              <span className="mt-0.5 block">{r.body}</span>
+            </span>
           </li>
         ))}
       </ol>
-    </section>
+    </>
   );
 }
 
@@ -1123,46 +1121,40 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
     lead: "לא כל מי שקנה בהקפה ישלם. את ההפסד הזה רושמים כבר עכשיו — עוד לפני שיודעים מי.",
     body: (
       <>
-        <section className="space-y-3 rounded-2xl border-2 border-accent/30 bg-accent-soft/40 p-4">
-          <p className="flex items-center gap-2 text-[16px] font-bold text-fg">
-            <Store className="h-5 w-5 shrink-0 text-accent" aria-hidden /> דמיינו: המכולת של עינב
-          </p>
-          <p className="text-[15px]">
-            עינב מחזיקה מכולת שכונתית, ולקוחות קבועים קונים אצלה ״על החשבון״: לוקחים עכשיו ומשלמים בסוף החודש. כל קנייה כזו היא כותבת בפנקס ההקפה. השנה{" "}
-            {EINAV.customers} לקוחות קנו כך, ובסך הכול מגיעים לה <Money v={EINAV_TOTAL} />.
-          </p>
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
-            <figure className="overflow-hidden rounded-xl border border-line bg-surface" aria-label="פנקס ההקפה של עינב">
-              <figcaption className="border-b-2 border-fg/70 bg-surface-2/60 px-3 py-2 text-sm font-bold text-fg">פנקס ההקפה</figcaption>
-              <ul className="divide-y divide-dashed divide-line text-[14px]">
-                {PINKAS.map(([name, amount]) => (
-                  <li key={name} className="flex items-center gap-2 px-3 py-1.5">
-                    <span className="min-w-0 flex-1 text-fg">{name}</span>
-                    <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11.5px] font-semibold text-muted ring-1 ring-line-strong">ישלם?</span>
-                    <Money v={amount} plain className="w-20 text-end" />
-                  </li>
-                ))}
-              </ul>
-              <p className="flex items-center justify-between border-t-2 border-fg/70 px-3 py-2 text-[14px] font-bold text-fg">
-                <span>סך הכול מגיע לעינב</span>
-                <Money v={EINAV_TOTAL} plain />
-              </p>
-            </figure>
-            <p className="self-center rounded-xl border-2 border-amber-500/50 bg-amber-500/[0.1] p-3 text-[14px] leading-relaxed text-fg">
-              <strong>מניסיון של שנים:</strong> בערך {pct(EINAV.unpaid / EINAV.customers)} מהסכום לא נגבה אף פעם — כ-<Money v={EINAV_LOSS} />. אבל ליד אף שם בפנקס לא כתוב{" "}
-              <strong>מי</strong>. עינב יודעת רק <strong>כמה</strong>.
-            </p>
-          </div>
-        </section>
-        <h3 className="text-lg font-semibold text-fg">אז כמה באמת יש לה?</h3>
         <p>
-          לא <Money v={EINAV_TOTAL} />, אלא בערך <Money v={EINAV_TOTAL - EINAV_LOSS} />. את ה-<Money v={EINAV_LOSS} /> שכנראה לא יגיעו היא רושמת כבר עכשיו כ״כרית״ בצד —
-          זו <strong>ההפרשה להפסדי אשראי</strong>. ההפסד שייך לשנה שבה נעשו המכירות, ולכן נרשם בה — גם אם הלקוח יפשוט רגל רק בשנה הבאה.
+          <strong>דמיינו: המכולת של עינב.</strong> עינב מחזיקה מכולת שכונתית, ולקוחות קבועים קונים אצלה ״על החשבון״: לוקחים עכשיו ומשלמים בסוף החודש. כל קנייה כזו היא כותבת בפנקס ההקפה. השנה{" "}
+          {EINAV.customers} לקוחות קנו כך, ובסך הכול מגיעים לה <Money v={EINAV_TOTAL} />.
         </p>
-        <KeyCard>
+        <figure className="overflow-hidden rounded-xl border border-line bg-surface" aria-label="פנקס ההקפה של עינב">
+          <figcaption className="border-b-2 border-fg/70 bg-surface-2/60 px-3 py-2 text-sm font-bold text-fg">פנקס ההקפה</figcaption>
+          <ul className="divide-y divide-dashed divide-line text-[14px]">
+            {PINKAS.map(([name, amount]) => (
+              <li key={name} className="flex items-center gap-2 px-3 py-1.5">
+                <span className="min-w-0 flex-1 text-fg">{name}</span>
+                <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11.5px] font-semibold text-muted ring-1 ring-line-strong">ישלם?</span>
+                <Money v={amount} plain className="w-20 text-end" />
+              </li>
+            ))}
+          </ul>
+          <p className="flex items-center justify-between border-t-2 border-fg/70 px-3 py-2 text-[14px] font-bold text-fg">
+            <span>סך הכול מגיע לעינב</span>
+            <Money v={EINAV_TOTAL} plain />
+          </p>
+        </figure>
+        <p>
+          <strong>מניסיון של שנים:</strong> בערך {pct(EINAV.unpaid / EINAV.customers)} מהסכום לא נגבה אף פעם — כ-<Money v={EINAV_LOSS} />. אבל ליד אף שם בפנקס לא כתוב{" "}
+          <strong>מי</strong>. עינב יודעת רק <strong>כמה</strong>.
+        </p>
+        <Part title="אז כמה באמת יש לה?">
+          <p>
+            לא <Money v={EINAV_TOTAL} />, אלא בערך <Money v={EINAV_TOTAL - EINAV_LOSS} />. את ה-<Money v={EINAV_LOSS} /> שכנראה לא יגיעו היא רושמת כבר עכשיו כ״כרית״
+            בצד — זו <strong>ההפרשה להפסדי אשראי</strong>. ההפסד שייך לשנה שבה נעשו המכירות, ולכן נרשם בה — גם אם הלקוח יפשוט רגל רק בשנה הבאה.
+          </p>
+        </Part>
+        <Remember>
           את הלקוחות לא מוחקים — הרי לא יודעים מי לא ישלם. רושמים לידם חשבון נפרד, כרית, שמקטין אותם. וכשמתברר שלקוח מסוים לא ישלם — מורידים אותו מהלקוחות ומהכרית
           יחד.
-        </KeyCard>
+        </Remember>
         <MiniQuiz
           prefix="basics"
           chapter={"cl-idea"}
@@ -1178,9 +1170,9 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
     lead: "שני חשבונות ושלושה מושגים: הלקוחות ברוטו, ההפרשה שמקטינה אותם — ומה שנשאר, הלקוחות נטו.",
     body: (
       <>
-        <ul className="grid gap-2 sm:grid-cols-3 [column-span:all]">
+        <ul className="divide-y divide-line">
           {TERMS.map((t) => (
-            <li key={t.name} className="flex flex-col gap-1.5 rounded-xl border border-line bg-surface px-3.5 py-3">
+            <li key={t.name} className="flex flex-col gap-1 py-2.5">
               <span className="flex items-center justify-between gap-2">
                 <strong className="text-[15.5px] text-fg">{t.name}</strong>
                 <span className={cn("num shrink-0 rounded-full px-2.5 py-0.5 text-[12.5px] font-bold", t.tone)}>
@@ -1191,8 +1183,8 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
             </li>
           ))}
         </ul>
-        <p className="rounded-xl bg-surface-2/70 py-3.5 text-center text-xl font-semibold text-fg [column-span:all]">לקוחות ברוטו − הפרשה = לקוחות נטו</p>
-        <div className="space-y-2 [column-span:all]">
+        <p className="rounded-xl bg-surface-2/70 py-3.5 text-center text-xl font-semibold text-fg">לקוחות ברוטו − הפרשה = לקוחות נטו</p>
+        <div className="space-y-2">
           <p className="text-[15px] font-semibold text-fg">אצל עינב: מה שמגיע לה, ומה שבאמת צפוי להגיע</p>
           <div className="flex overflow-hidden rounded-lg text-center text-[13.5px] font-semibold" role="img" aria-label={`לקוחות ברוטו ${f(EINAV_TOTAL)}: נטו ${f(EINAV_TOTAL - EINAV_LOSS)} והפרשה ${f(EINAV_LOSS)}`}>
             <span className="num bg-accent py-2.5 text-accent-fg" style={{ flex: EINAV_TOTAL - EINAV_LOSS }}>
@@ -1221,9 +1213,8 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
     lead: "את ההפרשה רושמים בסוף השנה: הוצאה ברווח והפסד, מול כרית במאזן — בשנה שבה נעשו המכירות.",
     body: (
       <>
-        <h3 className="text-lg font-semibold text-fg">הפקודה: הוצאה מול כרית</h3>
         <p>
-          בסוף השנה עינב רושמת את ההפרשה. בחובה — <strong>הוצאות הפסדי אשראי</strong>, ברווח והפסד של השנה. בזכות — ההפרשה, שיושבת במאזן ליד הלקוחות ומקטינה אותם.
+          <strong>הפקודה: הוצאה מול כרית.</strong> בסוף השנה עינב רושמת את ההפרשה. בחובה — <strong>הוצאות הפסדי אשראי</strong>, ברווח והפסד של השנה. בזכות — ההפרשה, שיושבת במאזן ליד הלקוחות ומקטינה אותם.
           ההפסד שייך לשנה שבה נעשו המכירות, גם אם הלקוח יפשוט רגל רק בשנה הבאה.
         </p>
         <Posted entries={EINAV_YEAR.entries} at={1} title="ההפרשה של עינב · 31.12" note={null} />
@@ -1246,19 +1237,16 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
     lead: "כשיודעים משהו על לקוח מסוים: חוב אבוד נמחק, וחוב ספציפי מקבל הפרשה משלו. וכל המושגים נפגשים בנוסחה אחת.",
     body: (
       <>
-        <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4 [column-span:all]">
+        <ul className="divide-y divide-line">
           {MORE_TERMS.map((t) => (
-            <li
-              key={t.name}
-              // Bad debt stands out: it is the one term that does not enter the formula.
-              className={cn("flex flex-col gap-1 rounded-xl border px-3.5 py-2.5", t.aside ? "border-danger/40 bg-danger/[0.08]" : "border-line bg-surface")}
-            >
+            // Bad debt stands out by its tag: it is the one term that does not enter the formula.
+            <li key={t.name} className="flex flex-col gap-1 py-2.5">
               <span className="flex flex-wrap items-center justify-between gap-1.5">
                 <strong className="text-[15px] text-fg">{t.name}</strong>
                 {t.aside && <span className="rounded-full bg-danger/15 px-2 py-0.5 text-[11.5px] font-semibold text-danger ring-1 ring-danger/40">{t.aside}</span>}
               </span>
               <span className="text-[13.5px] text-fg/85">{t.what}</span>
-              <span className="num mt-auto rounded-md bg-surface-2/70 px-2 py-1.5 text-[13.5px] leading-loose text-fg/90">
+              <span className="num text-[13.5px] leading-loose text-fg/90">
                 <span className="me-1 text-[11px] font-bold text-muted">בדוגמה:</span>
                 {t.eg}
               </span>
@@ -1304,13 +1292,15 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <MethodBox />
-        <h3 className="text-lg font-semibold text-fg">מה נכנס לכל צד</h3>
-        <p className="text-[14.5px]">כל נתון בשאלה הוא אחת מהשורות האלה. יתרות הפתיחה והסגירה — בצד שבו היתרה יושבת; הסגירה — מתחת לקו.</p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <TemplateT title="לקוחות (ברוטו)" dr={["יתרת פתיחה", "מכירות באשראי", "החזרת חוב שנמחק", "יתרת סגירה"]} cr={["גבייה מלקוחות", "מחיקת חוב אבוד"]} />
-          <TemplateT title={ALLOW} dr={["מחיקת חוב אבוד", "ביטול הפרשה (קיטון)"]} cr={["יתרת פתיחה", "החזרת חוב שנמחק", "הוצאות הפסדי אשראי (גידול)", "יתרת סגירה"]} />
-        </div>
-        <ClosingFormula />
+        <Part title="מה נכנס לכל צד">
+          <p>כל נתון בשאלה הוא אחת מהשורות האלה. יתרות הפתיחה והסגירה — בצד שבו היתרה יושבת; הסגירה — מתחת לקו.</p>
+          {/* The two cards side by side, as rule 1 opens them. */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <TemplateT title="לקוחות (ברוטו)" dr={["יתרת פתיחה", "מכירות באשראי", "החזרת חוב שנמחק", "יתרת סגירה"]} cr={["גבייה מלקוחות", "מחיקת חוב אבוד"]} />
+            <TemplateT title={ALLOW} dr={["מחיקת חוב אבוד", "ביטול הפרשה (קיטון)"]} cr={["יתרת פתיחה", "החזרת חוב שנמחק", "הוצאות הפסדי אשראי (גידול)", "יתרת סגירה"]} />
+          </div>
+          <ClosingFormula />
+        </Part>
       </>
     ),
   },
@@ -1319,10 +1309,10 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
     lead: "כלל 3 בפועל: ארבע נוסחאות לחילוץ נעלם — כולן על אותם שלושה מספרים, כדי ששום דבר חדש לא יסיח.",
     body: (
       <>
-        <p className="rounded-lg bg-surface-2/70 px-3 py-2 text-[14.5px] text-fg [column-span:all]">
+        <p>
           בכל ארבע הדוגמאות: לקוחות ברוטו <N v={BASE.gross} />, אחוז הפרשה <P r={BASE.rate} />, הפרשה <N v={BASE.allowance} />.
         </p>
-        <div className="grid gap-3 lg:grid-cols-2 [column-span:all]">
+        <div className="space-y-3">
           <Formula
             title="א. אחוז ההפרשה"
             when="נתונות ההפרשה והלקוחות ברוטו באותו יום — למשל ב-31.12 אשתקד."
@@ -1461,7 +1451,7 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
           title='נתון: חברת כרמל בע"מ, 2025'
           asks={<>(1) יתרות הפתיחה של הלקוחות וההפרשה; (2) פקודות היומן; (3) הוצאות הפסדי האשראי; (4) סעיף הלקוחות במאזן ליום 31.12.2025.</>}
         >
-          <ul className="grid list-inside list-disc gap-x-6 gap-y-1 lg:grid-cols-2">
+          <ul className="list-disc space-y-1 ps-5 marker:text-subtle">
             <li>
               במאזן ליום 31.12.2024: לקוחות נטו <Money v={g.openingNet} />; ההפרשה — {pct(g.openingRate)} מהברוטו. ספקים <Money v={g.openingSuppliers} />.
             </li>
@@ -1489,10 +1479,6 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
 
   "cl-calc": {
     lead: "פתרתם שאלה? הזינו את מה שהשאלה נותנת, והשאירו ריק את מה שלא. המחשבון מוצא את הנעלם בשיטה של השיעור, מראה איך — ובודק את התשובה שלכם.",
-    body: (
-      <div className="[column-span:all]">
-        <CreditLossCalculator />
-      </div>
-    ),
+    body: <CreditLossCalculator />,
   },
 };

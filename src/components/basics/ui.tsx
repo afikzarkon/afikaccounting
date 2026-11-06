@@ -49,7 +49,7 @@ export function Chapter({ n, id, title, lead, children }: { n: number; id: strin
 export function KeyCard({ icon, children, className }: { icon?: ReactNode; children: ReactNode; className?: string }) {
   return (
     <div className={cn("flex items-center gap-3.5 rounded-2xl bg-gradient-to-l from-accent/15 via-accent-soft to-surface px-4 py-4 ring-1 ring-accent/35 sm:px-5", className)}>
-      {icon && <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-accent to-cyan-500 text-white shadow-[0_10px_22px_-12px_var(--accent)]">{icon}</span>}
+      {icon && <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent text-accent-fg">{icon}</span>}
       <p className="min-w-0 text-[17px] font-bold leading-snug text-fg">{children}</p>
     </div>
   );

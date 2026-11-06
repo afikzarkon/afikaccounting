@@ -62,7 +62,6 @@ export function SolutionView({
   return (
     <div className="space-y-6">
       <motion.div variants={fadeUp} initial="hidden" animate="show" custom={0} className="card relative overflow-hidden p-6">
-        <div className="pointer-events-none absolute -top-24 -end-16 h-56 w-56 rounded-full bg-accent/20 blur-3xl" />
         <div className="relative flex flex-wrap items-center gap-2">
           <Badge tone={outcome.tone}>{outcome.label}</Badge>
           <Badge>{standard}</Badge>
@@ -395,7 +394,7 @@ function DisclosureCard({ text }: { text: string }) {
         }
       />
       <div className="relative p-5">
-        <div className="absolute inset-y-5 start-5 w-0.5 rounded bg-gradient-to-b from-accent to-cyan-400" />
+        <div className="absolute inset-y-5 start-5 w-0.5 rounded bg-accent" />
         <div className="ps-5 font-serif text-[14.5px] leading-7 whitespace-pre-wrap text-fg/90">{text}</div>
       </div>
     </section>

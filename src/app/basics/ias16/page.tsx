@@ -29,13 +29,12 @@ export default async function Ias16Page() {
   return (
     <div className="relative">
       <LegacyHashRedirect redirects={REDIRECTS} />
-      <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-16 sm:pt-14">
         <CourseHeader
           trail={[{ label: "שלב 2 · קורסים מתקדמים" }, { label: "רכוש קבוע (IAS 16)" }]}
           title={
             <>
-              רכוש קבוע <span className="text-gradient">מהקל לקשה</span>
+              רכוש קבוע מהקל לקשה
             </>
           }
           lessons={await visibleLessons(IAS16_LESSONS)}

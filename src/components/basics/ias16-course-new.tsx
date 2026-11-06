@@ -1,7 +1,9 @@
-import { ArrowLeft, Building2, CalendarClock, ClipboardList, Factory, HelpCircle, Repeat, Search, Truck, Wrench } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
+import { Deeper, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
+import { Statement } from "@/components/study/ledger";
 import { SHAKED_Q, shaked } from "@/lib/learn/ias16-exams";
 import {
   BAKERY,
@@ -60,10 +62,11 @@ import {
   unkTwoMonths,
 } from "@/lib/study/ias16/lessons/unknowns";
 import { cn } from "@/lib/utils";
+import { PpeNote } from "./ias16-note";
 import { AssetSheet, type SheetLine } from "./ias16-sheet";
 import { FillGrid, MiniQuiz } from "./inventory-interactive";
-import { ChainChips, MoreDialog, Reveal, Sorted, Story } from "./inventory-teach";
-import { Card, Formula, JE, KeyCard, Money, Wide } from "./ui";
+import { ChainChips, Reveal, Sorted } from "./inventory-teach";
+import { Formula, JE, Money, Wide } from "./ui";
 
 /**
  * The screens the fourteen-lesson course added: the four words and the sheet
@@ -96,6 +99,16 @@ function Chain({ boxes }: { boxes: { label: string; value?: ReactNode; unknown?:
         </li>
       ))}
     </ol>
+  );
+}
+
+/** A titled block of a worked example or a question: a bold line over its own lines, with no box around them. */
+function Titled({ title, children }: { title: ReactNode; children: ReactNode }) {
+  return (
+    <section className="space-y-2">
+      <p className="font-semibold text-fg">{title}</p>
+      {children}
+    </section>
   );
 }
 
@@ -174,11 +187,10 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
     lead: "לכל נכס ארבעה מספרים. העלות — לא משתנה. הוצאות פחת — של השנה בלבד. פחת נצבר — כל הפחת מאז הקנייה. ועלות מופחתת — מה שנשאר: העלות פחות הפחת הנצבר.",
     body: (
       <>
-        <Story icon={<Factory />} title={`התנור של ${BAKERY}`}>
-          <p>
-            עלות <Money v={OVEN.cost} />, ערך גרט <Money v={OVEN.salvage} />, {OVEN.life} שנות חיים בקו ישר, מ-1.1.{OVEN.from}. פחת שנתי: <Money v={OVEN_ANNUAL} />. כך נראים ארבעת המספרים שלו בסוף {OVEN.from + 2} — אחרי שלוש שנים.
-          </p>
-        </Story>
+        <p>
+          <strong>{`התנור של ${BAKERY}.`}</strong> עלות <Money v={OVEN.cost} />, ערך גרט <Money v={OVEN.salvage} />, {OVEN.life} שנות חיים בקו ישר, מ-1.1.{OVEN.from}. פחת שנתי:{" "}
+          <Money v={OVEN_ANNUAL} />. כך נראים ארבעת המספרים שלו בסוף {OVEN.from + 2} — אחרי שלוש שנים.
+        </p>
         <Wide>
           <div className="space-y-1.5" role="img" aria-label={`עלות ${n(OVEN.cost)}: שלוש שנים של פחת, ${n(OVEN_ANNUAL * 3)}, ועלות מופחתת ${n(OVEN.cost - OVEN_ANNUAL * 3)}`}>
             <div className="flex h-12 overflow-hidden rounded-xl ring-1 ring-line-strong">
@@ -213,9 +225,9 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
             ]}
           />
         </Wide>
-        <KeyCard>
-          <strong>עלות מופחתת = ערך בספרים = יתרה בספרים</strong> — שלושה שמות לאותו מספר. בשאלות ובספרים תפגשו את שלושתם; בקורס נגיד בעיקר ״עלות מופחתת״.
-        </KeyCard>
+        <Remember>
+          עלות מופחתת = ערך בספרים = יתרה בספרים — שלושה שמות לאותו מספר. בשאלות ובספרים תפגשו את שלושתם; בקורס נגיד בעיקר ״עלות מופחתת״.
+        </Remember>
       </>
     ),
     check: quiz("ppe-four-words", [
@@ -237,11 +249,9 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
     lead: "כל שאלת רכוש קבוע נפתרת בטבלה אחת: שורה לכל שנה, ובכל שורה ארבעת המספרים. כל שורה נבנית מהשורה שמעליה — ומכאן והלאה, כל נושא בקורס הוא שינוי בטבלה הזו.",
     body: (
       <>
-        <Wide>
-          <AssetSheet caption={`תנור — ${BAKERY}`} rows={ovenSheet} grow />
-        </Wide>
-        <Card title="שלוש הנוסחאות של הטבלה">
-          <ul className="space-y-1.5 text-[15px]">
+        <div className="space-y-1.5">
+          <p className="font-semibold text-fg">שלוש הנוסחאות של הטבלה:</p>
+          <ul className="space-y-1.5">
             <li>
               <strong>C</strong> — הוצאות פחת השנה = (עלות − ערך גרט) ÷ שנות חיים
             </li>
@@ -252,7 +262,10 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
               <strong>E</strong> — עלות מופחתת = עלות − פחת נצבר
             </li>
           </ul>
-        </Card>
+        </div>
+        <Wide>
+          <AssetSheet caption={`תנור — ${BAKERY}`} rows={ovenSheet} grow />
+        </Wide>
         <Wide>
           <FillGrid
             caption="תורכם: מכונה בעלות 50,000 ₪, ערך גרט 10,000 ₪, 4 שנים בקו ישר. השלימו את התאים הריקים."
@@ -266,7 +279,7 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
             hint="רמז: בשורה האחרונה העלות המופחתת שווה לערך הגרט."
           />
         </Wide>
-        <KeyCard>בכל שיעור מכאן נשנה את הטבלה: שנה חלקית מוסיפה שורה קצרה, שיפוץ מוסיף לעלות, מכירה מוציאה את השורה, והערכה מחדש מאפסת את הפחת הנצבר.</KeyCard>
+        <Remember>בכל שיעור מכאן נשנה את הטבלה: שנה חלקית מוסיפה שורה קצרה, שיפוץ מוסיף לעלות, מכירה מוציאה את השורה, והערכה מחדש מאפסת את הפחת הנצבר.</Remember>
       </>
     ),
   },
@@ -274,26 +287,25 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
     lead: "את מספרי הטבלה מציגים בשני דוחות: הוצאות הפחת של השנה — ברווח והפסד; העלות, הפחת הנצבר והעלות המופחתת — במאזן.",
     body: (
       <>
-        <Story icon={<Factory />} title={`התנור בדוחות של ${OVEN.from + 2}`}>
-          <p>אותה שורה מהטבלה — שורת {OVEN.from + 2} — מתפצלת לשני דוחות.</p>
-        </Story>
+        <p>
+          <strong>{`התנור בדוחות של ${OVEN.from + 2}.`}</strong> אותה שורה מהטבלה — שורת {OVEN.from + 2} — מתפצלת לשני דוחות.
+        </p>
         <Wide className="grid gap-3 md:grid-cols-2">
-          <Card title={`מאזן ליום 31.12.${OVEN.from + 2}`}>
-            <DataTable
-              head={["רכוש קבוע", "₪"]}
-              rows={[
-                ["תנור — עלות (B)", OVEN.cost],
-                ["בניכוי פחת נצבר (D)", -3 * OVEN_ANNUAL],
-              ]}
-              foot={["עלות מופחתת (E)", OVEN.cost - 3 * OVEN_ANNUAL]}
-            />
-          </Card>
-          <Card title={`רווח והפסד לשנת ${OVEN.from + 2}`}>
-            <DataTable head={["הוצאות", "₪"]} rows={[["הוצאות פחת (C)", OVEN_ANNUAL]]} />
-            <p className="text-sm text-muted">רק הפחת של השנה. הפחת של השנים הקודמות כבר נרשם ברווח והפסד שלהן.</p>
-          </Card>
+          <Statement
+            title={`מאזן ליום 31.12.${OVEN.from + 2} (קטע)`}
+            rows={[
+              { label: "רכוש קבוע", kind: "heading" },
+              { label: "תנור — עלות (B)", values: [OVEN.cost] },
+              { label: "בניכוי פחת נצבר (D)", values: [-3 * OVEN_ANNUAL] },
+              { label: "עלות מופחתת (E)", values: [OVEN.cost - 3 * OVEN_ANNUAL], kind: "total" },
+            ]}
+          />
+          <div className="space-y-2">
+            <Statement title={`רווח והפסד לשנת ${OVEN.from + 2} (קטע)`} rows={[{ label: "הוצאות פחת (C)", values: [-OVEN_ANNUAL] }]} />
+            <p className="text-sm text-muted">רק הפחת של השנה, בסוגריים כי זו הוצאה. הפחת של השנים הקודמות כבר נרשם ברווח והפסד שלהן.</p>
+          </div>
         </Wide>
-        <KeyCard>מאזן — תמונה ביום אחד, ולכן מספרים מצטברים (B, D, E). רווח והפסד — שנה אחת, ולכן רק C.</KeyCard>
+        <Remember>מאזן — תמונה ביום אחד, ולכן מספרים מצטברים (B, D, E). רווח והפסד — שנה אחת, ולכן רק C.</Remember>
       </>
     ),
     check: quiz("ppe-bs-view", [
@@ -317,11 +329,10 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
     lead: "לפני כל חישוב פחת שואלים חמש שאלות. כל נתון בשאלה עונה על אחת מהן — וכשיש תשובה לכל החמש, הפחת כבר כתוב.",
     body: (
       <>
-        <Story icon={<Truck />} title={`המשאית של ${BAKERY}`}>
-          <p>
-            נקנתה ב-1.{VAN.boughtMonth}.{VAN.from} ב-<Money v={VAN.cost} />, הייתה מוכנה לשימוש ב-1.{VAN.readyMonth}.{VAN.from}, ומופחתת {VAN.rate * 100}% לשנה בקו ישר.
-          </p>
-        </Story>
+        <p>
+          <strong>{`המשאית של ${BAKERY}.`}</strong> נקנתה ב-1.{VAN.boughtMonth}.{VAN.from} ב-<Money v={VAN.cost} />, הייתה מוכנה לשימוש ב-1.{VAN.readyMonth}.{VAN.from}, ומופחתת{" "}
+          {VAN.rate * 100}% לשנה בקו ישר.
+        </p>
         <Wide>
           <DataTable
             head={["השאלה", "איפה מוצאים בשאלה", "במשאית"]}
@@ -349,7 +360,9 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
         <Wide>
           <AssetSheet caption={`משאית — ${BAKERY}, לאורך כל חייה`} rows={vanLife} grow />
         </Wide>
-        <KeyCard>נכס ל-{VAN_LIFE} שנים שנכנס באפריל מופיע ב-{VAN_LIFE + 1} שנות כספים: {VAN_FIRST_MONTHS} חודשים בראשונה, ו-{12 - VAN_FIRST_MONTHS} באחרונה.</KeyCard>
+        <Remember>
+          נכס ל-{VAN_LIFE} שנים שנכנס באפריל מופיע ב-{VAN_LIFE + 1} שנות כספים: {VAN_FIRST_MONTHS} חודשים בראשונה, ו-{12 - VAN_FIRST_MONTHS} באחרונה.
+        </Remember>
       </>
     ),
     check: quiz("ppe-five-questions", [
@@ -373,11 +386,10 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
     lead: "כל השיטות מפחיתות בדיוק את אותו סכום — העלות פחות ערך הגרט. ההבדל הוא רק איך הסכום מתחלק בין השנים, ולכן בוחרים את השיטה שמשקפת איך הנכס באמת נשחק.",
     body: (
       <>
-        <Story icon={<Factory />} title="נכס אחד, שלוש חלוקות">
-          <p>
-            נכס ב-<Money v={100_000} />, בלי ערך גרט, 4 שנים. בשיטת התפוקה הוא צפוי לייצר 100,000 יחידות: 10,000, 30,000, 40,000 ו-20,000 בשנים 1–4.
-          </p>
-        </Story>
+        <p>
+          <strong>נכס אחד, שלוש חלוקות.</strong> נכס ב-<Money v={100_000} />, בלי ערך גרט, 4 שנים. בשיטת התפוקה הוא צפוי לייצר 100,000 יחידות: 10,000, 30,000, 40,000
+          ו-20,000 בשנים 1–4.
+        </p>
         <Wide>
           <DataTable
             head={["שנה", "קו ישר", "סכום ספרות (יורד)", "תפוקה"]}
@@ -399,7 +411,7 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
             ]}
           />
         </Wide>
-        <KeyCard>בוחרים שיטה ונשארים איתה. שינוי שיטה הוא שינוי אומדן — מכאן ולהבא (שיעור 8).</KeyCard>
+        <Remember>בוחרים שיטה ונשארים איתה. שינוי שיטה הוא שינוי אומדן — מכאן ולהבא (שיעור 8).</Remember>
       </>
     ),
     check: quiz("ppe-why-methods", [
@@ -426,7 +438,7 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
             ]}
           />
         </Wide>
-        <KeyCard icon={<Search className="h-5 w-5" />}>נתון שהשיטה לא צריכה — לא נכנס לחישוב. בשיטת התפוקה, למשל, תאריך הכניסה ואורך החיים בשנים לא משנים את הפחת: רק התפוקה.</KeyCard>
+        <Remember>נתון שהשיטה לא צריכה — לא נכנס לחישוב. בשיטת התפוקה, למשל, תאריך הכניסה ואורך החיים בשנים לא משנים את הפחת: רק התפוקה.</Remember>
       </>
     ),
     check: quiz("ppe-which-method", [
@@ -456,11 +468,10 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
     lead: `ב-1.${VAN_SALE.month}.${VAN_SALE.year} המאפייה מוכרת את המשאית. הסדר כמו תמיד: קודם פחת עד יום המכירה, אחר כך העלות המופחתת מול התמורה — והשורה של המשאית יוצאת מהטבלה.`,
     body: (
       <>
-        <Story icon={<Truck />} title={`המשאית נמכרת ב-${n(VAN_SALE.proceeds)} ₪`}>
-          <p>
-            עלות <Money v={VAN.cost} />, {VAN.rate * 100}% לשנה מ-1.{VAN.readyMonth}.{VAN.from} — אותה משאית משיעור 4.
-          </p>
-        </Story>
+        <p>
+          <strong>{`המשאית נמכרת ב-${n(VAN_SALE.proceeds)} ₪.`}</strong> עלות <Money v={VAN.cost} />, {VAN.rate * 100}% לשנה מ-1.{VAN.readyMonth}.{VAN.from} — אותה משאית
+          משיעור 4.
+        </p>
         <Wide>
           <AssetSheet caption="משאית — עד המכירה" rows={vanSaleSheet} mark={vanSaleSheet.length - 2} />
         </Wide>
@@ -516,11 +527,10 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
     lead: `ב-1.1.${UPGRADE.year} המאפייה משדרגת את התנור: השדרוג מגדיל את התפוקה, ולכן נכנס לעלות. בטבלה עובר קו — מעליו לא נוגעים בכלום; מתחתיו בסיס חדש, ופחת חדש על השנים שנותרו.`,
     body: (
       <>
-        <Story icon={<Wrench />} title={`שדרוג ב-${n(UPGRADE.cost)} ₪`}>
-          <p>
-            אחרי {UPGRADE_YEARS} שנים. מיום השדרוג נותרו לתנור {UPGRADE.lifeLeft} שנים (במקום {OVEN.life - UPGRADE_YEARS}), וערך הגרט נשאר <Money v={OVEN.salvage} />.
-          </p>
-        </Story>
+        <p>
+          <strong>{`שדרוג ב-${n(UPGRADE.cost)} ₪.`}</strong> אחרי {UPGRADE_YEARS} שנים. מיום השדרוג נותרו לתנור {UPGRADE.lifeLeft} שנים (במקום {OVEN.life - UPGRADE_YEARS}),
+          וערך הגרט נשאר <Money v={OVEN.salvage} />.
+        </p>
         <Wide>
           <AssetSheet caption="תנור — לפני השדרוג ואחריו" rows={upgradeSheet} mark={UPGRADE_YEARS} />
         </Wide>
@@ -540,7 +550,7 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
           />
         </Wide>
         <JE entry={{ id: "1", date: `1.1.${UPGRADE.year}`, text: "השדרוג", lines: [{ account: "מכונה", dr: UPGRADE.cost }, { account: "מזומן", cr: UPGRADE.cost }] }} note="השדרוג נכנס לעלות — לא להוצאות." />
-        <KeyCard>זה אותו רעיון כמו שינוי אומדן: לא מתקנים את העבר, ומפחיתים את מה שנשאר על השנים שנותרו. ההבדל היחיד — לבסיס נוסף כסף.</KeyCard>
+        <Remember>זה אותו רעיון כמו שינוי אומדן: לא מתקנים את העבר, ומפחיתים את מה שנשאר על השנים שנותרו. ההבדל היחיד — לבסיס נוסף כסף.</Remember>
       </>
     ),
     check: quiz("ppe-upgrade-bakery", [
@@ -558,11 +568,10 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
     lead: "החלפת נכס היא שתי עסקאות שקורות באותו יום: מכירה של הנכס הישן וקנייה של החדש. את שתיהן כבר יודעים לרשום — רק מחברים אותן לפקודה אחת.",
     body: (
       <>
-        <Story icon={<Repeat />} title="המשאית של המאפייה — הפעם בהחלפה">
-          <p>
-            במקום למכור את המשאית ב-1.{VAN_SALE.month}.{VAN_SALE.year} תמורת מזומן, המאפייה מוסרת אותה לסוכנות (שוויה ההוגן <Money v={VAN_SWAP.fairValue} />), משלמת עוד <Money v={VAN_SWAP.cashPaid} />, ומקבלת משאית חדשה. לעסקה יש מהות מסחרית.
-          </p>
-        </Story>
+        <p>
+          <strong>המשאית של המאפייה — הפעם בהחלפה.</strong> במקום למכור את המשאית ב-1.{VAN_SALE.month}.{VAN_SALE.year} תמורת מזומן, המאפייה מוסרת אותה לסוכנות (שוויה
+          ההוגן <Money v={VAN_SWAP.fairValue} />), משלמת עוד <Money v={VAN_SWAP.cashPaid} />, ומקבלת משאית חדשה. לעסקה יש מהות מסחרית.
+        </p>
         <Wide className="grid gap-3 md:grid-cols-2">
           <JE
             title="1 · כאילו מכרנו את הישנה בשווי ההוגן"
@@ -599,7 +608,7 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
           }}
           note={`עלות המשאית החדשה: ${n(VAN_SWAP.fairValue)} + ${n(VAN_SWAP.cashPaid)} = ${n(NEW_VAN_COST)} ₪.`}
         />
-        <KeyCard>כך כשיש מהות מסחרית ושווי הוגן מהימן. בלעדיהם — מודדים לפי העלות המופחתת, בלי רווח או הפסד (המסך הבא).</KeyCard>
+        <Remember>כך כשיש מהות מסחרית ושווי הוגן מהימן. בלעדיהם — מודדים לפי העלות המופחתת, בלי רווח או הפסד (המסך הבא).</Remember>
       </>
     ),
     check: quiz("ppe-swap-is-sale", [
@@ -639,35 +648,36 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
             ]}
           />
         </Wide>
-        <Wide className="grid gap-3 md:grid-cols-2">
-          <Card title={`רווח והפסד לשנת ${YEAR_2026.year}`}>
-            <DataTable
-              head={["", "₪"]}
-              rows={[
-                ["הוצאות פחת", YEAR_2026.totalCharge],
-                [VAN_SALE_RESULT < 0 ? "הפסד הון ממכירת המשאית" : "רווח הון ממכירת המשאית", Math.abs(VAN_SALE_RESULT)],
-              ]}
-            />
-          </Card>
-          <Card title={`מאזן ליום 31.12.${YEAR_2026.year}`}>
-            <DataTable
-              head={["רכוש קבוע", "₪"]}
-              rows={[
-                ["עלות", OVEN.cost + BUILDING_COST + LAND_COST],
-                ["בניכוי פחת נצבר", -(YEAR_2026.oven.accumulated + YEAR_2026.building.accumulated)],
-              ]}
-              foot={["עלות מופחתת", YEAR_2026.oven.carrying + YEAR_2026.building.carrying + LAND_COST]}
-            />
-          </Card>
+        <Wide>
+          <PpeNote />
         </Wide>
-        <MoreDialog label="מאיפה כל מספר?">
+        <Wide className="grid gap-3 md:grid-cols-2">
+          <Statement
+            title={`רווח והפסד לשנת ${YEAR_2026.year} (קטע)`}
+            rows={[
+              { label: "הוצאות פחת", values: [-YEAR_2026.totalCharge] },
+              { label: VAN_SALE_RESULT < 0 ? "הפסד הון ממכירת המשאית" : "רווח הון ממכירת המשאית", values: [VAN_SALE_RESULT] },
+              { label: "השפעה על הרווח", values: [VAN_SALE_RESULT - YEAR_2026.totalCharge], kind: "total" },
+            ]}
+          />
+          <Statement
+            title={`מאזן ליום 31.12.${YEAR_2026.year} (קטע)`}
+            rows={[
+              { label: "רכוש קבוע", kind: "heading" },
+              { label: "עלות", values: [OVEN.cost + BUILDING_COST + LAND_COST] },
+              { label: "בניכוי פחת נצבר", values: [-(YEAR_2026.oven.accumulated + YEAR_2026.building.accumulated)] },
+              { label: "עלות מופחתת", values: [YEAR_2026.oven.carrying + YEAR_2026.building.carrying + LAND_COST], kind: "total" },
+            ]}
+          />
+        </Wide>
+        <Deeper title="מאיפה כל מספר?">
           <p>
             תנור: <Money v={OVEN_ANNUAL} /> בשנה מ-{OVEN.from}. מבנה: <Money v={BUILDING_COST} /> (מתוך <Money v={PREMISES.total} />, אחרי הפרדת הקרקע) ÷ {PREMISES.life} = <Money v={BUILDING_ANNUAL} /> בשנה. קרקע — בלי פחת.
           </p>
           <p>
             משאית: פחת עד יום המכירה בלבד — <Money v={VAN_SALE_CHARGE} />; ובסוף השנה היא כבר לא במאזן.
           </p>
-        </MoreDialog>
+        </Deeper>
       </>
     ),
     check: quiz("ppe-bakery-all", [
@@ -688,11 +698,10 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
         <Wide>
           <ChainChips items={["כותבים את החישוב הרגיל קדימה", "ממלאים כל מה שנתון", "פותרים את התיבה הריקה"]} />
         </Wide>
-        <Story icon={<HelpCircle />} title="דוגמה">
-          <p>
-            מכונה בעלות <Money v={UNK_LIFE.cost} /> נכנסה לשימוש ב-1.{UNK_LIFE.readyMonth}.{UNK_LIFE.from}, קו ישר, בלי גרט. ב-31.12.{UNK_LIFE.to} הפחת הנצבר <Money v={UNK_LIFE.accumulated} />. מה אורך החיים?
-          </p>
-        </Story>
+        <p>
+          <strong>דוגמה.</strong> מכונה בעלות <Money v={UNK_LIFE.cost} /> נכנסה לשימוש ב-1.{UNK_LIFE.readyMonth}.{UNK_LIFE.from}, קו ישר, בלי גרט. ב-31.12.{UNK_LIFE.to} הפחת
+          הנצבר <Money v={UNK_LIFE.accumulated} />. מה אורך החיים?
+        </p>
         <Wide>
           <Chain
             boxes={[
@@ -717,7 +726,7 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
             ])}
           />
         </Wide>
-        <KeyCard>לא מנחשים ולא מחפשים נוסחה הפוכה בעל-פה: כותבים את מה שכבר יודעים לחשב — והנעלם נגלה לבד.</KeyCard>
+        <Remember>לא מנחשים ולא מחפשים נוסחה הפוכה בעל-פה: כותבים את מה שכבר יודעים לחשב — והנעלם נגלה לבד.</Remember>
       </>
     ),
     check: quiz("ppe-unk-method", [
@@ -733,7 +742,7 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
     lead: "בפחת עצמו יש ארבעה נעלמים אפשריים: עלות, ערך גרט, אורך חיים ותאריך. כולם יוצאים מאותה נוסחה: פחת שנתי = (עלות − גרט) ÷ חיים, ובשנה חלקית × חודשים/12.",
     body: (
       <>
-        <Card title={`ערך גרט: מכונה ב-${n(UNK_SALVAGE.cost)} ₪, ${UNK_SALVAGE.life} שנים, פחת שנתי ${n(UNK_SALVAGE.annual)} ₪`}>
+        <Titled title={`ערך גרט: מכונה ב-${n(UNK_SALVAGE.cost)} ₪, ${UNK_SALVAGE.life} שנים, פחת שנתי ${n(UNK_SALVAGE.annual)} ₪`}>
           <Chain
             boxes={[
               { label: "עלות", value: n(UNK_SALVAGE.cost) },
@@ -745,7 +754,7 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
           <p>
             עלות − גרט = <Money v={UNK_SALVAGE.annual} plain /> × {UNK_SALVAGE.life} = <Money v={UNK_SALVAGE.annual * UNK_SALVAGE.life} />; גרט = <Money v={UNK_SALVAGE.cost} plain /> − <Money v={UNK_SALVAGE.annual * UNK_SALVAGE.life} plain /> = <strong><Money v={unkSalvage} /></strong>.
           </p>
-        </Card>
+        </Titled>
         <Wide>
           <DataTable
             head={["חסר", "נתון", "חילוץ"]}
@@ -757,7 +766,7 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
             ]}
           />
         </Wide>
-        <KeyCard icon={<CalendarClock className="h-5 w-5" />}>כשיש תאריכים — סופרים חודשים, לא שנות כספים. מ-1.7.2023 עד 31.12.2025: 30 חודשים, לא 3 שנים.</KeyCard>
+        <Remember>כשיש תאריכים — סופרים חודשים, לא שנות כספים. מ-1.7.2023 עד 31.12.2025: 30 חודשים, לא 3 שנים.</Remember>
       </>
     ),
     check: quiz("ppe-unk-dep", [
@@ -773,7 +782,7 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
     lead: "גם בשיטות האחרות — כותבים את הנוסחה של השיטה, ומחלצים. ביתרה פוחתת היחס בין שתי שנים עוקבות מגלה את השיעור; בסכום ספרות המונה והמכנה ידועים — חסר רק הסכום בר-הפחת.",
     body: (
       <>
-        <Card title={`סכום ספרות: עלות ${n(UNK_SYD.cost)} ₪, ${UNK_SYD.life} שנים, פחת שנה 1 — ${n(UNK_SYD.first)} ₪. מה הגרט?`}>
+        <Titled title={`סכום ספרות: עלות ${n(UNK_SYD.cost)} ₪, ${UNK_SYD.life} שנים, פחת שנה 1 — ${n(UNK_SYD.first)} ₪. מה הגרט?`}>
           <Chain
             boxes={[
               { label: "(עלות − גרט)", unknown: true },
@@ -784,18 +793,18 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
           <p>
             עלות − גרט = <Money v={UNK_SYD.first} plain /> × {unkSydDigits}/{UNK_SYD.life} = <Money v={unkSydBase} />; גרט = <Money v={UNK_SYD.cost} plain /> − <Money v={unkSydBase} plain /> = <strong><Money v={unkSydSalvage} /></strong>.
           </p>
-        </Card>
-        <Card title={`יתרה פוחתת: פחת שנה 1 — ${n(DB_BACK.first)} ₪, שנה 2 — ${n(DB_BACK.second)} ₪`}>
+        </Titled>
+        <Titled title={`יתרה פוחתת: פחת שנה 1 — ${n(DB_BACK.first)} ₪, שנה 2 — ${n(DB_BACK.second)} ₪`}>
           <p>
             שנה 2 = שנה 1 × (1 − שיעור), ולכן 1 − שיעור = <Money v={DB_BACK.second} plain /> ÷ <Money v={DB_BACK.first} plain /> = {n(DB_BACK.second / DB_BACK.first)}: השיעור {n(((DB_BACK.first - DB_BACK.second) / DB_BACK.first) * 100)}%, והעלות{" "}
             <Money v={DB_BACK.first} plain /> ÷ {n(((DB_BACK.first - DB_BACK.second) / DB_BACK.first) * 100)}% = <Money v={(DB_BACK.first * DB_BACK.first) / (DB_BACK.first - DB_BACK.second)} />.
           </p>
-        </Card>
-        <Card title={`תפוקה: ${n(UNITS_BACK.charge)} ₪ פחת על ${n(UNITS_BACK.km)} ק״מ`}>
+        </Titled>
+        <Titled title={`תפוקה: ${n(UNITS_BACK.charge)} ₪ פחת על ${n(UNITS_BACK.km)} ק״מ`}>
           <p>
             פחת לק״מ = <Money v={UNITS_BACK.charge} plain /> ÷ <Money v={UNITS_BACK.km} plain /> = <Money v={UNITS_BACK.charge / UNITS_BACK.km} />. מכאן אפשר לחלץ גם את הסכום בר-הפחת (× סך הק״מ), וממנו — עלות או גרט.
           </p>
-        </Card>
+        </Titled>
       </>
     ),
     check: quiz("ppe-unk-methods", [
@@ -821,7 +830,7 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
             ]}
           />
         </Wide>
-        <Card title={`החלפה: עלות מופחתת ${n(UNK_SWAP.carrying)} ₪, שולמו ${n(UNK_SWAP.cashPaid)} ₪, רווח ${n(UNK_SWAP.gain)} ₪`}>
+        <Titled title={`החלפה: עלות מופחתת ${n(UNK_SWAP.carrying)} ₪, שולמו ${n(UNK_SWAP.cashPaid)} ₪, רווח ${n(UNK_SWAP.gain)} ₪`}>
           <Chain
             boxes={[
               { label: "שווי הוגן", unknown: true },
@@ -832,8 +841,8 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
           <p>
             שווי הוגן = <Money v={UNK_SWAP.carrying} plain /> + <Money v={UNK_SWAP.gain} plain /> = <Money v={unkSwapFair} />; עלות הנכס החדש = <Money v={unkSwapFair} plain /> + <Money v={UNK_SWAP.cashPaid} plain /> = <strong><Money v={unkSwapCost} /></strong>.
           </p>
-        </Card>
-        <Card title={`שיפוץ: עלות מופחתת ${n(UNK_RENO.carrying)} ₪, אחריו ${n(UNK_RENO.annual)} ₪ לשנה על ${UNK_RENO.lifeLeft} שנים`}>
+        </Titled>
+        <Titled title={`שיפוץ: עלות מופחתת ${n(UNK_RENO.carrying)} ₪, אחריו ${n(UNK_RENO.annual)} ₪ לשנה על ${UNK_RENO.lifeLeft} שנים`}>
           <Chain
             boxes={[
               { label: "עלות מופחתת", value: n(UNK_RENO.carrying) },
@@ -845,7 +854,7 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
           <p>
             בסיס חדש = <Money v={UNK_RENO.annual} plain /> × {UNK_RENO.lifeLeft} = <Money v={unkRenoBase} />; שיפוץ = <Money v={unkRenoBase} plain /> − <Money v={UNK_RENO.carrying} plain /> = <strong><Money v={unkReno} /></strong>.
           </p>
-        </Card>
+        </Titled>
       </>
     ),
     check: quiz("ppe-unk-events", [
@@ -861,7 +870,7 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
     lead: "בהערכה מחדש, הפחת שאחרי ההערכה מגלה את השווי ההוגן: שווי הוגן ÷ שנים שנותרו = פחת חדש. ובקרקע — הקרן וההפסד יחד מגלים כמה ירד השווי.",
     body: (
       <>
-        <Card title={`מבנה: עלות מופחתת לפני ההערכה ${n(UNK_REVAL.carrying)} ₪; אחריה ${n(UNK_REVAL.annual)} ₪ לשנה על ${UNK_REVAL.lifeLeft} שנים`}>
+        <Titled title={`מבנה: עלות מופחתת לפני ההערכה ${n(UNK_REVAL.carrying)} ₪; אחריה ${n(UNK_REVAL.annual)} ₪ לשנה על ${UNK_REVAL.lifeLeft} שנים`}>
           <Chain
             boxes={[
               { label: "שווי הוגן", unknown: true },
@@ -872,14 +881,14 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
           <p>
             שווי הוגן = <Money v={UNK_REVAL.annual} plain /> × {UNK_REVAL.lifeLeft} = <Money v={unkRevalFair} />; עלייה ראשונה — כולה לקרן: <Money v={unkRevalFair} plain /> − <Money v={UNK_REVAL.carrying} plain /> = <strong><Money v={unkRevalSurplus} /></strong>.
           </p>
-        </Card>
-        <Card title={`קרקע: קרן ${n(UNK_LAND.surplus)} ₪, ירדה ל-${n(UNK_LAND.after)} ₪, הפסד ${n(UNK_LAND.loss)} ₪`}>
+        </Titled>
+        <Titled title={`קרקע: קרן ${n(UNK_LAND.surplus)} ₪, ירדה ל-${n(UNK_LAND.after)} ₪, הפסד ${n(UNK_LAND.loss)} ₪`}>
           <p>
             נרשם הפסד — ולכן הקרן נוצלה כולה קודם. הירידה: <Money v={UNK_LAND.surplus} plain /> + <Money v={UNK_LAND.loss} plain /> = <Money v={UNK_LAND.surplus + UNK_LAND.loss} />; השווי הקודם: <Money v={UNK_LAND.after} plain /> + <Money v={UNK_LAND.surplus + UNK_LAND.loss} plain /> ={" "}
             <strong><Money v={unkLandBefore} /></strong>.
           </p>
-        </Card>
-        <KeyCard>אם יש גרט אחרי ההערכה — מוסיפים אותו: שווי הוגן = פחת חדש × שנים שנותרו + גרט.</KeyCard>
+        </Titled>
+        <Remember>אם יש גרט אחרי ההערכה — מוסיפים אותו: שווי הוגן = פחת חדש × שנים שנותרו + גרט.</Remember>
       </>
     ),
     check: quiz("ppe-unk-reval", [
@@ -895,11 +904,10 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
     lead: "בשאלות הקשות נעלם אחד מוביל לנעלם הבא. פותרים אחד, מכניסים אותו כנתון — וממשיכים לחישוב הבא.",
     body: (
       <>
-        <Story icon={<Truck />} title="המשאית של המאפייה — מהסוף להתחלה">
-          <p>
-            עלות <Money v={VAN.cost} />, {VAN.rate * 100}% לשנה, בלי גרט. נמכרה ב-1.{VAN_SALE.month}.{VAN_SALE.year} ב-<Money v={VAN_SALE.proceeds} />, ונרשם הפסד הון של <Money v={-VAN_SALE_RESULT} />. כמה חודשים היא הופחתה?
-          </p>
-        </Story>
+        <p>
+          <strong>המשאית של המאפייה — מהסוף להתחלה.</strong> עלות <Money v={VAN.cost} />, {VAN.rate * 100}% לשנה, בלי גרט. נמכרה ב-1.{VAN_SALE.month}.{VAN_SALE.year} ב-
+          <Money v={VAN_SALE.proceeds} />, ונרשם הפסד הון של <Money v={-VAN_SALE_RESULT} />. כמה חודשים היא הופחתה?
+        </p>
         <Wide className="space-y-2">
           <Chain
             boxes={[
@@ -938,7 +946,7 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
             ])}
           />
         </Wide>
-        <KeyCard>כל שורה היא חישוב שכבר מכירים. הקושי בשאלה כזו הוא רק הסדר — ולכן כותבים את כל השרשראות לפני שמתחילים לחשב.</KeyCard>
+        <Remember>כל שורה היא חישוב שכבר מכירים. הקושי בשאלה כזו הוא רק הסדר — ולכן כותבים את כל השרשראות לפני שמתחילים לחשב.</Remember>
       </>
     ),
     check: quiz("ppe-unk-two", [
@@ -956,7 +964,7 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
     lead: "שאלה שלישית, שבה חלק מהנתונים חבויים בתוצאות. כתבו לכל נעלם את השרשרת שלו, ופתרו על דף — לפני שאתם פותחים את הפתרון.",
     body: (
       <>
-        <Story icon={<ClipboardList />} title="שקד תעשיות בע״מ — רכוש קבוע, 2026">
+        <Titled title="שקד תעשיות בע״מ — רכוש קבוע, 2026">
           <ol className="list-inside list-decimal space-y-1.5">
             <li>
               מכונה א׳ נקנתה ב-<Money v={SHAKED_Q.machine.cost} /> והייתה זמינה לשימוש ב-1.{SHAKED_Q.machine.readyMonth}.{SHAKED_Q.machine.from}. היא מופחתת בקו ישר, בלי ערך גרט. ב-31.12.2025 הפחת הנצבר שלה <Money v={SHAKED_Q.machine.accumulated2025} />.
@@ -968,8 +976,8 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
               מבנה נקנה ב-1.1.{SHAKED_Q.building.from} ב-<Money v={SHAKED_Q.building.cost} />, ל-{SHAKED_Q.building.life} שנים בלי ערך גרט. החברה מיישמת מודל הערכה מחדש (שיטת האיפוס), ומעבירה את הקרן לעודפים בקצב הפחת. ההערכה הראשונה הייתה ב-31.12.{SHAKED_Q.building.revalued}, והוצאות הפחת של המבנה ב-2026 הן <Money v={SHAKED_Q.building.charge2026} />.
             </li>
           </ol>
-        </Story>
-        <Card title="נדרש">
+        </Titled>
+        <Titled title="נדרש">
           <ol className="list-inside list-[hebrew] space-y-1">
             <li>אורך החיים של מכונה א׳.</li>
             <li>השווי ההוגן של מכונה א׳ ביום ההחלפה, ועלות מכונה ב׳.</li>
@@ -978,8 +986,8 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
             <li>סך הוצאות הפחת ב-2026, והרווח מההחלפה — איפה הם בדוחות.</li>
             <li>הצגת מכונה ב׳ והמבנה במאזן ליום 31.12.2026.</li>
           </ol>
-        </Card>
-        <KeyCard icon={<Building2 className="h-5 w-5" />}>שלושה נעלמים מרכזיים: אורך חיים (מהפחת הנצבר), שווי הוגן של מכונה (מהרווח), ושווי הוגן של מבנה (מהפחת החדש). כל אחד — חישוב רגיל עם תיבה ריקה.</KeyCard>
+        </Titled>
+        <Remember>שלושה נעלמים מרכזיים: אורך חיים (מהפחת הנצבר), שווי הוגן של מכונה (מהרווח), ושווי הוגן של מבנה (מהפחת החדש). כל אחד — חישוב רגיל עם תיבה ריקה.</Remember>
       </>
     ),
   },
@@ -987,13 +995,13 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
     lead: "הפתרון, נעלם אחר נעלם: כל אחד מתחיל בחישוב הרגיל, ממלא את מה שנתון, ומחלץ את מה שחסר — ובסוף, הדוחות.",
     body: (
       <>
-        <Card title="א. אורך החיים של מכונה א׳">
+        <Titled title="א. אורך החיים של מכונה א׳">
           <p>
             מ-1.{SHAKED_Q.machine.readyMonth}.{SHAKED_Q.machine.from} עד 31.12.2025: {S.monthsTo2025} חודשים. פחת שנתי = <Money v={SHAKED_Q.machine.accumulated2025} plain /> ÷ {S.monthsTo2025} × 12 = <Money v={S.annual} />. חיים = <Money v={SHAKED_Q.machine.cost} plain /> ÷{" "}
             <Money v={S.annual} plain /> = <strong>{n(S.life)} שנים</strong>.
           </p>
-        </Card>
-        <Card title="ב. ההחלפה">
+        </Titled>
+        <Titled title="ב. ההחלפה">
           <p>
             פחת 2026 עד ההחלפה: <Money v={S.annual} plain /> × 6/12 = <Money v={S.dep2026Old} />. פחת נצבר: <Money v={S.accumAtExchange} />; עלות מופחתת: <Money v={S.carryingAtExchange} />.
           </p>
@@ -1018,8 +1026,8 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
           <p>
             פחת מכונה ב׳ ב-2026: <Money v={S.newCost} plain /> ÷ {SHAKED_Q.exchange.newLife} × 6/12 = <Money v={S.dep2026New} />.
           </p>
-        </Card>
-        <Card title="ג–ד. המבנה">
+        </Titled>
+        <Titled title="ג–ד. המבנה">
           <p>
             לפי עלות: <Money v={S.costAnnual} /> לשנה; עד 31.12.{SHAKED_Q.building.revalued} — {S.yearsToRevaluation} שנים, ועלות מופחתת <Money v={S.carryingAtRevaluation} />. נותרו {S.lifeLeft} שנים.
           </p>
@@ -1029,8 +1037,8 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
           <p>
             העברה לעודפים ב-2026: <Money v={SHAKED_Q.building.charge2026} plain /> − <Money v={S.costAnnual} plain /> = <Money v={S.transfer2026} />. יתרת הקרן ב-31.12.2026: <Money v={S.surplus2026} />.
           </p>
-        </Card>
-        <Card title="ה–ו. הדוחות">
+        </Titled>
+        <Titled title="ה–ו. הדוחות">
           <DataTable
             head={["רווח והפסד 2026", "₪"]}
             rows={[
@@ -1048,7 +1056,7 @@ export const IAS16_COURSE_NEW_SCREENS: Record<string, ScreenContent> = {
           <p className="text-sm text-muted">
             בהון: קרן הערכה מחדש <Money v={S.surplus2026} />. ההעברה לעודפים (<Money v={S.transfer2026} />) — בדוח על השינויים בהון בלבד, לא ברווח והפסד.
           </p>
-        </Card>
+        </Titled>
       </>
     ),
   },

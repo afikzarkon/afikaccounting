@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   absenceProvision,
+  accrualPath,
   accrued,
   amendedYear,
   assetsInterest,
@@ -13,10 +14,12 @@ import {
   classify,
   dayCost,
   definedContribution,
+  expectedHeads,
   destination,
   grown,
   impliedRate,
   impliedShare,
+  fifo,
   lifo,
   measure,
   partInterest,
@@ -24,6 +27,7 @@ import {
   plainYear,
   presentation,
   pv,
+  pvPath,
   raised,
   recognisedAssets,
   retirementPN,
@@ -88,6 +92,13 @@ describe("short-term benefits", () => {
     // Six days used of five this year: one carried day, and the rest of the carried balance lapses.
     const l = lifo({ carried: 2, entitlement: 5, used: 6 });
     assert.deepEqual([l.fromCarried, l.carriedLeft], [1, 1]);
+  });
+
+  it("FIFO: the carried days go first, and fewer of them lapse", () => {
+    const at = (used: number) => fifo({ carried: 3, entitlement: 12, used });
+    assert.deepEqual(at(2), { fromCarried: 2, carriedLeft: 1, unusedOwn: 12 });
+    assert.deepEqual(at(8), { fromCarried: 3, carriedLeft: 0, unusedOwn: 7 });
+    assert.deepEqual(at(15), { fromCarried: 3, carriedLeft: 0, unusedOwn: 0 });
   });
 
   it("reference case 6: a bonus by formula, and the cost of a day", () => {
@@ -431,5 +442,32 @@ describe("other long-term and termination benefits", () => {
     assert.equal(classify({ fromDecisionToTerminate: false, settledWithin12Months: true, afterEmployment: false }), "shortTerm");
     assert.equal(classify({ fromDecisionToTerminate: false, settledWithin12Months: false, afterEmployment: true }), "postEmployment");
     assert.equal(classify({ fromDecisionToTerminate: false, settledWithin12Months: false, afterEmployment: false }), "otherLongTerm");
+  });
+});
+
+describe("the figures' helpers", () => {
+  it("a future amount on its way to today: each year the one after it ÷ (1 + i), today first", () => {
+    const path = pvPath(100, 0.08, 5);
+    assert.equal(path.length, 6);
+    assert.equal(path[5], 100);
+    assert.equal(Math.round(path[0]), 68);
+    for (let k = 0; k < 5; k++) assert.ok(Math.abs(path[k] * 1.08 - path[k + 1]) < 1e-9);
+    assert.equal(Math.round(pvPath(10_000, 0.05, 2)[0]), 9_070);
+  });
+
+  it("expected heads: headcount × (1 − leavers)", () => {
+    assert.equal(expectedHeads(250, 0.08), 230);
+    assert.equal(expectedHeads(40, 0.1), 36);
+  });
+});
+
+describe("accrual, year by year", () => {
+  it("under the formula it follows the tiers and stops at the cap; the straight line spreads the total over the window", () => {
+    const f = tiered([{ upTo: 4, perYear: 3_000 }, { perYear: 1_500 }]);
+    const path = accrualPath(f, 8, 18_000);
+    assert.deepEqual(path.map((r) => r.formula), [3_000, 6_000, 9_000, 12_000, 13_500, 15_000, 16_500, 18_000]);
+    assert.equal(path[4].straight, (18_000 / 8) * 5);
+    const capped = accrualPath(tiered([{ perYear: 2_500 }]), 8, 10_000);
+    assert.deepEqual(capped.map((r) => r.straight), [2_500, 5_000, 7_500, 10_000, 10_000, 10_000, 10_000, 10_000]);
   });
 });

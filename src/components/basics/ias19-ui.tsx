@@ -1,11 +1,13 @@
-import { ArrowDown, Lightbulb, MapPin, MessageCircle, Signpost, Star } from "lucide-react";
+import { ArrowDown, BookOpenCheck, Lightbulb, MapPin, MessageCircle, Signpost, Star, Undo2 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Num } from "@/components/study/blocks";
+import { Roll } from "@/components/study/ledger";
 import { studyHref } from "@/lib/study";
 import { branchOf, MIND_MAP } from "@/lib/study/ias19/map";
+import { PRIMER_NEEDS, primerTitle } from "@/lib/study/ias19/primer";
 import { type Ias19Slug, LESSON_N, prereqLine } from "@/lib/study/ias19/shared";
 import { cn } from "@/lib/utils";
+import { FORMULA_COLORS, Mark } from "./ias19-formula";
 import { Reveal } from "./inventory-teach";
 
 /**
@@ -34,9 +36,6 @@ export function MindMap({ links, className }: { links?: boolean; className?: str
               <p className="flex flex-wrap items-center gap-x-2 font-bold text-fg">
                 {b.core && <Star className="h-4 w-4 fill-amber-400 text-amber-500" aria-label="הענף המרכזי" />}
                 {b.title}
-                <span className="text-[12px] font-medium text-muted" dir="ltr">
-                  {b.en}
-                </span>
               </p>
               <ul className="mt-1.5 space-y-1">
                 {b.leaves.map((l) => (
@@ -89,6 +88,20 @@ export function MapBranch({ lesson, children }: { lesson: Ias19Slug; children: R
       <p className="text-[13.5px] text-muted">
         <strong className="text-fg/80">נדרש מהשיעורים הקודמים:</strong> {prereqLine(lesson)}
       </p>
+      {PRIMER_NEEDS[lesson].length > 0 && (
+        <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13.5px] text-muted">
+          <BookOpenCheck className="h-4 w-4 text-accent" aria-hidden />
+          <strong className="text-fg/80">ידע מקדים:</strong>
+          {PRIMER_NEEDS[lesson].map((id, i) => (
+            <span key={id}>
+              <Link href={`/basics/ias19#primer-${id}`} className="font-medium text-accent hover:underline">
+                {primerTitle(id)}
+              </Link>
+              {i < PRIMER_NEEDS[lesson].length - 1 && " ·"}
+            </span>
+          ))}
+        </p>
+      )}
     </section>
   );
 }
@@ -97,54 +110,31 @@ export function MapBranch({ lesson, children }: { lesson: Ias19Slug; children: R
 export type RollRow = { label: ReactNode; value: number; how?: ReactNode; kind?: "balance" | "pn" };
 
 /**
- * A roll-forward drawn the same way in every lesson: opening, the lines that
- * explain the year, the P.N. that balances it — marked as the balancing line —
- * and the closing; and for each line, the rate and the years it uses.
+ * A roll-forward drawn the same way in every lesson, as on a worksheet:
+ * opening, the lines that explain the year, the P.N. that balances it —
+ * tagged with where it lands — and the closing; under each line, the rate and
+ * the years it uses. The obligation is a credit and prints negative; plan
+ * assets (`side="debit"`) print as they are.
  */
-export function RollForward({ title, rows, unit = "₪" }: { title: ReactNode; rows: RollRow[]; unit?: string }) {
-  const hasHow = rows.some((r) => r.how);
+export function RollForward({ title, rows, unit, side = "credit", pnTo = "OCI" }: { title: ReactNode; rows: RollRow[]; unit?: string; side?: "credit" | "debit"; pnTo?: ReactNode }) {
+  const balances = rows.flatMap((r, i) => (r.kind === "balance" ? [i] : []));
+  const last = balances[balances.length - 1];
   return (
-    <figure className="overflow-hidden rounded-xl border border-line">
-      <figcaption className="border-b border-line bg-surface-2/70 px-4 py-2.5 text-sm font-semibold text-fg">
-        {title} <span className="text-xs font-normal text-muted">({unit})</span>
-      </figcaption>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[22rem] text-sm">
-          <thead>
-            <tr className="text-xs text-muted">
-              <th className="px-3 py-2 text-start font-medium">שורה</th>
-              <th className="px-3 py-2 text-end font-medium">סכום</th>
-              {hasHow && <th className="px-3 py-2 text-start font-medium">באיזו ריבית וכמה שנים</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr
-                key={i}
-                className={cn(
-                  "border-t border-line/70",
-                  r.kind === "balance" && "bg-surface-2/50 font-semibold",
-                  r.kind === "pn" && "bg-amber-500/[0.1] font-bold",
-                )}
-              >
-                <td className="px-3 py-2 text-fg">
-                  {r.label}
-                  {r.kind === "pn" && <span className="ms-1.5 rounded bg-amber-500/20 px-1.5 py-px text-[10.5px] font-bold text-amber-700 dark:text-amber-300">שורה מאזנת</span>}
-                </td>
-                <td className="px-3 py-2 text-end text-fg">
-                  <Num v={Math.round(r.value)} />
-                </td>
-                {hasHow && <td className="px-3 py-2 text-[13px] text-muted">{r.how}</td>}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </figure>
+    <Roll
+      title={title}
+      unit={unit}
+      side={side}
+      lines={rows.map((r, i) => ({
+        label: r.label,
+        value: r.value,
+        note: r.how,
+        kind: r.kind === "pn" ? "focal" : r.kind === "balance" ? (i === last && i > 0 ? "closing" : "opening") : undefined,
+        tag: r.kind === "pn" ? pnTo : undefined,
+      }))}
+    />
   );
 }
 
-const CIRCLED = ["①", "②", "③", "④", "⑤"];
 export const RECIPE_STEPS = [
   "הטבה לשנת שירות אחת, בשכר הצפוי בפרישה",
   "שנות שירות שנצברו עד תאריך המדידה",
@@ -153,14 +143,19 @@ export const RECIPE_STEPS = [
   "i: תשואת אג״ח קונצרניות איכותיות בתאריך המדידה",
 ];
 
-/** The five-step recipe, ①–⑤, and its formula; with values, the formula with numbers. */
-export function Recipe5({ values, result }: { values?: ReactNode[]; result?: ReactNode }) {
+/** The same five steps as five questions in everyday words, asked in this order. */
+export const RECIPE_QUESTIONS = ["כמה ההטבה לכל שנת עבודה?", "כמה שנות עבודה כבר עברו?", "כמה עובדים צפויים לקבל?", "בעוד כמה שנים משלמים?", "באיזו ריבית מהוונים?"];
+
+/** The five-step recipe, ①–⑤ in their colours, and its formula; with values, the formula with numbers. `asQuestions` asks the five questions instead of naming the steps. */
+export function Recipe5({ values, result, asQuestions }: { values?: ReactNode[]; result?: ReactNode; asQuestions?: boolean }) {
   return (
     <div className="space-y-2 rounded-2xl border-2 border-accent/30 bg-surface p-3.5">
       <ol className="space-y-1.5">
-        {RECIPE_STEPS.map((s, i) => (
+        {(asQuestions ? RECIPE_QUESTIONS : RECIPE_STEPS).map((s, i) => (
           <li key={s} className="flex items-baseline gap-2 text-[14.5px]">
-            <span className="text-[18px] font-bold text-accent">{CIRCLED[i]}</span>
+            <span className="text-[18px]">
+              <Mark c={(i + 1) as 1 | 2 | 3 | 4 | 5} />
+            </span>
             <span className="min-w-0 flex-1 text-fg/90">{s}</span>
             {values?.[i] !== undefined && <span className="shrink-0 font-semibold text-fg">{values[i]}</span>}
           </li>
@@ -241,35 +236,87 @@ export function Bridge({ summary, children }: { summary: ReactNode; children: Re
   );
 }
 
-/** A term on its first appearance: Hebrew, English and the paragraph of the standard. */
-export function T19({ he, en, par }: { he: string; en: string; par?: string }) {
+/**
+ * The two boxes a year's numbers land in: profit or loss — what the company
+ * did this year (the work, the interest) — and OCI — changes in estimates
+ * nobody decided on. The balancing line, P.N., drops into OCI, and an arrow
+ * back to profit or loss is struck out: it never returns.
+ */
+export function TwoBuckets({ pl = ["עלות העבודה של השנה", "הריבית על החוב"], oci = ["שינוי בהערכות: הריבית ירדה, עזבו פחות עובדים"], drop = "P.N. — המספר המאזן" }: { pl?: ReactNode[]; oci?: ReactNode[]; drop?: ReactNode }) {
+  const bucket = "flex min-h-32 flex-col rounded-b-[2rem] rounded-t-md border-2 border-t-[5px] px-3 pt-2 pb-4";
+  return (
+    <figure role="img" aria-label="שתי קופות: רווח והפסד הוא מה שהחברה עשתה השנה; OCI הוא שינויי הערכה. המספר המאזן נופל ל-OCI ולא חוזר לרווח והפסד." className="space-y-2 rounded-2xl border border-line bg-surface p-3.5">
+      <figcaption className="text-[14px] font-bold text-fg">שתי קופות</figcaption>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
+        <div>
+          <p className="mb-1 h-9" />
+          <div className={cn(bucket, "border-fg/40 bg-surface-2/60")}>
+            <p className="text-[15px] font-bold text-fg">{DEST.pl.label}</p>
+            <p className="mb-1.5 text-[12px] text-muted">מה שהחברה עשתה השנה</p>
+            <ul className="space-y-1 text-[13px] text-fg">
+              {pl.map((x, i) => (
+                <li key={i} className="rounded bg-surface px-2 py-0.5 ring-1 ring-line">
+                  {x}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <div className="flex flex-col items-center pb-10 text-center">
+          <Undo2 className="h-5 w-5 text-danger" aria-hidden />
+          <span className="text-[11.5px] font-bold text-danger line-through decoration-2">חוזר</span>
+          <span className="text-[11px] text-muted">לעולם לא</span>
+        </div>
+        <div>
+          <p className="mb-1 flex h-9 flex-col items-center">
+            <span className="rounded-full border-2 border-amber-500/60 bg-amber-500/15 px-2 text-[12px] font-bold text-fg">{drop}</span>
+            <ArrowDown className="h-4 w-4" style={{ color: FORMULA_COLORS[5].color }} aria-hidden />
+          </p>
+          <div className={cn(bucket, "border-credit/60 bg-credit/[0.08]")}>
+            <p className="text-[15px] font-bold text-fg">{DEST.oci.label}</p>
+            <p className="mb-1.5 text-[12px] text-muted">שינויי הערכה שאף אחד לא החליט עליהם</p>
+            <ul className="space-y-1 text-[13px] text-fg">
+              {oci.map((x, i) => (
+                <li key={i} className="rounded bg-surface px-2 py-0.5 ring-1 ring-line">
+                  {x}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </figure>
+  );
+}
+
+/** A term on its first appearance: its Hebrew name and the paragraph of the standard. */
+export function T19({ he, par }: { he: string; par?: string }) {
   return (
     <span>
-      <strong className="font-semibold text-fg">{he}</strong>{" "}
-      <span className="text-[0.92em] text-muted">
-        (<span dir="ltr">{en}</span>
-        {par && (
-          <>
-            , <span dir="ltr">IAS 19.{par}</span>
-          </>
-        )}
-        )
-      </span>
+      <strong className="font-semibold text-fg">{he}</strong>
+      {par && <span className="text-[0.92em] text-muted"> (סעיף {par})</span>}
     </span>
   );
 }
 
-/** A step down a short sorting ladder. */
-export function Ladder({ steps }: { steps: { q: ReactNode; yes: ReactNode }[] }) {
+/**
+ * A step down a short sorting ladder. Walking one case down it: `answers` says
+ * under each step why it was answered as it was, and `stop` is the step the
+ * case stops at — ringed, with the steps after it dimmed.
+ */
+export function Ladder({ steps, answers, stop }: { steps: { q: ReactNode; yes: ReactNode }[]; answers?: ReactNode[]; stop?: number }) {
   return (
     <ol className="space-y-1.5">
       {steps.map((s, i) => (
-        <li key={i}>
-          <div className="flex items-start gap-2 rounded-xl border border-line bg-surface px-3 py-2">
+        <li key={i} className={cn(stop !== undefined && i > stop && "opacity-40")}>
+          <div className={cn("flex items-start gap-2 rounded-xl border border-line bg-surface px-3 py-2", stop === i && "border-accent ring-2 ring-accent/60")}>
             <span className="num mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
-            <p className="min-w-0 text-[14.5px] text-fg">
-              {s.q} <span className="font-semibold text-accent">כן ← {s.yes}</span>
-            </p>
+            <div className="min-w-0 text-[14.5px] text-fg">
+              <p>
+                {s.q} <span className="font-semibold text-accent">כן ← {s.yes}</span>
+              </p>
+              {answers?.[i] && <p className={cn("mt-1 text-[13.5px]", stop === i ? "font-bold text-accent" : "text-muted")}>{answers[i]}</p>}
+            </div>
           </div>
           {i < steps.length - 1 && <ArrowDown className="mx-auto my-0.5 h-4 w-4 text-subtle" aria-label="לא — לשאלה הבאה" />}
         </li>

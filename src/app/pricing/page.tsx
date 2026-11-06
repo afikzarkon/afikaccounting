@@ -51,12 +51,11 @@ export default async function PricingPage({ searchParams }: PageProps<"/pricing"
   const plans = PLANS.filter((p) => !isHidden(v, planKey(p.tier)));
   return (
     <div className="relative">
-      <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-16 sm:pt-14">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold text-accent">מחירים</p>
           <h1 className="mt-2 text-[2.2rem] leading-tight font-bold tracking-tight text-fg sm:text-5xl">
-            מתחילים <span className="text-gradient">בחינם</span>, ממשיכים עד המבחן
+            מתחילים בחינם, ממשיכים עד המבחן
           </h1>
           <p className="mt-3 text-[15px] leading-relaxed text-muted">
             חשבונאות מאפס פתוחה לגמרי, לתמיד. כשתרצו להמשיך לנושאים שחוזרים בכל מבחן — הקורסים המתקדמים מחכים, והשיעור הראשון בכל אחד מהם עלינו.

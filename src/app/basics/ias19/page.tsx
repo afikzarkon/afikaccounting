@@ -1,13 +1,14 @@
-import { Link2, ListChecks, Map as MapIcon } from "lucide-react";
+import { BookA, BookOpenCheck, ChevronDown, Link2, ListChecks, Map as MapIcon } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Glossary } from "@/components/basics/glossary";
+import { Primer, PrimerTable } from "@/components/basics/ias19-primer";
 import { MindMap } from "@/components/basics/ias19-ui";
 import { ExamsSection } from "@/components/pricing/exams-teaser";
 import { GatedCoursePath } from "@/components/pricing/gated-course";
 import { CourseHeader } from "@/components/study-mode/course-header";
 import { Container } from "@/components/ui/primitives";
-import { screenHref } from "@/lib/study/basics";
 import { IAS19_LESSONS } from "@/lib/study/ias19";
+import { IAS19_GLOSSARY } from "@/lib/study/ias19/glossary";
 import { lessonList, lessonsRef, prereqLine, STAGES } from "@/lib/study/ias19/shared";
 import { SKILLS } from "@/lib/study/ias19/skills";
 import { visibleLessons } from "@/lib/visibility/server";
@@ -29,28 +30,36 @@ export default async function Ias19Page() {
   const titles = Object.fromEntries(IAS19_LESSONS.map((m) => [m.slug, m.title]));
   return (
     <div className="relative">
-      <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-16 sm:pt-14">
         <CourseHeader
           trail={[{ label: "שלב 2 · קורסים מתקדמים" }, { label: "הטבות עובד (IAS 19)" }]}
-          title={
-            <>
-              הטבות עובד <span className="text-gradient">מהמפה ועד המבחן</span>
-            </>
-          }
+          title="IAS 19: הטבות עובד, מאפס ועד שאלת מבחן"
           lessons={lessons}
         >
           <p>
-            שיעורים אינטראקטיביים, צעד אחר צעד: קודם מיון של ארבעת סוגי ההטבות וארגז כלים קטן, אחר כך ההטבות הפשוטות, ואז הלב של הקורס — הטבה מוגדרת, משיעור לשיעור, עד הצגה
-            בדוחות. בכל שיעור: רעיון מהחיים, כלל אחד, דוגמה פתורה, תרגול עם משוב מיידי ומלכודות.
+            לא צריך לדעת שום דבר על הטבות עובד כדי להתחיל. בשיעור הראשון לומדים לזהות איזו הטבה מונחת לפניכם, ואחר כך עוברים להטבות הפשוטות. משם בונים, שיעור אחרי שיעור, את
+            החישוב של מענקי פרישה ופיצויים. בסוף פותרים לבד שאלה שלמה ברמת מבחן.
           </p>
-          <p className="text-sm">
-            מה צריך לדעת מראש: הוצאה מול השקעה, ופקודת יומן בסיסית — חובה וזכות.{" "}
-            <Link href={screenHref("expense")} className="font-medium text-accent hover:underline">
-              לשיעור ״הוצאה מול השקעה״
-            </Link>
+          <p className="mt-2">
+            כל שיעור הוא מסלול קצר שעוברים בקצב שלכם. יש סיפור קטן שפותח את הנושא, תרשים לכל רעיון, דוגמה שפותרים יחד, ותרגילים שמראים מיד איפה טעיתם.
           </p>
         </CourseHeader>
+
+        <section id="primer" aria-labelledby="ias19-primer-title" className="mt-10 scroll-mt-24">
+          <h2 id="ias19-primer-title" className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-fg">
+            <BookOpenCheck className="h-6 w-6 text-accent" aria-hidden /> מה צריך לדעת לפני שמתחילים
+          </h2>
+          <p className="mt-1 text-[15px] text-muted">
+            את הדברים האלה צריך להביא איתכם לקורס, כי התרגילים נשענים עליהם כל הזמן. פתחו כל כרטיס וענו על השאלה שבסופו. מה שלא בטוח, כדאי לחזור עליו לפני שיעור 1.
+          </p>
+          <div className="mt-4">
+            <Primer />
+          </div>
+          <h3 className="mt-6 text-[17px] font-bold text-fg">מי צריך מה</h3>
+          <div className="mt-2">
+            <PrimerTable />
+          </div>
+        </section>
 
         <div className="mt-8">
           <GatedCoursePath lessons={lessons} />
@@ -120,6 +129,21 @@ export default async function Ias19Page() {
               </tbody>
             </table>
           </div>
+        </section>
+
+        <section aria-labelledby="ias19-glossary-title" className="mt-14">
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
+              <h2 id="ias19-glossary-title" className="flex flex-1 items-center gap-2 text-2xl font-semibold tracking-tight text-fg">
+                <BookA className="h-6 w-6 text-accent" aria-hidden /> מילון קצר, במילים פשוטות
+              </h2>
+              <ChevronDown className="h-5 w-5 shrink-0 text-muted transition group-open:rotate-180" aria-hidden />
+            </summary>
+            <p className="mt-1 text-[15px] text-muted">{IAS19_GLOSSARY.length} מונחים שחוזרים בכל הקורס, כל אחד בשורה אחת.</p>
+            <div className="mt-4">
+              <Glossary terms={IAS19_GLOSSARY} placeholder="למשל: היוון, OCI, תקרה" />
+            </div>
+          </details>
         </section>
 
         <ExamsSection topic="ias19" />

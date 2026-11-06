@@ -1,5 +1,6 @@
 import { grown, plainYear, pv, rollForward } from "@/lib/learn/ias19";
 import type { StudyModule, Trap } from "../../types";
+import { FORMULA, said, work } from "../formulas";
 import { calc, choice, COURSE, COURSE_HREF, fmt, journal, lessonRef, pct } from "../shared";
 
 /**
@@ -48,7 +49,8 @@ const traps: Trap[] = [
     prompt: "פתיחה 50,000, סגירה 80,000, שיעור תחילת השנה 6%. על איזו יתרה מחשבים את הריבית?",
     options: ["על 50,000 — הפתיחה", "על 80,000 — הסגירה", "על הממוצע, 65,000", "על השינוי, 30,000"],
     answer: 0,
-    why: "הריבית היא ״ההתקרבות לתשלום״ של מה שהיה בתחילת השנה.",
+    why: `הריבית היא ״ההתקרבות לתשלום״ של מה שהיה בתחילת השנה.
+${said(work.interestCost(50_000, 0.06))}`,
     traps: ["", "המלכודת: ריבית על הסגירה. הסגירה כבר כוללת את הריבית ואת השירות של השנה.", "אין ממוצע; שירות השנה מתווסף בסופה.", "השינוי כולל את הריבית עצמה."],
   },
   {
@@ -56,7 +58,9 @@ const traps: Trap[] = [
     prompt: "בתחילת השנה השיעור 7%, ובסופה 6%. באיזה שיעור מחשבים ריבית ועלות שירות?",
     options: ["7% — תחילת השנה", "6% — סוף השנה", "6.5%", "7% לריבית ו-6% לשירות"],
     answer: 0,
-    why: "ריבית ועלות שירות — לפי ההנחות של תחילת השנה. שיעור סוף השנה שייך רק לסגירה.",
+    why: `ריבית ועלות שירות — לפי ההנחות של תחילת השנה. שיעור סוף השנה שייך רק לסגירה.
+${FORMULA.interestCost}
+${FORMULA.service}`,
     traps: ["", "המלכודת: להשתמש בשיעור סוף השנה. השינוי בשיעור ייתפס ב-P.N.", "אין ממוצע.", "שתיהן לפי תחילת השנה."],
   },
   {
@@ -64,7 +68,8 @@ const traps: Trap[] = [
     prompt: "סגירה ב-31.12.2024, הפרישה ב-31.12.2028. כמה שנים מהוונים את עלות השירות של 2024?",
     options: ["4 — מסוף 2024", "5 — מתחילת 2024", "3", "1"],
     answer: 0,
-    why: "עלות השירות נמדדת לסוף השנה: מ-31.12.2024 עד 31.12.2028 — 4 שנים.",
+    why: `עלות השירות נמדדת לסוף השנה.
+${said(work.nYear(2028, 2024))}`,
     traps: ["", "המלכודת: לספור מתחילת השנה. השירות של השנה ״נגמר״ בסופה.", "שלוש שנים זה מסוף 2025.", "שנה אחת זה רק עד סוף 2025."],
   },
   {
@@ -72,7 +77,7 @@ const traps: Trap[] = [
     prompt: "ה-P.N. של ההתחייבות השנה הוא הפסד של 12,000 ₪. איפה הוא נרשם?",
     options: ["ב-OCI — רווח כולל אחר", "ברווח והפסד, בהוצאות השכר", "ברווח והפסד, בהוצאות המימון", "לא נרשם — הוא רק הפרש"],
     answer: 0,
-    why: "מדידה מחדש של התחייבות להטבה מוגדרת נרשמת ב-OCI (IAS 19.57(ד)).",
+    why: "מדידה מחדש של התחייבות להטבה מוגדרת נרשמת ב-OCI (סעיף 57(ד)).",
     traps: ["", "המלכודת: לרשום לרווח והפסד. שם נרשמים רק שירות וריבית.", "הריבית היא שורה אחרת.", "ההתחייבות גדלה — חייבים לרשום את ההפרש."],
   },
   {
@@ -80,7 +85,8 @@ const traps: Trap[] = [
     prompt: "בשנה שולמו לעובדים 300,000 ₪: 60,000 מהקרן, והשאר מהחברה. כמה מורידים בתנועה בהתחייבות?",
     options: ["300,000", "60,000", "240,000", "0"],
     answer: 0,
-    why: "ההתחייבות קטנה בכל מה ששולם לעובדים — לא משנה מאיזה כיס.",
+    why: `ההתחייבות קטנה בכל מה ששולם לעובדים — לא משנה מאיזה כיס.
+${said(work.paidTotal(60_000, 240_000))}`,
     traps: ["", "המלכודת: להוריד רק את מה ששולם מהקרן. זה נכון לנכסים, לא להתחייבות.", "גם החלק של הקרן מסלק חוב.", "התשלום מקטין את ההתחייבות."],
   },
   {
@@ -120,26 +126,36 @@ export const ROLLFORWARD: StudyModule = {
   ],
   exercises: [
     calc("sales-interest", "צוות מכירות: ריבית", `צוות מכירות: יתרת ההתחייבות ב-1.1.2023 ${fmt(SALES.y2023.opening)} ₪; שיעור ההיוון ב-31.12.2022 ${pct(SALES.y2023.rate)}. מה הוצאות הריבית של 2023?`, SALES_2023.interest, [
-      `${fmt(SALES.y2023.opening)} × ${pct(SALES.y2023.rate)} = ${fmt(SALES_2023.interest)} ₪ — על הפתיחה, בשיעור תחילת השנה.`,
+      said(work.interestCost(SALES.y2023.opening, SALES.y2023.rate)),
+      "על הפתיחה, בשיעור של תחילת השנה.",
     ]),
     calc("sales-pn", "צוות מכירות: P.N.", `צוות מכירות, 2023: פתיחה ${fmt(SALES.y2023.opening)}; ריבית ${fmt(SALES_2023.interest)}; עלות שירות ${fmt(SALES.y2023.service)}; כל ההטבות ששולמו לעובדים ${fmt(SALES.y2023.payments)} (ביום האחרון של השנה); סגירה ${fmt(SALES.y2023.closing)}. מה ה-P.N. (הפסד, בסכום חיובי)?`, SALES_2023.pn, [
-      "P.N. = סגירה − פתיחה − ריבית − שירות + תשלומים.",
-      `${fmt(SALES.y2023.closing)} − ${fmt(SALES.y2023.opening)} − ${fmt(SALES_2023.interest)} − ${fmt(SALES.y2023.service)} + ${fmt(SALES.y2023.payments)} = ${fmt(SALES_2023.pn)} ₪ הפסד, ל-OCI.`,
+      said(work.pnDB(SALES_2023)),
+      "הפסד, ל-OCI.",
     ]),
     calc("sales-payments", "צוות מכירות: התשלומים", `צוות מכירות, 2024: פתיחה ${fmt(SALES.y2023.closing)}; שיעור ב-31.12.2023 ${pct(SALES.y2024.rate)}; עלות שירות ${fmt(SALES.y2024.service)}; רווח אקטוארי (P.N.) ${fmt(SALES.y2024.gain)}; סגירה ${fmt(SALES.y2024.closing)}. כמה הטבות שולמו?`, SALES_2024.payments, [
-      `ריבית: ${fmt(SALES.y2023.closing)} × ${pct(SALES.y2024.rate)} = ${fmt(SALES_2024.interest)}.`,
-      `כאן הנעלם הוא התשלומים: ${fmt(SALES.y2023.closing)} + ${fmt(SALES_2024.interest)} + ${fmt(SALES.y2024.service)} − ${fmt(SALES.y2024.gain)} − ${fmt(SALES.y2024.closing)} = ${fmt(SALES_2024.payments)} ₪.`,
+      `ריבית:
+${said(work.interestCost(SALES.y2023.closing, SALES.y2024.rate))}`,
+      `כאן הנעלם הוא התשלומים, וה-P.N. רווח, ולכן בא עם מינוס:
+${said(work.paymentsDB(SALES_2024))}`,
     ]),
     calc("rnd-opening", "שבתון: פתיחה", `מחלקת מחקר: ${RND.staff} עובדים, ${pct(RND.stay)} צפויים להישאר ${RND.years} שנים, ובתחילת השנה השישית יקבל כל אחד תשלום שבתון של ${fmt(RND_PAYMENT)} ₪. הצבירה על ${RND.years} שנים, מ-1.1.${RND.from}; שיעור ההיוון ${pct(RND.rate)}. מה ההתחייבות ב-31.12.${RND.from}?`, RND_OPENING, [
-      `צבירה לשנה: ${fmt(RND_PAYMENT)} × ${RND.staff} × ${pct(RND.stay)} ÷ ${RND.years} = ${fmt(RND_PER_YEAR)} ₪.`,
-      `שנה אחת, n = ${RND.years - 1}: ${fmt(RND_PER_YEAR)} ÷ ${1 + RND.rate}^${RND.years - 1} = ${fmt(Math.round(RND_OPENING))} ₪.`,
+      said(work.perYearGroup(RND_PAYMENT, RND.staff, RND.stay, RND.years)),
+      `נצברה שנה אחת:
+${said(work.nYear(RND.from + RND.years - 1, RND.from))}`,
+      said(work.measure({ perYear: RND_PER_YEAR, years: 1, heads: 1, n: RND.years - 1, i: RND.rate })),
     ]),
     calc("rnd-service", "שבתון: עלות שירות", `מחלקת מחקר: צבירה לשנה ${fmt(RND_PER_YEAR)} ₪ (כל העובדים יחד), התשלום ב-1.1.${RND.from + RND.years}, שיעור ${pct(RND.rate)}. מה עלות השירות השוטף של ${RND.from + 1}?`, RND_2025.service, [
-      `מהוונים מסוף ${RND.from + 1} עד התשלום — ${RND.years - 2} שנים: ${fmt(RND_PER_YEAR)} ÷ ${1 + RND.rate}^${RND.years - 2} = ${fmt(Math.round(RND_2025.service))} ₪.`,
+      `מהוונים מסוף ${RND.from + 1} עד התשלום:
+${said(work.nYear(RND.from + RND.years - 1, RND.from + 1))}`,
+      said(work.service(RND_PER_YEAR, RND.rate, RND.years - 2)),
     ]),
     calc("rnd-closing", "שבתון: סגירה", `מחלקת מחקר: צבירה לשנה ${fmt(RND_PER_YEAR)} ₪, התשלום ב-1.1.${RND.from + RND.years}, שיעור ${pct(RND.rate)} בכל התאריכים, וההנחות לא השתנו. מה ההתחייבות ב-31.12.${RND.from + 1}?`, RND_2025.closing, [
-      `שתי שנים: ${fmt(2 * RND_PER_YEAR)} ÷ ${1 + RND.rate}^${RND.years - 2} = ${fmt(Math.round(RND_2025.closing))} ₪.`,
-      `ריבית ${fmt(Math.round(RND_2025.interest))} + שירות ${fmt(Math.round(RND_2025.service))} + פתיחה ${fmt(Math.round(RND_OPENING))} = הסגירה; P.N. = 0, כי שום הנחה לא השתנתה.`,
+      `נצברו שתי שנים:
+${said(work.measure({ perYear: RND_PER_YEAR, years: 2, heads: 1, n: RND.years - 2, i: RND.rate }))}`,
+      `בדיקה מהמעגל, כש-P.N. = 0 כי שום הנחה לא השתנתה. הריבית:
+${said(work.interestCost(RND_OPENING, RND.rate))}`,
+      said(work.rollDB({ opening: RND_OPENING, interest: RND_2025.interest, service: RND_2025.service })),
     ]),
     journal(
       "sales-entries",
@@ -152,15 +168,17 @@ export const ROLLFORWARD: StudyModule = {
         { account: "מזומן", cr: SALES.y2023.payments },
         { account: "התחייבות בשל הטבה מוגדרת", cr: SALES.y2023.service + SALES_2023.interest + SALES_2023.pn - SALES.y2023.payments },
       ],
-      "שירות — לשכר; ריבית — למימון; P.N. — ל-OCI; והתשלום מקטין את ההתחייבות. נטו ההתחייבות גדלה בהפרש בין הסגירה לפתיחה.",
+      `שירות — לשכר; ריבית — למימון; P.N. — ל-OCI; והתשלום מקטין את ההתחייבות. ההתחייבות בזכות:
+${said(work.liabilityMove(SALES.y2023.service, SALES_2023.interest, SALES_2023.pn, SALES.y2023.payments))}`,
       ["הוצאות שכר", "הוצאות מימון", "קרן הון — מדידה מחדש", "מזומן", "התחייבות בשל הטבה מוגדרת", "נכסי תכנית"],
     ),
-    choice("pn-zero", "P.N.", "בשנה שבה לא השתנתה שום הנחה, ולא היו תשלומים חריגים — כמה P.N.?", ["אפס", "שווה לריבית", "שווה לעלות השירות", "תמיד חיובי"], 0, "פתיחה + ריבית + שירות − תשלומים מסבירים הכול; לא נשאר פער."),
+    choice("pn-zero", "P.N.", "בשנה שבה לא השתנתה שום הנחה, ולא היו תשלומים חריגים — כמה P.N.?", ["אפס", "שווה לריבית", "שווה לעלות השירות", "תמיד חיובי"], 0, `פתיחה, ריבית, שירות ותשלומים מסבירים הכול, ולא נשאר פער:
+${FORMULA.pnDB}`),
   ],
   traps,
   tips: [
     "המעגל: פתיחה, ריבית, שירות, תשלומים, P.N. וסגירה — הריבית והשירות לפי תחילת השנה, הסגירה לפי סופה.",
-    "פתיחה + ריבית + עלות שירות − תשלומים + P.N. = סגירה, ולכן P.N. = סגירה − פתיחה − ריבית − שירות + תשלומים. n של עלות השירות נספר מסוף השנה.",
+    `${FORMULA.rollDB}; ${FORMULA.pnDB}; ${FORMULA.interestCost}; ${FORMULA.service} — n נספר מסוף השנה.`,
     "רישום: שירות — ח׳ הוצאות שכר; ריבית — ח׳ הוצאות מימון; הפסד P.N. — ח׳ קרן הון (OCI); תשלום — ז׳ מזומן. בכולן הצד השני: ההתחייבות.",
     "P.N. (סעיף 57(ד)): כל מה שנשאר — שינויי הנחות, והפער בין הצפוי למה שקרה. ריבית יורדת מגדילה את ההתחייבות: הפסד.",
   ],

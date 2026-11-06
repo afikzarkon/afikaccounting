@@ -47,12 +47,9 @@ export function SectionHeading({
     <div className={cn("flex flex-wrap items-end justify-between gap-4", className)}>
       <div className="max-w-3xl">
         {eyebrow && (
-          <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2.5 py-1 text-xs font-bold text-accent">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />
-            {eyebrow}
-          </p>
+          <p className="mb-2 text-sm font-semibold text-accent">{eyebrow}</p>
         )}
-        <h2 className="text-[1.75rem] leading-tight font-bold tracking-tight text-fg sm:text-[2.25rem]">{title}</h2>
+        <h2 className="text-[1.85rem] leading-tight font-bold text-fg sm:text-[2.4rem]">{title}</h2>
         {description && <p className="mt-3 text-[16px] leading-relaxed text-muted">{description}</p>}
       </div>
       {action}

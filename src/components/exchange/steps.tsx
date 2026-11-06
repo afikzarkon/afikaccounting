@@ -1,7 +1,7 @@
-import { CalendarCheck, History, Scale } from "lucide-react";
 import { Callout, DataTable, Dt, JournalEntry, Num } from "@/components/study/blocks";
 import { Formula } from "@/components/study/math";
-import { StepCard, texNum } from "@/components/study/ui";
+import { StepPart } from "@/components/learn/step-part";
+import { texNum } from "@/components/study/ui";
 import { solveExchange } from "@/lib/learn/exchange";
 import { MACHINE } from "@/lib/learn/ias16-example";
 import { catchUpLines, EXAMPLE, EXCHANGE_DATE, EXCHANGE_YEAR, exchangeLines } from "./entries";
@@ -17,29 +17,26 @@ const STEPS = ["זיהוי תאריך ההחלפה", "עדכון פחת עד ל�
 export function ExchangeStepsSection() {
   return (
     <>
-      <div className="card p-5">
-        <p className="text-xs font-semibold text-accent">דרכים לפתור שאלת החלפה — במבט אחד</p>
-        <p className="mt-1 text-[15px] text-fg/90">
-          כל שאלת החלפת נכסים נפתרת באותם שלושה שלבים, באותו הסדר. לאורך הדרך נמשיך את השאלה המרכזית של הפרק (
-          <a href="#method" className="font-medium text-accent hover:underline">
-            דרכים לפתור שאלה
-          </a>
-          ): המכונה של {MACHINE.company} נכנסה לשימוש ב-<Dt>{MACHINE.readyDate}</Dt> בעלות <Num v={EXAMPLE.oldCost} /> ₪, לאורך חיים של{" "}
-          {EXAMPLE.oldLife} שנים, ערך גרט <Num v={EXAMPLE.oldSalvage} /> ₪ ובקו ישר. ב-<Dt>{EXCHANGE_DATE}</Dt> החליפה אותה החברה במכונה חדשה ושילמה
-          בנוסף <Num v={EXAMPLE.cashPaid} /> ₪ במזומן. השווי ההוגן של המכונה הישנה ביום ההחלפה: <Num v={EXAMPLE.fairValueGiven} />{" "}
-          ₪. למכונה החדשה: אורך חיים של {EXAMPLE.newLife} שנים וערך גרט של <Num v={EXAMPLE.newSalvage} /> ₪.
-        </p>
-        <ol className="mt-4 grid gap-2 sm:grid-cols-3">
-          {STEPS.map((s, i) => (
-            <li key={s} className="flex items-center gap-2 rounded-xl border border-line bg-surface-2/50 px-3 py-2.5 text-sm font-medium text-fg">
-              <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold text-accent-fg">{i + 1}</span>
-              {s}
-            </li>
-          ))}
-        </ol>
-      </div>
+      <p>
+        כל שאלת החלפת נכסים נפתרת באותם שלושה שלבים, באותו הסדר. לאורך הדרך נמשיך את השאלה המרכזית של הפרק (
+        <a href="#method" className="font-medium text-accent hover:underline">
+          דרכים לפתור שאלה
+        </a>
+        ): המכונה של {MACHINE.company} נכנסה לשימוש ב-<Dt>{MACHINE.readyDate}</Dt> בעלות <Num v={EXAMPLE.oldCost} /> ₪, לאורך חיים של{" "}
+        {EXAMPLE.oldLife} שנים, ערך גרט <Num v={EXAMPLE.oldSalvage} /> ₪ ובקו ישר. ב-<Dt>{EXCHANGE_DATE}</Dt> החליפה אותה החברה במכונה חדשה ושילמה
+        בנוסף <Num v={EXAMPLE.cashPaid} /> ₪ במזומן. השווי ההוגן של המכונה הישנה ביום ההחלפה: <Num v={EXAMPLE.fairValueGiven} />{" "}
+        ₪. למכונה החדשה: אורך חיים של {EXAMPLE.newLife} שנים וערך גרט של <Num v={EXAMPLE.newSalvage} /> ₪.
+      </p>
+      <ol className="max-w-[70ch] space-y-1.5">
+        {STEPS.map((s, i) => (
+          <li key={s} className="flex items-center gap-2.5">
+            <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
+            {s}
+          </li>
+        ))}
+      </ol>
 
-      <StepCard step={1} title="זיהוי תאריך ההחלפה" lead="מועד העסקה המדויק במהלך השנה" icon={<CalendarCheck className="h-5 w-5" />}>
+      <StepPart step={1} title="זיהוי תאריך ההחלפה" lead="מועד העסקה המדויק במהלך השנה">
         <p>
           תאריך ההחלפה הוא קו הגבול של השנה. הוא קובע שני דברים: <strong>עד מתי</strong> מפחיתים את הנכס הישן, ו<strong>ממתי</strong> מתחילים
           להפחית את הנכס החדש. מסמנים אותו בשאלה לפני כל חישוב.
@@ -58,9 +55,9 @@ export function ExchangeStepsSection() {
             מהם — מפספס חלק מההוצאה.
           </p>
         </Callout>
-      </StepCard>
+      </StepPart>
 
-      <StepCard step={2} title="עדכון פחת עד לתאריך ההחלפה" lead="מביאים את הנכס הישן ליום ההחלפה — ורק אז מחליפים" icon={<History className="h-5 w-5" />}>
+      <StepPart step={2} title="עדכון פחת עד לתאריך ההחלפה" lead="מביאים את הנכס הישן ליום ההחלפה — ורק אז מחליפים">
         <p>
           הפחת הנצבר שבשאלה הוא בדרך כלל לתחילת השנה. לפני ההחלפה מחשבים את הוצאות הפחת <strong>מתחילת השנה ועד יום ההחלפה</strong>, ומעדכנים את
           הפחת הנצבר ואת הערך בספרים לאותו יום.
@@ -90,9 +87,9 @@ export function ExchangeStepsSection() {
             <Num v={WITH.bookValue} />), ולכן גם רווח קטן מדי מההחלפה.
           </p>
         </Callout>
-      </StepCard>
+      </StepPart>
 
-      <StepCard step={3} title="סיווג העסקה וקביעת עלות הנכס החדש" lead="האם יש מהות מסחרית — והאם השווי ההוגן ניתן למדידה מהימנה" icon={<Scale className="h-5 w-5" />}>
+      <StepPart step={3} title="סיווג העסקה וקביעת עלות הנכס החדש" lead="האם יש מהות מסחרית — והאם השווי ההוגן ניתן למדידה מהימנה">
         <p>
           לפי <strong>סעיף 25</strong>, לעסקה יש <strong>מהות מסחרית</strong> כשהיא באמת משנה את הכלכלה של החברה: תזרימי המזומנים הצפויים
           מהנכס החדש שונים מאלה של הנכס הישן — בסיכון, בעיתוי או בסכום — ובאופן משמעותי. מכונה ישנה תמורת מכונה חדשה עם תפוקה אחרת — יש מהות
@@ -164,7 +161,7 @@ export function ExchangeStepsSection() {
             <Num v={WITH.newCost - WITHOUT.newCost} />.
           </p>
         </Callout>
-      </StepCard>
+      </StepPart>
     </>
   );
 }

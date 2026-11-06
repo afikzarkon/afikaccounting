@@ -1,17 +1,18 @@
 import { Factory, Flame, Package, Ship } from "lucide-react";
 import type { ReactNode } from "react";
+import { Deeper, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { ScreenLink } from "@/components/study-mode/screen-link";
-import { Callout, DataTable } from "@/components/study/blocks";
+import { DataTable } from "@/components/study/blocks";
 import { type Entry } from "@/lib/learn/basics";
 import { entriesFor, purchaseCost, statement, valuatePeriod } from "@/lib/learn/inventory";
 import { DAF, DISCOUNT_EXCESS, DISCOUNT_WHOLE, FINANCING, LEHAVA, SHEMESH } from "@/lib/learn/inventory-examples";
 import { ROW_LABEL, solveTable, TABLE_ROWS } from "@/lib/learn/inventory-solver";
 import { cn } from "@/lib/utils";
 import { type FillData, SoldSlider, SortQuiz, SystemSwitch, TableFill, TryInCalc } from "./inventory-interactive";
-import { MoreDialog, Sorted, Story } from "./inventory-teach";
+import { Sorted, Story } from "./inventory-teach";
 import { GrossProfitStatementView } from "./inventory-trace";
-import { Card, KeyCard, Money, Rule, type Step, Stepper, Term, Wide } from "./ui";
+import { Card, Money, Rule, type Step, Stepper, Term } from "./ui";
 
 const LEH = valuatePeriod(LEHAVA, "fifo");
 const LEH_P = valuatePeriod(LEHAVA, "fifo", { system: "periodic" });
@@ -82,10 +83,10 @@ const TERM_GROUPS: { title: string; terms: TermCard[] }[] = [
 const termSteps: Step[] = TERM_GROUPS.map((g) => ({
   title: g.title,
   body: (
-    <ul className="grid gap-2 sm:grid-cols-2">
+    <ul className="divide-y divide-line">
       {g.terms.map((t) => (
-        <li key={t.term} className="rounded-xl border border-line bg-surface p-3.5">
-          <div className="flex items-start justify-between gap-2">
+        <li key={t.term} className="py-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             <p className="font-semibold text-fg">{t.term}</p>
             {t.home !== "—" && (
               <span className={cn("shrink-0 rounded-md px-2 py-0.5 text-[11px] font-bold", t.home === "מאזן" ? "bg-accent text-accent-fg" : "bg-fg text-surface")}>{t.home}</span>
@@ -246,7 +247,7 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
           <Shelf bought={10} sold={6} />
           <p className="font-semibold">כמה הרוויחה השנה?</p>
         </Story>
-        <Wide className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Card title="✗ כל הקניות כהוצאה" className="border-danger/40">
             <p>
               <Money v={LEH.netSales} /> − <Money v={LEH.purchasesCost} /> ={" "}
@@ -267,14 +268,12 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
               ארבע הערכות (<Money v={LEH.closingCarrying} />) הן נכס. ההוצאה שלהן — בשנה שבה יימכרו.
             </p>
           </Card>
-        </Wide>
-        <KeyCard>
-          הוצאה נרשמת יחד עם ההכנסה שהיא יצרה. זה <Term he="עיקרון ההקבלה" />.
-        </KeyCard>
+        </div>
         <p>הזיזו את הסליידר — אותן קניות, ומה שזז הוא רק החלוקה בין הוצאה לנכס:</p>
-        <Wide>
-          <SoldSlider />
-        </Wide>
+        <SoldSlider />
+        <Remember>
+          הוצאה נרשמת יחד עם ההכנסה שהיא יצרה. זה <Term he="עיקרון ההקבלה" />.
+        </Remember>
       </>
     ),
   },
@@ -282,7 +281,7 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
     lead: "התקן IAS 2 עונה על ארבע שאלות — וכל אחת מהן נלמדת בקורס בשיעור משלה.",
     body: (
       <>
-        <Wide className="grid gap-2 sm:grid-cols-2">
+        <ol className="max-w-[70ch] space-y-3">
           {(
             [
               ["מה נחשב מלאי?", "סחורה שמחזיקים כדי למכור.", "iv-definition"],
@@ -291,20 +290,18 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
               ["מתי העלות הופכת להוצאה?", "כשהסחורה נמכרת — בעלות המכר.", "inv-cogs"],
             ] as const
           ).map(([q, a, screen], i) => (
-            <div key={q} className="rounded-xl border border-line bg-surface p-3.5">
-              <p className="flex items-center gap-2 font-semibold text-fg">
-                <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
-                {q}
-              </p>
-              <p className="mt-1 text-[14.5px] text-fg/85">{a}</p>
-              <p className="mt-1.5 text-[13px] text-muted">
-                לומדים ב<ScreenLink id={screen} />
-              </p>
-            </div>
+            <li key={q} className="flex items-baseline gap-2.5">
+              <span className="num grid h-6 w-6 shrink-0 place-items-center self-start rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
+              <span>
+                <strong className="text-fg">{q}</strong> {a}
+                <span className="block text-[13px] text-muted">
+                  לומדים ב<ScreenLink id={screen} />
+                </span>
+              </span>
+            </li>
           ))}
-        </Wide>
-        <KeyCard icon={<Package className="h-5 w-5" />}>בשאלות המבחן החברה כמעט תמיד קמעונאית: קונה סחורה מוכנה ומוכרת אותה כמו שהיא.</KeyCard>
-        <MoreDialog label="ומה עם חברה יצרנית?">
+        </ol>
+        <Deeper icon={<Factory />} title="ומה עם חברה יצרנית?">
           <p>
             לעלות הרכישה מתווספות <Term he="עלויות המרה" /> — עבודה ישירה ו<Term he="תקורות ייצור" />.
           </p>
@@ -317,10 +314,9 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
             </li>
             <li>תקורות הנהלה כלליות ועלויות מכירה — אף פעם לא בעלות.</li>
           </ul>
-          <p className="flex items-center gap-2 text-muted">
-            <Factory className="h-4 w-4" aria-hidden /> מופיע בעיקר בשאלות תיאורטיות.
-          </p>
-        </MoreDialog>
+          <p className="text-muted">מופיע בעיקר בשאלות תיאורטיות.</p>
+        </Deeper>
+        <Remember>בשאלות המבחן החברה כמעט תמיד קמעונאית: קונה סחורה מוכנה ומוכרת אותה כמו שהיא.</Remember>
       </>
     ),
   },
@@ -332,7 +328,7 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
     lead: "בשיטה תקופתית יש למלאי הסגירה שני בתים: נכס במאזן, ובאותו סכום — הקטנה של עלות המכר ברווח או הפסד.",
     body: (
       <>
-        <Wide className="grid items-stretch gap-3 md:grid-cols-[1fr_auto_1fr]">
+        <div className="grid items-stretch gap-3 md:grid-cols-[1fr_auto_1fr]">
           <div className="rounded-xl border-2 border-accent/50 bg-accent-soft p-4">
             <p className="text-xs font-bold text-accent">מאזן — נכס</p>
             <p className="mt-2 font-semibold text-fg">מלאי סגירה מאזני</p>
@@ -347,15 +343,15 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
             <p className="mt-2 font-semibold text-fg">מלאי סגירה רווח או הפסד</p>
             <p className="mt-1 text-sm text-fg/85">בזכות — מקטין את עלות המכר.</p>
           </div>
-        </Wide>
-        <KeyCard>רק ״מלאי סגירה מאזני״ הוא נכס. ״מלאי סגירה רווח או הפסד״ ו״מלאי פתיחה״ — תוצאתיים.</KeyCard>
-        <MoreDialog label="ומה קורה בשנה הבאה?">
+        </div>
+        <Deeper title="ומה קורה בשנה הבאה?">
           <p>&quot;מלאי סגירה רווח או הפסד&quot; מתאפס, כמו כל חשבון תוצאתי.</p>
           <p>
             &quot;מלאי סגירה מאזני&quot; עובר לשנה הבאה ומשנה שם וסיווג ל&quot;מלאי פתיחה&quot; — חשבון תוצאתי בחובה, כמו הקניות. בסוף השנה הבאה סופרים שוב, ורושמים
             סגירה חדשה.
           </p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>רק ״מלאי סגירה מאזני״ הוא נכס. ״מלאי סגירה רווח או הפסד״ ו״מלאי פתיחה״ — תוצאתיים.</Remember>
       </>
     ),
   },
@@ -363,7 +359,7 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
     lead: "בשיטה תקופתית מעדכנים את המלאי פעם בשנה, לפי ספירה. בשיטה תמידית — בכל קנייה ובכל מכירה.",
     body: (
       <>
-        <Wide className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-xl border-2 border-line-strong bg-surface p-4">
             <p className="font-bold text-fg">תקופתי — פעם בשנה</p>
             <p className="mt-1 text-[14.5px] text-fg/85">במהלך השנה: ״קניות״. בסוף השנה: סופרים, ורושמים מלאי סגירה.</p>
@@ -372,13 +368,10 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
             <p className="font-bold text-fg">תמידי — בכל תנועה</p>
             <p className="mt-1 text-[14.5px] text-fg/85">בקנייה: ״מלאי״. בכל מכירה: גם ח׳ עלות המכר / ז׳ מלאי.</p>
           </div>
-        </Wide>
+        </div>
         <p>אותם שלושה אירועים של להבה. החליפו שיטה, ועברו בין האירועים:</p>
-        <Wide>
-          <SystemSwitch data={SYSTEMS} />
-        </Wide>
-        <KeyCard>השיטה משנה את הפקודות. ב-FIFO המספרים בסוף יוצאים זהים בשתיהן.</KeyCard>
-        <MoreDialog label="טבלת השוואה מלאה">
+        <SystemSwitch data={SYSTEMS} />
+        <Deeper title="טבלת השוואה מלאה">
           <DataTable
             head={["", "מלאי תקופתי", "מלאי תמידי"]}
             rows={[
@@ -390,7 +383,8 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
               ["חיסרון", "אין מעקב שוטף; עלות המכר ידועה רק בסוף השנה", "צריך לחשב עלות בכל מכירה"],
             ]}
           />
-        </MoreDialog>
+        </Deeper>
+        <Remember>השיטה משנה את הפקודות. ב-FIFO המספרים בסוף יוצאים זהים בשתיהן.</Remember>
       </>
     ),
   },
@@ -398,19 +392,17 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
     lead: "התבנית שמופיעה בכל שאלה: מכירות נטו, פחות עלות המכר — רווח גולמי.",
     body: (
       <>
-        <Wide>
-          <GrossProfitStatementView s={statement(LEH)} caption="חנות להבה — הדוח עד הרווח הגולמי" />
-        </Wide>
+        <GrossProfitStatementView s={statement(LEH)} caption="חנות להבה — הדוח עד הרווח הגולמי" />
         <Sorted
           columns={[
             { title: "מקטין את המכירות", tone: "neutral", items: ["הנחות ללקוחות", "החזרות מלקוחות"] },
             { title: "מקטין את הקניות", tone: "neutral", items: ["הנחות מספקים", "החזרות לספקים"] },
           ]}
         />
-        <KeyCard>
+        <Remember>
           שיעור רווח גולמי = רווח גולמי ÷ מכירות נטו — לא ÷ עלות המכר. בלהבה: <Money v={LEH.grossProfit} plain /> ÷ <Money v={LEH.netSales} plain /> ={" "}
           {Math.round(LEH.gpPct * 10000) / 100}%.
-        </KeyCard>
+        </Remember>
       </>
     ),
   },
@@ -419,13 +411,11 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <p>חברת &quot;דף&quot; הוקמה ב-2024 (פתיחה אפס), וחסרים לה תאים בשתי שנים. לחצו &quot;צעד הבא&quot; — ליד כל צעד כתוב למה הוא הבא בתור:</p>
-        <Wide>
-          <TableFill data={DAF_FILL} />
-        </Wide>
-        <KeyCard>כשהשנה גמורה — מגלגלים: מלאי הסגירה של 2024 הוא מלאי הפתיחה של 2025.</KeyCard>
+        <TableFill data={DAF_FILL} />
         <div className="flex flex-wrap gap-2">
           <TryInCalc id="daf" label="פתחו את הטבלה במחשבון" />
         </div>
+        <Remember>כשהשנה גמורה — מגלגלים: מלאי הסגירה של 2024 הוא מלאי הפתיחה של 2025.</Remember>
       </>
     ),
   },
@@ -434,17 +424,14 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
     lead: "עלות המלאי היא כל מה שהביא את הסחורה למקומה ולמצבה — ולא יותר.",
     body: (
       <>
-        <KeyCard>לכל הוצאה שואלים: האם היא הביאה את הסחורה לכאן, ולמצב הזה?</KeyCard>
-        <Wide>
-          <Sorted
-            columns={[
-              { title: "נכנס לעלות", tone: "good", items: ["מחיר הרכישה", "מכס שלא מוחזר", "הובלה פנימה וטיפול", "אחסון הכרחי לפני שלב נוסף"] },
-              { title: "מנוכה מהעלות", tone: "neutral", items: ["הנחות מסחריות והנחות כמות", "החזרים מהספק"] },
-              { title: "בחוץ — הוצאה", tone: "bad", items: ["מע״מ בר-קיזוז", "אחסון רגיל", "הובלה ללקוח, פרסום", "בזבוז חריג, תקורה מנהלית", "רכיב מימון באשראי חריג"] },
-            ]}
-          />
-        </Wide>
-        <MoreDialog label="עם סעיפי התקן">
+        <Sorted
+          columns={[
+            { title: "נכנס לעלות", tone: "good", items: ["מחיר הרכישה", "מכס שלא מוחזר", "הובלה פנימה וטיפול", "אחסון הכרחי לפני שלב נוסף"] },
+            { title: "מנוכה מהעלות", tone: "neutral", items: ["הנחות מסחריות והנחות כמות", "החזרים מהספק"] },
+            { title: "בחוץ — הוצאה", tone: "bad", items: ["מע״מ בר-קיזוז", "אחסון רגיל", "הובלה ללקוח, פרסום", "בזבוז חריג, תקורה מנהלית", "רכיב מימון באשראי חריג"] },
+          ]}
+        />
+        <Deeper title="עם סעיפי התקן">
           <DataTable
             head={["פריט", "בעלות?", "סעיף"]}
             rows={[
@@ -461,7 +448,8 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
               ["רכיב מימון באשראי חריג", "✗ הוצאות מימון", "18"],
             ]}
           />
-        </MoreDialog>
+        </Deeper>
+        <Remember>לכל הוצאה שואלים: האם היא הביאה את הסחורה לכאן, ולמצב הזה?</Remember>
       </>
     ),
   },
@@ -473,9 +461,7 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
           <p>על השולחן: הנחת כמות, מכס, שתי הובלות, אחסון בחנות ומע״מ. נעבור עליהם אחד-אחד:</p>
         </Story>
         <Stepper label="שמש · בניית העלות" steps={costSteps} />
-        <Callout kind="warn" title="מכס — על המחיר נטו">
-          <p>&quot;מכס X% מהמחיר נטו&quot; — על המחיר אחרי ההנחה, בלי ההובלה.</p>
-        </Callout>
+        <Remember>מכס — על המחיר נטו: &quot;מכס X% מהמחיר נטו&quot; — על המחיר אחרי ההנחה, בלי ההובלה.</Remember>
       </>
     ),
   },
@@ -487,7 +473,7 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
     lead: "בתנאי אשראי חריגים לענף, העלות היא מחיר המזומן. ההפרש הוא הוצאות מימון — לא מלאי.",
     body: (
       <>
-        <Wide className="grid items-center gap-3 sm:grid-cols-[1fr_auto_1fr]">
+        <div className="grid items-center gap-3 sm:grid-cols-[1fr_auto_1fr]">
           <div className="rounded-xl border-2 border-line-strong bg-surface p-4 text-center">
             <p className="text-[13px] text-muted">המחיר באשראי ״שוטף + 150״</p>
             <p className="text-2xl font-bold text-fg">
@@ -511,27 +497,25 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
               </p>
             </div>
           </div>
-        </Wide>
-        <KeyCard>במזומן המחיר היה נמוך ב-4% — וזו העלות. ההפרש הוא מחיר הכסף, לאורך תקופת האשראי.</KeyCard>
+        </div>
         <p className="text-[14.5px] text-muted">ואם תנאי האשראי רגילים בענף? אין פיצול: העלות היא המחיר המלא.</p>
+        <Remember>במזומן המחיר היה נמוך ב-4% — וזו העלות. ההפרש הוא מחיר הכסף, לאורך תקופת האשראי.</Remember>
       </>
     ),
   },
   "inv-cost-sort": {
     lead: "לפני התרגול של השיעור — בודקים שההבנה יושבת: לכל עלות, האם היא נכנסת למלאי, נשארת בחוץ, או מנוכה ממנו.",
     body: (
-      <Wide>
-        <SortQuiz
-          id="cost-sort"
-          title="נכלל בעלות, הוצאה, או מנוכה?"
-          options={[
-            ["in", "נכלל בעלות"],
-            ["out", "הוצאה / לא עלות"],
-            ["less", "מנוכה מהעלות"],
-          ]}
-          items={COST_ITEMS}
-        />
-      </Wide>
+      <SortQuiz
+        id="cost-sort"
+        title="נכלל בעלות, הוצאה, או מנוכה?"
+        options={[
+          ["in", "נכלל בעלות"],
+          ["out", "הוצאה / לא עלות"],
+          ["less", "מנוכה מהעלות"],
+        ]}
+        items={COST_ITEMS}
+      />
     ),
   },
 
@@ -542,7 +526,7 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
         <Story icon={<Package />} title={`חנות קנתה ${PICK.qty} מחברות ב-${PICK.first} ₪ בינואר, ועוד ${PICK.qty} ב-${PICK.second} ₪ ביוני`}>
           <p>בספטמבר מכרה {PICK.qty} מחברות. המחברות זהות — אז איזה מהן נמכרו, ובכמה עלו?</p>
         </Story>
-        <Wide className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-xl border-2 border-line-strong bg-surface p-4">
             <p className="font-bold text-fg">FIFO — נכנס ראשון, יוצא ראשון</p>
             <p className="mt-1 text-[14.5px] text-fg/85">נמכרו הוותיקות, של ינואר.</p>
@@ -557,13 +541,13 @@ export const INVENTORY_SCREENS: Record<string, ScreenContent> = {
               עלות המכר: <Money v={(PICK.qty * (PICK.first + PICK.second)) / 2} /> · על המדף: <Money v={(PICK.qty * (PICK.first + PICK.second)) / 2} />
             </p>
           </div>
-        </Wide>
-        <KeyCard>בשתי השיטות עלות המכר ומלאי הסגירה יחד הם <Money v={PICK.qty * (PICK.first + PICK.second)} plain /> ₪ — כל מה שנקנה. השיטה רק מחליטה איך לחלק.</KeyCard>
-        <MoreDialog label="ומה עוד צריך לדעת על הכללים">
+        </div>
+        <Deeper title="ומה עוד צריך לדעת על הכללים">
           <p>LIFO (נכנס אחרון, יוצא ראשון) — אסור לפי IAS 2.</p>
           <p>לכל מלאי דומה באופיו ובשימושו — אותה נוסחה. ופריטים ייחודיים — זיהוי ספציפי, במסך הבא.</p>
           <p>ממוצע משוקלל יש בשתי דרכים: תקופתי (ממוצע אחד לשנה) ונע (ממוצע חדש אחרי כל קנייה) — שיעור 7.</p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>בשתי השיטות עלות המכר ומלאי הסגירה יחד הם <Money v={PICK.qty * (PICK.first + PICK.second)} plain /> ₪ — כל מה שנקנה. השיטה רק מחליטה איך לחלק.</Remember>
       </>
     ),
   },

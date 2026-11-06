@@ -1,5 +1,6 @@
 import { Box, Car, ClipboardCheck, Factory, Gift, Package, Scale, Ship, TrendingUp } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
+import { Deeper, Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
 import { CARS } from "@/lib/study/inventory/fifo";
@@ -10,8 +11,8 @@ import { FV_NRV, FV_TABLE } from "@/lib/study/inventory/nrv";
 import { NET, NET_COGS, NET_PURCHASES, NET_SALES } from "@/lib/study/inventory/recording";
 import { TWO_YEARS, YEAR2_COGS } from "@/lib/study/inventory/what";
 import { MiniQuiz } from "./inventory-interactive";
-import { MoreDialog, Reveal, Sorted, Story } from "./inventory-teach";
-import { Card, KeyCard, Money, Rule, Wide } from "./ui";
+import { Reveal, Sorted, Story } from "./inventory-teach";
+import { Card, Money } from "./ui";
 
 /**
  * The concept screens the twelve-lesson course added to the ones it kept:
@@ -45,7 +46,7 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
         <Story icon={<ClipboardCheck />} title="מה שאלת מלאי במבחן מבקשת">
           <p>חברה קונה ומוכרת סחורה במהלך השנה. צריך למצוא כמה שווה מה שנשאר במחסן, כמה עלה מה שנמכר, וכמה הרוויחה — ולפעמים גם כמה תקבל מהביטוח אחרי שריפה.</p>
         </Story>
-        <Wide className="grid gap-3 sm:grid-cols-2">
+        <ol className="max-w-[70ch] space-y-2">
           {(
             [
               ["שיעורים 1–3 · היסודות", "מהו מלאי ולמה הוא לא הוצאה, איך רושמים אותו, ומה נספר כמלאי של החברה."],
@@ -54,24 +55,23 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
               ["שיעורים 9–12 · שאלות מבחן", "נעלמים, שריפה וביטוח, דף הפתרון — ושתי שאלות מלאות ברמת מבחן."],
             ] as const
           ).map(([t, d], i) => (
-            <div key={t} className="rounded-xl border border-line bg-surface p-3.5">
-              <p className="flex items-center gap-2 font-semibold text-fg">
-                <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
-                {t}
-              </p>
-              <p className="mt-1 text-[14.5px] text-fg/85">{d}</p>
-            </div>
+            <li key={t} className="flex items-baseline gap-2.5">
+              <span className="num grid h-6 w-6 shrink-0 place-items-center self-start rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
+              <span>
+                <strong className="text-fg">{t}</strong> — {d}
+              </span>
+            </li>
           ))}
-        </Wide>
-        <Card title="בשיעור הזה">
-          <ul className="list-inside list-disc space-y-1 text-[15px]">
+        </ol>
+        <Part title="בשיעור הזה">
+          <ul className="list-inside list-disc space-y-1">
             <li>למה מה שלא נמכר אינו הוצאה של השנה</li>
             <li>ארבעת הצעדים בסוף השנה, ופקודת מלאי הסגירה</li>
             <li>מה קורה למלאי בשנה הבאה</li>
             <li>הדוח עד הרווח הגולמי</li>
           </ul>
-        </Card>
-        <KeyCard>כל שיעור בנוי אותו דבר: מושגים קצרים, אחד בכל מסך, עם בדיקה קטנה אחרי כל אחד — ואז תרגול וסיכום. מה שצריך לדעת מראש: רק חובה וזכות.</KeyCard>
+        </Part>
+        <Remember>כל שיעור בנוי אותו דבר: מושגים קצרים, אחד בכל מסך, עם בדיקה קטנה אחרי כל אחד — ואז תרגול וסיכום. מה שצריך לדעת מראש: רק חובה וזכות.</Remember>
       </>
     ),
   },
@@ -101,7 +101,7 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
             </>,
           ])}
         />
-        <KeyCard>הפקודה עושה שני דברים בבת אחת: יוצרת נכס במאזן, ומקטינה את ההוצאה — כי מה שלא נמכר אינו הוצאה של השנה.</KeyCard>
+        <Remember>הפקודה עושה שני דברים בבת אחת: יוצרת נכס במאזן, ומקטינה את ההוצאה — כי מה שלא נמכר אינו הוצאה של השנה.</Remember>
       </>
     ),
     check: (
@@ -134,7 +134,7 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
             ב-2025 קנתה {Y.buy1} יח׳ ב-{Y.unit} ₪ ומכרה {Y.sold1}. ב-2026 קנתה עוד {Y.buy2} ומכרה {Y.sold2}.
           </p>
         </Story>
-        <Wide className="grid gap-3 sm:grid-cols-[1fr_auto_1fr]">
+        <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr]">
           <Card title="סוף 2025">
             <p>
               נשארו {left1} יח׳ × {Y.unit} = <Money v={left1 * Y.unit} />
@@ -150,12 +150,12 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
             </p>
             <p className="text-sm text-muted">חשבון תוצאתי בחובה — כמו קניות</p>
           </Card>
-        </Wide>
-        <Rule>
-          עלות המכר 2026 = <Money v={left1 * Y.unit} plain /> + <Money v={Y.buy2 * Y.unit} plain /> − <Money v={left2 * Y.unit} plain /> = <Money v={YEAR2_COGS} /> — בדיוק {Y.sold2} יח׳ ×{" "}
-          {Y.unit}.
-        </Rule>
-        <KeyCard>מה שלא נמכר השנה נמכר בשנה הבאה — ושם גם נרשמת ההוצאה שלו. כך כל יחידה נכנסת לעלות המכר פעם אחת, בשנה שבה נמכרה.</KeyCard>
+        </div>
+        <p>
+          <strong>עלות המכר 2026</strong> = <Money v={left1 * Y.unit} plain /> + <Money v={Y.buy2 * Y.unit} plain /> − <Money v={left2 * Y.unit} plain /> = <Money v={YEAR2_COGS} /> — בדיוק{" "}
+          {Y.sold2} יח׳ × {Y.unit}.
+        </p>
+        <Remember>מה שלא נמכר השנה נמכר בשנה הבאה — ושם גם נרשמת ההוצאה שלו. כך כל יחידה נכנסת לעלות המכר פעם אחת, בשנה שבה נמכרה.</Remember>
       </>
     ),
     check: (
@@ -185,14 +185,12 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "הנחות והחזרות נרשמות בנטו: מה שקשור ללקוחות מקטין את המכירות, ומה שקשור לספקים מקטין את הקניות.",
     body: (
       <>
-        <Wide>
-          <Sorted
-            columns={[
-              { title: "מקטין את המכירות", tone: "neutral", items: keyed([<>הנחות ללקוחות</>, <>החזרות מלקוחות</>]) },
-              { title: "מקטין את הקניות", tone: "neutral", items: keyed([<>הנחות מספקים</>, <>החזרות לספקים</>]) },
-            ]}
-          />
-        </Wide>
+        <Sorted
+          columns={[
+            { title: "מקטין את המכירות", tone: "neutral", items: keyed([<>הנחות ללקוחות</>, <>החזרות מלקוחות</>]) },
+            { title: "מקטין את הקניות", tone: "neutral", items: keyed([<>הנחות מספקים</>, <>החזרות לספקים</>]) },
+          ]}
+        />
         <p>שנה של חנות אחת, צעד אחר צעד:</p>
         <Reveal
           steps={keyed([
@@ -210,12 +208,12 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
             </>,
           ])}
         />
-        <KeyCard>לפני שמציבים מספר בדוח, שואלים: זה של לקוח או של ספק? התשובה קובעת את השורה.</KeyCard>
-        <MoreDialog label="וכשהקניות נטו חסרות?">
+        <Deeper title="וכשהקניות נטו חסרות?">
           <p>
             לפעמים נתונה עלות המכר, וחסרות ההחזרות לספקים. כותבים את המשוואה עם נעלם: עלות המכר = פתיחה + (קניות ברוטו − X) − סגירה, ופותרים.
           </p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>לפני שמציבים מספר בדוח, שואלים: זה של לקוח או של ספק? התשובה קובעת את השורה.</Remember>
       </>
     ),
     check: (
@@ -245,24 +243,22 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "מלאי הוא נכס שמוחזק כדי למכור אותו. מה שהחברה משתמשת בו בעצמה, או מחלקת בחינם — אינו מלאי.",
     body: (
       <>
-        <Wide>
-          <Sorted
-            columns={[
-              { title: "שלושה סוגי מלאי", tone: "good", items: ["מוצרים גמורים — מוכנים למכירה", "מוצרים בתהליך ייצור", "חומרי גלם וחומרי עזר לייצור"] },
-              { title: "לא מלאי", tone: "bad", items: ["דוגמיות וקטלוגים לחלוקה חינם", "מכונה שהחברה עובדת בה", "מחשבים של המשרד"] },
-            ]}
-          />
-        </Wide>
-        <KeyCard>
-          ״במהלך העסקים הרגיל״ — נבחן לפי מה שהחברה עושה. קרקע אצל קבלן שבונה ומוכר דירות היא מלאי; אותה קרקע אצל מפעל שבונה עליה מחסן — רכוש קבוע.
-        </KeyCard>
-        <MoreDialog label="על מה התקן לא חל?">
+        <Sorted
+          columns={[
+            { title: "שלושה סוגי מלאי", tone: "good", items: ["מוצרים גמורים — מוכנים למכירה", "מוצרים בתהליך ייצור", "חומרי גלם וחומרי עזר לייצור"] },
+            { title: "לא מלאי", tone: "bad", items: ["דוגמיות וקטלוגים לחלוקה חינם", "מכונה שהחברה עובדת בה", "מחשבים של המשרד"] },
+          ]}
+        />
+        <Deeper title="על מה התקן לא חל?">
           <ul className="list-inside list-disc space-y-1">
             <li>מכשירים פיננסיים, כמו מניות ואגרות חוב (IAS 32, IFRS 9).</li>
             <li>נכסים ביולוגיים הקשורים לפעילות חקלאית, ותוצרת חקלאית בעת האסיף (IAS 41).</li>
           </ul>
           <p>לכל אלה יש תקן משלהם. כל שאר סוגי המלאי — לפי IAS 2.</p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>
+          ״במהלך העסקים הרגיל״ — נבחן לפי מה שהחברה עושה. קרקע אצל קבלן שבונה ומוכר דירות היא מלאי; אותה קרקע אצל מפעל שבונה עליה מחסן — רכוש קבוע.
+        </Remember>
       </>
     ),
     check: (
@@ -309,12 +305,12 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
             </>,
           ])}
         />
-        <KeyCard>מלאי הפתיחה הוא מה שהיה באמת של החברה וראוי למכירה ב-31.12 — לא מה שנכתב בספירה.</KeyCard>
-        <MoreDialog label="ויחידות פגומות בסוף השנה הנוכחית?">
+        <Deeper title="ויחידות פגומות בסוף השנה הנוכחית?">
           <p>
             יחידות שנספרו אבל יושמדו — לא נכנסות למלאי הסגירה. העלות שלהן נשארת בעלות המכר, כי בעלות המכר נמצא כל מה שנקנה ולא נשאר כנכס.
           </p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>מלאי הפתיחה הוא מה שהיה באמת של החברה וראוי למכירה ב-31.12 — לא מה שנכתב בספירה.</Remember>
       </>
     ),
     check: (
@@ -347,21 +343,19 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
         <Story icon={<Ship />} title={`רכישה אחת: ${BASES.qty} יח׳ ב-${BASES.price} ₪`}>
           <p>ארבעה ספקים, ארבעה ניסוחים להובלה. כמה הובלה נכנסת לרכישה?</p>
         </Story>
-        <Wide>
-          <DataTable
-            head={["הניסוח בשאלה", "החישוב", "סה״כ הובלה", "ליחידה"]}
-            rows={[
-              [`״${BASES.shipment.toLocaleString("he-IL")} ₪ למשלוח״`, "סכום אחד", BASES.shipment, BASES.shipment / BASES.qty],
-              [`״${BASES.perUnit} ₪ ליחידה״`, `${BASES.qty} × ${BASES.perUnit}`, BASES.qty * BASES.perUnit, BASES.perUnit],
-              [`״${BASES.pack.fee} ₪ לארגז של ${BASES.pack.size}״`, `${BASES.qty} ÷ ${BASES.pack.size} × ${BASES.pack.fee}`, perPack, perPack / BASES.qty],
-              [`״${BASES.kg.rate} ₪ לק״ג; יחידה שוקלת ${BASES.kg.perUnit} ק״ג״`, `${BASES.qty} × ${BASES.kg.perUnit} × ${BASES.kg.rate}`, perKg, perKg / BASES.qty],
-            ]}
-          />
-        </Wide>
-        <KeyCard>קודם הסכום לכל הרכישה, אחר כך ליחידה. הטעות הנפוצה: לכפול ״למשלוח״ בכמות, כאילו כתוב ״ליחידה״.</KeyCard>
-        <MoreDialog label="ומכס באחוזים?">
+        <DataTable
+          head={["הניסוח בשאלה", "החישוב", "סה״כ הובלה", "ליחידה"]}
+          rows={[
+            [`״${BASES.shipment.toLocaleString("he-IL")} ₪ למשלוח״`, "סכום אחד", BASES.shipment, BASES.shipment / BASES.qty],
+            [`״${BASES.perUnit} ₪ ליחידה״`, `${BASES.qty} × ${BASES.perUnit}`, BASES.qty * BASES.perUnit, BASES.perUnit],
+            [`״${BASES.pack.fee} ₪ לארגז של ${BASES.pack.size}״`, `${BASES.qty} ÷ ${BASES.pack.size} × ${BASES.pack.fee}`, perPack, perPack / BASES.qty],
+            [`״${BASES.kg.rate} ₪ לק״ג; יחידה שוקלת ${BASES.kg.perUnit} ק״ג״`, `${BASES.qty} × ${BASES.kg.perUnit} × ${BASES.kg.rate}`, perKg, perKg / BASES.qty],
+          ]}
+        />
+        <Deeper title="ומכס באחוזים?">
           <p>״מכס X% מעלות הרכישה נטו״ — האחוז מחושב על המחיר אחרי ההנחה, בלי ההובלה ובלי עלויות נלוות אחרות. מכס שאפשר לקבל בחזרה — לא נכנס בכלל.</p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>קודם הסכום לכל הרכישה, אחר כך ליחידה. הטעות הנפוצה: לכפול ״למשלוח״ בכמות, כאילו כתוב ״ליחידה״.</Remember>
       </>
     ),
     check: (
@@ -410,7 +404,7 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
             </>,
           ])}
         />
-        <KeyCard>הספירה, ההנחות, שווי המימוש נטו והמכירות — כולם בערכות. אל תפרקו ערכה לכוסות וצלחות, אלא כדי למצוא את המחיר שלה.</KeyCard>
+        <Remember>הספירה, ההנחות, שווי המימוש נטו והמכירות — כולם בערכות. אל תפרקו ערכה לכוסות וצלחות, אלא כדי למצוא את המחיר שלה.</Remember>
       </>
     ),
     check: (
@@ -461,7 +455,7 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
             </>,
           ])}
         />
-        <KeyCard>ההובלה אינה של הספק — לכן ההנחה שלו לא חלה עליה. והמכס נמדד אחרי ההנחה, לא לפניה.</KeyCard>
+        <Remember>ההובלה אינה של הספק — לכן ההנחה שלו לא חלה עליה. והמכס נמדד אחרי ההנחה, לא לפניה.</Remember>
       </>
     ),
     check: (
@@ -495,19 +489,17 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
             הנחה על כל יחידה <strong>מעבר ליחידה ה-{TIER.unitAfter.toLocaleString("he-IL")}</strong>.
           </p>
         </Story>
-        <Wide>
-          <DataTable
-            head={["כמות ברכישה", "מדרגה 1", "מדרגה 2", "עלות", "ליחידה"]}
-            rows={tierQty.map((q) => [
-              q.toLocaleString("he-IL"),
-              q > TIER.wholeOver ? (q * TIER.price * TIER.wholePct) / 100 : "—",
-              q > TIER.unitAfter ? (q - TIER.unitAfter) * TIER.unitOff : "—",
-              tierCost(q),
-              tierCost(q) / q,
-            ])}
-          />
-        </Wide>
-        <KeyCard>ההנחות מחושבות לכל רכישה בנפרד. רכישה קטנה שאחריה רכישה גדולה — לא ״מצטרפות״ לסף, אלא אם כתוב שהסף שנתי.</KeyCard>
+        <DataTable
+          head={["כמות ברכישה", "מדרגה 1", "מדרגה 2", "עלות", "ליחידה"]}
+          rows={tierQty.map((q) => [
+            q.toLocaleString("he-IL"),
+            q > TIER.wholeOver ? (q * TIER.price * TIER.wholePct) / 100 : "—",
+            q > TIER.unitAfter ? (q - TIER.unitAfter) * TIER.unitOff : "—",
+            tierCost(q),
+            tierCost(q) / q,
+          ])}
+        />
+        <Remember>ההנחות מחושבות לכל רכישה בנפרד. רכישה קטנה שאחריה רכישה גדולה — לא ״מצטרפות״ לסף, אלא אם כתוב שהסף שנתי.</Remember>
       </>
     ),
     check: (
@@ -545,18 +537,16 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
             ))}
           </ul>
         </Story>
-        <Rule>
+        <p>
           ברוטו <Money v={TARGET_GROSS} plain /> × {100 - TARGET.pct}% = <Money v={TARGET_COST} /> — כל רכישה נרשמת כבר בנטו.
-        </Rule>
-        <Wide>
-          <Sorted
-            columns={[
-              { title: "מכירים בהנחה", tone: "good", items: ["היעד כבר הושג", "יעד רכישות, והחברה צופה לעמוד בו"] },
-              { title: "לא מכירים", tone: "bad", items: ["יעד מכירות שעוד לא הושג", "יעד שהחברה לא צופה לעמוד בו", "יעד שהשנה נגמרה בלי להגיע אליו"] },
-            ]}
-          />
-        </Wide>
-        <KeyCard>השאלה היא תמיד: האם ההנחה תלויה רק בחברה? רכישות — כן. מכירות — תלויות בלקוחות.</KeyCard>
+        </p>
+        <Sorted
+          columns={[
+            { title: "מכירים בהנחה", tone: "good", items: ["היעד כבר הושג", "יעד רכישות, והחברה צופה לעמוד בו"] },
+            { title: "לא מכירים", tone: "bad", items: ["יעד מכירות שעוד לא הושג", "יעד שהחברה לא צופה לעמוד בו", "יעד שהשנה נגמרה בלי להגיע אליו"] },
+          ]}
+        />
+        <Remember>השאלה היא תמיד: האם ההנחה תלויה רק בחברה? רכישות — כן. מכירות — תלויות בלקוחות.</Remember>
       </>
     ),
     check: (
@@ -603,7 +593,7 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
             </>,
           ])}
         />
-        <KeyCard>הנחה מספק — בצד העלות. הנחה ללקוח — בצד המכירות. אותה מילה, שני צדדים של הדוח.</KeyCard>
+        <Remember>הנחה מספק — בצד העלות. הנחה ללקוח — בצד המכירות. אותה מילה, שני צדדים של הדוח.</Remember>
       </>
     ),
     check: (
@@ -645,15 +635,13 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
             נמכר {CARS[1].name}. מלאי הסגירה: <Money v={CARS[0].cost} plain /> + <Money v={CARS[2].cost} plain /> = <Money v={CARS[0].cost + CARS[2].cost} />.
           </p>
         </Story>
-        <Wide>
-          <Sorted
-            columns={[
-              { title: "זיהוי ספציפי", tone: "neutral", items: ["פריטים שאינם בני החלפה", "סחורה שיוצרה לפרויקט מסוים"] },
-              { title: "FIFO או ממוצע משוקלל", tone: "neutral", items: ["כל השאר — פריטים זהים", "אותה נוסחה לכל מלאי דומה באופיו ובשימושו", "LIFO — אסור"] },
-            ]}
-          />
-        </Wide>
-        <KeyCard>זיהוי ספציפי אינו בחירה: הוא חובה לפריטים ייחודיים, ואסור לפריטים זהים.</KeyCard>
+        <Sorted
+          columns={[
+            { title: "זיהוי ספציפי", tone: "neutral", items: ["פריטים שאינם בני החלפה", "סחורה שיוצרה לפרויקט מסוים"] },
+            { title: "FIFO או ממוצע משוקלל", tone: "neutral", items: ["כל השאר — פריטים זהים", "אותה נוסחה לכל מלאי דומה באופיו ובשימושו", "LIFO — אסור"] },
+          ]}
+        />
+        <Remember>זיהוי ספציפי אינו בחירה: הוא חובה לפריטים ייחודיים, ואסור לפריטים זהים.</Remember>
       </>
     ),
     check: (
@@ -706,7 +694,7 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
             </>,
           ])}
         />
-        <KeyCard>שווי מימוש נטו ספציפי לחברה — מה שהיא תקבל, אחרי מה שתוציא כדי להשלים ולמכור. שווי הוגן הוא של ״כל משתתף בשוק״.</KeyCard>
+        <Remember>שווי מימוש נטו ספציפי לחברה — מה שהיא תקבל, אחרי מה שתוציא כדי להשלים ולמכור. שווי הוגן הוא של ״כל משתתף בשוק״.</Remember>
       </>
     ),
     check: (
@@ -737,24 +725,22 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
         <Story icon={<ClipboardCheck />} title="נתון נוסף בשאלת הצגת דוחות">
           <p>״עלות מלאי הסגירה 250,000 ₪; הערכת מלאי קבעה ששווי המימוש נטו שלו 240,000 ₪.״</p>
         </Story>
-        <Wide>
-          <DataTable
-            head={["איפה", "מה כותבים", "₪"]}
-            rows={[
-              ["דוח על המצב הכספי — מלאי", "הנמוך מבין השניים", 240_000],
-              ["רווח או הפסד — מלאי סגירה בעלות המכר", "אותו סכום, כמלאי הסגירה", 240_000],
-              ["השפעה על עלות המכר", "גדלה בהורדת הערך", 10_000],
-              ["מלאי הפתיחה בשנה הבאה", "הערך אחרי ההורדה", 240_000],
-            ]}
-          />
-        </Wide>
-        <KeyCard>ולהפך — אם שווי המימוש נטו גבוה מהעלות (למשל 580,000 מול 1,250,000), המלאי בעלות, ושום דבר לא משתנה.</KeyCard>
-        <MoreDialog label="ליחידה, או לכל המלאי?">
+        <DataTable
+          head={["איפה", "מה כותבים", "₪"]}
+          rows={[
+            ["דוח על המצב הכספי — מלאי", "הנמוך מבין השניים", 240_000],
+            ["רווח או הפסד — מלאי סגירה בעלות המכר", "אותו סכום, כמלאי הסגירה", 240_000],
+            ["השפעה על עלות המכר", "גדלה בהורדת הערך", 10_000],
+            ["מלאי הפתיחה בשנה הבאה", "הערך אחרי ההורדה", 240_000],
+          ]}
+        />
+        <Deeper title="ליחידה, או לכל המלאי?">
           <p>
             כשנתון שווי מימוש נטו ליחידה, כופלים ביחידות שבסגירה ומשווים לעלות הכוללת של הסגירה. כשנתון סכום כולל — משווים ישירות. בשאלות הקורס ההשוואה נעשית לכל
             המלאי מאותו סוג יחד.
           </p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>ולהפך — אם שווי המימוש נטו גבוה מהעלות (למשל 580,000 מול 1,250,000), המלאי בעלות, ושום דבר לא משתנה.</Remember>
       </>
     ),
     check: (
@@ -782,25 +768,23 @@ export const COURSE_SCREENS: Record<string, ScreenContent> = {
     lead: "שאלות התיאוריה בודקות עיקרון אחד: הפסד צפוי נרשם מיד, רווח צפוי — רק כשמוכרים. כמעט כל טענה נבדקת מולו.",
     body: (
       <>
-        <Wide>
-          <Sorted
-            columns={[
-              { title: "משנה את ערך המלאי", tone: "bad", items: ["מחיר המכירה ירד מתחת לעלות", "המלאי ניזוק או התיישן", "עלויות ההשלמה או המכירה עלו"] },
-              { title: "לא משנה", tone: "good", items: ["מחיר המכירה עלה", "שווי מימוש נטו גבוה מהעלות", "חומר גלם זול יותר — כשהמוצר הגמור עוד רווחי"] },
-            ]}
-          />
-        </Wide>
-        <KeyCard icon={<TrendingUp className="h-5 w-5" />}>
-          מחירי הרכישה עלו לקראת סוף השנה? ב-FIFO מלאי הסגירה עשוי מהרכישות האחרונות — היקרות — ולכן הוא גבוה יותר מאשר בממוצע.
-        </KeyCard>
-        <MoreDialog label="תקורות ייצור קבועות בשנה חלשה">
-          <p className="flex items-center gap-2">
-            <Factory className="h-4 w-4 text-accent" aria-hidden /> בחברה יצרנית, תקורה קבועה (פחת מכונות, שכירות מפעל) מוקצית ליחידות לפי רמת ייצור <strong>רגילה</strong>.
+        <Sorted
+          columns={[
+            { title: "משנה את ערך המלאי", tone: "bad", items: ["מחיר המכירה ירד מתחת לעלות", "המלאי ניזוק או התיישן", "עלויות ההשלמה או המכירה עלו"] },
+            { title: "לא משנה", tone: "good", items: ["מחיר המכירה עלה", "שווי מימוש נטו גבוה מהעלות", "חומר גלם זול יותר — כשהמוצר הגמור עוד רווחי"] },
+          ]}
+        />
+        <Deeper icon={<Factory />} title="תקורות ייצור קבועות בשנה חלשה">
+          <p>
+            בחברה יצרנית, תקורה קבועה (פחת מכונות, שכירות מפעל) מוקצית ליחידות לפי רמת ייצור <strong>רגילה</strong>.
           </p>
           <p>
             ירד הייצור באופן חריג? כל יחידה עדיין מקבלת את החלק ״הרגיל״ שלה, והחלק שלא הוקצה הוא הוצאה של התקופה. כך יחידה לא ״מתייקרת״ רק כי ייצרו מעט (IAS 2.13).
           </p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>
+          מחירי הרכישה עלו לקראת סוף השנה? ב-FIFO מלאי הסגירה עשוי מהרכישות האחרונות — היקרות — ולכן הוא גבוה יותר מאשר בממוצע.
+        </Remember>
       </>
     ),
     check: (

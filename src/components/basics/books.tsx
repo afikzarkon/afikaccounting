@@ -1,14 +1,15 @@
-import { ArrowLeft, CalendarClock, Check, RotateCcw } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import { balancesOf, carryForward, CREDIT, SPLIT, type Entry, isBalanceSheet, CANDLES, ledger, statements, trialBalance, TCHELET } from "@/lib/learn/basics";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { ScreenLink } from "@/components/study-mode/screen-link";
+import { Part, Remember } from "@/components/study-mode/screen-parts";
 import { cn } from "@/lib/utils";
 import { ClassifyExercise } from "./classify";
 import { RetainedSolver } from "./retained";
 import { JournalCheck } from "./journal-check";
 import { MiniQuiz } from "./inventory-interactive";
 import { Posted, TBox, THead } from "./t-accounts";
-import { Calc, JE, KeyCard, Money, SideChip, StatementsView, type Step, Stepper, TBTable, Term } from "./ui";
+import { Calc, JE, Money, SideChip, StatementsView, type Step, Stepper, TBTable, Term } from "./ui";
 
 const Y24 = statements(TCHELET.tb2024);
 const OPENING_25 = carryForward(TCHELET.tb2024);
@@ -214,13 +215,13 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
             ),
           }))}
         />
-        <section className="space-y-3">
-          <h3 className="text-lg font-semibold text-fg">הלוואה בתשלומים: קרן וריבית באותו תשלום</h3>
+        <Part title="הלוואה בתשלומים: קרן וריבית באותו תשלום">
           <p>
             ברוב ההלוואות משלמים כל פעם גם חלק מהקרן וגם ריבית — בהעברה אחת. בפקודה מפרקים את התשלום לשניים: הקרן מקטינה את החוב, ורק הריבית היא הוצאה.
           </p>
           <JE entry={SPLIT.loanPayment} />
-        </section>
+        </Part>
+        <Remember>הלוואה היא התחייבות. רק הריבית היא הוצאה; החזר הקרן רק מקטין את החוב.</Remember>
       </>
     ),
     check: (
@@ -287,6 +288,7 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
             },
           ]}
         />
+        <Remember>יתרת כרטיס: סך חובה מול סך זכות — היתרה בצד הגדול, בגובה ההפרש. אל תשכחו את יתרת הפתיחה.</Remember>
       </>
     ),
     check: (
@@ -311,12 +313,14 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <Route at={2} />
-        <h3 className="text-lg font-semibold text-fg">מה זה מאזן בוחן?</h3>
-        <dl className="grid gap-2 sm:grid-cols-2">
+        <p>
+          <strong>מה זה מאזן בוחן?</strong>
+        </p>
+        <dl className="divide-y divide-line">
           {TB_WHAT.map(([t, d]) => (
-            <div key={t} className="rounded-xl border border-line bg-surface px-3.5 py-2.5">
-              <dt className="text-[14px] font-bold text-fg">{t}</dt>
-              <dd className="text-[14px] leading-relaxed text-fg/85">{d}</dd>
+            <div key={t} className="grid gap-x-4 py-2 sm:grid-cols-[8rem_minmax(0,1fr)]">
+              <dt className="text-[15px] font-bold text-fg">{t}</dt>
+              <dd className="text-[15px] text-fg/85">{d}</dd>
             </div>
           ))}
         </dl>
@@ -324,22 +328,19 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
           כך נראה מאזן הבוחן של סדנת הנרות, מאותם כרטיסים שבנינו במסך הקודם. יתרת המזומן, <Money v={cash.balance} />, היא היתרה שחישבנו בכרטיס:
         </p>
         <TBTable tb={candlesTb} caption="מאזן בוחן · סדנת הנרות" kind />
-
-        <h3 className="pt-2 text-lg font-semibold text-fg">מ-1.1 ועד מאזן נכון ל-31.12</h3>
-        <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {TB_STAGES.map(([t, d], i) => (
-            <li key={t} className="flex items-start gap-2 rounded-xl border border-line bg-surface p-3">
-              <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold text-accent-fg">{i + 1}</span>
-              <span>
-                <span className="block text-sm font-semibold text-fg">{t}</span>
-                <span className="block text-[13px] text-muted">{d}</span>
-              </span>
-            </li>
-          ))}
-        </ol>
-        <p className="rounded-xl border border-amber-500/40 bg-amber-500/[0.08] px-4 py-2.5 text-[15px]">
-          בשאלה מקבלים בדרך כלל את שלב 1. דוחות שנבנים ישר ממנו — שגויים: קודם התאמות.
-        </p>
+        <Part title="מ-1.1 ועד מאזן נכון ל-31.12">
+          <ol className="max-w-[70ch] space-y-1.5">
+            {TB_STAGES.map(([t, d], i) => (
+              <li key={t} className="flex items-baseline gap-2.5">
+                <span className="num grid h-6 w-6 shrink-0 place-items-center self-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
+                <span>
+                  <strong className="text-fg">{t}</strong> — {d}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </Part>
+        <Remember>בשאלה מקבלים בדרך כלל את שלב 1. דוחות שנבנים ישר ממנו — שגויים: קודם התאמות.</Remember>
       </>
     ),
     check: (
@@ -376,17 +377,17 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
     lead: "עודפים הם הרווחים שהחברה צברה מאז שקמה, ולא חילקה לבעלים. הם חלק מההון.",
     body: (
       <>
-        <div className="grid gap-2 md:grid-cols-3">
-          <Fact icon={<CalendarClock className="h-4 w-4" />} title="חברה שנפתחה השנה">
-            אין לה עודפים לתחילת השנה: הם 0.
-          </Fact>
-          <Fact icon={<RotateCcw className="h-4 w-4" />} title="בכל שנה">
-            עודפי סגירה = עודפי פתיחה + רווח השנה (או פחות הפסד, ופחות מה שחולק).
-          </Fact>
-          <Fact icon={<span className="text-sm font-bold">?</span>} title="בשאלה">
-            העודפים כמעט תמיד הנעלם. המאזן חייב להתאזן — ולכן הם ההפרש.
-          </Fact>
-        </div>
+        <ul className="list-disc space-y-1 ps-5 marker:text-subtle">
+          <li>
+            <strong>חברה שנפתחה השנה.</strong> אין לה עודפים לתחילת השנה: הם 0.
+          </li>
+          <li>
+            <strong>בכל שנה.</strong> עודפי סגירה = עודפי פתיחה + רווח השנה (או פחות הפסד, ופחות מה שחולק).
+          </li>
+          <li>
+            <strong>בשאלה.</strong> העודפים כמעט תמיד הנעלם. המאזן חייב להתאזן — ולכן הם ההפרש.
+          </li>
+        </ul>
         <RetainedSolver
           title="המאזן של תכלת ליום 31.12.2024 — מה חסר?"
           assets={Y24.assets}
@@ -396,13 +397,13 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
           opening={0}
           profit={Y24.profit}
         />
-        <div className="space-y-2 rounded-2xl border-2 border-amber-500/50 bg-amber-500/[0.08] px-4 py-3.5">
-          <p className="text-[16px] font-bold text-fg">מהשנה השנייה: העודפים במאזן הבוחן הם יתרת הפתיחה</p>
-          <p className="text-[15px] leading-relaxed">
+        <Part title="מהשנה השנייה: העודפים במאזן הבוחן הם יתרת הפתיחה">
+          <p>
             במהלך השנה אף פקודה לא נוגעת בעודפים — הרווח של השנה עוד מפוזר בהכנסות ובהוצאות. לכן במאזן בוחן של 31.12, לפני שסוגרים את השנה, העודפים הם עדיין
             היתרה של <strong>1.1</strong>. כדי להגיע לעודפי הסגירה מוסיפים להם את רווח השנה.
           </p>
-        </div>
+        </Part>
+        <Remember>עודפי סגירה = פתיחה + רווח (− הפסד) − חלוקה. חברה חדשה: פתיחה 0.</Remember>
       </>
     ),
     check: (
@@ -511,25 +512,12 @@ export const BOOKS_SCREENS: Record<string, ScreenContent> = {
             },
           ]}
         />
-        <KeyCard>בהמשך תלמדו גם לבנות דוח כספי מלא. כרגע זה לימוד מקדים.</KeyCard>
+        <p>בהמשך תלמדו גם לבנות דוח כספי מלא. כרגע זה לימוד מקדים.</p>
+        <Remember>מאזני ממשיך, תוצאתי מתאפס: בסוף השנה הרווח עובר לעודפים, והכנסות והוצאות מתחילות מאפס.</Remember>
       </>
     ),
   },
 };
-
-function Fact({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-2.5 rounded-xl border border-line bg-surface p-3">
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent" aria-hidden>
-        {icon}
-      </span>
-      <span className="min-w-0">
-        <span className="block text-sm font-bold text-fg">{title}</span>
-        <span className="block text-[14px] text-fg/85">{children}</span>
-      </span>
-    </div>
-  );
-}
 
 /** Tchelet's balances on 31.12.2024 beside its openings on 1.1.2025: the balance sheet carries over, profit or loss starts again at zero. */
 function CarryList() {

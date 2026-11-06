@@ -29,13 +29,12 @@ export default async function InventoryPage() {
   return (
     <div className="relative">
       <LegacyHashRedirect redirects={REDIRECTS} />
-      <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-16 sm:pt-14">
         <CourseHeader
           trail={[{ label: "שלב 2 · קורסים מתקדמים" }, { label: "מלאי (IAS 2)" }]}
           title={
             <>
-              מלאי <span className="text-gradient">מאפס ועד מבחן</span>
+              מלאי מאפס ועד מבחן
             </>
           }
           lessons={await visibleLessons(INVENTORY_LESSONS)}

@@ -1,5 +1,5 @@
-import { BookOpen } from "lucide-react";
-import { Callout, DataTable } from "@/components/study/blocks";
+import { DataTable } from "@/components/study/blocks";
+import { Remember } from "@/components/study-mode/screen-parts";
 
 /** What IAS 16.29–42 says about the revaluation model, paragraph by paragraph, in plain words — the part a non-depreciated asset (land) needs; the rest comes with the depreciated asset in lesson 10. */
 const PARAGRAPHS: [string, string, string][] = [
@@ -17,25 +17,21 @@ const PARAGRAPHS: [string, string, string][] = [
 export function RevaluationStandardSection() {
   return (
     <>
-      <div className="card flex items-start gap-3 p-5">
-        <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent">
-          <BookOpen className="h-5 w-5" />
-        </span>
-        <p className="text-[15px] leading-relaxed text-fg/90">
-          אחרי ההכרה הראשונית (בעלות) החברה ממשיכה למדוד את הנכס באחת משתי דרכים. ב<strong>מודל העלות</strong> הנכס נשאר בעלות פחות פחת. ב<strong>מודל
-          ההערכה מחדש</strong> הנכס &quot;מתעדכן&quot; מדי פעם לשווי ההוגן שלו — כמה היו מקבלים עליו היום — ומשם ממשיכים להפחית. הנה מה שהתקן קובע, סעיף אחר
-          סעיף:
-        </p>
-      </div>
+      <p>
+        אחרי ההכרה הראשונית (בעלות) החברה ממשיכה למדוד את הנכס באחת משתי דרכים. ב<strong>מודל העלות</strong> הנכס נשאר בעלות פחות פחת. ב<strong>מודל
+        ההערכה מחדש</strong> הנכס &quot;מתעדכן&quot; מדי פעם לשווי ההוגן שלו — כמה היו מקבלים עליו היום — ומשם ממשיכים להפחית. הנה מה שהתקן קובע, סעיף אחר
+        סעיף:
+      </p>
       <DataTable caption="מודל ההערכה מחדש בתקן — סעיפים 29–42" head={["סעיף", "הנושא", "מה הוא אומר, במילים פשוטות"]} rows={PARAGRAPHS} />
-      <Callout kind="check" title="שלושה כללים שמספיקים לקרקע">
-        <ol className="list-inside list-decimal space-y-1">
+      <p>נכס שמופחת — פחת עד יום ההערכה, מה עושים בפחת הנצבר, פחת חדש והעברת הקרן בהדרגה — בשיעור הבא.</p>
+      <Remember>
+        <p>שלושה כללים שמספיקים לקרקע:</p>
+        <ol className="list-inside list-decimal space-y-1 font-medium">
           <li>ביום ההערכה משווים את הערך בספרים לשווי ההוגן.</li>
           <li>עלייה — לקרן (אלא אם מבטלת הפסד קודם); ירידה — קודם מהקרן, ומה שנשאר — הפסד.</li>
           <li>קרן הקרקע נשארת בהון עד שהקרקע נגרעת — ואז עוברת כולה לעודפים.</li>
         </ol>
-        <p>נכס שמופחת — פחת עד יום ההערכה, מה עושים בפחת הנצבר, פחת חדש והעברת הקרן בהדרגה — בשיעור הבא.</p>
-      </Callout>
+      </Remember>
     </>
   );
 }

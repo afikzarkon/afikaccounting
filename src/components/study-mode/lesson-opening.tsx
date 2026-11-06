@@ -48,7 +48,7 @@ export function LessonOpening({
           <motion.span
             initial={{ scale: 0.6, rotate: -12 }}
             animate={{ scale: 1, rotate: 0 }}
-            className="num grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-accent to-cyan-500 text-[28px] font-bold text-white shadow-[0_14px_30px_-14px_var(--accent)]"
+            className="num grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-accent text-[28px] font-bold text-accent-fg"
             aria-hidden
           >
             {m.n}
@@ -69,7 +69,7 @@ export function LessonOpening({
               כבר התחלתם: {xp} מתוך {max} XP
             </p>
             <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-label="ההתקדמות בשיעור" aria-valuemin={0} aria-valuemax={max} aria-valuenow={xp}>
-              <div className="h-full rounded-full bg-gradient-to-l from-accent to-cyan-400" style={{ width: `${(xp / max) * 100}%` }} />
+              <div className="h-full rounded-full bg-accent" style={{ width: `${(xp / max) * 100}%` }} />
             </div>
           </div>
         )}

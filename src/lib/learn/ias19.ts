@@ -18,6 +18,12 @@
 /** The value today of an amount paid in n years, discounted at i. */
 export const pv = (fv: number, i: number, n: number) => fv / (1 + i) ** n;
 
+/** What an amount paid in n years is worth at each year on the way to today: index k is k years from today (index n is the amount itself). */
+export const pvPath = (fv: number, i: number, n: number) => Array.from({ length: n + 1 }, (_, k) => pv(fv, i, n - k));
+
+/** Employees expected to stay (and receive): headcount × (1 − the share expected to leave). */
+export const expectedHeads = (heads: number, leaving: number) => heads * (1 - leaving);
+
 /** The rate for m months of a year whose rate is i: compound, not i × m/12 (IAS 19.123). */
 export const partRate = (i: number, months: number) => (1 + i) ** (months / 12) - 1;
 
@@ -146,6 +152,13 @@ export function attribution(f: BenefitFormula, expected: number, cap = Infinity)
 export function accrued(a: Attribution, f: BenefitFormula, served: number, cap = Infinity) {
   if (a.method === "formula") return Math.min(f(served), cap);
   return a.perYear! * Math.min(served, a.window);
+}
+
+/** What is accrued at the end of each year 1..years, both ways: under the plan's formula (capped) and on a straight line over the window. */
+export function accrualPath(f: BenefitFormula, expected: number, cap = Infinity, years = expected) {
+  const a = attribution(f, expected, cap);
+  const straight = a.total / a.window;
+  return Array.from({ length: years }, (_, k) => ({ year: k + 1, formula: Math.min(f(k + 1), cap), straight: straight * Math.min(k + 1, a.window) }));
 }
 
 // ---------------------------------------------------------------------------
@@ -343,6 +356,17 @@ export const dayCost = (salary: number, workingDays: number, onCosts = 0) => (sa
 export function lifo(x: { carried: number; entitlement: number; used: number }) {
   const fromCarried = Math.max(0, Math.min(x.carried, x.used - x.entitlement));
   const unusedOwn = Math.max(0, x.entitlement - x.used);
+  return { fromCarried, carriedLeft: x.carried - fromCarried, unusedOwn };
+}
+
+/**
+ * Days carried forward under FIFO: the carried balance is used first, then
+ * the year's own entitlement. Returns the carried days used and those left
+ * (which lapse at the end of the year), and the year's days left unused.
+ */
+export function fifo(x: { carried: number; entitlement: number; used: number }) {
+  const fromCarried = Math.min(x.carried, x.used);
+  const unusedOwn = Math.max(0, x.entitlement - (x.used - fromCarried));
   return { fromCarried, carriedLeft: x.carried - fromCarried, unusedOwn };
 }
 

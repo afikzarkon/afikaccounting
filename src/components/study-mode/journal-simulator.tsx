@@ -182,7 +182,7 @@ export function Feedback({ ok, title, text }: { ok: boolean; title: ReactNode; t
       </span>
       <div className="min-w-0 self-center">
         <p className={cn("text-[15px] font-bold", ok ? "text-success" : "text-danger")}>{title}</p>
-        {text && <p className="mt-1 text-[14.5px] leading-relaxed text-fg/90">{text}</p>}
+        {text && <p className="mt-1 whitespace-pre-line text-[14.5px] leading-relaxed text-fg/90">{text}</p>}
       </div>
     </motion.div>
   );

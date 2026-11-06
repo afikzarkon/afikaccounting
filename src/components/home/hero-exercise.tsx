@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ClipboardPen, RotateCcw } from "lucide-react";
+import { ArrowLeft, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { TrapQuiz } from "@/components/study-mode/trap-quiz";
@@ -17,13 +17,9 @@ export function HeroExercise({ trap }: { trap: Trap }) {
   // A fresh quiz for each try.
   const [round, setRound] = useState(0);
   return (
-    <div className="card overflow-hidden shadow-2xl">
-      <div className="flex items-center gap-2.5 border-b border-line px-4 py-3 sm:px-5">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent" aria-hidden>
-          <ClipboardPen className="h-5 w-5" />
-        </span>
-        <p className="min-w-0 flex-1 truncate text-[17px] font-semibold text-fg">נסו עכשיו · מלכודת משיעור 1</p>
-        <span className="num shrink-0 rounded-md bg-surface-2 px-2 py-0.5 text-[12px] font-semibold text-muted">שאלה אחת</span>
+    <div className="card overflow-hidden">
+      <div className="border-b border-line px-4 py-3 sm:px-5">
+        <p className="text-[17px] font-semibold text-fg">נסו שאלה משיעור 1. יש בה מלכודת.</p>
       </div>
       <div className="p-4 sm:p-5">
         <TrapQuiz key={round} trap={trap} answered={answered} onAnswer={(choice) => setAnswered({ choice, correct: choice === trap.answer })} />

@@ -1,5 +1,6 @@
 import { CircleCheck, CircleX, Wrench } from "lucide-react";
-import { Callout, DataTable, JournalEntry, Topic } from "@/components/study/blocks";
+import { DataTable, JournalEntry } from "@/components/study/blocks";
+import { Deeper, Part } from "@/components/study-mode/screen-parts";
 
 const CASES: [string, boolean, string][] = [
   ["החלפת מנוע במכונה, שמאריכה את חייה בשלוש שנים", true, "הארכת אורך החיים"],
@@ -15,13 +16,10 @@ const CASES: [string, boolean, string][] = [
 export function DistinctionSection() {
   return (
     <>
-      <div className="card p-5">
-        <p className="text-xs font-semibold text-accent">השאלה הראשונה בכל שאלת שיפוץ</p>
-        <p className="mt-1 text-[15px] text-fg/90">
-          לפני כל חישוב שואלים: האם ההוצאה <strong>משפרת</strong> את הנכס — או רק <strong>שומרת</strong> עליו? התשובה קובעת אם העלות נכנסת לנכס
-          ומופחתת על פני השנים הבאות, או נזקפת מיד להוצאות השנה (סעיפים 7, 12–13).
-        </p>
-      </div>
+      <p>
+        <strong>השאלה הראשונה בכל שאלת שיפוץ:</strong> לפני כל חישוב שואלים — האם ההוצאה <strong>משפרת</strong> את הנכס, או רק <strong>שומרת</strong> עליו?
+        התשובה קובעת אם העלות נכנסת לנכס ומופחתת על פני השנים הבאות, או נזקפת מיד להוצאות השנה (סעיפים 7, 12–13).
+      </p>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="card overflow-hidden">
@@ -81,7 +79,7 @@ export function DistinctionSection() {
         ])}
       />
 
-      <Topic title="רכיב שמוחלף בשיפוץ — גורעים את הישן" refs="סעיפים 13, 70" open>
+      <Part title="רכיב שמוחלף בשיפוץ — גורעים את הישן (סעיפים 13, 70)">
         <p>
           כששיפוץ <strong>מחליף</strong> חלק קיים בנכס — גג, מנוע, מערכת מיזוג — לא מספיק להוסיף את החלק החדש. החלק הישן כבר לא קיים, ולכן גורעים
           אותו מהספרים: סוגרים את העלות שלו ואת הפחת שנצבר עליו, והיתרה שנותרה נרשמת כהפסד מגריעה.
@@ -106,13 +104,13 @@ export function DistinctionSection() {
             ]}
           />
         </div>
-        <Callout title="ואם לא יודעים מה הייתה העלות של החלק הישן?">
+        <Deeper title="ואם לא יודעים מה הייתה העלות של החלק הישן?">
           <p>
             לפי סעיף 70, כשאי אפשר לזהות את העלות המקורית של החלק שהוחלף, משתמשים בעלות של החלק החדש כאינדיקציה למה שהחלק הישן עלה בזמנו —
             ומפחיתים ממנה את הפחת שהיה נצבר עליו עד היום.
           </p>
-        </Callout>
-      </Topic>
+        </Deeper>
+      </Part>
     </>
   );
 }

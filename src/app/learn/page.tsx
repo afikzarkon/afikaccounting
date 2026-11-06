@@ -18,11 +18,10 @@ export default async function LearnPage() {
   const engine = ENGINE_TOOLS.filter((x) => !isLinkHidden(links, x.href));
   return (
     <div className="relative">
-      <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-16 sm:pt-14">
         <p className="text-xs font-semibold text-accent">לימוד</p>
         <h1 className="mt-2 text-[2.2rem] leading-tight font-bold tracking-tight text-fg sm:text-5xl">
-          מפת <span className="text-gradient">הלימוד</span>
+          מפת הלימוד
         </h1>
         <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted">
           כל מה שאפשר ללמוד באתר, לפי הסדר שבו כדאי ללמוד אותו. מתחילים ב״חשבונאות מאפס״ — חינם, כל הקורס — וממשיכים לקורסים המתקדמים, שהשיעור הראשון בכל אחד מהם

@@ -134,7 +134,7 @@ function GateMark({ gate, dark }: { gate?: Gate; dark?: boolean }) {
   if (!gate.locked) return <TierBadge tier="free" label="חינם" className="align-middle" />;
   return (
     <span className="inline-flex items-center gap-1.5 align-middle">
-      <Lock className={cn("h-4 w-4", dark ? "text-[#93b4ff]" : "text-muted")} aria-label="נעול" />
+      <Lock className={cn("h-4 w-4", dark ? "text-[#a9dcc0]" : "text-muted")} aria-label="נעול" />
       <TierBadge tier="courses" icon={false} />
     </span>
   );
@@ -173,29 +173,28 @@ function Spotlight({
   prev?: { m: StudyModule; status: ReturnType<typeof pathStatus> };
 }) {
   const firstUnseen = m.screens.findIndex((_, i) => !p.seen.includes(i));
-  const back = "inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[#93b4ff]/60 bg-white/[0.06] px-5 text-[15px] font-bold text-[#e8eef8] transition hover:border-[#93b4ff] hover:bg-white/[0.12]";
+  const back = "inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[#a9dcc0]/60 bg-white/[0.06] px-5 text-[15px] font-bold text-[#eaf3ee] transition hover:border-[#a9dcc0] hover:bg-white/[0.12]";
   return (
     <section
       aria-labelledby={`lesson-${m.slug}`}
-      className="relative flex flex-wrap gap-6 overflow-hidden rounded-3xl bg-gradient-to-br from-[#0b1a3a] via-[#0e2350] to-[#0b1a3a] p-5 text-[#e8eef8] shadow-[0_24px_50px_-26px_rgb(11_26_58/0.8)] ring-1 ring-[#4f8bff]/30 sm:p-8"
+      className="relative flex flex-wrap gap-6 overflow-hidden rounded-3xl bg-[#0f3d2e] p-5 text-[#eaf3ee] shadow-[0_24px_50px_-26px_rgb(15_61_46/0.5)] ring-1 ring-[#7fd3a6]/30 sm:p-8"
     >
-      <div aria-hidden className="pointer-events-none absolute -end-24 -top-24 h-72 w-72 rounded-full bg-[#4f8bff]/25 blur-3xl" />
       <div className="relative flex min-w-0 flex-[1_1_20rem] flex-col gap-3">
-        <p className="num text-sm font-semibold text-[#93b4ff]">
+        <p className="num text-sm font-semibold text-[#a9dcc0]">
           {started ? "אתם כאן" : "השיעור הבא"} · שיעור {m.n} מתוך {total}
         </p>
         <h2 id={`lesson-${m.slug}`} className="text-2xl leading-tight font-bold sm:text-3xl">
           {m.title}
           {gate && <> <GateMark gate={gate} dark /></>}
         </h2>
-        <p className="text-[15px] leading-relaxed text-[#c4cfe4]">{m.description}</p>
+        <p className="text-[15px] leading-relaxed text-[#c9ddd1]">{m.description}</p>
         {m.videos?.length ? (
           <p className="num flex items-center gap-1.5 text-[14px] font-semibold text-[#ffc93c]">
             <PlayCircle className="h-4 w-4" aria-hidden /> {videoLine(m)} — בפתיחת השיעור
           </p>
         ) : null}
         <div className="mt-2 flex flex-wrap items-center gap-3">
-          <LessonLink gate={gate} href={studyHref(m.slug)} prefetch className="inline-flex h-12 items-center gap-2.5 rounded-xl bg-[#4f8bff] px-6 text-[15px] font-bold text-[#04112b] transition hover:brightness-110">
+          <LessonLink gate={gate} href={studyHref(m.slug)} prefetch className="inline-flex h-12 items-center gap-2.5 rounded-xl bg-[#7fd3a6] px-6 text-[15px] font-bold text-[#062016] transition hover:brightness-110">
             {started ? "להמשיך מאיפה שעצרתי" : "להתחיל את השיעור"} <ArrowLeft className="h-4 w-4" aria-hidden />
           </LessonLink>
           {prev &&
@@ -211,32 +210,32 @@ function Spotlight({
           <button
             type="button"
             onClick={() => updateTopic(m.slug, (q) => ({ ...q, skipped: true }))}
-            className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[#93b4ff]/60 bg-white/[0.06] px-5 text-[15px] font-bold text-[#e8eef8] transition hover:border-[#93b4ff] hover:bg-white/[0.12]"
+            className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[#a9dcc0]/60 bg-white/[0.06] px-5 text-[15px] font-bold text-[#eaf3ee] transition hover:border-[#a9dcc0] hover:bg-white/[0.12]"
           >
             דלג על השיעור <ChevronsLeft className="h-4 w-4" aria-hidden />
           </button>
-          <span className="num text-sm text-[#a9b7d1]">
+          <span className="num text-sm text-[#a3bdaf]">
             {xpOf(m, p)}/{maxXp(m)} XP
           </span>
         </div>
         <Tools module={m} spotlight gate={gate} />
       </div>
       <div className="relative flex min-w-0 flex-[1_1_15rem] flex-col gap-2.5 rounded-2xl bg-white/[0.06] p-4 ring-1 ring-white/10 backdrop-blur sm:p-5">
-        <p className="text-[13px] font-semibold text-[#a9b7d1]">מה יש בשיעור</p>
+        <p className="text-[13px] font-semibold text-[#a3bdaf]">מה יש בשיעור</p>
         <ul className="flex flex-col gap-2.5" aria-label="המושגים בשיעור">
           {m.screens.map((s, i) => {
             const seen = p.seen.includes(i);
             return (
               <li key={s.id} className="flex items-center gap-3 text-[15px]">
-                <span className={cn("grid h-6 w-6 shrink-0 place-items-center rounded-full", seen ? "bg-[#22c55e] text-[#052e14]" : "border-2 border-[#4f8bff]")}>
+                <span className={cn("grid h-6 w-6 shrink-0 place-items-center rounded-full", seen ? "bg-[#22c55e] text-[#052e14]" : "border-2 border-[#7fd3a6]")}>
                   {seen && <Check className="h-3.5 w-3.5" strokeWidth={3.2} aria-label="נקרא" />}
                 </span>
                 <span className={cn(started && i === firstUnseen && "font-bold")}>{s.title}</span>
               </li>
             );
           })}
-          <li className="num flex items-center gap-3 text-[15px] text-[#a9b7d1]">
-            <span className="h-6 w-6 shrink-0 rounded-full border-2 border-dashed border-[#5b6a88]" aria-hidden />
+          <li className="num flex items-center gap-3 text-[15px] text-[#a3bdaf]">
+            <span className="h-6 w-6 shrink-0 rounded-full border-2 border-dashed border-[#5e7d6c]" aria-hidden />
             {m.exercises.length + m.traps.length} שאלות תרגול · סיכום
           </li>
         </ul>

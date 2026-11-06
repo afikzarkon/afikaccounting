@@ -2,12 +2,13 @@ import { Eye, ListChecks, Search } from "lucide-react";
 import type { ReactNode } from "react";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { ScreenLink } from "@/components/study-mode/screen-link";
+import { Part, Remember } from "@/components/study-mode/screen-parts";
 import { balancesOf, carryForward, type Entry, ledger, statements, trialBalance } from "@/lib/learn/basics";
 import { NOGA, OFEK } from "@/lib/learn/basics-year";
 import { MiniQuiz } from "./inventory-interactive";
 import { TCardsDialog } from "./t-dialog";
 import { Posted } from "./t-accounts";
-import { Calc, KeyCard, Money, Rule, Stepper, TBTable } from "./ui";
+import { Calc, Money, Stepper, TBTable } from "./ui";
 
 const NOGA_B = balancesOf(ledger(NOGA.entries));
 const NOGA_S = statements(NOGA_B);
@@ -76,13 +77,13 @@ export function Reveal({ prompt, label, children }: { prompt: ReactNode; label: 
   );
 }
 
-/** A short list of facts in a box: the checks before handing in a trial balance. */
+/** A short list of facts: the checks before handing in a trial balance. */
 function CheckList({ items }: { items: ReactNode[] }) {
   return (
     <ul className="space-y-1.5">
       {items.map((x, i) => (
-        <li key={i} className="flex items-start gap-2 rounded-lg bg-surface-2/60 px-3 py-2 text-[14.5px]">
-          <ListChecks className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
+        <li key={i} className="flex items-start gap-2">
+          <ListChecks className="mt-1 h-4 w-4 shrink-0 text-accent" aria-hidden />
           <span>{x}</span>
         </li>
       ))}
@@ -95,34 +96,37 @@ export const YEAR_SCREENS: Record<string, ScreenContent> = {
     lead: "שאלה של שנה שלמה נראית מפחידה — עשרים אירועים, תאריכים ושמות. אבל היא בנויה מאותן פקודות שכבר מכירים. מה שעושה את ההבדל הוא סדר עבודה קבוע.",
     body: (
       <>
-        <ol className="space-y-2 [column-span:all]">
+        <ol className="max-w-[70ch] space-y-3">
           {METHOD.map((m, i) => (
-            <li key={m.t} className="grid gap-x-4 gap-y-1 rounded-2xl border border-line bg-surface px-3.5 py-3 md:grid-cols-[13rem_minmax(0,1fr)_minmax(0,0.8fr)] md:items-center">
-              <span className="flex items-center gap-2">
-                <span className="num grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent text-[13px] font-bold text-accent-fg">{i + 1}</span>
-                <span className="text-[15px] font-bold leading-snug text-fg">{m.t}</span>
-              </span>
-              <span className="text-[14px] leading-relaxed text-fg/85">{m.d}</span>
-              <span className="text-[13px] text-muted max-md:border-t max-md:border-line max-md:pt-1.5">
-                <strong className="text-success">חוסך: </strong>
-                {m.saves}
+            <li key={m.t} className="flex items-baseline gap-2.5">
+              <span className="num grid h-6 w-6 shrink-0 place-items-center self-start rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
+              <span className="min-w-0">
+                <strong className="text-fg">{m.t}</strong> — {m.d}
+                <span className="mt-0.5 block text-[14px] text-muted">
+                  <strong className="text-success">חוסך: </strong>
+                  {m.saves}
+                </span>
               </span>
             </li>
           ))}
         </ol>
-        <section className="space-y-2">
-          <h3 className="flex items-center gap-2 text-lg font-semibold text-fg">
-            <Search className="h-5 w-5 text-accent" aria-hidden /> המילים בשאלה מגלות את החשבון
-          </h3>
-          <dl className="overflow-hidden rounded-2xl border border-line">
+        <Part
+          title={
+            <span className="flex items-center gap-2">
+              <Search className="h-5 w-5 text-accent" aria-hidden /> המילים בשאלה מגלות את החשבון
+            </span>
+          }
+        >
+          <dl className="divide-y divide-line">
             {CLUES.map(([w, a]) => (
-              <div key={w} className="grid gap-1 border-t border-line px-3.5 py-2.5 first:border-t-0 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-3">
-                <dt className="text-[14.5px] font-semibold text-fg">{w}</dt>
-                <dd className="text-[14.5px] text-fg/85">{a}</dd>
+              <div key={w} className="grid gap-x-4 py-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                <dt className="text-[15px] font-semibold text-fg">{w}</dt>
+                <dd className="text-[15px] text-muted">{a}</dd>
               </div>
             ))}
           </dl>
-        </section>
+        </Part>
+        <Remember>קוראים את כל השאלה לפני הפקודה הראשונה, ומחברים כל ״ראה נתון״.</Remember>
       </>
     ),
     check: (
@@ -169,8 +173,7 @@ export const YEAR_SCREENS: Record<string, ScreenContent> = {
             },
           ]}
         />
-        <section className="space-y-2">
-          <h3 className="text-lg font-semibold text-fg">שלוש יתרות שכדאי להבין</h3>
+        <Part title="שלוש יתרות שכדאי להבין">
           <CheckList
             items={[
               <>
@@ -184,7 +187,7 @@ export const YEAR_SCREENS: Record<string, ScreenContent> = {
               </>,
             ]}
           />
-        </section>
+        </Part>
       </>
     ),
     check: (
@@ -208,7 +211,9 @@ export const YEAR_SCREENS: Record<string, ScreenContent> = {
     lead: `עכשיו תורכם: שנה שלמה, 21 אירועים. ${OFEK.story} בכל צעד — קודם כותבים לבד, ורק אז פותחים את הפתרון.`,
     body: (
       <>
-        <KeyCard>טיפ: עבדו עם דף. כתבו כל פקודה, ותנו לה מספר. כך תוכלו לבנות מהן את הכרטיסים במסך הבא.</KeyCard>
+        <p>
+          <strong>טיפ:</strong> עבדו עם דף. כתבו כל פקודה, ותנו לה מספר. כך תוכלו לבנות מהן את הכרטיסים במסך הבא.
+        </p>
         <Stepper
           label={`${OFEK.name} · ${OFEK.year} · 21 אירועים`}
           steps={OFEK.entries.map((x, i) => ({ title: `אירוע ${x.id} · ${x.date} · ${x.text}`, body: <TryFirst entries={OFEK.entries} at={i} /> }))}
@@ -229,8 +234,10 @@ export const YEAR_SCREENS: Record<string, ScreenContent> = {
           <span className="text-[14px] text-muted">כל הכרטיסים של אופק, אחרי 21 הפקודות</span>
         </div>
         <TBTable tb={trialBalance(OFEK_B)} caption={`מאזן בוחן · ${OFEK.name} · 31.12.${OFEK.year}`} kind />
-        <section className="space-y-2">
-          <h3 className="text-lg font-semibold text-fg">הבדיקות לפני שממשיכים</h3>
+        <Calc result={<Money v={OFEK_S.profit} />}>
+          רווח {OFEK.year}: הכנסות <Money v={OFEK_S.totalIncome} /> − הוצאות <Money v={OFEK_S.totalExpenses} />
+        </Calc>
+        <Part title="הבדיקות לפני שממשיכים">
           <CheckList
             items={[
               <>סך החובה = סך הזכות.</>,
@@ -243,13 +250,8 @@ export const YEAR_SCREENS: Record<string, ScreenContent> = {
               </>,
             ]}
           />
-        </section>
-        <Calc result={<Money v={OFEK_S.profit} />}>
-          רווח {OFEK.year}: הכנסות <Money v={OFEK_S.totalIncome} /> − הוצאות <Money v={OFEK_S.totalExpenses} />
-        </Calc>
-        <Rule>
-          עוד אין כאן מלאי סגירה — בשיעור הבא נלמד אותו. לכן כל הקניות נראות כהוצאה של השנה.
-        </Rule>
+        </Part>
+        <Remember>עוד אין כאן מלאי סגירה — בשיעור הבא נלמד אותו. לכן כל הקניות נראות כהוצאה של השנה.</Remember>
       </>
     ),
     check: (
@@ -273,13 +275,11 @@ export const YEAR_SCREENS: Record<string, ScreenContent> = {
     lead: "1.1.2026: אופק נכנסת לשנה השנייה. החשבונות המאזניים ממשיכים, התוצאתיים מתאפסים — והרווח של 2025 עובר לעודפים.",
     body: (
       <>
-        <section className="space-y-2">
-          <h3 className="text-lg font-semibold text-fg">יתרות הפתיחה ב-1.1.2026</h3>
-          <TBTable tb={trialBalance(OFEK_OPEN)} caption="יתרות פתיחה · רק חשבונות מאזניים, והעודפים עם רווח 2025" kind />
-          <p className="text-[14.5px] text-muted">
-            העודפים, <Money v={-OFEK_OPEN["עודפים"]} />, הם בדיוק רווח 2025: החברה חדשה, ולכן לפני כן היו 0. בכרטיסים ראו <ScreenLink id="carry" />.
-          </p>
-        </section>
+        <p>
+          <strong>יתרות הפתיחה ב-1.1.2026.</strong> העודפים, <Money v={-OFEK_OPEN["עודפים"]} />, הם בדיוק רווח 2025: החברה חדשה, ולכן לפני כן היו 0. בכרטיסים ראו{" "}
+          <ScreenLink id="carry" />.
+        </p>
+        <TBTable tb={trialBalance(OFEK_OPEN)} caption="יתרות פתיחה · רק חשבונות מאזניים, והעודפים עם רווח 2025" kind />
         <Stepper
           label={`${OFEK.name} · 2026`}
           steps={[
@@ -300,6 +300,7 @@ export const YEAR_SCREENS: Record<string, ScreenContent> = {
             },
           ]}
         />
+        <Remember>בשנה השנייה: המאזני ממשיך, התוצאתי מאפס, והרווח של השנה הקודמת כבר בעודפים.</Remember>
       </>
     ),
     check: (

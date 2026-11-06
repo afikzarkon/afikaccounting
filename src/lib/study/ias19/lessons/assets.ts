@@ -40,7 +40,7 @@ export const SALES_ASSETS = {
 export const SALES_A_2023 = assetsYear({ opening: SALES_ASSETS.y2023.opening, periods: [{ months: 12, i: SALES.y2023.rate }], contributions: [{ amount: SALES_ASSETS.y2023.contributions, month: 12 }], paidFromAssets: SALES_ASSETS.y2023.paidFromFund, closing: SALES_ASSETS.y2023.closing });
 export const SALES_A_2024 = assetsYear({ opening: SALES_ASSETS.y2023.closing, periods: [{ months: 12, i: SALES.y2024.rate }], contributions: [{ amount: SALES_ASSETS.y2024.contributions, month: 12 }], paidFromAssets: SALES_ASSETS.y2024.paidFromFund, closing: SALES_ASSETS.y2024.closing });
 
-/** Continued practice: a fund with a contribution in the middle of a year whose rate changed — interest income on the obligation's periods (IAS 19.125). */
+/** Continued practice: a fund with a contribution in the middle of a year whose rate changed — interest income on the obligation's periods (סעיף 125). */
 export const SPLIT = { opening: 2_500, periods: [{ months: 6, i: 0.04 }, { months: 6, i: 0.06 }], contribution: 2_000, month: 6, closing: 4_300 };
 export const SPLIT_INTEREST = assetsInterest({ opening: SPLIT.opening, periods: SPLIT.periods, contributions: [{ amount: SPLIT.contribution, month: SPLIT.month }] });
 export const SPLIT_A = assetsYear({ opening: SPLIT.opening, periods: SPLIT.periods, contributions: [{ amount: SPLIT.contribution, month: SPLIT.month }], closing: SPLIT.closing });
@@ -61,7 +61,7 @@ const traps: Trap[] = [
     prompt: "הקרן הרוויחה בפועל 9%; שיעור ההיוון של ההתחייבות 5%. באיזה שיעור מחשבים הכנסות ריבית על הנכסים?",
     options: ["5% — כמו ההתחייבות", "9% — התשואה בפועל", "7%", "לא מחשבים ריבית על נכסים"],
     answer: 0,
-    why: "הכנסות ריבית — באותו שיעור היוון כמו של ההתחייבות (IAS 19.125). כל השאר — P.N. ב-OCI.",
+    why: "הכנסות ריבית — באותו שיעור היוון כמו של ההתחייבות (סעיף 125). כל השאר — P.N. ב-OCI.",
     traps: ["", "המלכודת: התשואה בפועל. ההפרש בינה לבין 5% הוא P.N.", "אין ממוצע.", "ריבית נטו כוללת גם את הנכסים."],
   },
   {
@@ -77,7 +77,7 @@ const traps: Trap[] = [
     prompt: "הקרן הרוויחה 8,000 ₪ מעבר להכנסות הריבית. איפה נרשם העודף?",
     options: ["ב-OCI", "ברווח והפסד, בהכנסות מימון", "מקטין את הוצאות השכר", "לא נרשם"],
     answer: 0,
-    why: "התשואה מעבר להכנסות הריבית היא מדידה מחדש — ב-OCI (IAS 19.127).",
+    why: "התשואה מעבר להכנסות הריבית היא מדידה מחדש — ב-OCI (סעיף 127).",
     traps: ["", "המלכודת: לרשום לרווח והפסד. שם רק הכנסות הריבית.", "זה לא קשור לשירות.", "הנכסים גדלו — חייבים לרשום."],
   },
   {
@@ -85,7 +85,7 @@ const traps: Trap[] = [
     prompt: "נכסים 60,000, התחייבות 54,000, ותקרת הנכס 2,700. איזה נכס נטו מציגים?",
     options: ["2,700", "6,000", "0", "60,000"],
     answer: 0,
-    why: "הנמוך מבין העודף (6,000) והתקרה (2,700) (IAS 19.64).",
+    why: "הנמוך מבין העודף (6,000) והתקרה (2,700) (סעיף 64).",
     traps: ["", "המלכודת: להציג את כל העודף. החברה יכולה להשתמש רק ב-2,700.", "יש תקרה חיובית — משהו מוכר.", "במאזן — נטו, לא ברוטו."],
   },
   {
@@ -101,7 +101,7 @@ const traps: Trap[] = [
     prompt: "בקרן נעולה בידי נאמן 180,000 ₪, וההתחייבות 150,000. החזר לחברה רק לפי שיקול דעת הנאמן, ואין הפחתת הפקדות. מה מוכר כנכס נטו?",
     options: ["0", "30,000", "180,000", "15,000"],
     answer: 0,
-    why: "החברה לא יכולה להשתמש בעודף בפועל — התקרה אפס (IFRIC 14).",
+    why: "החברה לא יכולה להשתמש בעודף בפועל — התקרה אפס.",
     traps: ["", "המלכודת: להתעלם מכך שהכסף נעול. עודף שאי אפשר להשתמש בו אינו נכס.", "בנכס נטו מציגים רק את העודף, והוא חסום.", "אין בסיס לחצי."],
   },
 ];
@@ -153,17 +153,17 @@ export const ASSETS: StudyModule = {
     calc("sales-a-2024", "צוות מכירות: נכסים 2024", `קרן של צוות המכירות, 2024: פתיחה ${fmt(SALES_ASSETS.y2023.closing)}; שיעור ${pct(SALES.y2024.rate)}; הפקדות ${fmt(SALES_ASSETS.y2024.contributions)}; שולמו מהקרן ${fmt(SALES_ASSETS.y2024.paidFromFund)} (מתוך ${fmt(SALES_2024.payments)} ששולמו לעובדים); שווי הוגן בסוף ${fmt(SALES_ASSETS.y2024.closing)}. מה ה-P.N. של הנכסים (רווח — בסכום חיובי)?`, SALES_A_2024.pn, [
       `ריבית ${fmt(SALES_A_2024.interest)}; P.N. = ${fmt(SALES_A_2024.pn)} ₪ רווח.`,
     ]),
-    calc("split-interest", "ריבית על הפקדה בשנה מפוצלת", `קרן: פתיחה ${fmt(SPLIT.opening)}; שיעור ההתחייבות ${pct(SPLIT.periods[0].i)} עד 30.6 ו-${pct(SPLIT.periods[1].i)} מ-1.7; ב-1.7 הופקדו ${fmt(SPLIT.contribution)}. לפי IAS 19.125, מה הכנסות הריבית של השנה (בלי עיגולי ביניים)?`, SPLIT_INTEREST.total, [
+    calc("split-interest", "ריבית על הפקדה בשנה מפוצלת", `קרן: פתיחה ${fmt(SPLIT.opening)}; שיעור ההתחייבות ${pct(SPLIT.periods[0].i)} עד 30.6 ו-${pct(SPLIT.periods[1].i)} מ-1.7; ב-1.7 הופקדו ${fmt(SPLIT.contribution)}. לפי סעיף 125, מה הכנסות הריבית של השנה (בלי עיגולי ביניים)?`, SPLIT_INTEREST.total, [
       `חצי ראשון: ${fmt(SPLIT.opening)} × (${1 + SPLIT.periods[0].i}^0.5 − 1) = ${fmt(SPLIT_INTEREST.parts[0])}.`,
       `חצי שני: (${fmt(SPLIT.opening)} + ${fmt(SPLIT.contribution)}) × (${1 + SPLIT.periods[1].i}^0.5 − 1) = ${fmt(SPLIT_INTEREST.parts[1])}. סה״כ ${fmt(Math.round(SPLIT_INTEREST.total * 100) / 100)} — באותו פיצול כמו ההתחייבות.`,
     ]),
-    choice("net", "התחייבות נטו", "התחייבות 31,000 ונכסי תכנית 12,400. מה מוצג במאזן?", ["התחייבות נטו 18,600", "התחייבות 31,000 ונכס 12,400, בנפרד", "נכס 12,400", "התחייבות 43,400"], 0, "התחייבות נטו = התחייבות פחות נכסים (IAS 19.113)."),
+    choice("net", "התחייבות נטו", "התחייבות 31,000 ונכסי תכנית 12,400. מה מוצג במאזן?", ["התחייבות נטו 18,600", "התחייבות 31,000 ונכס 12,400, בנפרד", "נכס 12,400", "התחייבות 43,400"], 0, "התחייבות נטו = התחייבות פחות נכסים (סעיף 113)."),
   ],
   traps,
   tips: [
     "שני מעגלים — התחייבות ונכסים — הפער ביניהם הוא נטו, ותקרה חוסמת עודף.",
     "(א) התחייבות נטו = התחייבות פחות נכסים. (ב) מעגל נכסים: פתיחה + ריבית + הפקדות − תשלומים מהנכסים + P.N. = סגירה; הריבית בשיעור של ההתחייבות ובאותו פיצול תקופות, והפקדה באמצע שנה מקבלת ריבית חלקית. (ג) מההתחייבות יורדים כל התשלומים; מהנכסים — רק מה שיצא מהם. (ד) נכס נטו = הנמוך מבין העודף והתקרה.",
     "נכסי תכנית (סעיפים 8 ו-113): בקרן נפרדת, רק לתשלום הטבות, לא זמינים לנושים. P.N. של הנכסים (סעיף 127) — ל-OCI.",
-    "תקרת נכס (סעיף 64, IFRIC 14): הערך הנוכחי של מה שהחברה יכולה להשתמש בו — החזר או הקטנת הפקדות. עודף שאי אפשר להשתמש בו נשרף ב-OCI.",
+    "תקרת נכס (סעיף 64): הערך הנוכחי של מה שהחברה יכולה להשתמש בו — החזר או הקטנת הפקדות. עודף שאי אפשר להשתמש בו נשרף ב-OCI.",
   ],
 };

@@ -1,16 +1,18 @@
 import { Bike, Flame, Gift, ShieldCheck } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
+import { Deeper, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
+import { Statement } from "@/components/study/ledger";
 import { dateLabel, purchaseCost, valuatePeriod, type Period } from "@/lib/learn/inventory";
 import { MISHAK, mishak, OFEK, OFEK_2026, OFEK_YEARS, ofek } from "@/lib/learn/inventory-exams";
 import { m, pc } from "@/lib/learn/inventory-explain";
 import { POLICY_AVG, POLICY_FIFO, ROAD, ROAD_FIRE, TWO_RATES } from "@/lib/study/inventory/fire";
 import { OPER, OPER_PROFIT, OPER_SELLING } from "@/lib/study/inventory/worksheet";
 import { AnswerCheck, MiniQuiz, TryInCalc } from "./inventory-interactive";
-import { ChainChips, MoreDialog, Reveal, Sorted, Story } from "./inventory-teach";
+import { ChainChips, Reveal, Sorted, Story } from "./inventory-teach";
 import { TraceStepView } from "./inventory-trace";
-import { Card, KeyCard, Money, Rule, type Step, Stepper, Wide } from "./ui";
+import { Card, Money, Rule, type Step, Stepper } from "./ui";
 
 /** Steps or items made on the server and handed to a client component: each needs a key. */
 const keyed = (xs: ReactNode[]) => xs.map((x, i) => <Fragment key={i}>{x}</Fragment>);
@@ -85,17 +87,25 @@ const sheetSteps: Step[] = [
           שווי מימוש נטו: {GV.closingUnits} × {GAVIA.nrvPerUnit} = <Money v={GV.nrvTotal!} /> — נמוך מהעלות, הורדה של <Money v={GV.writeDown} />. מלאי סגירה:{" "}
           <Money v={GV.closingCarrying} />.
         </p>
-        <DataTable
-          head={["", "₪"]}
-          rows={[
-            ["מכירות", GV.netSales],
-            ["מלאי פתיחה", GV.openingCost],
-            ["קניות", GV.purchasesCost],
-            ["מלאי סגירה", -GV.closingCarrying],
-            ["עלות המכר", GV.cogs],
-            ["רווח גולמי", GV.grossProfit],
-          ]}
-        />
+        <div className="grid gap-3 md:grid-cols-2">
+          <Statement
+            title="רווח והפסד (עד הרווח הגולמי)"
+            rows={[
+              { label: "מכירות", values: [GV.netSales] },
+              { label: "עלות המכר", values: [-GV.cogs], note: "ראו חישוב" },
+              { label: "רווח גולמי", values: [GV.grossProfit], kind: "total" },
+            ]}
+          />
+          <Statement
+            title="חישוב עלות המכר"
+            rows={[
+              { label: "מלאי פתיחה", values: [GV.openingCost] },
+              { label: "קניות", values: [GV.purchasesCost] },
+              { label: "בניכוי: מלאי סגירה", values: [-GV.closingCarrying] },
+              { label: "עלות המכר", values: [GV.cogs], kind: "total" },
+            ]}
+          />
+        </div>
       </>
     ),
   },
@@ -131,15 +141,17 @@ const ofekSteps: Step[] = [
   {
     title: "2025 · עד הרווח התפעולי",
     body: (
-      <DataTable
-        head={["", "₪"]}
+      <Statement
+        title="רווח והפסד לשנת 2025 (מהרווח הגולמי)"
         rows={[
-          ["רווח גולמי", O25.grossProfit],
-          [`אחסון (${n(OFEK.storageMonthly)} × 12)`, -OFEK.storageMonthly * 12],
-          [`הובלה ללקוחות (${O.sold2025} × ${OFEK.delivery})`, -OFEK.delivery * O.sold2025],
-          ["הוצאות מכירה ושיווק", -O.selling2025],
-          ["הוצאות הנהלה וכלליות", -OFEK.admin2025],
-          ["רווח תפעולי", O.operating2025],
+          { label: "רווח גולמי", values: [O25.grossProfit] },
+          {
+            label: "הוצאות מכירה ושיווק",
+            values: [-O.selling2025],
+            note: `אחסון ${n(OFEK.storageMonthly)} × 12 = ${n(OFEK.storageMonthly * 12)}; הובלה ללקוחות ${O.sold2025} × ${OFEK.delivery} = ${n(OFEK.delivery * O.sold2025)}`,
+          },
+          { label: "הוצאות הנהלה וכלליות", values: [-OFEK.admin2025] },
+          { label: "רווח תפעולי", values: [O.operating2025], kind: "total" },
         ]}
       />
     ),
@@ -187,9 +199,7 @@ export const COURSE_EXAM_SCREENS: Record<string, ScreenContent> = {
     lead: "בשריפה, הביטוח משלם על עלות המלאי שנשרף. כדי לדעת כמה נשרף, מגלגלים את המלאי עד יום השריפה — ומורידים את מה שניצל.",
     body: (
       <>
-        <Wide>
-          <ChainChips items={["מלאי ביום השריפה", "פחות מה שניצל", "= נשרף (התביעה)", "פחות השתתפות עצמית", "עד התקרה = שיפוי"]} />
-        </Wide>
+        <ChainChips items={["מלאי ביום השריפה", "פחות מה שניצל", "= נשרף (התביעה)", "פחות השתתפות עצמית", "עד התקרה = שיפוי"]} />
         <Story icon={<Flame />} title="המחסן נשרף ב-30.6">
           <p>
             מלאי פתיחה <Money v={ROAD.opening} />, קניות עד השריפה <Money v={ROAD.purchases} />, מכירות עד השריפה <Money v={ROAD.sales} />, שיעור רווח גולמי {ROAD.rate * 100}%.
@@ -211,7 +221,7 @@ export const COURSE_EXAM_SCREENS: Record<string, ScreenContent> = {
             </>,
           ])}
         />
-        <KeyCard>זו אותה נוסחת עלות המכר — רק שהנעלם הוא מלאי ״הסגירה״ ביום השריפה.</KeyCard>
+        <Remember>זו אותה נוסחת עלות המכר — רק שהנעלם הוא מלאי ״הסגירה״ ביום השריפה.</Remember>
       </>
     ),
     check: (
@@ -259,12 +269,12 @@ export const COURSE_EXAM_SCREENS: Record<string, ScreenContent> = {
             </>,
           ])}
         />
-        <KeyCard>השיעור — כפי שהפוליסה קובעת: של השנה הקודמת, או ממוצע של כמה שנים. ממוצע פשוט, אלא אם כתוב אחרת.</KeyCard>
-        <MoreDialog label="וגם בלי שריפה?">
+        <Deeper title="וגם בלי שריפה?">
           <p>
             אותו חישוב הוא ״השיטה הקמעונאית״ שבתקן: כשאין ספירה, מעריכים את מלאי הסגירה דרך שיעור הרווח הגולמי. הוא מופיע בעיקר בשאלות שריפה וגניבה.
           </p>
-        </MoreDialog>
+        </Deeper>
+        <Remember>השיעור — כפי שהפוליסה קובעת: של השנה הקודמת, או ממוצע של כמה שנים. ממוצע פשוט, אלא אם כתוב אחרת.</Remember>
       </>
     ),
     check: (
@@ -292,22 +302,20 @@ export const COURSE_EXAM_SCREENS: Record<string, ScreenContent> = {
     lead: "מה שלא נשרף יורד מהתביעה — בעלות. אם הוא נתון במחיר מכירה, ממירים: × (1 − שיעור הרווח הגולמי).",
     body: (
       <>
-        <Wide>
-          <Sorted
-            columns={[
-              {
-                title: "יורד מהמלאי ביום השריפה",
-                tone: "neutral",
-                items: ["מלאי שנשאר בחנות, נתון בעלות — כמו שהוא", "מלאי שנשאר, נתון במחיר מכירה — × (1 − שיעור)", "יחידות שניצלו — × עלות ליחידה", "משגור אצל אחרים — שלנו, אבל לא נשרף"],
-              },
-              { title: "לא נכנס בכלל", tone: "bad", items: ["רכישות ומכירות אחרי יום השריפה", "שווי מימוש נטו — השיפוי לפי עלות"] },
-            ]}
-          />
-        </Wide>
-        <Rule>
-          ניצל מלאי במחיר מכירה 10,000 ₪, ושיעור הרווח הגולמי 25%: בעלות — 10,000 × 75% = <Money v={7_500} />.
-        </Rule>
-        <KeyCard>המלאי במחסן בעלות — ולכן גם מה שמורידים ממנו חייב להיות בעלות. במחיר מכירה מסתתר רווח שלא שייך לחישוב.</KeyCard>
+        <Sorted
+          columns={[
+            {
+              title: "יורד מהמלאי ביום השריפה",
+              tone: "neutral",
+              items: ["מלאי שנשאר בחנות, נתון בעלות — כמו שהוא", "מלאי שנשאר, נתון במחיר מכירה — × (1 − שיעור)", "יחידות שניצלו — × עלות ליחידה", "משגור אצל אחרים — שלנו, אבל לא נשרף"],
+            },
+            { title: "לא נכנס בכלל", tone: "bad", items: ["רכישות ומכירות אחרי יום השריפה", "שווי מימוש נטו — השיפוי לפי עלות"] },
+          ]}
+        />
+        <p>
+          <strong>למשל:</strong> ניצל מלאי במחיר מכירה 10,000 ₪, ושיעור הרווח הגולמי 25%: בעלות — 10,000 × 75% = <Money v={7_500} />.
+        </p>
+        <Remember>המלאי במחסן בעלות — ולכן גם מה שמורידים ממנו חייב להיות בעלות. במחיר מכירה מסתתר רווח שלא שייך לחישוב.</Remember>
       </>
     ),
     check: (
@@ -338,7 +346,7 @@ export const COURSE_EXAM_SCREENS: Record<string, ScreenContent> = {
         <Story icon={<ShieldCheck />} title="ספרים בממוצע, פוליסה ב-FIFO">
           <p>פתיחה 100 יח׳ ב-10 ₪; 1.2 — נקנו 200 ב-12 ₪; 1.3 — נמכרו 250; 1.4 — נקנו 100 ב-13 ₪; 1.5 — הכול נשרף.</p>
         </Story>
-        <Wide className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <Card title="לפי הפוליסה — FIFO" className="border-success/40">
             <p>
               {POLICY_FIFO.unitsAtFire} יח׳: 100 × 13 + 50 × 12 = <Money v={POLICY_FIFO.burned} />
@@ -351,11 +359,11 @@ export const COURSE_EXAM_SCREENS: Record<string, ScreenContent> = {
             </p>
             <p className="text-sm text-muted">לא רלוונטי לתביעה.</p>
           </Card>
-        </Wide>
-        <KeyCard>בשאלה שהספרים בה בשיטה אחת והפוליסה בשנייה — בונים את ההיסטוריה פעמיים: פעם לדוחות, ופעם לתביעה.</KeyCard>
+        </div>
         <div className="flex flex-wrap gap-2">
           <TryInCalc id="agam" label="שריפה לפי FIFO חוצה שנים — במחשבון" />
         </div>
+        <Remember>בשאלה שהספרים בה בשיטה אחת והפוליסה בשנייה — בונים את ההיסטוריה פעמיים: פעם לדוחות, ופעם לתביעה.</Remember>
       </>
     ),
     check: (
@@ -383,27 +391,25 @@ export const COURSE_EXAM_SCREENS: Record<string, ScreenContent> = {
     lead: "מהתביעה יורדת ההשתתפות העצמית, והתוצאה לא עולה על התקרה. מה שלא שופה — הפסד של החברה.",
     body: (
       <>
-        <Wide>
-          <DataTable
-            head={["", "השתתפות באחוזים", "השתתפות קבועה ותקרה"]}
-            rows={[
-              ["נשרף (התביעה)", 40_000, 60_000],
-              ["השתתפות עצמית", "15% — 6,000", "5,000"],
-              ["אחרי השתתפות", 34_000, 55_000],
-              ["תקרה", "—", 50_000],
-              ["שיפוי", 34_000, 50_000],
-              ["הפסד שלא שופה", 6_000, 10_000],
-            ]}
-          />
-        </Wide>
-        <KeyCard>סדר: קודם השתתפות, אחר כך תקרה — אלא אם השאלה אומרת שהתקרה חלה על התביעה עצמה.</KeyCard>
-        <MoreDialog label="ומה עם הקריאה המדויקת?">
+        <DataTable
+          head={["", "השתתפות באחוזים", "השתתפות קבועה ותקרה"]}
+          rows={[
+            ["נשרף (התביעה)", 40_000, 60_000],
+            ["השתתפות עצמית", "15% — 6,000", "5,000"],
+            ["אחרי השתתפות", 34_000, 55_000],
+            ["תקרה", "—", 50_000],
+            ["שיפוי", 34_000, 50_000],
+            ["הפסד שלא שופה", 6_000, 10_000],
+          ]}
+        />
+        <Deeper title="ומה עם הקריאה המדויקת?">
           <ul className="list-inside list-disc space-y-1">
             <li>״השתתפות עצמית X% מסכום התביעה״ — אחוז מהנשרף.</li>
             <li>״השתתפות עצמית בסך X ₪ ללא קשר לגובה הנזק״ — סכום קבוע.</li>
             <li>״סכום השיפוי נטו לא יעלה על X״ — התקרה על מה שנשאר אחרי ההשתתפות.</li>
           </ul>
-        </MoreDialog>
+        </Deeper>
+        <Remember>סדר: קודם השתתפות, אחר כך תקרה — אלא אם השאלה אומרת שהתקרה חלה על התביעה עצמה.</Remember>
       </>
     ),
     check: (
@@ -440,7 +446,7 @@ export const COURSE_EXAM_SCREENS: Record<string, ScreenContent> = {
           </p>
         </Story>
         <Stepper label="דף הפתרון · ארבעה בלוקים" steps={sheetSteps} />
-        <KeyCard>כל בלוק משתמש בקודם. כשהשאלה ארוכה — הבלוקים הם המפה: כל נתון נוסף שייך לאחד מהם.</KeyCard>
+        <Remember>כל בלוק משתמש בקודם. כשהשאלה ארוכה — הבלוקים הם המפה: כל נתון נוסף שייך לאחד מהם.</Remember>
       </>
     ),
     check: (
@@ -468,23 +474,22 @@ export const COURSE_EXAM_SCREENS: Record<string, ScreenContent> = {
     lead: "כשמבקשים דוח עד הרווח התפעולי, מה שלא נכנס לעלות המלאי לא נעלם — הוא יורד מתחת לרווח הגולמי, כהוצאה תפעולית.",
     body: (
       <>
-        <Wide>
-          <DataTable
-            head={["", "₪"]}
-            rows={[
-              ["רווח גולמי", OPER.grossProfit],
-              ["אחסון במחסני החברה", -OPER.storage],
-              ["הובלה ללקוחות", -OPER.delivery],
-              ["פרסום", -OPER.advertising],
-              ["הוצאות מכירה ושיווק", -OPER_SELLING],
-              ["הוצאות הנהלה וכלליות", -OPER.admin],
-              ["רווח תפעולי", OPER_PROFIT],
-              ["הוצאות מימון (רכיב אשראי)", -OPER.finance],
-              ["רווח לפני מס", OPER_PROFIT - OPER.finance],
-            ]}
-          />
-        </Wide>
-        <KeyCard>אחסון רגיל והובלה ללקוח — מכירה ושיווק. רכיב מימון מאשראי חריג — הוצאות מימון, מתחת לרווח התפעולי.</KeyCard>
+        <Statement
+          title="רווח והפסד (מהרווח הגולמי)"
+          rows={[
+            { label: "רווח גולמי", values: [OPER.grossProfit] },
+            {
+              label: "הוצאות מכירה ושיווק",
+              values: [-OPER_SELLING],
+              note: `אחסון במחסני החברה ${OPER.storage.toLocaleString("en-US")} + הובלה ללקוחות ${OPER.delivery.toLocaleString("en-US")} + פרסום ${OPER.advertising.toLocaleString("en-US")}`,
+            },
+            { label: "הוצאות הנהלה וכלליות", values: [-OPER.admin] },
+            { label: "רווח תפעולי", values: [OPER_PROFIT], kind: "subtotal" },
+            { label: "הוצאות מימון (רכיב אשראי)", values: [-OPER.finance] },
+            { label: "רווח לפני מס", values: [OPER_PROFIT - OPER.finance], kind: "total" },
+          ]}
+        />
+        <Remember>אחסון רגיל והובלה ללקוח — מכירה ושיווק. רכיב מימון מאשראי חריג — הוצאות מימון, מתחת לרווח התפעולי.</Remember>
       </>
     ),
     check: (
@@ -577,13 +582,13 @@ export const COURSE_EXAM_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <Stepper label="אופק · הפתרון" steps={ofekSteps} />
-        <Rule>
-          מלאי 2024: <Money v={O24.closingCarrying} /> · מלאי 2025: <Money v={O25.closingCarrying} /> · רווח תפעולי 2025: <Money v={O.operating2025} /> · שיפוי:{" "}
-          <Money v={O.fire.settlement.net} />
-        </Rule>
         <div className="flex flex-wrap gap-2">
           <TryInCalc id="ofek" label="פתחו את אופק במחשבון" />
         </div>
+        <Remember>
+          מלאי 2024: <Money v={O24.closingCarrying} /> · מלאי 2025: <Money v={O25.closingCarrying} /> · רווח תפעולי 2025: <Money v={O.operating2025} /> · שיפוי:{" "}
+          <Money v={O.fire.settlement.net} />
+        </Remember>
       </>
     ),
   },
@@ -636,12 +641,12 @@ export const COURSE_EXAM_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <Stepper label="משחק · הפתרון" steps={mishakSteps} />
-        <Rule>
-          שיעור רווח גולמי 2025: {pc(X.year.gpPct)} · מלאי 31.12.2025: <Money v={X.year.closingCarrying} /> · שיפוי: <Money v={X.fire.settlement.net} />
-        </Rule>
         <div className="flex flex-wrap gap-2">
           <TryInCalc id="mishak" label="פתחו את 2025 של משחק במחשבון" />
         </div>
+        <Remember>
+          שיעור רווח גולמי 2025: {pc(X.year.gpPct)} · מלאי 31.12.2025: <Money v={X.year.closingCarrying} /> · שיפוי: <Money v={X.fire.settlement.net} />
+        </Remember>
       </>
     ),
   },

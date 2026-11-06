@@ -17,7 +17,8 @@ const embeds = "https://www.youtube-nocookie.com https://www.youtube.com https:/
 // Inline scripts stay allowed (Next.js bootstrap, the theme script); everything else is pinned to known origins.
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  // Vercel Analytics loads from /_vercel/insights in production, and its debug script from va.vercel-scripts.com in dev.
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval' https://va.vercel-scripts.com" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: https://i.ytimg.com ${supabase}`,
   "font-src 'self' data:",

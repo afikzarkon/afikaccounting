@@ -1,245 +1,419 @@
-import { CreditCard, PiggyBank } from "lucide-react";
+import { ArrowRight, ChevronDown, Search } from "lucide-react";
 import type { ReactNode } from "react";
+import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
-import { partRate, pv, simplePart } from "@/lib/learn/ias19";
-import { HOOK, SOLVED, SOLVED_PART, SOLVED_PV, SOLVED_ROLL, TOGETHER, TOGETHER_PART, TOGETHER_PV, TOGETHER_ROLL } from "@/lib/study/ias19/lessons/toolkit";
-import { lessonRef } from "@/lib/study/ias19/shared";
-import { Bridge, ExplainTask, HintLadder, MapBranch, RollForward, T19 } from "./ias19-ui";
+import { partRate } from "@/lib/learn/ias19";
+import { said, tool, TOOL } from "@/lib/study/ias19/formulas";
+import { CASE, CASE_INTEREST, CASE_TODAY, DANA_NEXT, DANA_NOW, DEPOSIT, DEPOSIT_FV, HOOK, PART_BALANCE, PERIODS, VACATION, VACATION_EXPENSE } from "@/lib/study/ias19/lessons/toolkit";
+import { fmt } from "@/lib/study/ias19/shared";
+import { ltrQuiz } from "@/lib/study/ias19/ltr";
+import { Ltr, Work } from "./ias19-formula";
+import { RollForward, T19 } from "./ias19-ui";
+import { Timeline } from "./ias19-visuals";
 import { MiniQuiz } from "./inventory-interactive";
-import { Story } from "./inventory-teach";
-import { Card, Frac, KeyCard, Money, Rule, Stepper, Wide } from "./ui";
+import { Money } from "./ui";
 
-/** The employee-benefits course, lesson 2: the toolkit — present value, interest for part of a year, and the roll-forward. */
+/**
+ * The employee-benefits course, lesson 2: the toolkit — present value,
+ * interest for part of a year, and the roll-forward. Each tool comes with why
+ * the course needs it, and every result is worked both ways: by the formula of
+ * the course's main page, and in Excel. Nothing opens step by step.
+ */
 
-const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={items} />;
+const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={ltrQuiz(items)} />;
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
 const pct = (r: number, d = 2) => `${(r * 100).toLocaleString("en-US", { maximumFractionDigits: d })}%`;
-const L = ({ children }: { children: ReactNode }) => <bdi dir="ltr">{children}</bdi>;
+/** A formula inside a sentence, read left to right. */
+const L = Ltr;
+/** A formula on a line of its own. */
+const F = ({ children }: { children: string }) => (
+  <span className="block py-0.5 font-semibold">
+    <L>{children}</L>
+  </span>
+);
+
+/** A question set out the same way everywhere in the lesson: what we look for, the task, a moment to try, and the full solution behind one button. */
+export function Solve({ seek, task, children }: { seek: ReactNode; task: ReactNode; children: ReactNode }) {
+  return (
+    <div className="space-y-2.5 rounded-2xl border border-line bg-surface p-3.5">
+      <p className="flex items-start gap-2 text-[14.5px]">
+        <Search className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
+        <span>
+          <strong>מה מחפשים: </strong>
+          {seek}
+        </span>
+      </p>
+      <p className="text-[15px] leading-relaxed">
+        <strong>השאלה: </strong>
+        {task} <span className="text-muted">נסו לפתור לבד, ורק אז פתחו את הפתרון.</span>
+      </p>
+      <details className="group border-t border-line pt-2.5">
+        <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-lg border border-line-strong px-3 py-1.5 text-[14px] font-semibold text-accent hover:bg-accent-soft [&::-webkit-details-marker]:hidden">
+          <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden />
+          <span className="group-open:hidden">הצגת הפתרון</span>
+          <span className="hidden group-open:inline">הסתרת הפתרון</span>
+        </summary>
+        <div className="mt-2.5 space-y-1.5">{children}</div>
+      </details>
+    </div>
+  );
+}
 
 export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
   "emp-tool-hook": {
-    lead: "שקל של היום שווה יותר משקל של העתיד — ובכל שאלה בקורס נצטרך לדעת בכמה.",
+    lead: "הרבה מהחובות לעובדים ישולמו רק בעוד כמה שנים. לפני שמודדים אותם, צריך להבין איך כסף זז בזמן.",
     body: (
       <>
-        <Story icon={<PiggyBank />} title="היום, או בעוד ארבע שנים?">
-          <p>
-            מציעים לכם <Money v={HOOK.amount} /> — היום, או בעוד {HOOK.years} שנים. רוב האנשים בוחרים ״היום״: את הכסף של היום אפשר להפקיד ולקבל עליו ריבית. אז כמה ״שווים״ היום{" "}
-            <Money v={HOOK.amount} /> של עוד {HOOK.years} שנים?
-          </p>
-        </Story>
-        <Story icon={<CreditCard />} title="ריבית על חצי שנה">
-          <p>לקחתם הלוואה באמצע השנה, בריבית שנתית. האם הריבית על חצי השנה היא בדיוק חצי מהריבית השנתית? (רמז: לא בדיוק.)</p>
-        </Story>
-        <MapBranch lesson="ias19-toolkit">ענף ״ארגז הכלים״: שלוש פעולות שחוזרות בכל שאלה של הטבה מוגדרת ושל הטבה ארוכה — ערך נוכחי, ריבית על חלק משנה ומעגל.</MapBranch>
+        <P>
+          לדנה יש חוזה שבו כתוב שכשתפרוש, בעוד {HOOK.years} שנים, היא תקבל מענק של <Money v={HOOK.amount} />. עכשיו סוף השנה, והחברה מכינה דוחות כספיים. היא צריכה לכתוב בהם כמה היא חייבת לדנה.
+        </P>
+        <Timeline
+          label={`${HOOK.amount.toLocaleString("he-IL")} ₪ שישולמו בעוד ${HOOK.years} שנים: מה כותבים בדוח היום?`}
+          from={0}
+          to={HOOK.years}
+          ticks={[
+            { at: 0, label: "היום: יום הדוח" },
+            ...Array.from({ length: HOOK.years - 1 }, (_, k) => ({ at: k + 1, label: `שנה ${k + 1}` })),
+            { at: HOOK.years, label: `שנה ${HOOK.years}: התשלום` },
+          ]}
+          marks={[
+            { at: 0, label: "? ₪", tone: "accent" },
+            { at: HOOK.years, label: `${HOOK.amount.toLocaleString("he-IL")} ₪`, tone: 1 },
+          ]}
+        />
+        {quiz("emp-tool-hook", [
+          {
+            q: "מה תכתוב החברה בדוח?",
+            options: [`פחות מ-${fmt(HOOK.amount)} ₪`, `בדיוק ${fmt(HOOK.amount)} ₪, כי זה מה שכתוב בחוזה`, `יותר מ-${fmt(HOOK.amount)} ₪`],
+            answer: 0,
+            why: `אם היו מציעים לך ${fmt(HOOK.amount)} ₪ היום או בעוד ${HOOK.years} שנים, היית לוקח היום. את הכסף אפשר להפקיד בבנק, ובעוד ${HOOK.years} שנים יהיה לך יותר מ-${fmt(HOOK.amount)}. כלומר ${fmt(HOOK.amount)} ₪ שמקבלים בעוד ${HOOK.years} שנים שווים היום פחות.`,
+          },
+        ])}
+        <P>
+          אז כמה פחות? זה תלוי בשני דברים: כמה ריבית הכסף יכול להרוויח, וכמה זמן מחכים. כדי לחשב את זה נלמד קודם איך כסף גדל קדימה בזמן, ואחר כך איך מחזירים אותו להיום. בסוף מסך 3 נחזור לדנה ונמצא את המספר.
+        </P>
+        <P>ועוד דבר: בשנה הבאה התשלום יהיה קרוב יותר, ולכן החוב לדנה יגדל. כדי לעקוב אחרי מה שקורה לחוב משנה לשנה נשתמש במעגל, במסך 5.</P>
+        <Remember>סכום שישולם בעתיד שווה היום פחות. בדוחות רושמים כמה הוא שווה היום.</Remember>
+      </>
+    ),
+  },
+  "emp-tool-fv": {
+    lead: "כסף בבנק גדל כל שנה בריבית. ככה מגיעים מסכום של היום לסכום שיהיה בעתיד.",
+    body: (
+      <>
+        <P>
+          מפקידים היום <Money v={DEPOSIT.amount} /> בבנק, בריבית שנתית של {pct(DEPOSIT.rate)}. בסוף השנה הראשונה הבנק מוסיף {pct(DEPOSIT.rate)} מ-{fmt(DEPOSIT.amount)}, כלומר{" "}
+          {fmt(DEPOSIT.amount * DEPOSIT.rate)}, ויש בחשבון {fmt(DEPOSIT.amount * (1 + DEPOSIT.rate))}. בשנה השנייה הריבית היא {pct(DEPOSIT.rate)} מ-{fmt(DEPOSIT.amount * (1 + DEPOSIT.rate))}, כלומר{" "}
+          {fmt(DEPOSIT.amount * (1 + DEPOSIT.rate) * DEPOSIT.rate)}. וכך הלאה:
+        </P>
+        <div className="overflow-x-auto rounded-xl border border-line bg-surface px-3 py-2">
+          <table className="num w-full text-center text-[14.5px]">
+            <thead>
+              <tr className="text-[13px] text-muted">
+                <th className="py-1.5 font-medium">שנה</th>
+                <th className="font-medium">יתרת פתיחה</th>
+                <th className="font-medium">ריבית {pct(DEPOSIT.rate)}</th>
+                <th className="font-medium">יתרת סגירה</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: DEPOSIT.years }, (_, k) => {
+                const opening = DEPOSIT.amount * (1 + DEPOSIT.rate) ** k;
+                return (
+                  <tr key={k} className="border-t border-line">
+                    <td className="py-1.5">{k + 1}</td>
+                    <td>{fmt(opening)}</td>
+                    <td>{fmt(opening * DEPOSIT.rate)}</td>
+                    <td className={k === DEPOSIT.years - 1 ? "font-bold" : undefined}>{fmt(opening * (1 + DEPOSIT.rate))}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <P>יתרת הסגירה של כל שנה היא הפתיחה של השנה הבאה. והריבית גדלה כל שנה, כי היא מחושבת גם על הריבית של השנים הקודמות. לזה קוראים ריבית דריבית.</P>
+        <P>
+          אין צורך בטבלה כל פעם. להוסיף {pct(DEPOSIT.rate)} זה לכפול ב-{1 + DEPOSIT.rate}, ולכן {DEPOSIT.years} שנים הן {DEPOSIT.years} הכפלות:
+        </P>
+        <F>{`${fmt(DEPOSIT.amount)} × ${Array(DEPOSIT.years).fill(1 + DEPOSIT.rate).join(" × ")} = ${fmt(DEPOSIT.amount)} × ${1 + DEPOSIT.rate}^${DEPOSIT.years} = ${fmt(DEPOSIT.amount * (1 + DEPOSIT.rate) ** DEPOSIT.years)}`}</F>
+        <P>זו הנוסחה של ערך עתידי. PV הוא הסכום היום, RATE הריבית השנתית, YEAR מספר השנים, ו-FV מה שיהיה בסוף:</P>
+        <Work w={tool.fv(DEPOSIT.amount, DEPOSIT.rate, DEPOSIT.years)} />
+        <P>באקסל pmt הוא תשלומים בדרך (אצלנו 0), ואת pv כותבים עם מינוס: מה שמפקידים יוצא מהכיס, ומה שמקבלים בסוף נכנס.</P>
+        <P>
+          ומה הקשר לדנה? החוב אליה מתנהג בדיוק כמו פיקדון כזה. כל שנה הוא גדל בריבית, עד שביום הפרישה הוא מגיע ל-<Money v={HOOK.amount} />.
+        </P>
+        {quiz("emp-tool-fv", [
+          {
+            q: "מפקידים 2,000 ₪ לשנתיים בריבית 5%. כמה יהיה בסוף?",
+            options: ["2,205 ₪", "2,200 ₪", "2,100 ₪", "2,000 ₪"],
+            answer: 0,
+            why: `${said(tool.fv(2_000, 0.05, 2))}\n2,200 מתקבל אם מוסיפים 100 כל שנה, בלי ריבית על הריבית של השנה הראשונה. 2,100 הוא שנה אחת בלבד.`,
+          },
+        ])}
+        <Remember>
+          כל שנה כופלים ב-<L>(1 + RATE)</L>. ערך עתידי: <L>{TOOL.fv}</L>.
+        </Remember>
       </>
     ),
   },
   "emp-tool-pv": {
-    lead: "ערך נוכחי מחזיר סכום מהעתיד להיום: מחלקים ב-(1+i) בחזקת מספר השנים עד התשלום.",
+    lead: "ערך נוכחי הוא אותה דרך בכיוון ההפוך: מהסכום שבעתיד חוזרים להיום.",
     body: (
       <>
         <P>
-          <T19 he="ערך נוכחי" en="Present Value, PV" /> הוא כמה שווה היום סכום שישולם בעתיד (<span dir="ltr">FV</span>). מחלקים את הסכום העתידי ב-(1+i) פעם אחת לכל שנה שנשארה עד
-          התשלום:
+          במסך הקודם <Money v={DEPOSIT.amount} /> של היום הפכו ל-<Money v={DEPOSIT_FV} /> בעוד {DEPOSIT.years} שנים. אפשר לקרוא את זה גם הפוך: <Money v={DEPOSIT_FV} /> שיתקבלו בעוד {DEPOSIT.years} שנים שווים היום{" "}
+          <Money v={DEPOSIT.amount} />. קדימה כפלנו ב-{1 + DEPOSIT.rate} כל שנה, ולכן אחורה מחלקים ב-{1 + DEPOSIT.rate} כל שנה.
         </P>
-        <div className="flex flex-wrap items-center justify-center gap-2 rounded-xl bg-surface px-4 py-3 text-[18px] font-semibold ring-1 ring-accent/40">
-          PV = <Frac top="FV" bottom={<L>(1 + i)ⁿ</L>} />
+        <div className="rounded-xl border border-line bg-surface px-3 py-3">
+          <div className="num grid text-center" style={{ gridTemplateColumns: `repeat(${DEPOSIT.years + 1}, minmax(0, 1fr))` }}>
+            {Array.from({ length: DEPOSIT.years + 1 }, (_, k) => (
+              <div key={k}>
+                <div className="text-[12.5px] text-muted">{k === 0 ? "היום" : `שנה ${k}`}</div>
+                <div className={k === 0 ? "text-[17px] font-bold text-accent" : k === DEPOSIT.years ? "text-[17px] font-bold" : "text-[17px]"}>{fmt(DEPOSIT.amount * (1 + DEPOSIT.rate) ** k)}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-1 grid text-center text-[13px] text-muted" style={{ gridTemplateColumns: `repeat(${DEPOSIT.years}, minmax(0, 1fr))`, marginInline: `${50 / (DEPOSIT.years + 1)}%` }}>
+            {Array.from({ length: DEPOSIT.years }, (_, k) => (
+              <span key={k} className="inline-flex items-center justify-center gap-1">
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                <L>{`÷ ${1 + DEPOSIT.rate}`}</L>
+              </span>
+            ))}
+          </div>
+          <p className="mt-1.5 text-center text-[12.5px] text-muted">מהתשלום בעתיד חוזרים להיום</p>
         </div>
-        <Card title="בסיפור מהמסך הקודם">
-          <p>
-            <Money v={HOOK.amount} /> בעוד {HOOK.years} שנים, בריבית {pct(HOOK.rate)}: <Money v={HOOK.amount} plain /> ÷ <L>{1 + HOOK.rate}</L>
-            <sup>{HOOK.years}</sup> = <strong><Money v={Math.round(pv(HOOK.amount, HOOK.rate, HOOK.years))} /></strong>. זה מה שהם שווים היום.
-          </p>
-        </Card>
-        <Rule>n הוא מספר השנים מהיום ועד התשלום — לא מספר השנים שכבר עברו.</Rule>
+        <P>
+          {DEPOSIT.years} חלוקות ב-{1 + DEPOSIT.rate} הן חלוקה אחת ב-<L>{`${1 + DEPOSIT.rate}^${DEPOSIT.years}`}</L>. זו הנוסחה של <T19 he="ערך נוכחי" />:
+        </P>
+        <Work w={tool.pv(DEPOSIT_FV, DEPOSIT.rate, DEPOSIT.years)} />
+        <P>YEAR הוא מספר השנים מהיום ועד התשלום. לא כמה שנים העובד כבר עבד, ולא כמה הוא יעבוד בסך הכול.</P>
+        <Part title="חוזרים לדנה">
+          <P>
+            דנה תקבל <Money v={HOOK.amount} /> בעוד {HOOK.years} שנים. בקורס הריבית שבה מחזירים חוב לעובדים להיום נקראת <strong>שיעור היוון</strong>. נניח שהוא {pct(HOOK.rate)}:
+          </P>
+          <Work w={tool.pv(HOOK.amount, HOOK.rate, HOOK.years)} />
+          <P>
+            זה המספר שהחברה כותבת בדוח היום. בשנה הבאה יישארו {HOOK.years - 1 === 2 ? "שנתיים" : `${HOOK.years - 1} שנים`}, ואותו חשבון ייתן{" "}
+            <L>{`${fmt(HOOK.amount)} ÷ ${1 + HOOK.rate}^${HOOK.years - 1} = ${fmt(Math.round(DANA_NEXT))}`}</L> ₪. החוב גדל ב-<Money v={Math.round(DANA_NEXT - DANA_NOW)} /> בלי שקרה שום דבר, רק כי התשלום התקרב. את הגידול הזה נראה במעגל, במסך 5.
+          </P>
+        </Part>
+        {quiz("emp-tool-pv", [
+          {
+            q: "כמה שווים היום 5,000 ₪ שישולמו בעוד שנתיים, בריבית 10%?",
+            options: ["4,132 ₪", "4,545 ₪", "4,000 ₪", "6,050 ₪"],
+            answer: 0,
+            why: `${said(tool.pv(5_000, 0.1, 2))}\n4,545 הוא חלוקה אחת בלבד, כאילו נשארה שנה. 4,000 הוא הורדה של 500 פעמיים, בלי ריבית דריבית. 6,050 הוא הכפלה במקום חלוקה: זה הערך העתידי, לא הנוכחי.`,
+          },
+        ])}
+        <Remember>
+          קדימה בזמן כופלים, אחורה מחלקים. ערך נוכחי: <L>{TOOL.pv}</L>.
+        </Remember>
       </>
     ),
-    check: quiz("emp-tool-pv", [
-      { q: "מה שווה היום 5,000 ₪ שישולמו בעוד שנתיים, בריבית 10%?", options: ["4,132 ₪", "4,000 ₪", "4,545 ₪", "6,050 ₪"], answer: 0, why: "5,000 ÷ 1.1² = 4,132 ₪. 4,545 הוא שנה אחת בלבד; 6,050 הוא ערך עתידי." },
-      { q: "ככל שהתשלום רחוק יותר (n גדול), הערך הנוכחי...", options: ["קטן", "גדל", "לא משתנה", "תלוי בסכום"], answer: 0, why: "מחלקים ביותר פעמים ב-(1+i)." },
-    ]),
   },
   "emp-tool-part": {
-    lead: "ריבית על חלק משנה היא ריבית דריבית: (1+i) בחזקת m/12, פחות 1 — לא i כפול חלק השנה.",
+    lead: "בשאלות קורים דברים באמצע השנה, ואז צריך לדעת כמה ריבית יש ברבעון, בחודש או בחצי שנה.",
     body: (
       <>
         <P>
-          כשצריך ריבית ל-m חודשים בלבד, התקן מחשב אותה כמו ריבית דריבית (<span dir="ltr">IAS 19.123</span>): קודם השיעור לתקופה, אחר כך כפול היתרה.
+          החברה משלמת לעובד ב-31.3, או משנה את התוכנית ב-30.9. מאותו יום החוב שונה, ולכן צריך לחשב ריבית רק עד שם. החדשות הטובות: אין נוסחה חדשה. בנוסחה ממסך 2, YEAR לא חייב להיות מספר שלם. רבעון הוא 3 חודשים מתוך 12, כלומר <L>YEAR = 3/12</L>.
         </P>
-        <div className="flex flex-wrap items-center justify-center gap-2 rounded-xl bg-surface px-4 py-3 text-[17px] font-semibold ring-1 ring-accent/40">
-          ריבית = יתרה × (<L>(1 + i)^(m/12) − 1</L>)
-        </div>
-        <Card title="רבעון בריבית שנתית 8%">
-          <p>
-            ריבית דריבית: <L>1.08^(3/12) − 1</L> = <strong>{pct(partRate(0.08, 3), 4)}</strong>. ריבית פשוטה הייתה נותנת <L>8% × 3/12</L> = {pct(simplePart(0.08, 3))}. ההפרש קטן — אבל
-            רק הראשון נכון.
-          </p>
-        </Card>
+        <p className="text-[13px] font-bold text-muted">
+          אותו פיקדון, <Money v={DEPOSIT.amount} /> ב-{pct(DEPOSIT.rate)}, לרבעון אחד:
+        </p>
+        <F>{`${fmt(DEPOSIT.amount)} × (${1 + DEPOSIT.rate})^(3/12) = ${fmt(Math.round(DEPOSIT.amount * (1 + DEPOSIT.rate) ** 0.25 * 100) / 100)} ₪`}</F>
         <P>
-          ותשלום באמצע השנה? מיום התשלום החוב קטן, ולכן אין עליו ריבית עד סוף התקופה. מחשבים ריבית על כל היתרה, ומפחיתים את הריבית על התשלום מיום שולם.
+          אז הריבית לרבעון היא {pct(partRate(DEPOSIT.rate, 3), 3)}. למה לא רבע מ-{pct(DEPOSIT.rate)}, כלומר {pct(DEPOSIT.rate / 4)}? נבדוק: ארבעה רבעונים של {pct(DEPOSIT.rate / 4)} נותנים{" "}
+          <L>{`${1 + DEPOSIT.rate / 4}^4 = ${((1 + DEPOSIT.rate / 4) ** 4).toFixed(4)}`}</L>, כלומר {pct((1 + DEPOSIT.rate / 4) ** 4 - 1)} בשנה, יותר מ-{pct(DEPOSIT.rate)}. הסיבה היא שהריבית של כל רבעון מרוויחה ריבית ברבעונים הבאים. לכן הריבית לרבעון צריכה להיות קצת פחות מרבע.
         </P>
+        <P>הנוסחה לשיעור של תקופה, בריבית דריבית:</P>
+        <Work w={tool.partRate(DEPOSIT.rate, 3)} />
+        <div className="overflow-x-auto rounded-xl border border-line bg-surface px-3 py-2">
+          <table className="num w-full text-center text-[14.5px]">
+            <thead>
+              <tr className="text-[13px] text-muted">
+                <th className="py-1.5 font-medium">תקופה</th>
+                <th className="font-medium">YEAR</th>
+                <th className="font-medium">שיעור, כשהשנתי {pct(DEPOSIT.rate)}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {PERIODS.map((p) => (
+                <tr key={p.months} className="border-t border-line">
+                  <td className="py-1.5">{p.label}</td>
+                  <td>
+                    <L>{p.months % 12 === 0 ? String(p.months / 12) : `${p.months}/12`}</L>
+                  </td>
+                  <td>{pct(partRate(DEPOSIT.rate, p.months), 3)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <P>
+          וכמה ריבית בשקלים? מכפילים את היתרה בשיעור של התקופה. על יתרה של <Money v={PART_BALANCE} />, לרבעון:
+        </P>
+        <Work w={tool.part(PART_BALANCE, DEPOSIT.rate, 3)} />
+        <Part title="ריבית פשוטה, כשהשאלה מבקשת אותה">
+          <P>יש שאלות שמבקשות במפורש ריבית פשוטה. בה לא מחשבים ריבית על ריבית, אלא מכפילים את השיעור השנתי בחלק מהשנה:</P>
+          <Work w={tool.simpleOn(PART_BALANCE, DEPOSIT.rate, 3)} />
+          <P>כשהשאלה לא אומרת באיזו ריבית, משתמשים בריבית דריבית.</P>
+        </Part>
+        <Part title="ובערך נוכחי?">
+          <P>
+            אותו דבר. אם דנה הייתה מקבלת את המענק בעוד שנתיים וחצי, <L>YEAR = 2.5</L>:
+          </P>
+          <Work w={tool.pv(HOOK.amount, HOOK.rate, 2.5)} />
+        </Part>
+        {quiz("emp-tool-part", [
+          {
+            q: "ריבית שנתית 6%. מה השיעור לחצי שנה, בריבית דריבית?",
+            options: ["2.956%", "3%", "6%", "1.5%"],
+            answer: 0,
+            why: `${said(tool.partRate(0.06, 6, 3))}\n3% הוא התשובה בריבית פשוטה:\n${said(tool.simple(0.06, 6))}\n6% הוא שנה שלמה, ו-1.5% הוא רבעון בריבית פשוטה.`,
+          },
+        ])}
+        <Remember>
+          YEAR יכול להיות חלק משנה: רבעון <L>3/12</L>, חודש <L>1/12</L>. שיעור לתקופה: <L>(1 + RATE)^YEAR − 1</L>. ריבית פשוטה, רק כשמבקשים: <L>RATE × YEAR</L>.
+        </Remember>
       </>
     ),
-    check: quiz("emp-tool-part", [
-      { q: "ריבית שנתית 6%. מה השיעור לחצי שנה?", options: ["2.956%", "3%", "6%", "1.5%"], answer: 0, why: "1.06^0.5 − 1 = 2.956%. 3% הוא ריבית פשוטה." },
-      { q: "יתרה 100,000 ₪ ב-1.1, ובאמצע השנה שולמו 20,000 ₪. על מה מחשבים ריבית?", options: ["על 100,000 לשנה, פחות ריבית על 20,000 לחצי שנה", "על 80,000 לשנה שלמה", "על 100,000 לשנה, בלי קשר לתשלום", "על 120,000"], answer: 0, why: "עד התשלום החוב היה 100,000; ממנו והלאה — 80,000." },
-    ]),
   },
   "emp-tool-roll": {
-    lead: "מעגל: פתיחה ועוד כל השינויים שווה סגירה — והמספר שנשאר כדי שיתאזן הוא ה-P.N.",
+    lead: "המעגל מראה מאיפה היתרה התחילה, מה קרה לה במשך השנה ואיפה היא נגמרה.",
     body: (
       <>
         <P>
-          <T19 he="מעגל" en="Roll-forward" /> הוא דרך לספר מה קרה ליתרה בשנה: מתחילים ביתרת הפתיחה, מוסיפים מה שהגדיל אותה, מורידים מה שהקטין אותה — ומגיעים ליתרת הסגירה.
+          כבר ראיתם <T19 he="מעגל" />, בטבלת הפיקדון במסך 2: יתרת פתיחה, ועוד ריבית, שווה יתרת סגירה. במעגל של חוב לעובדים יש עוד שורה, התשלומים. כשהחברה משלמת לעובדים, החוב קטן:
         </P>
-        <P>
-          כשכל השורות ידועות חוץ מאחת, מוצאים אותה מהמעגל. בהטבה מוגדרת השורה הזו היא בדרך כלל <strong>P.N.</strong> — מה שנשאר אחרי שהסברנו כל רכיב.
-        </P>
-        <Card title="מוסכמת הסימנים">
-          <p>בחוברות ובקבצי אקסל ההתחייבות נרשמת במינוס, ותשלום בפלוס — כי תשלום מקטין את ההתחייבות. פונקציית PV באקסל מחזירה מינוס; זו לא טעות, רק מהפכים סימן.</p>
-        </Card>
-        <Rule>
-          כלל המעגל: פתיחה + הוצאות ושינויים − תשלומים + P.N. = סגירה; כל רכיב אפשר לגלות אם כל השאר ידועים. כלל הריבית (<span dir="ltr">IAS 19.123</span>): יתרה × ((1+i)^(m/12) − 1),
-          ותשלום באמצע השנה מקטין את הריבית על התקופה שנשארה.
-        </Rule>
-      </>
-    ),
-    check: quiz("emp-tool-roll", [
-      { q: "פתיחה 4,000, הוצאה ?, תשלומים 9,000, סגירה 3,500. מה ההוצאה?", options: ["8,500", "9,500", "500", "16,500"], answer: 0, why: "3,500 − 4,000 + 9,000 = 8,500." },
-      { q: "באקסל, PV מחזיר −12,000. מה הערך הנוכחי?", options: ["12,000", "−12,000 — יש טעות", "0", "אי אפשר לדעת"], answer: 0, why: "המינוס הוא רק כיוון התזרים." },
-    ]),
-  },
-  "emp-tool-solved": {
-    lead: "כל אחד משלושת הכלים הוא חישוב של שורה אחת — וחוזרים עליו בכל שאלה.",
-    body: (
-      <Wide>
-        <Stepper
-          label="שלוש מיני־דוגמאות"
-          steps={[
-            {
-              title: "א. ערך נוכחי",
-              body: (
-                <p>
-                  עובד צבר מענק של <Money v={SOLVED.pv.fv} />, שישולם בעוד {SOLVED.pv.years} שנים. שיעור ההיוון {pct(SOLVED.pv.rate)}. <Money v={SOLVED.pv.fv} plain /> ÷ <L>{1 + SOLVED.pv.rate}</L>
-                  <sup>{SOLVED.pv.years}</sup> = <strong><Money v={Math.round(SOLVED_PV)} /></strong>.
-                </p>
-              ),
-            },
-            {
-              title: "ב. ריבית על חלק משנה",
-              body: (
-                <div className="space-y-2">
-                  {SOLVED.part.map((p, k) => (
-                    <p key={k}>
-                      <Money v={p.balance} plain /> × (<L>{1 + p.rate}^({p.months}/12) − 1</L>) = <strong><Money v={Math.round(SOLVED_PART[k])} /></strong> ל-{p.months} חודשים, בשיעור שנתי {pct(p.rate)}.
-                    </p>
-                  ))}
-                </div>
-              ),
-            },
-            {
-              title: "ג. מעגל: הפרשה לחופשה",
-              body: (
-                <div className="space-y-3">
-                  <p>
-                    פתיחה <Money v={SOLVED.roll.opening} />, שולמו <Money v={SOLVED.roll.payments} />, סגירה <Money v={SOLVED.roll.closing} />. ההוצאה היא המספר שמאזן.
-                  </p>
-                  <RollForward
-                    title="הפרשה לחופשה"
-                    rows={[
-                      { label: "יתרת פתיחה", value: SOLVED.roll.opening, kind: "balance" },
-                      { label: "תשלומים", value: -SOLVED.roll.payments },
-                      { label: "הוצאה (P.N.)", value: SOLVED_ROLL, kind: "pn", how: "סגירה − פתיחה + תשלומים" },
-                      { label: "יתרת סגירה", value: SOLVED.roll.closing, kind: "balance" },
-                    ]}
-                  />
-                </div>
-              ),
-            },
-          ]}
-        />
-      </Wide>
-    ),
-  },
-  "emp-tool-together": {
-    lead: "פותרים לבד, ופותחים רמז רק כשנתקעים: קודם שאלה מכוונת, אחר כך הכלל, השורה הראשונה — והפתרון.",
-    body: (
-      <>
-        <Card title="א. ערך נוכחי">
-          <HintLadder
-            task={
-              <>
-                <Money v={TOGETHER.pv.fv} /> ישולמו בעוד {TOGETHER.pv.years} שנים, בשיעור {pct(TOGETHER.pv.rate)}. כמה הם שווים היום?
-              </>
-            }
-            hints={[
-              "מכפילים או מחלקים כשמחזירים סכום מהעתיד להיום?",
-              "הכלי הראשון: PV = FV ÷ (1+i)ⁿ.",
-              <>
-                <Money v={TOGETHER.pv.fv} plain /> ÷ <L>{1 + TOGETHER.pv.rate}</L>
-                <sup>{TOGETHER.pv.years}</sup>
-              </>,
-              <>
-                <Money v={Math.round(TOGETHER_PV)} />
-              </>,
+        <F>{TOOL.roll}</F>
+        <Part title="החוב לדנה, כמעגל">
+          <P>
+            במסך 3 החוב לדנה היה <Money v={Math.round(DANA_NOW)} /> היום ו-<Money v={Math.round(DANA_NEXT)} /> בעוד שנה. מה נוסף באמצע? ריבית של {pct(HOOK.rate)} על החוב:{" "}
+            <L>{`${fmt(Math.round(DANA_NOW))} × ${pct(HOOK.rate)} = ${fmt(Math.round(DANA_NEXT - DANA_NOW))}`}</L> ₪. בגיליון עבודה זה נראה כך:
+          </P>
+          <RollForward
+            title="התחייבות למענק לדנה"
+            rows={[
+              { label: "יתרת פתיחה", value: Math.round(DANA_NOW), kind: "balance" },
+              { label: `ריבית ${pct(HOOK.rate)}`, value: Math.round(DANA_NEXT - DANA_NOW) },
+              { label: "יתרת סגירה", value: Math.round(DANA_NEXT), kind: "balance" },
             ]}
           />
-        </Card>
-        <Card title="ב. ריבית עם תשלום באמצע השנה">
-          <HintLadder
-            task={
-              <>
-                יתרה של <Money v={TOGETHER.part.balance} /> ב-1.1, ריבית {pct(TOGETHER.part.rate)}. ב-1.5 שולמו <Money v={TOGETHER.part.paid} />. מה הריבית של השנה?
-              </>
-            }
-            hints={[
-              "על איזה סכום הייתה ריבית מ-1.5 ועד סוף השנה?",
-              "הכלי השני: ריבית לחלק משנה, על התשלום — שמונה חודשים.",
-              <>
-                <Money v={TOGETHER.part.balance} plain /> × {pct(TOGETHER.part.rate)} − <Money v={TOGETHER.part.paid} plain /> × (<L>{1 + TOGETHER.part.rate}^(8/12) − 1</L>)
-              </>,
-              <>
-                <Money v={Math.round(TOGETHER_PART)} />
-              </>,
+          <P>התחייבות היא יתרת זכות, ולכן בגיליון היא כתובה במינוס. מה שמגדיל אותה גם במינוס, ותשלום, שמקטין אותה, כתוב בפלוס.</P>
+        </Part>
+        <Part title="כשחסרה שורה אחת">
+          <P>
+            ככה משתמשים במעגל בשאלות: נותנים את כל השורות חוץ מאחת, והיא יוצאת מכל השאר. למשל הפרשה לחופשה. בתחילת השנה החוב לעובדים על ימי חופשה היה <Money v={VACATION.opening} />. במשך השנה שולמו להם{" "}
+            <Money v={VACATION.payments} />, ובסוף השנה החוב <Money v={VACATION.closing} />. מה ההוצאה של השנה?
+          </P>
+          <RollForward
+            title="הפרשה לחופשה"
+            pnTo="רווח והפסד"
+            rows={[
+              { label: "יתרת פתיחה", value: VACATION.opening, kind: "balance" },
+              { label: "הוצאה, השורה החסרה", value: VACATION_EXPENSE, kind: "pn" },
+              { label: "תשלומים", value: -VACATION.payments },
+              { label: "יתרת סגירה", value: VACATION.closing, kind: "balance" },
             ]}
           />
-        </Card>
-        <Card title="ג. מעגל">
-          <HintLadder
-            task={
-              <>
-                פתיחה <Money v={TOGETHER.roll.opening} />, תשלומים <Money v={TOGETHER.roll.payments} />, סגירה <Money v={TOGETHER.roll.closing} />. מה ההוצאה?
-              </>
-            }
-            hints={["מה חסר כדי שהמעגל יתאזן?", "הכלי השלישי: הוצאה = סגירה − פתיחה + תשלומים.", <>
-                <Money v={TOGETHER.roll.closing} plain /> − <Money v={TOGETHER.roll.opening} plain /> + <Money v={TOGETHER.roll.payments} plain />
-              </>, <><Money v={TOGETHER_ROLL} /></>]}
-          />
-        </Card>
+          <P>
+            ההיגיון: החוב עלה ב-<Money v={VACATION.closing - VACATION.opening} /> אף שיצאו <Money v={VACATION.payments} />. אז נוספו <Money v={VACATION_EXPENSE} />. בנוסחה ובאקסל:
+          </P>
+          <Work w={tool.expense(VACATION.opening, VACATION.payments, VACATION.closing)} />
+          <P>בהמשך הקורס המעגלים יהיו ארוכים יותר, עם עוד שורות. אבל השיטה לא משתנה: מחשבים כל שורה שאפשר מהנתונים, והשורה שנשארה היא מה שמאזן את המעגל.</P>
+        </Part>
+        {quiz("emp-tool-roll", [
+          {
+            q: "פתיחה 4,000, תשלומים 9,000, סגירה 3,500. מה ההוצאה?",
+            options: ["8,500", "9,500", "500", "16,500"],
+            answer: 0,
+            why: `${said(tool.expense(4_000, 9_000, 3_500))}\n9,500 מתקבל כשמחברים את הפתיחה במקום להחסיר אותה. 500 הוא רק השינוי ביתרה, בלי התשלומים. 16,500 הוא חיבור של כל המספרים.`,
+          },
+        ])}
+        <Remember>
+          <L>{TOOL.roll}</L>. כשחסרה שורה אחת, היא יוצאת מכל השאר.
+        </Remember>
       </>
     ),
   },
-  "emp-tool-master": {
-    lead: "שלושה כלים — ואותם נפעיל בכל שיעור מכאן והלאה.",
+  "emp-tool-practice": {
+    lead: "ארבע שאלות על אותה חברה. כל אחת משתמשת בכלי אחר מהשיעור.",
     body: (
       <>
-        <ExplainTask
-          task="הסבירו לחבר, בדקה, למה הריבית על חצי שנה אינה חצי מהריבית השנתית."
-          model="ריבית שנתית מניחה שהריבית של החצי הראשון כבר מצטרפת לקרן ומרוויחה ריבית בחצי השני. לכן שיעור של חצי שנה, כפול עצמו, צריך לתת את השיעור השנתי — והוא קצת פחות מהחצי: (1+i)^0.5 − 1."
-        />
-        <KeyCard>
-          את שלושת הכלים לא צריך לזכור כנוסחאות נפרדות: <strong>להחזיר להיום</strong>, <strong>להוסיף ריבית לחלק מהשנה</strong>, <strong>לסגור מעגל</strong>.
-        </KeyCard>
-        <Bridge summary="ארגז הכלים הוא ערך נוכחי, ריבית על חלק משנה ומעגל.">
-          ההטבה הראשונה במפה היא דווקא זו שבה לא מהוונים בכלל. למה? {lessonRef("ias19-short")}.
-        </Bridge>
+        <div className="rounded-xl border border-line bg-surface px-4 py-3">
+          <p className="text-[13px] font-bold text-muted">המקרה</p>
+          <P>
+            חברת ״אורן״ הבטיחה לעובד, יוסי, מענק של <Money v={CASE.grant} /> שישולם בעוד {CASE.years === 2 ? "שנתיים" : `${CASE.years} שנים`}. שיעור ההיוון {pct(CASE.rate)}. לחברה יש גם הפרשה לחופשה: בתחילת השנה
+            היא הייתה <Money v={CASE.vacation.opening} />, ההוצאה של השנה <Money v={CASE.vacation.expense} />, ובסוף השנה <Money v={CASE.vacation.closing} />.
+          </P>
+        </div>
+        <Part title="1. כמה רושמים היום על המענק ליוסי?">
+          <Solve seek={<>ערך נוכחי של <Money v={CASE.grant} /> שישולמו בעוד {CASE.years} שנים.</>} task="מה החוב ליוסי בדוח של היום?">
+            <P>
+              איזה כלי? הסכום ישולם בעתיד, ואנחנו רוצים לדעת כמה הוא שווה היום, ולכן ערך נוכחי. FV הוא המענק, <Money v={CASE.grant} />. RATE הוא שיעור ההיוון, {pct(CASE.rate)}. YEAR הוא מספר השנים מהיום ועד
+              התשלום, {CASE.years}. מחלקים ב-{1 + CASE.rate} פעם לכל שנה:
+            </P>
+            <Work w={tool.pv(CASE.grant, CASE.rate, CASE.years)} />
+            <P>
+              בדיקה בכיוון ההפוך, בערך עתידי: <L>{`${fmt(CASE_TODAY)} × (${1 + CASE.rate})^${CASE.years} ≈ ${fmt(CASE.grant)}`}</L> ₪. חזרנו בדיוק למענק.
+            </P>
+          </Solve>
+        </Part>
+        <Part title="2. בכמה גדל החוב ליוסי ברבעון הראשון?">
+          <Solve seek={<>הריבית לשלושה חודשים, כי החברה מפרסמת דוח רבעוני ב-31.3. <L>YEAR = 3/12</L>, ריבית דריבית.</>} task={<>החוב היום <Money v={CASE_TODAY} />. בכמה הוא יגדל עד 31.3?</>}>
+            <P>
+              איזה כלי? צריך ריבית רק עד 31.3, ולכן ריבית לתקופה שאינה שנה. היתרה היא החוב שמצאנו בשאלה 1, <Money v={CASE_TODAY} />. התקופה היא שלושה חודשים מתוך 12, ולכן <L>YEAR = 3/12</L>. השאלה לא
+              אמרה באיזו ריבית, ולכן ריבית דריבית. קודם השיעור לרבעון:
+            </P>
+            <Work w={tool.partRate(CASE.rate, 3)} />
+            <P>ואז מכפילים בו את היתרה. אפשר גם בצעד אחד:</P>
+            <Work w={tool.part(CASE_TODAY, CASE.rate, 3)} />
+            <P>אם השאלה הייתה מבקשת ריבית פשוטה, מכפילים את השיעור השנתי ברבע שנה:</P>
+            <Work w={tool.simpleOn(CASE_TODAY, CASE.rate, 3)} />
+          </Solve>
+        </Part>
+        <Part title="3. מה החוב ליוסי בסוף השנה?">
+          <Solve seek="יתרת הסגירה במעגל. נוספה ריבית של שנה, ולא שולם כלום." task="מה יתרת הסגירה של החוב ליוסי?">
+            <P>
+              איזה כלי? רוצים לדעת מה קרה לחוב במשך שנה, ולכן מעגל. הפתיחה היא החוב מתחילת השנה, <Money v={CASE_TODAY} />. במשך השנה נוספה ריבית של שנה שלמה:{" "}
+              <L>{`${fmt(CASE_TODAY)} × ${pct(CASE.rate)} = ${fmt(CASE_INTEREST)}`}</L> ₪. ליוסי לא שולם כלום, ולכן אין שורת תשלומים. הסגירה היא הפתיחה ועוד הריבית:
+            </P>
+            <RollForward
+              title="התחייבות למענק ליוסי"
+              rows={[
+                { label: "יתרת פתיחה", value: CASE_TODAY, kind: "balance" },
+                { label: `ריבית ${pct(CASE.rate)}`, value: CASE_INTEREST, how: <L>{`${fmt(CASE_TODAY)} × ${pct(CASE.rate)}`}</L> },
+                { label: "יתרת סגירה", value: CASE_TODAY + CASE_INTEREST, kind: "balance" },
+              ]}
+            />
+            <P>ואותו מספר יוצא בערך נוכחי, כשנשארה שנה אחת. המעגל והערך הנוכחי מסכימים:</P>
+            <Work w={tool.pv(CASE.grant, CASE.rate, CASE.years - 1)} />
+          </Solve>
+        </Part>
+        <Part title="4. כמה שילמה החברה לעובדים על חופשה?">
+          <Solve seek="התשלומים, השורה היחידה שחסרה במעגל של ההפרשה לחופשה." task="כמה שולם לעובדים השנה?">
+            <P>
+              איזה כלי? ידועות שלוש שורות במעגל, הפתיחה, ההוצאה והסגירה, וחסרה רק אחת. לכן מחלצים אותה מהמעגל. מתחילים מ-<Money v={CASE.vacation.opening} /> ומוסיפים את ההוצאה,{" "}
+              <Money v={CASE.vacation.expense} />. יוצא <Money v={CASE.vacation.opening + CASE.vacation.expense} />. בסוף השנה נשארו רק <Money v={CASE.vacation.closing} />, אז כל השאר יצא בתשלומים:
+            </P>
+            <RollForward
+              title="הפרשה לחופשה"
+              pnTo="השורה החסרה"
+              rows={[
+                { label: "יתרת פתיחה", value: CASE.vacation.opening, kind: "balance" },
+                { label: "הוצאה", value: CASE.vacation.expense },
+                { label: "תשלומים", value: -(CASE.vacation.opening + CASE.vacation.expense - CASE.vacation.closing), kind: "pn" },
+                { label: "יתרת סגירה", value: CASE.vacation.closing, kind: "balance" },
+              ]}
+            />
+            <P>ואותו חישוב בנוסחה ובאקסל:</P>
+            <Work w={tool.paymentsST(CASE.vacation.opening, CASE.vacation.expense, CASE.vacation.closing)} />
+          </Solve>
+        </Part>
+        <Remember>ערך נוכחי למה שישולם בעתיד, שיעור לתקופה כשקורה משהו באמצע השנה, ומעגל כדי לעקוב אחרי היתרה ולמצוא את מה שחסר.</Remember>
       </>
     ),
-    check: quiz("emp-tool-master", [
-      { q: "מה הערך הנוכחי של 6,000 ₪ בעוד 3 שנים, בריבית 4%?", options: ["5,334 ₪", "5,280 ₪", "5,769 ₪", "6,749 ₪"], answer: 0, why: "6,000 ÷ 1.04³ = 5,334 ₪." },
-      { q: "ריבית שנתית 5%. מה השיעור לרבעון?", options: ["1.2272%", "1.25%", "5%", "1.6667%"], answer: 0, why: "1.05^0.25 − 1 = 1.2272%; 1.25% הוא ריבית פשוטה." },
-      { q: "פתיחה 1,500, ריבית 90, תשלום 400, סגירה 1,400. מה ה-P.N.?", options: ["210 — הפסד", "210 — רווח", "190", "0"], answer: 0, why: "1,400 − 1,500 − 90 + 400 = 210: ההתחייבות גדלה מעבר למה שהוסבר." },
-      { q: "בהפרשה לחופשה, למה ההוצאה היא מה שמאזן את המעגל?", options: ["כי כל השאר נתונים, והיא הנעלם", "כי היא שווה לפתיחה", "כי מהוונים אותה", "כי התשלום הוא ההוצאה"], answer: 0, why: "פתיחה, תשלומים וסגירה ידועים — ההוצאה משלימה." },
-    ]),
   },
 };

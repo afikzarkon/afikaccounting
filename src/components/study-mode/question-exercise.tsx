@@ -131,7 +131,7 @@ export function QuestionExercise({ q, result, onCheck }: { q: Question; result?:
               {q.steps.map((s, i) => (
                 <li key={s} className="flex gap-2.5">
                   <span className="num mt-0.5 grid h-5.5 w-5.5 shrink-0 place-items-center rounded-full bg-accent-soft text-[11.5px] font-bold text-accent">{i + 1}</span>
-                  <span className="min-w-0">{s}</span>
+                  <span className="min-w-0 whitespace-pre-line">{s}</span>
                 </li>
               ))}
             </ol>

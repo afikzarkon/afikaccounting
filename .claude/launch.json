@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "dev-demo",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "require('child_process').spawn('npm',['run','dev','--','-p','3001'],{stdio:'inherit',shell:true,env:{...process.env,NEXT_PUBLIC_SUPABASE_URL:''}}).on('exit',c=>process.exit(c))"],
+      "port": 3001
     }
   ]
 }

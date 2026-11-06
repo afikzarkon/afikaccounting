@@ -41,9 +41,62 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# skills installed with npx skills (local tooling)
-.claude/skills/
-skills-lock.json
+# skills live in .claude/skills/ as real files and are committed, so every
+# computer and cloud session gets them; skills-lock.json records their sources
 
 # private working files (never committed)
 /.private/
+
+# skill folders npx skills creates for other agents (local tooling)
+/skills/
+/.adal/skills/
+/.agents/skills/
+/.aider-desk/skills/
+/.augment/skills/
+/.autohand/skills/
+/.bob/skills/
+/.codeartsdoer/skills/
+/.codebuddy/skills/
+/.codemaker/skills/
+/.codestudio/skills/
+/.commandcode/skills/
+/.continue/skills/
+/.cortex/skills/
+/.crush/skills/
+/.devin/skills/
+/.forge/skills/
+/.goose/skills/
+/.grok/skills/
+/.hermes/skills/
+/.iflow/skills/
+/.inferencesh/skills/
+/.jazz/skills/
+/.junie/skills/
+/.kimchi/skills/
+/.kiro/skills/
+/.kode/skills/
+/.lingma/skills/
+/.mcpjam/skills/
+/.minimax/skills/
+/.moxby/skills/
+/.mux/skills/
+/.neovate/skills/
+/.ona/skills/
+/.openhands/skills/
+/.pochi/skills/
+/.posit/assistant/skills/
+/.qoder/skills/
+/.qwen/skills/
+/.reasonix/skills/
+/.roo/skills/
+/.rovodev/skills/
+/.tabnine/agent/skills/
+/.terramind/skills/
+/.tinycloud/skills/
+/.trae/skills/
+/.vibe/skills/
+/.windsurf/skills/
+/.zcode/skills/
+/.zencoder/skills/
+/agent/skills/
+/data/skills/

@@ -10,8 +10,6 @@ import { cn } from "@/lib/utils";
 export function StageHero({ badge, children, className }: { badge?: ReactNode; children: ReactNode; className?: string }) {
   return (
     <div className={cn("relative overflow-hidden rounded-3xl bg-surface p-5 ring-1 ring-line sm:p-7", className)}>
-      <div aria-hidden className="pointer-events-none absolute -end-28 -top-28 h-72 w-72 rounded-full bg-accent/20 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute -start-20 -bottom-32 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
       <div className="relative flex flex-wrap items-start gap-5">
         {badge}
         <div className="min-w-0 flex-[1_1_18rem]">{children}</div>

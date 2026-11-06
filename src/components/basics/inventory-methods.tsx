@@ -1,8 +1,9 @@
 import { Milk, Speaker } from "lucide-react";
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
+import { Deeper, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { ScreenLink } from "@/components/study-mode/screen-link";
-import { Callout, DataTable } from "@/components/study/blocks";
+import { DataTable } from "@/components/study/blocks";
 import { gpFire, grossProfitMethod, valuateChain, valuatePeriod } from "@/lib/learn/inventory";
 import { explainNrv, u } from "@/lib/learn/inventory-explain";
 import {
@@ -26,9 +27,9 @@ import { closingFromSoldPct, discountPctFromAmount, lastSaleQty, purchasesFromSo
 import { CountBridge, FillGrid, type SortItem, SortQuiz, TryInCalc } from "./inventory-interactive";
 import { FIFO_DRILL, FIFO_DRILL_ANSWERS as FA, FIFO_DRILL_COGS, MA_DRILL, MA_DRILL_ANSWERS as MD, SHELF_DRILL, SHELF_DRILL_ANSWERS as SA, SHELF_DRILL_COGS, WA_DRILL, WA_DRILL_ANSWERS as WD } from "@/lib/study/inventory/drills";
 import { FIFO, FIFO_PERIODIC_STEPS, FIFO_PERPETUAL_STEPS, FIFO_T, MA, MA_STEPS, WA, WA_STEPS } from "./inventory-stages";
-import { MoreDialog, PatternPicker, Reveal, Sorted, Story } from "./inventory-teach";
+import { PatternPicker, Reveal, Sorted, Story } from "./inventory-teach";
 import { FlowStrip, TraceStepView } from "./inventory-trace";
-import { KeyCard, Money, Rule, type Step, Stepper, Term, Wide } from "./ui";
+import { Money, Rule, type Step, Stepper, Term } from "./ui";
 
 const WAO = valuatePeriod(WA_OPEN, "wa-periodic");
 const [KOL1, KOL155] = valuateChain(kolNextYear(155), "fifo", { carryWriteDown: true });
@@ -201,9 +202,9 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
         <Story icon={<Milk />} title="כמו מדף חלב בסופר">
           <p>מוכרים קודם את הקרטונים הוותיקים. בסוף היום, על המדף נשארו החדשים.</p>
         </Story>
-        <KeyCard>כדי לדעת מה נשאר ב-FIFO, לא צריך לעקוב אחרי כל מכירה: הולכים מהרכישה האחרונה אחורה, עד שמשלימים את כמות הסגירה.</KeyCard>
         <p>חנות הכתיבה &quot;מחברת&quot;: ארבע קניות במחירים עולים וארבע מכירות — ולא לסירוגין: פעמיים קנתה ברצף, ופעמיים מכרה ברצף. פותרים כמו בשאלת מבחן, שלב אחר שלב:</p>
         <Stepper label="מחברת · FIFO תקופתי" steps={FIFO_PERIODIC_STEPS} />
+        <Remember>כדי לדעת מה נשאר ב-FIFO, לא צריך לעקוב אחרי כל מכירה: הולכים מהרכישה האחרונה אחורה, עד שמשלימים את כמות הסגירה.</Remember>
       </>
     ),
     check: FIFO_DRILL_PAGE,
@@ -212,12 +213,14 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
     lead: "FIFO תמידי: בכל מכירה שואלים מה יש במלאי באותו יום, ולוקחים קודם מהשכבה הוותיקה. בסוף מגיעים לאותו מלאי סגירה כמו בדרך התקופתית.",
     body: (
       <>
-        <KeyCard>ההבדל מהתקופתי: את עלות המכר בונים מכירה אחר מכירה — וסופרים רק מה שכבר נכנס עד אותו יום.</KeyCard>
+        <p>
+          <strong>ההבדל מהתקופתי:</strong> את עלות המכר בונים מכירה אחר מכירה — וסופרים רק מה שכבר נכנס עד אותו יום.
+        </p>
         <p>אותה &quot;מחברת&quot;, הפעם בשיטה תמידית:</p>
         <Stepper label="מחברת · FIFO תמידי" steps={FIFO_PERPETUAL_STEPS} />
-        <Rule>
+        <Remember>
           FIFO תמידי: מלאי סגירה <Money v={FIFO_T.closingCarrying} /> · עלות המכר <Money v={FIFO_T.cogs} /> — זהה לתקופתי. רק ב-FIFO.
-        </Rule>
+        </Remember>
       </>
     ),
     check: SHELF_DRILL_PAGE,
@@ -226,10 +229,9 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
     lead: "ממוצע משוקלל תקופתי: ממוצע אחד לכל השנה — כל העלות שהייתה זמינה, חלקי כל היחידות.",
     body: (
       <>
-        <KeyCard>לא משנה מתי נמכר מה — רק כמה היה זמין בכל השנה, ובכמה.</KeyCard>
         <p>אותה &quot;מחברת&quot;, הפעם בממוצע משוקלל תקופתי:</p>
         <Stepper label="מחברת · ממוצע משוקלל תקופתי" steps={WA_STEPS} />
-        <MoreDialog label="ועם מלאי פתיחה?">
+        <Deeper title="ועם מלאי פתיחה?">
           <p>
             מלאי פתיחה 100 יח׳ בעלות <Money v={WA_OPEN.opening!.cost} />; רכישות 300 יח׳ ב-11 ₪ ו-200 יח׳ ב-12 ₪; נמכרו 400. הפתיחה נכנסת גם לסכום וגם לכמות:
           </p>
@@ -237,7 +239,8 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
             ({WAO.openingCost.toLocaleString("he-IL")} + {WAO.purchasesCost.toLocaleString("he-IL")}) ÷ ({WAO.openingUnits} + {WAO.purchasesUnits}) = {u(WAO.avgCost!)} · סגירה:{" "}
             {WAO.closingUnits} × {u(WAO.avgCost!)} = <Money v={WAO.closingCarrying} />
           </Rule>
-        </MoreDialog>
+        </Deeper>
+        <Remember>לא משנה מתי נמכר מה — רק כמה היה זמין בכל השנה, ובכמה.</Remember>
       </>
     ),
     check: WA_DRILL_PAGE,
@@ -246,12 +249,14 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
     lead: "ממוצע נע: ממוצע חדש אחרי כל קנייה — ורק אחרי קנייה. מכירה יוצאת בממוצע הקיים ולא משנה אותו.",
     body: (
       <>
-        <KeyCard>כרטיס מלאי, שורה לכל תנועה: קנייה ← ממוצע חדש; מכירה ← יוצאת בממוצע שעל הכרטיס.</KeyCard>
+        <p>
+          <strong>כרטיס מלאי, שורה לכל תנועה:</strong> קנייה ← ממוצע חדש; מכירה ← יוצאת בממוצע שעל הכרטיס.
+        </p>
         <p>אותה &quot;מחברת&quot;, הפעם בממוצע נע — הכרטיס נבנה שורה אחר שורה:</p>
         <Stepper label="מחברת · ממוצע נע" steps={MA_STEPS} />
-        <Rule>
+        <Remember>
           ממוצע נע: מלאי סגירה <Money v={MA.closingCarrying} /> · עלות המכר <Money v={MA.cogs} /> — שונה מהממוצע התקופתי.
-        </Rule>
+        </Remember>
       </>
     ),
     check: MA_DRILL_PAGE,
@@ -260,18 +265,16 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
     lead: "אותם נתונים, שלוש שיטות, שלוש תוצאות — אבל בכל שיטה מלאי הסגירה ועלות המכר יחד שווים לכל מה שהיה זמין.",
     body: (
       <>
-        <Wide>
-          <DataTable
-            caption="מחברת: אותם נתונים — שלוש שיטות"
-            head={["שיטה", "מלאי סגירה", "עלות המכר", "רווח גולמי"]}
-            rows={[
-              ["FIFO", FIFO.closingCarrying, FIFO.cogs, FIFO.grossProfit],
-              ["ממוצע משוקלל תקופתי", WA.closingCarrying, WA.cogs, WA.grossProfit],
-              ["ממוצע משוקלל נע", MA.closingCarrying, MA.cogs, MA.grossProfit],
-            ]}
-          />
-        </Wide>
-        <KeyCard>המחירים עלו — ולכן ב-FIFO נשארו על המדף היחידות היקרות: הסגירה הגבוהה ביותר, והרווח הגבוה ביותר. הממוצעים נופלים באמצע.</KeyCard>
+        <DataTable
+          caption="מחברת: אותם נתונים — שלוש שיטות"
+          head={["שיטה", "מלאי סגירה", "עלות המכר", "רווח גולמי"]}
+          rows={[
+            ["FIFO", FIFO.closingCarrying, FIFO.cogs, FIFO.grossProfit],
+            ["ממוצע משוקלל תקופתי", WA.closingCarrying, WA.cogs, WA.grossProfit],
+            ["ממוצע משוקלל נע", MA.closingCarrying, MA.cogs, MA.grossProfit],
+          ]}
+        />
+        <Remember>המחירים עלו — ולכן ב-FIFO נשארו על המדף היחידות היקרות: הסגירה הגבוהה ביותר, והרווח הגבוה ביותר. הממוצעים נופלים באמצע.</Remember>
       </>
     ),
   },
@@ -299,18 +302,18 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
             הנמוך: <Money v={KOL.nrvPerUnit!} />. מורידים ערך ב-<Money v={KOL1.writeDown} /> — וההורדה נכנסת ל<strong>עלות המכר</strong>.
           </p>
         </Story>
-        <KeyCard>
-          <Term he="שווי מימוש נטו" /> = מה שנקבל על המלאי, נטו: מחיר מכירה צפוי − עלויות השלמה − עלויות מכירה.
-        </KeyCard>
         <Sorted
           columns={[
-            { title: "בשיטה תקופתית", tone: "neutral", items: [<>ההורדה ״מגולמת״: מלאי הסגירה נרשם ישר ב-<Money key="c" v={KOL1.closingCarrying} /></>] },
-            { title: "בשיטה תמידית", tone: "neutral", items: [<>פקודה: ח׳ עלות המכר / ז׳ מלאי <Money key="w" v={KOL1.writeDown} plain /></>] },
+            { title: "בשיטה תקופתית", tone: "neutral", items: [<Fragment key="periodic">ההורדה ״מגולמת״: מלאי הסגירה נרשם ישר ב-<Money v={KOL1.closingCarrying} /></Fragment>] },
+            { title: "בשיטה תמידית", tone: "neutral", items: [<Fragment key="perpetual">פקודה: ח׳ עלות המכר / ז׳ מלאי <Money v={KOL1.writeDown} plain /></Fragment>] },
           ]}
         />
-        <MoreDialog label="החישוב המלא">
+        <Deeper title="החישוב המלא">
           <TraceStepView s={explainNrv(KOL, KOL1)!} />
-        </MoreDialog>
+        </Deeper>
+        <Remember>
+          <Term he="שווי מימוש נטו" /> = מה שנקבל על המלאי, נטו: מחיר מכירה צפוי − עלויות השלמה − עלויות מכירה.
+        </Remember>
       </>
     ),
   },
@@ -319,21 +322,19 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <Stepper label="קול · שנה אחרי שנה" steps={reverseSteps} />
-        <Callout kind="tip" title="שווי מימוש נטו ≠ שווי הוגן">
-          <p>&quot;שווי הוגן&quot; (מחיר בשוק) בשאלה הוא מסיח. משווים לעלות רק את שווי המימוש נטו של החברה.</p>
-        </Callout>
         <div className="flex flex-wrap gap-2">
-          <MoreDialog label="מתי ואיך בודקים">
-            <ul className="list-inside list-disc space-y-1">
-              <li>בכל תאריך דוח מחדש.</li>
-              <li>לכל קבוצת פריטים דומים יחד: יחידות × שווי מימוש נטו ליחידה, מול העלות הכוללת.</li>
-              <li>
-                חריג: <Term he="חומרי גלם" /> לא יורדים מתחת לעלות, אם המוצרים הגמורים שבהם ייכללו צפויים להימכר בעלות או מעליה.
-              </li>
-            </ul>
-          </MoreDialog>
           <TryInCalc id="kol" label="פתחו את קול במחשבון" />
         </div>
+        <Deeper title="מתי ואיך בודקים">
+          <ul className="list-inside list-disc space-y-1">
+            <li>בכל תאריך דוח מחדש.</li>
+            <li>לכל קבוצת פריטים דומים יחד: יחידות × שווי מימוש נטו ליחידה, מול העלות הכוללת.</li>
+            <li>
+              חריג: <Term he="חומרי גלם" /> לא יורדים מתחת לעלות, אם המוצרים הגמורים שבהם ייכללו צפויים להימכר בעלות או מעליה.
+            </li>
+          </ul>
+        </Deeper>
+        <Remember>שווי מימוש נטו ≠ שווי הוגן: &quot;שווי הוגן&quot; (מחיר בשוק) בשאלה הוא מסיח. משווים לעלות רק את שווי המימוש נטו של החברה.</Remember>
       </>
     ),
   },
@@ -341,71 +342,61 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
     lead: "מלאי שייך למי שהסיכון עליו: לא כל מה שבמחסן שלנו — ולא כל מה שלנו נמצא במחסן.",
     body: (
       <>
-        <KeyCard>השאלה שפותרת הכול: אם הסחורה תיהרס עכשיו — מי יספוג את ההפסד?</KeyCard>
-        <Wide>
-          <Sorted
-            columns={[
-              {
-                title: "שלנו",
-                tone: "good",
-                items: ["במחסן — אם עוד לא נמכר", "בדרך, כשהסיכון כבר עבר אלינו", "משגור שמסרנו — עד המכירה ללקוח הסופי", "מלאי איטי או מת (ובודקים שווי מימוש נטו)"],
-              },
-              {
-                title: "לא שלנו",
-                tone: "bad",
-                items: ["בדרך, כשהסיכון עדיין אצל הספק (שולם? מקדמה)", "מכור והחזק — כבר של הלקוח", "משגור שספק מסר לנו", "דוגמיות לחלוקה חינם — הוצאה"],
-              },
-            ]}
-          />
-        </Wide>
+        <Sorted
+          columns={[
+            {
+              title: "שלנו",
+              tone: "good",
+              items: ["במחסן — אם עוד לא נמכר", "בדרך, כשהסיכון כבר עבר אלינו", "משגור שמסרנו — עד המכירה ללקוח הסופי", "מלאי איטי או מת (ובודקים שווי מימוש נטו)"],
+            },
+            {
+              title: "לא שלנו",
+              tone: "bad",
+              items: ["בדרך, כשהסיכון עדיין אצל הספק (שולם? מקדמה)", "מכור והחזק — כבר של הלקוח", "משגור שספק מסר לנו", "דוגמיות לחלוקה חינם — הוצאה"],
+            },
+          ]}
+        />
+        <Remember>השאלה שפותרת הכול: אם הסחורה תיהרס עכשיו — מי יספוג את ההפסד?</Remember>
       </>
     ),
   },
   "inv-count-sort": {
     lead: "לפני שממשיכים — בודקים שההבנה יושבת: לכל פריט, האם הוא מלאי של החברה?",
     body: (
-      <Wide>
-        <SortQuiz
-          id="count-sort"
-          title="שלנו או לא?"
-          options={[
-            ["ours", "מלאי שלנו"],
-            ["not", "לא מלאי שלנו"],
-          ]}
-          items={COUNT_ITEMS}
-        />
-      </Wide>
+      <SortQuiz
+        id="count-sort"
+        title="שלנו או לא?"
+        options={[
+          ["ours", "מלאי שלנו"],
+          ["not", "לא מלאי שלנו"],
+        ]}
+        items={COUNT_ITEMS}
+      />
     ),
   },
   "inv-bridge": {
     lead: "מהספירה במחסן למלאי בספרים: מוסיפים את מה ששלנו ונמצא בחוץ, ומורידים את מה שבמחסן ואינו שלנו.",
-    body: (
-      <Wide>
-        <CountBridge rows={COUNT_BRIDGE} />
-      </Wide>
-    ),
+    body: <CountBridge rows={COUNT_BRIDGE} />,
   },
 
   "inv-unknowns": {
     lead: "כל שאלת נעלמים נשענת על רעיון אחד: משוואה שכל המספרים בה ידועים חוץ מאחד.",
     body: (
       <>
-        <KeyCard>מחפשים משוואה אחת עם נעלם אחד. פותרים, מציבים — וממשיכים, עד שאין יותר נעלמים.</KeyCard>
         <p>יש שמונה תבניות שחוזרות בבחינות. אין צורך לזכור את כולן עכשיו — רק לדעת לזהות איזו מתאימה:</p>
-        <Wide>
-          <PatternPicker
-            items={[
-              { missing: "דוח עם סימני שאלה", given: "כמה שנים", pattern: 1, screen: "inv-chain" },
-              { missing: "כמות מכירה", given: "העלות שלה ידועה (ממוצע נע)", pattern: 2, screen: "inv-qty" },
-              { missing: "כמות המכירה האחרונה", given: "כמות הסגירה ידועה", pattern: 3, screen: "inv-qty" },
-              { missing: "מחיר מכירה", given: "שיעור רווח גולמי", pattern: 4, screen: "inv-gp" },
-              { missing: "מלאי סגירה / מלאי שנשרף", given: "שיעור רווח גולמי, בלי ספירה", pattern: 5, screen: "inv-gp" },
-              { missing: "מחיר רכישה", given: "עלות ממוצעת", pattern: 6, screen: "inv-avg-price" },
-              { missing: "שיעור הנחה", given: "הנחה בשקלים", pattern: 7, screen: "inv-pct" },
-              { missing: "קניות ומלאי סגירה", given: "״נמכר p% מהקניות״", pattern: 8, screen: "inv-pct" },
-            ]}
-          />
-        </Wide>
+        <PatternPicker
+          items={[
+            { missing: "דוח עם סימני שאלה", given: "כמה שנים", pattern: 1, screen: "inv-chain" },
+            { missing: "כמות מכירה", given: "העלות שלה ידועה (ממוצע נע)", pattern: 2, screen: "inv-qty" },
+            { missing: "כמות המכירה האחרונה", given: "כמות הסגירה ידועה", pattern: 3, screen: "inv-qty" },
+            { missing: "מחיר מכירה", given: "שיעור רווח גולמי", pattern: 4, screen: "inv-gp" },
+            { missing: "מלאי סגירה / מלאי שנשרף", given: "שיעור רווח גולמי, בלי ספירה", pattern: 5, screen: "inv-gp" },
+            { missing: "מחיר רכישה", given: "עלות ממוצעת", pattern: 6, screen: "inv-avg-price" },
+            { missing: "שיעור הנחה", given: "הנחה בשקלים", pattern: 7, screen: "inv-pct" },
+            { missing: "קניות ומלאי סגירה", given: "״נמכר p% מהקניות״", pattern: 8, screen: "inv-pct" },
+          ]}
+        />
+        <Remember>מחפשים משוואה אחת עם נעלם אחד. פותרים, מציבים — וממשיכים, עד שאין יותר נעלמים.</Remember>
       </>
     ),
   },
@@ -416,26 +407,24 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
         <p>
           מכירות נטו, קניות נטו, עלות המכר ורווח גולמי — כל חוליה משתמשת במספרים של אחרת. כשבחוליה חסר מספר אחד בלבד, מחלצים אותו — והוא &quot;פותח&quot; את החוליה הבאה.
         </p>
-        <KeyCard>החוליה שבין השנים: פתיחה(t) = סגירה(t−1). מה שעמד במחסן ב-31.12 עומד בו גם ב-1.1.</KeyCard>
-        <Wide>
-          <FlowStrip
-            boxes={[
-              { label: `מלאי סגירה 31.12.${DAF.years[0].label}`, value: `${DAF_CLOSE.toLocaleString("he-IL")} ₪` },
-              { label: "עובר שנה", value: "" },
-              { label: `מלאי פתיחה 1.1.${DAF.years[1].label}`, value: `${DAF_CLOSE.toLocaleString("he-IL")} ₪`, tone: "accent" },
-            ]}
-          />
-        </Wide>
+        <FlowStrip
+          boxes={[
+            { label: `מלאי סגירה 31.12.${DAF.years[0].label}`, value: `${DAF_CLOSE.toLocaleString("he-IL")} ₪` },
+            { label: "עובר שנה", value: "" },
+            { label: `מלאי פתיחה 1.1.${DAF.years[1].label}`, value: `${DAF_CLOSE.toLocaleString("he-IL")} ₪`, tone: "accent" },
+          ]}
+        />
         <p className="text-[14.5px] text-muted">
           את השרשרת המלאה, צעד אחר צעד, ראו במסך <ScreenLink id="inv-daf" />.
         </p>
+        <Remember>החוליה שבין השנים: פתיחה(t) = סגירה(t−1). מה שעמד במחסן ב-31.12 עומד בו גם ב-1.1.</Remember>
       </>
     ),
   },
   "inv-qty": {
     lead: "כמות חסרה: בממוצע נע — עלות המכירה חלקי הממוצע שלפניה; ובכל שיטה — מה שהיה = מה שיצא + מה שנשאר.",
     body: (
-      <Wide className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <>
         <Pattern
           n={2}
           unknown="כמות מכירה"
@@ -469,51 +458,51 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
             </>,
           ]}
         />
-      </Wide>
+      </>
     ),
   },
   "inv-gp": {
     lead: "שיעור הרווח הגולמי מתרגם מכירות לעלות המכר, ולהפך — ומשם מוצאים מחיר חסר, או מלאי שאין לו ספירה.",
     body: (
       <>
-        <KeyCard>שיעור גולמי של 25%: מכל שקל מכירות — 25 אגורות רווח, ו-75 אגורות עלות. לכן מכירות = עלות המכר ÷ 0.75.</KeyCard>
-        <Wide className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <Pattern
-            n={4}
-            unknown="מחיר מכירה"
-            given="שיעור רווח גולמי ועלות המכר"
-            tool="מכירות = עלות המכר ÷ (1 − שיעור)"
-            calc="rimon"
-            story={<>עלות המכר {P_PRICE.cogs.toLocaleString("he-IL")} ₪, שיעור גולמי {P_PRICE.gp * 100}%. שאר המכירות: {P_PRICE.otherSales.toLocaleString("he-IL")} ₪. במכירה של {P_PRICE.qty} יח׳ המחיר חסר.</>}
-            steps={[
-              <>
-                מכירות = {P_PRICE.cogs.toLocaleString("he-IL")} ÷ {1 - P_PRICE.gp} = <strong>{PRICE_SALES.toLocaleString("he-IL")}</strong> ₪.
-              </>,
-              <>
-                המכירה החסרה: {PRICE_SALES.toLocaleString("he-IL")} − {P_PRICE.otherSales.toLocaleString("he-IL")} = {(PRICE_SALES - P_PRICE.otherSales).toLocaleString("he-IL")} ₪.
-              </>,
-              <>
-                מחיר = {(PRICE_SALES - P_PRICE.otherSales).toLocaleString("he-IL")} ÷ {P_PRICE.qty} = <strong>{(PRICE_SALES - P_PRICE.otherSales) / P_PRICE.qty}</strong> ₪.
-              </>,
-            ]}
-          />
-          <Pattern
-            n={5}
-            unknown="מלאי סגירה / מלאי שנשרף"
-            given="שיעור רווח גולמי, בלי ספירה"
-            tool="סגירה = פתיחה + קניות − מכירות × (1 − שיעור)"
-            calc="gpfire"
-            story={<>מלאי פתיחה {P_RETAIL.opening.toLocaleString("he-IL")} ₪, קניות {P_RETAIL.purchases.toLocaleString("he-IL")} ₪, מכירות {P_RETAIL.netSales.toLocaleString("he-IL")} ₪, שיעור גולמי רגיל {P_RETAIL.rate * 100}%.</>}
-            steps={[
-              <>עלות המכר: {P_RETAIL.netSales.toLocaleString("he-IL")} × {(1 - P_RETAIL.rate) * 100}% = {(P_RETAIL.netSales * (1 - P_RETAIL.rate)).toLocaleString("he-IL")} ₪.</>,
-              <>היה זמין: {(P_RETAIL.opening + P_RETAIL.purchases).toLocaleString("he-IL")} ₪.</>,
-              <>
-                נשאר: <strong>{RETAIL.closing.toLocaleString("he-IL")}</strong> ₪.
-              </>,
-              <>בשריפה: אותו חישוב רק עד תאריך השריפה, ומורידים את מה שניצל. בדוגמת המחשבון: שיפוי נטו <Money v={FIRE.settlement.net} />.</>,
-            ]}
-          />
-        </Wide>
+        <p>
+          <strong>שיעור גולמי של 25%:</strong> מכל שקל מכירות — 25 אגורות רווח, ו-75 אגורות עלות. לכן מכירות = עלות המכר ÷ 0.75.
+        </p>
+        <Pattern
+          n={4}
+          unknown="מחיר מכירה"
+          given="שיעור רווח גולמי ועלות המכר"
+          tool="מכירות = עלות המכר ÷ (1 − שיעור)"
+          calc="rimon"
+          story={<>עלות המכר {P_PRICE.cogs.toLocaleString("he-IL")} ₪, שיעור גולמי {P_PRICE.gp * 100}%. שאר המכירות: {P_PRICE.otherSales.toLocaleString("he-IL")} ₪. במכירה של {P_PRICE.qty} יח׳ המחיר חסר.</>}
+          steps={[
+            <>
+              מכירות = {P_PRICE.cogs.toLocaleString("he-IL")} ÷ {1 - P_PRICE.gp} = <strong>{PRICE_SALES.toLocaleString("he-IL")}</strong> ₪.
+            </>,
+            <>
+              המכירה החסרה: {PRICE_SALES.toLocaleString("he-IL")} − {P_PRICE.otherSales.toLocaleString("he-IL")} = {(PRICE_SALES - P_PRICE.otherSales).toLocaleString("he-IL")} ₪.
+            </>,
+            <>
+              מחיר = {(PRICE_SALES - P_PRICE.otherSales).toLocaleString("he-IL")} ÷ {P_PRICE.qty} = <strong>{(PRICE_SALES - P_PRICE.otherSales) / P_PRICE.qty}</strong> ₪.
+            </>,
+          ]}
+        />
+        <Pattern
+          n={5}
+          unknown="מלאי סגירה / מלאי שנשרף"
+          given="שיעור רווח גולמי, בלי ספירה"
+          tool="סגירה = פתיחה + קניות − מכירות × (1 − שיעור)"
+          calc="gpfire"
+          story={<>מלאי פתיחה {P_RETAIL.opening.toLocaleString("he-IL")} ₪, קניות {P_RETAIL.purchases.toLocaleString("he-IL")} ₪, מכירות {P_RETAIL.netSales.toLocaleString("he-IL")} ₪, שיעור גולמי רגיל {P_RETAIL.rate * 100}%.</>}
+          steps={[
+            <>עלות המכר: {P_RETAIL.netSales.toLocaleString("he-IL")} × {(1 - P_RETAIL.rate) * 100}% = {(P_RETAIL.netSales * (1 - P_RETAIL.rate)).toLocaleString("he-IL")} ₪.</>,
+            <>היה זמין: {(P_RETAIL.opening + P_RETAIL.purchases).toLocaleString("he-IL")} ₪.</>,
+            <>
+              נשאר: <strong>{RETAIL.closing.toLocaleString("he-IL")}</strong> ₪.
+            </>,
+            <>בשריפה: אותו חישוב רק עד תאריך השריפה, ומורידים את מה שניצל. בדוגמת המחשבון: שיפוי נטו <Money v={FIRE.settlement.net} />.</>,
+          ]}
+        />
       </>
     ),
   },
@@ -544,7 +533,7 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
   "inv-pct": {
     lead: "אחוז שנתון במילים מתרגמים לשקלים: שיעור הנחה = הנחה ÷ מחיר; קניות = עלות המכר ÷ האחוז שנמכר.",
     body: (
-      <Wide className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <>
         <Pattern
           n={7}
           unknown="שיעור הנחה"
@@ -576,7 +565,7 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
             <>ובאותה משפחה: &quot;הכפילה את הכמות&quot; — × 2; &quot;גדל ב-75%&quot; — × 1.75.</>,
           ]}
         />
-      </Wide>
+      </>
     ),
   },
 };

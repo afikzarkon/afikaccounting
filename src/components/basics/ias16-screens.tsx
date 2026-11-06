@@ -20,11 +20,10 @@ import { YearlyRevaluationSection } from "@/components/revaluation/yearly";
 import type { ScreenContent } from "@/components/study-mode/shell";
 
 /**
- * A section of the former long page as a concept screen: whole, across the
- * screen's width (it was laid out for a full column), under the one principle
- * it teaches.
+ * A section of the former long page as a concept screen, under the one
+ * principle it teaches: its blocks go straight into the screen's single column.
  */
-const screen = (lead: string, body: ReactNode): ScreenContent => ({ lead, body: <div className="space-y-4 [column-span:all]">{body}</div> });
+const screen = (lead: string, body: ReactNode): ScreenContent => ({ lead, body });
 
 /** The concept screens of the fixed-assets course, by id: each section of the former page, with its principle on top. */
 export const IAS16_SCREENS: Record<string, ScreenContent> = {

@@ -1,7 +1,8 @@
-import { ArrowRightLeft, History, Scale, TrendingUp } from "lucide-react";
+import { Part } from "@/components/study-mode/screen-parts";
 import { Callout, DataTable, JournalEntry, Num } from "@/components/study/blocks";
 import { Formula } from "@/components/study/math";
-import { StepCard, texNum } from "@/components/study/ui";
+import { StepPart } from "@/components/learn/step-part";
+import { texNum } from "@/components/study/ui";
 import { solveRevaluation, splitRevaluation } from "@/lib/learn/revaluation";
 import { depLines, nettingLines, proportionalLines, SL_EX } from "./data";
 import { EnrichmentBox, EnrichmentLegend } from "./enrichment";
@@ -26,26 +27,23 @@ const STEPS = ["פחת עד יום ההערכה", "חישוב פער ההערכ�
 export function RevaluationStepsSection() {
   return (
     <>
-      <div className="card p-5">
-        <p className="text-xs font-semibold text-accent">דרכים לפתור שאלת הערכה מחדש — במבט אחד</p>
-        <p className="mt-1 text-[15px] text-fg/90">
-          במודל הערכה מחדש הנכס מוצג בשווי ההוגן שלו ביום ההערכה, בניכוי פחת שנצבר מאז (סעיף 31). כל שאלה נפתרת באותם שלבים. לאורך הדרך נפתור
-          דוגמה אחת לאורך כל העמוד: מבנה שנרכש ב-1.1.{SL_EX.firstYear} בעלות <Num v={SL_EX.cost} /> ₪, לאורך חיים של {SL_EX.life} שנים, בקו ישר וללא
-          ערך גרט. החברה מעריכה אותו מחדש פעמיים: ב-31.12.{EV.year} השווי ההוגן <Num v={EV.fairValue} /> ₪, וב-31.12.{SECOND_DOWN.year} —{" "}
-          <Num v={SECOND_DOWN.fairValue} /> ₪. כאן נפתור את ההערכה הראשונה; בשנייה חוזרים על אותם שלבים בדיוק (הלוח המלא בלשונית &quot;דוגמאות לפי
-          שיטות&quot;).
-        </p>
-        <ol className="mt-4 grid gap-2 sm:grid-cols-4">
-          {STEPS.map((s, i) => (
-            <li key={s} className="flex items-center gap-2 rounded-xl border border-line bg-surface-2/50 px-3 py-2.5 text-sm font-medium text-fg">
-              <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold text-accent-fg">{i + 1}</span>
-              {s}
-            </li>
-          ))}
-        </ol>
-      </div>
+      <p>
+        במודל הערכה מחדש הנכס מוצג בשווי ההוגן שלו ביום ההערכה, בניכוי פחת שנצבר מאז (סעיף 31). כל שאלה נפתרת באותם שלבים. לאורך הדרך נפתור
+        דוגמה אחת לאורך כל העמוד: מבנה שנרכש ב-1.1.{SL_EX.firstYear} בעלות <Num v={SL_EX.cost} /> ₪, לאורך חיים של {SL_EX.life} שנים, בקו ישר וללא
+        ערך גרט. החברה מעריכה אותו מחדש פעמיים: ב-31.12.{EV.year} השווי ההוגן <Num v={EV.fairValue} /> ₪, וב-31.12.{SECOND_DOWN.year} —{" "}
+        <Num v={SECOND_DOWN.fairValue} /> ₪. כאן נפתור את ההערכה הראשונה; בשנייה חוזרים על אותם שלבים בדיוק (הלוח המלא בלשונית &quot;דוגמאות לפי
+        שיטות&quot;).
+      </p>
+      <ol className="max-w-[70ch] space-y-1.5">
+        {STEPS.map((s, i) => (
+          <li key={s} className="flex items-center gap-2.5">
+            <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
+            {s}
+          </li>
+        ))}
+      </ol>
 
-      <StepCard step={1} title="עדכון פחת עד תאריך ההערכה מחדש" lead="קודם מביאים את הנכס ליום ההערכה — ורק אז משווים לשווי ההוגן" icon={<History className="h-5 w-5" />}>
+      <StepPart step={1} title="עדכון פחת עד תאריך ההערכה מחדש" lead="קודם מביאים את הנכס ליום ההערכה — ורק אז משווים לשווי ההוגן">
         <p>
           לפני ההערכה מחדש רושמים את הוצאות הפחת מתחילת התקופה ועד יום ההערכה, ומחשבים את הערך בספרים המעודכן. בדוגמה ההערכה ב-31.12, ולכן
           רושמים קודם את הפחת של כל שנת {SL_EX.revaluations[0].year}.
@@ -54,15 +52,15 @@ export function RevaluationStepsSection() {
           tex={String.raw`\text{ערך בספרים מעודכן} = \text{עלות} - \text{פחת נצבר} = ${texNum(SL_EX.cost)} - ${texNum(OLD_ANNUAL)} \times ${YEARS_BEFORE} = ${texNum(EV.before)}`}
         />
         <JournalEntry title={`פחת לשנת ${SL_EX.revaluations[0].year}`} date={`31.12.${SL_EX.revaluations[0].year}`} lines={depLines(OLD_ANNUAL)} />
-      </StepCard>
+      </StepPart>
 
-      <StepCard step={2} title="חישוב פער ההערכה מחדש" lead="כמה השווי ההוגן גבוה (או נמוך) מהערך בספרים" icon={<Scale className="h-5 w-5" />}>
+      <StepPart step={2} title="חישוב פער ההערכה מחדש" lead="כמה השווי ההוגן גבוה (או נמוך) מהערך בספרים">
         <Formula
           tex={String.raw`\text{פער הערכה מחדש} = \text{שווי הוגן ליום ההערכה} - \text{ערך בספרים מעודכן} = ${texNum(EV.fairValue)} - ${texNum(EV.before)} = ${texNum(EV.diff)}`}
         />
-      </StepCard>
+      </StepPart>
 
-      <StepCard step={3} title="סיווג הפער וטיפול חשבונאי" lead="קרן הערכה מחדש (רווח כולל אחר) או רווח והפסד — תלוי במה שקרה קודם" icon={<TrendingUp className="h-5 w-5" />}>
+      <StepPart step={3} title="סיווג הפער וטיפול חשבונאי" lead="קרן הערכה מחדש (רווח כולל אחר) או רווח והפסד — תלוי במה שקרה קודם">
         <div className="grid gap-3 md:grid-cols-2">
           <div className="rounded-xl border border-line bg-surface-2/40 p-4 text-[14.5px]">
             <p className="font-semibold text-fg">הערכה מחדש ראשונה</p>
@@ -97,13 +95,10 @@ export function RevaluationStepsSection() {
           <Num v={-SECOND_DOWN.diff} />, והיא כולה בתוך הקרן — מקטינה אותה ולא נוגעת ברווח והפסד. ירידה שעוברת את הקרן מופיעה בטבלת המקרים
           למעלה.
         </p>
-      </StepCard>
+      </StepPart>
 
-      <div className="card p-5">
-        <p className="flex items-center gap-2 text-[17px] font-semibold text-fg">
-          <ArrowRightLeft className="h-5 w-5 text-accent" /> מה עושים עם הפחת הנצבר ביום ההערכה? שתי שיטות
-        </p>
-        <p className="mt-1 text-[15px] text-fg/90">
+      <Part title="מה עושים עם הפחת הנצבר ביום ההערכה? שתי שיטות">
+        <p>
           שתי השיטות מביאות את הנכס לאותו ערך בספרים — <Num v={EV.fairValue} /> — ואותו סכום לקרן. ההבדל רק באופן ההצגה של העלות והפחת הנצבר (סעיף
           35). <strong>בבחינות נשאלת רק שיטת הביטול</strong>; ההתאמה היחסית מוצגת כאן להעשרה בלבד.
         </p>
@@ -138,9 +133,9 @@ export function RevaluationStepsSection() {
             ["ערך בספרים", EV.fairValue, EV.propGrossAfter - EV.propAccAfter],
           ]}
         />
-      </div>
+      </Part>
 
-      <StepCard step={4} title="פחת חדש מיום ההערכה" lead="השווי ההוגן, פחות הגרט, על פני יתרת אורך החיים" icon={<History className="h-5 w-5" />}>
+      <StepPart step={4} title="פחת חדש מיום ההערכה" lead="השווי ההוגן, פחות הגרט, על פני יתרת אורך החיים">
         <Formula
           tex={String.raw`\text{פחת שנתי חדש} = \frac{\text{שווי הוגן} - \text{גרט}}{\text{יתרת אורך החיים}} = \frac{${texNum(EV.fairValue)} - ${texNum(SL_EX.salvage)}}{${EV.monthsLeft / 12}} = ${texNum(NEW_ANNUAL)}`}
         />
@@ -156,7 +151,7 @@ export function RevaluationStepsSection() {
             ב&quot;קרקע מול מבנה&quot;, ובדוגמאות.
           </p>
         </Callout>
-      </StepCard>
+      </StepPart>
     </>
   );
 }

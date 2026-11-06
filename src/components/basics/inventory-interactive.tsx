@@ -102,7 +102,7 @@ export function MiniQuiz({ chapter, items, prefix = "inv", bare }: { chapter: st
                   {picked !== null && (
                     <span className={picked === it.answer ? "text-success" : "text-danger"}>
                       {picked === it.answer ? "נכון. " : "לא בדיוק. "}
-                      <span className="text-fg/85">{it.why}</span>
+                      <span className="whitespace-pre-line text-fg/85">{it.why}</span>
                     </span>
                   )}
                 </p>

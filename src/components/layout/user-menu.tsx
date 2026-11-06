@@ -75,7 +75,7 @@ export function UserMenu({ name, email, admin = false }: { name: string; email: 
         aria-label="תפריט משתמש"
         className="flex items-center gap-2 rounded-full border border-line py-1 pe-2.5 ps-1 transition-colors hover:border-line-strong"
       >
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-accent to-cyan-400 text-[11px] font-semibold text-accent-fg">
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-accent text-[11px] font-semibold text-accent-fg">
           {initials || "U"}
         </span>
         <ChevronDown className={`h-3.5 w-3.5 text-muted transition-transform ${open ? "rotate-180" : ""}`} />

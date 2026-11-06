@@ -22,14 +22,13 @@ export const metadata: Metadata = {
 export default function ReviewPage() {
   return (
     <div className="relative">
-      <div className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative pt-10 pb-16 sm:pt-14">
         <p className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2.5 py-1 text-xs font-bold text-accent">
           <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />
           חזרה מרווחת
         </p>
         <h1 className="mt-3 text-[2.2rem] leading-tight font-bold tracking-tight text-fg sm:text-5xl">
-          החזרה <span className="text-gradient">שלי</span>
+          החזרה שלי
         </h1>
         <p className="mt-3 max-w-3xl text-[16px] leading-relaxed text-muted">
           כל שאלה שטעיתם בה בשיעור מגיעה לכאן, וחוזרת אליכם אחרי יום. ענו נכון — והיא תחזור בעוד 3 ימים, ואחר כך בעוד שבוע. שלוש פעמים נכון ברצף, והיא יוצאת מהחזרה.

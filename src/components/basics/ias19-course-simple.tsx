@@ -1,283 +1,578 @@
-import { Backpack, CalendarDays, Coins, ShieldCheck } from "lucide-react";
+import { Backpack, Coins, Mail, PartyPopper } from "lucide-react";
 import type { ReactNode } from "react";
+import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
+import { fifo, lifo } from "@/lib/learn/ias19";
 import { DC, DC_PAID, DC_VAR, DC_VAR_YEAR, DC_YEAR, INSURED, INSURED_EXPENSE } from "@/lib/study/ias19/lessons/dc";
 import {
-  BONUS,
-  BONUS_EXPENSE,
-  BONUS_OPENING,
-  BONUS_PAID,
-  SICK,
-  SICK_CLOSING,
-  SICK_EXPENSE,
-  SICK_LEFT,
-  SICK_OPENING,
-  SICK_PAID,
-  VEST,
-  VEST_EXPENSE,
-  VEST_OPENING,
-  VEST_PAID,
+  AVI,
+  AVI_PV,
+  DANNY,
+  DANNY_FIFO,
+  DAYCOST,
+  DAYCOST_BASE,
+  DAYCOST_FULL,
+  DAYCOST_RATE,
+  EXPECTED,
+  NOF,
+  NOF_EXPENSE,
+  NOF_OPENING,
+  NOF_PAID,
+  RONIT,
+  RONIT_LEFT,
+  VESTING,
+  VESTING_STAY,
 } from "@/lib/study/ias19/lessons/short";
-import { lessonRef, lessonsRef, pct } from "@/lib/study/ias19/shared";
+import { fmt, lessonRef, lessonsRef, pct } from "@/lib/study/ias19/shared";
+import { FORMULA, putIn, said, tool, work } from "@/lib/study/ias19/formulas";
+import { Ltr, Work } from "./ias19-formula";
 import { DrillBox, RiskTest, SolveTemplate } from "./ias19-interactive";
 import { Bridge, ExplainTask, HintLadder, MapBranch, RollForward, T19 } from "./ias19-ui";
+import { Fork, SplitBar, Timeline, TwoPanel } from "./ias19-visuals";
 import { MiniQuiz } from "./inventory-interactive";
 import { Sorted, Story } from "./inventory-teach";
-import { Card, JE, KeyCard, Money, Rule, Stepper, Wide } from "./ui";
+import { Card, JE, Money, Stepper } from "./ui";
+import { ltrQuiz } from "@/lib/study/ias19/ltr";
 
 /** The employee-benefits course, lessons 3–4: short-term benefits, and defined contribution against defined benefit. */
 
-const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={items} />;
+const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={ltrQuiz(items)} />;
+/** A formula inside a sentence, read left to right. */
+const L = Ltr;
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
-const stayers = SICK.carried.staff - SICK.carried.leavers;
 
 export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
   // ---------------------------------------------------------------------------
   // Lesson 3: short-term benefits.
   "emp-short-hook": {
-    lead: "זכות שעוברת לשנה הבאה היא כבר חוב של החברה — גם לפני שנוצלה.",
-    body: (
-      <>
-        <Story icon={<CalendarDays />} title="חמישה ימי חופש שלא ניצלת">
-          <p>נשארו לך חמישה ימי חופש מהשנה שעברה. האם החברה חייבת לך אותם? ואם תעזוב מחר — האם היא תשלם לך עליהם בכסף?</p>
-          <p>התשובה תלויה בשני דברים: האם הימים עוברים לשנה הבאה, והאם משלמים עליהם בעזיבה. זה כל השיעור.</p>
-        </Story>
-        <MapBranch lesson="ias19-short">ענף ״הטבות לזמן קצר״ — הענף היחיד במפה שבו לא מהוונים.</MapBranch>
-      </>
-    ),
-  },
-  "emp-short-what": {
-    lead: "הטבה שתסולק תוך 12 חודשים מסוף שנת השירות נרשמת בסכום המלא — בלי היוון.",
+    lead: "רוב מה שעובד מקבל מהחברה משולם בתוך שנה. זו הטבה לזמן קצר, והיא הכי פשוטה למדידה.",
     body: (
       <>
         <P>
-          <T19 he="הטבה לזמן קצר" en="Short-term employee benefit" par="9" /> היא הטבה שצפוי לסלק במלואה עד 12 חודשים אחרי סוף השנה שבה העובד נתן את השירות: משכורת, חופשה, מחלה,
-          בונוס שנתי.
+          אבי עובד בחברה ומשתכר <Money v={AVI.salary} /> בחודש. את המשכורת של דצמבר הוא מקבל ב-9 בינואר. ב-31.12 אבי כבר עבד את כל החודש, אבל עוד לא קיבל עליו כסף. כלומר החברה חייבת לו, ובדוחות של השנה היא
+          רושמת:
         </P>
-        <P>
-          כי הכסף יוצא מהר, אין טעם להוון: מכירים בסכום <strong>לא מהוון</strong> (<span dir="ltr">IAS 19.11</span>). זה ההבדל הגדול משאר הענפים במפה.
-        </P>
+        <JE
+          note={null}
+          entry={{
+            id: "1",
+            date: "31.12",
+            text: "משכורת דצמבר, שעוד לא שולמה",
+            lines: [
+              { account: "הוצאות שכר", dr: AVI.salary },
+              { account: "התחייבות לעובדים", cr: AVI.salary },
+            ],
+          }}
+        />
+        <JE
+          note={null}
+          entry={{
+            id: "2",
+            date: "9.1",
+            text: "התשלום לאבי",
+            lines: [
+              { account: "התחייבות לעובדים", dr: AVI.salary },
+              { account: "מזומן", cr: AVI.salary },
+            ],
+          }}
+        />
+        <P>ההוצאה שייכת לשנה שבה אבי עבד, גם אם הכסף יוצא רק בשנה הבאה.</P>
+        <Part title="ההגדרה">
+          <P>
+            <T19 he="הטבה לזמן קצר" par="9" /> היא הטבה שצפויה להשתלם כולה עד 12 חודשים אחרי סוף השנה שבה העובד עבד. הנה הסוגים העיקריים:
+          </P>
+          <DataTable
+            head={["סוג", "דוגמאות"]}
+            rows={[
+              ["שכר ונלוות", "משכורת, ביטוח לאומי של המעסיק, הפרשות לפנסיה"],
+              ["היעדרויות בתשלום", "ימי חופשה, ימי מחלה, הבראה, חגים, מילואים, חופשת לידה"],
+              ["בונוסים", "בונוס שנתי ושיתוף ברווחים, שמשולמים עד שנה מסוף השנה"],
+              ["הטבות שאינן כסף", "רכב, טלפון, ארוחות, ביטוח בריאות"],
+            ]}
+          />
+          <P>מה לא נכלל כאן: פנסיה ופיצויים שמשולמים אחרי שהעובד מסיים לעבוד, ומענק יובל אחרי 25 שנות עבודה. הם משולמים בעוד שנים, ונלמד אותם בשיעורים הבאים.</P>
+        </Part>
+        <Part title="רושמים לפי מה שצפוי להשתלם">
+          <P>
+            זה העיקרון שילווה את כל השיעור. החברה לא רושמת את כל מה שהעובד יכול לקבל, אלא את מה שהיא צופה שתשלם בגלל העבודה שכבר נעשתה. אם לעובדים נצברו {fmt(EXPECTED.accrued)} ימי מחלה, אבל לפי הניסיון
+            ינוצלו רק {fmt(EXPECTED.used)}, ההפרשה היא על {fmt(EXPECTED.used)} ימים. נחזור לזה בהרחבה בהמשך השיעור.
+          </P>
+        </Part>
+        <Part title="ולמה לא מהוונים?">
+          <P>בשיעור 2 ראינו שסכום עתידי שווה היום פחות. אבל כשמדובר בחודש אחד, ההבדל זניח. המשכורת של אבי, בריבית {pct(AVI.rate)} לחודש אחד:</P>
+          <L>{`${fmt(AVI.salary)} ÷ (${1 + AVI.rate})^(1/12) = ${fmt(Math.round(AVI_PV))} ₪`}</L>
+          <P>
+            הפרש של <Money v={Math.round(AVI.salary - AVI_PV)} /> על {fmt(AVI.salary)}. לכן בהטבה לזמן קצר רושמים את הסכום המלא, בלי היוון.
+          </P>
+        </Part>
+        {quiz("emp-short-hook", [
+          {
+            q: "איזו מההטבות הבאות היא הטבה לזמן קצר?",
+            options: ["בונוס על השנה, שישולם במרץ", "פנסיה חודשית אחרי הפרישה", "מענק אחרי 25 שנות עבודה", "בונוס על הרווחים של שלוש השנים הבאות"],
+            answer: 0,
+            why: "הבונוס על השנה משולם במרץ, פחות מ-12 חודשים אחרי סוף השנה. פנסיה משולמת אחרי שהעובד מסיים לעבוד, מענק יובל רק אחרי 25 שנה, ובונוס על שלוש שנים ישולם הרבה אחרי סוף השנה הראשונה.",
+          },
+        ])}
+        <Remember>משולם עד 12 חודשים מסוף השנה. רושמים את מה שצפוי להשתלם, בסכום המלא, בלי היוון.</Remember>
       </>
     ),
-    check: quiz("emp-short-what", [
-      { q: "בונוס על השנה ישולם בעוד חודשיים. האם מהוונים אותו?", options: ["לא — הטבה לזמן קצר נרשמת בסכום המלא", "כן, תמיד", "רק אם הריבית גבוהה", "רק בבונוס גדול"], answer: 0, why: "IAS 19.11: סכום לא מהוון." },
-      { q: "מענק שישולם 18 חודשים אחרי סוף שנת השירות — לזמן קצר?", options: ["לא", "כן", "רק אם הוא קטן", "תלוי בשם"], answer: 0, why: "הוא מעבר ל-12 חודשים מסוף שנת השירות." },
-    ]),
   },
   "emp-short-absence": {
-    lead: "היעדרות שנצברת יוצרת הפרשה על מה שצפוי להיות מנוצל — ובמבשילה, גם על מה שישולם לעוזבים.",
-    body: (
-      <>
-        <Wide>
-          <DataTable
-            head={["", "מה זה", "מתי מכירים"]}
-            rows={[
-              [<T19 key="a" he="לא נצברת" en="Non-accumulating" />, "חג, מחלה שלא עוברת, חופשת לידה, מילואים", "רק כשההיעדרות קורית (סעיפים 13ב, 18)"],
-              [<T19 key="b" he="נצברת" en="Accumulating" />, "ימים שעוברים לשנה הבאה", "הפרשה על מה שצפוי להיות מנוצל (סעיפים 15–16)"],
-              [<T19 key="c" he="מבשילה" en="Vesting" />, "בעזיבה משלמים על הצבירה", "גם ימי העוזבים הצפויים בהפרשה"],
-              [<T19 key="d" he="לא מבשילה" en="Non-vesting" />, "בעזיבה — כלום", "רק ימים שצפויים להיות מנוצלים"],
-            ]}
-          />
-        </Wide>
-        <Card title="LIFO: מה מנוצל קודם">
-          <p>
-            עובד שיש לו ימים צבורים ומנצל השנה ימים — מנצל <strong>קודם את הזכאות של השנה</strong>, ורק אחר כך את היתרה מהעבר. לכן מי שניצל פחות מהזכאות השנתית לא נגע בצבור, והצבור
-            עלול לפקוע.
-          </p>
-        </Card>
-      </>
-    ),
-    check: quiz("emp-short-absence", [
-      { q: "ימי מחלה עוברים לשנה הבאה, אבל לא משולמים בעזיבה. איך הם מסווגים?", options: ["נצברים ולא מבשילים", "נצברים ומבשילים", "לא נצברים", "לא מבשילים ולא נצברים"], answer: 0, why: "עוברים = נצברים; לא משולמים בעזיבה = לא מבשילים." },
-      { q: "לעובד 8 ימים בשנה ו-2 צבורים. הוא ניצל השנה 9. לפי LIFO, כמה מהצבורים נוצלו?", options: ["1", "2", "0", "9"], answer: 0, why: "8 מהשנה, ועוד יום אחד מהצבור." },
-    ]),
-  },
-  "emp-short-bonus": {
-    lead: "בונוס נרשם כשיש מחויבות קיימת ואומדן מהימן — ועל הכול: ההוצאה היא מה שסוגר את המעגל.",
+    lead: "יש ימי היעדרות שעוברים לשנה הבאה אם לא מנצלים אותם, ויש ימים שפשוט נעלמים. ההבדל הזה קובע מתי רושמים.",
     body: (
       <>
         <P>
-          <T19 he="בונוס ושיתוף ברווחים" en="Bonus and profit-sharing" par="19" /> נרשמים כשמתקיימים שני תנאים: יש <strong>מחויבות קיימת</strong> (משפטית או משתמעת), ואפשר לאמוד את
-          הסכום <strong>באופן מהימן</strong>: נוסחה בתנאי התוכנית, סכום שנקבע לפני אישור הדוחות, או דפוס קבוע מהעבר.
+          היעדרות בתשלום היא יום שבו העובד לא עובד וממשיך לקבל שכר. רוב השאלות בנושא הזה עוסקות בימי חופשה. לפעמים יש ימי מחלה או ימי הבראה. השאלה הראשונה שצריך לשאול על כל סוג כזה: מה קורה לימים שהעובד
+          לא ניצל?
         </P>
-        <P>ובונוס על רווחים של כמה שנים? הוא כבר לא לזמן קצר — השירות של השנה הראשונה ישולם מאוחר מדי.</P>
-        <Rule>
-          הכלל: הפרשה בסוף השנה = (ימי הצבירה שצפוי לנצל + ימי הצבירה של עוזבים צפויים, אם ההיעדרות מבשילה) × עלות יום. ההוצאה היא ה-P.N. של המעגל: סגירה − פתיחה + תשלומים.
-        </Rule>
-        <KeyCard icon={<Coins className="h-5 w-5" />}>עלות יום = שכר ÷ ימי עבודה × (1 + תוספות המעסיק שחלות על הרכיב הזה).</KeyCard>
-      </>
-    ),
-    check: quiz("emp-short-bonus", [
-      { q: "החברה מחליטה על בונוס רק אחרי אישור הדוחות, ואין נוהג. האם מכירים בו בדוח?", options: ["לא — לא הייתה מחויבות בתאריך הדוח", "כן, תמיד", "כן, כהערכה", "רק אם הרווח גבוה"], answer: 0, why: "בתאריך הדוח לא הייתה מחויבות ולא אומדן." },
-      { q: "פתיחה 10,000, שולמו 50,000, סגירה 12,000. מה ההוצאה?", options: ["52,000", "50,000", "48,000", "72,000"], answer: 0, why: "12,000 − 10,000 + 50,000." },
-    ]),
-  },
-  "emp-short-solved": {
-    lead: "ימים שאינם מבשילים: מפרישים רק על מה שצפוי להיות מנוצל, וההוצאה מאזנת את המעגל.",
-    body: (
-      <>
-        <Story icon={<CalendarDays />} title="רשת מרפאות: ימי מחלה">
-          <p>
-            לכל עובד {SICK.entitlement} ימי מחלה בשנה, שעוברים לשנה אחת בלבד. הם <strong>לא מבשילים</strong>, והניצול ב-LIFO. עלות יום: <Money v={SICK.dayCost} />.
-          </p>
-          <p>
-            בתחילת השנה: {SICK.carried.staff} עובדים עם {SICK.carried.days} ימים צבורים כל אחד; מהם {SICK.carried.leavers} צפויים לעזוב. במהלך השנה: {SICK.usedMore.staff} עובדים ניצלו{" "}
-            {SICK.usedMore.days} ימים, ו-{SICK.usedLess.staff} ניצלו {SICK.usedLess.days}.
-          </p>
-        </Story>
-        <Wide>
-          <Stepper
-            label="ימי מחלה — המעגל"
-            steps={[
-              {
-                title: "1. פתיחה",
-                body: (
-                  <p>
-                    לא מבשילים: העוזבים לא יקבלו כלום. מפרישים רק לנשארים: {stayers} × {SICK.carried.days} × <Money v={SICK.dayCost} plain /> = <strong><Money v={SICK_OPENING} /></strong>.
-                  </p>
-                ),
-              },
-              {
-                title: "2. תשלומים",
-                body: (
-                  <p>
-                    <Money v={SICK.dayCost} plain /> × ({SICK.usedMore.staff} × {SICK.usedMore.days} + {SICK.usedLess.staff} × {SICK.usedLess.days}) = <strong><Money v={SICK_PAID} /></strong>.
-                  </p>
-                ),
-              },
-              {
-                title: "3. סגירה — LIFO",
-                body: (
-                  <p>
-                    מי שניצל {SICK.usedMore.days} ניצל את כל {SICK.entitlement} הימים של השנה ועוד יום מהצבור; שאר הצבור שלו פקע. מי שניצל {SICK.usedLess.days} השאיר {SICK_LEFT} יום מהשנה:{" "}
-                    {SICK.usedLess.staff} × {SICK_LEFT} × <Money v={SICK.dayCost} plain /> = <strong><Money v={SICK_CLOSING} /></strong>.
-                  </p>
-                ),
-              },
-              {
-                title: "4. ההוצאה — המספר שמאזן",
-                body: (
-                  <div className="space-y-3">
-                    <p>
-                      <Money v={SICK_CLOSING} plain /> − <Money v={SICK_OPENING} plain /> + <Money v={SICK_PAID} plain /> = <strong><Money v={SICK_EXPENSE} /></strong>.
-                    </p>
-                    <RollForward
-                      title="הפרשה לימי מחלה"
-                      rows={[
-                        { label: "יתרת פתיחה", value: SICK_OPENING, kind: "balance" },
-                        { label: "תשלומים", value: -SICK_PAID },
-                        { label: "הוצאה (P.N.)", value: SICK_EXPENSE, kind: "pn", how: "בלי היוון — סגירה − פתיחה + תשלומים" },
-                        { label: "יתרת סגירה", value: SICK_CLOSING, kind: "balance" },
-                      ]}
-                    />
-                  </div>
-                ),
-              },
-            ]}
-          />
-        </Wide>
-      </>
-    ),
-  },
-  "emp-short-together": {
-    lead: "כשהימים מבשילים, גם ימי העוזבים נכנסים להפרשה — ובבונוס, ההפרש בין האומדן לתשלום הוא הוצאת השנה.",
-    body: (
-      <>
-        <Card title="א. אותה רשת, אבל הימים מבשילים">
-          <HintLadder
-            task={
-              <>
-                הימים מבשילים: מי שעוזב מקבל כסף על הצבור. מתוך {SICK.carried.leavers} העוזבים הצפויים עזבו בפועל {VEST.left}, וקיבלו כסף על {SICK.carried.days} הימים שלהם. מה הפתיחה, מה
-                התשלומים, ומה ההוצאה?
-              </>
-            }
-            hints={[
-              "למי עכשיו מפרישים בפתיחה — רק לנשארים?",
-              "הכלל: ימי ניצול צפויים + ימי עוזבים צפויים, כי ההיעדרות מבשילה.",
-              <>
-                פתיחה: {SICK.carried.staff} × {SICK.carried.days} × <Money v={SICK.dayCost} plain /> = <Money v={VEST_OPENING} />.
-              </>,
-              <>
-                תשלומים: <Money v={SICK_PAID} plain /> + {VEST.left} × {SICK.carried.days} × <Money v={SICK.dayCost} plain /> = <Money v={VEST_PAID} />. סגירה <Money v={SICK_CLOSING} plain /> (כמו קודם).
-                הוצאה: <Money v={SICK_CLOSING} plain /> − <Money v={VEST_OPENING} plain /> + <Money v={VEST_PAID} plain /> = <strong><Money v={VEST_EXPENSE} /></strong>.
-              </>,
-            ]}
-          />
-        </Card>
-        <Card title="ב. בונוס לפי נוסחה">
-          <HintLadder
-            task={
-              <>
-                כל עובד שנשאר עד יום התשלום מקבל <span dir="ltr">{pct(BONUS.share)}</span> מהרווח השנתי. בסוף השנה: {BONUS.staff} עובדים, {BONUS.expectedLeavers} צפויים לעזוב, והרווח המוערך{" "}
-                <Money v={BONUS.estimate} />. במרץ שולם הבונוס ל-{BONUS.paidTo} עובדים, על רווח סופי של <Money v={BONUS.actual} />. בונוס על השנה הבאה לא יינתן. מה ההפרשה בפתיחה, ומה ההוצאה של
-                השנה הבאה?
-              </>
-            }
-            hints={[
-              "מי צפוי לקבל — כולם, או רק מי שיישאר?",
-              "מחויבות קיימת ואומדן מהימן: נוסחה × עובדים צפויים.",
-              <>
-                פתיחה: ({BONUS.staff} − {BONUS.expectedLeavers}) × <span dir="ltr">{pct(BONUS.share)}</span> × <Money v={BONUS.estimate} plain /> = <Money v={BONUS_OPENING} />.
-              </>,
-              <>
-                תשלום: {BONUS.paidTo} × <span dir="ltr">{pct(BONUS.share)}</span> × <Money v={BONUS.actual} plain /> = <Money v={BONUS_PAID} />; סגירה 0. הוצאה: 0 − <Money v={BONUS_OPENING} plain /> +{" "}
-                <Money v={BONUS_PAID} plain /> = <strong><Money v={BONUS_EXPENSE} /></strong> — ההפרש בין האומדן לתשלום.
-              </>,
-            ]}
-          />
-        </Card>
-      </>
-    ),
-  },
-  "emp-short-master": {
-    lead: "בזמן קצר: סכום מלא, לפי מה שצפוי להשתלם — והמעגל סוגר את ההוצאה.",
-    body: (
-      <>
-        <ExplainTask
-          task="הסבירו לחבר, בדקה, מה ההבדל בין היעדרות מבשילה ללא מבשילה."
-          model="בשתיהן הימים עוברים לשנה הבאה. במבשילה, מי שעוזב מקבל כסף על הימים שצבר — ולכן ההפרשה כוללת גם את הימים של העוזבים. בלא מבשילה, מי שעוזב מפסיד אותם — ולכן מפרישים רק על הימים שצפוי שינוצלו."
+        <Part title="לא נצברת: הימים לא עוברים לשנה הבאה">
+          <P>
+            ימי חג, ימי אבל, ימי מילואים וחופשת לידה. העובד לא ״צובר״ חגים כשהוא עובד יותר, והחג לא עובר לשנה הבאה אם לא היה צריך אותו. לכן אין מה להפריש מראש: רושמים את העלות רק כשההיעדרות קורית, כחלק
+            מהשכר של אותו חודש (<T19 he="לא נצברת" par="13" />).
+          </P>
+        </Part>
+        <Part title="נצברת: מה שלא נוצל עובר לשנה הבאה">
+          <P>
+            ימי חופשה, ימי הבראה, ולפעמים גם ימי מחלה. כאן כל חודש עבודה מוסיף לעובד ימים, וימים שלא נוצלו נשארים לו. בסוף השנה החברה חייבת לו את הימים האלה, ולכן רושמת הפרשה (
+            <T19 he="נצברת" par="13" />).
+          </P>
+        </Part>
+        <DataTable
+          head={["", "לא נצברת", "נצברת"]}
+          rows={[
+            ["ימים שלא נוצלו", "נעלמים", "עוברים לשנה הבאה"],
+            ["דוגמאות", "חגים, אבל, מילואים, חופשת לידה", "חופשה, הבראה, מחלה שעוברת"],
+            ["מתי רושמים", "כשההיעדרות קורית", "כשהעובד עובד וצובר ימים"],
+            ["הפרשה בסוף השנה", "אין", "על הימים שצפויים להשתלם"],
+          ]}
         />
-        <Bridge summary="הטבה לזמן קצר היא סכום לא מהוון, לפי מה שצפוי להשתלם.">
-          ומה אם ההטבה תשולם רק בעוד שלושים שנה, וגוף אחר מחזיק את הכסף? מי נושא בסיכון אז? {lessonRef("ias19-dc")}.
-        </Bridge>
+        <Part title="דוגמה: אותם ימים, שתי תשובות">
+          <P>
+            לרונית {RONIT.entitlement} ימי חופשה בשנה, והשנה היא ניצלה {RONIT.used}. עלות יום עבודה שלה <Money v={RONIT.dayCost} />. בסוף השנה נשארו לה {RONIT_LEFT} ימים.
+          </P>
+          <P>אם הימים נצברים, החברה חייבת לרונית {RONIT_LEFT} ימים, והיא רושמת הפרשה:</P>
+          <Work w={work.days([{ staff: 1, days: RONIT_LEFT, dayCost: RONIT.dayCost }])} />
+          <JE
+            note={null}
+            entry={{
+              id: "1",
+              date: "31.12",
+              text: "הפרשה לימי החופשה שנשארו",
+              lines: [
+                { account: "הוצאות שכר", dr: RONIT_LEFT * RONIT.dayCost },
+                { account: "הפרשה לחופשה", cr: RONIT_LEFT * RONIT.dayCost },
+              ],
+            }}
+          />
+          <P>אם הימים לא נצברים, {RONIT_LEFT} הימים פשוט נעלמו בסוף השנה. החברה לא חייבת עליהם כלום, ואין הפרשה.</P>
+        </Part>
+        <P>
+          <strong>טיפ לשאלות:</strong> חפשו בשאלה מילים כמו ״ניתן לצבור״, ״עוברים לשנה הבאה״ או ״פוקעים בסוף השנה״. הן אומרות לכם איזה סוג זה.
+        </P>
+        {quiz("emp-short-absence", [
+          {
+            q: "שתי עובדות ייצאו בשנה הבאה לחופשת לידה, והחברה תשלים להן שכר. כמה הפרשה רושמים השנה?",
+            options: ["אפס. חופשת לידה לא נצברת, ונרשמת כשהיא קורית", "את כל השכר שהחברה תשלים להן", "חצי מהשכר", "את הערך הנוכחי של השכר"],
+            answer: 0,
+            why: "חופשת לידה לא נצברת: עבודה השנה לא מגדילה אותה, והיא לא עוברת משנה לשנה. לכן רושמים אותה רק כשהיא קורית, בשנה הבאה. ואין כאן היוון בכל מקרה, כי זו הטבה לזמן קצר.",
+          },
+        ])}
+        <Remember>לא נצברת: רושמים רק כשההיעדרות קורית. נצברת: בסוף השנה מפרישים על הימים שנשארו.</Remember>
       </>
     ),
-    check: quiz("emp-short-master", [
-      { q: "מענק לידה של 1,800 ₪ לכל יולדת; השנה ילדו 6 עובדות. מה ההוצאה, ומתי?", options: ["10,800 ₪, כשההיעדרות קורית", "10,800 ₪ מראש, בתחילת השנה", "הערך הנוכחי של 10,800", "אפס"], answer: 0, why: "לא נצבר — מכירים כשקורה." },
-      { q: "עובד עוזב עם 2 ימים צבורים, וההיעדרות לא מבשילה. מה הוא מקבל?", options: ["כלום, ואין בגינו הפרשה", "פדיון 2 ימים", "פדיון יום אחד", "תלוי בוותק"], answer: 0, why: "לא מבשילה = אין פדיון." },
-      { q: "בונוס על רווחים מצטברים של שלוש שנים — לזמן קצר?", options: ["לא", "כן", "רק בשנה השלישית", "רק להנהלה"], answer: 0, why: "רוב השירות ישולם יותר מ-12 חודשים אחרי סוף שנתו." },
-      { q: "סכום הבונוס נקבע אחרי תאריך הדוח. מוכר בדוח?", options: ["רק אם הייתה מחויבות קיימת בתאריך הדוח", "תמיד", "לעולם לא", "רק בדוח של השנה הבאה"], answer: 0, why: "התנאי הוא מחויבות קיימת ואומדן מהימן בתאריך הדוח." },
-    ]),
+  },
+  "emp-short-vest": {
+    lead: "כשהימים נצברים, יש עוד שאלה אחת: מה מקבל עובד שעוזב עם ימים שלא ניצל?",
+    body: (
+      <>
+        <Part title="מבשילה: מי שעוזב מקבל כסף על הימים">
+          <P>
+            הדוגמה הנפוצה היא ימי חופשה. עובד שעוזב את העבודה עם ימי חופשה שלא ניצל מקבל עליהם תשלום, פדיון חופשה. כלומר, כל יום שנצבר יעלה לחברה כסף: או שהעובד ינצל אותו, או שיקבל עליו תשלום כשיעזוב (
+            <T19 he="מבשילה" par="15" />).
+          </P>
+        </Part>
+        <Part title="לא מבשילה: מי שעוזב מפסיד את הימים">
+          <P>הדוגמה הנפוצה היא ימי מחלה. הם עוברים משנה לשנה, אבל עובד שעוזב לא מקבל עליהם כסף. יום מחלה עולה לחברה רק אם העובד באמת יהיה חולה וינצל אותו.</P>
+        </Part>
+        <Part title="מה זה משנה בהפרשה">
+          <P>זה משנה על מי מפרישים. נזכור את העיקרון ממסך 1: מפרישים על מה שהחברה צפויה לשלם.</P>
+          <P>
+            לחברה {VESTING.staff} עובדים, ולכל אחד {VESTING.days} ימים צבורים. עלות יום <Money v={VESTING.dayCost} />. לפי הניסיון, {VESTING.leavers} עובדים יעזבו לפני שינצלו את הימים, וכל השאר ינצלו את
+            כל הימים.
+          </P>
+          <DataTable
+            head={["", "מבשילה", "לא מבשילה"]}
+            rows={[
+              ["על מי מפרישים", `כל ${VESTING.staff} העובדים`, `רק ${VESTING_STAY} הנשארים`],
+              ["למה", "גם העוזבים יקבלו כסף", "העוזבים יפסידו את הימים"],
+              ["הפרשה", <Work key="v" w={work.days([{ staff: VESTING.staff, days: VESTING.days, dayCost: VESTING.dayCost }])} />, <Work key="n" w={work.days([{ staff: VESTING_STAY, days: VESTING.days, dayCost: VESTING.dayCost }])} />],
+            ]}
+          />
+        </Part>
+        <Part title="ומה אם הנשארים לא ינצלו הכל?">
+          <P>
+            גם מי שנשאר לא בהכרח ינצל את כל הימים. נניח שלפי הניסיון כל עובד שנשאר ינצל בממוצע רק {VESTING.used} מתוך {VESTING.days} הימים, והשאר יפקעו. יום שפוקע לא עולה לחברה כלום, ולכן על הנשארים
+            מפרישים רק לפי הניצול הצפוי. זה נכון בשני הסוגים: גם במבשילה, עובד שנשאר לא מקבל כסף על יום שפקע.
+          </P>
+          <P>ההבדל בין הסוגים נשאר רק בעוזבים:</P>
+          <DataTable
+            head={["", "מבשילה", "לא מבשילה"]}
+            rows={[
+              ["העוזבים", `כל הימים: ${VESTING.leavers} × ${VESTING.days}`, "כלום"],
+              ["הנשארים", `לפי הצפי: ${VESTING_STAY} × ${VESTING.used}`, `לפי הצפי: ${VESTING_STAY} × ${VESTING.used}`],
+              [
+                "הפרשה",
+                <Work
+                  key="v"
+                  w={work.days([
+                    { staff: VESTING.leavers, days: VESTING.days, dayCost: VESTING.dayCost },
+                    { staff: VESTING_STAY, days: VESTING.used, dayCost: VESTING.dayCost },
+                  ])}
+                />,
+                <Work key="n" w={work.days([{ staff: VESTING_STAY, days: VESTING.used, dayCost: VESTING.dayCost }])} />,
+              ],
+            ]}
+          />
+        </Part>
+        <DataTable
+          head={["סוג", "בדרך כלל"]}
+          rows={[
+            ["ימי חופשה", "נצברים ומבשילים"],
+            ["ימי מחלה", "נצברים ולא מבשילים"],
+            ["כל סוג אחר", "לפי מה שכתוב בשאלה"],
+          ]}
+        />
+        <P>
+          <strong>טיפ לשאלות:</strong> מילים כמו ״פדיון״ או ״בעת עזיבה ישולם״ אומרות מבשילה. ״עובד שעוזב אינו זכאי לתשלום״ אומרת לא מבשילה. ואם השאלה נותנת ״לפי הניסיון״ כמה עובדים יעזבו או כמה ימים ינוצלו,
+          היא מצפה שתשתמשו בזה.
+        </P>
+        {quiz("emp-short-vest", [
+          {
+            q: "ל-20 עובדים יש 2 ימי מחלה צבורים לכל אחד. הימים לא מבשילים, ו-5 עובדים צפויים לעזוב לפני שינצלו אותם. כל הנשארים צפויים לנצל את כל הימים. על כמה ימים מפרישים?",
+            options: ["30 ימים", "40 ימים", "10 ימים", "0 ימים"],
+            answer: 0,
+            why: "לא מבשילה, ולכן רק הנשארים: (20 − 5) × 2 = 30 ימים. 40 הוא כל העובדים, כאילו הימים מבשילים. 10 הם ימי העוזבים, בדיוק החלק שלא מפרישים עליו. ו-0 שוכח שהימים נצברים.",
+          },
+        ])}
+        <Remember>הנשארים: לפי מה שצפוי שינצלו, בשני הסוגים. העוזבים: במבשילה על כל הימים שלהם, כי יקבלו כסף. בלא מבשילה, כלום.</Remember>
+      </>
+    ),
+  },
+  "emp-short-daycost": {
+    lead: "כדי להפוך ימים לשקלים צריך לדעת כמה עולה לחברה יום עבודה אחד. וזה יותר מהשכר.",
+    body: (
+      <>
+        <Part title="מהשכר ליום">
+          <P>
+            מחלקים את השכר החודשי במספר ימי העבודה בחודש. עובדת שמשתכרת <Money v={DAYCOST.salary} /> בחודש, ובחודש יש {DAYCOST.days} ימי עבודה:
+          </P>
+          <L>{`${fmt(DAYCOST.salary)} ÷ ${DAYCOST.days} = ${fmt(DAYCOST_BASE)} ₪ ליום`}</L>
+        </Part>
+        <Part title="מה הן התוספות">
+          <P>
+            על כל שקל שהעובד מקבל, המעסיק משלם עוד כסף לגופים אחרים: ביטוח לאומי של המעסיק, הפרשה לקרן הפנסיה, הפרשה לפיצויים, ולפעמים קרן השתלמות. אלה התוספות. כשהעובדת בחופשה, החברה ממשיכה לשלם עליה את
+            כל אלה, ולכן הן חלק מעלות היום.
+          </P>
+          <P>
+            נניח שבחברה התוספות הן {DAYCOST.onCosts.map((o) => `${o.label} ${pct(o.rate)}`).join(", ").replace(/, ([^,]*)$/, " ו$1")}. אפשר לחשב את עלות היום בשתי דרכים.
+          </P>
+          <p className="text-[13px] font-bold text-muted">דרך 1: כל תוספת בשקלים</p>
+          <DataTable
+            head={["רכיב", "₪ ליום"]}
+            rows={[
+              ["שכר ליום", fmt(DAYCOST_BASE)],
+              ...DAYCOST.onCosts.map((o) => [`${o.label}, ${pct(o.rate)}`, fmt(DAYCOST_BASE * o.rate)]),
+              [<strong key="t">עלות יום</strong>, <strong key="v">{fmt(DAYCOST_FULL)}</strong>],
+            ]}
+          />
+          <p className="text-[13px] font-bold text-muted">דרך 2: קודם מחברים את האחוזים</p>
+          <P>
+            <L>{`${DAYCOST.onCosts.map((o) => pct(o.rate)).join(" + ")} = ${pct(DAYCOST_RATE)}`}</L>, ואז:
+          </P>
+          <Work
+            w={{
+              ...work.dayCost(DAYCOST.salary, DAYCOST.days, DAYCOST_RATE),
+              excel: { numbers: `=${DAYCOST.salary}/${DAYCOST.days}*(1+${pct(DAYCOST_RATE)}) → ${fmt(DAYCOST_FULL)} ₪` },
+            }}
+          />
+          <P>שתי הדרכים נותנות אותו מספר. הראשונה מראה מאיפה כל שקל בא. השנייה קצרה יותר, ובה כדאי להשתמש במבחן.</P>
+        </Part>
+        <Part title="ואם השכר נתון לשנה?">
+          <P>
+            אותו רעיון: מחלקים במספר ימי העבודה בשנה. שכר שנתי של <Money v={DAYCOST.annual.salary} /> ו-{DAYCOST.annual.days} ימי עבודה בשנה:
+          </P>
+          <Work w={work.dayCost(DAYCOST.annual.salary, DAYCOST.annual.days, DAYCOST_RATE)} />
+        </Part>
+        <Part title="לא כל תוספת חלה על כל רכיב">
+          <P>
+            קראו בשאלה על מה חלה כל תוספת. על שכר החופשה חלות בדרך כלל כל התוספות. על בונוס, למשל, חל לפעמים רק ביטוח לאומי, בלי פנסיה ופיצויים. אז עלות בונוס של <Money v={DAYCOST.bonus} /> היא:
+          </P>
+          <Work w={work.bonusCost(DAYCOST.bonus, DAYCOST.onCosts[0].rate)} />
+          <P>ולא {fmt(DAYCOST.bonus * (1 + DAYCOST_RATE))}, שזה כאילו כל התוספות חלות עליו.</P>
+        </Part>
+        <Part title="לפי איזה שכר?">
+          <P>
+            בקורס מחשבים לפי השכר של השנה שנגמרה, גם אם ידוע שהשכר יעלה בשנה הבאה. הסיבה: ביום הדוח העובד צבר זכאות רק לפי מה שהרוויח עד אז, ושכר השנה הבאה עוד לא מגיע לו. חשוב לדעת שיש על זה פרשנויות
+            שונות: יש מי שמחשב לפי השכר הצפוי בשנה הבאה, כי התקן מדבר על הסכום שהחברה צפויה לשלם. אם השאלה מבקשת במפורש שכר אחר, עובדים לפיה.
+          </P>
+        </Part>
+        {quiz("emp-short-daycost", [
+          {
+            q: "פקיד משתכר 8,400 ₪ בחודש, 21 ימי עבודה, והתוספות על שכרו 17%. מהי עלות יום שלו?",
+            options: ["468 ₪", "400 ₪", "417 ₪", "9,828 ₪"],
+            answer: 0,
+            why: `${said(work.dayCost(8_400, 21, 0.17))}\n400 הוא השכר ליום בלי התוספות. 417 מחבר 17 שקלים במקום 17 אחוזים. 9,828 הוא השכר החודשי עם התוספות, לא יום אחד.`,
+          },
+        ])}
+        <Remember>
+          <L>{FORMULA.dayCost}</L>. רק התוספות שחלות על הרכיב, ולפי השכר של השנה.
+        </Remember>
+      </>
+    ),
+  },
+  "emp-short-lifo": {
+    lead: "כשלעובד יש גם ימים של השנה וגם ימים צבורים מהשנה שעברה, צריך לדעת מאילו ימים הוא מנצל קודם. זו השיטה הנפוצה בשאלות.",
+    body: (
+      <>
+        <Part title="מה זה LIFO">
+          <P>
+            LIFO הם ראשי תיבות של Last In, First Out: מה שנכנס אחרון יוצא ראשון. הימים של השנה הנוכחית הם האחרונים שנכנסו, ולכן העובד מנצל אותם קודם. לימים הצבורים מהשנה שעברה הוא מגיע רק אחרי שימי השנה
+            נגמרו.
+          </P>
+          <P>ועוד כלל שחוזר בשאלות: ימים צבורים עוברים לשנה אחת בלבד. מה שלא נוצל עד סוף השנה הבאה פוקע.</P>
+        </Part>
+        <Part title="דני, בשלושה מצבים">
+          <P>
+            לדני {DANNY.entitlement} ימי חופשה בשנה. מהשנה שעברה נשארו לו {DANNY.carried} ימים צבורים, ואם לא ינצל אותם השנה הם יפקעו. מה קורה בסוף השנה, לפי כמה ימים הוא ניצל?
+          </P>
+          <DataTable
+            head={["ניצל", "מימי השנה", "מהצבורים", "צבורים שפקעו", "עובר לשנה הבאה"]}
+            rows={DANNY.used.map((used) => {
+              const l = lifo({ carried: DANNY.carried, entitlement: DANNY.entitlement, used });
+              return [`${used} ימים`, String(used - l.fromCarried), String(l.fromCarried), String(l.carriedLeft), String(l.unusedOwn)];
+            })}
+          />
+          <P>
+            <strong>ניצל {DANNY.used[0]}:</strong> כל {DANNY.used[0]} הימים יצאו מימי השנה, ונשארו לו {DANNY.entitlement - DANNY.used[0]} מהם. לצבורים הוא לא הגיע בכלל, ולכן כל {DANNY.carried} פקעו.
+          </P>
+          <P>
+            <strong>ניצל {DANNY.used[1]}:</strong> בדיוק את ימי השנה. שוב לא נגע בצבורים, והם פקעו. לשנה הבאה לא עובר כלום.
+          </P>
+          <P>
+            <strong>ניצל {DANNY.used[2]}:</strong> {DANNY.entitlement} מימי השנה, ועוד {DANNY.used[2] - DANNY.entitlement} מהצבורים. {DANNY.carried - (DANNY.used[2] - DANNY.entitlement) === 1 ? "היום הצבור השלישי פקע." : `${DANNY.carried - (DANNY.used[2] - DANNY.entitlement)} ימים צבורים פקעו.`}
+          </P>
+        </Part>
+        <Part title="בנוסחה">
+          <Work w={work.lifo(DANNY.entitlement, DANNY.used[0])} />
+          <Work w={work.lifoOld(DANNY.used[2], DANNY.entitlement)} />
+          <P>הנוסחה הראשונה למי שניצל פחות מהזכאות של השנה, והשנייה למי שניצל יותר. וכשהתוצאה יוצאת שלילית, היא אפס: מי שניצל {DANNY.used[0]} לא ניצל ימים מהצבור.</P>
+        </Part>
+        <Part title="ומה זה אומר על ההפרשה">
+          <P>
+            בסוף השנה מפרישים על הימים שעוברים לשנה הבאה. אצל דני, אם ניצל {DANNY.used[0]}, זה {DANNY.entitlement - DANNY.used[0]} ימים. ימים שפקעו כבר לא יעלו לחברה כלום, ולכן לא מפרישים עליהם.
+          </P>
+        </Part>
+        <P>
+          <strong>טיפ לשאלות:</strong> ב-LIFO הימים הצבורים יוצאים אחרונים, ולכן הם הראשונים לפקוע. עובד שניצל פחות מהזכאות של השנה מאבד את כל הימים הצבורים שלו.
+        </P>
+        {quiz("emp-short-lifo", [
+          {
+            q: "לעובדת 10 ימים בשנה ו-2 ימים צבורים שפוקעים בסוף השנה. היא ניצלה 11 ימים. לפי LIFO, כמה ימים צבורים פקעו?",
+            options: ["יום אחד", "2 ימים", "אפס", "9 ימים"],
+            answer: 0,
+            why: `קודם 10 ימי השנה, ואז יום אחד מהצבור:\n${said(work.lifoOld(11, 10))}\nמתוך 2 הצבורים נוצל אחד, והשני פקע. 2 שוכח שיום אחד נוצל. אפס שוכח שהצבור פוקע בסוף השנה. 9 מערבב את ימי השנה עם הצבור.`,
+          },
+        ])}
+        <Remember>LIFO: קודם ימי השנה, ורק אחריהם הצבורים. צבור שלא נוצל עד סוף השנה פוקע, ועליו לא מפרישים.</Remember>
+      </>
+    ),
+  },
+  "emp-short-fifo": {
+    lead: "יש שאלות שבהן הניצול הפוך: קודם הימים הישנים, ורק אחריהם הימים של השנה. השאלה תמיד תגיד את זה במפורש.",
+    body: (
+      <>
+        <Part title="מה זה FIFO">
+          <P>
+            FIFO הם ראשי תיבות של First In, First Out: מה שנכנס ראשון יוצא ראשון. הימים הצבורים מהשנה שעברה נכנסו קודם, ולכן העובד מנצל אותם קודם. לימי השנה הנוכחית הוא מגיע רק אחרי שהצבורים נגמרו.
+          </P>
+          <P>הכלל על פקיעה לא משתנה: ימים צבורים עוברים לשנה אחת בלבד, ומה שלא נוצל עד סוף השנה פוקע.</P>
+        </Part>
+        <Part title="דני, ב-FIFO">
+          <P>
+            אותו דני: {DANNY.entitlement} ימי חופשה בשנה, ו-{DANNY.carried} ימים צבורים מהשנה שעברה שפוקעים בסוף השנה. הפעם הניצול לפי FIFO.
+          </P>
+          <DataTable
+            head={["ניצל", "מהצבורים", "מימי השנה", "צבורים שפקעו", "עובר לשנה הבאה"]}
+            rows={DANNY_FIFO.map((used) => {
+              const f = fifo({ carried: DANNY.carried, entitlement: DANNY.entitlement, used });
+              return [`${used} ימים`, String(f.fromCarried), String(used - f.fromCarried), String(f.carriedLeft), String(f.unusedOwn)];
+            })}
+          />
+          {DANNY_FIFO.map((used) => {
+            const f = fifo({ carried: DANNY.carried, entitlement: DANNY.entitlement, used });
+            const own = used - f.fromCarried;
+            return (
+              <P key={used}>
+                <strong>ניצל {used}:</strong>{" "}
+                {own === 0
+                  ? `${used === 2 ? "שני הימים" : `${used} הימים`} יצאו מהצבורים. ${f.carriedLeft === 1 ? "היום הצבור השלישי לא נוצל ופקע" : `${f.carriedLeft} ימים צבורים לא נוצלו ופקעו`}, וכל ${DANNY.entitlement} ימי השנה עוברים לשנה הבאה.`
+                  : `קודם ${f.fromCarried} הצבורים, ואז ${own} מימי השנה. ${f.unusedOwn === 1 ? "נשאר יום אחד" : `נשארו ${f.unusedOwn} ימים`} מהשנה${f.carriedLeft === 0 ? ", ושום יום לא פקע" : ""}.`}
+              </P>
+            );
+          })}
+        </Part>
+        <Part title="בנוסחה">
+          <Work w={work.fifoOwn(DANNY_FIFO[1], DANNY.carried)} />
+          <Work w={work.fifoLeft(DANNY.entitlement, DANNY_FIFO[1] - DANNY.carried)} />
+          <P>ומי שניצל פחות ממה שצבר, כמו בשורה הראשונה, לא נגע בימי השנה בכלל: כולם עוברים לשנה הבאה, ומה שנשאר מהצבור פוקע.</P>
+        </Part>
+        <Part title="ומה זה אומר על ההפרשה">
+          <P>
+            בדיוק כמו קודם: בסוף השנה מפרישים על הימים שעוברים לשנה הבאה. אצל דני, אם ניצל {DANNY_FIFO[1]}, זה {DANNY.entitlement - (DANNY_FIFO[1] - DANNY.carried)} ימים.
+          </P>
+          <P>כדאי לשים לב: ב-FIFO הצבורים יוצאים ראשונים, ולכן פוקעים הרבה פחות ימים. נשארים יותר ימים לשנה הבאה, וגם ההפרשה גבוהה יותר.</P>
+        </Part>
+        <P>
+          <strong>טיפ לשאלות:</strong> אם השאלה לא אומרת אחרת, עובדים ב-LIFO. FIFO רק כשכתוב במפורש, למשל ״הניצול לפי FIFO״ או ״העובדים מנצלים קודם את הימים שנצברו״.
+        </P>
+        {quiz("emp-short-fifo", [
+          {
+            q: "לעובדת 10 ימים בשנה ו-2 ימים צבורים שפוקעים בסוף השנה. היא ניצלה 11 ימים. לפי FIFO, כמה ימים עוברים לשנה הבאה?",
+            options: ["יום אחד", "אפס", "2 ימים", "3 ימים"],
+            answer: 0,
+            why: `קודם 2 הצבורים, ואז 9 מימי השנה:\n${said(work.fifoOwn(11, 2))}\n${said(work.fifoLeft(10, 9))}\nאפס הוא התשובה ב-LIFO. 2 ו-3 שוכחים שהיא ניצלה גם מימי השנה.`,
+          },
+        ])}
+        <Remember>FIFO: קודם הצבורים, ורק אחריהם ימי השנה. רק כשהשאלה אומרת את זה במפורש.</Remember>
+      </>
+    ),
+  },
+  "emp-short-bonus": {
+    lead: "בונוס נרשם כהוצאה בשנה שבה העובדים עבדו, אם כבר בסוף השנה ברור שהחברה תשלם אותו ואפשר לאמוד כמה.",
+    body: (
+      <>
+        <Part title="שני תנאים">
+          <P>
+            החברה מכירה בהפרשה לבונוס רק כששני התנאים מתקיימים בסוף השנה (<T19 he="בונוס ושיתוף ברווחים" par="19" />):
+          </P>
+          <P>
+            <strong>1. יש מחויבות.</strong> החברה לא יכולה להימנע מהתשלום. המחויבות יכולה להיות משפטית, כמו חוזה או הסכם, או משתמעת: נוהג שהחברה תמיד שילמה, כך שהעובדים מצפים לו.
+          </P>
+          <P>
+            <strong>2. אפשר לאמוד את הסכום באופן מהימן.</strong> למשל: יש נוסחה בתוכנית הבונוס, הסכום נקבע לפני שהדוחות אושרו, או שהנוהג מהעבר מראה כמה משלמים.
+          </P>
+          <DataTable
+            head={["מקרה", "מכירים בהפרשה?"]}
+            rows={[
+              ["בהסכם כתוב שכל עובד יקבל 0.002% מהרווח השנתי", "כן: מחויבות משפטית ונוסחה"],
+              ["אין חוזה, אבל עשר שנים ברציפות החברה שילמה משכורת 13", "כן: נוהג יוצר מחויבות משתמעת"],
+              ["ההנהלה תחליט רק אחרי אישור הדוחות אם לתת בונוס, ואין נוהג", "לא: בסוף השנה אין מחויבות"],
+            ]}
+          />
+        </Part>
+        <Part title="דוגמה: בונוס לפי נוסחה">
+          <div className="rounded-xl border border-line bg-surface px-4 py-3">
+            <P>
+              בחברת ״נוף״ {NOF.staff} עובדים. לפי ההסכם, כל עובד שעדיין עובד ביום התשלום, 31.3, מקבל <L>{pct(NOF.share)}</L> מהרווח של השנה. בסוף השנה הרווח המוערך <Money v={NOF.estimate} />, והחברה צופה
+              ש-{NOF.leavers} עובדים יעזבו לפני מרץ. בפועל, ב-31.3 הבונוס שולם ל-{NOF.paidTo} עובדים, והרווח הסופי היה <Money v={NOF.actual} />.
+            </P>
+          </div>
+          <P>
+            <strong>מה מחפשים:</strong> ההפרשה בסוף השנה, וההוצאה של השנה הבאה.
+          </P>
+          <P>
+            <strong>ההפרשה בסוף השנה.</strong> כל עובד צבר בונוס לפי הרווח המוערך. מי שצפוי לעזוב לפני התשלום לא יקבל כלום, ולכן לא מפרישים עליו:
+          </P>
+          <Work w={work.stayers(NOF.staff, NOF.leavers)} />
+          <Work w={work.bonus(NOF.share, NOF.estimate, NOF.staff - NOF.leavers)} />
+          <JE
+            note={null}
+            entry={{
+              id: "1",
+              date: "31.12",
+              text: "הפרשה לבונוס",
+              lines: [
+                { account: "הוצאות שכר", dr: NOF_OPENING },
+                { account: "הפרשה לבונוס", cr: NOF_OPENING },
+              ],
+            }}
+          />
+          <P>
+            <strong>בשנה הבאה.</strong> התשלום בפועל לפי הרווח הסופי ולפי מי שבאמת נשאר:
+          </P>
+          <Work w={work.bonusPaid(NOF.share, NOF.actual, NOF.paidTo)} />
+          <P>
+            האומדן היה {fmt(NOF_OPENING)}, ושולמו {fmt(NOF_PAID)}. את ההפרש לא מתקנים אחורה בשנה שעברה. הוא נרשם כהוצאה של השנה הבאה, ויוצא מהמעגל:
+          </P>
+          <RollForward
+            title="הפרשה לבונוס, בשנה הבאה"
+            pnTo="רווח והפסד"
+            rows={[
+              { label: "יתרת פתיחה", value: NOF_OPENING, kind: "balance" },
+              { label: "הוצאות שכר, השורה החסרה", value: NOF_EXPENSE, kind: "pn" },
+              { label: "תשלומים", value: -NOF_PAID },
+              { label: "יתרת סגירה", value: 0, kind: "balance" },
+            ]}
+          />
+          <Work w={tool.expense(NOF_OPENING, NOF_PAID, 0)} />
+        </Part>
+        <Part title="עוד שני דברים שכדאי לזכור">
+          <P>
+            <strong>תוספות על הבונוס.</strong> אם חל על הבונוס ביטוח לאומי או תוספת אחרת, מוסיפים אותה גם להפרשה, כמו שראינו במסך 4.
+          </P>
+          <P>
+            <strong>בונוס על כמה שנים.</strong> בונוס שמשולם רק אחרי שלוש שנים, על הרווחים של כולן, הוא כבר לא הטבה לזמן קצר: על השנה הראשונה הוא ישולם יותר מ-12 חודשים אחרי סופה.
+          </P>
+        </Part>
+        <P>
+          <strong>טיפ לשאלות:</strong> חפשו בשאלה שלושה דברים: האם יש הסכם או נוהג, מה הנוסחה, ומי צפוי להיות זכאי ביום התשלום. מי שצפוי לעזוב לפני התשלום לא נכנס להפרשה.
+        </P>
+        {quiz("emp-short-bonus", [
+          {
+            q: "ההנהלה החליטה בפברואר, אחרי אישור הדוחות, לתת לעובדים בונוס על השנה שעברה. עד היום החברה לא נתנה בונוסים. מכירים בבונוס בדוחות של השנה שעברה?",
+            options: ["לא. בסוף השנה לא הייתה מחויבות", "כן, כי הבונוס הוא על השנה שעברה", "כן, אבל רק חצי מהסכום", "כן, בערך הנוכחי שלו"],
+            answer: 0,
+            why: "בסוף השנה לא היה הסכם ולא נוהג, וההחלטה התקבלה רק אחרי אישור הדוחות. לכן לא הייתה מחויבות, ואין הפרשה. זה שהבונוס ״על השנה שעברה״ לא מספיק. אין סיבה לחצי, ובהטבה לזמן קצר לא מהוונים.",
+          },
+        ])}
+        <Remember>מחויבות ואומדן מהימן בסוף השנה. מפרישים רק על מי שצפוי לקבל, וההפרש בין האומדן לתשלום הוא הוצאה של השנה הבאה.</Remember>
+      </>
+    ),
   },
 
   // ---------------------------------------------------------------------------
   // Lesson 4: defined contribution against defined benefit.
   "emp-dc-hook": {
-    lead: "מי שמבטיח תוצאה — נושא בסיכון; מי שמבטיח רק סכום קבוע — לא.",
+    lead: "מי שמבטיח תוצאה נושא בסיכון. מי שמבטיח רק סכום קבוע, לא.",
     body: (
       <>
         <Story icon={<Backpack />} title="דמי כיס, או ״אני משלם על הכול״">
-          <p>אפשרות אחת: נותנים לבן שלכם דמי כיס קבועים כל שבוע לטיול השנתי, והוא כבר יסתדר. אפשרות שנייה: מבטיחים לשלם את כל החשבון של הטיול, יעלה כמה שיעלה.</p>
-          <p>מי נושא בסיכון שהטיול יתייקר — בכל אחד מהמקרים?</p>
+          <p>אפשרות אחת: נותנים לבן שלכם דמי כיס קבועים לטיול השנתי, והוא כבר יסתדר. אפשרות שנייה: מבטיחים לשלם את כל החשבון, יעלה כמה שיעלה.</p>
+          <TwoPanel
+            label="דמי כיס קבועים: אם הטיול יתייקר, הבן יסתדר, והסיכון עליו. הבטחה לשלם הכול: אם הטיול יתייקר, ההורה משלם, והסיכון עליו"
+            panels={[
+              { title: "דמי כיס קבועים", icon: <Coins />, steps: ["נותנים סכום קבוע", "הטיול התייקר?"], verdict: "הבן מסתדר: הסיכון עליו", tone: 1 },
+              { title: "״אני משלם על הכול״", icon: <Backpack />, steps: ["מבטיחים את החשבון", "הטיול התייקר?"], verdict: "ההורה משלם: הסיכון עליו", tone: 4 },
+            ]}
+          />
+          <p>מי נושא בסיכון שהטיול יתייקר, בכל אחד מהמקרים?</p>
         </Story>
-        <MapBranch lesson="ias19-dc">
-          הענף ״לאחר סיום העסקה״ מתפצל לשניים: הפקדה מוגדרת — פשוטה, והיא כולה בשיעור הזה — והטבה מוגדרת, ב{lessonsRef("ias19-measure", "ias19-present")}.
-        </MapBranch>
+        <MapBranch lesson="ias19-dc">הענף ״לאחר סיום העסקה״ מתפצל לשניים: הפקדה מוגדרת, פשוטה וכולה בשיעור הזה, והטבה מוגדרת, ב{lessonsRef("ias19-measure", "ias19-present")}.</MapBranch>
       </>
     ),
   },
   "emp-dc-what": {
-    lead: "הטבה לאחר סיום העסקה היא כל הטבה שמשולמת אחרי שהעבודה נגמרה — חוץ מפיטורין ומהטבות לזמן קצר.",
+    lead: "הטבה לאחר סיום העסקה היא כל הטבה שמשולמת אחרי שהעבודה נגמרה, חוץ מפיטורין ומהטבות לזמן קצר.",
     body: (
       <>
         <P>
-          <T19 he="הטבות לאחר סיום העסקה" en="Post-employment benefits" par="26" /> הן הטבות עובד שעומדות לתשלום אחרי סיום ההעסקה. לא נכללות בהן הטבות בגין פיטורין (שנולדות מההחלטה לסיים את
+          <T19 he="הטבות לאחר סיום העסקה" par="26" /> הן הטבות עובד שעומדות לתשלום אחרי סיום ההעסקה. לא נכללות בהן הטבות בגין פיטורין (שנולדות מההחלטה לסיים את
           ההעסקה) והטבות לזמן קצר.
         </P>
         <Sorted
           columns={[
-            { title: "הטבות בפרישה", tone: "good", items: ["פנסיה", "מענק פרישה חד־פעמי", "פיצויים לפי משכורת אחרונה"] },
+            { title: "הטבות בפרישה", tone: "good", items: ["מענק פרישה חד־פעמי", "פיצויים לפי משכורת אחרונה", "הפקדות לקופה חיצונית"] },
             { title: "הטבות לגמלאים", tone: "good", items: ["שי לחגים", "השתתפות בהוצאות רפואיות", "נופש וחופשות"] },
             { title: "לא כאן", tone: "bad", items: ["פיצוי בגין פיטורין מוקדמים", "חופשה שנתית שוטפת", "בונוס שנתי"] },
           ]}
@@ -285,66 +580,108 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
       </>
     ),
     check: quiz("emp-dc-what", [
-      { q: "החברה משתתפת בחצי מעלות הביטוח הרפואי של גמלאיה. איזו הטבה זו?", options: ["הטבה לאחר סיום העסקה", "הטבה לזמן קצר", "הטבה בגין פיטורין", "לא הטבת עובד"], answer: 0, why: "משולמת אחרי סיום ההעסקה — הטבה לגמלאים (IAS 19.26)." },
-      { q: "פיצוי מיוחד לעובדים שהסכימו לפרוש מוקדם במסגרת תוכנית התייעלות. איזו הטבה זו?", options: ["הטבה בגין פיטורין", "הטבה לאחר סיום העסקה", "הטבה לזמן קצר", "הטבה אחרת לזמן ארוך"], answer: 0, why: `נולדה מההחלטה לסיים את ההעסקה — פיטורין, ב${lessonRef("ias19-other")}.` },
+      { q: "החברה משתתפת בחצי מעלות הביטוח הרפואי של גמלאיה. איזו הטבה זו?", options: ["הטבה לאחר סיום העסקה", "הטבה לזמן קצר", "הטבה בגין פיטורין", "לא הטבת עובד"], answer: 0, why: "משולמת אחרי סיום ההעסקה: הטבה לגמלאים (סעיף 26)." },
+      { q: "פיצוי מיוחד לעובדים שהסכימו לפרוש מוקדם במסגרת תוכנית התייעלות. איזו הטבה זו?", options: ["הטבה בגין פיטורין", "הטבה לאחר סיום העסקה", "הטבה לזמן קצר", "הטבה אחרת לזמן ארוך"], answer: 0, why: `נולדה מההחלטה לסיים את ההעסקה: פיטורין, ב${lessonRef("ias19-other")}.` },
     ]),
   },
   "emp-dc-two": {
-    lead: "בהפקדה מוגדרת החברה מעבירה סכום קבוע ונפטרת; בהטבה מוגדרת היא מבטיחה את ההטבה עצמה.",
+    lead: "בהפקדה מוגדרת החברה מעבירה סכום קבוע ונפטרת. בהטבה מוגדרת היא מבטיחה את התוצאה.",
     body: (
       <>
-        <Wide className="grid gap-3 sm:grid-cols-2">
-          <Card title={<T19 he="הפקדה מוגדרת" en="Defined Contribution, DC" par="28" />}>
-            <p>החברה מעבירה סכום קבוע לקרן נפרדת, ואין לה שום מחויבות נוספת. כמה העובד יקבל בסוף — תלוי בתשואת הקרן. הסיכון על העובד.</p>
-            <p className="text-[14px] text-muted">בישראל: פנסיה צוברת, ורכיב הפיצויים אצל עובדים שחתומים על סעיף 14 לחוק פיצויי פיטורין.</p>
+        <TwoPanel
+          label="מעטפה לחתונה מול הבטחה לממן את החתונה: במעטפה נותנים סכום קבוע, ומה שקורה אחר כך לא עליך; בהבטחה משלמים כמה שיעלה, והסיכון עליך"
+          panels={[
+            { title: "מעטפה לחתונה", icon: <Mail />, steps: ["נותנים סכום קבוע", "מה שקורה אחר כך: לא עליך"], verdict: "הסיכון על הזוג: הפקדה מוגדרת", tone: 1 },
+            { title: "״אני מממן את החתונה״", icon: <PartyPopper />, steps: ["מבטיחים את התוצאה", "יעלה כמה שיעלה"], verdict: "הסיכון עליך: הטבה מוגדרת", tone: 4 },
+          ]}
+        />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Card title={<T19 he="הפקדה מוגדרת" par="28" />}>
+            <p>החברה מעבירה סכום קבוע לקרן נפרדת, ואין לה מחויבות נוספת. כמה העובד יקבל בסוף תלוי בתשואת הקרן. הסיכון על העובד.</p>
+            <p className="text-[14px] text-muted">בישראל: פיצויים לעובדים עם סעיף 14, וכל הפקדה קבועה לקופה שאחריה לחברה אין חובה נוספת.</p>
           </Card>
-          <Card title={<T19 he="הטבה מוגדרת" en="Defined Benefit, DB" par="27(b)" />}>
-            <p>החברה מתחייבת להטבה עצמה — סכום לפי נוסחה. הסיכון האקטוארי (תמותה, עליית שכר, תשואה) עליה, גם כשקרן חיצונית משלמת בפועל.</p>
-            <p className="text-[14px] text-muted">בישראל: פיצויים מלאים לפי משכורת אחרונה, מענקי פרישה, פנסיה תקציבית.</p>
+          <Card title={<T19 he="הטבה מוגדרת" par="27(ב)" />}>
+            <p>החברה מתחייבת לסכום לפי נוסחה. הסיכון שההערכות יתבדו (תמותה, שכר, תשואה) עליה, גם כשקרן חיצונית משלמת.</p>
+            <p className="text-[14px] text-muted">בישראל: פיצויים לפי משכורת אחרונה, ומענקי פרישה.</p>
           </Card>
-        </Wide>
+        </div>
       </>
     ),
     check: quiz("emp-dc-two", [
-      { q: "המעסיק מפקיד 6.5% מהשכר לקרן פנסיה, והסיכון על העובד. איזו תוכנית?", options: ["הפקדה מוגדרת", "הטבה מוגדרת", "הטבה לזמן קצר", "פיטורין"], answer: 0, why: "סכום קבוע, בלי מחויבות נוספת." },
-      { q: "פנסיה תקציבית: החברה משלמת לגמלאי 70% מהמשכורת האחרונה. איזו תוכנית?", options: ["הטבה מוגדרת", "הפקדה מוגדרת", "אחרת לזמן ארוך", "לזמן קצר"], answer: 0, why: "החברה הבטיחה את ההטבה." },
+      { q: "המעסיק מפקיד 6.5% מהשכר לקופה חיצונית, והסיכון על העובד. איזו תוכנית?", options: ["הפקדה מוגדרת", "הטבה מוגדרת", "הטבה לזמן קצר", "פיטורין"], answer: 0, why: "סכום קבוע, בלי מחויבות נוספת." },
+      { q: "החברה התחייבה לשלם לכל עובד שפורש משכורת אחרונה אחת על כל שנת עבודה. איזו תוכנית?", options: ["הטבה מוגדרת", "הפקדה מוגדרת", "אחרת לזמן ארוך", "לזמן קצר"], answer: 0, why: "החברה הבטיחה את התוצאה." },
     ]),
   },
   "emp-dc-test": {
-    lead: "המבחן הוא מי נושא בסיכון — לא מי משלם.",
+    lead: "המבחן הוא מי נושא בסיכון, לא מי משלם.",
     body: (
       <>
-        <P>קרן חיצונית יכולה לשלם את ההטבות — ועדיין התוכנית תהיה הטבה מוגדרת, אם החברה חייבת לכסות חוסר. מה שהופך תוכנית להטבה מוגדרת (<span dir="ltr">IAS 19.29</span>):</P>
+        <P>קרן חיצונית יכולה לשלם את ההטבות, והתוכנית עדיין הטבה מוגדרת: אם החברה חייבת להשלים חוסר (סעיף 29).</P>
+        <Fork
+          label="השאלה: מי יפסיד אם הכסף לא יספיק? העובד: הפקדה מוגדרת. החברה: הטבה מוגדרת"
+          question="מי יפסיד אם הכסף לא יספיק?"
+          branches={[
+            { when: "העובד", then: "הפקדה מוגדרת" },
+            { when: "החברה", then: "הטבה מוגדרת" },
+          ]}
+        />
         <RiskTest />
         <Sorted
           columns={[
-            { title: "הסיכון על העובד → הפקדה מוגדרת", tone: "good", items: ["הפקדה קבועה, בלי ערבות", "מבטח לקח על עצמו את כל הסיכון", "רכיב פיצויים לפי סעיף 14"] },
-            { title: "הסיכון על החברה → הטבה מוגדרת", tone: "bad", items: ["ערבות לתשואה מינימלית", "חובה להשלים חוסר בקרן", "נוסחה לפי משכורת אחרונה", "אין הפקדות בכלל"] },
+            { title: "הסיכון על העובד: הפקדה מוגדרת", tone: "good", items: ["הפקדה קבועה, בלי ערבות", "מבטח לקח על עצמו את כל הסיכון", "פיצויים לפי סעיף 14"] },
+            { title: "הסיכון על החברה: הטבה מוגדרת", tone: "bad", items: ["ערבות לתשואה מינימלית", "חובה להשלים חוסר בקרן", "נוסחה לפי משכורת אחרונה", "אין הפקדות בכלל"] },
           ]}
         />
       </>
     ),
     check: quiz("emp-dc-test", [
-      { q: "קרן נפרדת משלמת את ההטבות, והחברה מחויבת להשלים חוסרים. איזו תוכנית?", options: ["הטבה מוגדרת", "הפקדה מוגדרת", "תלוי בקרן", "אין"], answer: 0, why: "חובת ההשלמה = הסיכון על החברה." },
-      { q: "החברה ערבה לתשואה מינימלית על ההפקדות. איזו תוכנית?", options: ["הטבה מוגדרת", "הפקדה מוגדרת", "לזמן קצר", "פיטורין"], answer: 0, why: "IAS 19.29." },
+      { q: "קרן נפרדת משלמת את ההטבות, והחברה חייבת להשלים חוסרים. איזו תוכנית?", options: ["הטבה מוגדרת", "הפקדה מוגדרת", "תלוי בקרן", "אין"], answer: 0, why: "חובת ההשלמה = הסיכון על החברה." },
+      { q: "החברה ערבה לתשואה מינימלית על ההפקדות. איזו תוכנית?", options: ["הטבה מוגדרת", "הפקדה מוגדרת", "לזמן קצר", "פיטורין"], answer: 0, why: "סעיף 29." },
     ]),
   },
   "emp-dc-record": {
-    lead: "בהפקדה מוגדרת ההוצאה היא ההפקדה המגיעה על השנה; מה שעוד לא הועבר — התחייבות.",
+    lead: "בהפקדה מוגדרת ההוצאה היא ההפקדה של השנה. מה שעוד לא הועבר הוא חוב.",
     body: (
       <>
-        <Rule>
-          הכלל (<span dir="ltr">IAS 19.51–52</span>): הוצאה = ההפקדה המגיעה בגין שירות התקופה. ההפרש מול מה ששולם הוא התחייבות (או נכס, אם שילמו יותר). בלי היוון — אלא אם ההפקדה צפויה
-          להשתלם יותר מ-12 חודשים אחרי סוף השנה.
-        </Rule>
-        <KeyCard icon={<ShieldCheck className="h-5 w-5" />}>אין כאן מדידה אקטוארית, אין ריבית ואין P.N. ההפקדה המוגדרת היא העלה הקל בענף.</KeyCard>
+        <P>
+          <strong>הכלל</strong> (סעיף 51–52): ההוצאה היא ההפקדה המגיעה על עבודת השנה. מה שעוד לא שולם הוא חוב (ואם שילמו יותר, נכס).
+        </P>
+        <Remember>
+          <span className="block">
+            ההוצאה: <L>{FORMULA.dcExpense}</L>.
+          </span>
+          <span className="block">
+            החוב בסוף השנה: <L>{FORMULA.dcPayable}</L>.
+          </span>
+          <span className="block">
+            ושכר שעולה כל שנה: <L>{FORMULA.grown}</L>.
+          </span>
+        </Remember>
+        <P>בלי היוון, אלא אם ההפקדה תשולם יותר מ-12 חודשים אחרי סוף השנה.</P>
+        <Timeline
+          label="ההפקדה של דצמבר עוברת ב-10 בינואר: ההוצאה שייכת לדצמבר, וב-31.12 היא חוב"
+          title="ההפקדה של דצמבר"
+          from={0}
+          to={2}
+          ticks={[
+            { at: 0, label: "1.12" },
+            { at: 1, label: "31.12" },
+            { at: 2, label: "31.1" },
+          ]}
+          spans={[{ from: 0, to: 1, label: "עבודת דצמבר: ההוצאה", tone: 1 }]}
+          marks={[
+            { at: 1, label: "חוב: זכאים", tone: "accent" },
+            { at: 1.33, label: "10.1: הכסף עובר", tone: 4 },
+          ]}
+        />
+        <Remember>אין כאן מדידה אקטוארית, אין ריבית ואין P.N. ההפקדה המוגדרת היא החלק הקל.</Remember>
         <Card title="ומה עם חלק העובד?">
-          <p>כשהחברה מנכה משכר העובד את חלקו ומעבירה אותו לקרן, זה חלק מהשכר שהעובד כבר הרוויח — לא הוצאה נוספת של החברה. ההוצאה בגין התוכנית היא רק ההפקדה של המעסיק.</p>
+          <p>כשהחברה מנכה משכר העובד את חלקו ומעבירה אותו לקופה, זה חלק מהשכר שהעובד כבר הרוויח, לא הוצאה נוספת של החברה. ההוצאה בגין התוכנית היא רק ההפקדה של המעסיק.</p>
         </Card>
       </>
     ),
     check: quiz("emp-dc-record", [
-      { q: "בתוכנית הפקדה מוגדרת — מתי יש התחייבות במאזן?", options: ["רק כשהפקדה מגיעה ועוד לא שולמה", "תמיד, לפי ערך נוכחי של הפנסיה", "אף פעם", "רק בפרישה"], answer: 0, why: "ההתחייבות היא רק ההפקדה שטרם הועברה." },
+      { q: "בתוכנית הפקדה מוגדרת, מתי יש חוב במאזן?", options: ["רק כשהפקדה מגיעה ועוד לא שולמה", "תמיד, לפי ערך נוכחי של ההטבה", "אף פעם", "רק בפרישה"], answer: 0, why: "החוב הוא רק ההפקדה שטרם הועברה." },
     ]),
   },
   "emp-dc-template": {
@@ -352,43 +689,67 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <SolveTemplate
-          seek={["ההוצאה של השנה — ההפקדה המגיעה בגין השירות שניתן השנה.", "היתרה במאזן — ההפרש בין מה שהגיע למה שהועבר."]}
+          seek={["ההוצאה של השנה: ההפקדה המגיעה על העבודה של השנה.", "היתרה במאזן: ההפרש בין מה שהגיע למה שהועבר."]}
           check={[
             "קודם: האם זו בכלל הפקדה מוגדרת? (מבחן הסיכון)",
-            "כמה חודשי שירות היו השנה — עובד חדש, מחלקה שנפתחה באמצע השנה?",
+            "כמה חודשי עבודה היו השנה? עובד חדש, מחלקה שנפתחה באמצע השנה?",
             "של מי ההפקדה? רק חלק המעסיק הוא הוצאה; חלק העובד מנוכה משכרו.",
-            "מתי הכסף עובר? בחודש שאחרי, ברבעון, או מראש — זה קובע כמה שולם עד 31.12.",
-            "היוון — רק אם ההפקדה תשולם יותר מ-12 חודשים אחרי סוף השנה (IAS 19.52).",
+            "מתי הכסף עובר? בחודש שאחרי, ברבעון, או מראש. זה קובע כמה שולם עד 31.12.",
+            "היוון: רק אם ההפקדה תשולם יותר מ-12 חודשים אחרי סוף השנה (סעיף 52).",
           ]}
           build={[
-            { title: "1. הפקדה לחודש", lines: ["עובדים × שכר × שיעור המעסיק."] },
-            { title: "2. ההוצאה", lines: ["הפקדה לחודש × חודשי השירות של השנה."] },
+            { title: "1. הפקדה לחודש", lines: [<L key="f">עובדים × שכר × שיעור המעסיק = הפקדה לחודש</L>] },
+            { title: "2. ההוצאה", lines: [<L key="f">{FORMULA.dcExpense}</L>, "על חודשי העבודה של השנה בלבד."] },
             { title: "3. מה הועבר", lines: ["הפקדה לחודש × החודשים שהכסף שלהם יצא עד 31.12."] },
-            { title: "4. היתרה והפקודה", lines: ["הגיע יותר משהועבר → זכאים (התחייבות). הועבר יותר → הוצאות מראש (נכס).", "ח׳ הוצאות שכר · ז׳ מזומן · ז׳ זכאים (או ח׳ הוצאות מראש)."] },
+            { title: "4. היתרה והפקודה", lines: [<L key="f">{FORMULA.dcPayable}</L>, "הועבר יותר משהגיע? נכס: הוצאות מראש.", "ח׳ הוצאות שכר · ז׳ מזומן · ז׳ זכאים (או ח׳ הוצאות מראש)."] },
           ]}
         />
       </>
     ),
     check: quiz("emp-dc-template", [
-      { q: "החברה מעבירה את ההפקדות פעם ברבעון, אחרי סוף הרבעון. כמה חודשים יהיו ב״זכאים״ ב-31.12?", options: ["3 — הרבעון האחרון", "1", "0", "12"], answer: 0, why: "אוקטובר–דצמבר יעברו רק בינואר." },
-      { q: "החברה מנכה 7% משכר העובד ומעבירה לקרן. האם זו הוצאה של החברה?", options: ["לא — זה חלק מהשכר של העובד", "כן, בנוסף לחלק המעסיק", "רק אם הקרן חיצונית", "רק בפרישה"], answer: 0, why: "ההוצאה היא רק הפקדת המעסיק." },
+      { q: "החברה מעבירה את ההפקדות פעם ברבעון, אחרי סוף הרבעון. כמה חודשים יהיו ב״זכאים״ ב-31.12?", options: ["3: הרבעון האחרון", "1", "0", "12"], answer: 0, why: "אוקטובר עד דצמבר יעברו רק בינואר." },
+      { q: "החברה מנכה 7% משכר העובד ומעבירה לקופה. האם זו הוצאה של החברה?", options: ["לא, זה חלק מהשכר של העובד", "כן, בנוסף לחלק המעסיק", "רק אם הקופה חיצונית", "רק בפרישה"], answer: 0, why: "ההוצאה היא רק הפקדת המעסיק." },
     ]),
   },
   "emp-dc-solved": {
-    lead: "הוצאה = שכר × שיעור ההפקדה; ההפקדה של דצמבר, שתעבור בינואר, היא התחייבות.",
+    lead: "הוצאה = שכר × שיעור ההפקדה. ההפקדה של דצמבר, שתעבור בינואר, היא חוב.",
     body: (
       <>
-        <Story icon={<Coins />} title="משרד תכנון: הפקדה לפנסיה">
+        <Story icon={<Coins />} title="משרד תכנון: הפקדה חודשית לקופה">
           <p>
-            שכר שנתי <Money v={DC.payroll} />. המעסיק מפקיד {pct(DC.rate)} לקרן פנסיה צוברת, והכסף עובר ב-10 לחודש שאחרי.
+            שכר שנתי <Money v={DC.payroll} />. המעסיק מפקיד {pct(DC.rate)} לקופה חיצונית, והכסף עובר ב-10 לחודש שאחרי.
           </p>
         </Story>
+        <SplitBar
+          title="12 הפקדות: 11 עברו בשנה, אחת עוברת בינואר"
+          periods={[
+            { months: 11, label: `שולם: ${Math.round(DC_PAID).toLocaleString("he-IL")} ₪`, tone: 1 },
+            { months: 1, label: "חוב", tone: 4 },
+          ]}
+          cuts={["ינואר", "דצמבר"]}
+        />
         <Stepper
           label="הפקדה מוגדרת"
           steps={[
-            { title: "1. ההוצאה", body: <p><Money v={DC.payroll} plain /> × {pct(DC.rate)} = <strong><Money v={DC_YEAR.expense} /></strong>.</p> },
-            { title: "2. מה שולם", body: <p>11 חודשים הועברו במהלך השנה: <Money v={DC_PAID} />.</p> },
-            { title: "3. מה נשאר", body: <p>ההפקדה של דצמבר תעבור בינואר: <strong><Money v={DC_YEAR.liability} /></strong> — זכאים.</p> },
+            { title: "1. ההוצאה", body: <Work w={work.dcExpense(DC.payroll, DC.rate)} /> },
+            {
+              title: "2. מה שולם",
+              body: (
+                <>
+                  <p>11 חודשים הועברו במהלך השנה:</p>
+                  <Work w={work.dcPaid(DC_YEAR.expense, 11)} />
+                </>
+              ),
+            },
+            {
+              title: "3. מה נשאר",
+              body: (
+                <>
+                  <p>ההפקדה של דצמבר תעבור בינואר, ועד אז היא זכאים:</p>
+                  <Work w={work.dcPayable(DC_YEAR.expense, DC_PAID)} />
+                </>
+              ),
+            },
             {
               title: "4. הפקודה",
               body: (
@@ -412,59 +773,112 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
     ),
   },
   "emp-dc-together": {
-    lead: "שכר אחר — אותה דרך; ומבטח שקיבל את כל הסיכון הופך את התוכנית להפקדה מוגדרת.",
+    lead: "שכר אחר, אותה דרך. ומבטח שלקח את כל הסיכון הופך את התוכנית להפקדה מוגדרת.",
     body: (
       <>
-        <Card title="א. שכר אחר">
+        <Part title="א. שכר אחר">
           <HintLadder
             task={
               <>
                 שכר שנתי <Money v={DC_VAR.payroll} />, הפקדה {pct(DC_VAR.rate)}, הכסף עובר ב-10 לחודש שאחרי. מה ההוצאה, מה שולם ומה הזכאים?
               </>
             }
-            hints={["מה מגיע על כל השנה — ומה מזה כבר הועבר?", "הכלל: הוצאה = ההפקדה המגיעה; ההפרש — זכאים.", <>הוצאה: <Money v={DC_VAR.payroll} plain /> × {pct(DC_VAR.rate)} = <Money v={DC_VAR_YEAR.expense} />.</>, <>זכאים <Money v={DC_VAR_YEAR.liability} />; מזומן <Money v={DC_VAR_YEAR.expense - DC_VAR_YEAR.liability} />.</>]}
+            hints={[
+              "מה מגיע על כל השנה, ומה מזה כבר הועבר?",
+              <>
+                הכלל:
+                <span className="block">
+                  <L>{FORMULA.dcExpense}</L>
+                </span>
+                <span className="block">
+                  <L>{FORMULA.dcPayable}</L>
+                </span>
+              </>,
+              <>
+                הוצאה: <L>{putIn(work.dcExpense(DC_VAR.payroll, DC_VAR.rate))}</L>
+              </>,
+              <>
+                <Work w={work.dcExpense(DC_VAR.payroll, DC_VAR.rate)} />
+                <Work w={work.dcPaid(DC_VAR_YEAR.expense, 11)} />
+                <Work w={work.dcPayable(DC_VAR_YEAR.expense, DC_VAR_YEAR.expense - DC_VAR_YEAR.liability)} />
+                בפקודה: הוצאות שכר בחובה; מזומן וזכאים בזכות.
+              </>,
+            ]}
           />
-        </Card>
-        <Card title="ב. מבטח שלקח את הסיכון">
+        </Part>
+        <Part title="ב. מבטח שלקח את הסיכון">
+          <Fork
+            label="מבטח לקח את כל הסיכון: אם הכסף לא יספיק, המבטח יפסיד, ולכן זו הפקדה מוגדרת"
+            question="מי יפסיד אם הכסף לא יספיק?"
+            branches={[
+              { when: "המבטח (לא החברה)", then: "הפקדה מוגדרת: ההוצאה היא הפרמיה" },
+              { when: "החברה", then: "הטבה מוגדרת" },
+            ]}
+          />
           <HintLadder
             task={
               <>
                 מבטח קיבל על עצמו את כל הסיכון של מענקי הפרישה, והחברה משלמת לו רק פרמיה של {pct(INSURED.premium)} מעלות השכר (<Money v={INSURED.payroll} />). סווגו, וצרו את המעגל.
               </>
             }
-            hints={["האם לחברה יש מחויבות כלשהי מעבר לפרמיה?", "המבחן: מי נושא בסיכון — המבטח. הפקדה מוגדרת.", <>הוצאה = הפרמיה: <Money v={INSURED.payroll} plain /> × {pct(INSURED.premium)} = <Money v={INSURED_EXPENSE} />.</>, <>מעגל: פתיחה 0, הוצאה <Money v={INSURED_EXPENSE} plain />, תשלום <Money v={INSURED_EXPENSE} plain />, סגירה 0.</>]}
+            hints={[
+              "יש לחברה מחויבות כלשהי מעבר לפרמיה?",
+              <>
+                המבחן: מי נושא בסיכון. המבטח, ולכן הפקדה מוגדרת, וההפקדה היא הפרמיה:
+                <span className="block">
+                  <L>{FORMULA.dcExpense}</L>
+                </span>
+              </>,
+              <>
+                הוצאה: <L>{putIn(work.dcExpense(INSURED.payroll, INSURED.premium))}</L>
+              </>,
+              <>
+                <Work w={work.dcExpense(INSURED.payroll, INSURED.premium)} />
+                המעגל, כשהפרמיה שולמה כולה:
+                <Work w={work.roll({ opening: 0, added: INSURED_EXPENSE, payments: INSURED_EXPENSE })} />
+              </>,
+            ]}
           />
-        </Card>
+        </Part>
       </>
     ),
   },
   "emp-dc-drill": {
-    lead: "אותה סוגיה, מספרים חדשים בכל לחיצה — עם פתרון מלא לפי התבנית.",
+    lead: "אותה סוגיה, מספרים חדשים בכל לחיצה, ופתרון מלא לפי התבנית.",
     body: (
       <>
-        <P>בחרו סוג שאלה, פתרו לבד, לחצו ״בדיקה״ — ורק אז פתחו את הפתרון המלא. ״שאלה חדשה״ מגרילה מספרים אחרים: מספר עובדים, שכר, שיעור, מועד פתיחה ומועד העברת הכסף.</P>
+        <P>בחרו סוג שאלה, פתרו לבד, לחצו ״בדיקה״, ורק אז פתחו את הפתרון המלא. ״שאלה חדשה״ מגרילה מספרים אחרים: מספר עובדים, שכר, שיעור, מועד פתיחה ומועד העברת הכסף.</P>
         <DrillBox families={["classify", "dc"]} />
       </>
     ),
   },
   "emp-dc-master": {
-    lead: "הפקדה מוגדרת: ההוצאה היא ההפקדה. הטבה מוגדרת: מדידה — וזה כל ההמשך.",
+    lead: "הפקדה מוגדרת: ההוצאה היא ההפקדה. הטבה מוגדרת: מדידה, וזה כל ההמשך.",
     body: (
       <>
         <ExplainTask
           task="הסבירו לחבר, בדקה, למה ״מי משלם״ אינו המבחן."
-          model="גם בתוכנית של הטבה מוגדרת, קרן חיצונית יכולה להיות זו שמשלמת לגמלאים. אבל אם בקרן חסר כסף והחברה חייבת להשלים, הסיכון נשאר אצל החברה. לכן שואלים מי יפסיד אם הכסף לא יספיק — לא מי מעביר את הכסף."
+          model={
+            <>
+              גם בהטבה מוגדרת, קרן חיצונית יכולה לשלם לגמלאים. אבל אם חסר בה כסף והחברה חייבת להשלים, הסיכון אצל החברה. לכן שואלים מי יפסיד אם הכסף לא יספיק, לא מי מעביר אותו.
+            </>
+          }
         />
-        <Bridge summary="הפקדה מוגדרת: הוצאה שווה להפקדה. הטבה מוגדרת: מדידה אקטוארית.">
-          איך מודדים בדוחות את מה שהחברה הבטיחה לשלם בעוד 14 שנה? {lessonRef("ias19-measure")}.
-        </Bridge>
+        <TwoPanel
+          label="קרן משלמת בשני המקרים; ההבדל הוא מי משלים חוסר"
+          panels={[
+            { title: "הקרן משלמת, ואין השלמה", steps: ["חסר כסף בקרן", "העובד מקבל פחות"], verdict: "הפקדה מוגדרת", tone: 1 },
+            { title: "הקרן משלמת, והחברה משלימה", steps: ["חסר כסף בקרן", "החברה מוסיפה"], verdict: "הטבה מוגדרת", tone: 4 },
+          ]}
+        />
+        <Bridge summary="הפקדה מוגדרת: ההוצאה היא ההפקדה. הטבה מוגדרת: מדידה אקטוארית.">איך מודדים בדוחות את מה שהחברה הבטיחה לשלם בעוד 14 שנה? {lessonRef("ias19-measure")}.</Bridge>
       </>
     ),
     check: quiz("emp-dc-master", [
-      { q: "המעסיק מפקיד 7% לקרן, והסיכון על העובד. DC או DB?", options: ["DC", "DB"], answer: 0, why: "סכום קבוע, בלי מחויבות נוספת." },
-      { q: "החברה ערבה לתשואה מינימלית. DC או DB?", options: ["DB", "DC"], answer: 0, why: "ערבות = סיכון על החברה (IAS 19.29)." },
-      { q: "בתוכנית DC — מתי יש התחייבות במאזן?", options: ["רק כשהפקדה מגיעה ועוד לא שולמה", "תמיד", "רק בפרישה", "אף פעם"], answer: 0, why: "ההפקדה שטרם הועברה." },
-      { q: "קרן נפרדת משלמת, והחברה מחויבת להשלים חוסרים. DC או DB?", options: ["DB", "DC"], answer: 0, why: "הסיכון על החברה." },
+      { q: "המעסיק מפקיד 7% לקרן, והסיכון על העובד. הפקדה מוגדרת או הטבה מוגדרת?", options: ["הפקדה מוגדרת", "הטבה מוגדרת"], answer: 0, why: "סכום קבוע, בלי מחויבות נוספת." },
+      { q: "החברה ערבה לתשואה מינימלית. הפקדה מוגדרת או הטבה מוגדרת?", options: ["הטבה מוגדרת", "הפקדה מוגדרת"], answer: 0, why: "ערבות = סיכון על החברה (סעיף 29)." },
+      { q: "בהפקדה מוגדרת, מתי יש חוב במאזן?", options: ["רק כשהפקדה מגיעה ועוד לא שולמה", "תמיד", "רק בפרישה", "אף פעם"], answer: 0, why: "ההפקדה שטרם הועברה." },
+      { q: "קרן נפרדת משלמת, והחברה חייבת להשלים חוסרים. הפקדה מוגדרת או הטבה מוגדרת?", options: ["הטבה מוגדרת", "הפקדה מוגדרת"], answer: 0, why: "הסיכון על החברה." },
     ]),
   },
 };

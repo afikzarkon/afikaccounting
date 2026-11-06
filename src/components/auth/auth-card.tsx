@@ -16,8 +16,6 @@ export function AuthCard({
 }) {
   return (
     <div className="relative flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden px-4 py-16">
-      <div className="bg-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_70%)]" />
-      <div className="pointer-events-none absolute top-1/4 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-accent/20 blur-3xl" />
       <div className="relative w-full max-w-md">
         <div className="glass rounded-3xl p-7 shadow-2xl sm:p-9">
           <LogoMark className="h-10 w-10" />

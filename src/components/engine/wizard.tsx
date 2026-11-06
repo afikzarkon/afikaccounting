@@ -298,7 +298,7 @@ function Stepper({
               >
                 <div className="relative h-1 overflow-hidden rounded-full bg-line">
                   <motion.div
-                    className="absolute inset-y-0 start-0 rounded-full bg-gradient-to-l from-accent to-cyan-400"
+                    className="absolute inset-y-0 start-0 rounded-full bg-accent"
                     initial={false}
                     animate={{ width: done || active ? "100%" : "0%" }}
                     transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}

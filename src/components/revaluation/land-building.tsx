@@ -1,5 +1,5 @@
-import { Building2, Trees } from "lucide-react";
-import { Callout, DataTable, JournalEntry, Num, Topic } from "@/components/study/blocks";
+import { DataTable, JournalEntry, Num } from "@/components/study/blocks";
+import { Part, Remember } from "@/components/study-mode/screen-parts";
 import { Formula } from "@/components/study/math";
 import { solveLand } from "@/lib/learn/revaluation";
 import { LAND, side, transferLines } from "./data";
@@ -25,70 +25,53 @@ export function LandBuildingSection() {
         ]}
       />
 
-      <Topic title="קרקע — הערכה מחדש בכל שנה, ואז מכירה" open>
-        <div className="flex items-start gap-3">
-          <span className="mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent">
-            <Trees className="h-5 w-5" />
-          </span>
-          <p className="!mt-0">
-            קרקע נרכשה ב-1.1.{ROWS[0].year} ב-<Num v={LAND.cost} /> ₪ ומוערכת מחדש בכל 31.12. ב-{LAND.saleYear} נמכרה ב-<Num v={LAND.proceeds} /> ₪. אין פחת
-            בשום שלב — בכל שנה רק פער בין השווי הקודם לחדש.
-          </p>
-        </div>
-        <DataTable
-          head={["31.12", "שווי קודם", "שווי הוגן", "פער", "לקרן", "לרווח והפסד", "יתרת הקרן", "מה קרה"]}
-          rows={[
-            ...ROWS.map((r) => [String(r.year), r.opening, r.fairValue, r.diff, r.oci + 0, r.pl + 0, r.surplus + 0, whatHappened(r)]),
-            [String(LAND.saleYear), LAST.fairValue, "—", "—", -LAST.surplus, GAIN, 0, "מכירה — הקרן עוברת לעודפים"],
-          ]}
-          highlight={ROWS.map((r, i) => (r.pl !== 0 ? i : -1)).filter((i) => i >= 0)}
-        />
-        <div className="grid gap-3 lg:grid-cols-2">
-          {ROWS.map((r) => (
-            <JournalEntry
-              key={r.year}
-              title={`הערכה מחדש ${r.year}`}
-              date={`31.12.${r.year}`}
-              lines={[
-                ...side("קרקע", r.diff),
-                ...side("קרן הערכה מחדש — קרקע (רווח כולל אחר)", -r.oci),
-                ...side("הפסד מירידת ערך (רווח והפסד)", -r.pl),
-              ].sort((x, y) => Number(x.cr !== undefined) - Number(y.cr !== undefined))}
-            />
-          ))}
+      <p>
+        <strong>קרקע — הערכה מחדש בכל שנה, ואז מכירה.</strong> קרקע נרכשה ב-1.1.{ROWS[0].year} ב-<Num v={LAND.cost} /> ₪ ומוערכת מחדש בכל 31.12. ב-
+        {LAND.saleYear} נמכרה ב-<Num v={LAND.proceeds} /> ₪. אין פחת בשום שלב — בכל שנה רק פער בין השווי הקודם לחדש.
+      </p>
+      <DataTable
+        head={["31.12", "שווי קודם", "שווי הוגן", "פער", "לקרן", "לרווח והפסד", "יתרת הקרן", "מה קרה"]}
+        rows={[
+          ...ROWS.map((r) => [String(r.year), r.opening, r.fairValue, r.diff, r.oci + 0, r.pl + 0, r.surplus + 0, whatHappened(r)]),
+          [String(LAND.saleYear), LAST.fairValue, "—", "—", -LAST.surplus, GAIN, 0, "מכירה — הקרן עוברת לעודפים"],
+        ]}
+        highlight={ROWS.map((r, i) => (r.pl !== 0 ? i : -1)).filter((i) => i >= 0)}
+      />
+      <div className="space-y-3">
+        {ROWS.map((r) => (
           <JournalEntry
-            title="המכירה"
-            date={`${LAND.saleYear}`}
+            key={r.year}
+            title={`הערכה מחדש ${r.year}`}
+            date={`31.12.${r.year}`}
             lines={[
-              { account: "מזומן", dr: LAND.proceeds },
-              { account: "קרקע", cr: LAST.fairValue },
-              { account: "רווח ממכירת קרקע (רווח והפסד)", cr: GAIN },
-            ]}
-            note={
-              <>
-                הרווח נמדד מול השווי ההוגן האחרון (<Num v={LAST.fairValue} />), לא מול העלות המקורית.
-              </>
-            }
+              ...side("קרקע", r.diff),
+              ...side("קרן הערכה מחדש — קרקע (רווח כולל אחר)", -r.oci),
+              ...side("הפסד מירידת ערך (רווח והפסד)", -r.pl),
+            ].sort((x, y) => Number(x.cr !== undefined) - Number(y.cr !== undefined))}
           />
-          <JournalEntry title="העברת הקרן לעודפים" date={`${LAND.saleYear}`} lines={transferLines(LAST.surplus)} />
-        </div>
-        <Callout kind="warn" title="הקרן לא עוברת דרך רווח והפסד">
-          <p>
-            העברת הקרן לעודפים היא פקודה בתוך ההון העצמי (סעיף 41). מי שרושם את <Num v={LAST.surplus} /> כרווח ממכירה — מנפח את הרווח והפסד.
-          </p>
-        </Callout>
-      </Topic>
+        ))}
+        <JournalEntry
+          title="המכירה"
+          date={`${LAND.saleYear}`}
+          lines={[
+            { account: "מזומן", dr: LAND.proceeds },
+            { account: "קרקע", cr: LAST.fairValue },
+            { account: "רווח ממכירת קרקע (רווח והפסד)", cr: GAIN },
+          ]}
+          note={
+            <>
+              הרווח נמדד מול השווי ההוגן האחרון (<Num v={LAST.fairValue} />), לא מול העלות המקורית.
+            </>
+          }
+        />
+        <JournalEntry title="העברת הקרן לעודפים" date={`${LAND.saleYear}`} lines={transferLines(LAST.surplus)} />
+      </div>
 
-      <Topic title="מבנה: שתי חלופות לתנועה בקרן ההערכה מחדש" refs="סעיף 41" open>
-        <div className="flex items-start gap-3">
-          <span className="mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent">
-            <Building2 className="h-5 w-5" />
-          </span>
-          <p className="!mt-0">
-            אחרי ההערכה הפחת השנתי מחושב לפי <strong>השווי ההוגן החדש</strong> בניכוי גרט מעודכן, מחולק ב<strong>יתרת אורך החיים</strong>. לגבי הקרן
-            — החברה בוחרת אחת משתי חלופות:
-          </p>
-        </div>
+      <Part title="מבנה: שתי חלופות לתנועה בקרן ההערכה מחדש (סעיף 41)">
+        <p>
+          אחרי ההערכה הפחת השנתי מחושב לפי <strong>השווי ההוגן החדש</strong> בניכוי גרט מעודכן, מחולק ב<strong>יתרת אורך החיים</strong>. לגבי הקרן —
+          החברה בוחרת אחת משתי חלופות:
+        </p>
         <div className="grid gap-3 lg:grid-cols-2">
           <div className="rounded-xl border border-line bg-surface-2/40 p-4">
             <p className="text-sm font-semibold text-fg">1. העברה בקצב הפחת — מימוש תוך כדי שימוש</p>
@@ -108,7 +91,12 @@ export function LandBuildingSection() {
             </p>
           </div>
         </div>
-      </Topic>
+      </Part>
+
+      <Remember>
+        הקרן לא עוברת דרך רווח והפסד: העברת הקרן לעודפים היא פקודה בתוך ההון העצמי (סעיף 41). מי שרושם את <Num v={LAST.surplus} /> כרווח ממכירה —
+        מנפח את הרווח והפסד.
+      </Remember>
     </>
   );
 }

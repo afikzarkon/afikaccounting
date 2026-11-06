@@ -42,7 +42,7 @@ export function TrapQuiz({ trap, answered, onAnswer }: { trap: Trap; answered?: 
         ) : (
           <div className="space-y-2">
             <Feedback ok={false} title="לא נכון" text={trap.traps[answered.choice]} />
-            <p className="rounded-2xl bg-surface-2/70 px-4 py-3.5 text-[15px] leading-relaxed text-fg/90 ring-1 ring-line">
+            <p className="whitespace-pre-line rounded-2xl bg-surface-2/70 px-4 py-3.5 text-[15px] leading-relaxed text-fg/90 ring-1 ring-line">
               <span className="font-bold text-success">התשובה הנכונה: </span>
               {trap.why}
             </p>
