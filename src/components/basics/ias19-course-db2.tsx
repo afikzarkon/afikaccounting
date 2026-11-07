@@ -30,11 +30,11 @@ import { EXAM_B } from "@/lib/learn/ias19-exams";
 import { lessonRef, lessonsRef, pct } from "@/lib/study/ias19/shared";
 import { FormulaFill, Ltr } from "./ias19-formula";
 import { DrillBox, SolveTemplate } from "./ias19-interactive";
-import { Bridge, DestTag, ExplainTask, HintLadder, Ladder, MapBranch, RollForward, T19, TwoBuckets } from "./ias19-ui";
+import { Bridge, DestTag, ExplainTask, FullSteps, Ladder, MapBranch, RollForward, T19, TaskSolution, TwoBuckets } from "./ias19-ui";
 import { BeforeAfter, Fork, NetBars, Routing, SplitBar, TwoPanel } from "./ias19-visuals";
 import { MiniQuiz } from "./inventory-interactive";
 import { Sorted, Story } from "./inventory-teach";
-import { Card, JE, Money, Rule, Stepper } from "./ui";
+import { Card, JE, Money, Rule } from "./ui";
 import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
 
 /** The employee-benefits course, lessons 8–10: an amendment mid-year and settlement, plan assets and the ceiling, presentation and reverse engineering. */
@@ -244,7 +244,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
           </p>
         </Story>
         {SPLIT_YEAR}
-        <Stepper
+        <FullSteps
           label="שנה חתוכה"
           steps={[
             { title: "פתיחה", body: <p><Money v={CTO.oldPerYear} plain /> × 1 ÷ <L>{1 + CTO.rateEnd2023}^{n5}</L> = <strong><M v={CTO_OPENING} /></strong>.</p> },
@@ -303,7 +303,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
       <>
         {SETTLE_FORK}
         <Part title="א. סילוק">
-          <HintLadder
+          <TaskSolution
             task={
               <>
                 ב-31.12.{CTO.from + 1} החברה משלמת למנהל <Money v={SETTLE.paid} /> תמורת ביטול החוב שבספרים, <M v={CTO_YEAR.closing} />. מה הרישום?
@@ -331,23 +331,23 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
           />
         </Part>
         <Part title="ב. פרישה בלתי צפויה">
-          <HintLadder
+          <TaskSolution
             task={
               <>
                 במקום זאת: המנהל פורש במפתיע ב-{RETIRE.date}, וזכאי לפי התנאים ל-<L>{RETIRE.years} × <Money v={CTO.newPerYear} plain /> = <Money v={RETIRE_PAID} /></L>. איך נרשם ההפרש מול היתרה?
               </>
             }
-            hints={["התשלום חורג מתנאי התוכנית?", "לא. זו פרישה לפי התנאים, ולכן אין סילוק.", <>ההפרש: <Money v={RETIRE_PAID} plain /> − <M v={CTO_YEAR.closing} /></>, <><strong><M v={RETIRE_PN} /></strong> הפסד: P.N. ב-OCI.</>]}
+            hints={["התשלום חורג מתנאי התוכנית?", "לא. זו פרישה לפי התנאים, ולכן אין סילוק.", <>ההפרש: <Money v={RETIRE_PAID} plain /> − <M v={CTO_YEAR.closing} /></>, <>= <strong><M v={RETIRE_PN} /></strong> הפסד: P.N. ב-OCI.</>]}
           />
         </Part>
         <Part title="ג. ביטול תוכנית קטנה">
-          <HintLadder
+          <TaskSolution
             task={
               <>
                 חברה משלמת לעובד <Money v={SMALL.paid} /> תמורת ביטול התוכנית, והיתרה בספרים <Money v={SMALL.books} />. מה הרישום? ומה היה משתנה אילו העובד פשוט התפטר?
               </>
             }
-            hints={["הביטול לפי תנאי התוכנית?", "לא. זו עסקה שמבטלת את החוב: סילוק.", <>הפסד: <Money v={SMALL.paid} plain /> − <Money v={SMALL.books} plain /></>, <><strong><Money v={SMALL_LOSS} /></strong> הפסד מסילוק, לרווח והפסד. אילו התפטר ויצא לפי התנאים: פרישה בלתי צפויה, P.N. ב-OCI.</>]}
+            hints={["הביטול לפי תנאי התוכנית?", "לא. זו עסקה שמבטלת את החוב: סילוק.", <>הפסד: <Money v={SMALL.paid} plain /> − <Money v={SMALL.books} plain /></>, <>= <strong><Money v={SMALL_LOSS} /></strong> הפסד מסילוק, לרווח והפסד. אילו התפטר ויצא לפי התנאים: פרישה בלתי צפויה, P.N. ב-OCI.</>]}
           />
         </Part>
       </>
@@ -621,7 +621,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
           <NetBars obligation={SURPLUS.obligation} assets={SURPLUS.assets} ceiling={SURPLUS_CEILING} title="31.12.2023" />
           <NetBars obligation={SURPLUS.closingObligation} assets={SURPLUS.closingAssets} ceiling={SURPLUS_END_CEILING} title="31.12.2024" />
         </div>
-        <HintLadder
+        <TaskSolution
           task={
             <>
               ב-31.12.2023: קופה <Money v={SURPLUS.assets} />, חוב <Money v={SURPLUS.obligation} />; התקרה {pct(SURPLUS.ceilingShare)} מהחוב. ב-2024: עלות ריבית <Money v={SURPLUS.interestCost} />, שירות{" "}
@@ -791,7 +791,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
           ]}
           cuts={["1.1", `1.${PLAN.assets.month + 1}: הפקדה · 1.${AMENDED.month + 1}: תיקון`, "31.12"]}
         />
-        <Stepper
+        <FullSteps
           label="תיקון והצגה"
           steps={[
             {
@@ -860,7 +860,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
               { title: "ריבית נטו בשכר", steps: [<>שכר <Money key="s" v={Math.round(AM_EFFECT.pl)} plain /></>, "מימון 0"], verdict: <>רווח והפסד: <Money v={Math.round(AM_EFFECT.pl)} plain /></>, tone: 4 },
             ]}
           />
-          <HintLadder
+          <TaskSolution
             task="אותה שנה, אבל החברה מציגה את הריבית הנטו בהוצאות השכר. מה משתנה?"
             hints={["המדיניות משנה את הסכומים, או רק את השורה?", "רק את השורה. הסך ברווח והפסד זהה.", <>שכר: <Money v={-AM_EFFECT.salary} plain /> + <Money v={-AM_EFFECT.netInterest} plain /></>, <>= <M v={-AM_EFFECT.pl} /> בשכר, ובמימון אפס.</>]}
           />
@@ -873,7 +873,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
             הטבות ששולמו {NOTE.paidLast.toLocaleString("en-US")} (מהן מהקופה {NOTE.paidFromAssetsLast.toLocaleString("en-US")}), הפקדה לקופה {NOTE.contributionLast.toLocaleString("en-US")}, ושירות עבר {NOTE.pastServiceLast} (תוספת לדרג א׳).
           </p>
           <p className="text-[14.5px]">כל התשלומים והתיקון בסוף השנה; ההפקדה ב-30.6.</p>
-          <HintLadder
+          <TaskSolution
             task="חלצו: ריבית ההיוון, אחוז התשלומים מהקופה, שיעור ההפקדה, ושיעור התוספת לדרג א׳."
             hints={[
               "מה מותר לחלץ ישירות, ובאיזה תנאי?",

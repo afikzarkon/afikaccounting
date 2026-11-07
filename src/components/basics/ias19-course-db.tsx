@@ -27,12 +27,12 @@ import { lessonRef, pct } from "@/lib/study/ias19/shared";
 import { FORMULA, said, work } from "@/lib/study/ias19/formulas";
 import { FormulaFill, Ltr, type Term, Work } from "./ias19-formula";
 import { DrillBox, PucExplorer, SolveTemplate, WindowExplorer } from "./ias19-interactive";
-import { Bridge, ExplainTask, HintLadder, Ladder, MapBranch, Recipe5, RollForward, T19, TwoBuckets } from "./ias19-ui";
+import { Bridge, ExplainTask, FullSteps, Ladder, MapBranch, Recipe5, RollForward, T19, TaskSolution, TwoBuckets } from "./ias19-ui";
 import { BankStatement, Diff, PeopleGrid, Routing, Timeline, WrongRight, YearBars } from "./ias19-visuals";
 import { MiniQuiz } from "./inventory-interactive";
 import { Sorted, Story } from "./inventory-teach";
 import { RollSchedule } from "./roll-schedule";
-import { Card, Money, Rule, Stepper, Wide } from "./ui";
+import { Card, Money, Rule, Wide } from "./ui";
 import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
 
 /** The employee-benefits course, lessons 5–7: measuring at one date, attribution to years of service, and a year's roll-forward. */
@@ -314,7 +314,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
       <>
         <Part title="א. הפרישה נדחית בשנתיים, והריבית יורדת">
           {servedVsN(VP.served, VP_LATER.yearsToRetire)}
-          <HintLadder
+          <TaskSolution
             task={
               <>
                 אותה סמנכ״לית, אבל הפרישה בעוד {VP_LATER.yearsToRetire} שנים, והתשואה {pct(VP_LATER.rate)}. מה החוב?
@@ -328,10 +328,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
                   <L>{FORMULA.measure}</L>
                 </span>
               </>,
-              <>
-                ①:
-                <Work w={work.perYearGrown(VP.share, VP.salary, VP.growth, VP_LATER.yearsToRetire)} />
-              </>,
+              null,
               <>
                 ①:
                 <Work w={work.perYearGrown(VP.share, VP.salary, VP.growth, VP_LATER.yearsToRetire)} />
@@ -344,7 +341,7 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
         <Part title="ב. קבוצה של עובדים">
           <PeopleGrid total={GROUP.opening.staff} leaving={GROUP.opening.staff - g.heads} title={`${GROUP.opening.staff} עובדים, ${pct(GROUP.opening.stay)} צפויים לקבל`} />
           <Work w={work.heads(GROUP.opening.staff, GROUP.opening.stay)} />
-          <HintLadder
+          <TaskSolution
             task={
               <>
                 חברת לוגיסטיקה, {GROUP.opening.date}: מענק של {pct(GROUP.opening.share)} מהשכר האחרון לכל שנת עבודה. שכר ממוצע צפוי בפרישה <Money v={GROUP.opening.finalSalary} />. כולם התחילו ב-1.1.
@@ -652,7 +649,7 @@ ${said(work.counted(31, 35))}` },
             ]}
             at={BACK.served}
           />
-          <HintLadder
+          <TaskSolution
             task={
               <>
                 <Money v={BACK.early.perYear} /> לכל אחת מ-{BACK.early.upTo} השנים הראשונות, ו-<Money v={BACK.later} /> לכל שנה אחריהן, בלי תקרה. צפוי לעבוד {BACK.expected} שנים, עבד {BACK.served}, התשלום בעוד{" "}
@@ -707,7 +704,7 @@ ${said(work.counted(31, 35))}` },
             spans={DUAL.people.map((p, k) => ({ from: DUAL_ROWS[k].start, to: DUAL_ROWS[k].end, label: `עובד ${p.id}: ${DUAL_ROWS[k].start}–${DUAL_ROWS[k].end}`, tone: 2 as const, row: k }))}
             marks={DUAL.people.map((p) => ({ at: p.age, label: `${p.id} היום` }))}
           />
-          <HintLadder
+          <TaskSolution
             task="מה החוב לכל עובד, ובסך הכול?"
             hints={[
               `לכל עובד: האם הוא יכול להשלים ${DUAL.rule.years} שנות עבודה עד גיל ${DUAL.rule.retire}? ומאיזה גיל העבודה שלו מתחילה להוביל למענק?`,
@@ -715,11 +712,7 @@ ${said(work.counted(31, 35))}` },
                 עובד א׳ התחיל בגיל {DUAL.people[0].hireAge}, לפני {DUAL.rule.minAge - DUAL.rule.years}: צובר מגיל {DUAL_ROWS[0].start} עד {DUAL_ROWS[0].end}. עובד ב׳ התחיל בגיל {DUAL.people[1].hireAge}: ישלים{" "}
                 {DUAL.rule.years} שנה בגיל {DUAL_ROWS[1].end}. עובד ג׳ התחיל בגיל {DUAL.people[2].hireAge}: לא ישלים, ולכן זכאי רק בגיל {DUAL.rule.retire}, וצובר עד אז.
               </>,
-              <>
-                עובד א׳:
-                <Work w={work.straight(DUAL.rule.grant, DUAL_ROWS[0].window)} />
-                <Work w={work.counted(DUAL.people[0].age, DUAL_ROWS[0].start)} />
-              </>,
+              null,
               <div key="t" className="space-y-2">
                 {DUAL.people.map((p, k) => (
                   <div key={p.id}>
@@ -923,7 +916,7 @@ ${said(work.counted(33, 35))}` },
           <p className="text-[15px]">
             פתיחה <Money v={PAID_YEAR.opening} />, שיעור תחילת השנה {pct(PAID_YEAR.rate)}. ב-1.{PAID_YEAR.month} שולם לעובד שפרש, כצפוי, מענק של <Money v={PAID_YEAR.paid} />.
           </p>
-          <Stepper
+          <FullSteps
             label="ריבית עם תשלום"
             steps={[
               { title: "1. על הפתיחה", body: <p><L>{PAID_YEAR.opening.toLocaleString("en-US")} × {pct(PAID_YEAR.rate)} = {Math.round(PAID_ON_OPENING).toLocaleString("en-US")}</L></p> },
@@ -1103,7 +1096,7 @@ ${said(work.counted(33, 35))}` },
           }
         />
         <Part title="רק הריבית יורדת">
-          <HintLadder
+          <TaskSolution
             task={
               <>
                 אותו סמנכ״ל, {CF.from + 1}: כל ההנחות כמו קודם, רק הריבית בסוף השנה יורדת ל-{pct(CHANGED.rateEnd)}. מה ה-P.N.?
@@ -1117,10 +1110,7 @@ ${said(work.counted(33, 35))}` },
                   <L>{FORMULA.pnDB}</L>
                 </span>
               </>,
-              <>
-                סגירה:
-                <Work w={work.measure({ perYear: CF_PER_YEAR, years: 2, heads: 1, n: n1 - 1, i: CHANGED.rateEnd })} />
-              </>,
+              null,
               <>
                 <Work w={work.measure({ perYear: CF_PER_YEAR, years: 2, heads: 1, n: n1 - 1, i: CHANGED.rateEnd })} />
                 <Work w={work.pnDB({ opening: Y1.closing, interest: Y2.interest, service: Y2.service, closing: RATE_ONLY_CLOSING })} />

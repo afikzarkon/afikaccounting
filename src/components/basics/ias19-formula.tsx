@@ -117,7 +117,7 @@ export function FormulaFill({
   working = [],
   result,
   given = true,
-  stepwise = true,
+  stepwise = false,
 }: {
   label: string;
   lhs?: ReactNode;

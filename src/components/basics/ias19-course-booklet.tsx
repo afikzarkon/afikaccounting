@@ -7,8 +7,7 @@ import type { BkLine, BkNote, BkQuestion, BkStep } from "@/lib/learn/ias19-bookl
 import { BK_AMEND, BK_CASES, BK_DC, BK_GIFT, BK_NOTE, BK_OLT, BK_SHORT, BK_THREE, BK_TIER, BK_TIERED } from "@/lib/learn/ias19-booklet-cases";
 import { BookletCheck } from "./ias19-booklet-client";
 import { Ltr } from "./ias19-formula";
-import { RollForward } from "./ias19-ui";
-import { Stepper } from "./stepper";
+import { FullSteps, RollForward } from "./ias19-ui";
 
 /**
  * The booklet-level questions that close the lessons: the story and its data,
@@ -36,34 +35,62 @@ function value(l: BkLine) {
   }
 }
 
+/** A table cell: a formula (an operator, no Hebrew words) reads left to right; anything else is left as it is. */
+const cell = (c: string | number) =>
+  typeof c === "string" && /[×÷=−^]/.test(c) && !/[֐-׿]/.test(c) ? (
+    <bdi dir="ltr" className="num">
+      <Ltr>{c}</Ltr>
+    </bdi>
+  ) : (
+    c
+  );
+
+/** A note as a table: what is computed, the calculation with the numbers, and the result — one row per line. */
 function Note({ n }: { n: BkNote }) {
   return (
-    <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
+    <div className="space-y-2">
       <p className="text-[15px] font-bold">{n.title}</p>
       {n.text && <p className="text-[14.5px] leading-relaxed text-fg/85">{n.text}</p>}
-      <ul className="space-y-2">
-        {n.lines.map((l, i) => (
-          <li key={i} className="border-t border-line/60 pt-2 text-[14.5px] leading-relaxed first:border-t-0 first:pt-0">
-            <span className="font-semibold">{l.label}</span>
-            {l.how && <span className="block text-[13.5px] text-muted">{l.how}</span>}
-            {l.text && <span className="block">{l.text}</span>}
-            {(l.calc || l.value !== undefined) && (
-              <span className="block">
-                <bdi dir="ltr" className="num">
-                  {l.calc && <Ltr>{l.calc}</Ltr>}
+      <div className="overflow-x-auto rounded-xl border border-line">
+        <table className="w-full min-w-[32rem] text-[14px]">
+          <thead>
+            <tr className="bg-surface-2/70 text-[12.5px] text-muted">
+              <th className="px-3 py-2 text-start font-medium">מה מחשבים</th>
+              <th className="px-3 py-2 text-start font-medium">חישוב</th>
+              <th className="px-3 py-2 text-end font-medium">תוצאה</th>
+            </tr>
+          </thead>
+          <tbody>
+            {n.lines.map((l, i) => (
+              <tr key={i} className="border-t border-line/70 align-top">
+                <td className="px-3 py-2 font-semibold text-fg">
+                  {l.label}
+                  {l.how && <span className="block text-[12.5px] font-normal text-muted">{l.how}</span>}
+                </td>
+                <td className="px-3 py-2 text-fg">
+                  {l.calc ? (
+                    <bdi dir="ltr" className="num">
+                      <Ltr>{l.calc}</Ltr>
+                    </bdi>
+                  ) : (
+                    l.text
+                  )}
+                </td>
+                <td className="px-3 py-2 text-end font-bold whitespace-nowrap text-fg">
                   {l.value !== undefined && (
                     <>
-                      {l.calc ? " = " : ""}
-                      <strong className="whitespace-nowrap">{value(l)}</strong>
+                      <bdi dir="ltr" className="num">
+                        {value(l)}
+                      </bdi>
+                      {(l.unit === "ימים" || l.unit === "שנים") && <> {l.value === 1 ? (l.unit === "ימים" ? "יום" : "שנה") : l.unit}</>}
                     </>
                   )}
-                </bdi>
-                {l.value !== undefined && (l.unit === "ימים" || l.unit === "שנים") && <> {l.value === 1 ? (l.unit === "ימים" ? "יום" : "שנה") : l.unit}</>}
-              </span>
-            )}
-          </li>
-        ))}
-      </ul>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -75,7 +102,7 @@ function Step({ s }: { s: BkStep }) {
         <P key={t}>{t}</P>
       ))}
       {s.tables?.map((t, i) => (
-        <DataTable key={i} caption={t.title} head={t.head} rows={t.rows} />
+        <DataTable key={i} caption={t.title} head={t.head} rows={t.rows.map((row) => row.map(cell))} foot={t.foot?.map(cell)} />
       ))}
       {s.notes?.map((n, i) => (
         <Note key={i} n={n} />
@@ -92,7 +119,7 @@ function SolutionBox({ children }: { children: ReactNode }) {
     <details className="group rounded-2xl border border-line bg-surface p-3.5">
       <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-lg border border-line-strong px-3 py-1.5 text-[14px] font-semibold text-accent hover:bg-accent-soft [&::-webkit-details-marker]:hidden">
         <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden />
-        <span className="group-open:hidden">פתיחת הפתרון, צעד אחר צעד</span>
+        <span className="group-open:hidden">הצגת הפתרון המלא</span>
         <span className="hidden group-open:inline">הסתרת הפתרון</span>
       </summary>
       <div className="mt-3">{children}</div>
@@ -114,7 +141,7 @@ function booklet(q: BkQuestion): ScreenContent {
           </ul>
         </div>
         {q.tables.map((t, i) => (
-          <DataTable key={i} caption={t.title} head={t.head} rows={t.rows} />
+          <DataTable key={i} caption={t.title} head={t.head} rows={t.rows.map((row) => row.map(cell))} foot={t.foot?.map(cell)} />
         ))}
         <div className="rounded-xl bg-surface-2 px-4 py-3 text-[15px] leading-relaxed">
           <strong>נדרש:</strong>
@@ -129,7 +156,7 @@ function booklet(q: BkQuestion): ScreenContent {
           <p className="mb-3 text-[14px] text-muted">
             כל היוון בפתרון אפשר לחשב גם בגיליון: <bdi dir="ltr" className="num font-semibold">=PV(ריבית;שנים;0;-סכום)</bdi>, וריבית לחלק משנה: <bdi dir="ltr" className="num font-semibold">=יתרה*((1+ריבית)^(חודשים/12)-1)</bdi>.
           </p>
-          <Stepper label={q.title} steps={q.steps.map((s) => ({ title: s.title, body: <Step s={s} /> }))} />
+          <FullSteps label={q.title} steps={q.steps.map((s) => ({ title: s.title, body: <Step s={s} /> }))} />
         </SolutionBox>
         <Remember>{q.point}</Remember>
       </>

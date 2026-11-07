@@ -9,13 +9,13 @@ import { AWARD, AWARD_IF_POST, AWARD_META, AWARD_OPENING, AWARD_PL, AWARD_SERVIC
 import { CLOSING, CLOSING_EXTRA } from "@/lib/study/ias19/lessons/map";
 import { lessonRef, lessonsRef, pct } from "@/lib/study/ias19/shared";
 import { Ltr } from "./ias19-formula";
-import { Bridge, DestTag, ExplainTask, HintLadder, Ladder, MapBranch, RECIPE_STEPS, Recipe5, RollForward, T19 } from "./ias19-ui";
+import { Bridge, DestTag, ExplainTask, FullSteps, Ladder, MapBranch, Recipe5, RECIPE_STEPS, RollForward, T19, TaskSolution } from "./ias19-ui";
 import { Fork, NetBars, Routing, SplitBar, Timeline, TwoPanel } from "./ias19-visuals";
 import { MiniQuiz } from "./inventory-interactive";
 import { Sorted, Story } from "./inventory-teach";
 import { DrillBox, SolveTemplate, TermDates, TermTest } from "./ias19-interactive";
 import { PrintButton } from "./print-button";
-import { JE, Money, Rule, Stepper } from "./ui";
+import { JE, Money, Rule } from "./ui";
 import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
 
 /** The employee-benefits course, lessons 11–12: other long-term and termination benefits, the two exam-level questions, and the cheat sheet. */
@@ -334,7 +334,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
           ]}
           cuts={["1.1.2023", `1.${AWARD.month + 1}: התיקון`, "31.12.2023"]}
         />
-        <Stepper
+        <FullSteps
           label="מענק יובל — 2023"
           steps={[
             { title: "פתיחה", body: <p>{AWARD_META.servedAtStart} × <Money v={AWARD.oldTotal / AWARD.years} plain /> ÷ <L>{1 + AWARD.rateStart}^{AWARD_META.nEnd + 1}</L> = <strong><M v={AWARD_OPENING} /></strong>.</p> },
@@ -380,7 +380,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <Part title={`א. מרכז השירות מ${lessonRef("ias19-map")} — בסכומים`}>
-          <HintLadder
+          <TaskSolution
             task={
               <>
                 ב-31.12 הוחלט סופית לסגור את המרכז בעוד שנה. מי שעוזב לפני הסגירה — <Money v={CLOSING.leaveEarly} />; מי שנשאר עד הסגירה — <Money v={CLOSING.stayToEnd} />. {CLOSING.staff} עובדים; צפוי ש-45
@@ -404,7 +404,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
           />
         </Part>
         <Part title="ב. ואילו מענק היובל היה הטבה לאחר סיום העסקה?">
-          <HintLadder
+          <TaskSolution
             task="אותם מספרים, אבל המענק משולם בפרישה. מה משתנה ברווח והפסד?"
             hints={["איזו שורה במעגל מחליפה כתובת?", "ה-P.N. — בהטבה מוגדרת הוא עובר ל-OCI.", <>רווח והפסד: שירות <M v={AWARD_SERVICE} /> + ריבית <M v={AWARD_YEAR.interest} /></>, <>= <strong><M v={AWARD_IF_POST} /></strong>, וה-P.N. (<M v={Math.abs(AWARD_YEAR.pn)} />) — ב-OCI.</>]}
           />
@@ -581,7 +581,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
   "emp-exam-a-solve": {
     lead: "אני פותר: טבלת קבוצות, ואז הצעדים לפי הסדר — שנה בלי חדשות, ושנה עם תיקון וירידת ריבית.",
     body: (
-      <Stepper
+      <FullSteps
         label="מחלקת ההרכבה"
         steps={[
           {
@@ -655,7 +655,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
     lead: "פותרים יחד: שיוך לפי סיבת הזכאות — חלון צבירה משלו לכל קבוצה, והיוון עד התשלום.",
     body: (
       <Part title="מחלקת השטח">
-        <HintLadder
+        <TaskSolution
           task={`בנו את טבלת הקבוצות, ואת המעגלים של ${y1} ו-${y2}.`}
           hints={[
             "לכל קבוצה: מה יקרה קודם — גיל 55 או 12 שנות עבודה? ואם אף אחד — מה אז?",
@@ -774,7 +774,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
   "emp-exam-b-solve": {
     lead: "קודם משחזרים את הנסתר מהביאור — בלי לעגל את השיעור — ורק אז בונים שני מעגלים.",
     body: (
-      <Stepper
+      <FullSteps
         label="שאלה 2 — הפתרון"
         steps={[
           {

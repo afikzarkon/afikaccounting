@@ -21,7 +21,7 @@ export type BkNote = { title: string; text?: string; lines: BkLine[] };
 export type BkRow = { label: string; value: number; note?: string; kind?: "balance" | "pn" };
 /** A movement table: the obligation is a credit (`side="credit"`), plan assets a debit. */
 export type BkRoll = { title: string; rows: BkRow[]; side?: "credit" | "debit"; pnTo?: string; unit?: string };
-export type BkTable = { title?: string; head: string[]; rows: (string | number)[][] };
+export type BkTable = { title?: string; head: string[]; rows: (string | number)[][]; foot?: (string | number)[] };
 /** One step of the solution, shown one at a time. */
 export type BkStep = { title: string; text?: string[]; rolls?: BkRoll[]; notes?: BkNote[]; tables?: BkTable[] };
 /** An amount the learner types before opening the solution. */
@@ -209,7 +209,6 @@ export function shortQuestion(id: string, title: string, q: ShortInput): BkQuest
   const m = G[0].name;
   /** "מנהל אחד", "3 טכנאים". */
   const count = (n: number, g: ShortGrade) => (n === 1 ? `${g.one} אחד` : `${n} ${g.name}`);
-  const days = (rows: { name: string; n: number; d: number; i: number }[]) => rows.map((x) => `${x.n} × ${d2(x.d)} × ${d2(r.dayCost[x.i])}`).join(" + ");
   return {
     id,
     title,
@@ -249,100 +248,127 @@ export function shortQuestion(id: string, title: string, q: ShortInput): BkQuest
           {
             head: ["הטבה", "סיווג", "מה רושמים"],
             rows: [
-              ["ביטוח לאומי, פיצויים, פנסיה, קרן השתלמות", "משולמים בסוף כל חודש", "אין יתרה. הם רק נכנסים לעלות היום"],
+              [`${q.onCosts.map((o) => o.label).join(", ")}, ${q.managerExtra.label}`, "משולמים בסוף כל חודש", "אין יתרה. הם רק נכנסים לעלות היום"],
               ["נופש מפעלי", "היעדרות נצברת ומבשילה", "הפרשה לפי הצפי"],
               ["דמי חופשה", "היעדרות נצברת ומבשילה (LIFO)", "הפרשה לפי הצפי"],
-              ["בונוס ל" + m, "זמן קצר: ישולם בתוך שנה, והזכאות התמלאה", "הפרשה על כל הסכום"],
+              [`בונוס ל${m}`, "זמן קצר: ישולם בתוך שנה, והזכאות התמלאה", "הפרשה על כל הסכום"],
               ["חופשת לידה", "היעדרות לא נצברת", "כלום. נרשמת כשהיא קורית"],
             ],
           },
         ],
       },
       {
-        title: "ביאור 1: עלות יום לכל דרג",
-        notes: [
+        title: "עלות יום לכל דרג",
+        text: [`עלות יום = שכר חודשי ÷ ימי עבודה × (1 + התוספות). התוספות לכל העובדים: ${pc(sum(q.onCosts.map((o) => o.rate)))}. ל${m} מוסיפים ${q.managerExtra.label}, ${pc(q.managerExtra.rate)}.`],
+        tables: [
           {
-            title: "עלות יום = שכר חודשי ÷ ימי עבודה × (1 + התוספות)",
-            text: `התוספות לכל העובדים: ${q.onCosts.map((o) => pc(o.rate)).join(" + ")} = ${pc(sum(q.onCosts.map((o) => o.rate)))}. ל${m} מוסיפים ${pc(q.managerExtra.rate)}.`,
-            lines: G.map((g, i) => ({ label: g.name, calc: `${money(g.salary)} ÷ ${g.workDays} × ${nf(1 + r.rateOf(i), 5)}`, value: r.dayCost[i], unit: "₪" as const })),
+            head: ["דרג", "שכר חודשי", "ימי עבודה", "תוספות", "חישוב", "עלות יום"],
+            rows: G.map((g, i) => [g.name, money(g.salary), g.workDays, pc(r.rateOf(i)), `${money(g.salary)} ÷ ${g.workDays} × ${nf(1 + r.rateOf(i), 5)}`, d2(r.dayCost[i])]),
           },
         ],
       },
       {
-        title: "ביאור 2: נופש מפעלי",
+        title: "נופש מפעלי",
         text: ["הנופש התחיל השנה, ולכן הפתיחה 0. התשלומים: מי שניצל השנה. הסגירה: מי שצפוי לנצל בשנה הבאה."],
-        notes: [
+        tables: [
           {
-            title: `תשלומים ${y}: (עובדים − לא ניצלו) × ימי נופש × עלות יום`,
-            lines: [...G.map((g, i) => ({ label: g.name, calc: `(${g.staff} − ${q.retreat.notUsed[i]}) × ${g.retreat} × ${d2(r.dayCost[i])}`, value: r.retreatUsed[i] * g.retreat * r.dayCost[i], unit: "₪" as const })), { label: "סה״כ תשלומים", value: r.retreat.paid, unit: "₪" }],
+            title: `תשלומים ${y}: מי שניצל`,
+            head: ["דרג", "עובדים", "לא ניצלו", "ניצלו", "ימי נופש", "עלות יום", "סה״כ"],
+            rows: G.map((g, i) => [g.name, g.staff, q.retreat.notUsed[i], r.retreatUsed[i], g.retreat, d2(r.dayCost[i]), money(r.retreatUsed[i] * g.retreat * r.dayCost[i])]),
+            foot: ["סה״כ", "", "", "", "", "", money(r.retreat.paid)],
           },
           {
-            title: `סגירה 31.12.${y}: צפויים לנצל × ימי נופש × עלות יום`,
-            lines: [...G.map((g, i) => ({ label: g.name, calc: `${q.retreat.willUse[i]} × ${g.retreat} × ${d2(r.dayCost[i])}`, value: q.retreat.willUse[i] * g.retreat * r.dayCost[i], unit: "₪" as const })), { label: "סה״כ סגירה", value: r.retreat.closing, unit: "₪" }],
+            title: `סגירה 31.12.${y}: מי שצפוי לנצל ב-${y + 1}`,
+            head: ["דרג", "צפויים לנצל", "ימי נופש", "עלות יום", "סה״כ"],
+            rows: G.map((g, i) => [g.name, q.retreat.willUse[i], g.retreat, d2(r.dayCost[i]), money(q.retreat.willUse[i] * g.retreat * r.dayCost[i])]),
+            foot: ["סה״כ", "", "", "", money(r.retreat.closing)],
           },
         ],
         rolls: [shortRoll("הפרשה לנופש מפעלי", r.retreat, y)],
       },
       {
-        title: "ביאור 3: דמי חופשה, פתיחה ותשלומים",
-        notes: [
+        title: `דמי חופשה: יתרת פתיחה 31.12.${y - 1}, לפי הצפי`,
+        text: ["ב-LIFO מנצלים קודם את ימי השנה. מהיתרה נלקח רק מה שמעבר לזכאות השנתית, ולא יותר מהיתרה. לא צפויות עזיבות, ולכן כולם לפי הניצול הצפוי."],
+        tables: [
           {
-            title: `פתיחה 31.12.${y - 1}: כמה מהיתרה ינוצל ב-${y}`,
-            text: "ב-LIFO מנצלים קודם את ימי השנה. מהיתרה נלקח רק מה שמעבר לזכאות השנתית, ולא יותר מהיתרה: MIN(יתרה, MAX(0, צפי ניצול − זכאות)).",
-            lines: [
-              ...G.map((g, i) => ({ label: `${g.name}: ימים מהיתרה`, calc: `MIN(${q.vacation.carried[i]}, MAX(0, ${q.vacation.expectedNow[i]} − ${g.vacation}))`, value: r.openDays[i], unit: "ימים" as const })),
-              { label: "פתיחה = עובדים × ימים × עלות יום", calc: days(G.map((g, i) => ({ name: g.name, n: g.staff, d: r.openDays[i], i }))), value: r.vacation.opening, unit: "₪" },
-            ],
-          },
-          {
-            title: `תשלומים ${y}: הניצול בפועל`,
-            lines: [{ label: "עובדים × ימים שנוצלו × עלות יום", calc: days(G.map((g, i) => ({ name: g.name, n: g.staff, d: q.vacation.actual[i], i }))), value: r.vacation.paid, unit: "₪" }],
+            head: ["דרג", "עובדים", "יתרה לעובד", `צפי ניצול ${y}`, "ימים מהיתרה", "עלות יום", "הפרשה"],
+            rows: G.map((g, i) => [
+              g.name,
+              g.staff,
+              q.vacation.carried[i],
+              q.vacation.expectedNow[i],
+              `MIN(${q.vacation.carried[i]}, MAX(0, ${q.vacation.expectedNow[i]} − ${g.vacation})) = ${r.openDays[i]}`,
+              d2(r.dayCost[i]),
+              money(g.staff * r.openDays[i] * r.dayCost[i]),
+            ]),
+            foot: ["סה״כ", "", "", "", "", "", money(r.vacation.opening)],
           },
         ],
       },
       {
-        title: "ביאור 4: דמי חופשה, סגירה",
-        notes: [
+        title: `דמי חופשה: תשלומים ${y}, לפי מה שקרה`,
+        tables: [
           {
-            title: `סגירה 31.12.${y}: היתרה החדשה, ומה ממנה ינוצל`,
-            text: `יתרה חדשה = זכאות − ניצול (לא פחות מ-0). היתרה הישנה פוקעת. ${q.leavers === 1 ? `ה${G[0].one} שצפוי לעזוב מקבל` : `ה${m} שצפויים לעזוב מקבלים`} את כל היתרה, כי ההיעדרות מבשילה.`,
-            lines: [
-              ...G.map((g, i) => ({ label: `${g.name}: יתרה חדשה`, calc: `MAX(0, ${g.vacation} − ${q.vacation.actual[i]})`, value: r.newBalance[i], unit: "ימים" as const })),
-              ...G.map((g, i) => ({
-                label: `${g.name}: ינוצל מהיתרה ב-${y + 1}`,
-                calc: q.vacation.expectedNext[i] === "max" ? `מקסימום: כל היתרה, ${r.newBalance[i]}` : `MIN(${r.newBalance[i]}, MAX(0, ${q.vacation.expectedNext[i]} − ${g.vacation}))`,
-                value: r.closeDays[i],
-                unit: "ימים" as const,
-              })),
-              {
-                label: "סגירה",
-                calc: `${days(G.map((g, i) => ({ name: g.name, n: r.stayers[i], d: r.closeDays[i], i })))} + ${q.leavers} × ${r.newBalance[0]} × ${d2(r.dayCost[0])}`,
-                value: r.vacation.closing,
-                unit: "₪",
-              },
+            head: ["דרג", "עובדים", "ימים שנוצלו", "עלות יום", "סה״כ"],
+            rows: G.map((g, i) => [g.name, g.staff, q.vacation.actual[i], d2(r.dayCost[i]), money(g.staff * q.vacation.actual[i] * r.dayCost[i])]),
+            foot: ["סה״כ", "", "", "", money(r.vacation.paid)],
+          },
+        ],
+      },
+      {
+        title: `דמי חופשה: יתרת סגירה 31.12.${y}`,
+        text: [
+          "יתרה חדשה = זכאות − ניצול (לא פחות מ-0). היתרה הישנה פוקעת.",
+          `${q.leavers === 1 ? `ה${G[0].one} שצפוי לעזוב מקבל` : `ה${m} שצפויים לעזוב מקבלים`} את כל היתרה, כי ההיעדרות מבשילה. הנשארים נכנסים לפי מה שינצלו מהיתרה ב-${y + 1}.`,
+        ],
+        tables: [
+          {
+            head: ["דרג", "עובדים", "יתרה חדשה לעובד", `צפי ניצול ${y + 1}`, "ימים מהיתרה", "עלות יום", "הפרשה"],
+            rows: [
+              ...G.map((g, i) => [
+                i === 0 && q.leavers ? `${g.name} שנשארים` : g.name,
+                r.stayers[i],
+                `MAX(0, ${g.vacation} − ${q.vacation.actual[i]}) = ${r.newBalance[i]}`,
+                q.vacation.expectedNext[i] === "max" ? "מקסימום" : String(q.vacation.expectedNext[i]),
+                q.vacation.expectedNext[i] === "max" ? `כל היתרה = ${r.closeDays[i]}` : `MIN(${r.newBalance[i]}, MAX(0, ${q.vacation.expectedNext[i]} − ${g.vacation})) = ${r.closeDays[i]}`,
+                d2(r.dayCost[i]),
+                money(r.stayers[i] * r.closeDays[i] * r.dayCost[i]),
+              ]),
+              ...(q.leavers ? [[`${m} שעוזבים`, q.leavers, String(r.newBalance[0]), "עוזב", `כל היתרה = ${r.newBalance[0]}`, d2(r.dayCost[0]), money(r.leaverPay)]] : []),
             ],
+            foot: ["סה״כ", "", "", "", "", "", money(r.vacation.closing)],
           },
         ],
         rolls: [shortRoll("הפרשה לדמי חופשה", r.vacation, y)],
       },
       {
-        title: "ביאור 5: בונוס, וחופשת לידה",
-        notes: [
+        title: "בונוס, וחופשת לידה",
+        tables: [
           {
-            title: `בונוס: שכר × (1 + ${q.onCosts[0].label}) × ${pc(q.bonusRate)} × מספר ה${m}`,
-            lines: [
-              { label: "שכר לבונוס", calc: `${money(G[0].salary)} × ${nf(1 + q.onCosts[0].rate, 4)}`, value: r.bonusBase, unit: "₪" },
-              { label: "הפרשה לבונוס", calc: `${d2(r.bonusBase)} × ${pc(q.bonusRate)} × ${G[0].staff}`, value: r.bonus.closing, unit: "₪" },
+            head: ["", "חישוב", "סכום"],
+            rows: [
+              [`שכר לבונוס (רק ${q.onCosts[0].label})`, `${money(G[0].salary)} × ${nf(1 + q.onCosts[0].rate, 4)}`, d2(r.bonusBase)],
+              [`הפרשה לבונוס, ${G[0].staff} ${m}`, `${d2(r.bonusBase)} × ${pc(q.bonusRate)} × ${G[0].staff}`, money(r.bonus.closing)],
+              ["חופשת לידה", "היעדרות לא נצברת: נרשמת בשנה הבאה, כשהיא קורית", "0"],
             ],
           },
-          { title: "חופשת לידה", lines: [{ label: "היעדרות לא נצברת", text: "אין הפרשה. החופשה נרשמת כהוצאה כשהיא קורית, בשנה הבאה." }] },
         ],
         rolls: [shortRoll(`הפרשה לבונוס ל${m}`, r.bonus, y)],
       },
       {
-        title: "התשובה: התנועה בכל ההפרשות",
-        rolls: [shortRoll("הפרשות בגין הטבות לזמן קצר", r.total, y)],
-        text: [`ההוצאה = סגירה − פתיחה + תשלומים = ${money(r.total.closing)} − ${money(r.total.opening)} + ${money(r.total.paid)} = ${money(r.total.expense)} ₪.`],
+        title: "התשובה: טבלת התנועה בכל ההפרשות",
+        text: [`ההוצאה היא השורה החסרה: סגירה − פתיחה + תשלומים = ${money(r.total.closing)} − ${money(r.total.opening)} + ${money(r.total.paid)} = ${money(r.total.expense)} ₪.`],
+        tables: [
+          {
+            head: ["שורה", "נופש מפעלי", "דמי חופשה", "בונוס", "סה״כ"],
+            rows: [
+              [`יתרת פתיחה 31.12.${y - 1}`, money(r.retreat.opening), money(r.vacation.opening), money(r.bonus.opening), money(r.total.opening)],
+              [`הוצאות שכר ${y} (השורה החסרה)`, money(r.retreat.expense), money(r.vacation.expense), money(r.bonus.expense), money(r.total.expense)],
+              [`תשלומים ${y}`, `(${money(r.retreat.paid)})`, `(${money(r.vacation.paid)})`, money(r.bonus.paid), `(${money(r.total.paid)})`],
+            ],
+            foot: [`יתרת סגירה 31.12.${y}`, money(r.retreat.closing), money(r.vacation.closing), money(r.bonus.closing), money(r.total.closing)],
+          },
+        ],
       },
     ],
   };

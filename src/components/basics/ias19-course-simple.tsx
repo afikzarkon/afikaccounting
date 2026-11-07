@@ -25,14 +25,14 @@ import {
   VESTING_STAY,
 } from "@/lib/study/ias19/lessons/short";
 import { fmt, lessonRef, lessonsRef, pct } from "@/lib/study/ias19/shared";
-import { FORMULA, putIn, said, tool, work } from "@/lib/study/ias19/formulas";
+import { FORMULA, said, tool, work } from "@/lib/study/ias19/formulas";
 import { Ltr, Work } from "./ias19-formula";
 import { DrillBox, RiskTest, SolveTemplate } from "./ias19-interactive";
-import { Bridge, ExplainTask, HintLadder, MapBranch, RollForward, T19 } from "./ias19-ui";
+import { Bridge, ExplainTask, FullSteps, MapBranch, RollForward, T19, TaskSolution } from "./ias19-ui";
 import { Fork, SplitBar, Timeline, TwoPanel } from "./ias19-visuals";
 import { MiniQuiz } from "./inventory-interactive";
 import { Sorted, Story } from "./inventory-teach";
-import { Card, JE, Money, Stepper } from "./ui";
+import { Card, JE, Money } from "./ui";
 import { ltrQuiz } from "@/lib/study/ias19/ltr";
 
 /** The employee-benefits course, lessons 3–4: short-term benefits, and defined contribution against defined benefit. */
@@ -728,7 +728,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
           ]}
           cuts={["ינואר", "דצמבר"]}
         />
-        <Stepper
+        <FullSteps
           label="הפקדה מוגדרת"
           steps={[
             { title: "1. ההוצאה", body: <Work w={work.dcExpense(DC.payroll, DC.rate)} /> },
@@ -777,7 +777,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <Part title="א. שכר אחר">
-          <HintLadder
+          <TaskSolution
             task={
               <>
                 שכר שנתי <Money v={DC_VAR.payroll} />, הפקדה {pct(DC_VAR.rate)}, הכסף עובר ב-10 לחודש שאחרי. מה ההוצאה, מה שולם ומה הזכאים?
@@ -794,9 +794,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
                   <L>{FORMULA.dcPayable}</L>
                 </span>
               </>,
-              <>
-                הוצאה: <L>{putIn(work.dcExpense(DC_VAR.payroll, DC_VAR.rate))}</L>
-              </>,
+              null,
               <>
                 <Work w={work.dcExpense(DC_VAR.payroll, DC_VAR.rate)} />
                 <Work w={work.dcPaid(DC_VAR_YEAR.expense, 11)} />
@@ -815,7 +813,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
               { when: "החברה", then: "הטבה מוגדרת" },
             ]}
           />
-          <HintLadder
+          <TaskSolution
             task={
               <>
                 מבטח קיבל על עצמו את כל הסיכון של מענקי הפרישה, והחברה משלמת לו רק פרמיה של {pct(INSURED.premium)} מעלות השכר (<Money v={INSURED.payroll} />). סווגו, וצרו את המעגל.
@@ -829,9 +827,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
                   <L>{FORMULA.dcExpense}</L>
                 </span>
               </>,
-              <>
-                הוצאה: <L>{putIn(work.dcExpense(INSURED.payroll, INSURED.premium))}</L>
-              </>,
+              null,
               <>
                 <Work w={work.dcExpense(INSURED.payroll, INSURED.premium)} />
                 המעגל, כשהפרמיה שולמה כולה:
