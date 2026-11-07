@@ -70,6 +70,11 @@ const nextConfig: NextConfig = {
       { source: "/study/inventory-exam", destination: "/study/inventory-worksheet", permanent: true },
       // The fixed-assets course grew from five lessons to twelve: its depreciation lesson split into straight-line and the other methods.
       { source: "/study/ias16-depreciation", destination: "/study/ias16-straight", permanent: true },
+      // The employee-benefits course went from twelve lessons to eight: each folded lesson lands on the one it now lives in.
+      { source: "/study/ias19-toolkit", destination: "/study/ias19-map", permanent: true },
+      { source: "/study/ias19-attribute", destination: "/study/ias19-measure", permanent: true },
+      { source: "/study/ias19-amend", destination: "/study/ias19-rollforward", permanent: true },
+      { source: "/study/ias19-present", destination: "/study/ias19-assets", permanent: true },
     ];
   },
   partialPrefetching: true,

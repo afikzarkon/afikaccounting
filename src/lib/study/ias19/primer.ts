@@ -73,7 +73,7 @@ export const PRIMER: PrimerCard[] = [
   {
     id: "journal",
     title: "פקודת יומן (חובה וזכות)",
-    needed: ["ias19-short", "ias19-dc", "ias19-present"],
+    needed: ["ias19-short", "ias19-dc", "ias19-assets"],
     taught: "בקורס ״חשבונאות מאפס״",
     plain: "כל פעולה נרשמת בשני צדדים, באותו סכום: חובה וזכות.",
     need: "זה בסיס בחשבונאות, ובלעדיו אי אפשר לפתור כאן שאלה. כמעט כל שאלה במבחן מבקשת בסוף לרשום את הפקודות.",
@@ -107,8 +107,8 @@ export const PRIMER: PrimerCard[] = [
   {
     id: "pl-oci",
     title: "רווח והפסד מול רווח כולל אחר (OCI)",
-    needed: ["ias19-dc", "ias19-rollforward", "ias19-amend", "ias19-assets", "ias19-present", "ias19-other"],
-    taught: `כאן, בכרטיס הזה; תזכורת בשיעורים ${LESSON_N["ias19-rollforward"]} ו-${LESSON_N["ias19-present"]}`,
+    needed: ["ias19-dc", "ias19-rollforward", "ias19-assets", "ias19-other"],
+    taught: `כאן, בכרטיס הזה; תזכורת בשיעורים ${LESSON_N["ias19-rollforward"]} ו-${LESSON_N["ias19-assets"]}`,
     plain: "רווח והפסד הוא הדוח של השנה: הכנסות פחות הוצאות. OCI, רווח כולל אחר, הוא שינוי בשווי שלא נכנס לרווח של השנה. הוא נצבר בהון העצמי, בקרן הון, ולא עובר דרך הרווח.",
     need: "בשאלות של הטבות עובד כל שורה הולכת לאחד משני המקומות. מי שמבלבל ביניהם מקבל רווח שגוי, גם כשכל החישובים נכונים.",
     life: `לחברה הכנסות ${fmt(LIFE_PL.income)} והוצאות ${fmt(LIFE_PL.expenses)}, אז הרווח ${fmt(LIFE_PL.income - LIFE_PL.expenses)}. בנוסף הקרקע שלה עלתה בשווי ב-${LIFE_PL.revaluation}. העלייה הזו היא OCI: היא מגדילה את ההון, אבל הרווח נשאר ${fmt(LIFE_PL.income - LIFE_PL.expenses)}.`,
@@ -121,8 +121,8 @@ export const PRIMER: PrimerCard[] = [
   {
     id: "pv",
     title: "ערך נוכחי (היוון)",
-    needed: ["ias19-toolkit", "ias19-measure", "ias19-attribute", "ias19-rollforward", "ias19-amend", "ias19-assets", "ias19-present", "ias19-other"],
-    taught: `מאפס בשיעור ${LESSON_N["ias19-toolkit"]}`,
+    needed: ["ias19-map", "ias19-measure", "ias19-rollforward", "ias19-assets", "ias19-other"],
+    taught: `מאפס בשיעור ${LESSON_N["ias19-map"]}`,
     plain: "כסף שמקבלים מאוחר שווה פחות מכסף שמקבלים עכשיו. כסף שבידך אפשר להשקיע ולהרוויח עליו ריבית.",
     need: "חוב לעובדים משולם לרוב בעוד שנים רבות. בדוחות רושמים כמה הוא שווה היום, ולכן כמעט כל חישוב בקורס עובר דרך היוון.",
     life: `מציעים לך ${LIFE_PV.fv} ₪ היום, או ${LIFE_PV.fv} ₪ בעוד ${LIFE_PV.n} שנים. כולם בוחרים היום. בריבית ${pct(LIFE_PV.i)}, ה-${LIFE_PV.fv} של בעוד ${LIFE_PV.n} שנים שווים היום בערך ${LIFE_PV_TODAY}.`,
@@ -139,8 +139,8 @@ export const PRIMER: PrimerCard[] = [
   {
     id: "roll",
     title: "מעגל: מיתרת פתיחה ליתרת סגירה",
-    needed: ["ias19-toolkit", "ias19-rollforward", "ias19-amend", "ias19-assets", "ias19-present", "ias19-other"],
-    taught: `מאפס בשיעור ${LESSON_N["ias19-toolkit"]}, ומתרגלים בכל שיעור מ-${LESSON_N["ias19-rollforward"]} עד ${LESSON_N["ias19-other"]}`,
+    needed: ["ias19-map", "ias19-rollforward", "ias19-assets", "ias19-other"],
+    taught: `מאפס בשיעור ${LESSON_N["ias19-map"]}, ומתרגלים בכל שיעור מ-${LESSON_N["ias19-rollforward"]} עד ${LESSON_N["ias19-other"]}`,
     plain: "כמו דף חשבון בנק: יתרת פתיחה, ועוד מה שנכנס, פחות מה שיצא, שווה יתרת סגירה. מה שנשאר בלי הסבר נקרא בקורס P.N. הוא יכול להיות חיובי או שלילי, לפי שאר הנתונים.",
     need: "בלי מעגל אי אפשר לפתור כאן תרגילים. החוב לעובדים והקופה מנוהלים כל אחד במעגל משלו, וכמעט כל שאלה מתחילה בבניית מעגל.",
     life: `בחשבון היו ${fmt(LIFE_BANK.opening)}, הפקדת ${fmt(LIFE_BANK.deposit)}, משכת ${fmt(LIFE_BANK.withdrawal)}, ובדף כתוב ${fmt(LIFE_BANK.closing)}. ${fmt(LIFE_BANK.opening)} + ${fmt(LIFE_BANK.deposit)} − ${fmt(LIFE_BANK.withdrawal)} = ${fmt(LIFE_BANK.opening + LIFE_BANK.deposit - LIFE_BANK.withdrawal)}, ולכן ${fmt(LIFE_BANK.closing - LIFE_BANK.opening - LIFE_BANK.deposit + LIFE_BANK.withdrawal)} עוד לא הוסברו. זה ה-P.N., והפעם הוא חיובי.`,
@@ -157,7 +157,7 @@ export const PRIMER: PrimerCard[] = [
   {
     id: "percent",
     title: "אחוזים ועובדים צפויים",
-    needed: ["ias19-short", "ias19-measure", "ias19-attribute"],
+    needed: ["ias19-short", "ias19-measure"],
     taught: "כאן, בכרטיס הזה",
     plain: `לא כל העובדים יישארו עד שיגיע להם הכסף. לכן סופרים רק את מי שצפוי להישאר: ${LIFE_HEADS.staff} עובדים, ו-${pct(1 - LIFE_HEADS.leaving)} מהם צפויים להישאר, הם ${expectedHeads(LIFE_HEADS.staff, LIFE_HEADS.leaving)} עובדים.`,
     need: "בשאלות הנתונים מגיעים כמעט תמיד באחוזים: כמה יעזבו, בכמה יעלה השכר, איזה חלק מהרווח הולך לבונוס. צריך לתרגם כל אחוז למספר לפני שמתחילים.",

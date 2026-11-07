@@ -62,13 +62,13 @@ describe("canAccess", () => {
     assert.ok(canAccessWith(free, topic("ias16"), "ias16-intro"));
     assert.ok(!canAccessWith(free, topic("ias16"), "ias16-revaluation"));
     assert.ok(canAccessWith(free, topic("ias19"), "ias19-map"));
-    assert.ok(!canAccessWith(free, topic("ias19"), "ias19-toolkit"));
+    assert.ok(!canAccessWith(free, topic("ias19"), "ias19-short"));
     assert.ok(!canAccessWith(free, topic("ias19")), "the topic as a whole is closed");
   });
   it("opens the employee-benefits course whole on courses", () => {
-    assert.ok(canAccessWith(courses, topic("ias19"), "ias19-toolkit"));
-    assert.deepEqual(lockedOf(courses, topic("ias19"), ["ias19-map", "ias19-toolkit", "ias19-exams"]), []);
-    assert.deepEqual(lockedOf(free, topic("ias19"), ["ias19-map", "ias19-toolkit", "ias19-exams"]), ["ias19-toolkit", "ias19-exams"]);
+    assert.ok(canAccessWith(courses, topic("ias19"), "ias19-short"));
+    assert.deepEqual(lockedOf(courses, topic("ias19"), ["ias19-map", "ias19-short", "ias19-exams"]), []);
+    assert.deepEqual(lockedOf(free, topic("ias19"), ["ias19-map", "ias19-short", "ias19-exams"]), ["ias19-short", "ias19-exams"]);
   });
   it("the plans name every course with its true number of lessons", async () => {
     const { PLANS } = await import("./pricing");

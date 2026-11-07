@@ -111,7 +111,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
           <p>ומה אם תגידו ״תן לי 140,000 עכשיו ונסגור עניין״? או שפשוט תעזבו מחר?</p>
         </Story>
         {EVENTS}
-        <MapBranch lesson="ias19-amend">ב{lessonRef("ias19-rollforward")} ההנחות היו קבועות כל השנה. כאן נכנס אירוע אחד באמצע השנה, ועליו נשענים {lessonsRef("ias19-assets", "ias19-present")}.</MapBranch>
+        <MapBranch lesson="ias19-rollforward">בחלק הראשון ההנחות היו קבועות כל השנה. כאן נכנס אירוע אחד באמצע השנה, ועליו נשען {lessonRef("ias19-assets")}.</MapBranch>
       </>
     ),
   },
@@ -400,7 +400,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
           <NetBars obligation={15_000} assets={4_200} title="חוב, קופה, ומה שנשאר" />
           <p>ומה אם בקופה יש יותר מהחוב, אבל היא נעולה אצל נאמן שמחליט אם להחזיר לכם? העודף באמת שלכם?</p>
         </Story>
-        <MapBranch lesson="ias19-assets">{lessonsRef("ias19-measure", "ias19-amend")} מדדו רק את החוב. כאן מוסיפים את הצד השני, הקופה. ובשיעור הבא מציגים את הכול בדוחות.</MapBranch>
+        <MapBranch lesson="ias19-assets">{lessonsRef("ias19-measure", "ias19-amend")} מדדו רק את החוב. כאן מוסיפים את הצד השני, הקופה. ובחלק השני של השיעור מציגים את הכול בדוחות.</MapBranch>
       </>
     ),
   },
@@ -548,7 +548,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
             "בסוף השנה: אם בקופה יותר מהחוב — הנכס נטו הוא הנמוך מבין העודף לתקרה (סעיף 64). ואם התקרה הגבילה בתחילת השנה — הריבית על הנכסים כפי שהוכרו.",
           ]}
           build={[
-            { title: "① התנועה בהתחייבות", lines: [`כמו ב${lessonRef("ias19-rollforward")} ו${lessonRef("ias19-amend")}.`] },
+            { title: "① התנועה בהתחייבות", lines: [`כמו ב${lessonRef("ias19-rollforward")}.`] },
             { title: "② הכנסות ריבית", lines: ["פתיחה × i + הפקדה × ((1+i)^(חודשים/12) − 1) − תשלום מהקרן × ((1+i)^(חודשים/12) − 1)."] },
             { title: "③ מדידה מחדש של הנכסים", lines: ["סגירה − פתיחה − ריבית − הפקדות + שולם מהקרן."] },
             { title: "④ נטו ותקרה", lines: ["התחייבות − נכסים. עודף? הנמוך מבין העודף לתקרה."] },
@@ -676,7 +676,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
             </>
           }
         />
-        <Bridge summary="שני מעגלים (חוב וקופה), הפער ביניהם הוא נטו, ותקרה חוסמת עודף.">יש לנו כל מה שצריך לחשב. איך מציגים את התוצאות בדוחות, ואיך מחלצים שיעורים מביאור? {lessonRef("ias19-present")}.</Bridge>
+        <Bridge summary="שני מעגלים (חוב וקופה), הפער ביניהם הוא נטו, ותקרה חוסמת עודף.">יש לנו כל מה שצריך לחשב. איך מציגים את התוצאות בדוחות, ואיך מחלצים שיעורים מביאור? זה החלק השני של השיעור.</Bridge>
       </>
     ),
     check: quiz("emp-assets-master", [
@@ -698,7 +698,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
           <p>דף הבנק של החודש: ריבית, החזר הלוואה, ותיקון של טעות. בבית כל שורה נכנסת לקופסה אחרת. אם מערבבים, התקציב לא מסתדר.</p>
           <p>בדוחות זה אותו דבר: שורה אחת לרווח והפסד, אחת ל-OCI, ואחת רק למאזן.</p>
         </Story>
-        <MapBranch lesson="ias19-present">הצעד האחרון בהטבה המוגדרת: מחברים את המעגלים של {lessonsRef("ias19-measure", "ias19-assets")} לדוחות. ואחר כך הופכים כיוון: מביאור של שנה קודמת חושפים הנחות.</MapBranch>
+        <MapBranch lesson="ias19-assets">הצעד האחרון בהטבה המוגדרת: מחברים את המעגלים של {lessonsRef("ias19-measure", "ias19-assets")} לדוחות. ואחר כך הופכים כיוון: מביאור של שנה קודמת חושפים הנחות.</MapBranch>
         <TwoBuckets pl={["עלות העבודה של השנה", "ריבית נטו"]} oci={["P.N. של החוב", "P.N. של הקופה", "השפעת התקרה"]} />
       </>
     ),
@@ -774,7 +774,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
     lead: "תיקון באמצע השנה, וגם הריבית על הקופה מפוצלת באותן תקופות. ואז כל שורה לקופסה שלה.",
     body: (
       <>
-        <Story icon={<Inbox />} title={`המענק עם הקופה, מ${lessonRef("ias19-assets")}, עם תיקון`}>
+        <Story icon={<Inbox />} title="המענק עם הקופה, מתחילת השיעור, עם תיקון">
           <p>
             ב-1.{AMENDED.month + 1}.2024 המענק עולה מ-<Money v={PLAN_PER_YEAR} /> ל-<Money v={AMENDED.newPerYear} /> לשנה, גם על העבר. הריבית יורדת מ-{pct(PLAN.rate)} ל-{pct(AMENDED.rateAfter)} ביום התיקון, ובסוף השנה היא{" "}
             {pct(AMENDED.rateEnd)}.

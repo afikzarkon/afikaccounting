@@ -429,7 +429,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             { when: "אחרי סיום העסקה", then: "הטבה מוגדרת: P.N.", to: "oci" },
           ]}
         />
-        <Bridge summary="אחרות לזמן ארוך: אותו מעגל, הכול לרווח והפסד. פיטורין: הכרה מלאה במועד המוקדם.">כל החומר נלמד. עכשיו מחברים אותו בשתי שאלות סיכום — כמו במבחן. {lessonRef("ias19-exams")}.</Bridge>
+        <Bridge summary="אחרות לזמן ארוך: אותו מעגל, הכול לרווח והפסד. פיטורין: הכרה מלאה במועד המוקדם.">כל החומר נלמד. עכשיו מחברים אותו בשאלות סיכום, כמו במבחן. {lessonRef("ias19-exams")}.</Bridge>
       </>
     ),
     check: quiz("emp-other-master", [

@@ -5,6 +5,12 @@ import { describe, it } from "node:test";
 import { TOPICS } from "../catalog";
 import { STUDY_MODULES } from ".";
 import { IAS19_LESSONS } from "./ias19";
+import { ATTRIBUTE } from "./ias19/lessons/attribute";
+import { DC_LESSON } from "./ias19/lessons/dc";
+import { MEASURE } from "./ias19/lessons/measure";
+import { ROLLFORWARD } from "./ias19/lessons/rollforward";
+import { SHORT } from "./ias19/lessons/short";
+import { TOOLKIT } from "./ias19/lessons/toolkit";
 import { IAS19_GLOSSARY } from "./ias19/glossary";
 import { FORMULA, putIn, said, TOOL, tool, work } from "./ias19/formulas";
 import { ltrFormulas } from "./ias19/ltr";
@@ -14,8 +20,8 @@ import { LESSON_N, PREREQS, STAGES } from "./ias19/shared";
 import { SKILLS } from "./ias19/skills";
 
 describe("the employee-benefits course", () => {
-  it("twelve lessons, numbered in order, all on the course's page, the first free", () => {
-    assert.equal(IAS19_LESSONS.length, 12);
+  it("eight lessons, numbered in order, all on the course's page, the first free", () => {
+    assert.equal(IAS19_LESSONS.length, 8);
     IAS19_LESSONS.forEach((m, i) => {
       assert.equal(m.n, i + 1, m.slug);
       assert.equal(m.backHref, "/basics/ias19", m.slug);
@@ -64,21 +70,21 @@ describe("before we start: the primer, and the glossary", () => {
     assert.equal(PRIMER.find((c) => c.id === "pl-oci")!.checks.length, 2);
   });
 
-  it("who needs what: a key for every lesson, only real cards, lesson 1 empty, the present value in lessons 5 to 11", () => {
+  it("who needs what: a key for every lesson, only real cards, lesson 1 empty, the present value in lessons 4 to 7", () => {
     assert.deepEqual(Object.keys(PRIMER_NEEDS), Object.keys(LESSON_N));
     const ids = new Set(PRIMER.map((c) => c.id));
     for (const needs of Object.values(PRIMER_NEEDS)) for (const id of needs) assert.ok(ids.has(id), id);
     assert.deepEqual(PRIMER_NEEDS["ias19-map"], []);
-    for (const slug of ["ias19-measure", "ias19-attribute", "ias19-rollforward", "ias19-amend", "ias19-assets", "ias19-present", "ias19-other"] as const) assert.ok(PRIMER_NEEDS[slug].includes("pv"), slug);
-    // The blueprint's table, in the site's numbering.
+    for (const slug of ["ias19-measure", "ias19-rollforward", "ias19-assets", "ias19-other"] as const) assert.ok(PRIMER_NEEDS[slug].includes("pv"), slug);
+    // The blueprint's table, in the site's numbering (eight lessons since the merge).
     const byN = (id: string) => PRIMER.find((c) => c.id === id)!.needed.map((s) => LESSON_N[s]).sort((a, b) => a - b);
-    assert.deepEqual(byN("pv"), [2, 5, 6, 7, 8, 9, 10, 11]);
-    assert.deepEqual(byN("roll"), [2, 7, 8, 9, 10, 11]);
-    assert.deepEqual(byN("pl-oci"), [4, 7, 8, 9, 10, 11]);
-    assert.deepEqual(byN("accrual"), [1, 3]);
-    assert.deepEqual(byN("journal"), [3, 4, 10]);
-    assert.deepEqual(byN("percent"), [3, 5, 6]);
-    assert.deepEqual(byN("obligation"), [1, 3, 11]);
+    assert.deepEqual(byN("pv"), [1, 4, 5, 6, 7]);
+    assert.deepEqual(byN("roll"), [1, 5, 6, 7]);
+    assert.deepEqual(byN("pl-oci"), [3, 5, 6, 7]);
+    assert.deepEqual(byN("accrual"), [1, 2]);
+    assert.deepEqual(byN("journal"), [2, 3, 6]);
+    assert.deepEqual(byN("percent"), [2, 4]);
+    assert.deepEqual(byN("obligation"), [1, 2, 7]);
   });
 
   it("the self-checks' answers are the solver's", () => {
@@ -136,7 +142,8 @@ describe("formulas read left to right: P.N.", () => {
 
 describe("every result is worked: the formula, then the numbers", () => {
   /** The lessons already written this way; each lesson joins as it is converted. */
-  const WORKED: string[] = ["ias19-toolkit", "ias19-short", "ias19-dc", "ias19-measure", "ias19-attribute", "ias19-rollforward"];
+  /** The parts of the course written formula-first (the old lessons 2–7, now inside lessons 1–5). */
+  const WORKED = [TOOLKIT, SHORT, DC_LESSON, MEASURE, ATTRIBUTE, ROLLFORWARD];
   const formulas = [...Object.values(FORMULA), ...Object.values(TOOL)] as string[];
   const plain = (s: string) => s.replaceAll(/[‎⁦⁩]/g, "");
 
@@ -147,7 +154,7 @@ describe("every result is worked: the formula, then the numbers", () => {
     assert.equal(putIn(work.pv(15_600, 0.07, 6)), "15,600 ÷ 1.07^6");
   });
 
-  it("lesson 2 works every result both ways: the main page's formula, and Excel", () => {
+  it("the toolkit (lesson 1, part two) works every result both ways: the main page's formula, and Excel", () => {
     const w = tool.pv(8_000, 0.06, 4);
     assert.equal(w.formula, "FV ÷ (1 + RATE)^YEAR = PV");
     assert.equal(w.numbers, "8,000 ÷ (1.06)^4 = 6,337 ₪");
@@ -155,12 +162,11 @@ describe("every result is worked: the formula, then the numbers", () => {
     assert.equal(tool.partRate(0.08, 3).numbers, "(1.08)^(3/12) − 1 = 1.9427%");
     assert.equal(tool.partRate(0.08, 24).numbers, "(1.08)^2 − 1 = 16.64%");
     assert.equal(tool.part(18_000, 0.05, 8).excel?.numbers, "=FV(5%;8/12;0;-18000)-18000 → 595 ₪");
-    const toolkit = IAS19_LESSONS.find((l) => l.slug === "ias19-toolkit")!;
-    for (const x of toolkit.exercises) if (x.kind === "number") assert.ok(x.steps.some((s) => s.includes("באקסל:")), `${x.id}: no Excel`);
+    for (const x of TOOLKIT.exercises) if (x.kind === "number") assert.ok(x.steps.some((s) => s.includes("באקסל:")), `${x.id}: no Excel`);
   });
 
   it("every calculation's solution shows one of the course's formulas, and a line with the numbers in", () => {
-    for (const m of IAS19_LESSONS.filter((l) => WORKED.includes(l.slug)))
+    for (const m of WORKED)
       for (const x of m.exercises) {
         if (x.kind !== "number") continue;
         const lines = x.steps.flatMap((s) => plain(s).split("\n"));

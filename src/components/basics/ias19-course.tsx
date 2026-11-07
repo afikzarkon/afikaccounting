@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { SIMPLE_BANK, SIMPLE_PV, WHY_GRANT, WHY_PER_YEAR, WHY_PROFIT_ACCRUED, WHY_PROFIT_CASH } from "@/lib/study/ias19/lessons/map";
-import { lessonRef } from "@/lib/study/ias19/shared";
 import { Bridge, T19 } from "./ias19-ui";
 import { BankStatement, DateWindows, DecisionTree, Fork, PvSlide, Staircase, Timeline, Tree, TwoPanel, YearCompare } from "./ias19-visuals";
 import { MiniQuiz, SortQuiz } from "./inventory-interactive";
@@ -310,7 +309,7 @@ export const IAS19_BASICS_SCREENS: Record<string, ScreenContent> = {
     lead: "לפני שממשיכים: כמה שאלות על כל השיעור.",
     body: (
       <Bridge summary="הסוג נקבע לפי מתי ולמה משלמים. והעיקרון: עבודה של היום יוצרת חוב היום, גם אם התשלום רחוק.">
-        כדי לרשום היום משהו שישולם בעוד שנים, צריך לדעת כמה הוא שווה היום. איך מחזירים סכום מהעתיד להיום, ואיך מחשבים ריבית על חצי שנה? זה {lessonRef("ias19-toolkit")}.
+        כדי לרשום היום משהו שישולם בעוד שנים, צריך לדעת כמה הוא שווה היום. איך מחזירים סכום מהעתיד להיום, ואיך מחשבים ריבית על חצי שנה? זה החלק השני של השיעור.
       </Bridge>
     ),
     check: quiz("emp-map-master", [
