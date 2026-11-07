@@ -22,7 +22,7 @@ import {
   GYM_PATH,
 } from "@/lib/study/ias19/lessons/attribute";
 import { GROUP, groupStep, VP, VP_ACCRUED, VP_LATER, VP_LATER_PER_YEAR, VP_OBLIGATION, VP_PER_YEAR } from "@/lib/study/ias19/lessons/measure";
-import { CF, CF_PER_YEAR, CHANGED, CHANGED_CLOSING, CHANGED_PER_YEAR, RATE_ONLY_CLOSING, Y1, Y1_PN, Y2 } from "@/lib/study/ias19/lessons/rollforward";
+import { CF, CF_PER_YEAR, CHANGED, CHANGED_CLOSING, CHANGED_PER_YEAR, PAID_INTEREST, PAID_MONTHS, PAID_ON_OPENING, PAID_SAVED, PAID_YEAR, RATE_ONLY_CLOSING, Y1, Y1_PN, Y2 } from "@/lib/study/ias19/lessons/rollforward";
 import { lessonRef, pct } from "@/lib/study/ias19/shared";
 import { FORMULA, said, work } from "@/lib/study/ias19/formulas";
 import { FormulaFill, Ltr, type Term, Work } from "./ias19-formula";
@@ -32,7 +32,7 @@ import { BankStatement, Diff, PeopleGrid, Routing, Timeline, WrongRight, YearBar
 import { MiniQuiz } from "./inventory-interactive";
 import { Sorted, Story } from "./inventory-teach";
 import { RollSchedule } from "./roll-schedule";
-import { Card, Money, Rule, Wide } from "./ui";
+import { Card, Money, Rule, Stepper, Wide } from "./ui";
 import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
 
 /** The employee-benefits course, lessons 5–7: measuring at one date, attribution to years of service, and a year's roll-forward. */
@@ -896,6 +896,49 @@ ${said(work.counted(33, 35))}` },
       { q: "סגירה ב-31.12.2025, פרישה ב-31.12.2030. מה n של עלות השירות של 2025?", options: ["5", "6", "4", "1"], answer: 0, why: said(work.nYear(2030, 2025)) },
     ]),
   },
+  "emp-roll-paid": {
+    lead: "כששולם מענק באמצע השנה, מיום התשלום החוב קטן — ולכן גם הריבית.",
+    body: (
+      <>
+        <P>
+          <T19 he="הריבית על ההתחייבות" par="123" /> היא השינוי בהתחייבות מחלוף הזמן: יתרת הפתיחה כפול השיעור שבו נמדדה, תוך התחשבות בתשלומים. מה ששולם כבר לא ״מתקרב לתשלום״ — ולכן מורידים את הריבית
+          עליו, מיום ששולם ועד סוף השנה.
+        </P>
+        <Timeline
+          label={`פתיחה ${PAID_YEAR.opening.toLocaleString("en-US")} נושאת ריבית כל השנה; התשלום ב-1.${PAID_YEAR.month} לא נושא ריבית ${PAID_MONTHS} חודשים`}
+          title="מה נושא ריבית, וכמה זמן"
+          from={0}
+          to={12}
+          ticks={[
+            { at: 0, label: "1.1" },
+            { at: PAID_YEAR.month - 1, label: `1.${PAID_YEAR.month}: תשלום` },
+            { at: 12, label: "31.12" },
+          ]}
+          spans={[
+            { from: 0, to: 12, label: "הפתיחה: 12 חודשים", tone: 5, row: 0 },
+            { from: PAID_YEAR.month - 1, to: 12, label: `התשלום: ${PAID_MONTHS} חודשים שלא נושאים ריבית`, tone: 4, row: 1 },
+          ]}
+        />
+        <Part title="דוגמה">
+          <p className="text-[15px]">
+            פתיחה <Money v={PAID_YEAR.opening} />, שיעור תחילת השנה {pct(PAID_YEAR.rate)}. ב-1.{PAID_YEAR.month} שולם לעובד שפרש, כצפוי, מענק של <Money v={PAID_YEAR.paid} />.
+          </p>
+          <Stepper
+            label="ריבית עם תשלום"
+            steps={[
+              { title: "1. על הפתיחה", body: <p><L>{PAID_YEAR.opening.toLocaleString("en-US")} × {pct(PAID_YEAR.rate)} = {Math.round(PAID_ON_OPENING).toLocaleString("en-US")}</L></p> },
+              { title: "2. על התשלום", body: <p><L>{PAID_YEAR.paid.toLocaleString("en-US")} × ({1 + PAID_YEAR.rate}^({PAID_MONTHS}/12) − 1) = {Math.round(PAID_SAVED).toLocaleString("en-US")}</L> — ריבית דריבית לחלק משנה, לא {pct(PAID_YEAR.rate)} × {PAID_MONTHS}/12.</p> },
+              { title: "3. הריבית", body: <p><L>{Math.round(PAID_ON_OPENING).toLocaleString("en-US")} − {Math.round(PAID_SAVED).toLocaleString("en-US")} = {Math.round(PAID_INTEREST).toLocaleString("en-US")}</L> ₪.</p> },
+            ]}
+          />
+        </Part>
+      </>
+    ),
+    check: quiz("emp-roll-paid", [
+      { q: "תשלום של 20,000 ב-1.10, שיעור 6%. כמה חודשים הוא לא נושא ריבית?", options: ["3", "9", "10", "2"], answer: 0, why: "מ-1.10 עד 31.12: אוקטובר, נובמבר, דצמבר." },
+      { q: "האם משתמשים ב-6% × 3/12 על התשלום?", options: ["לא — 1.06^(3/12) − 1", "כן, זה הכי מדויק", "לא — 6% על כל השנה", "לא מורידים ריבית על תשלומים"], answer: 0, why: "ריבית לחלק משנה היא ריבית דריבית." },
+    ]),
+  },
   "emp-roll-rule": {
     lead: "P.N. = סגירה − פתיחה − ריבית − שירות + תשלומים. ולכל שורה, המקום שלה בדוחות.",
     body: (
@@ -925,6 +968,57 @@ ${said(work.counted(33, 35))}` },
       </>
     ),
     check: quiz("emp-roll-rule", [{ q: "רישום של P.N. הפסד:", options: ["ח׳ קרן הון (OCI), ז׳ התחייבות", "ח׳ הוצאות שכר, ז׳ התחייבות", "ח׳ התחייבות, ז׳ קרן הון", "ח׳ הוצאות מימון, ז׳ מזומן"], answer: 0, why: "הפסד מגדיל את החוב, ונרשם ב-OCI." }]),
+  },
+  "emp-roll-where": {
+    lead: "שירות, ריבית, שירות עבר וסילוק — לרווח והפסד. מדידה מחדש — ל-OCI, ולא חוזרת.",
+    body: (
+      <>
+        <Sorted
+          columns={[
+            { title: "רווח והפסד", tone: "neutral", items: ["עלות שירות שוטף — בהוצאות השכר", "ריבית — במימון או בשכר", `עלות שירות עבר — ${lessonRef("ias19-amend")}`, `רווח או הפסד מסילוק — ${lessonRef("ias19-amend")}`] },
+            { title: "רווח כולל אחר (OCI)", tone: "neutral", items: ["רווח או הפסד ממדידה מחדש: שינוי בשיעור ההיוון, בתמותה, במועד הפרישה, בשכר הצפוי"] },
+          ]}
+        />
+        <Card title="שני חריגים קטנים">
+          <p>עלות שעובדת על ייצור יכולה להיכנס לעלות נכס (למשל מלאי) במקום לרווח והפסד. והריבית: התקן לא מחייב להציג אותה במימון — רק לתת לה גילוי נפרד. יש חברות שמציגות אותה במימון, ויש שבשכר.</p>
+        </Card>
+        <Remember>
+          מדידה מחדש שנרשמה ב-OCI לא עוברת לעולם לרווח והפסד, גם כשהעובדים פורשים. מותר להעביר אותה בתוך ההון, מהקרן לעודפים (סעיף 122).
+        </Remember>
+      </>
+    ),
+    check: quiz("emp-roll-where", [
+      { q: "הפסד ממדידה מחדש של 18,000. לאן?", options: ["OCI", "הוצאות שכר", "הוצאות מימון", "ישר לעודפים"], answer: 0, why: "סעיף 57(ד)." },
+      { q: "החברה מציגה את הריבית בהוצאות השכר. מותר?", options: ["כן, עם גילוי נפרד לריבית", "לא, רק במימון", "רק אם היא קטנה", "רק ב-OCI"], answer: 0, why: "התקן דורש גילוי נפרד, לא שורה מסוימת." },
+    ]),
+  },
+  "emp-roll-template": {
+    lead: "תנועה בהתחייבות: שתי מדידות, ארבע שורות שמסבירות, ואחת שמאזנת.",
+    body: (
+      <>
+        <SolveTemplate
+          seek={["התנועה של השנה: פתיחה, עלות שירות שוטף, ריבית, תשלומים, סגירה — והמדידה מחדש שמאזנת."]}
+          check={[
+            "מה הפתיחה? אם לא נתונה — מודדים אותה בהנחות של 31.12 הקודם. עובד שהתחיל השנה: אין פתיחה ואין ריבית.",
+            "עלות שירות שוטף: יחידת הזכאות של השנה, בשיעור של תחילת השנה, מהוונת מסוף השנה עד התשלום.",
+            "ריבית: על הפתיחה, בשיעור שבו נמדדה, פחות הריבית על תשלומים מיום ששולמו (סעיף 123).",
+            "הסגירה: בהנחות של סוף השנה — השיעור, מועד הפרישה (וממנו השכר הצפוי).",
+            "מדידה מחדש = הסגירה פחות כל השאר. עלייה בהתחייבות = הפסד, ל-OCI.",
+          ]}
+          build={[
+            { title: "① הפתיחה", lines: [<L key="f">{FORMULA.measure}</L>, "בהנחות של תחילת השנה."] },
+            { title: "② עלות שירות שוטף", lines: [<L key="f">{FORMULA.service}</L>] },
+            { title: "③ ריבית", lines: [<L key="f">{FORMULA.interestCost}</L>, "פחות הריבית על תשלומים מיום ששולמו."] },
+            { title: "④ הסגירה", lines: ["אותה נוסחה, בהנחות של סוף השנה."] },
+            { title: "⑤ המדידה מחדש", lines: [<L key="f">{FORMULA.pnDB}</L>] },
+          ]}
+        />
+      </>
+    ),
+    check: quiz("emp-roll-template", [
+      { q: "העובד התחיל לעבוד השנה. כמה ריבית בשנה הראשונה?", options: ["אפס — אין פתיחה", "הסגירה × השיעור", "עלות השירות × השיעור", "חצי מהשיעור"], answer: 0, why: "ריבית היא על הפתיחה, ובשנה הראשונה היא אפס." },
+      { q: "ב-31.12 השתנה רק מועד הפרישה. איפה רואים את זה?", options: ["בסגירה, ומשם במדידה מחדש", "בעלות השירות של השנה", "בריבית", "בפתיחה"], answer: 0, why: "שירות וריבית לפי ההנחות של תחילת השנה." },
+    ]),
   },
   "emp-roll-solved": {
     lead: "שנה ראשונה: אין פתיחה ואין ריבית. שנה שנייה: כל השורות.",
@@ -1035,6 +1129,15 @@ ${said(work.counted(33, 35))}` },
             ]}
           />
         </Part>
+      </>
+    ),
+  },
+  "emp-roll-drill": {
+    lead: "שנה חדשה, הנחות חדשות, מספרים חדשים — אותה תבנית.",
+    body: (
+      <>
+        <P>״תנועה בהתחייבות״: עובד בשנתו השנייה, ובסוף השנה משתנים השיעור ולפעמים גם מועד הפרישה. ״ריבית עם תשלום״: מענק שמשולם באמצע השנה. פתרו, בדקו, ורק אז פתחו את הפתרון.</P>
+        <DrillBox families={["year", "payint"]} />
       </>
     ),
   },

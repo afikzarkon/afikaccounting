@@ -1,4 +1,4 @@
-import { accrued, attribution, backLoaded, grown, pv, tiered } from "@/lib/learn/ias19";
+import { accrued, amendedYear, attribution, backLoaded, grown, pv, retirementPN, settlementGain, tiered } from "@/lib/learn/ias19";
 import { fmt, pct } from "./shared";
 
 /**
@@ -64,7 +64,7 @@ export type Drill = {
   entry?: { account: string; dr?: number; cr?: number }[];
 };
 
-export type DrillFamily = "classify" | "dc" | "puc" | "window" | "tiers";
+export type DrillFamily = "classify" | "dc" | "puc" | "window" | "tiers" | "year" | "payint" | "amend" | "settle";
 
 export const DRILL_TITLES: Record<DrillFamily, string> = {
   classify: "סיווג: הפקדה מוגדרת או הטבה מוגדרת",
@@ -72,6 +72,10 @@ export const DRILL_TITLES: Record<DrillFamily, string> = {
   puc: "מדידת התחייבות לעובד אחד",
   window: "ייחוס: שני מסלולים לזכאות",
   tiers: "ייחוס: נוסחת התוכנית או קו ישר",
+  year: "תנועה בהתחייבות לשנה",
+  payint: "ריבית עם תשלום באמצע השנה",
+  amend: "שינוי תנאים באמצע השנה",
+  settle: "סילוק מול פרישה לפי התנאים",
 };
 
 /** Whether a typed answer to a number ask is right: within a shekel, or 0.2% for large amounts, since a solution rounds along the way. */
@@ -563,12 +567,330 @@ export function tiersDrill(r: Rand): Drill {
   };
 }
 
+// ---------------------------------------------------------------------------
+// A year's roll-forward: current service, interest, the closing and the P.N.
+
+export type YearDraw = { role: (typeof ROLES)[number]; share: number; salary: number; growth: number; from: number; total: number; r0: number; r1: number; later: boolean };
+
+export function yearDraw(r: Rand): YearDraw {
+  const r0 = pick(r, [0.055, 0.06, 0.065, 0.075]);
+  return {
+    role: pick(r, ROLES),
+    share: pick(r, [0.04, 0.06, 0.075]),
+    salary: step(r, 216_000, 600_000, 12_000),
+    growth: pick(r, [0.015, 0.025, 0.03, 0.035]),
+    from: int(r, 2021, 2025),
+    total: int(r, 4, 9),
+    r0,
+    r1: r0 + pick(r, [-0.015, -0.01, -0.005, 0.005, 0.01]),
+    later: r() < 0.5,
+  };
+}
+
+/** The second year of service: opening (one year, at the first year-end rate), service and interest at that rate, the closing at the second year-end, and the P.N. */
+export function yearFigures(d: YearDraw) {
+  const unit = d.share * grown(d.salary, d.growth, d.total - 1);
+  const n0 = d.total - 1;
+  const opening = pv(unit, d.r0, n0);
+  const service = pv(unit, d.r0, n0 - 1);
+  const interest = opening * d.r0;
+  const total = d.later ? d.total + 1 : d.total;
+  const unitEnd = d.share * grown(d.salary, d.growth, total - 1);
+  const nEnd = total - 2;
+  const closing = pv(unitEnd * 2, d.r1, nEnd);
+  return { unit, n0, opening, service, interest, unitEnd, nEnd, closing, pn: closing - opening - service - interest };
+}
+
+export function yearDrill(r: Rand): Drill {
+  const d = yearDraw(r);
+  const F = yearFigures(d);
+  const v = (m: string, f: string) => (d.role.f ? f : m);
+  const y1 = d.from + 1;
+  const retire = d.from + d.total - 1;
+  const loss = F.pn > 0;
+  return {
+    family: "year",
+    title: DRILL_TITLES.year,
+    story: [
+      `${d.role.role} ${v("זכאי", "זכאית")} בסיום ההעסקה למענק חד־פעמי: ${pct(d.share)} מהשכר השנתי האחרון על כל שנת עבודה. ${v("הוא החל", "היא החלה")} לעבוד ב-1.1.${d.from}.`,
+      `השכר השנתי ב-${d.from}: ${fmt(d.salary)} ₪, והחברה צופה עלייה של ${pct(d.growth)} בכל ינואר. ב-31.12.${d.from} הוערך מועד הפרישה ל-31.12.${retire}, ושיעור ההיוון היה ${pct(d.r0)}.`,
+      d.later
+        ? `ב-31.12.${y1} עודכנו ההנחות: הפרישה נדחתה בשנה, ל-31.12.${retire + 1}, ושיעור ההיוון ${pct(d.r1)}.`
+        : `ב-31.12.${y1} מועד הפרישה לא השתנה, ושיעור ההיוון ${pct(d.r1)}.`,
+      `ערכו את התנועה בהתחייבות לשנת ${y1}.`,
+    ],
+    asks: [
+      { kind: "number", id: "opening", label: `היתרה ב-31.12.${d.from}`, answer: F.opening, unit: "₪" },
+      { kind: "number", id: "service", label: `עלות שירות שוטף ${y1}`, answer: F.service, unit: "₪" },
+      { kind: "number", id: "interest", label: `הוצאות ריבית ${y1}`, answer: F.interest, unit: "₪" },
+      { kind: "number", id: "closing", label: `היתרה ב-31.12.${y1}`, answer: F.closing, unit: "₪" },
+      { kind: "number", id: "pn", label: "רווח או הפסד ממדידה מחדש (בערך מוחלט)", answer: Math.abs(F.pn), unit: "₪" },
+      { kind: "choice", id: "pnSide", label: "המדידה מחדש היא", options: ["הפסד, ל-OCI", "רווח, ל-OCI", "הפסד, לרווח והפסד", "רווח, לרווח והפסד"], answer: loss ? 0 : 1 },
+    ],
+    seek: [`ארבע שורות בתנועה של ${y1}: עלות שירות שוטף, ריבית, הסגירה, ומה שמאזן אותן — המדידה מחדש.`],
+    check: [
+      "עלות שירות וריבית — לפי ההנחות של תחילת השנה (השיעור של 31.12 של השנה הקודמת).",
+      "עלות השירות מהוונת מסוף השנה עד התשלום; הריבית — על יתרת הפתיחה.",
+      "הסגירה — לפי ההנחות של סוף השנה: השיעור החדש, ומועד הפרישה החדש (שמשנה גם את השכר הצפוי).",
+      "מה שלא מוסבר בשירות ובריבית הוא מדידה מחדש: עלייה בהתחייבות = הפסד, ל-OCI (סעיף 57(ד)).",
+    ],
+    build: [
+      { title: "① יחידת זכאות", lines: [`${pct(d.share)} × ${fmt(d.salary)} × ${f1(d.growth)}^${d.total - 1} = ${sh(F.unit)}.`] },
+      { title: "② הפתיחה", lines: [`שנה אחת נצברה; ${F.n0} שנים עד הפרישה: ${sh(F.unit)} ÷ ${f1(d.r0)}^${F.n0} = ${sh(F.opening)}.`] },
+      { title: "③ עלות שירות שוטף", lines: [`יחידה אחת, בשיעור של תחילת השנה, מסוף ${y1}: ${sh(F.unit)} ÷ ${f1(d.r0)}^${F.n0 - 1} = ${sh(F.service)}.`] },
+      { title: "④ ריבית", lines: [`${sh(F.opening)} × ${pct(d.r0)} = ${sh(F.interest)}.`] },
+      {
+        title: "⑤ הסגירה",
+        lines: [
+          d.later ? `הפרישה נדחתה: יחידה חדשה ${pct(d.share)} × ${fmt(d.salary)} × ${f1(d.growth)}^${d.total} = ${sh(F.unitEnd)}.` : "ההנחות על הפרישה לא השתנו — אותה יחידה.",
+          `שתי שנים נצברו: ${sh(F.unitEnd)} × 2 ÷ ${f1(d.r1)}^${F.nEnd} = ${sh(F.closing)}.`,
+        ],
+      },
+      {
+        title: "⑥ המדידה מחדש — השורה המאזנת",
+        lines: [`${sh(F.closing)} − ${sh(F.opening)} − ${sh(F.service)} − ${sh(F.interest)} = ${loss ? "" : "−"}${sh(Math.abs(F.pn))} → ${loss ? "הפסד" : "רווח"}, ל-OCI.`, "שירות — לשכר; ריבית — למימון או לשכר (עם גילוי נפרד)."],
+      },
+    ],
+    table: {
+      head: ["שורה", "סכום"],
+      rows: [
+        [`יתרה 31.12.${d.from}`, Math.round(F.opening)],
+        ["עלות שירות שוטף", Math.round(F.service)],
+        ["ריבית", Math.round(F.interest)],
+        [`מדידה מחדש (${loss ? "הפסד" : "רווח"})`, Math.round(F.pn)],
+      ],
+      foot: [`יתרה 31.12.${y1}`, Math.round(F.closing)],
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Interest when benefits are paid during the year (IAS 19.123).
+
+export type PayDraw = { opening: number; rate: number; paid: number; month: number };
+
+export function payDraw(r: Rand): PayDraw {
+  const opening = step(r, 120_000, 900_000, 10_000);
+  return { opening, rate: pick(r, [0.045, 0.055, 0.06, 0.065, 0.07]), paid: step(r, opening / 10, opening / 3, 1_000), month: pick(r, [2, 3, 5, 6, 7, 8, 9, 10]) };
+}
+
+export function payFigures(d: PayDraw) {
+  const months = 13 - d.month;
+  const onOpening = d.opening * d.rate;
+  const onPaid = d.paid * ((1 + d.rate) ** (months / 12) - 1);
+  return { months, onOpening, onPaid, interest: onOpening - onPaid };
+}
+
+export function payDrill(r: Rand): Drill {
+  const d = payDraw(r);
+  const F = payFigures(d);
+  return {
+    family: "payint",
+    title: DRILL_TITLES.payint,
+    story: [
+      `יתרת ההתחייבות בגין הטבה מוגדרת ב-1.1: ${fmt(d.opening)} ₪. שיעור ההיוון שלפיו נמדדה: ${pct(d.rate)}.`,
+      `ב-1.${d.month} שילמה החברה מענק של ${fmt(d.paid)} ₪ לעובד שפרש, כצפוי. מה הוצאות הריבית של השנה?`,
+    ],
+    asks: [
+      { kind: "number", id: "onOpening", label: "ריבית על הפתיחה, לשנה שלמה", answer: F.onOpening, unit: "₪" },
+      { kind: "number", id: "onPaid", label: "הריבית שנחסכה על התשלום", answer: F.onPaid, unit: "₪" },
+      { kind: "number", id: "interest", label: "הוצאות הריבית", answer: F.interest, unit: "₪" },
+    ],
+    seek: ["הריבית על ההתחייבות: חלוף הזמן על היתרה, בשיעור של תחילת התקופה, בניכוי התשלומים מיום ששולמו (סעיף 123)."],
+    check: [
+      "על איזו יתרה? הפתיחה — לא הסגירה.",
+      "באיזה שיעור? השיעור שלפיו נמדדה הפתיחה.",
+      `כמה חודשים התשלום כבר לא נושא ריבית? מ-1.${d.month} עד סוף השנה: ${F.months}.`,
+      "ריבית לחלק משנה — בריבית דריבית: (1+i)^(חודשים/12) − 1, לא i × חודשים/12.",
+    ],
+    build: [
+      { title: "1. על הפתיחה", lines: [`${fmt(d.opening)} × ${pct(d.rate)} = ${sh(F.onOpening)}.`] },
+      { title: "2. על התשלום", lines: [`${fmt(d.paid)} × (${f1(d.rate)}^(${F.months}/12) − 1) = ${sh(F.onPaid)}.`] },
+      { title: "3. הריבית", lines: [`${sh(F.onOpening)} − ${sh(F.onPaid)} = ${sh(F.interest)}.`] },
+    ],
+  };
+}
+
+// ---------------------------------------------------------------------------
+// An amendment during the year: service in two periods, past service, interest in two parts.
+
+export type AmendDraw = { oldPer: number; newPer: number; from: number; years: number; month: number; r0: number; ra: number; rEnd: number };
+
+export function amendDraw(r: Rand): AmendDraw {
+  const oldPer = step(r, 30_000, 120_000, 5_000);
+  const ra = pick(r, [0.045, 0.055, 0.065, 0.075]);
+  return {
+    oldPer,
+    newPer: oldPer + step(r, 10_000, 50_000, 5_000),
+    from: int(r, 2021, 2025),
+    years: int(r, 4, 8),
+    month: pick(r, [2, 3, 5, 6, 7, 8, 9]),
+    r0: ra + pick(r, [0.005, 0.01, 0.015]),
+    ra,
+    rEnd: r() < 0.6 ? ra : ra - 0.005,
+  };
+}
+
+export function amendFigures(d: AmendDraw) {
+  const opening = pv(d.oldPer, d.r0, d.years);
+  const y = amendedYear({ opening, iStart: d.r0, iAmend: d.ra, iEnd: d.rEnd, months: d.month - 1, oldPerYear: d.oldPer, newPerYear: d.newPer, servedAtStart: 1, nEnd: d.years - 1 });
+  return { opening, ...y, before: d.month - 1, after: 13 - d.month, nAmend: d.years - 1 + (13 - d.month) / 12 };
+}
+
+export function amendDrill(r: Rand): Drill {
+  const d = amendDraw(r);
+  const F = amendFigures(d);
+  const y1 = d.from + 1;
+  const loss = F.pn > 0;
+  const m = (k: number) => `${k}/12`;
+  const nA = `(${d.years - 1} + ${F.after}/12)`;
+  const sA = `(1 + ${F.before}/12)`;
+  return {
+    family: "amend",
+    title: DRILL_TITLES.amend,
+    story: [
+      `מנהל התפעול החל לעבוד ב-1.1.${d.from}, וזכאי בפרישה למענק של ${fmt(d.oldPer)} ₪ על כל שנת עבודה. ב-31.12.${d.from} הוערך שיפרוש בעוד ${d.years} שנים; שיעור ההיוון ${pct(d.r0)}.`,
+      `ב-1.${d.month}.${y1} החליטה החברה להגדיל את המענק ל-${fmt(d.newPer)} ₪ לשנה — גם על השנים שכבר עבד. שיעור ההיוון ביום השינוי ${pct(d.ra)}${d.rEnd === d.ra ? " ועד סוף השנה" : `, וב-31.12.${y1} — ${pct(d.rEnd)}`}. מועד הפרישה לא השתנה.`,
+      `ערכו את התנועה בהתחייבות לשנת ${y1}.`,
+    ],
+    asks: [
+      { kind: "number", id: "opening", label: `היתרה ב-31.12.${d.from}`, answer: F.opening, unit: "₪" },
+      { kind: "number", id: "service", label: "עלות שירות שוטף (שתי התקופות)", answer: F.service, unit: "₪" },
+      { kind: "number", id: "past", label: "עלות שירות עבר", answer: F.pastService, unit: "₪" },
+      { kind: "number", id: "interest", label: "הוצאות ריבית (שני החלקים)", answer: F.interest, unit: "₪" },
+      { kind: "number", id: "closing", label: `היתרה ב-31.12.${y1}`, answer: F.closing, unit: "₪" },
+      { kind: "number", id: "pn", label: "מדידה מחדש (בערך מוחלט)", answer: Math.abs(F.pn), unit: "₪" },
+    ],
+    seek: ["תנועה של שנה שהשינוי חוצה: שירות שוטף ושני חלקי ריבית לפני ואחרי, שירות עבר ביום השינוי, הסגירה, והמדידה מחדש שמאזנת."],
+    check: [
+      `השינוי ב-1.${d.month} מפצל את השנה: ${F.before} חודשים בתנאים הישנים, ${F.after} בחדשים.`,
+      "לכל תקופה — התנאים שלה, השיעור של תחילתה, וההיוון מסוף התקופה עד הפרישה.",
+      "שירות עבר = ההתחייבות אחרי השינוי פחות לפניו — שתיהן ביום השינוי, באותו שיעור ובאותו n. לרווח והפסד, כהוצאות שכר.",
+      "ריבית: על הפתיחה עד השינוי; ומהשינוי — על ההתחייבות אחרי השינוי, בשיעור החדש.",
+    ],
+    build: [
+      { title: "① הפתיחה", lines: [`${fmt(d.oldPer)} × 1 ÷ ${f1(d.r0)}^${d.years} = ${sh(F.opening)}.`] },
+      {
+        title: "② עלות שירות שוטף",
+        lines: [
+          `עד השינוי: ${fmt(d.oldPer)} × ${m(F.before)} ÷ ${f1(d.r0)}^${nA} = ${sh(F.serviceBefore)}.`,
+          `אחרי השינוי: ${fmt(d.newPer)} × ${m(F.after)} ÷ ${f1(d.ra)}^${d.years - 1} = ${sh(F.serviceAfter)}.`,
+          `סה״כ ${sh(F.service)}.`,
+        ],
+      },
+      {
+        title: "③ עלות שירות עבר (ביום השינוי)",
+        lines: [
+          `ותק ביום השינוי: ${sA} שנים; n = ${nA}; שיעור ${pct(d.ra)}.`,
+          `לפני: ${fmt(d.oldPer)} × ${sA} ÷ ${f1(d.ra)}^${nA} = ${sh(F.pastBefore)}.`,
+          `אחרי: ${fmt(d.newPer)} × ${sA} ÷ ${f1(d.ra)}^${nA} = ${sh(F.pastAfter)}.`,
+          `שירות עבר: ${sh(F.pastService)}.`,
+        ],
+      },
+      {
+        title: "④ ריבית",
+        lines: [
+          `עד השינוי: ${sh(F.opening)} × (${f1(d.r0)}^(${m(F.before)}) − 1) = ${sh(F.interestBefore)}.`,
+          `אחרי: ${sh(F.pastAfter)} × (${f1(d.ra)}^(${m(F.after)}) − 1) = ${sh(F.interestAfter)}.`,
+          `סה״כ ${sh(F.interest)}.`,
+        ],
+      },
+      { title: "⑤ הסגירה", lines: [`${fmt(d.newPer)} × 2 ÷ ${f1(d.rEnd)}^${d.years - 1} = ${sh(F.closing)}.`] },
+      { title: "⑥ מדידה מחדש", lines: [`${sh(F.closing)} − ${sh(F.opening)} − ${sh(F.service)} − ${sh(F.pastService)} − ${sh(F.interest)} = ${loss ? "" : "−"}${sh(Math.abs(F.pn))} → ${loss ? "הפסד" : "רווח"}, ל-OCI.`] },
+    ],
+    table: {
+      head: ["שורה", "סכום"],
+      rows: [
+        [`יתרה 31.12.${d.from}`, Math.round(F.opening)],
+        ["עלות שירות שוטף", Math.round(F.service)],
+        ["ריבית", Math.round(F.interest)],
+        ["עלות שירות עבר", Math.round(F.pastService)],
+        [`מדידה מחדש (${loss ? "הפסד" : "רווח"})`, Math.round(F.pn)],
+      ],
+      foot: [`יתרה 31.12.${y1}`, Math.round(F.closing)],
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Settlement against a retirement on the plan's terms.
+
+export type SettleDraw = { perYear: number; served: number; n: number; rate: number; price: number };
+
+export function settleDraw(r: Rand): SettleDraw {
+  const perYear = step(r, 40_000, 140_000, 5_000);
+  const served = int(r, 2, 6);
+  const n = int(r, 2, 7);
+  const rate = pick(r, [0.045, 0.055, 0.065, 0.075]);
+  const books = pv(perYear * served, rate, n);
+  return { perYear, served, n, rate, price: Math.round((books * pick(r, [0.85, 0.9, 0.95, 1.05, 1.1])) / 1_000) * 1_000 };
+}
+
+export function settleFigures(d: SettleDraw) {
+  const books = pv(d.perYear * d.served, d.rate, d.n);
+  const gain = settlementGain(books, d.price);
+  const paidOnTerms = d.perYear * d.served;
+  return { books, gain, paidOnTerms, pn: retirementPN(books, paidOnTerms) };
+}
+
+export function settleDrill(r: Rand): Drill {
+  const d = settleDraw(r);
+  const F = settleFigures(d);
+  const gain = F.gain > 0;
+  return {
+    family: "settle",
+    title: DRILL_TITLES.settle,
+    story: [
+      `סמנכ״לית המכירות זכאית בפרישה למענק של ${fmt(d.perYear)} ₪ על כל שנת עבודה. ב-31.12 היא צברה ${d.served} שנים, וצפויה לפרוש בעוד ${d.n} שנים; שיעור ההיוון ${pct(d.rate)}.`,
+      `א. ב-1.1 סיכמה איתה החברה לבטל את סעיף המענק, ושילמה לה במקומו ${fmt(d.price)} ₪.`,
+      `ב. במקום זאת: ב-1.1 היא פרשה במפתיע, וקיבלה את המענק לפי ההסכם.`,
+    ],
+    asks: [
+      { kind: "number", id: "books", label: "ההתחייבות בספרים ביום האירוע", answer: F.books, unit: "₪" },
+      { kind: "number", id: "settle", label: "א. רווח או הפסד מסילוק (בערך מוחלט)", answer: Math.abs(F.gain), unit: "₪" },
+      { kind: "choice", id: "settleSide", label: "א. הוא", options: ["רווח, ברווח והפסד", "הפסד, ברווח והפסד", "רווח, ב-OCI", "הפסד, ב-OCI"], answer: gain ? 0 : 1 },
+      { kind: "number", id: "pn", label: "ב. ההפרש בין התשלום לספרים", answer: F.pn, unit: "₪" },
+      { kind: "choice", id: "pnSide", label: "ב. הוא", options: ["הפסד ממדידה מחדש, ב-OCI", "הפסד מסילוק, ברווח והפסד", "עלות שירות עבר", "אין הפרש"], answer: 0 },
+    ],
+    seek: ["מה סוגר את ההתחייבות, ולאן הולך ההפרש בין מה ששולם לבין מה שבספרים."],
+    check: [
+      "קודם — ההתחייבות בספרים ביום האירוע.",
+      "סילוק = עסקה שמבטלת את המחויבות, מחוץ לתנאי התוכנית (סעיף 111). ההפרש מול מחיר הסילוק — לרווח והפסד, בהוצאות השכר (סעיף 109).",
+      "תשלום לפי תנאי התוכנית, גם אם מוקדם מהצפוי, אינו סילוק: ההפרש הוא שינוי אומדן — מדידה מחדש, ב-OCI.",
+    ],
+    build: [
+      { title: "1. ההתחייבות בספרים", lines: [`${fmt(d.perYear)} × ${d.served} ÷ ${f1(d.rate)}^${d.n} = ${sh(F.books)}.`] },
+      {
+        title: "א. סילוק",
+        lines: [
+          `${sh(F.books)} − ${fmt(d.price)} = ${gain ? "" : "−"}${sh(Math.abs(F.gain))} → ${gain ? "רווח" : "הפסד"} מסילוק, ברווח והפסד.`,
+          gain
+            ? `ח׳ התחייבות ${sh(F.books)} · ז׳ מזומן ${sh(d.price)} · ז׳ רווח מסילוק (הוצאות שכר) ${sh(F.gain)}.`
+            : `ח׳ התחייבות ${sh(F.books)} · ח׳ הפסד מסילוק (הוצאות שכר) ${sh(-F.gain)} · ז׳ מזומן ${sh(d.price)}.`,
+        ],
+      },
+      {
+        title: "ב. פרישה לפי התנאים",
+        lines: [
+          `התשלום לפי ההסכם: ${fmt(d.perYear)} × ${d.served} = ${sh(F.paidOnTerms)}, בלי היוון — הוא משולם היום.`,
+          `${sh(F.paidOnTerms)} − ${sh(F.books)} = ${sh(F.pn)} → הפסד ממדידה מחדש, ב-OCI.`,
+          `ח׳ התחייבות ${sh(F.books)} · ח׳ OCI ${sh(F.pn)} · ז׳ מזומן ${sh(F.paidOnTerms)}.`,
+        ],
+      },
+    ],
+  };
+}
+
 export const DRILLS: Record<DrillFamily, (r: Rand) => Drill> = {
   classify: classifyDrill,
   dc: dcDrill,
   puc: pucDrill,
   window: windowDrill,
   tiers: tiersDrill,
+  year: yearDrill,
+  payint: payDrill,
+  amend: amendDrill,
+  settle: settleDrill,
 };
 
 export const makeDrill = (family: DrillFamily, seed: number) => DRILLS[family](seeded(seed));

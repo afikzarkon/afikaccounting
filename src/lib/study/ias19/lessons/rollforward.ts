@@ -1,4 +1,4 @@
-import { grown, plainYear, pv, rollForward } from "@/lib/learn/ias19";
+import { grown, partInterest, plainYear, pv, rollForward } from "@/lib/learn/ias19";
 import type { StudyModule, Trap } from "../../types";
 import { FORMULA, said, work } from "../formulas";
 import { calc, choice, COURSE, COURSE_HREF, fmt, journal, lessonRef, pct } from "../shared";
@@ -25,6 +25,13 @@ export const CHANGED_PN = CHANGED_CLOSING - Y2.closing;
 export const RATE_ONLY_CLOSING = pv(2 * CF_PER_YEAR, CHANGED.rateEnd, raises - 1);
 export const RATE_ONLY_PN = RATE_ONLY_CLOSING - Y2.closing;
 
+/** Interest when a benefit is paid during the year (IAS 19.123): a grant paid on 1.6, so seven months without interest. */
+export const PAID_YEAR = { opening: 240_000, rate: 0.065, paid: 30_000, month: 6 };
+export const PAID_MONTHS = 13 - PAID_YEAR.month;
+export const PAID_ON_OPENING = PAID_YEAR.opening * PAID_YEAR.rate;
+export const PAID_SAVED = partInterest(PAID_YEAR.paid, PAID_YEAR.rate, PAID_MONTHS);
+export const PAID_INTEREST = PAID_ON_OPENING - PAID_SAVED;
+
 /** The exercise (a): a sales team's plan with given lines — the P.N. one year, the payments the next. Lesson 9 adds its assets. */
 export const SALES = {
   y2023: { opening: 3_400_000, rate: 0.034, service: 610_000, payments: 310_000, closing: 3_950_000 },
@@ -46,11 +53,11 @@ export const RND_2025 = plainYear({ opening: RND_OPENING, i: RND.rate, perYear: 
 const traps: Trap[] = [
   {
     id: "interest-closing",
-    prompt: "פתיחה 50,000, סגירה 80,000, שיעור תחילת השנה 6%. על איזו יתרה מחשבים את הריבית?",
-    options: ["על 50,000 — הפתיחה", "על 80,000 — הסגירה", "על הממוצע, 65,000", "על השינוי, 30,000"],
+    prompt: "פתיחה 45,000, סגירה 75,000, שיעור תחילת השנה 6%. על איזו יתרה מחשבים את הריבית?",
+    options: ["על 45,000 — הפתיחה", "על 75,000 — הסגירה", "על הממוצע, 60,000", "על השינוי, 30,000"],
     answer: 0,
     why: `הריבית היא ״ההתקרבות לתשלום״ של מה שהיה בתחילת השנה.
-${said(work.interestCost(50_000, 0.06))}`,
+${said(work.interestCost(45_000, 0.06))}`,
     traps: ["", "המלכודת: ריבית על הסגירה. הסגירה כבר כוללת את הריבית ואת השירות של השנה.", "אין ממוצע; שירות השנה מתווסף בסופה.", "השינוי כולל את הריבית עצמה."],
   },
   {
@@ -90,6 +97,14 @@ ${said(work.paidTotal(60_000, 240_000))}`,
     traps: ["", "המלכודת: להוריד רק את מה ששולם מהקרן. זה נכון לנכסים, לא להתחייבות.", "גם החלק של הקרן מסלק חוב.", "התשלום מקטין את ההתחייבות."],
   },
   {
+    id: "pn-recycle",
+    prompt: "לפני שלוש שנים נרשם הפסד ממדידה מחדש של 40,000 ₪ ב-OCI. השנה העובדים פרשו. מה קורה לסכום?",
+    options: ["נשאר בהון; מותר להעביר אותו לעודפים", "עובר לרווח והפסד בשנת הפרישה", "מבוטל מול ההתחייבות", "נפרס לרווח והפסד על שנים"],
+    answer: 0,
+    why: "מדידה מחדש לא ממוחזרת לרווח והפסד; אפשר להעביר אותה בתוך ההון, לעודפים (סעיף 122).",
+    traps: ["", "המלכודת: למחזר כמו מכשירים פיננסיים. כאן אסור.", "ההתחייבות כבר שולמה; ההפסד נשאר בהון.", "אין פריסה של מדידה מחדש."],
+  },
+  {
     id: "pn-sign",
     prompt: "הריבית בשוק ירדה בסוף השנה. מה קורה להתחייבות, ואיזה P.N. נוצר?",
     options: ["ההתחייבות גדלה — P.N. הפסד", "ההתחייבות קטנה — P.N. רווח", "אין השפעה", "ההתחייבות גדלה — P.N. רווח"],
@@ -113,15 +128,21 @@ export const ROLLFORWARD: StudyModule = {
     "למדוד את הסגירה בהנחות סוף השנה, ולמצוא את ה-P.N.",
     "למצוא שורה חסרה אחרת במעגל כשה-P.N. נתון",
     "לרשום את התנועות: שכר, מימון, OCI ותשלום",
+    "להוריד מהריבית את חלקה של הטבה ששולמה באמצע השנה",
+    "לדעת מה הולך לרווח והפסד ומה ל-OCI, ושמדידה מחדש לא חוזרת לרווח והפסד",
   ],
   backHref: COURSE_HREF,
   screens: [
     { id: "emp-roll-hook", title: "חשבון החיסכון שהפתיע" },
     { id: "emp-roll-lines", title: "ארבע שורות שמסבירות, ואחת שמאזנת" },
     { id: "emp-roll-rates", title: "איזו ריבית ואיזה n בכל שורה" },
+    { id: "emp-roll-paid", title: "ריבית כששולם מענק באמצע השנה" },
     { id: "emp-roll-rule", title: "הכלל: המעגל, ורישום כל שורה" },
+    { id: "emp-roll-where", title: "לאן הולכת כל שורה: רווח והפסד, OCI, ומה עם ההון" },
+    { id: "emp-roll-template", title: "תבנית פתרון: תנועה בהתחייבות" },
     { id: "emp-roll-solved", title: "דוגמה פתורה: סמנכ״ל כספים, שנתיים" },
     { id: "emp-roll-together", title: "פותרים יחד: רק הריבית יורדת" },
+    { id: "emp-roll-drill", title: "מחולל שאלות: תנועה וריבית במספרים חדשים" },
     { id: "emp-roll-master", title: "בדיקת שליטה, וגשר לשיעור הבא" },
   ],
   exercises: [
@@ -177,6 +198,8 @@ ${FORMULA.pnDB}`),
   ],
   traps,
   tips: [
+    "שירות שוטף, ריבית, שירות עבר וסילוק — לרווח והפסד (אלא אם מהוונים לנכס, כמו מלאי). מדידה מחדש — ל-OCI, ולא חוזרת לרווח והפסד; מותר להעביר אותה לעודפים (סעיף 122). הריבית — במימון או בשכר, עם גילוי נפרד.",
+    "ריבית (סעיף 123): פתיחה × שיעור תחילת השנה, פחות הריבית על כל תשלום מיום ששולם: תשלום × ((1+i)^(חודשים/12) − 1).",
     "המעגל: פתיחה, ריבית, שירות, תשלומים, P.N. וסגירה — הריבית והשירות לפי תחילת השנה, הסגירה לפי סופה.",
     `${FORMULA.rollDB}; ${FORMULA.pnDB}; ${FORMULA.interestCost}; ${FORMULA.service} — n נספר מסוף השנה.`,
     "רישום: שירות — ח׳ הוצאות שכר; ריבית — ח׳ הוצאות מימון; הפסד P.N. — ח׳ קרן הון (OCI); תשלום — ז׳ מזומן. בכולן הצד השני: ההתחייבות.",
