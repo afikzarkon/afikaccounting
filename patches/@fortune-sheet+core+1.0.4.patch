@@ -1,0 +1,248 @@
+diff --git a/node_modules/@fortune-sheet/core/dist/index.esm.js b/node_modules/@fortune-sheet/core/dist/index.esm.js
+index 5c9820b..9cf550e 100644
+--- a/node_modules/@fortune-sheet/core/dist/index.esm.js
++++ b/node_modules/@fortune-sheet/core/dist/index.esm.js
+@@ -57132,7 +57132,16 @@ function setCaretPosition(ctx, textDom, children, pos) {
+     var el = textDom;
+     var range = document.createRange();
+     var sel = window.getSelection();
+-    range.setStart(el.childNodes[children], pos);
++    var node = el && el.childNodes[children];
++    var len = node ? node.nodeType === 3 ? node.length : node.childNodes.length : -1;
++    if (pos > len) {
++      // The remembered caret spot no longer fits the rebuilt formula: put the caret at its end.
++      var host = el && el.closest ? el.closest("[contenteditable='true']") : null;
++      host = host || document.getElementById("luckysheet-rich-text-editor");
++      if (host) moveToEnd(host);
++      return;
++    }
++    range.setStart(node, pos);
+     range.collapse(true);
+     sel === null || sel === void 0 ? void 0 : sel.removeAllRanges();
+     sel === null || sel === void 0 ? void 0 : sel.addRange(range);
+@@ -57436,6 +57445,39 @@ function getRangeIndexes($editor) {
+   });
+   return res;
+ }
++// The caret as a count of characters into the editor's text, so it survives the editor's
++// HTML being rebuilt (recolouring a formula changes the spans, not the text).
++function caretTextOffset(editor) {
++  var sel = window.getSelection();
++  if (!sel || sel.rangeCount === 0 || !editor.contains(sel.anchorNode)) return null;
++  var range = document.createRange();
++  range.selectNodeContents(editor);
++  range.setEnd(sel.anchorNode, sel.anchorOffset);
++  return range.toString().length;
++}
++function setCaretTextOffset(editor, offset) {
++  var walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
++  var node = walker.nextNode();
++  var last = null;
++  while (node) {
++    if (offset <= node.length) break;
++    offset -= node.length;
++    last = node;
++    node = walker.nextNode();
++  }
++  if (!node) {
++    if (!last || offset > 0) return false;
++    node = last;
++    offset = last.length;
++  }
++  var range = document.createRange();
++  range.setStart(node, offset);
++  range.collapse(true);
++  var sel = window.getSelection();
++  sel === null || sel === void 0 ? void 0 : sel.removeAllRanges();
++  sel === null || sel === void 0 ? void 0 : sel.addRange(range);
++  return true;
++}
+ function handleFormulaInput(ctx, $copyTo, $editor, kcode, preText) {
+   var refreshRangeSelect = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : true;
+   var value1;
+@@ -57464,9 +57506,10 @@ function handleFormulaInput(ctx, $copyTo, $editor, kcode, preText) {
+       var textRange = document.selection.createRange();
+       ctx.formulaCache.functionRangeIndex = textRange;
+     }
++    var caretAt = caretTextOffset($editor);
+     $editor.innerHTML = value;
+     if ($copyTo) $copyTo.innerHTML = value;
+-    functionRange(ctx, $editor, value, value1);
++    if (caretAt == null || !setCaretTextOffset($editor, caretAt)) functionRange(ctx, $editor, value, value1);
+     if (refreshRangeSelect) {
+       cancelFunctionrangeSelected(ctx);
+       if (kcode !== 46) {
+@@ -57690,10 +57733,10 @@ function israngeseleciton(ctx, istooltip) {
+     if (txt.length === 0 && anchor.parentNode.previousSibling) {
+       var ahr = anchor.parentNode.previousSibling;
+       txt = _.trim(ahr.textContent || "");
+-      lasttxt = txt.substring(txt.length - 1, 1);
++      lasttxt = txt.substr(txt.length - 1, 1);
+       ctx.formulaCache.rangeSetValueTo = anchor.parentNode;
+     } else {
+-      lasttxt = txt.substring(anchorOffset - 1, 1);
++      lasttxt = _.trim(anchor.textContent.slice(0, anchorOffset)).slice(-1);
+       ctx.formulaCache.rangeSetValueTo = anchor.parentNode;
+     }
+     if (istooltip && (lasttxt === "(" || lasttxt === ",") || !istooltip && (lasttxt === "(" || lasttxt === "," || lasttxt === "=" || lasttxt in operatorjson || lasttxt === "&")) {
+@@ -57709,12 +57752,17 @@ function israngeseleciton(ctx, istooltip) {
+       _txt2 = _.trim(_ahr2[_ahr2.length - 2].innerText);
+       ctx.formulaCache.rangeSetValueTo = _ahr2;
+     }
+-    var _lasttxt = _txt2.substring(_txt2.length - 1, 1);
++    var _lasttxt = _txt2.substr(_txt2.length - 1, 1);
+     if (istooltip && (_lasttxt === "(" || _lasttxt === ",") || !istooltip && (_lasttxt === "(" || _lasttxt === "," || _lasttxt === "=" || _lasttxt in operatorjson || _lasttxt === "&")) {
+       return true;
+     }
+   } else if (parentElement.id === "luckysheet-rich-text-editor" || parentElement.id === "luckysheet-functionbox-cell" || anchorOffset === 0) {
+     var _anchor$previousSibli;
++    if (anchorOffset !== 0 && anchor.nodeType === 3) {
++      var ownLast = _.trim(anchor.textContent.slice(0, anchorOffset)).slice(-1);
++      ctx.formulaCache.rangeSetValueTo = anchor;
++      return istooltip ? ownLast === "(" || ownLast === "," : ownLast === "(" || ownLast === "," || ownLast === "=" || ownLast in operatorjson || ownLast === "&";
++    }
+     if (anchorOffset === 0) {
+       anchor = anchor.parentNode;
+     }
+@@ -57722,7 +57770,7 @@ function israngeseleciton(ctx, istooltip) {
+     if (((_anchor$previousSibli = anchor.previousSibling) === null || _anchor$previousSibli === void 0 ? void 0 : _anchor$previousSibli.textContent) == null) return false;
+     if (anchor.previousSibling) {
+       var _txt3 = _.trim(anchor.previousSibling.textContent);
+-      var _lasttxt2 = _txt3.substring(_txt3.length - 1, 1);
++      var _lasttxt2 = _txt3.substr(_txt3.length - 1, 1);
+       ctx.formulaCache.rangeSetValueTo = anchor.previousSibling;
+       if (istooltip && (_lasttxt2 === "(" || _lasttxt2 === ",") || !istooltip && (_lasttxt2 === "(" || _lasttxt2 === "," || _lasttxt2 === "=" || _lasttxt2 in operatorjson || _lasttxt2 === "&")) {
+         return true;
+@@ -68885,7 +68933,7 @@ function handleCurrencyFormat(ctx, cellInput) {
+   var flowdata = getFlowdata(ctx);
+   if (!flowdata) return;
+   var currency = ctx.currency || "¥";
+-  updateFormat(ctx, cellInput, flowdata, "ct", "".concat(currency, " #.00"));
++  updateFormat(ctx, cellInput, flowdata, "ct", "".concat(currency, " #,##0.00"));
+ }
+ function handlePercentageFormat(ctx, cellInput) {
+   var flowdata = getFlowdata(ctx);
+diff --git a/node_modules/@fortune-sheet/core/dist/index.js b/node_modules/@fortune-sheet/core/dist/index.js
+index 04113a1..abbe0e6 100644
+--- a/node_modules/@fortune-sheet/core/dist/index.js
++++ b/node_modules/@fortune-sheet/core/dist/index.js
+@@ -57142,7 +57142,16 @@ function setCaretPosition(ctx, textDom, children, pos) {
+     var el = textDom;
+     var range = document.createRange();
+     var sel = window.getSelection();
+-    range.setStart(el.childNodes[children], pos);
++    var node = el && el.childNodes[children];
++    var len = node ? node.nodeType === 3 ? node.length : node.childNodes.length : -1;
++    if (pos > len) {
++      // The remembered caret spot no longer fits the rebuilt formula: put the caret at its end.
++      var host = el && el.closest ? el.closest("[contenteditable='true']") : null;
++      host = host || document.getElementById("luckysheet-rich-text-editor");
++      if (host) moveToEnd(host);
++      return;
++    }
++    range.setStart(node, pos);
+     range.collapse(true);
+     sel === null || sel === void 0 ? void 0 : sel.removeAllRanges();
+     sel === null || sel === void 0 ? void 0 : sel.addRange(range);
+@@ -57446,6 +57455,39 @@ function getRangeIndexes($editor) {
+   });
+   return res;
+ }
++// The caret as a count of characters into the editor's text, so it survives the editor's
++// HTML being rebuilt (recolouring a formula changes the spans, not the text).
++function caretTextOffset(editor) {
++  var sel = window.getSelection();
++  if (!sel || sel.rangeCount === 0 || !editor.contains(sel.anchorNode)) return null;
++  var range = document.createRange();
++  range.selectNodeContents(editor);
++  range.setEnd(sel.anchorNode, sel.anchorOffset);
++  return range.toString().length;
++}
++function setCaretTextOffset(editor, offset) {
++  var walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
++  var node = walker.nextNode();
++  var last = null;
++  while (node) {
++    if (offset <= node.length) break;
++    offset -= node.length;
++    last = node;
++    node = walker.nextNode();
++  }
++  if (!node) {
++    if (!last || offset > 0) return false;
++    node = last;
++    offset = last.length;
++  }
++  var range = document.createRange();
++  range.setStart(node, offset);
++  range.collapse(true);
++  var sel = window.getSelection();
++  sel === null || sel === void 0 ? void 0 : sel.removeAllRanges();
++  sel === null || sel === void 0 ? void 0 : sel.addRange(range);
++  return true;
++}
+ function handleFormulaInput(ctx, $copyTo, $editor, kcode, preText) {
+   var refreshRangeSelect = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : true;
+   var value1;
+@@ -57474,9 +57516,10 @@ function handleFormulaInput(ctx, $copyTo, $editor, kcode, preText) {
+       var textRange = document.selection.createRange();
+       ctx.formulaCache.functionRangeIndex = textRange;
+     }
++    var caretAt = caretTextOffset($editor);
+     $editor.innerHTML = value;
+     if ($copyTo) $copyTo.innerHTML = value;
+-    functionRange(ctx, $editor, value, value1);
++    if (caretAt == null || !setCaretTextOffset($editor, caretAt)) functionRange(ctx, $editor, value, value1);
+     if (refreshRangeSelect) {
+       cancelFunctionrangeSelected(ctx);
+       if (kcode !== 46) {
+@@ -57700,10 +57743,10 @@ function israngeseleciton(ctx, istooltip) {
+     if (txt.length === 0 && anchor.parentNode.previousSibling) {
+       var ahr = anchor.parentNode.previousSibling;
+       txt = ___default['default'].trim(ahr.textContent || "");
+-      lasttxt = txt.substring(txt.length - 1, 1);
++      lasttxt = txt.substr(txt.length - 1, 1);
+       ctx.formulaCache.rangeSetValueTo = anchor.parentNode;
+     } else {
+-      lasttxt = txt.substring(anchorOffset - 1, 1);
++      lasttxt = _.trim(anchor.textContent.slice(0, anchorOffset)).slice(-1);
+       ctx.formulaCache.rangeSetValueTo = anchor.parentNode;
+     }
+     if (istooltip && (lasttxt === "(" || lasttxt === ",") || !istooltip && (lasttxt === "(" || lasttxt === "," || lasttxt === "=" || lasttxt in operatorjson || lasttxt === "&")) {
+@@ -57719,12 +57762,17 @@ function israngeseleciton(ctx, istooltip) {
+       _txt2 = ___default['default'].trim(_ahr2[_ahr2.length - 2].innerText);
+       ctx.formulaCache.rangeSetValueTo = _ahr2;
+     }
+-    var _lasttxt = _txt2.substring(_txt2.length - 1, 1);
++    var _lasttxt = _txt2.substr(_txt2.length - 1, 1);
+     if (istooltip && (_lasttxt === "(" || _lasttxt === ",") || !istooltip && (_lasttxt === "(" || _lasttxt === "," || _lasttxt === "=" || _lasttxt in operatorjson || _lasttxt === "&")) {
+       return true;
+     }
+   } else if (parentElement.id === "luckysheet-rich-text-editor" || parentElement.id === "luckysheet-functionbox-cell" || anchorOffset === 0) {
+     var _anchor$previousSibli;
++    if (anchorOffset !== 0 && anchor.nodeType === 3) {
++      var ownLast = _.trim(anchor.textContent.slice(0, anchorOffset)).slice(-1);
++      ctx.formulaCache.rangeSetValueTo = anchor;
++      return istooltip ? ownLast === "(" || ownLast === "," : ownLast === "(" || ownLast === "," || ownLast === "=" || ownLast in operatorjson || ownLast === "&";
++    }
+     if (anchorOffset === 0) {
+       anchor = anchor.parentNode;
+     }
+@@ -57732,7 +57780,7 @@ function israngeseleciton(ctx, istooltip) {
+     if (((_anchor$previousSibli = anchor.previousSibling) === null || _anchor$previousSibli === void 0 ? void 0 : _anchor$previousSibli.textContent) == null) return false;
+     if (anchor.previousSibling) {
+       var _txt3 = ___default['default'].trim(anchor.previousSibling.textContent);
+-      var _lasttxt2 = _txt3.substring(_txt3.length - 1, 1);
++      var _lasttxt2 = _txt3.substr(_txt3.length - 1, 1);
+       ctx.formulaCache.rangeSetValueTo = anchor.previousSibling;
+       if (istooltip && (_lasttxt2 === "(" || _lasttxt2 === ",") || !istooltip && (_lasttxt2 === "(" || _lasttxt2 === "," || _lasttxt2 === "=" || _lasttxt2 in operatorjson || _lasttxt2 === "&")) {
+         return true;
+@@ -68895,7 +68943,7 @@ function handleCurrencyFormat(ctx, cellInput) {
+   var flowdata = getFlowdata(ctx);
+   if (!flowdata) return;
+   var currency = ctx.currency || "¥";
+-  updateFormat(ctx, cellInput, flowdata, "ct", "".concat(currency, " #.00"));
++  updateFormat(ctx, cellInput, flowdata, "ct", "".concat(currency, " #,##0.00"));
+ }
+ function handlePercentageFormat(ctx, cellInput) {
+   var flowdata = getFlowdata(ctx);

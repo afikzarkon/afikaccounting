@@ -5,9 +5,21 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isGuarded } from "@/components/layout/content-guard-view";
+import { SheetBoundary } from "./sheet-boundary";
 import type { SheetData } from "./sheet-workbook";
 
-const SheetWorkbook = dynamic(() => import("./sheet-workbook"), {
+// The workbook is a large script (about 570 KB over the wire). It starts loading as soon as
+// the reader points at the button, or once the page is idle on a wide screen, so the
+// sheet is ready when it opens instead of loading then.
+const loadWorkbook = () => import("./sheet-workbook");
+let requested = false;
+const prefetch = () => {
+  if (requested) return;
+  requested = true;
+  loadWorkbook().catch(() => (requested = false));
+};
+
+const SheetWorkbook = dynamic(loadWorkbook, {
   ssr: false,
   loading: () => <p className="p-6 text-sm text-muted">טוען את הגיליון…</p>,
 });
@@ -15,7 +27,23 @@ const SheetWorkbook = dynamic(() => import("./sheet-workbook"), {
 /** Where a reader solves questions: the courses, review, an exam, and the engine. */
 const showsOn = (pathname: string) => isGuarded(pathname) || pathname.startsWith("/engine");
 
-const EMPTY: SheetData = [{ name: "Sheet1", celldata: [], luckysheet_select_save: [{ row: [0, 0], column: [0, 0] }] }];
+// The selection must name its focus cell: without one, typing into the selected cell and pressing
+// Enter makes the workbook write to an undefined row and throw.
+const EMPTY: SheetData = [
+  { name: "Sheet1", celldata: [], luckysheet_select_save: [{ row: [0, 0], column: [0, 0], row_focus: 0, column_focus: 0 }] },
+];
+
+/** Gives every stored selection its focus cell (sheets saved before this was set lack it). */
+function withFocus(sheets: SheetData): SheetData {
+  return sheets.map((sheet) => ({
+    ...sheet,
+    luckysheet_select_save: sheet.luckysheet_select_save?.map((s) => ({
+      ...s,
+      row_focus: s.row_focus ?? s.row[0],
+      column_focus: s.column_focus ?? s.column[0],
+    })),
+  }));
+}
 const storeKey = (pathname: string) => `sheet:v1:${pathname}`;
 const WIDTH_KEY = "sheet:v1:width";
 
@@ -23,7 +51,7 @@ function load(pathname: string): SheetData {
   try {
     const raw = localStorage.getItem(storeKey(pathname));
     const parsed = raw ? (JSON.parse(raw) as SheetData) : null;
-    return Array.isArray(parsed) && parsed.length ? parsed : EMPTY;
+    return Array.isArray(parsed) && parsed.length ? withFocus(parsed) : EMPTY;
   } catch {
     return EMPTY;
   }
@@ -52,6 +80,9 @@ function save(pathname: string, data: SheetData) {
     // Storage full or blocked: the sheet still works, it just won't be there next time.
   }
 }
+
+/** Half the screen at most to begin with, so the question keeps room beside the sheet. */
+const defaultWidth = () => clamp(Math.min(560, window.innerWidth * 0.45));
 
 function clamp(w: number) {
   return Math.round(Math.min(Math.max(w, 360), window.innerWidth * 0.75));
@@ -83,11 +114,23 @@ export function SheetDock() {
 
   useEffect(() => flush, [flush]);
 
+  useEffect(() => {
+    if (!visible || requested) return;
+    const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    if (conn?.saveData || !window.matchMedia("(min-width: 768px)").matches) return;
+    const idle = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 2000));
+    const cancel = window.cancelIdleCallback ?? window.clearTimeout;
+    const id = idle(prefetch, { timeout: 5000 });
+    return () => cancel(id);
+  }, [visible]);
+
   const openSheet = () => {
     try {
       const w = Number(localStorage.getItem(WIDTH_KEY));
-      if (w) setWidth(clamp(w));
-    } catch {}
+      setWidth(w ? clamp(w) : defaultWidth());
+    } catch {
+      setWidth(defaultWidth());
+    }
     setSheet({ path: pathname, data: load(pathname) });
     setOpen(true);
   };
@@ -126,14 +169,28 @@ export function SheetDock() {
     setVersion((v) => v + 1);
   };
 
+  // While dragging, the width goes straight to the page's style, once a frame;
+  // React hears of it only when the drag ends.
+  const aside = useRef<HTMLElement>(null);
   const startResize = (e: React.PointerEvent) => {
     e.preventDefault();
-    const move = (ev: PointerEvent) => setWidth(clamp(ev.clientX));
+    let frame = 0;
+    const move = (ev: PointerEvent) => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const w = `${clamp(ev.clientX)}px`;
+        document.documentElement.style.setProperty("--sheet-w", w);
+        aside.current?.style.setProperty("--sheet-w", w);
+      });
+    };
     const up = (ev: PointerEvent) => {
+      cancelAnimationFrame(frame);
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
+      const w = clamp(ev.clientX);
+      setWidth(w);
       try {
-        localStorage.setItem(WIDTH_KEY, String(clamp(ev.clientX)));
+        localStorage.setItem(WIDTH_KEY, String(w));
       } catch {}
     };
     window.addEventListener("pointermove", move);
@@ -147,6 +204,9 @@ export function SheetDock() {
       <button
         type="button"
         onClick={openSheet}
+        onPointerEnter={prefetch}
+        onFocus={prefetch}
+        onTouchStart={prefetch}
         className="no-print fixed bottom-20 left-4 z-40 flex items-center gap-2 rounded-full border border-line-strong bg-surface px-4 py-2.5 text-sm font-semibold text-fg shadow-lg transition hover:border-accent hover:text-accent md:bottom-6"
       >
         <SheetIcon className="size-4" aria-hidden />
@@ -157,6 +217,7 @@ export function SheetDock() {
 
   return (
     <aside
+      ref={aside}
       data-sheet
       aria-label="גיליון עבודה"
       style={{ "--sheet-w": `${width}px` } as React.CSSProperties}
@@ -196,7 +257,17 @@ export function SheetDock() {
         </button>
       </header>
       <div dir="ltr" className="relative min-h-0 flex-1">
-        {sheet?.path === pathname && <SheetWorkbook key={`${pathname}:${version}`} data={sheet.data} onChange={onChange} />}
+        {sheet?.path === pathname && (
+          <SheetBoundary
+            onReset={() => {
+              flush();
+              setSheet({ path: pathname, data: load(pathname) });
+              setVersion((v) => v + 1);
+            }}
+          >
+            <SheetWorkbook key={`${pathname}:${version}`} data={sheet.data} onChange={onChange} />
+          </SheetBoundary>
+        )}
       </div>
     </aside>
   );
