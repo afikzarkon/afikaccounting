@@ -24,7 +24,7 @@ export const SURPLUS_END = cappedSurplus(SURPLUS.closingAssets, SURPLUS.closingO
 export const SURPLUS_EFFECT = presentation({ service: SURPLUS.service, interestCost: SURPLUS.interestCost, interestIncome: SURPLUS_A.interest, pnObligation: SURPLUS_PN_OBLIGATION, pnAssets: SURPLUS_A.pn, closing: SURPLUS.closingObligation, assets: SURPLUS.closingAssets });
 
 /** The exercise: retirement gifts, a trust account that can buy gifts or — at the trustee's discretion — refund the company: no surplus may be recognised. */
-export const GIFTS = { opening: 150_000, service: 80_000, rate: 0.075, closing: 236_000, deposit: 350_000, depositMonth: 3, fairValue: 260_000, investmentLoss: 90_000 };
+export const GIFTS = { opening: 154_000, service: 80_000, rate: 0.075, closing: 236_000, deposit: 350_000, depositMonth: 3, fairValue: 260_000, investmentLoss: 90_000 };
 export const GIFTS_INTEREST = GIFTS.opening * GIFTS.rate;
 export const GIFTS_PN = balancingPN({ opening: GIFTS.opening, interest: GIFTS_INTEREST, service: GIFTS.service, pastService: 0, payments: 0, settled: 0, closing: GIFTS.closing });
 export const GIFTS_RECOGNISED = recognisedAssets(GIFTS.fairValue, GIFTS.closing, 0);
@@ -114,8 +114,8 @@ const traps: Trap[] = [
   },
   {
     id: "locked",
-    prompt: "בקרן נעולה בידי נאמן 180,000 ₪, וההתחייבות 150,000. החזר לחברה רק לפי שיקול דעת הנאמן, ואין הפחתת הפקדות. מה מוכר כנכס נטו?",
-    options: ["0", "30,000", "180,000", "15,000"],
+    prompt: "בקרן נעולה בידי נאמן 184,000 ₪, וההתחייבות 156,000. החזר לחברה רק לפי שיקול דעת הנאמן, ואין הפחתת הפקדות. מה מוכר כנכס נטו?",
+    options: ["0", "28,000", "184,000", "14,000"],
     answer: 0,
     why: "החברה לא יכולה להשתמש בעודף בפועל — התקרה אפס.",
     traps: ["", "המלכודת: להתעלם מכך שהכסף נעול. עודף שאי אפשר להשתמש בו אינו נכס.", "בנכס נטו מציגים רק את העודף, והוא חסום.", "אין בסיס לחצי."],

@@ -448,3 +448,169 @@ function DrillView({ drill }: { drill: Drill }) {
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Termination or not: three questions in order, each one can settle it.
+
+const TERM_QS = [
+  {
+    q: "האם ההטבה משולמת בכל מקרה של עזיבה — התפטרות, פרישה או פיטורין — באותו סכום?",
+    yes: "משולמת בלי קשר לסיבת העזיבה → הטבה לאחר סיום העסקה (סעיף 164).",
+  },
+  {
+    q: "האם ההטבה מותנית בכך שהעובד ימשיך לעבוד, למשל עד הסגירה?",
+    yes: "תמורה לשירות שעוד יינתן → הטבה בגין שירות: שכר שנרשם בתקופת העבודה (סעיף 162).",
+  },
+  {
+    q: "האם ההטבה נולדת מהחלטה של החברה לסיים את ההעסקה לפני הפרישה הרגילה, או מהסכמת העובד להצעה בתמורה לעזיבה?",
+    yes: "המחויבות נולדה מההחלטה, לא מהשירות → הטבת פיטורין (סעיף 159). בלי שיוך לשנות שירות (סעיף 170).",
+  },
+] as const;
+
+export function TermTest() {
+  const [answers, setAnswers] = useState<boolean[]>([]);
+  const at = answers.length;
+  const hit = answers.indexOf(true);
+  const done = hit >= 0 || at === TERM_QS.length;
+  const verdict = hit >= 0 ? TERM_QS[hit].yes : "לא נולדה מהחלטה לסיים, ולא תלויה בסיבת העזיבה: זכאות שנצברת עם השירות לפי חוק או הסכם → הטבה לאחר סיום העסקה (סעיף 160).";
+  const term = hit === 2;
+  return (
+    <section className="space-y-2.5 rounded-2xl border border-line bg-surface p-3.5" aria-label="מבחן הפיטורין">
+      <p className="flex items-center gap-2 font-bold text-fg">
+        <ShieldQuestion className="h-5 w-5 text-accent" aria-hidden /> פיטורין או לא? שואלים לפי הסדר
+      </p>
+      <ol className="space-y-2">
+        {TERM_QS.slice(0, Math.min(at + 1, TERM_QS.length)).map((x, i) => {
+          const a = answers[i];
+          return (
+            <li key={i} className={cn("rounded-xl px-3 py-2 ring-1", a === undefined ? "bg-accent-soft ring-accent/40" : "bg-surface-2/50 ring-line")}>
+              <p className="text-[14.5px] text-fg">
+                <span className="num me-1 font-bold text-accent">{i + 1}.</span>
+                {x.q}
+              </p>
+              {a === undefined && !done ? (
+                <div className="mt-2 flex gap-2">
+                  <button type="button" onClick={() => setAnswers([...answers, true])} className="h-9 rounded-lg bg-accent px-4 text-[14px] font-bold text-accent-fg">
+                    כן
+                  </button>
+                  <button type="button" onClick={() => setAnswers([...answers, false])} className="h-9 rounded-lg bg-surface px-4 text-[14px] font-bold text-fg ring-1 ring-line-strong">
+                    לא
+                  </button>
+                </div>
+              ) : (
+                <p className="mt-1 text-[13.5px] text-muted">{a ? "כן." : "לא — ממשיכים לשאלה הבאה."}</p>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+      {done && (
+        <div className={cn("anim-step-in rounded-xl px-3.5 py-2.5 text-[15px] font-semibold ring-1", term ? "bg-amber-500/10 text-fg ring-amber-500/40" : "bg-success/10 text-fg ring-success/40")}>
+          {verdict}
+          <button type="button" onClick={() => setAnswers([])} className="ms-2 inline-flex items-center gap-1 text-[13px] font-bold text-accent hover:underline">
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden /> הטבה אחרת
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// When a termination benefit is recognised: the earlier of two dates (IAS 19.165–167).
+
+const MONTHS_HE = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
+const CONDITIONS_167 = ["אין זה סביר שיהיו בתוכנית שינויים משמעותיים", "התוכנית מזהה כמה עובדים, באילו תפקידים, איפה, ומתי (לא כל עובד בשמו)", "ההטבות מפורטות מספיק כדי שכל עובד יוכל לחשב מה יקבל"];
+
+function MonthPick({ label, value, onChange, none }: { label: string; value: number; onChange: (v: number) => void; none: string }) {
+  return (
+    <label className="flex flex-wrap items-center justify-between gap-2 text-[14px] text-fg">
+      <span>{label}</span>
+      <select value={value} onChange={(e) => onChange(Number(e.target.value))} className="h-9 rounded-lg bg-surface px-2 text-[14px] ring-1 ring-line-strong">
+        <option value={0}>{none}</option>
+        {MONTHS_HE.map((m, i) => (
+          <option key={m} value={i + 1}>
+            {m}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+type Dated = { m: number; what: string };
+const earliest = (xs: Dated[]) => (xs.length ? xs.reduce((x, y) => (y.m < x.m ? y : x)) : null);
+
+export function TermDates() {
+  const [path, setPath] = useState<"offer" | "decision">("decision");
+  const [accepted, setAccepted] = useState(9);
+  const [limit, setLimit] = useState(0);
+  const [notice, setNotice] = useState(10);
+  const [conds, setConds] = useState([true, true, false]);
+  const [ias37, setIas37] = useState(6);
+  const all = conds.every(Boolean);
+  const lockA: Dated[] =
+    path === "offer"
+      ? [...(accepted ? [{ m: accepted, what: "העובד קיבל את ההצעה" }] : []), ...(limit ? [{ m: limit, what: "נוצרה מגבלה אפקטיבית על ביטול ההצעה" }] : [])]
+      : notice && all
+        ? [{ m: notice, what: "הודעה לעובדים על תוכנית שעומדת בשלושת התנאים" }]
+        : [];
+  const a = earliest(lockA);
+  const candidates: Dated[] = [...(a ? [a] : []), ...(ias37 ? [{ m: ias37, what: "הפרשה לארגון מחדש לפי IAS 37" }] : [])];
+  const win = earliest(candidates);
+  return (
+    <section className="space-y-3 rounded-2xl border border-line bg-surface p-3.5" aria-label="מועד ההכרה בהטבת פיטורין">
+      <p className="font-bold text-fg">מתי רושמים? שנו את האירועים וראו איזה מועד קובע</p>
+      <div className="flex flex-wrap gap-1.5" role="tablist">
+        {(
+          [
+            ["decision", "החברה מחליטה לפטר (סעיף 167)"],
+            ["offer", "העובד מקבל הצעה (סעיף 166)"],
+          ] as const
+        ).map(([k, t]) => (
+          <button key={k} type="button" role="tab" aria-selected={path === k} onClick={() => setPath(k)} className={cn("h-9 rounded-lg px-3 text-[13.5px] font-bold ring-1", path === k ? "bg-accent text-accent-fg ring-accent" : "bg-surface text-fg ring-line-strong")}>
+            {t}
+          </button>
+        ))}
+      </div>
+      <div className="space-y-2 rounded-xl bg-surface-2/50 p-3 ring-1 ring-line">
+        <p className="text-[13.5px] font-bold text-muted">א. הרגע שבו כבר אי אפשר לבטל את ההצעה</p>
+        {path === "offer" ? (
+          <>
+            <MonthPick label="העובד קיבל את ההצעה ב-" value={accepted} onChange={setAccepted} none="עוד לא קיבל" />
+            <MonthPick label="מגבלה אפקטיבית על ביטול (חוק, הסכם, רגולציה) ב-" value={limit} onChange={setLimit} none="אין" />
+          </>
+        ) : (
+          <>
+            <MonthPick label="ההודעה לעובדים ב-" value={notice} onChange={setNotice} none="עוד לא הודיעה" />
+            <ul className="space-y-1">
+              {CONDITIONS_167.map((c, i) => (
+                <li key={c}>
+                  <label className="flex items-start gap-2 text-[14px] text-fg">
+                    <input type="checkbox" checked={conds[i]} onChange={() => setConds(conds.map((v, k) => (k === i ? !v : v)))} className="mt-1 accent-[var(--accent)]" />
+                    {c}
+                  </label>
+                </li>
+              ))}
+            </ul>
+            {notice > 0 && !all && <p className="text-[13px] text-muted">בלי שלושת התנאים, ההודעה עדיין לא נועלת את החברה.</p>}
+          </>
+        )}
+      </div>
+      <div className="space-y-2 rounded-xl bg-surface-2/50 p-3 ring-1 ring-line">
+        <p className="text-[13.5px] font-bold text-muted">ב. הכרה בעלויות של ארגון מחדש לפי IAS 37, שכולל את הפיטורין</p>
+        <MonthPick label="ההפרשה לארגון מחדש ב-" value={ias37} onChange={setIas37} none="אין ארגון מחדש" />
+      </div>
+      <div aria-live="polite" className={cn("rounded-xl px-3.5 py-2.5 text-[15px] font-semibold ring-1", win ? "bg-accent-soft text-fg ring-accent/40" : "bg-surface-2 text-fg ring-line")}>
+        {win ? (
+          <>
+            רושמים ב{MONTHS_HE[win.m - 1]}: {win.what}.{" "}
+            {candidates.length > 1 ? (candidates[0].m === candidates[1].m ? "שני המועדים באותו חודש." : `זה המוקדם מבין שני המועדים (${MONTHS_HE[candidates[0].m - 1]} ו${MONTHS_HE[candidates[1].m - 1]}).`) : "רק המועד הזה קיים."}
+          </>
+        ) : (
+          "עוד אין מועד: אפשר לבטל את ההצעה, ואין ארגון מחדש. אין התחייבות."
+        )}
+      </div>
+    </section>
+  );
+}

@@ -6,7 +6,7 @@ export const KINDS = ["הטבה לזמן קצר", "הטבה לאחר סיום ה
 const [SHORT, POST, OTHER, TERM] = [0, 1, 2, 3];
 
 /** Lesson 11's termination example: a service centre closing, and two payments that sound alike. */
-export const CLOSING = { leaveEarly: 8_000, stayToEnd: 20_000, staff: 60 };
+export const CLOSING = { leaveEarly: 8_000, stayToEnd: 21_000, staff: 60 };
 export const CLOSING_EXTRA = CLOSING.stayToEnd - CLOSING.leaveEarly;
 
 /** The principle screen's two more ideas: 100 ₪ three years away, and the debt's bank statement — round numbers, no calculation asked. */

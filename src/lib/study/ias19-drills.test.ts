@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { isBalanced } from "../learn/basics";
 import { measure, plainYear, pv } from "../learn/ias19";
-import { amendDraw, amendFigures, assetsDraw, assetsFigures, ceilingDraw, ceilingFigures, dcDraw, dcFigures, payDraw, payFigures, settleDraw, settleFigures, yearDraw, yearFigures, DRILLS, type DrillFamily, pucDraw, pucFigures, seeded, tiersDraw, tiersFigures, windowDraw, windowOf, windowRow } from "./ias19/drills";
+import { amendDraw, amendFigures, awardDraw, awardFigures, termDraw, termFigures, assetsDraw, assetsFigures, ceilingDraw, ceilingFigures, dcDraw, dcFigures, payDraw, payFigures, settleDraw, settleFigures, yearDraw, yearFigures, DRILLS, type DrillFamily, pucDraw, pucFigures, seeded, tiersDraw, tiersFigures, windowDraw, windowOf, windowRow } from "./ias19/drills";
 
 const N = 400;
 const near = (a: number, b: number, where: string) => assert.ok(Math.abs(a - b) < 1e-6 * Math.max(1, Math.abs(b)), `${where}: ${a} ≠ ${b}`);
@@ -129,6 +129,33 @@ describe("IAS 19 practice drills with new numbers", () => {
       assert.ok(F.netOpen <= D.assets - D.obligation + 1e-9 && F.netOpen <= F.ceilingOpen + 1e-9 && F.netOpen > 0, `ceiling open #${seed}`);
       assert.ok(F.netClose <= D.closingAssets - F.closingObl + 1e-9 && F.netClose <= F.ceilingClose + 1e-9, `ceiling close #${seed}`);
       near(F.openAssets + F.income + F.pnAssets, F.closeAssets, `ceiling roll #${seed}`);
+    }
+  });
+
+  it("a long-service award: the roll-forward closes, service is one figure with the past, and everything reaches profit or loss", () => {
+    for (let seed = 1; seed <= N; seed++) {
+      const D = awardDraw(seeded(seed));
+      const F = awardFigures(D);
+      near(F.opening + F.serviceCost + F.interest + F.pn, F.closing, `award #${seed}`);
+      near(F.pl, F.closing - F.opening, `award P&L #${seed}`);
+      near(F.serviceCost, F.serviceBefore + F.serviceAfter + F.pastService, `award service #${seed}`);
+      assert.ok(F.pastService > 0 && F.nEnd >= 2, `award #${seed}`);
+    }
+  });
+
+  it("termination: the amount every employee gets whatever they choose, discounted only past twelve months; an offer counts only those who accepted", () => {
+    for (let seed = 1; seed <= N; seed++) {
+      const D = termDraw(seeded(seed));
+      const F = termFigures(D);
+      if (D.variant === "offer") {
+        assert.equal(F.liability, D.accepted * D.amount, `term offer #${seed}`);
+        assert.ok(D.accepted < D.expected, `term offer #${seed}`);
+      } else {
+        near(F.liability, D.payIn > 1 ? pv(D.early * D.staff, D.rate, D.payIn) : D.early * D.staff, `term closure #${seed}`);
+        assert.ok(D.leavers > 0 && D.leavers < D.staff, `term closure #${seed}`);
+        const d = DRILLS.term(seeded(seed));
+        assert.ok(isBalanced({ id: "1", text: "", lines: d.entry! }), `term entry #${seed}`);
+      }
     }
   });
 });

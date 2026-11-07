@@ -64,7 +64,7 @@ export type Drill = {
   entry?: { account: string; dr?: number; cr?: number }[];
 };
 
-export type DrillFamily = "classify" | "dc" | "puc" | "window" | "tiers" | "year" | "payint" | "amend" | "settle" | "assets" | "ceiling";
+export type DrillFamily = "classify" | "dc" | "puc" | "window" | "tiers" | "year" | "payint" | "amend" | "settle" | "assets" | "ceiling" | "award" | "term";
 
 export const DRILL_TITLES: Record<DrillFamily, string> = {
   classify: "סיווג: הפקדה מוגדרת או הטבה מוגדרת",
@@ -78,6 +78,8 @@ export const DRILL_TITLES: Record<DrillFamily, string> = {
   settle: "סילוק מול פרישה לפי התנאים",
   assets: "תנועה בנכסי התכנית",
   ceiling: "עודף ותקרת הנכס",
+  award: "מענק יובל שעלה באמצע השנה",
+  term: "הטבת פיטורין: מתי ובכמה",
 };
 
 /** Whether a typed answer to a number ask is right: within a shekel, or 0.2% for large amounts, since a solution rounds along the way. */
@@ -1049,6 +1051,248 @@ export function ceilingDrill(r: Rand): Drill {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Other long-term benefits: a long-service award raised during the year.
+
+/** A choice ask with its options shuffled; the first of `options` is the right one. */
+function choiceAsk(r: Rand, id: string, label: string, options: string[]): DrillAsk {
+  const order = shuffle(r, options.map((_, i) => i));
+  return { kind: "choice", id, label, options: order.map((i) => options[i]), answer: order.indexOf(0) };
+}
+
+const AWARD_KINDS = [
+  { name: "מענק יובל", who: "עובדת במחלקת השיווק", began: "החלה" },
+  { name: "מענק ותק", who: "עובד במוקד השירות", began: "החל" },
+  { name: "מענק התמדה", who: "מהנדסת במפעל", began: "החלה" },
+  { name: "מענק יובל", who: "נהג בחברת ההסעות", began: "החל" },
+] as const;
+
+export type AwardDraw = { kind: number; perOld: number; perNew: number; years: number; from: number; served: number; months: number; r0: number; ra: number; rEnd: number };
+
+export function awardDraw(r: Rand): AwardDraw {
+  const years = int(r, 6, 15);
+  let perOld = step(r, 6_000, 30_000, 1_000);
+  if (years === 10 && perOld === 12_000) perOld += 1_000;
+  const r0 = pick(r, [0.045, 0.05, 0.055, 0.065, 0.07, 0.075]);
+  const ra = r0 + pick(r, [-0.015, -0.01, -0.005, 0.005, 0.01, 0.015]);
+  return {
+    kind: int(r, 0, AWARD_KINDS.length - 1),
+    perOld,
+    perNew: perOld + step(r, 1_000, 8_000, 500),
+    years,
+    from: int(r, 2018, 2024),
+    served: int(r, 1, years - 3),
+    months: int(r, 2, 10),
+    r0,
+    ra,
+    rEnd: r() < 0.6 ? ra : ra + pick(r, [-0.005, 0.005]),
+  };
+}
+
+export function awardFigures(d: AwardDraw) {
+  const nEnd = d.years - d.served - 1;
+  const opening = pv(d.perOld * d.served, d.r0, nEnd + 1);
+  const y = amendedYear({ opening, iStart: d.r0, iAmend: d.ra, iEnd: d.rEnd, months: d.months, oldPerYear: d.perOld, newPerYear: d.perNew, servedAtStart: d.served, nEnd });
+  const serviceCost = y.service + y.pastService;
+  return { opening, nEnd, ...y, serviceCost, pl: serviceCost + y.interest + y.pn, after: 12 - d.months };
+}
+
+export function awardDrill(r: Rand): Drill {
+  const d = awardDraw(r);
+  const F = awardFigures(d);
+  const k = AWARD_KINDS[d.kind];
+  const year = d.from + d.served;
+  const loss = F.pn > 0;
+  const m = (x: number) => `${x}/12`;
+  const nA = `(${F.nEnd} + ${F.after}/12)`;
+  const sA = `(${d.served} + ${d.months}/12)`;
+  const pnAsk = choiceAsk(r, "where", "איפה נרשם ה-P.N.?", ["ברווח והפסד, עם הוצאות השכר", "ברווח כולל אחר (OCI)", "בקרן הון, בלי לעבור ברווח והפסד", "לא נרשם: נפרס על השנים שנותרו"]);
+  return {
+    family: "award",
+    title: DRILL_TITLES.award,
+    story: [
+      `${k.who} ${k.began} לעבוד ב-1.1.${d.from}. בתום ${d.years} שנות עבודה ישולם ${k.name} של ${fmt(d.perOld * d.years)} ₪, והעבודה נמשכת גם אחריו. החברה מעריכה שהמענק ישולם.`,
+      `ב-1.${d.months + 1}.${year} החליטה החברה להגדיל את המענק ל-${fmt(d.perNew * d.years)} ₪, גם על השנים שכבר עברו.`,
+      `שיעור ההיוון: ${pct(d.r0)} ב-31.12.${year - 1}; ${pct(d.ra)} ב-1.${d.months + 1}.${year}${d.rEnd === d.ra ? ` וגם ב-31.12.${year}` : `; ${pct(d.rEnd)} ב-31.12.${year}`}.`,
+      `ערכו את התנועה בהתחייבות לשנת ${year}, והפרידו בין שכר עבודה לריבית.`,
+    ],
+    asks: [
+      { kind: "number", id: "opening", label: `היתרה ב-31.12.${year - 1}`, answer: F.opening, unit: "₪" },
+      { kind: "number", id: "service", label: "עלות שירות (שוטף ועבר, סכום אחד)", answer: F.serviceCost, unit: "₪" },
+      { kind: "number", id: "interest", label: "הוצאות ריבית", answer: F.interest, unit: "₪" },
+      { kind: "number", id: "closing", label: `היתרה ב-31.12.${year}`, answer: F.closing, unit: "₪" },
+      { kind: "number", id: "pn", label: "מדידה מחדש (בערך מוחלט)", answer: Math.abs(F.pn), unit: "₪" },
+      pnAsk,
+    ],
+    seek: [`התנועה בהתחייבות לשנת ${year}: פתיחה, עלות שירות אחת (שוטף ועבר יחד), ריבית, סגירה, ומדידה מחדש שמאזנת. הכול ברווח והפסד.`],
+    check: [
+      "המענק משולם בזמן העבודה, אבל לא תוך 12 חודשים מהשנה שבה הוא נצבר: הטבה אחרת לזמן ארוך (סעיף 153). מודדים כמו הטבה מוגדרת (סעיף 155).",
+      `ההגדלה ב-1.${d.months + 1} חותכת את השנה: ${d.months} חודשים במענק הישן, ${F.after} בחדש.`,
+      "ההגדלה חלה גם על העבר: שירות עבר, ביום ההגדלה, בשיעור של אותו יום.",
+      "סעיף 156: שירות שוטף ושירות עבר בסכום אחד, ובלי OCI. גם המדידה מחדש לרווח והפסד.",
+    ],
+    build: [
+      { title: "① הצבירה לשנה", lines: [`לפני: ${fmt(d.perOld * d.years)} ÷ ${d.years} = ${sh(d.perOld)}.`, `אחרי: ${fmt(d.perNew * d.years)} ÷ ${d.years} = ${sh(d.perNew)}.`] },
+      { title: "② הפתיחה", lines: [`${fmt(d.perOld)} × ${d.served} ÷ ${f1(d.r0)}^${F.nEnd + 1} = ${sh(F.opening)}.`] },
+      {
+        title: "③ עלות שירות שוטף",
+        lines: [
+          `עד ההגדלה: ${fmt(d.perOld)} × ${m(d.months)} ÷ ${f1(d.r0)}^${nA} = ${sh(F.serviceBefore)}.`,
+          `אחרי: ${fmt(d.perNew)} × ${m(F.after)} ÷ ${f1(d.ra)}^${F.nEnd} = ${sh(F.serviceAfter)}.`,
+        ],
+      },
+      {
+        title: "④ עלות שירות עבר (ביום ההגדלה)",
+        lines: [
+          `ותק: ${sA} שנים; n = ${nA}; שיעור ${pct(d.ra)}.`,
+          `לפני: ${fmt(d.perOld)} × ${sA} ÷ ${f1(d.ra)}^${nA} = ${sh(F.pastBefore)}.`,
+          `אחרי: ${fmt(d.perNew)} × ${sA} ÷ ${f1(d.ra)}^${nA} = ${sh(F.pastAfter)}.`,
+          `שירות עבר: ${sh(F.pastService)}.`,
+        ],
+      },
+      { title: "⑤ עלות שירות אחת", lines: [`${sh(F.serviceBefore)} + ${sh(F.serviceAfter)} + ${sh(F.pastService)} = ${sh(F.serviceCost)}.`] },
+      {
+        title: "⑥ ריבית",
+        lines: [
+          `עד ההגדלה: ${sh(F.opening)} × (${f1(d.r0)}^(${m(d.months)}) − 1) = ${sh(F.interestBefore)}.`,
+          `אחרי: ${sh(F.pastAfter)} × (${f1(d.ra)}^(${m(F.after)}) − 1) = ${sh(F.interestAfter)}.`,
+          `סה״כ ${sh(F.interest)}.`,
+        ],
+      },
+      { title: "⑦ הסגירה", lines: [`${fmt(d.perNew)} × ${d.served + 1} ÷ ${f1(d.rEnd)}^${F.nEnd} = ${sh(F.closing)}.`] },
+      {
+        title: "⑧ מדידה מחדש, ולאן",
+        lines: [
+          `${sh(F.closing)} − ${sh(F.opening)} − ${sh(F.serviceCost)} − ${sh(F.interest)} = ${loss ? "" : "−"}${sh(Math.abs(F.pn))} → ${loss ? "הפסד" : "רווח"}.`,
+          `ברווח והפסד, לא ב-OCI. סך הכול ברווח והפסד: ${sh(F.pl)}, בדיוק ההפרש בין הסגירה לפתיחה.`,
+        ],
+      },
+    ],
+    table: {
+      head: ["שורה", "סכום"],
+      rows: [
+        [`יתרה 31.12.${year - 1}`, Math.round(F.opening)],
+        ["עלות שירות (שכר עבודה)", Math.round(F.serviceCost)],
+        ["ריבית", Math.round(F.interest)],
+        [`מדידה מחדש (${loss ? "הפסד" : "רווח"}), ברווח והפסד`, Math.round(F.pn)],
+      ],
+      foot: [`יתרה 31.12.${year}`, Math.round(F.closing)],
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Termination benefits: when, and at how much.
+
+const SITES = ["מפעל האריזות", "סניף הדרום", "מרכז ההפצה", "מחלקת הדפוס", "המוקד הטלפוני", "מעבדת הבדיקות"];
+
+export type TermDraw =
+  | { variant: "closure"; site: number; year: number; staff: number; early: number; extra: number; leavers: number; payIn: number; rate: number }
+  | { variant: "offer"; site: number; year: number; amount: number; month: number; accepted: number; expected: number; closeMonth: number };
+
+export function termDraw(r: Rand): TermDraw {
+  const site = int(r, 0, SITES.length - 1);
+  const year = int(r, 2019, 2026);
+  if (r() < 0.6) {
+    let staff = step(r, 40, 160, 5);
+    if (staff === 90) staff = 95;
+    let early = step(r, 5_000, 18_000, 1_000);
+    if (early === 10_000) early = 11_000;
+    let extra = step(r, 6_000, 25_000, 1_000);
+    if (early + extra === 30_000) extra += 1_000;
+    return { variant: "closure", site, year, staff, early, extra, leavers: Math.round(staff * pick(r, [0.4, 0.55, 0.65, 0.75, 0.8])), payIn: pick(r, [1, 1, 2, 3]), rate: pick(r, [0.04, 0.05, 0.06, 0.07]) };
+  }
+  const expected = int(r, 18, 60);
+  return { variant: "offer", site, year, amount: step(r, 15_000, 70_000, 2_500), month: int(r, 9, 11), accepted: int(r, 5, expected - 6), expected, closeMonth: int(r, 1, 3) };
+}
+
+export function termFigures(d: TermDraw) {
+  if (d.variant === "offer") return { liability: d.accepted * d.amount, undiscounted: d.accepted * d.amount, later: 0 };
+  const undiscounted = d.early * d.staff;
+  return { liability: d.payIn > 1 ? pv(undiscounted, d.rate, d.payIn) : undiscounted, undiscounted, later: d.extra * (d.staff - d.leavers) };
+}
+
+export function termDrill(r: Rand): Drill {
+  const d = termDraw(r);
+  const F = termFigures(d);
+  const site = SITES[d.site];
+  if (d.variant === "offer") {
+    const when = choiceAsk(r, "when", "מתי נרשמת ההתחייבות לעובדים שעוד לא קיבלו את ההצעה?", [
+      "כשיקבלו אותה, או קודם אם תיווצר מגבלה אפקטיבית על ביטולה",
+      `כבר ב-31.12.${d.year}, לפי ${d.expected} העובדים הצפויים`,
+      "כשהכסף ישולם להם",
+      "בסוף תקופת ההצעה, לכולם יחד",
+    ]);
+    return {
+      family: "term",
+      title: DRILL_TITLES.term,
+      story: [
+        `ב-1.${d.month}.${d.year} הציעה החברה לעובדי ${site} פרישה מרצון: מי שיסכים יקבל ${fmt(d.amount)} ₪ ויעזוב בתוך חודשיים. ההצעה פתוחה עד 31.${d.closeMonth}.${d.year + 1}, ועד שעובד מקבל אותה החברה רשאית לבטל אותה.`,
+        `עד 31.12.${d.year} קיבלו את ההצעה ${d.accepted} עובדים. ההנהלה מעריכה שבסוף יסכימו ${d.expected}. ההצעה אינה חלק מתוכנית לארגון מחדש.`,
+        `מה ההתחייבות בגין פיטורין ב-31.12.${d.year}?`,
+      ],
+      asks: [{ kind: "number", id: "liability", label: `ההתחייבות ב-31.12.${d.year}`, answer: F.liability, unit: "₪" }, when],
+      seek: [`ההתחייבות בגין פיטורין ב-31.12.${d.year}: למי כבר נרשמת, ובכמה.`],
+      check: [
+        "פרישה מרצון בתמורה להטבה: הטבת פיטורין (סעיף 159), לא צבירה על שירות.",
+        "ההטבה נובעת מהסכמה של העובד להצעה: מכירים במוקדם מבין קבלת ההצעה לבין מגבלה אפקטיבית על ביטולה (סעיף 166).",
+        "כל עוד החברה רשאית לבטל, אין מחויבות כלפי מי שעוד לא קיבל. הצפי לא משנה.",
+        "ההצעה אינה חלק מארגון מחדש, אז המועד של IAS 37 לא מקדים את ההכרה.",
+        "התשלום בתוך חודשים: נמדד כהטבה לזמן קצר, בלי היוון (סעיף 169(א)).",
+      ],
+      build: [
+        { title: "① מי כבר קיבל", lines: [`${d.accepted} עובדים עד 31.12.${d.year}.`] },
+        { title: "② הסכום", lines: [`${d.accepted} × ${fmt(d.amount)} = ${sh(F.liability)}, בלי היוון.`] },
+        { title: "③ ומה עם השאר", lines: [`${d.expected - d.accepted} העובדים הנוספים הצפויים: יירשמו כשיקבלו את ההצעה, בשנת ${d.year + 1}.`] },
+      ],
+      entry: [
+        { account: "הוצאות שכר (הטבות פיטורין)", dr: F.liability },
+        { account: "התחייבות בגין פיטורין", cr: F.liability },
+      ],
+    };
+  }
+  const extraAsk = choiceAsk(r, "extra", `ומה עם התוספת של ${fmt(d.extra)} ₪ למי שנשאר עד הסגירה?`, [
+    "שכר על שירות עתידי: נרשמת בתקופה שעד הסגירה, כשעובדים בשבילה",
+    "חלק מהטבת הפיטורין: נרשמת עכשיו, לכל העובדים",
+    `נרשמת עכשיו, רק ל-${d.staff - d.leavers} הצפויים להישאר`,
+    "נרשמת ב-OCI כשתשולם",
+  ]);
+  const disc = d.payIn > 1;
+  return {
+    family: "term",
+    title: DRILL_TITLES.term,
+    story: [
+      `ב-31.12.${d.year} החליטה החברה סופית לסגור את ${site}, ובאותו יום הודיעה לעובדים על תוכנית מפורטת: כמה עובדים, באילו תפקידים, מתי, וכמה יקבל כל אחד. אין צפי לשינויים בתוכנית.`,
+      `כל אחד מ-${d.staff} העובדים יקבל ${fmt(d.early)} ₪ אם יעזוב לפני הסגירה. מי שיישאר עד הסגירה יקבל ${fmt(d.early + d.extra)} ₪. ההערכה: ${d.leavers} יעזבו קודם ו-${d.staff - d.leavers} יישארו.`,
+      disc
+        ? `הסגירה, וכל התשלומים, ב-31.12.${d.year + d.payIn}. שיעור ההיוון ${pct(d.rate)}.`
+        : `הסגירה, וכל התשלומים, במהלך ${d.year + 1}.`,
+      `מה ההתחייבות בגין פיטורין ב-31.12.${d.year}?`,
+    ],
+    asks: [{ kind: "number", id: "liability", label: `ההתחייבות ב-31.12.${d.year}`, answer: F.liability, unit: "₪" }, extraAsk],
+    seek: [`ההתחייבות בגין פיטורין ב-31.12.${d.year}: מה ההחלטה נותנת לכל עובד בכל מקרה, ובאיזה ערך.`],
+    check: [
+      "ההטבה נולדת מההחלטה לסגור, לא מהשירות: הטבת פיטורין (סעיף 159), בלי שיוך לשנות שירות (סעיף 170).",
+      `מתי: הודעה על תוכנית שעומדת בשלושת התנאים של סעיף 167, ב-31.12.${d.year}. (אם יש גם הפרשה לארגון מחדש לפי IAS 37, הולכים לפי המוקדם מבין השניים.)`,
+      `כמה: ${fmt(d.early)} ₪ מגיעים לכל עובד, יעזוב או יישאר. לכן הצפי של מי יעזוב לא משנה את הסכום.`,
+      "התוספת מותנית בהמשך עבודה: הטבה בגין שירות, לא פיטורין (סעיף 162).",
+      disc ? `התשלום יותר מ-12 חודשים אחרי סוף השנה: נמדד כהטבה אחרת לזמן ארוך, עם היוון (סעיף 169(ב)).` : "התשלום בתוך 12 חודשים מסוף השנה: כהטבה לזמן קצר, בלי היוון (סעיף 169(א)).",
+    ],
+    build: [
+      { title: "① מה מגיע לכל עובד בכל מקרה", lines: [`${fmt(d.early)} ₪. התוספת של ${fmt(d.extra)} ₪ היא שכר, לא פיטורין.`] },
+      { title: "② הסכום", lines: [`${fmt(d.early)} × ${d.staff} = ${sh(F.undiscounted)}.`] },
+      disc
+        ? { title: "③ היוון", lines: [`${sh(F.undiscounted)} ÷ ${f1(d.rate)}^${d.payIn} = ${sh(F.liability)}.`] }
+        : { title: "③ היוון", lines: ["אין: התשלום בתוך 12 חודשים."] },
+      { title: "④ והתוספת", lines: [`צפי: ${d.staff - d.leavers} × ${fmt(d.extra)} = ${sh(F.later)}, שיירשמו כהוצאות שכר בתקופה שעד הסגירה.`] },
+    ],
+    entry: [
+      { account: "הוצאות שכר (הטבות פיטורין)", dr: Math.round(F.liability) },
+      { account: "התחייבות בגין פיטורין", cr: Math.round(F.liability) },
+    ],
+  };
+}
+
 export const DRILLS: Record<DrillFamily, (r: Rand) => Drill> = {
   classify: classifyDrill,
   dc: dcDrill,
@@ -1061,6 +1305,8 @@ export const DRILLS: Record<DrillFamily, (r: Rand) => Drill> = {
   settle: settleDrill,
   assets: assetsDrill,
   ceiling: ceilingDrill,
+  award: awardDrill,
+  term: termDrill,
 };
 
 export const makeDrill = (family: DrillFamily, seed: number) => DRILLS[family](seeded(seed));
