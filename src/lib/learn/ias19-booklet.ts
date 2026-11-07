@@ -43,18 +43,18 @@ export type BkQuestion = {
 // ---------------------------------------------------------------------------
 // Number formatting for the worked lines.
 
-const nf = (x: number, d = 0) => x.toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: 0 });
+export const nf = (x: number, d = 0) => x.toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: 0 });
 /** An amount, rounded to the shekel. */
 export const money = (x: number) => nf(Math.round(x));
 /** A number with up to two decimals. */
-const d2 = (x: number) => nf(Math.round(x * 100) / 100, 2);
+export const d2 = (x: number) => nf(Math.round(x * 100) / 100, 2);
 /** A rate as a percentage. */
 export const pc = (r: number) => `${nf(r * 100, 3)}%`;
 /** 1 + i, as written in a discount factor. */
-const b = (i: number) => nf(1 + i, 5);
+export const b = (i: number) => nf(1 + i, 5);
 /** Years, as written in an exponent. */
-const yrs = (n: number) => nf(n, 4);
-const sum = (xs: number[]) => xs.reduce((s, x) => s + x, 0);
+export const yrs = (n: number) => nf(n, 4);
+export const sum = (xs: number[]) => xs.reduce((s, x) => s + x, 0);
 
 // ===========================================================================
 // 0. Defined contribution: the expense is the contribution, whoever invests it.
@@ -584,7 +584,7 @@ export function solveAmend(q: AmendInput) {
 }
 
 const LAST_DAY = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-const endOf = (month: number, y: number) => `${LAST_DAY[month]}.${month}.${y}`;
+export const endOf = (month: number, y: number) => `${LAST_DAY[month]}.${month}.${y}`;
 
 export function amendQuestion(id: string, title: string, q: AmendInput): BkQuestion {
   const s = solveAmend(q);

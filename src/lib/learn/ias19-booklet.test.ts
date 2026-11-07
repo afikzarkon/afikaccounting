@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { solveAmend, solveGift, solveNote, solveShort, solveThree, solveTiered } from "./ias19-booklet";
+import { FINAL_EXAMS } from "./ias19-finals";
 import { AMEND_CASE, BOOKLET, GIFT_CASE, NOTE_CASE, SHORT_CASE, THREE_CASE, TIERED_CASE } from "./ias19-booklet-cases";
 
 const near = (got: number, want: number, tol = 1) => assert.ok(Math.abs(got - want) <= tol, `got ${got}, want ${want}`);
@@ -17,7 +18,7 @@ describe("the booklet-level questions", () => {
   });
 
   it("every movement table balances: opening plus the lines is the closing", () => {
-    for (const q of BOOKLET)
+    for (const q of [...BOOKLET, ...FINAL_EXAMS])
       for (const s of q.steps)
         for (const r of s.rolls ?? []) {
           const closing = r.rows[r.rows.length - 1];
@@ -28,7 +29,7 @@ describe("the booklet-level questions", () => {
   });
 
   it("every computed line is a finite number", () => {
-    for (const q of BOOKLET) for (const s of q.steps) for (const n of s.notes ?? []) for (const l of n.lines) if (l.value !== undefined) assert.ok(Number.isFinite(l.value), `${q.id}: ${l.label}`);
+    for (const q of [...BOOKLET, ...FINAL_EXAMS]) for (const s of q.steps) for (const n of s.notes ?? []) for (const l of n.lines) if (l.value !== undefined) assert.ok(Number.isFinite(l.value), `${q.id}: ${l.label}`);
   });
 
   it("short-term: four benefits in one company", () => {

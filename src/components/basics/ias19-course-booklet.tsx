@@ -5,6 +5,7 @@ import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
 import type { BkLine, BkNote, BkQuestion, BkStep } from "@/lib/learn/ias19-booklet";
 import { BK_AMEND, BK_CASES, BK_DC, BK_GIFT, BK_NOTE, BK_OLT, BK_SHORT, BK_THREE, BK_TIER, BK_TIERED } from "@/lib/learn/ias19-booklet-cases";
+import { FINAL_EXAMS } from "@/lib/learn/ias19-finals";
 import { BookletCheck } from "./ias19-booklet-client";
 import { Ltr } from "./ias19-formula";
 import { FullSteps, RollForward } from "./ias19-ui";
@@ -203,7 +204,45 @@ const FORMAT: ScreenContent = {
   ),
 };
 
+/** Lesson 6: a surplus when the company must keep contributing — how much of it is an asset (IFRIC 14). */
+const MFR: ScreenContent = {
+  lead: "עודף בתוכנית הוא נכס רק אם יש ממנו הטבה לחברה. כשאין החזרים, ההטבה היא הפקדות קטנות יותר בעתיד. וחובת הפקדה מינימלית מקטינה גם אותה.",
+  body: (
+    <>
+      <P>
+        <strong>העיקרון:</strong> הנכס נטו הוא הנמוך מבין העודף לבין התקרה (סעיף 64). התקרה היא הערך הנוכחי של ההטבה הכלכלית: החזרים מהקרן, או הקטנת הפקדות עתידיות (סעיף 8).
+      </P>
+      <DataTable
+        caption="מה ההטבה הכלכלית, לפי מה שהתקנון מאפשר (IFRIC 14)"
+        head={["התקנון", "ההטבה מהקטנת הפקדות", "סעיף"]}
+        rows={[
+          ["אין חובת הפקדה מינימלית", "עלות השירות העתידית", "16–17"],
+          ["יש חובת הפקדה מינימלית לשירות עתידי", "עלות השירות העתידית פחות ההפקדות המינימליות בגינה, ולא פחות מ-0", "20–22"],
+          ["אין החזרים ואין הקטנת הפקדות בכלל", "0: אין נכס", "11–12"],
+        ]}
+      />
+      <Note
+        n={{
+          title: "דוגמה: נשארו שלוש שנות שירות, ריבית 5%",
+          text: "ההטבה שתיצבר בכל שנה: 200,000, משולמת בסוף השנה השלישית. ההפקדה המינימלית: 120,000 בסוף כל שנה.",
+          lines: [
+            { label: "ערך נוכחי של עלות השירות העתידית", calc: "200,000 × 3 ÷ 1.05^3", value: 518_303, unit: "₪" },
+            { label: "ערך נוכחי של ההפקדות המינימליות", calc: "120,000 ÷ 1.05 + 120,000 ÷ 1.05^2 + 120,000 ÷ 1.05^3", value: 326_790, unit: "₪" },
+            { label: "התקרה", calc: "518,303 − 326,790", value: 191_513, unit: "₪" },
+            { label: "אם העודף 241,697: הנכס נטו", calc: "MIN(241,697, 191,513)", value: 191_513, unit: "₪" },
+          ],
+        }}
+      />
+      <P>
+        ההפרש בין העודף לנכס הוא <strong>השפעת התקרה</strong>. השינוי בה הולך ל-OCI. אם הייתה השפעה כבר בתחילת השנה, גם עליה מחשבים ריבית, והיא נכנסת לריבית נטו (סעיף 124).
+      </P>
+      <Remember>אין החזרים? בודקים הקטנת הפקדות. יש הפקדה מינימלית? מפחיתים אותה מעלות השירות העתידית. הנכס: הנמוך מבין העודף לתקרה.</Remember>
+    </>
+  ),
+};
+
 export const IAS19_BOOKLET_SCREENS: Record<string, ScreenContent> = {
+  "emp-assets-mfr": { ...MFR },
   "emp-bk-format": { ...FORMAT },
   "emp-bk-short": { ...booklet(BK_SHORT) },
   "emp-bk-dc": { ...booklet(BK_DC) },
@@ -215,4 +254,12 @@ export const IAS19_BOOKLET_SCREENS: Record<string, ScreenContent> = {
   "emp-bk-three": { ...booklet(BK_THREE) },
   "emp-bk-olt": { ...booklet(BK_OLT) },
   "emp-bk-note": { ...booklet(BK_NOTE) },
+  "emp-mx-cancel": { ...booklet(FINAL_EXAMS[0]) },
+  "emp-mx-mgmt": { ...booklet(FINAL_EXAMS[1]) },
+  "emp-mx-short": { ...booklet(FINAL_EXAMS[2]) },
+  "emp-mx-three": { ...booklet(FINAL_EXAMS[3]) },
+  "emp-mx-sales": { ...booklet(FINAL_EXAMS[4]) },
+  "emp-mx-trust": { ...booklet(FINAL_EXAMS[5]) },
+  "emp-mx-mfr": { ...booklet(FINAL_EXAMS[6]) },
+  "emp-mx-integrated": { ...booklet(FINAL_EXAMS[7]) },
 };

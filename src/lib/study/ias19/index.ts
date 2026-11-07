@@ -139,7 +139,7 @@ const ASSETS_PRESENT = merge(ASSETS, PRESENT, {
     "לפתור שאלות נכסים והצגה ברמת חוברת התרגילים",
   ],
   screens: before(
-    retitle([...ASSETS.screens, ...PRESENT.screens], {
+    retitle(before([...ASSETS.screens, ...PRESENT.screens], "emp-assets-rule", [{ id: "emp-assets-mfr", title: "עודף, והפקדה מינימלית: כמה ממנו נכס (IFRIC 14)" }]), {
       "emp-assets-master": "בדיקת שליטה: נכסים ותקרה",
       "emp-present-hook": "חלק ב׳: כל שורה לקופסה שלה",
     }),
@@ -150,7 +150,19 @@ const ASSETS_PRESENT = merge(ASSETS, PRESENT, {
 
 const OTHER_TERM = at(OTHER, "ias19-other", before(OTHER.screens, "emp-other-master", [bk("olt", "שאלה מסכמת: שלוש תוכניות לזמן ארוך")]));
 
-const EXAM_LESSON = at(EXAMS, "ias19-exams", before(EXAMS.screens, "emp-exam-master", [bk("note", "שאלה 3: מה הביאור מסתיר — במתכונת מבחן")]));
+/** The eight summary exams that close the course (their screens are in ias19-course-booklet.tsx). */
+const FINALS: Screen[] = [
+  { id: "emp-mx-cancel", title: "מבחן מסכם 1: מענקים בשתי מחלקות, וביטול באמצע השנה" },
+  { id: "emp-mx-mgmt", title: "מבחן מסכם 2: הנהלה בשתי תוכניות, ותיקון ב-30.9" },
+  { id: "emp-mx-short", title: "מבחן מסכם 3: משכורת 13, חופשה וימי בחירה" },
+  { id: "emp-mx-three", title: "מבחן מסכם 4: מענק שהוקטן, פיטורין וסעיף 14" },
+  { id: "emp-mx-sales", title: "מבחן מסכם 5: חופשה, ומענק מכירות עם עובד שהוחלף" },
+  { id: "emp-mx-trust", title: "מבחן מסכם 6: חשבון נאמנות, ונכסים שהתקרה מאפסת" },
+  { id: "emp-mx-mfr", title: "מבחן מסכם 7: עודף, תקרה והפקדה מינימלית" },
+  { id: "emp-mx-integrated", title: "מבחן מסכם 8: שנה של אירועים, מביאור ועד הדוחות" },
+];
+
+const EXAM_LESSON = at(EXAMS, "ias19-exams", before(EXAMS.screens, "emp-exam-master", [bk("note", "שאלה 3: מה הביאור מסתיר — במתכונת מבחן"), ...FINALS]));
 
 /** The employee-benefits course: eight lessons, in four stages — foundations, the simple benefits, the defined benefit chain (three lessons, each leaning on the one before), and the extensions with exam-level questions. Each lesson ends with questions at the level of the owner's exercise booklet. Every formula in their practice reads left to right. */
 export const IAS19_LESSONS = [FOUNDATIONS, SHORT_TERM, DC, MEASUREMENT, MOVEMENT, ASSETS_PRESENT, OTHER_TERM, EXAM_LESSON].map(withLtrFormulas);
