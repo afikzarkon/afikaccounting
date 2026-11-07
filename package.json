@@ -12,6 +12,7 @@
     "db:seed": "tsx --env-file=.env.local scripts/seed.ts"
   },
   "dependencies": {
+    "@fortune-sheet/react": "^1.0.4",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
     "@vercel/analytics": "^2.0.1",

@@ -8,7 +8,9 @@ import { MARK_SPOTS } from "@/lib/watermark";
 const GUARDED = ["/study/", "/basics", "/review", "/exams/"];
 export const isGuarded = (pathname: string) => GUARDED.some((p) => pathname === p.replace(/\/$/, "") || pathname.startsWith(p));
 
-const editable = (t: EventTarget | null) => t instanceof HTMLElement && !!t.closest("input, textarea, select, [contenteditable='true']");
+// The reader's own spreadsheet (components/sheet) is theirs to copy and paste in.
+const editable = (t: EventTarget | null) =>
+  t instanceof HTMLElement && !!t.closest("input, textarea, select, [contenteditable='true'], [data-sheet]");
 
 /** On the local dev server the guard stays off: the page doesn't blur when focus moves to the editor or a devtool. */
 const DEV = process.env.NODE_ENV === "development";

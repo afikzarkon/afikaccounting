@@ -58,7 +58,7 @@ export function SearchPalette() {
   useEffect(() => {
     const show = () => setOpen(true);
     const onKey = (e: KeyboardEvent) => {
-      const typing = (e.target as HTMLElement | null)?.closest?.("input, textarea, select, [contenteditable]");
+      const typing = (e.target as HTMLElement | null)?.closest?.("input, textarea, select, [contenteditable], [data-sheet]");
       if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") || (e.key === "/" && !typing && !e.ctrlKey && !e.metaKey)) {
         e.preventDefault();
         setOpen(true);

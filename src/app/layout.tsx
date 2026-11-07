@@ -9,6 +9,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { PageViewTracker } from "@/components/layout/page-view-tracker";
 import { SearchPalette } from "@/components/layout/search";
 import { ThemeProvider } from "@/components/layout/theme-provider";
+import { SheetDock } from "@/components/sheet/sheet-dock";
 import { VisibilityProvider } from "@/components/layout/visibility";
 import { SITE_URL } from "@/lib/env";
 import { site } from "@/lib/site";
@@ -57,6 +58,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               <MobileTabBar />
             </Suspense>
             <SearchPalette />
+            <Suspense fallback={null}>
+              <SheetDock />
+            </Suspense>
             <Suspense fallback={null}>
               <PageViewTracker />
             </Suspense>

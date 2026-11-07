@@ -4,14 +4,31 @@
     {
       "name": "dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 3000
     },
     {
       "name": "dev-demo",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["-e", "require('child_process').spawn('npm',['run','dev','--','-p','3001'],{stdio:'inherit',shell:true,env:{...process.env,NEXT_PUBLIC_SUPABASE_URL:''}}).on('exit',c=>process.exit(c))"],
+      "runtimeArgs": [
+        "-e",
+        "require('child_process').spawn('npm',['run','dev','--','-p','3001'],{stdio:'inherit',shell:true,env:{...process.env,NEXT_PUBLIC_SUPABASE_URL:''}}).on('exit',c=>process.exit(c))"
+      ],
       "port": 3001
+    },
+    {
+      "name": "prod-demo",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "start",
+        "-p",
+        "3002"
+      ],
+      "port": 3002
     }
   ]
 }

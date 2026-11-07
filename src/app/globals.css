@@ -247,6 +247,13 @@
   }
 }
 
+/* ---- The reader's spreadsheet (components/sheet): on a wide screen the page moves aside for it ---- */
+@media (min-width: 768px) {
+  html[data-sheet] body {
+    padding-left: var(--sheet-w);
+  }
+}
+
 /* ---- Leak deterrents on course and exam pages (components/layout/content-guard) ---- */
 html[data-guard] main {
   -webkit-user-select: none;
