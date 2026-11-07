@@ -3,16 +3,16 @@ import type { StudyModule, Trap } from "../../types";
 import { calc, choice, COURSE, COURSE_HREF, fmt, lessonRef, pct } from "../shared";
 import { SALES, SALES_2024 } from "./rollforward";
 
-/** The worked example: a grant accrued evenly over eight years, and a fund beside it with a contribution on 1.4. */
-export const PLAN = { grant: 200_000, years: 8, n: 20, rate: 0.06, assets: { opening: 4_000, contribution: 800, month: 3, closing: 5_600 } };
+/** The worked example: a grant accrued evenly over eight years, and a fund beside it with a contribution on 1.5. */
+export const PLAN = { grant: 200_000, years: 8, n: 20, rate: 0.06, assets: { opening: 4_000, contribution: 800, month: 4, closing: 5_600 } };
 export const PLAN_PER_YEAR = PLAN.grant / PLAN.years;
 export const PLAN_OPENING = pv(PLAN_PER_YEAR, PLAN.rate, PLAN.n);
 export const PLAN_YEAR = plainYear({ opening: PLAN_OPENING, i: PLAN.rate, perYear: PLAN_PER_YEAR, servedAtStart: 1, nEnd: PLAN.n - 1 });
 export const PLAN_ASSETS = assetsYear({ opening: PLAN.assets.opening, periods: [{ months: 12, i: PLAN.rate }], contributions: [{ amount: PLAN.assets.contribution, month: PLAN.assets.month }], closing: PLAN.assets.closing });
 export const PLAN_EFFECT = presentation({ service: PLAN_YEAR.service, interestCost: PLAN_YEAR.interest, interestIncome: PLAN_ASSETS.interest, pnObligation: PLAN_YEAR.pn, pnAssets: PLAN_ASSETS.pn, closing: PLAN_YEAR.closing, assets: PLAN.assets.closing });
 
-/** "We solve": a surplus, and the ceiling (5% of the obligation). */
-export const SURPLUS = { assets: 52_000, obligation: 46_000, ceilingShare: 0.05, interestCost: 3_680, service: 18_000, closingObligation: 76_000, closingAssets: 79_000 };
+/** "We solve": a surplus, and the ceiling (6% of the obligation). */
+export const SURPLUS = { assets: 52_000, obligation: 46_000, ceilingShare: 0.06, interestCost: 3_680, service: 18_000, closingObligation: 76_000, closingAssets: 79_000 };
 export const SURPLUS_CEILING = SURPLUS.ceilingShare * SURPLUS.obligation;
 export const SURPLUS_NET = cappedSurplus(SURPLUS.assets, SURPLUS.obligation, SURPLUS_CEILING);
 export const SURPLUS_OPEN_ASSETS = recognisedAssets(SURPLUS.assets, SURPLUS.obligation, SURPLUS_CEILING);
@@ -66,11 +66,11 @@ const traps: Trap[] = [
   },
   {
     id: "mid-contribution",
-    prompt: "הפקדה של 1,600 ₪ ב-1.7, שיעור 3%. מה הכנסות הריבית על ההפקדה עד סוף השנה?",
-    options: ["1,600 × (1.03^0.5 − 1) ≈ 23.8", "1,600 × 3% = 48", "0 — הופקדה באמצע השנה", "1,600 × 1.5% = 24, ריבית פשוטה"],
+    prompt: "הפקדה של 1,600 ₪ ב-1.9, שיעור 3.5%. מה הכנסות הריבית על ההפקדה עד סוף השנה?",
+    options: ["1,600 × (1.035^(4/12) − 1) ≈ 18.4", "1,600 × 3.5% = 56", "0 — הופקדה באמצע השנה", "1,600 × 3.5% × 4/12 ≈ 18.7, ריבית פשוטה"],
     answer: 0,
     why: "הפקדה באמצע שנה מרוויחה ריבית רק מיום ההפקדה — ובריבית דריבית.",
-    traps: ["", "המלכודת: שנה שלמה. הכסף היה בקרן רק חצי שנה.", "חצי שנה בקרן — יש ריבית.", "הסכום קרוב, אבל השיטה שגויה: ריבית דריבית."],
+    traps: ["", "המלכודת: שנה שלמה. הכסף היה בקרן רק ארבעה חודשים.", "ארבעה חודשים בקרן — יש ריבית.", "הסכום קרוב, אבל השיטה שגויה: ריבית דריבית."],
   },
   {
     id: "assets-pn-pl",
@@ -97,6 +97,22 @@ const traps: Trap[] = [
     traps: ["", "המלכודת: לחשוב שהתקרה ״מקזזת״ את ההתחייבות. היא פועלת רק בצד הנכסים.", "ההתחייבות לא משתנה בגללה.", "ההתחייבות נשארת כמו שהיא."],
   },
   {
+    id: "own-bonds",
+    prompt: "החברה קנתה אג״ח וייעדה אותן בהחלטת דירקטוריון לתשלום מענקי פרישה. האג״ח רשומות על שמה, ונושיה יכולים לממש אותן. איך מטפלים בהן?",
+    options: ["לפי IFRS 9, כנכס פיננסי נפרד — לא מקזזים מההתחייבות", "כנכסי תכנית, בשווי הוגן, בקיזוז מההתחייבות", "כנכס שיפוי", "לא מכירים בהן"],
+    answer: 0,
+    why: "נכסי תכנית מוחזקים בישות נפרדת, מיועדים רק להטבות ואינם זמינים לנושים. אג״ח של החברה עצמה לא עומדות בזה — הן נמדדות לפי התקן שחל עליהן.",
+    traps: ["", "המלכודת: ״ייעדנו אותן לעובדים, אז זו קופה״. ייעוד פנימי לא מוציא את הכסף מהישג ידם של הנושים.", "שיפוי הוא זכות מול צד אחר — מבטח — לא אג״ח של החברה.", "האג״ח הן נכס של החברה, רק לא נכסי תכנית."],
+  },
+  {
+    id: "reimburse-offset",
+    prompt: "לחברה פוליסה שאינה כשירה, שמשפה אותה על מענקי הפרישה; ודאי למעשה שהמבטח ישלם. ההתחייבות 90,000 והשווי ההוגן של הזכות 84,000. מה במאזן?",
+    options: ["התחייבות 90,000 ונכס שיפוי 84,000, בנפרד", "התחייבות נטו 6,000", "התחייבות 90,000 בלבד", "נכס נטו 84,000"],
+    answer: 0,
+    why: "נכס שיפוי מוכר כנכס נפרד בשווי הוגן, ואין לקזז אותו מההתחייבות (סעיף 116).",
+    traps: ["", "המלכודת: לקזז כמו נכסי תכנית. קיזוז מותר רק לנכסי תכנית.", "הזכות לשיפוי היא נכס — מכירים בה.", "ההתחייבות לא נעלמת."],
+  },
+  {
     id: "locked",
     prompt: "בקרן נעולה בידי נאמן 180,000 ₪, וההתחייבות 150,000. החזר לחברה רק לפי שיקול דעת הנאמן, ואין הפחתת הפקדות. מה מוכר כנכס נטו?",
     options: ["0", "30,000", "180,000", "15,000"],
@@ -119,15 +135,20 @@ export const ASSETS: StudyModule = {
     "לחשב הכנסות ריבית על הפקדה באמצע שנה, באותו שיעור ובאותו פיצול תקופות כמו ההתחייבות",
     "להציג התחייבות נטו",
     "להגביל נכס נטו בתקרה, ולראות את השפעתה ב-OCI",
+    "לזהות מתי קופה היא נכסי תכנית, ומתי פוליסה היא נכס שיפוי",
   ],
   backHref: COURSE_HREF,
   screens: [
     { id: "emp-assets-hook", title: "חוב, וקופה בצד" },
+    { id: "emp-assets-qualify", title: "מתי קופה היא ״נכסי תכנית״" },
     { id: "emp-assets-what", title: "נכסי תכנית, ומעגל משלהם" },
     { id: "emp-assets-ceiling", title: "תקרת הנכס" },
+    { id: "emp-assets-reimburse", title: "פוליסה שאינה כשירה: נכס שיפוי" },
     { id: "emp-assets-rule", title: "הכלל: שני מעגלים, נטו, ותקרה" },
+    { id: "emp-assets-template", title: "תבנית פתרון: נכסי תכנית ותקרה" },
     { id: "emp-assets-solved", title: "דוגמה פתורה: מענק עם קרן" },
     { id: "emp-assets-together", title: "פותרים יחד: עודף שנתקל בתקרה" },
+    { id: "emp-assets-drill", title: "מחולל שאלות: נכסים ותקרה במספרים חדשים" },
     { id: "emp-assets-master", title: "בדיקת שליטה, וגשר לשיעור הבא" },
   ],
   exercises: [
@@ -161,6 +182,9 @@ export const ASSETS: StudyModule = {
   ],
   traps,
   tips: [
+    "נכסי תכנית: בישות נפרדת (קרן או מבטח), רק לתשלום הטבות, לא זמינים לנושים, וחוזרים לחברה רק מעודף או כהחזר על הטבות ששילמה. נמדדים בשווי הוגן ומקוזזים מההתחייבות (סעיף 113). אחרת — לפי התקן שחל עליהם (למשל IFRS 9).",
+    "נכס שיפוי (סעיפים 116–119): פוליסה שאינה כשירה כשודאי למעשה שהמבטח ישפה — נכס נפרד בשווי הוגן, בלי קיזוז; תנועה כמו בנכסי תכנית, ומותר להציג נטו ברווח והפסד. פוליסה שתואמת בדיוק את ההטבות — שווה להתחייבות.",
+    "הצגה: מותר להציג את כל ההתחייבות נטו כלא שוטפת, או לפצל לשוטפת ולא שוטפת — מדיניות חשבונאית (סעיף 133). קיזוז בין תוכניות — רק עם זכות משפטית לקזז וכוונה לסלק נטו (סעיף 131).",
     "שני מעגלים — התחייבות ונכסים — הפער ביניהם הוא נטו, ותקרה חוסמת עודף.",
     "(א) התחייבות נטו = התחייבות פחות נכסים. (ב) מעגל נכסים: פתיחה + ריבית + הפקדות − תשלומים מהנכסים + P.N. = סגירה; הריבית בשיעור של ההתחייבות ובאותו פיצול תקופות, והפקדה באמצע שנה מקבלת ריבית חלקית. (ג) מההתחייבות יורדים כל התשלומים; מהנכסים — רק מה שיצא מהם. (ד) נכס נטו = הנמוך מבין העודף והתקרה.",
     "נכסי תכנית (סעיפים 8 ו-113): בקרן נפרדת, רק לתשלום הטבות, לא זמינים לנושים. P.N. של הנכסים (סעיף 127) — ל-OCI.",

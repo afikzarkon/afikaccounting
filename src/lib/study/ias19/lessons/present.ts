@@ -8,8 +8,8 @@ import { s14 } from "./dc";
 import { CFO_2022 } from "./measure";
 import { SALES, SALES_2023, SALES_2024 } from "./rollforward";
 
-/** The worked example: lesson 9's plan, with the grant raised on 1.7 (for past years too) as the rate falls — and the year in the statements. */
-export const AMENDED = { newPerYear: 32_000, rateAfter: 0.04, rateEnd: 0.05, month: 6 };
+/** The worked example: lesson 9's plan, with the grant raised on 1.8 (for past years too) as the rate falls — and the year in the statements. */
+export const AMENDED = { newPerYear: 32_000, rateAfter: 0.04, rateEnd: 0.05, month: 7 };
 export const AM_YEAR = amendedYear({
   opening: PLAN_OPENING,
   iStart: PLAN.rate,

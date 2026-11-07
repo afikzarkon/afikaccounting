@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { isBalanced } from "../learn/basics";
 import { measure, plainYear, pv } from "../learn/ias19";
-import { amendDraw, amendFigures, dcDraw, dcFigures, payDraw, payFigures, settleDraw, settleFigures, yearDraw, yearFigures, DRILLS, type DrillFamily, pucDraw, pucFigures, seeded, tiersDraw, tiersFigures, windowDraw, windowOf, windowRow } from "./ias19/drills";
+import { amendDraw, amendFigures, assetsDraw, assetsFigures, ceilingDraw, ceilingFigures, dcDraw, dcFigures, payDraw, payFigures, settleDraw, settleFigures, yearDraw, yearFigures, DRILLS, type DrillFamily, pucDraw, pucFigures, seeded, tiersDraw, tiersFigures, windowDraw, windowOf, windowRow } from "./ias19/drills";
 
 const N = 400;
 const near = (a: number, b: number, where: string) => assert.ok(Math.abs(a - b) < 1e-6 * Math.max(1, Math.abs(b)), `${where}: ${a} ≠ ${b}`);
@@ -109,6 +109,26 @@ describe("IAS 19 practice drills with new numbers", () => {
       const F = settleFigures(D);
       near(F.gain, F.books - D.price, `settle #${seed}`);
       assert.ok(F.pn > 0, `settle #${seed}`);
+    }
+  });
+
+  it("plan assets: the roll-forward closes, interest income at the obligation's rate, the net is the obligation less the assets", () => {
+    for (let seed = 1; seed <= N; seed++) {
+      const D = assetsDraw(seeded(seed));
+      const F = assetsFigures(D);
+      near(D.opening + F.a.interest + D.contribution - D.paidFromFund + F.a.pn, D.closing, `assets #${seed}`);
+      near(F.a.interest, F.onOpening + F.onContribution, `assets interest #${seed}`);
+      assert.ok(Math.abs(F.pnObligation) < 1e-6, `assets #${seed}: obligation P.N. ${F.pnObligation} with nothing changed`);
+    }
+  });
+
+  it("the ceiling: the net asset is never above the surplus or the ceiling, and the assets' roll-forward closes on the amounts recognised", () => {
+    for (let seed = 1; seed <= N; seed++) {
+      const D = ceilingDraw(seeded(seed));
+      const F = ceilingFigures(D);
+      assert.ok(F.netOpen <= D.assets - D.obligation + 1e-9 && F.netOpen <= F.ceilingOpen + 1e-9 && F.netOpen > 0, `ceiling open #${seed}`);
+      assert.ok(F.netClose <= D.closingAssets - F.closingObl + 1e-9 && F.netClose <= F.ceilingClose + 1e-9, `ceiling close #${seed}`);
+      near(F.openAssets + F.income + F.pnAssets, F.closeAssets, `ceiling roll #${seed}`);
     }
   });
 });

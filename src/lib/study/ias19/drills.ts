@@ -1,4 +1,4 @@
-import { accrued, amendedYear, attribution, backLoaded, grown, pv, retirementPN, settlementGain, tiered } from "@/lib/learn/ias19";
+import { accrued, amendedYear, assetsYear, attribution, backLoaded, grown, plainYear, pv, recognisedAssets, retirementPN, settlementGain, tiered } from "@/lib/learn/ias19";
 import { fmt, pct } from "./shared";
 
 /**
@@ -64,7 +64,7 @@ export type Drill = {
   entry?: { account: string; dr?: number; cr?: number }[];
 };
 
-export type DrillFamily = "classify" | "dc" | "puc" | "window" | "tiers" | "year" | "payint" | "amend" | "settle";
+export type DrillFamily = "classify" | "dc" | "puc" | "window" | "tiers" | "year" | "payint" | "amend" | "settle" | "assets" | "ceiling";
 
 export const DRILL_TITLES: Record<DrillFamily, string> = {
   classify: "סיווג: הפקדה מוגדרת או הטבה מוגדרת",
@@ -76,6 +76,8 @@ export const DRILL_TITLES: Record<DrillFamily, string> = {
   payint: "ריבית עם תשלום באמצע השנה",
   amend: "שינוי תנאים באמצע השנה",
   settle: "סילוק מול פרישה לפי התנאים",
+  assets: "תנועה בנכסי התכנית",
+  ceiling: "עודף ותקרת הנכס",
 };
 
 /** Whether a typed answer to a number ask is right: within a shekel, or 0.2% for large amounts, since a solution rounds along the way. */
@@ -881,6 +883,172 @@ export function settleDrill(r: Rand): Drill {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Plan assets beside the obligation: two roll-forwards, the net liability, and the year in the statements.
+
+export type AssetsDraw = { grant: number; years: number; n: number; rate: number; opening: number; contribution: number; month: number; paidFromFund: number; closing: number };
+
+export function assetsDraw(r: Rand): AssetsDraw {
+  const years = pick(r, [8, 12, 15, 20]);
+  const grant = years * step(r, 10_000, 30_000, 1_000);
+  const rate = pick(r, [0.045, 0.055, 0.06, 0.065]);
+  const n = int(r, 12, 30);
+  // The fund holds less than the obligation, so there is a net liability and a net interest expense.
+  const obligation = pv(grant / years, rate, n);
+  const opening = Math.max(500, Math.round((obligation * pick(r, [0.3, 0.4, 0.5, 0.6])) / 100) * 100);
+  const contribution = Math.max(100, Math.round((obligation * pick(r, [0.1, 0.15, 0.2])) / 100) * 100);
+  const paidFromFund = 0;
+  const month = pick(r, [2, 3, 5, 6, 7, 9]);
+  const expected = opening + opening * rate + contribution - paidFromFund;
+  return { grant, years, n, rate, opening, contribution, month, paidFromFund, closing: Math.round((expected * (1 + pick(r, [-0.08, -0.04, 0.05, 0.1, 0.15]))) / 100) * 100 };
+}
+
+export function assetsFigures(d: AssetsDraw) {
+  const perYear = d.grant / d.years;
+  const opening = pv(perYear, d.rate, d.n);
+  const y = plainYear({ opening, i: d.rate, perYear, servedAtStart: 1, nEnd: d.n - 1, payments: d.paidFromFund });
+  const a = assetsYear({ opening: d.opening, periods: [{ months: 12, i: d.rate }], contributions: [{ amount: d.contribution, month: d.month - 1 }], paidFromAssets: d.paidFromFund, closing: d.closing });
+  const onOpening = d.opening * d.rate;
+  const onContribution = d.contribution * ((1 + d.rate) ** ((13 - d.month) / 12) - 1);
+  const pnObligation = y.closing - opening - y.service - y.interest + d.paidFromFund;
+  return { perYear, opening, ...y, pnObligation, a, onOpening, onContribution, netOpening: opening - d.opening, netClosing: y.closing - d.closing, netInterest: y.interest - a.interest };
+}
+
+export function assetsDrill(r: Rand): Drill {
+  const d = assetsDraw(r);
+  const F = assetsFigures(d);
+  const gain = F.a.pn > 0;
+  const months = 13 - d.month;
+  return {
+    family: "assets",
+    title: DRILL_TITLES.assets,
+    story: [
+      `לפי ההסכם עם עובד שהחל לעבוד ב-1.1 בשנה שעברה, הוא יקבל בפרישה מענק של ${fmt(d.grant)} ₪ על ${d.years} שנות עבודה רצופות. ב-31.12 של השנה שעברה נשארו ${d.n} שנים עד הפרישה. שיעור ההיוון ${pct(d.rate)}, ושום הערכה לא השתנתה השנה.`,
+      `שווי נכסי התכנית בסוף השנה שעברה: ${fmt(d.opening)} ₪. ב-1.${d.month} הפקידה החברה ${fmt(d.contribution)} ₪.${d.paidFromFund ? ` בסוף השנה שילמה הקרן ${fmt(d.paidFromFund)} ₪ לעובד אחר שפרש, כצפוי (ההתחייבות כללה אותו).` : ""} השווי ההוגן בסוף השנה: ${fmt(d.closing)} ₪.`,
+      "ערכו תנועה בהתחייבות ובנכסי התכנית, ומצאו את ההשפעה על הדוחות.",
+    ],
+    asks: [
+      { kind: "number", id: "income", label: "הכנסות ריבית מנכסי התכנית", answer: F.a.interest, unit: "₪" },
+      { kind: "number", id: "pnA", label: "מדידה מחדש של הנכסים (בערך מוחלט)", answer: Math.abs(F.a.pn), unit: "₪" },
+      { kind: "choice", id: "pnSide", label: "המדידה מחדש של הנכסים היא", options: ["רווח, ל-OCI", "הפסד, ל-OCI", "רווח, לרווח והפסד", "הפסד, לרווח והפסד"], answer: gain ? 0 : 1 },
+      { kind: "number", id: "netInterest", label: "ריבית נטו ברווח והפסד (הוצאה)", answer: F.netInterest, unit: "₪" },
+      { kind: "number", id: "net", label: "ההתחייבות נטו במאזן בסוף השנה", answer: F.netClosing, unit: "₪" },
+    ],
+    seek: ["שתי תנועות נפרדות — להתחייבות ולנכסים — ובמאזן ההתחייבות בניכוי הנכסים (סעיף 113)."],
+    check: [
+      "הכנסות ריבית — באותו שיעור כמו ההתחייבות (סעיף 125), על הפתיחה ועל הפקדה מיום שהופקדה, בריבית דריבית.",
+      "מהנכסים יורד רק מה שהקרן שילמה; מההתחייבות — כל מה ששולם לעובדים.",
+      "התשואה בפועל מעבר להכנסות הריבית — מדידה מחדש, ב-OCI (סעיף 127).",
+      "ברווח והפסד: עלות שירות, וריבית נטו (הוצאות ריבית פחות הכנסות ריבית).",
+    ],
+    build: [
+      { title: "① ההתחייבות", lines: [`צבירה לשנה: ${fmt(d.grant)} ÷ ${d.years} = ${sh(F.perYear)}.`, `פתיחה: ${sh(F.perYear)} ÷ ${f1(d.rate)}^${d.n} = ${sh(F.opening)}; עלות שירות: ÷ ${f1(d.rate)}^${d.n - 1} = ${sh(F.service)}; ריבית: ${sh(F.opening)} × ${pct(d.rate)} = ${sh(F.interest)}.`, `סגירה: ${sh(F.perYear)} × 2 ÷ ${f1(d.rate)}^${d.n - 1} = ${sh(F.closing)}${d.paidFromFund ? "" : " — בלי מדידה מחדש, כי שום הנחה לא השתנתה"}.`] },
+      { title: "② הכנסות ריבית", lines: [`על הפתיחה: ${fmt(d.opening)} × ${pct(d.rate)} = ${sh(F.onOpening)}.`, `על ההפקדה, ${months} חודשים: ${fmt(d.contribution)} × (${f1(d.rate)}^(${months}/12) − 1) = ${sh(F.onContribution)}.`, `סה״כ ${sh(F.a.interest)}.`] },
+      { title: "③ מדידה מחדש של הנכסים", lines: [`${fmt(d.closing)} − ${fmt(d.opening)} − ${sh(F.a.interest)} − ${fmt(d.contribution)}${d.paidFromFund ? ` + ${fmt(d.paidFromFund)}` : ""} = ${gain ? "" : "−"}${sh(Math.abs(F.a.pn))} → ${gain ? "רווח" : "הפסד"}, ל-OCI.`] },
+      { title: "④ הדוחות", lines: [`ריבית נטו: ${sh(F.interest)} − ${sh(F.a.interest)} = ${sh(F.netInterest)} הוצאה; עלות שירות ${sh(F.service)} — שכר.`, `במאזן: ${sh(F.closing)} − ${fmt(d.closing)} = ${sh(F.netClosing)} התחייבות נטו.`, "ההפקדה: ח׳ נכסי תכנית · ז׳ מזומן." + (d.paidFromFund ? " התשלום מהקרן: ח׳ התחייבות · ז׳ נכסי תכנית." : "")] },
+    ],
+    table: {
+      head: ["שורה", "התחייבות", "נכסי תכנית"],
+      rows: [
+        ["פתיחה", Math.round(F.opening), d.opening],
+        ["עלות שירות שוטף", Math.round(F.service), "—"],
+        ["ריבית", Math.round(F.interest), Math.round(F.a.interest)],
+        ["הפקדה", "—", d.contribution],
+        ...(d.paidFromFund ? [["שולם מהקרן", -d.paidFromFund, -d.paidFromFund] as (string | number)[]] : []),
+        ["מדידה מחדש", Math.round(F.pnObligation), Math.round(F.a.pn)],
+      ],
+      foot: ["סגירה", Math.round(F.closing), d.closing],
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// A surplus and the asset ceiling.
+
+export type CeilingDraw = { obligation: number; rate: number; service: number; lossObl: number; assets: number; closingAssets: number; share: number };
+
+export function ceilingDraw(r: Rand): CeilingDraw {
+  const obligation = step(r, 30_000, 120_000, 2_000);
+  const rate = pick(r, [0.06, 0.07, 0.08, 0.09]);
+  const share = pick(r, [0.03, 0.04, 0.06, 0.08]);
+  const service = step(r, obligation / 5, obligation / 2, 1_000);
+  const lossObl = step(r, 1_000, obligation / 5, 1_000);
+  const closingObl = obligation * (1 + rate) + service + lossObl;
+  // An opening surplus above the ceiling; a closing surplus either side of it.
+  const assets = Math.round((obligation * (1 + share + pick(r, [0.04, 0.06, 0.1]))) / 1_000) * 1_000;
+  const closingAssets = Math.round((closingObl * (1 + share * pick(r, [0.4, 0.6, 1.5, 2]))) / 1_000) * 1_000;
+  return { obligation, rate, service, lossObl, assets, closingAssets, share };
+}
+
+export function ceilingFigures(d: CeilingDraw) {
+  const interestCost = d.obligation * d.rate;
+  const closingObl = d.obligation + interestCost + d.service + d.lossObl;
+  const ceilingOpen = d.share * d.obligation;
+  const ceilingClose = d.share * closingObl;
+  const openAssets = recognisedAssets(d.assets, d.obligation, ceilingOpen);
+  const closeAssets = recognisedAssets(d.closingAssets, closingObl, ceilingClose);
+  const income = openAssets * d.rate;
+  const pnAssets = closeAssets - openAssets - income;
+  return { interestCost, closingObl, ceilingOpen, ceilingClose, openAssets, closeAssets, income, pnAssets, netOpen: openAssets - d.obligation, netClose: closeAssets - closingObl, netInterest: income - interestCost, oci: pnAssets - d.lossObl };
+}
+
+export function ceilingDrill(r: Rand): Drill {
+  const d = ceilingDraw(r);
+  const F = ceilingFigures(d);
+  const capClose = d.closingAssets - F.closingObl > F.ceilingClose;
+  const ociGain = F.oci > 0;
+  return {
+    family: "ceiling",
+    title: DRILL_TITLES.ceiling,
+    story: [
+      `התנועה בהתחייבות להטבה מוגדרת השנה: פתיחה ${fmt(d.obligation)} ₪; הוצאות ריבית ${fmt(F.interestCost)} ₪; עלות שירות שוטף ${fmt(d.service)} ₪; הפסד אקטוארי ${fmt(d.lossObl)} ₪; סגירה ${fmt(F.closingObl)} ₪. לא היו תשלומים.`,
+      `השווי ההוגן של נכסי התכנית: ${fmt(d.assets)} ₪ בתחילת השנה ו-${fmt(d.closingAssets)} ₪ בסופה. לפי תקנון הקרן, עודף עד ${pct(d.share)} מסכום ההתחייבות זמין לחברה למשיכה מיידית; עודף מעל זה משולם לעובדים, ולחברה אין בגינו שום הטבה.`,
+      "מה ההשפעה על הדוחות השנה?",
+    ],
+    asks: [
+      { kind: "number", id: "netOpen", label: "הנכס נטו בתחילת השנה", answer: F.netOpen, unit: "₪" },
+      { kind: "number", id: "income", label: "הכנסות ריבית מהנכסים", answer: F.income, unit: "₪" },
+      { kind: "number", id: "netClose", label: "הנכס נטו בסוף השנה", answer: F.netClose, unit: "₪" },
+      { kind: "number", id: "oci", label: "רווח כולל אחר, נטו (בערך מוחלט)", answer: Math.abs(F.oci), unit: "₪" },
+      { kind: "choice", id: "ociSide", label: "הרווח הכולל האחר הוא", options: ["רווח", "הפסד"], answer: ociGain ? 0 : 1 },
+    ],
+    seek: ["הנכס נטו שמותר להציג בכל תאריך, וממנו — הכנסות הריבית, המדידה מחדש וההשפעה על הדוחות."],
+    check: [
+      "יש עודף? הנכס נטו הוא הנמוך מבין העודף לבין תקרת הנכס (סעיף 64).",
+      "התקרה — הערך הנוכחי של ההטבות שהחברה יכולה לקבל מהעודף: החזר או הפחתת הפקדות. כאן: אחוז מההתחייבות, בכל תאריך לפי ההתחייבות של אותו תאריך.",
+      "כשהנכס הוצג בגובה התקרה, גם הכנסות הריבית וגם המדידה מחדש מחושבות על הנכסים כפי שהוכרו — לא על השווי ההוגן המלא.",
+      "שיעור ההיוון לא נתון? משחזרים אותו מהתנועה: ריבית ÷ פתיחה (כשלא היו תשלומים).",
+    ],
+    build: [
+      { title: "① שיעור ההיוון", lines: [`${fmt(F.interestCost)} ÷ ${fmt(d.obligation)} = ${pct(d.rate)}.`] },
+      {
+        title: "② תחילת השנה",
+        lines: [
+          `עודף: ${fmt(d.assets)} − ${fmt(d.obligation)} = ${sh(d.assets - d.obligation)}; תקרה: ${pct(d.share)} × ${fmt(d.obligation)} = ${sh(F.ceilingOpen)}.`,
+          `נכס נטו — הנמוך: ${sh(F.netOpen)}. הנכסים כפי שהוכרו: ${fmt(d.obligation)} + ${sh(F.netOpen)} = ${sh(F.openAssets)}.`,
+        ],
+      },
+      { title: "③ הכנסות ריבית", lines: [`${sh(F.openAssets)} × ${pct(d.rate)} = ${sh(F.income)}.`] },
+      {
+        title: "④ סוף השנה",
+        lines: [
+          `עודף: ${fmt(d.closingAssets)} − ${fmt(F.closingObl)} = ${sh(d.closingAssets - F.closingObl)}; תקרה: ${pct(d.share)} × ${fmt(F.closingObl)} = ${sh(F.ceilingClose)}.`,
+          capClose ? `העודף מעל התקרה — נכס נטו ${sh(F.netClose)}, והנכסים כפי שהוכרו ${sh(F.closeAssets)}.` : `העודף מתחת לתקרה — מציגים את כולו: ${sh(F.netClose)}.`,
+        ],
+      },
+      { title: "⑤ מדידה מחדש של הנכסים", lines: [`${sh(F.closeAssets)} − ${sh(F.openAssets)} − ${sh(F.income)} = ${F.pnAssets >= 0 ? "" : "−"}${sh(Math.abs(F.pnAssets))}.`] },
+      {
+        title: "⑥ הדוחות",
+        lines: [
+          `רווח והפסד: עלות שירות ${sh(d.service)} (שכר); ריבית נטו ${sh(F.income)} − ${sh(F.interestCost)} = ${F.netInterest >= 0 ? "הכנסה" : "הוצאה"} ${sh(Math.abs(F.netInterest))}.`,
+          `רווח כולל אחר: ${sh(F.pnAssets)} − ${sh(d.lossObl)} = ${ociGain ? "רווח" : "הפסד"} ${sh(Math.abs(F.oci))}.`,
+          `במאזן: נכס נטו ${sh(F.netClose)}.`,
+        ],
+      },
+    ],
+  };
+}
+
 export const DRILLS: Record<DrillFamily, (r: Rand) => Drill> = {
   classify: classifyDrill,
   dc: dcDrill,
@@ -891,6 +1059,8 @@ export const DRILLS: Record<DrillFamily, (r: Rand) => Drill> = {
   payint: payDrill,
   amend: amendDrill,
   settle: settleDrill,
+  assets: assetsDrill,
+  ceiling: ceilingDrill,
 };
 
 export const makeDrill = (family: DrillFamily, seed: number) => DRILLS[family](seeded(seed));

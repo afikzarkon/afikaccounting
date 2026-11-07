@@ -404,6 +404,34 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
       </>
     ),
   },
+  "emp-assets-qualify": {
+    lead: "קופה מקטינה את החוב רק אם היא באמת מחוץ להישג יד של החברה ושל הנושים שלה.",
+    body: (
+      <>
+        <P>
+          <T19 he="נכסי תכנית" par="8" /> הם נכסים שמוחזקים בישות משפטית נפרדת — קרן או חברת ביטוח — ומתקיימים בהם שלושה תנאים:
+        </P>
+        <Ladder
+          steps={[
+            { q: "הם מיועדים רק לתשלום הטבות לעובדים?", yes: "תנאי ראשון." },
+            { q: "הם לא זמינים לנושים של החברה?", yes: "תנאי שני." },
+            { q: "הם חוזרים לחברה רק מעודף, או כהחזר על הטבות שהיא שילמה בעצמה?", yes: "שלושתם — נכסי תכנית." },
+          ]}
+        />
+        <Card title="ומה אם לא?">
+          <p>אג״ח שהחברה קנתה ו״ייעדה״ לעובדים, אבל הן שלה ונושיה יכולים לממש אותן — אינן נכסי תכנית. הן נמדדות לפי התקן שחל עליהן (IFRS 9), ולא מקזזים אותן מההתחייבות.</p>
+          <p className="mt-1 text-[14px] text-muted">כשהנכסים בחברת ביטוח ועומדים בתנאים — זו ״פוליסת ביטוח כשירה״, והיא נכסי תכנית.</p>
+        </Card>
+        <Remember>
+          נכסי תכנית נמדדים בשווי הוגן, ומקוזזים מההתחייבות במאזן (סעיף 113). ההתחייבות נטו יכולה להיות כולה לא שוטפת, או מפוצלת לשוטפת ולא שוטפת — זו מדיניות חשבונאית (סעיף 133). ובין שתי תוכניות שונות מקזזים רק אם יש זכות משפטית לקזז וכוונה לסלק נטו (סעיף 131).
+        </Remember>
+      </>
+    ),
+    check: quiz("emp-assets-qualify", [
+      { q: "קרן נפרדת, רק לעובדים, נושי החברה לא יכולים לגעת בה, והחברה מקבלת ממנה רק עודף. נכסי תכנית?", options: ["כן", "לא — הקרן מחזירה כסף לחברה", "רק אם היא בחברת ביטוח", "תלוי בתשואה"], answer: 0, why: "החזר מעודף מותר בתנאי השלישי." },
+      { q: "פיקדון בבנק על שם החברה, שסומן ״לפיצויים״. נכסי תכנית?", options: ["לא — הוא זמין לנושים", "כן", "רק אם הוא צמוד", "כן, אם יש החלטת דירקטוריון"], answer: 0, why: "כסף של החברה עצמה אינו נכסי תכנית." },
+    ]),
+  },
   "emp-assets-what": {
     lead: "הקופה מקטינה את החוב. ויש לה מעגל משלה, עם ריבית באותו שיעור כמו החוב.",
     body: (
@@ -424,12 +452,12 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
           ]}
         />
         <SplitBar
-          title="הפקדה ב-1.4: מרוויחה ריבית רק תשעה חודשים"
+          title={`הפקדה ב-1.${PLAN.assets.month + 1}: מרוויחה ריבית רק ${12 - PLAN.assets.month} חודשים`}
           periods={[
-            { months: 3, label: "לפני ההפקדה", tone: 0 },
-            { months: 9, label: "ההפקדה בקופה: מרוויחה ריבית", rate: pct(PLAN.rate), tone: 1 },
+            { months: PLAN.assets.month, label: "לפני ההפקדה", tone: 0 },
+            { months: 12 - PLAN.assets.month, label: "ההפקדה בקופה: מרוויחה ריבית", rate: pct(PLAN.rate), tone: 1 },
           ]}
-          cuts={["1.1", "1.4: הפקדה", "31.12"]}
+          cuts={["1.1", `1.${PLAN.assets.month + 1}: הפקדה`, "31.12"]}
         />
         <Deeper title="הערה: כשהריבית השתנתה באמצע השנה">
           <p>
@@ -471,6 +499,26 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
       { q: "התקרה: מה היא עושה לחוב?", options: ["כלום; היא מגבילה רק את הנכס", "מקטינה", "מגדילה", "מבטלת"], answer: 0, why: "היא פועלת בצד הקופה." },
     ]),
   },
+  "emp-assets-reimburse": {
+    lead: "פוליסה שאינה כשירה, כשהחברה עדיין חייבת לעובד: נכס נפרד — בלי קיזוז.",
+    body: (
+      <>
+        <P>
+          לפעמים החברה מפקידה אצל מבטח, אבל הפוליסה לא עומדת בתנאים, ולחברה נשארת מחויבות כלפי העובד. אז הפוליסה איננה נכסי תכנית, אלא <T19 he="נכס שיפוי" par="116" />.
+        </P>
+        <Sorted
+          columns={[
+            { title: "נכסי תכנית (פוליסה כשירה)", tone: "neutral", items: ["שווי הוגן", "חובה לקזז מההתחייבות", "ריבית ומדידה מחדש — בתנועה של הנכסים"] },
+            { title: "נכס שיפוי (פוליסה לא כשירה)", tone: "neutral", items: ["שווי הוגן, כשודאי למעשה שהמבטח ישפה", "נכס נפרד — אסור לקזז במאזן", "ריבית ומדידה מחדש כמו בנכסי תכנית; מותר להציג נטו ברווח והפסד"] },
+          ]}
+        />
+        <Remember>פוליסה שמשפה בדיוק את ההטבות שהחברה צריכה לשלם — השווי ההוגן שלה שווה להתחייבות שהיא מכסה, בניכוי ירידה אם השיפוי לא בר השבה (סעיף 119).</Remember>
+      </>
+    ),
+    check: quiz("emp-assets-reimburse", [
+      { q: "התחייבות 70,000, נכס שיפוי 70,000. מה במאזן?", options: ["התחייבות 70,000 ונכס 70,000", "אפס — הם מתקזזים", "התחייבות 70,000 בלבד", "נכס 70,000 בלבד"], answer: 0, why: "נכס שיפוי לא מקוזז." },
+    ]),
+  },
   "emp-assets-rule": {
     lead: "שני מעגלים, נטו ביניהם, ותקרה על עודף.",
     body: (
@@ -487,6 +535,32 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
     ),
     check: quiz("emp-assets-rule", [{ q: "שולמו לעובדים 180,000, מהם 45,000 מהקופה. כמה מורידים מהקופה?", options: ["45,000", "180,000", "135,000", "0"], answer: 0, why: "רק מה שיצא מהקופה." }]),
   },
+  "emp-assets-template": {
+    lead: "שני מעגלים, אותה ריבית, ובסוף — נטו ותקרה.",
+    body: (
+      <>
+        <SolveTemplate
+          seek={["תנועה בהתחייבות, תנועה בנכסי התכנית, הסכום נטו במאזן, וההשפעה על רווח והפסד ועל OCI."]}
+          check={[
+            "האם הקופה היא נכסי תכנית (שלושת התנאים)? אם לא — נכס לפי התקן שלו, או נכס שיפוי.",
+            "הכנסות ריבית: באותו שיעור כמו הוצאות הריבית ובאותו פיצול תקופות (סעיף 125). הפקדות ותשלומים — מיום שקרו.",
+            "תשלומים: מההתחייבות — כל מה ששולם לעובדים; מהנכסים — רק מה שהקרן שילמה.",
+            "בסוף השנה: אם בקופה יותר מהחוב — הנכס נטו הוא הנמוך מבין העודף לתקרה (סעיף 64). ואם התקרה הגבילה בתחילת השנה — הריבית על הנכסים כפי שהוכרו.",
+          ]}
+          build={[
+            { title: "① התנועה בהתחייבות", lines: [`כמו ב${lessonRef("ias19-rollforward")} ו${lessonRef("ias19-amend")}.`] },
+            { title: "② הכנסות ריבית", lines: ["פתיחה × i + הפקדה × ((1+i)^(חודשים/12) − 1) − תשלום מהקרן × ((1+i)^(חודשים/12) − 1)."] },
+            { title: "③ מדידה מחדש של הנכסים", lines: ["סגירה − פתיחה − ריבית − הפקדות + שולם מהקרן."] },
+            { title: "④ נטו ותקרה", lines: ["התחייבות − נכסים. עודף? הנמוך מבין העודף לתקרה."] },
+            { title: "⑤ הדוחות", lines: ["רווח והפסד: שירות (ושירות עבר) בשכר; ריבית נטו = הוצאות ריבית − הכנסות ריבית.", "OCI: מדידה מחדש של ההתחייבות ושל הנכסים, נטו."] },
+          ]}
+        />
+      </>
+    ),
+    check: quiz("emp-assets-template", [
+      { q: "הוצאות ריבית 6,400, הכנסות ריבית 1,900. מה מוצג ברווח והפסד?", options: ["ריבית נטו: הוצאה 4,500", "הוצאה 6,400 והכנסה 1,900 בשתי שורות חובה", "רק 6,400", "הכול ב-OCI"], answer: 0, why: "ריבית נטו (סעיף 120)." },
+    ]),
+  },
   "emp-assets-solved": {
     lead: "שני מעגלים זה ליד זה, הנטו ביניהם, ותוצאת השנה בשלוש קופסאות.",
     body: (
@@ -496,7 +570,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
             מענק של <Money v={PLAN.grant} />, שנצבר שווה בשווה על {PLAN.years} שנות עבודה: <Money v={PLAN_PER_YEAR} /> לשנה. העובד עבד שנה אחת עד 31.12.2023, והתשלום בעוד {PLAN.n} שנים מאז.
           </p>
           <p>
-            ריבית {pct(PLAN.rate)}, בלי שינוי בהנחות. בקופה: <Money v={PLAN.assets.opening} /> ב-31.12.2023, הפקדה של <Money v={PLAN.assets.contribution} /> ב-1.4.2024, ושווי <Money v={PLAN.assets.closing} /> בסוף 2024.
+            ריבית {pct(PLAN.rate)}, בלי שינוי בהנחות. בקופה: <Money v={PLAN.assets.opening} /> ב-31.12.2023, הפקדה של <Money v={PLAN.assets.contribution} /> ב-1.{PLAN.assets.month + 1}.2024, ושווי <Money v={PLAN.assets.closing} /> בסוף 2024.
           </p>
         </Story>
         <div className="grid gap-3 lg:grid-cols-2">
@@ -542,7 +616,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
   "emp-assets-together": {
     lead: "כשיש עודף, בודקים תקרה בכל תאריך. ואת הריבית משחזרים מהחוב.",
     body: (
-      <Part title="עודף, ותקרה של 5% מהחוב">
+      <Part title={`עודף, ותקרה של ${pct(SURPLUS.ceilingShare)} מהחוב`}>
         <div className="grid gap-3 lg:grid-cols-2">
           <NetBars obligation={SURPLUS.obligation} assets={SURPLUS.assets} ceiling={SURPLUS_CEILING} title="31.12.2023" />
           <NetBars obligation={SURPLUS.closingObligation} assets={SURPLUS.closingAssets} ceiling={SURPLUS_END_CEILING} title="31.12.2024" />
@@ -578,6 +652,15 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
       </Part>
     ),
   },
+  "emp-assets-drill": {
+    lead: "קופה ליד החוב, ועודף מול תקרה — במספרים חדשים בכל לחיצה.",
+    body: (
+      <>
+        <P>״תנועה בנכסי התכנית״: מענק לעובד, קופה עם הפקדה באמצע השנה, ומה מגיע לרווח והפסד, ל-OCI ולמאזן. ״עודף ותקרת הנכס״: קופה שגדולה מהחוב ותקרה באחוז מההתחייבות. פתרו, בדקו, ורק אז פתחו את הפתרון.</P>
+        <DrillBox families={["assets", "ceiling"]} />
+      </>
+    ),
+  },
   "emp-assets-master": {
     lead: "שני מעגלים, חוב וקופה. הפער ביניהם הוא נטו, ותקרה חוסמת עודף.",
     body: (
@@ -599,7 +682,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
     check: quiz("emp-assets-master", [
       { q: "חוב 18,000, קופה 7,200. מה ההתחייבות נטו?", options: ["10,800", "25,200", "7,200", "18,000"], answer: 0, why: "סעיף 113." },
       { q: "קופה נעולה: 540, חוב 470, ואין החזר או הקטנת הפקדות. מה הנכס נטו?", options: ["0, והפער הוא הפסד ב-OCI", "70", "540", "470"], answer: 0, why: "התקרה אפס." },
-      { q: "הופקדו 1,200 ב-1.7, ריבית 5%. הכנסות ריבית על ההפקדה?", options: ["כ-30: 1,200 × (1.05^0.5 − 1)", "60", "0", "120"], answer: 0, why: "חצי שנה, ריבית דריבית." },
+      { q: "הופקדו 1,200 ב-1.10, ריבית 4.5%. הכנסות ריבית על ההפקדה?", options: ["כ-13: 1,200 × (1.045^(3/12) − 1)", "54", "0", "13.5: 1,200 × 4.5% × 3/12"], answer: 0, why: "שלושה חודשים, ריבית דריבית." },
       { q: "באיזו ריבית: הכנסות ריבית על הקופה?", options: ["של החוב", "התשואה בפועל"], answer: 0, why: "סעיף 125." },
       { q: "הטבות ששולמו 240,000, מהן 66,000 מהקופה. כמה מורידים מהקופה?", options: ["66,000", "240,000"], answer: 0, why: "רק מה שיצא מהקופה." },
     ]),
@@ -693,20 +776,20 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
       <>
         <Story icon={<Inbox />} title={`המענק עם הקופה, מ${lessonRef("ias19-assets")}, עם תיקון`}>
           <p>
-            ב-1.7.2024 המענק עולה מ-<Money v={PLAN_PER_YEAR} /> ל-<Money v={AMENDED.newPerYear} /> לשנה, גם על העבר. הריבית יורדת מ-{pct(PLAN.rate)} ל-{pct(AMENDED.rateAfter)} ביום התיקון, ובסוף השנה היא{" "}
+            ב-1.{AMENDED.month + 1}.2024 המענק עולה מ-<Money v={PLAN_PER_YEAR} /> ל-<Money v={AMENDED.newPerYear} /> לשנה, גם על העבר. הריבית יורדת מ-{pct(PLAN.rate)} ל-{pct(AMENDED.rateAfter)} ביום התיקון, ובסוף השנה היא{" "}
             {pct(AMENDED.rateEnd)}.
           </p>
           <p>
-            הקופה כמו קודם: <Money v={PLAN.assets.opening} /> בפתיחה, <Money v={PLAN.assets.contribution} /> ב-1.4, <Money v={PLAN.assets.closing} /> בסוף.
+            הקופה כמו קודם: <Money v={PLAN.assets.opening} /> בפתיחה, <Money v={PLAN.assets.contribution} /> ב-1.{PLAN.assets.month + 1}, <Money v={PLAN.assets.closing} /> בסוף.
           </p>
         </Story>
         <SplitBar
-          title="השנה, חתוכה ב-1.7: אותו פיצול לחוב ולקופה"
+          title={`השנה, חתוכה ב-1.${AMENDED.month + 1}: אותו פיצול לחוב ולקופה`}
           periods={[
-            { months: 6, label: "עד התיקון", rate: pct(PLAN.rate), tone: 1 },
-            { months: 6, label: "אחרי התיקון", rate: pct(AMENDED.rateAfter), tone: 4 },
+            { months: AMENDED.month, label: "עד התיקון", rate: pct(PLAN.rate), tone: 1 },
+            { months: 12 - AMENDED.month, label: "אחרי התיקון", rate: pct(AMENDED.rateAfter), tone: 4 },
           ]}
-          cuts={["1.1", "1.4: הפקדה · 1.7: תיקון", "31.12"]}
+          cuts={["1.1", `1.${PLAN.assets.month + 1}: הפקדה · 1.${AMENDED.month + 1}: תיקון`, "31.12"]}
         />
         <Stepper
           label="תיקון והצגה"
@@ -718,9 +801,9 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
                   title="החוב, 2024"
                   rows={[
                     { label: "יתרת פתיחה", value: PLAN_OPENING, kind: "balance" },
-                    { label: "עלות ריבית", value: AM_YEAR.interest, how: `${Math.round(AM_YEAR.interestBefore)} (חצי שנה, ${pct(PLAN.rate)}) + ${Math.round(AM_YEAR.interestAfter)} (חצי שנה, ${pct(AMENDED.rateAfter)}, על היתרה אחרי התיקון)` },
-                    { label: "עלות שירות שוטף", value: AM_YEAR.service, how: ltrFormulas(`${Math.round(AM_YEAR.serviceBefore)} (n = ${PLAN.n - 0.5}) + ${Math.round(AM_YEAR.serviceAfter)} (n = ${PLAN.n - 1})`) },
-                    { label: "עלות שירות עבר", value: AM_YEAR.pastService, how: ltrFormulas(`${Math.round(AM_YEAR.pastAfter)} − ${Math.round(AM_YEAR.pastBefore)}, ${pct(AMENDED.rateAfter)}, n = ${PLAN.n - 0.5}`) },
+                    { label: "עלות ריבית", value: AM_YEAR.interest, how: `${Math.round(AM_YEAR.interestBefore)} (${AMENDED.month} חודשים, ${pct(PLAN.rate)}) + ${Math.round(AM_YEAR.interestAfter)} (${12 - AMENDED.month} חודשים, ${pct(AMENDED.rateAfter)}, על היתרה אחרי התיקון)` },
+                    { label: "עלות שירות שוטף", value: AM_YEAR.service, how: ltrFormulas(`${Math.round(AM_YEAR.serviceBefore)} (n = ${PLAN.n - 1} + ${12 - AMENDED.month}/12) + ${Math.round(AM_YEAR.serviceAfter)} (n = ${PLAN.n - 1})`) },
+                    { label: "עלות שירות עבר", value: AM_YEAR.pastService, how: ltrFormulas(`${Math.round(AM_YEAR.pastAfter)} − ${Math.round(AM_YEAR.pastBefore)}, ${pct(AMENDED.rateAfter)}, n = ${PLAN.n - 1} + ${12 - AMENDED.month}/12`) },
                     { label: "P.N., הפסד", value: AM_YEAR.pn, kind: "pn" },
                     { label: "יתרת סגירה", value: AM_YEAR.closing, kind: "balance", how: ltrFormulas(`2 × ${AMENDED.newPerYear.toLocaleString("en-US")}, ${pct(AMENDED.rateEnd)}, n = ${PLAN.n - 1}`) },
                   ]}
@@ -735,7 +818,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
                   title="הקופה, 2024"
                   rows={[
                     { label: "יתרת פתיחה", value: PLAN.assets.opening, kind: "balance" },
-                    { label: "הכנסות ריבית", value: AM_ASSETS.interest, how: `${AM_ASSETS_PARTS.parts[0].toFixed(0)} עד 30.6 (${pct(PLAN.rate)}, כולל ההפקדה לרבעון) + ${AM_ASSETS_PARTS.parts[1].toFixed(0)} מ-1.7 (${pct(AMENDED.rateAfter)})` },
+                    { label: "הכנסות ריבית", value: AM_ASSETS.interest, how: `${AM_ASSETS_PARTS.parts[0].toFixed(0)} עד 31.${AMENDED.month} (${pct(PLAN.rate)}, כולל ההפקדה ל-${AMENDED.month - PLAN.assets.month} חודשים) + ${AM_ASSETS_PARTS.parts[1].toFixed(0)} מ-1.${AMENDED.month + 1} (${pct(AMENDED.rateAfter)})` },
                     { label: "הפקדות", value: PLAN.assets.contribution },
                     { label: "P.N., רווח", value: AM_ASSETS.pn, kind: "pn" },
                     { label: "שווי בסגירה", value: PLAN.assets.closing, kind: "balance" },
