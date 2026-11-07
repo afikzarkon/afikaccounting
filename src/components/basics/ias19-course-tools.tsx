@@ -9,7 +9,7 @@ import { fmt } from "@/lib/study/ias19/shared";
 import { ltrQuiz } from "@/lib/study/ias19/ltr";
 import { Ltr, Work } from "./ias19-formula";
 import { RollForward, T19 } from "./ias19-ui";
-import { Timeline } from "./ias19-visuals";
+import { Diff, Timeline } from "./ias19-visuals";
 import { MiniQuiz } from "./inventory-interactive";
 import { Money } from "./ui";
 
@@ -131,12 +131,16 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
             </tbody>
           </table>
         </div>
-        <P>יתרת הסגירה של כל שנה היא הפתיחה של השנה הבאה. והריבית גדלה כל שנה, כי היא מחושבת גם על הריבית של השנים הקודמות. לזה קוראים ריבית דריבית.</P>
+        <P>
+          יתרת הסגירה של כל שנה היא הפתיחה של השנה הבאה. והריבית גדלה כל שנה, כי היא מחושבת גם על הריבית של השנים הקודמות. לזה קוראים <T19 he="ריבית דריבית" />.
+        </P>
         <P>
           אין צורך בטבלה כל פעם. להוסיף {pct(DEPOSIT.rate)} זה לכפול ב-{1 + DEPOSIT.rate}, ולכן {DEPOSIT.years} שנים הן {DEPOSIT.years} הכפלות:
         </P>
         <F>{`${fmt(DEPOSIT.amount)} × ${Array(DEPOSIT.years).fill(1 + DEPOSIT.rate).join(" × ")} = ${fmt(DEPOSIT.amount)} × ${1 + DEPOSIT.rate}^${DEPOSIT.years} = ${fmt(DEPOSIT.amount * (1 + DEPOSIT.rate) ** DEPOSIT.years)}`}</F>
-        <P>זו הנוסחה של ערך עתידי. PV הוא הסכום היום, RATE הריבית השנתית, YEAR מספר השנים, ו-FV מה שיהיה בסוף:</P>
+        <P>
+          זו הנוסחה של <T19 he="ערך עתידי" />. PV הוא הסכום היום, RATE הריבית השנתית, YEAR מספר השנים, ו-FV מה שיהיה בסוף:
+        </P>
         <Work w={tool.fv(DEPOSIT.amount, DEPOSIT.rate, DEPOSIT.years)} />
         <P>באקסל pmt הוא תשלומים בדרך (אצלנו 0), ואת pv כותבים עם מינוס: מה שמפקידים יוצא מהכיס, ומה שמקבלים בסוף נכנס.</P>
         <P>
@@ -187,10 +191,12 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
           {DEPOSIT.years} חלוקות ב-{1 + DEPOSIT.rate} הן חלוקה אחת ב-<L>{`${1 + DEPOSIT.rate}^${DEPOSIT.years}`}</L>. זו הנוסחה של <T19 he="ערך נוכחי" />:
         </P>
         <Work w={tool.pv(DEPOSIT_FV, DEPOSIT.rate, DEPOSIT.years)} />
-        <P>YEAR הוא מספר השנים מהיום ועד התשלום. לא כמה שנים העובד כבר עבד, ולא כמה הוא יעבוד בסך הכול.</P>
+        <P>
+          YEAR הוא מספר השנים <strong>מהיום ועד התשלום</strong>. לא כמה שנים העובד כבר עבד, ולא כמה הוא יעבוד בסך הכול.
+        </P>
         <Part title="חוזרים לדנה">
           <P>
-            דנה תקבל <Money v={HOOK.amount} /> בעוד {HOOK.years} שנים. בקורס הריבית שבה מחזירים חוב לעובדים להיום נקראת <strong>שיעור היוון</strong>. נניח שהוא {pct(HOOK.rate)}:
+            דנה תקבל <Money v={HOOK.amount} /> בעוד {HOOK.years} שנים. בקורס הריבית שבה מחזירים חוב לעובדים להיום נקראת <T19 he="שיעור היוון" par="83" />. נניח שהוא {pct(HOOK.rate)}:
           </P>
           <Work w={tool.pv(HOOK.amount, HOOK.rate, HOOK.years)} />
           <P>
@@ -217,7 +223,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>
-          החברה משלמת לעובד ב-31.3, או משנה את התוכנית ב-30.9. מאותו יום החוב שונה, ולכן צריך לחשב ריבית רק עד שם. החדשות הטובות: אין נוסחה חדשה. בנוסחה מהמסך ״קדימה בזמן״, YEAR לא חייב להיות מספר שלם. רבעון הוא 3 חודשים מתוך 12, כלומר <L>YEAR = 3/12</L>.
+          החברה משלמת לעובד ב-31.3, או משנה את התוכנית ב-30.9. מאותו יום החוב שונה, ולכן צריך לחשב ריבית רק עד שם. החדשות הטובות: אין נוסחה חדשה. בנוסחה מהמסך ״קדימה בזמן״, YEAR <strong>לא חייב להיות מספר שלם</strong>. רבעון הוא 3 חודשים מתוך 12, כלומר <L>YEAR = 3/12</L>.
         </P>
         <p className="text-[13px] font-bold text-muted">
           אותו פיקדון, <Money v={DEPOSIT.amount} /> ב-{pct(DEPOSIT.rate)}, לרבעון אחד:
@@ -225,7 +231,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
         <F>{`${fmt(DEPOSIT.amount)} × (${1 + DEPOSIT.rate})^(3/12) = ${fmt(Math.round(DEPOSIT.amount * (1 + DEPOSIT.rate) ** 0.25 * 100) / 100)} ₪`}</F>
         <P>
           אז הריבית לרבעון היא {pct(partRate(DEPOSIT.rate, 3), 3)}. למה לא רבע מ-{pct(DEPOSIT.rate)}, כלומר {pct(DEPOSIT.rate / 4)}? נבדוק: ארבעה רבעונים של {pct(DEPOSIT.rate / 4)} נותנים{" "}
-          <L>{`${1 + DEPOSIT.rate / 4}^4 = ${((1 + DEPOSIT.rate / 4) ** 4).toFixed(4)}`}</L>, כלומר {pct((1 + DEPOSIT.rate / 4) ** 4 - 1)} בשנה, יותר מ-{pct(DEPOSIT.rate)}. הסיבה היא שהריבית של כל רבעון מרוויחה ריבית ברבעונים הבאים. לכן הריבית לרבעון צריכה להיות קצת פחות מרבע.
+          <L>{`${1 + DEPOSIT.rate / 4}^4 = ${((1 + DEPOSIT.rate / 4) ** 4).toFixed(4)}`}</L>, כלומר {pct((1 + DEPOSIT.rate / 4) ** 4 - 1)} בשנה, יותר מ-{pct(DEPOSIT.rate)}. הסיבה היא שהריבית של כל רבעון מרוויחה ריבית ברבעונים הבאים. לכן הריבית לרבעון צריכה להיות <strong>קצת פחות מרבע</strong>.
         </P>
         <P>הנוסחה לשיעור של תקופה, בריבית דריבית:</P>
         <Work w={tool.partRate(DEPOSIT.rate, 3)} />
@@ -256,9 +262,13 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
         </P>
         <Work w={tool.part(PART_BALANCE, DEPOSIT.rate, 3)} />
         <Part title="ריבית פשוטה, כשהשאלה מבקשת אותה">
-          <P>יש שאלות שמבקשות במפורש ריבית פשוטה. בה לא מחשבים ריבית על ריבית, אלא מכפילים את השיעור השנתי בחלק מהשנה:</P>
+          <P>
+            יש שאלות שמבקשות <strong>במפורש</strong> ריבית פשוטה. בה לא מחשבים ריבית על ריבית, אלא מכפילים את השיעור השנתי בחלק מהשנה:
+          </P>
           <Work w={tool.simpleOn(PART_BALANCE, DEPOSIT.rate, 3)} />
-          <P>כשהשאלה לא אומרת באיזו ריבית, משתמשים בריבית דריבית.</P>
+          <P>
+            כשהשאלה <strong>לא אומרת</strong> באיזו ריבית, משתמשים <strong>בריבית דריבית</strong>.
+          </P>
         </Part>
         <Part title="ובערך נוכחי?">
           <P>
@@ -285,7 +295,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>
-          כבר ראיתם <T19 he="מעגל" />, בטבלת הפיקדון במסך ״קדימה בזמן״: יתרת פתיחה, ועוד ריבית, שווה יתרת סגירה. במעגל של חוב לעובדים יש עוד שורה, התשלומים. כשהחברה משלמת לעובדים, החוב קטן:
+          כבר ראיתם מעגל, בטבלת הפיקדון במסך ״קדימה בזמן״: יתרת פתיחה, ועוד ריבית, שווה יתרת סגירה. במעגל של חוב לעובדים יש עוד שורה, התשלומים. כשהחברה משלמת לעובדים, החוב קטן:
         </P>
         <F>{TOOL.roll}</F>
         <Part title="החוב לדנה, כמעגל">
@@ -301,7 +311,9 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
               { label: "יתרת סגירה", value: Math.round(DANA_NEXT), kind: "balance" },
             ]}
           />
-          <P>התחייבות היא יתרת זכות, ולכן בגיליון היא כתובה במינוס. מה שמגדיל אותה גם במינוס, ותשלום, שמקטין אותה, כתוב בפלוס.</P>
+          <P>
+            התחייבות היא יתרת זכות, ולכן בגיליון היא כתובה <Diff>במינוס</Diff>. מה שמגדיל אותה גם במינוס, ותשלום, שמקטין אותה, כתוב <Diff>בפלוס</Diff>.
+          </P>
         </Part>
         <Part title="כשחסרה שורה אחת">
           <P>
@@ -322,7 +334,9 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
             ההיגיון: החוב עלה ב-<Money v={VACATION.closing - VACATION.opening} /> אף שיצאו <Money v={VACATION.payments} />. אז נוספו <Money v={VACATION_EXPENSE} />. בנוסחה ובאקסל:
           </P>
           <Work w={tool.expense(VACATION.opening, VACATION.payments, VACATION.closing)} />
-          <P>בהמשך הקורס המעגלים יהיו ארוכים יותר, עם עוד שורות. אבל השיטה לא משתנה: מחשבים כל שורה שאפשר מהנתונים, והשורה שנשארה היא מה שמאזן את המעגל.</P>
+          <P>
+            בהמשך הקורס המעגלים יהיו ארוכים יותר, עם עוד שורות. אבל השיטה לא משתנה: מחשבים כל שורה שאפשר מהנתונים, והשורה שנשארה היא <strong>מה שמאזן את המעגל</strong>.
+          </P>
         </Part>
         {quiz("emp-tool-roll", [
           {
@@ -352,7 +366,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
         <Part title="1. כמה רושמים היום על המענק ליוסי?">
           <Solve seek={<>ערך נוכחי של <Money v={CASE.grant} /> שישולמו בעוד {CASE.years} שנים.</>} task="מה החוב ליוסי בדוח של היום?">
             <P>
-              איזה כלי? הסכום ישולם בעתיד, ואנחנו רוצים לדעת כמה הוא שווה היום, ולכן ערך נוכחי. FV הוא המענק, <Money v={CASE.grant} />. RATE הוא שיעור ההיוון, {pct(CASE.rate)}. YEAR הוא מספר השנים מהיום ועד
+              <strong>איזה כלי?</strong> הסכום ישולם בעתיד, ואנחנו רוצים לדעת כמה הוא שווה היום, ולכן ערך נוכחי. FV הוא המענק, <Money v={CASE.grant} />. RATE הוא שיעור ההיוון, {pct(CASE.rate)}. YEAR הוא מספר השנים מהיום ועד
               התשלום, {CASE.years}. מחלקים ב-{1 + CASE.rate} פעם לכל שנה:
             </P>
             <Work w={tool.pv(CASE.grant, CASE.rate, CASE.years)} />
@@ -364,7 +378,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
         <Part title="2. בכמה גדל החוב ליוסי ברבעון הראשון?">
           <Solve seek={<>הריבית לשלושה חודשים, כי החברה מפרסמת דוח רבעוני ב-31.3. <L>YEAR = 3/12</L>, ריבית דריבית.</>} task={<>החוב היום <Money v={CASE_TODAY} />. בכמה הוא יגדל עד 31.3?</>}>
             <P>
-              איזה כלי? צריך ריבית רק עד 31.3, ולכן ריבית לתקופה שאינה שנה. היתרה היא החוב שמצאנו בשאלה 1, <Money v={CASE_TODAY} />. התקופה היא שלושה חודשים מתוך 12, ולכן <L>YEAR = 3/12</L>. השאלה לא
+              <strong>איזה כלי?</strong> צריך ריבית רק עד 31.3, ולכן ריבית לתקופה שאינה שנה. היתרה היא החוב שמצאנו בשאלה 1, <Money v={CASE_TODAY} />. התקופה היא שלושה חודשים מתוך 12, ולכן <L>YEAR = 3/12</L>. השאלה לא
               אמרה באיזו ריבית, ולכן ריבית דריבית. קודם השיעור לרבעון:
             </P>
             <Work w={tool.partRate(CASE.rate, 3)} />
@@ -377,7 +391,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
         <Part title="3. מה החוב ליוסי בסוף השנה?">
           <Solve seek="יתרת הסגירה במעגל. נוספה ריבית של שנה, ולא שולם כלום." task="מה יתרת הסגירה של החוב ליוסי?">
             <P>
-              איזה כלי? רוצים לדעת מה קרה לחוב במשך שנה, ולכן מעגל. הפתיחה היא החוב מתחילת השנה, <Money v={CASE_TODAY} />. במשך השנה נוספה ריבית של שנה שלמה:{" "}
+              <strong>איזה כלי?</strong> רוצים לדעת מה קרה לחוב במשך שנה, ולכן מעגל. הפתיחה היא החוב מתחילת השנה, <Money v={CASE_TODAY} />. במשך השנה נוספה ריבית של שנה שלמה:{" "}
               <L>{`${fmt(CASE_TODAY)} × ${pct(CASE.rate)} = ${fmt(CASE_INTEREST)}`}</L> ₪. ליוסי לא שולם כלום, ולכן אין שורת תשלומים. הסגירה היא הפתיחה ועוד הריבית:
             </P>
             <RollForward
@@ -395,7 +409,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
         <Part title="4. כמה שילמה החברה לעובדים על חופשה?">
           <Solve seek="התשלומים, השורה היחידה שחסרה במעגל של ההפרשה לחופשה." task="כמה שולם לעובדים השנה?">
             <P>
-              איזה כלי? ידועות שלוש שורות במעגל, הפתיחה, ההוצאה והסגירה, וחסרה רק אחת. לכן מחלצים אותה מהמעגל. מתחילים מ-<Money v={CASE.vacation.opening} /> ומוסיפים את ההוצאה,{" "}
+              <strong>איזה כלי?</strong> ידועות שלוש שורות במעגל, הפתיחה, ההוצאה והסגירה, וחסרה רק אחת. לכן מחלצים אותה מהמעגל. מתחילים מ-<Money v={CASE.vacation.opening} /> ומוסיפים את ההוצאה,{" "}
               <Money v={CASE.vacation.expense} />. יוצא <Money v={CASE.vacation.opening + CASE.vacation.expense} />. בסוף השנה נשארו רק <Money v={CASE.vacation.closing} />, אז כל השאר יצא בתשלומים:
             </P>
             <RollForward

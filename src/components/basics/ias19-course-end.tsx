@@ -10,7 +10,7 @@ import { CLOSING, CLOSING_EXTRA } from "@/lib/study/ias19/lessons/map";
 import { lessonRef, lessonsRef, pct } from "@/lib/study/ias19/shared";
 import { Ltr } from "./ias19-formula";
 import { Bridge, DestTag, ExplainTask, FullSteps, Ladder, MapBranch, Recipe5, RECIPE_STEPS, RollForward, T19, TaskSolution } from "./ias19-ui";
-import { Fork, NetBars, Routing, SplitBar, Timeline, TwoPanel } from "./ias19-visuals";
+import { Diff, Fork, NetBars, Routing, SplitBar, Timeline, TwoPanel } from "./ias19-visuals";
 import { MiniQuiz } from "./inventory-interactive";
 import { Sorted, Story } from "./inventory-teach";
 import { DrillBox, SolveTemplate, TermDates, TermTest } from "./ias19-interactive";
@@ -18,7 +18,7 @@ import { PrintButton } from "./print-button";
 import { JE, Money, Rule } from "./ui";
 import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
 
-/** The employee-benefits course, lessons 11–12: other long-term and termination benefits, the two exam-level questions, and the cheat sheet. */
+/** The employee-benefits course, lessons 7–8: other long-term and termination benefits, the two exam-level questions, and the cheat sheet. */
 
 const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={ltrQuiz(items)} />;
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
@@ -35,7 +35,7 @@ const CIRCLED = ["①", "②", "③", "④", "⑤"];
 
 export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
   // ---------------------------------------------------------------------------
-  // Lesson 11: other long-term and termination benefits.
+  // Lesson 7: other long-term and termination benefits.
   "emp-other-hook": {
     lead: "הטבה שמשולמת בזמן העבודה, והטבה שנולדת מהחלטה לסיים אותה. שני ענפים, שני כללים קצרים.",
     body: (
@@ -68,10 +68,10 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>
-          <T19 he="הטבה אחרת לזמן ארוך" par="153" />: משולמת בזמן העבודה, אבל לא תוך 12 חודשים מסוף שנת העבודה. מענק יובל, שבתון, בונוס רב־שנתי.
+          <T19 he="הטבה אחרת לזמן ארוך" par="153" />: משולמת בזמן העבודה, אבל <strong>לא תוך 12 חודשים</strong> מסוף שנת העבודה. מענק יובל, שבתון, בונוס רב־שנתי.
         </P>
         <P>
-          המדידה זהה להטבה מוגדרת (סעיף 155). רק הרישום פשוט יותר (סעיף 156): שירות (שוטף ועבר יחד), ריבית ו-P.N., כולם ברווח והפסד.
+          המדידה זהה להטבה מוגדרת (סעיף 155). רק הרישום פשוט יותר (סעיף 156): שירות (שוטף ועבר יחד), ריבית ו-P.N., <strong>כולם ברווח והפסד</strong>.
         </P>
         <TwoPanel
           label="אותו P.N., שתי קופסאות: בהטבה מוגדרת הוא הולך ל-OCI; בהטבה אחרת לזמן ארוך הוא הולך לרווח והפסד"
@@ -92,7 +92,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>
-          <T19 he="הטבה אחרת לזמן ארוך" par="153" /> היא כל הטבה בתחולת התקן שלא נכנסת לשלוש הקבוצות האחרות. הסימן שלה: העובד עדיין עובד כשהיא משולמת, אבל התשלום רחוק מהשנה שבה הוא הרוויח אותה.
+          הטבה אחרת לזמן ארוך היא כל הטבה בתחולת התקן שלא נכנסת לשלוש הקבוצות האחרות. הסימן שלה: <strong>העובד עדיין עובד</strong> כשהיא משולמת, אבל התשלום רחוק מהשנה שבה הוא הרוויח אותה.
         </P>
         <Sorted
           columns={[
@@ -105,13 +105,13 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
         </P>
         <ul className="space-y-1.5 rounded-xl bg-surface-2/50 p-3 text-[15px] ring-1 ring-line">
           <li>
-            <strong>עלות שירות</strong> — שוטף, עבר, ורווח או הפסד מסילוק, בסכום אחד. לא מפרידים ביניהם.
+            <strong>עלות שירות</strong> — שוטף, עבר, ורווח או הפסד מסילוק, <strong>בסכום אחד</strong>. לא מפרידים ביניהם.
           </li>
           <li>
             <strong>ריבית</strong> על ההתחייבות (ועל הנכסים, אם יש).
           </li>
           <li>
-            <strong>מדידה מחדש</strong> — ברווח והפסד, לא ב-OCI.
+            <strong>מדידה מחדש</strong> — ברווח והפסד, <strong>לא ב-OCI</strong>.
           </li>
         </ul>
         <Remember>ההבחנה הזו נדרשת בביאורים. בדוח רווח והפסד עצמו כל שלוש השורות יכולות לשבת יחד בהוצאות השכר.</Remember>
@@ -127,7 +127,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>
-          קצבה לעובד שאיבד את כושר העבודה לזמן ארוך יכולה להיות הטבה אחרת לזמן ארוך. השאלה היחידה (<T19 he="סעיף 157" />): האם הסכום תלוי בשנות השירות?
+          קצבה לעובד שאיבד את כושר העבודה לזמן ארוך (<T19 he="אובדן כושר עבודה" par="157" />) יכולה להיות הטבה אחרת לזמן ארוך. השאלה היחידה: האם הסכום <strong>תלוי בשנות השירות</strong>?
         </P>
         <Fork
           label="אובדן כושר עבודה: הסכום תלוי בוותק? כן: צוברים לאורך השירות, לפי ההסתברות לתשלום ומשך התשלום הצפוי. לא: מכירים בכל העלות החזויה ביום האירוע"
@@ -156,7 +156,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             "מה הצבירה לשנה? מענק ÷ שנות הזכאות. ואם המענק השתנה — לפני ואחרי.",
             "האם יש אירוע באמצע השנה? הוא חותך את השנה: חודשים בתנאים הישנים, חודשים בחדשים.",
             "האם השינוי חל גם על העבר? אז יש שירות עבר — שתי היתרות ביום השינוי, בשיעור של אותו יום.",
-            "לאן כל שורה? הכול לרווח והפסד (סעיף 156). בביאור: עלות שירות, ריבית, מדידה מחדש.",
+            <>לאן כל שורה? <strong>הכול לרווח והפסד</strong> (סעיף 156). בביאור: עלות שירות, ריבית, מדידה מחדש.</>,
           ]}
           build={[
             { title: "① הפתיחה", lines: ["צבירה × שנים שעברו ÷ (1+i של סוף השנה הקודמת)^(שנים עד התשלום)."] },
@@ -187,7 +187,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>
-          <T19 he="הטבת פיטורין" par="159" /> משולמת בתמורה לסיום ההעסקה, מאחת משתי סיבות: החברה החליטה לפטר עובד לפני מועד הפרישה הרגיל, או שהעובד הסכים להצעה של הטבות בתמורה לעזיבה.
+          <T19 he="הטבת פיטורין" par="159" /> משולמת <strong>בתמורה לסיום ההעסקה</strong>, מאחת משתי סיבות: החברה החליטה לפטר עובד לפני מועד הפרישה הרגיל, או שהעובד הסכים להצעה של הטבות בתמורה לעזיבה.
         </P>
         <TwoPanel
           label="שני מקורות למחויבות: הטבה לאחר סיום העסקה נצברת לאורך שנות העבודה; הטבת פיטורין נולדת ביום ההחלטה"
@@ -197,9 +197,9 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
           ]}
         />
         <P>
-          <strong>מה זה יכול להיות (סעיף 161):</strong> בדרך כלל תשלום חד־פעמי. אבל גם שיפור של הטבות לאחר סיום העסקה, או משכורת עד סוף תקופת ההודעה המוקדמת — כשהעובד כבר לא עובד בה.
+          <strong>מה זה יכול להיות (סעיף 161):</strong> בדרך כלל תשלום חד־פעמי. אבל גם שיפור של הטבות לאחר סיום העסקה, או משכורת עד סוף תקופת ההודעה המוקדמת — <strong>כשהעובד כבר לא עובד בה</strong>.
         </P>
-        <Remember>פיצויים לפי חוק, או תשלום בהתפטרות, נצברים בדרך כלל עם השירות — הם הטבה לאחר סיום העסקה (סעיף 160). אם בהתפטרות מקבלים פחות מבפיטורין, רק ההפרש הוא הטבת פיטורין.</Remember>
+        <Remember>פיצויים לפי חוק, או תשלום בהתפטרות, נצברים בדרך כלל עם השירות — הם הטבה לאחר סיום העסקה (סעיף 160). אם בהתפטרות מקבלים פחות מבפיטורין, <strong>רק ההפרש</strong> הוא הטבת פיטורין.</Remember>
       </>
     ),
     check: quiz("emp-other-term", [
@@ -211,7 +211,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
     lead: "שלוש שאלות, לפי הסדר. כל אחת יכולה להכריע.",
     body: (
       <>
-        <P>הניסוח בשאלה לא מספיק — גם ״פיצויים״ וגם ״מענק סגירה״ יכולים להיות כל דבר. בודקים מה יוצר את המחויבות.</P>
+        <P>הניסוח בשאלה לא מספיק — גם ״פיצויים״ וגם ״מענק סגירה״ יכולים להיות כל דבר. בודקים <strong>מה יוצר את המחויבות</strong>.</P>
         <TermTest />
         <P>נסו כמה מקרים: פיצויים לפי חוק; מענק למי שנשאר עד הסגירה; מענק למי שמסכים לפרוש מרצון.</P>
       </>
@@ -226,14 +226,14 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>
-          <strong>סעיף 165.</strong> הכרה בהתחייבות ובהוצאה במוקדם מבין:
+          סעיף 165. הכרה בהתחייבות ובהוצאה <strong>במוקדם מבין</strong>:
         </P>
         <ul className="space-y-1.5 rounded-xl bg-surface-2/50 p-3 text-[15px] ring-1 ring-line">
           <li>
-            <strong>א.</strong> המועד שבו החברה כבר לא יכולה לבטל את ההצעה.
+            א. המועד שבו החברה <strong>כבר לא יכולה לבטל</strong> את ההצעה.
           </li>
           <li>
-            <strong>ב.</strong> המועד שבו היא מכירה בעלויות של ארגון מחדש לפי <span dir="ltr">IAS 37</span> שכולל את הפיטורין. (שם: מחויבות משתמעת — תוכנית פורמלית מפורטת וציפייה תקפה אצל המושפעים.)
+            ב. המועד שבו היא מכירה בעלויות של <T19 he="ארגון מחדש" /> לפי <span dir="ltr">IAS 37</span> שכולל את הפיטורין. (שם: מחויבות משתמעת — תוכנית פורמלית מפורטת וציפייה תקפה אצל המושפעים.)
           </li>
         </ul>
         <P>
@@ -243,7 +243,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
           label="מתי החברה כבר לא יכולה לבטל: כשהעובד מקבל הצעה — המוקדם מבין הקבלה למגבלה על הביטול; כשהחברה מפטרת — ההודעה לעובדים על תוכנית שעומדת בשלושה תנאים"
           panels={[
             { title: "העובד מקבל הצעה (סעיף 166)", steps: ["העובד קיבל את ההצעה", "או קודם: מגבלה אפקטיבית על ביטול (חוק, הסכם)"], verdict: "המוקדם מבין השניים", tone: 1 },
-            { title: "החברה מפטרת (סעיף 167)", steps: ["הודעה לעובדים המושפעים", "והתוכנית: יציבה, מזהה מספרים ותפקידים, ומפרטת את ההטבות"], verdict: "יום ההודעה, אם שלושת התנאים מתקיימים", tone: 4 },
+            { title: "החברה מפטרת (סעיף 167)", steps: [<strong key="n">הודעה לעובדים המושפעים</strong>, "והתוכנית: יציבה, מזהה מספרים ותפקידים, ומפרטת את ההטבות"], verdict: "יום ההודעה, אם שלושת התנאים מתקיימים", tone: 4 },
           ]}
         />
         <TermDates />
@@ -259,7 +259,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>
-          <strong>סעיף 169.</strong> מודדים את הטבת הפיטורין בהכרה לראשונה, ואת השינויים אחריה, לפי מהות ההטבה:
+          סעיף 169. מודדים את הטבת הפיטורין בהכרה לראשונה, ואת השינויים אחריה, <strong>לפי מהות ההטבה</strong>:
         </P>
         <Fork
           label="מדידת הטבת פיטורין: הרחבה של הטבה לאחר סיום העסקה — לפי הכללים שלה. אחרת: תסולק תוך 12 חודשים מסוף השנה — כהטבה לזמן קצר, בלי היוון. לא תסולק — כהטבה אחרת לזמן ארוך, עם היוון"
@@ -267,7 +267,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
           branches={[
             { when: "הרחבה של הטבה לאחר סיום העסקה", then: "לפי הכללים של הטבות לאחר סיום העסקה", to: "pl" },
             { when: "תסולק כולה תוך 12 חודשים מסוף השנה", then: "כהטבה לזמן קצר: הסכום המלא, בלי היוון", to: "pl" },
-            { when: "לא תסולק כולה תוך 12 חודשים", then: "כהטבה אחרת לזמן ארוך: מהוונים, והשינויים לרווח והפסד", to: "pl" },
+            { when: <><Diff>לא</Diff> תסולק כולה תוך 12 חודשים</>, then: "כהטבה אחרת לזמן ארוך: מהוונים, והשינויים לרווח והפסד", to: "pl" },
           ]}
         />
         <Rule>בכל המסלולים: בלי שיוך לשנות שירות (סעיף 170). הסכום הוא מה שההחלטה נותנת, בלי קשר למי צפוי לעזוב מתי.</Rule>
@@ -285,10 +285,10 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
         <SolveTemplate
           seek={["ההתחייבות (וההוצאה) בגין פיטורין לתאריך המאזן: האם להכיר, ובאיזה סכום."]}
           check={[
-            "האם זו הטבת פיטורין? נולדה מהחלטה לסיים או מהסכמה להצעה (סעיף 159). משולמת בכל סיבת עזיבה — לאחר סיום (164). מותנית בהמשך עבודה — שכר (162).",
-            "ממתי? המוקדם מבין: אי אפשר עוד לבטל (166 להצעה, 167 להחלטה עם שלושת התנאים), והפרשה לארגון מחדש לפי IAS 37.",
+            <>האם זו הטבת פיטורין? נולדה מהחלטה לסיים או מהסכמה להצעה (סעיף 159). משולמת בכל סיבת עזיבה — לאחר סיום (164). <strong>מותנית בהמשך עבודה</strong> — שכר (162).</>,
+            <>ממתי? <strong>המוקדם מבין</strong>: אי אפשר עוד לבטל (166 להצעה, 167 להחלטה עם שלושת התנאים), והפרשה לארגון מחדש לפי IAS 37.</>,
             "מה מגיע לכל עובד בכל מקרה? רק זה הטבת הפיטורין. התוספת למי שנשאר — שכר בתקופת העבודה.",
-            "בהצעה לפרישה מרצון: רק מי שכבר קיבל, כל עוד אפשר לבטל.",
+            <>בהצעה לפרישה מרצון: <strong>רק מי שכבר קיבל</strong>, כל עוד אפשר לבטל.</>,
             "מתי ישולם? תוך 12 חודשים מסוף השנה — בלי היוון. מאוחר יותר — מהוונים. הרחבה של הטבה לאחר סיום — לפי הכללים שלה.",
           ]}
           build={[
@@ -323,7 +323,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             עובדת התחילה ב-1.1.{AWARD.from}. בתום {AWARD.years} שנים תקבל מענק יובל של <Money v={AWARD.oldTotal} /> (<Money v={AWARD.oldTotal / AWARD.years} /> לשנה).
           </p>
           <p>
-            ב-1.{AWARD.month + 1}.2023 המענק עולה ל-<Money v={AWARD.newTotal} /> (<Money v={AWARD.newTotal / AWARD.years} /> לשנה), גם על העבר. הריבית: {pct(AWARD.rateStart)} ב-31.12.2022, {pct(AWARD.rateAmend)} מ-1.{AWARD.month + 1}.2023 ועד סוף השנה.
+            ב-1.{AWARD.month + 1}.2023 המענק עולה ל-<Money v={AWARD.newTotal} /> (<Money v={AWARD.newTotal / AWARD.years} /> לשנה), <strong>גם על העבר</strong>. הריבית: {pct(AWARD.rateStart)} ב-31.12.2022, {pct(AWARD.rateAmend)} מ-1.{AWARD.month + 1}.2023 ועד סוף השנה.
           </p>
         </Story>
         <SplitBar
@@ -383,20 +383,20 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
           <TaskSolution
             task={
               <>
-                ב-31.12 הוחלט סופית לסגור את המרכז בעוד שנה. מי שעוזב לפני הסגירה — <Money v={CLOSING.leaveEarly} />; מי שנשאר עד הסגירה — <Money v={CLOSING.stayToEnd} />. {CLOSING.staff} עובדים; צפוי ש-45
+                ב-31.12 <Diff>הוחלט סופית</Diff> לסגור את המרכז <Diff>בעוד שנה</Diff>. מי שעוזב לפני הסגירה — <Money v={CLOSING.leaveEarly} />; מי שנשאר עד הסגירה — <Money v={CLOSING.stayToEnd} />. {CLOSING.staff} עובדים; צפוי ש-45
                 יעזבו מוקדם ו-15 יישארו. מה ההוצאה עכשיו, והפקודה?
               </>
             }
             hints={[
               "מה מקבל כל עובד בכל מקרה?",
-              ltrFormulas("פיטורין = מה שההחלטה נותנת לכולם; התוספת — שכר על שירות."),
+              <>{"⁦"}פיטורין {"‎=‎"} <strong>מה שההחלטה נותנת לכולם</strong>{"⁩"}; התוספת — שכר על שירות.</>,
               <>
                 <L><Money v={CLOSING.leaveEarly} plain /> × {CLOSING.staff} = <Money v={TERM} /></L>, בלי היוון.
               </>,
               <span key="j" className="block space-y-2">
                 <JE entry={{ id: "1", text: "הטבת פיטורין", lines: [{ account: "הוצאות שכר", dr: TERM }, { account: "התחייבות בגין פיטורין", cr: TERM }] }} />
                 <span className="block">
-                  התוספת של <Money v={CLOSING_EXTRA} /> תוכר בשנה הבאה, כשהעובדים עובדים בשבילה. פיצול אחר של עוזבים ונשארים — לא משנה את הסכום. ואילו התשלום היה בעוד {TERM_LATE.years} שנים ב-{pct(TERM_LATE.rate)}:{" "}
+                  התוספת של <Money v={CLOSING_EXTRA} /> <strong>תוכר בשנה הבאה</strong>, כשהעובדים עובדים בשבילה. פיצול אחר של עוזבים ונשארים — לא משנה את הסכום. ואילו התשלום היה בעוד {TERM_LATE.years} שנים ב-{pct(TERM_LATE.rate)}:{" "}
                   <Money v={TERM} plain /> ÷ <L>{1 + TERM_LATE.rate}^{TERM_LATE.years}</L> = <M v={TERM_DISCOUNTED} />.
                 </span>
               </span>,
@@ -418,7 +418,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
       <>
         <ExplainTask
           task="הסבירו לחבר למה מענק יובל מוצג בלי OCI."
-          model="מענק יובל משולם בזמן העבודה, ואין בו את אי־הוודאות הגדולה של מענק פרישה רחוק. לכן התקן מפשט: את כל השינויים, גם שינויי הערכות, רושמים מיד ברווח והפסד."
+          model={<>מענק יובל משולם בזמן העבודה, ואין בו את אי־הוודאות הגדולה של מענק פרישה רחוק. לכן התקן מפשט: את כל השינויים, גם שינויי הערכות, רושמים <strong>מיד ברווח והפסד</strong>.</>}
         />
         <Fork
           label="הטבה לעובד: מאיפה היא נולדה ומתי משולמת? מהחלטה לסיים: פיטורין, הכול במועד ההכרה. בזמן העבודה, מאוחר: אחרת לזמן ארוך, הכול לרווח והפסד. אחרי סיום העסקה: הטבה מוגדרת, P.N. ל-OCI"
@@ -442,7 +442,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
   },
 
   // ---------------------------------------------------------------------------
-  // Lesson 12: two exam-level questions.
+  // Lesson 8: two exam-level questions.
   "emp-exam-hook": {
     lead: "במבחן אין כותרת שאומרת באיזה שיעור אנחנו. מתחילים נכון כשיודעים מה לשאול לפני שמחשבים.",
     body: (
@@ -504,8 +504,8 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             { q: "ריבית:", yes: "על הפתיחה לשנה שלמה. בשינוי באמצע שנה: חותכים." },
             { q: "שירות שוטף:", yes: "עוד שנה באותה שיטה. בשנה חתוכה, כל חלק מהוון מסופו." },
             { q: "שירות עבר:", yes: "אחרי פחות לפני, ביום התיקון." },
-            { q: "סגירה:", yes: "מחדש, בנתונים ובריבית של סוף השנה." },
-            { q: "P.N.:", yes: "סגירה פחות כל השאר. לעולם לא מחשבים אותו ישירות." },
+            { q: "סגירה:", yes: <>מחדש, בנתונים ובריבית <strong>של סוף השנה</strong>.</> },
+            { q: "P.N.:", yes: <>סגירה פחות כל השאר. <strong>לעולם לא</strong> מחשבים אותו ישירות.</> },
           ]}
         />
         <Remember>כלל זהב: מה שנתון בשאלה, לא מחשבים. מה שלא נתון, מחלצים.</Remember>
@@ -537,19 +537,19 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             rows={EXAM_A.assembly.groups.map((g) => [`1.1.${g.from}`, g.heads, g.years])}
           />
           <p>
-            ב-1.7.{y2} הוחלט על מענק נוסף של <Money v={EXAM_A.assembly.amendment.grant} /> לכל מי שיעבוד {EXAM_A.assembly.amendment.minYears} שנים לפחות, שנצבר על {EXAM_A.assembly.amendment.minYears} שנים. שיעור
-            ההיוון {pct(EXAM_A.assembly.rate)}, ובדצמבר {y2} ירד ל-{pct(EXAM_A.assembly.endRate)}.
+            ב-1.7.{y2} הוחלט על מענק נוסף של <Money v={EXAM_A.assembly.amendment.grant} /> <Diff>לכל מי שיעבוד {EXAM_A.assembly.amendment.minYears} שנים לפחות</Diff>, שנצבר על {EXAM_A.assembly.amendment.minYears} שנים. שיעור
+            ההיוון {pct(EXAM_A.assembly.rate)}, <Diff>ובדצמבר {y2} ירד</Diff> ל-{pct(EXAM_A.assembly.endRate)}.
           </p>
           <p>
-            <strong>מחלקת השטח.</strong> מענק של <Money v={EXAM_A.field.grant} /> למי שעבד יותר מ-{EXAM_A.field.serviceYears} שנים, או שסיים את העסקתו אחרי גיל {EXAM_A.field.age}; השיוך לפי הסיבה שבגללה העובד
-            יהיה זכאי.
+            <strong>מחלקת השטח.</strong> מענק של <Money v={EXAM_A.field.grant} /> למי שעבד יותר מ-{EXAM_A.field.serviceYears} שנים, או שסיים את העסקתו אחרי גיל {EXAM_A.field.age}; <Diff>השיוך לפי הסיבה שבגללה העובד
+            יהיה זכאי</Diff>.
           </p>
           <DataTable
             head={["קבוצה", "עובדים", "כניסה", "גיל בכניסה", "שנות עבודה צפויות"]}
             rows={EXAM_A.field.groups.map((g) => [g.id === "older" ? "ותיקים" : g.id === "young" ? "צעירים" : "ארוכי טווח", g.heads, `1.1.${g.from}`, g.ageAtStart, g.years])}
           />
           <p>
-            לקראת סוף {y2} עזבו {EXAM_A.field.leavers.heads} עובדים מקבוצת ארוכי הטווח, והשיעור ירד מ-{pct(EXAM_A.field.rate)} ל-{pct(EXAM_A.field.endRate)}.
+            לקראת סוף {y2} <Diff>עזבו</Diff> {EXAM_A.field.leavers.heads} עובדים מקבוצת ארוכי הטווח, והשיעור ירד מ-{pct(EXAM_A.field.rate)} ל-{pct(EXAM_A.field.endRate)}.
           </p>
         </Story>
         <Timeline
@@ -588,7 +588,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             title: "סריקה",
             body: (
               <p>
-                מענק בסיום ההעסקה בגין שירות — הטבה לאחר סיום העסקה. הנוסחה קופצת בשנים המאוחרות — קו ישר (סעיף 73) — והתקרה מושגת אחרי {asm.groups[0].grants[0].window} שנים: <Money v={assemblyBenefit(asm.groups[0].grants[0].window)} />.
+                מענק בסיום ההעסקה בגין שירות — הטבה לאחר סיום העסקה. הנוסחה <strong>קופצת בשנים המאוחרות</strong> — קו ישר (סעיף 73) — והתקרה מושגת אחרי {asm.groups[0].grants[0].window} שנים: <Money v={assemblyBenefit(asm.groups[0].grants[0].window)} />.
               </p>
             ),
           },
@@ -623,7 +623,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             title: `${y2}: התיקון`,
             body: (
               <p>
-                המענק הנוסף (<L>{EXAM_A.assembly.amendment.grant.toLocaleString("en-US")} ÷ {EXAM_A.assembly.amendment.minYears} = <Money v={asm.addedPerYear} /></L> לשנה) — רק לקבוצות {asm.addedTo.join(" ו-")}. שירות עבר ב-1.7:{" "}
+                המענק הנוסף (<L>{EXAM_A.assembly.amendment.grant.toLocaleString("en-US")} ÷ {EXAM_A.assembly.amendment.minYears} = <Money v={asm.addedPerYear} /></L> לשנה) — <strong>רק לקבוצות</strong> {asm.addedTo.join(" ו-")}. שירות עבר ב-1.7:{" "}
                 <L>
                   <M v={asm.year2.after} /> − <M v={asm.year2.before} /> = <strong><M v={asm.year2.pastService} /></strong>
                 </L>
@@ -658,8 +658,8 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
         <TaskSolution
           task={`בנו את טבלת הקבוצות, ואת המעגלים של ${y1} ו-${y2}.`}
           hints={[
-            "לכל קבוצה: מה יקרה קודם — גיל 55 או 12 שנות עבודה? ואם אף אחד — מה אז?",
-            "השיוך לפי סיבת הזכאות; ההיוון — עד יום הסיום של הקבוצה.",
+            <>לכל קבוצה: <strong>מה יקרה קודם</strong> — גיל 55 או 12 שנות עבודה? ואם אף אחד — מה אז?</>,
+            <>השיוך לפי סיבת הזכאות; ההיוון — <strong>עד יום הסיום</strong> של הקבוצה.</>,
             <DataTable key="t"
               head={["קבוצה", "עובדים", "זכאות אחרי", "לשנה", `שירות ב-1.1.${y1}`, "n"]}
               rows={EXAM_A.field.groups.map((g, i) => {
@@ -788,7 +788,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
                   מהקרן: <L>{EXAM_B.note.paidFromAssetsLast} ÷ {EXAM_B.note.paidLast} = {pct(B.fromAssets)}</L>.
                 </li>
                 <li>
-                  הפקדה: <L>{EXAM_B.note.contributionLast} ÷ {B.payrollLast.toLocaleString("en-US")} = {pct(B.contributionRate)}</L> (כל מי שעבד ב-30.6, כולל מי שפרש בדצמבר).
+                  הפקדה: <L>{EXAM_B.note.contributionLast} ÷ {B.payrollLast.toLocaleString("en-US")} = {pct(B.contributionRate)}</L> (כל מי שעבד ב-30.6, <strong>כולל מי שפרש בדצמבר</strong>).
                 </li>
                 <li>
                   תוספת לדרג {EXAM_B.note.amendedLast}׳: <L>{EXAM_B.note.pastServiceLast} ÷ <K v={B.beforeLast} /> = {pct(B.addedLast)}</L>; דרג {EXAM_B.amendment.grade}׳ יקבל {pct(B.addedNow)}.
@@ -849,7 +849,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
                 </p>
                 <NetBars obligation={B.obligation.closing} assets={B.assets.closing} title={`31.12.${EXAM_B.year} (אלפי ₪)`} />
                 <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-[14.5px]">
-                  מי שעיגל את השיעור ל-{pct(BR.rate)} יקבל ריבית <K v={BR.obligation.interest} />, סגירה <K v={BR.obligation.closing} />, P.N. <K v={BR.obligation.pn} /> ונטו <K v={BR.net} />. ההבדל הוא העיגול בלבד — ולכן לפעמים יש שתי
+                  מי שעיגל את השיעור ל-{pct(BR.rate)} יקבל ריבית <K v={BR.obligation.interest} />, סגירה <K v={BR.obligation.closing} />, P.N. <K v={BR.obligation.pn} /> ונטו <K v={BR.net} />. ההבדל הוא <strong>העיגול בלבד</strong> — ולכן לפעמים יש שתי
                   גרסאות לפתרון. בדקו מה המרצה מבקש.
                 </p>
               </div>
@@ -925,7 +925,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
               ["עלות שירות עבר", "הריבית ביום התיקון", "n מיום התיקון עד התשלום", "אחרי פחות לפני, לרווח והפסד מיד (סעיפים 102–103)"],
               ["תשלומים", "—", "לפי המציאות", "סילוק: התחייבות פחות תשלום, לרווח והפסד (סעיפים 109–111)"],
               ["P.N.", "—", "—", "שורה מאזנת; ב-OCI ולא מסווגת מחדש (סעיפים 57, 122)"],
-              ["יתרת סגירה", "ריבית סוף השנה", "n מסוף השנה", "נתוני סוף השנה"],
+              ["יתרת סגירה", <span key="c">ריבית <Diff>סוף השנה</Diff></span>, "n מסוף השנה", "נתוני סוף השנה"],
             ]}
           />
         </div>
@@ -952,7 +952,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
               ["P.N.", <span key="7"><DestTag to="oci" />, ללא העברה לרווח והפסד</span>, <DestTag key="8" to="pl" />, <span key="9">תוך 12 חודשים: אין; אחרת: <DestTag to="pl" /> (סעיף 169)</span>],
               ["סילוק", <DestTag key="10" to="pl" />, "—", "—"],
               ["יתרות", <span key="11"><DestTag to="bs" /> — נטו</span>, <DestTag key="12" to="bs" />, <DestTag key="13" to="bs" />],
-              ["מועד ההכרה", "לאורך השירות", "לאורך השירות", "מלוא הסכום במוקדם מבין הצעה שאינה ניתנת לביטול והכרה בהפרשה לארגון מחדש (סעיף 165)"],
+              ["מועד ההכרה", "לאורך השירות", "לאורך השירות", <span key="t">מלוא הסכום <strong>במוקדם</strong> מבין הצעה שאינה ניתנת לביטול והכרה בהפרשה לארגון מחדש (סעיף 165)</span>],
             ]}
           />
         </div>
@@ -973,15 +973,15 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
           <ol className="list-inside list-decimal space-y-1 text-[15px]">
             <li>הריבית הממשלתית היא פיתיון; משתמשים בתשואת אג״ח קונצרניות איכותיות.</li>
             <li>מחלקים לשנים לפי נוסחת התוכנית — אלא אם השנים המאוחרות גבוהות מהותית: אז קו ישר (סעיפים 71, 73).</li>
-            <li>תקרה מקצרת את חלון הצבירה, ואינה מקטינה את הסכום לשנה.</li>
+            <li>תקרה <strong>מקצרת את חלון הצבירה</strong>, ואינה מקטינה את הסכום לשנה.</li>
             <li>צבירה מתחילה רק משעה שהשירות מקנה זכאות.</li>
-            <li>מהוונים לפי השנים עד התשלום, לא לפי שנות הצבירה.</li>
+            <li>מהוונים לפי <strong>השנים עד התשלום</strong>, לא לפי שנות הצבירה.</li>
             <li>ריבית ועלות שירות שוטף — לפי ריבית תחילת התקופה; הסגירה — לפי ריבית סוף השנה.</li>
             <li>בשינוי באמצע שנה מפצלים את השנה: הריבית על היתרה אחרי השינוי, לא על הפתיחה.</li>
             <li>P.N. היא שורה מאזנת; לעולם לא ממציאים אותה ישירות.</li>
-            <li>פרישה לפי התנאים המקוריים, גם אם מוקדמת מהצפוי, אינה סילוק: היא P.N. ב-OCI.</li>
+            <li>פרישה לפי התנאים המקוריים, גם אם מוקדמת מהצפוי, <strong>אינה סילוק</strong>: היא P.N. ב-OCI.</li>
             <li>סילוק הוא רק עסקה שמבטלת את ההתחייבות החוקית או המשתמעת לגבי חלק מההטבות או כולן, מעבר לתשלום שנקבע בתנאי התוכנית (סעיפים 109–111).</li>
-            <li>הטבה אחרת לזמן ארוך: הכול לרווח והפסד, בלי OCI.</li>
+            <li>הטבה אחרת לזמן ארוך: הכול לרווח והפסד, <strong>בלי OCI</strong>.</li>
             <li>פיטורין: ההכרה במוקדם משני מועדים; תוספת המותנית בשירות נוסף היא הטבה בגין שירות, לא פיטורין.</li>
             <li>מה שנתון בשאלה לא מחשבים מחדש. שחזור ריבית ואחוזים מביאור — בלי עיגול ביניים, ורק כשאין תשלומים או שינויים באמצע השנה.</li>
           </ol>

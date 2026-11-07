@@ -8,6 +8,7 @@ import { BK_AMEND, BK_CASES, BK_DC, BK_GIFT, BK_NOTE, BK_OLT, BK_SHORT, BK_THREE
 import { FINAL_EXAMS } from "@/lib/learn/ias19-finals";
 import { BookletCheck } from "./ias19-booklet-client";
 import { Ltr } from "./ias19-formula";
+import { rich } from "./ias19-rich";
 import { FullSteps, RollForward } from "./ias19-ui";
 
 /**
@@ -51,7 +52,7 @@ function Note({ n }: { n: BkNote }) {
   return (
     <div className="space-y-2">
       <p className="text-[15px] font-bold">{n.title}</p>
-      {n.text && <p className="text-[14.5px] leading-relaxed text-fg/85">{n.text}</p>}
+      {n.text && <p className="text-[14.5px] leading-relaxed text-fg/85">{rich(n.text)}</p>}
       <div className="overflow-x-auto rounded-xl border border-line">
         <table className="w-full min-w-[32rem] text-[14px]">
           <thead>
@@ -100,7 +101,7 @@ function Step({ s }: { s: BkStep }) {
   return (
     <div className="space-y-3">
       {s.text?.map((t) => (
-        <P key={t}>{t}</P>
+        <P key={t}>{rich(t)}</P>
       ))}
       {s.tables?.map((t, i) => (
         <DataTable key={i} caption={t.title} head={t.head} rows={t.rows.map((row) => row.map(cell))} foot={t.foot?.map(cell)} />
@@ -137,7 +138,7 @@ function booklet(q: BkQuestion): ScreenContent {
         <div className="rounded-xl border border-line bg-surface px-4 py-3">
           <ul className="list-disc space-y-1.5 ps-5 text-[15px] leading-relaxed">
             {q.facts.map((f) => (
-              <li key={f}>{f}</li>
+              <li key={f}>{rich(f)}</li>
             ))}
           </ul>
         </div>
@@ -148,7 +149,7 @@ function booklet(q: BkQuestion): ScreenContent {
           <strong>נדרש:</strong>
           <ol className="mt-1 list-[hebrew] space-y-1 ps-6">
             {q.required.map((r) => (
-              <li key={r}>{r}</li>
+              <li key={r}>{rich(r)}</li>
             ))}
           </ol>
         </div>
@@ -159,7 +160,7 @@ function booklet(q: BkQuestion): ScreenContent {
           </p>
           <FullSteps label={q.title} steps={q.steps.map((s) => ({ title: s.title, body: <Step s={s} /> }))} />
         </SolutionBox>
-        <Remember>{q.point}</Remember>
+        <Remember>{rich(q.point)}</Remember>
       </>
     ),
   };

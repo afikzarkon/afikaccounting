@@ -292,7 +292,7 @@ export const IAS19_SHORT_SCREENS: Record<string, ScreenContent> = {
       <>
         <StepList />
         <P>
-          לכל שלב יש מסך משלו. בכל טבלה תמצאו מתג בין הנחה א׳ (לא מבשילה) להנחה ב׳ (מבשילה). המתג זוכר את הבחירה בין המסכים, כך שאפשר לעבור את כל ששת השלבים בהנחה אחת, ואז לחזור ולעבור אותם בשנייה.
+          לכל שלב יש מסך משלו. בכל טבלה תמצאו מתג בין <strong>הנחה א׳</strong> (לא מבשילה) ל<strong>הנחה ב׳</strong> (מבשילה). המתג זוכר את הבחירה בין המסכים, כך שאפשר לעבור את כל ששת השלבים בהנחה אחת, ואז לחזור ולעבור אותם בשנייה.
         </P>
         <Part title="התרגיל שנפתור">
           <Facts lines={ALON_FACTS} />
@@ -315,7 +315,7 @@ export const IAS19_SHORT_SCREENS: Record<string, ScreenContent> = {
         </Part>
         <Part title="שלב 2: מה נכנס להפרשה">
           <P>
-            הפרשה מודדת רק כסף שהחברה תשלם בגלל היתרה, מעבר למה שהייתה משלמת בכל מקרה. הניצול לפי LIFO: קודם {ALON.entitlement} ימי הזכאות של השנה, ורק אחריהם היתרה מהשנה הקודמת. לכן{" "}
+            הפרשה מודדת רק כסף שהחברה תשלם בגלל היתרה, <strong>מעבר למה שהייתה משלמת בכל מקרה</strong>. הניצול לפי LIFO: קודם {ALON.entitlement} ימי הזכאות של השנה, ורק אחריהם היתרה מהשנה הקודמת. לכן{" "}
             {ALON.entitlement} הימים הראשונים הם שכר רגיל, ורק מהיום ה-{ALON.entitlement + 1} נוצרת עלות נוספת. הזיזו את הסרגל:
           </P>
           <DayStrip entitlement={ALON.entitlement} balance={ALON.carried[0]} dayCost={ALON.dayCost} initial={7.5} />
@@ -323,9 +323,9 @@ export const IAS19_SHORT_SCREENS: Record<string, ScreenContent> = {
         </Part>
         <Part title="למה מחלקים לקבוצות ולא מכפילים ממוצע">
           <P>
-            ההפרשה לא עולה בקו ישר עם הניצול: מי שלא עובר את {ALON.entitlement} הימים תורם 0. שני עובדים שמנצלים {ALON.entitlement - 2} ו-{ALON.entitlement + 2} ימים מנצלים בממוצע{" "}
+            ההפרשה לא עולה בקו ישר עם הניצול: מי שלא עובר את {ALON.entitlement} הימים <strong>תורם 0</strong>. שני עובדים שמנצלים {ALON.entitlement - 2} ו-{ALON.entitlement + 2} ימים מנצלים בממוצע{" "}
             {ALON.entitlement} ימים בדיוק. לפי הממוצע יוצא <L>{`2 × MIN(${ALON.carried[0]}, ${ALON.entitlement} − ${ALON.entitlement}) = 0`}</L> ימי יתרה. לפי כל עובד לחוד יוצא{" "}
-            <L>{`0 + MIN(${ALON.carried[0]}, ${ALON.entitlement + 2} − ${ALON.entitlement}) = ${Math.min(ALON.carried[0], 2)}`}</L> ימים. הממוצע מחביא את העובד שכן מגיע ליתרה. לכן מחלקים את העובדים לקבוצות לפי הניצול הצפוי, וכל קבוצה מקבלת חישוב משלה.
+            <L>{`0 + MIN(${ALON.carried[0]}, ${ALON.entitlement + 2} − ${ALON.entitlement}) = ${Math.min(ALON.carried[0], 2)}`}</L> ימים. הממוצע מחביא את העובד שכן מגיע ליתרה. לכן מחלקים את העובדים <strong>לקבוצות</strong> לפי הניצול הצפוי, וכל קבוצה מקבלת חישוב משלה.
           </P>
         </Part>
         <Remember>נצברת? מבשילה? ואז: רק הימים שמעבר לזכאות של השנה נלקחים מהיתרה, ורק הם נכנסים להפרשה. מחלקים לקבוצות, לא עובדים עם ממוצע.</Remember>
@@ -339,7 +339,7 @@ export const IAS19_SHORT_SCREENS: Record<string, ScreenContent> = {
         <ol className="list-decimal space-y-1.5 ps-6 text-[15.5px] leading-relaxed">
           <li>מחלקים את העובדים לקבוצות לפי ניצול צפוי, ומפצלים עוזבים מנשארים.</li>
           <li>
-            לכל קבוצה: <L>{FORMULA.fromBalance}</L>. כלומר הימים שמעבר לזכאות השוטפת, ולא יותר מהיתרה.
+            לכל קבוצה: <L>{FORMULA.fromBalance}</L>. כלומר הימים שמעבר לזכאות השוטפת, <strong>ולא יותר מהיתרה</strong>.
           </li>
           <li>בהנחה ב׳ עוזב מקבל את כל היתרה, ולכן לעוזבים לוקחים את מלוא היתרה.</li>
           <li>מסכמים ימים (עובדים × ימים לעובד) ומכפילים בעלות היום.</li>
@@ -358,7 +358,7 @@ export const IAS19_SHORT_SCREENS: Record<string, ScreenContent> = {
             <>
               <OpeningTable c={ALON} r={B} />
               <Note mode="B">
-                {ALON.opening[0].staff + ALON.opening[1].staff} עוזבים צפויים ({ALON.opening[0].staff} בתחילת השנה ו-{ALON.opening[1].staff} בסופה) מקבלים {ALON.carried[0]} ימים כל אחד, גם אם לא ינצלו אותם:{" "}
+                {ALON.opening[0].staff + ALON.opening[1].staff} עוזבים צפויים ({ALON.opening[0].staff} בתחילת השנה ו-{ALON.opening[1].staff} <strong>בסופה</strong>) מקבלים {ALON.carried[0]} ימים כל אחד, <strong>גם אם לא ינצלו אותם</strong>:{" "}
                 <L>{`${ALON.opening[0].staff + ALON.opening[1].staff} × ${ALON.carried[0]} = ${(ALON.opening[0].staff + ALON.opening[1].staff) * ALON.carried[0]}`}</L> ימים. {ALON.opening[2].staff} הנשארים מהקבוצה הגדולה
                 ממשיכים לתרום 0, וקבוצת ה-{ALON.opening[3].staff} תורמת {n(A.openingDays)}.
               </Note>
@@ -381,7 +381,7 @@ export const IAS19_SHORT_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>
-          התשלומים הם כל ימי ההיעדרות ששולמו, כולל {ALON.entitlement} הימים השוטפים של כל עובד, ולא רק ימי היתרה. בהנחה ב׳ מוסיפים פדיון: עוזב מקבל את היתרה שנשארה לו אחרי הניצול.
+          התשלומים הם כל ימי ההיעדרות ששולמו, <strong>כולל {ALON.entitlement} הימים השוטפים</strong> של כל עובד, ולא רק ימי היתרה. בהנחה ב׳ מוסיפים <strong>פדיון</strong>: עוזב מקבל את היתרה שנשארה לו אחרי הניצול.
         </P>
         <ol className="list-decimal space-y-1.5 ps-6 text-[15.5px] leading-relaxed">
           <li>
@@ -422,8 +422,8 @@ export const IAS19_SHORT_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>
-          לכל עובד שנשאר יש יתרה חדשה: הימים שלא נוצלו מהזכאות של השנה, <L>{FORMULA.carryOut}</L> (אם חיובי). יתרה ישנה שלא נוצלה פוקעת, כי הימים נצברים לשנה אחת בלבד. אחר כך מניחים שבשנה הבאה אין עזיבות
-          והעובדים ינצלו את המקסימום, ולכן כל יום יתרה יעלה כסף.
+          לכל עובד שנשאר יש יתרה חדשה: הימים שלא נוצלו מהזכאות של השנה, <L>{FORMULA.carryOut}</L> (אם חיובי). יתרה ישנה שלא נוצלה <strong>פוקעת</strong>, כי הימים נצברים <strong>לשנה אחת בלבד</strong>. אחר כך מניחים שבשנה הבאה אין עזיבות
+          והעובדים <strong>ינצלו את המקסימום</strong>, ולכן כל יום יתרה יעלה כסף.
         </P>
         <ByMode a={<ClosingTable c={ALON} r={A} />} b={<ClosingTable c={ALON} r={B} />} />
         <Note mode="both">
@@ -438,7 +438,7 @@ export const IAS19_SHORT_SCREENS: Record<string, ScreenContent> = {
             {A.actual[2].lapsed} פקעו. את זה רואים בעמודה ״יתרה שפקעה או אבדה״ בטבלת התשלומים.
           </P>
           <P>
-            הטעות הנפוצה היא להעביר גם את היתרה הישנה לסגירה:{" "}
+            <strong>הטעות הנפוצה</strong> היא להעביר גם את היתרה הישנה לסגירה:{" "}
             <L>{`(${ALON.actual[3].staff} × (${work.carryOut(ALON.entitlement, ALON.actual[3].use).numbers.split(" = ")[1]} + ${ALON.carried[0]})) × ${ALON.dayCost} = ${fmt(ALON.actual[3].staff * (A.actual[3].ownLeft + ALON.carried[0]) * ALON.dayCost)}`}</L>{" "}
             במקום <Money v={A.closing$} />.
           </P>
@@ -490,8 +490,8 @@ export const IAS19_SHORT_SCREENS: Record<string, ScreenContent> = {
             ])}
           />
           <P>
-            ההנחה שבחרתם במתג מסומנת בטבלה. ההבדל כולו בעוזבים: בהנחה ב׳ הם מגדילים את הפתיחה ב-<Money v={solved("B").opening$ - solved("A").opening$} /> ואת התשלומים ב-
-            <Money v={solved("B").paid - solved("A").paid} />, והסגירה זהה.
+            ההנחה שבחרתם במתג מסומנת בטבלה. <strong>ההבדל כולו בעוזבים</strong>: בהנחה ב׳ הם מגדילים את הפתיחה ב-<Money v={solved("B").opening$ - solved("A").opening$} /> ואת התשלומים ב-
+            <Money v={solved("B").paid - solved("A").paid} />, <strong>והסגירה זהה</strong>.
           </P>
         </Part>
         <Remember>
