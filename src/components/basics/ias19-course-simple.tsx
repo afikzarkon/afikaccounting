@@ -100,7 +100,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
           </P>
         </Part>
         <Part title="ולמה לא מהוונים?">
-          <P>בשיעור 2 ראינו שסכום עתידי שווה היום פחות. אבל כשמדובר בחודש אחד, ההבדל זניח. המשכורת של אבי, בריבית {pct(AVI.rate)} לחודש אחד:</P>
+          <P>בשיעור 1 ראינו שסכום עתידי שווה היום פחות. אבל כשמדובר בחודש אחד, ההבדל זניח. המשכורת של אבי, בריבית {pct(AVI.rate)} לחודש אחד:</P>
           <L>{`${fmt(AVI.salary)} ÷ (${1 + AVI.rate})^(1/12) = ${fmt(Math.round(AVI_PV))} ₪`}</L>
           <P>
             הפרש של <Money v={Math.round(AVI.salary - AVI_PV)} /> על {fmt(AVI.salary)}. לכן בהטבה לזמן קצר רושמים את הסכום המלא, בלי היוון.

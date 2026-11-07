@@ -502,7 +502,7 @@ ${said(work.n(14, 4))}` },
         />
         <Work w={work.counted(31, 35)} />
         <P>
-          ואורך החלון, כשהזכאות מתחילה מגיל מסוים: <L>{FORMULA.window}</L>.
+          ואורך החלון, כשהזכאות מתחילה מגיל מסוים: <L>{FORMULA.window}</L>. לרוב זה גיל הזכאות המלאה, לא בהכרח גיל הפרישה: מענק שמגיע בגיל 55 אחרי 20 שנה נצבר מ-35 עד 55, גם אם משלמים אותו רק בפרישה בגיל 65.
         </P>
         <Remember>
           ובכל מקרה, ההיוון (④) הוא על השנים עד התשלום, לא על חלון הצבירה: <L>{FORMULA.nAge}</L>.
@@ -613,7 +613,7 @@ ${said(work.counted(31, 35))}` },
           label={`החוב: ${FRONT_ACCRUED} שנצברו, חלקי ${1 + FRONT.rate} בחזקת ${FRONT.n}`}
           lhs="החוב היום"
           terms={{
-            acc: { c: 2, sym: "מה שנצבר", value: <Money v={FRONT_ACCRUED} plain />, from: <>{FRONT.early.upTo} × <Money v={FRONT.early.perYear} plain /> + {FRONT.served - FRONT.early.upTo} × <Money v={FRONT.later} plain /></>, why: "השנים הראשונות גבוהות יותר, ולכן לפי הנוסחה. התקרה לא חותכת: בדיוק 18,000 בסוף." },
+            acc: { c: 2, sym: "מה שנצבר", value: <Money v={FRONT_ACCRUED} plain />, from: <>{FRONT.early.upTo} × <Money v={FRONT.early.perYear} plain /> + {FRONT.served - FRONT.early.upTo} × <Money v={FRONT.later} plain /></>, why: `השנים הראשונות גבוהות יותר, ולכן לפי הנוסחה. התקרה לא חותכת: בסוף ${FRONT.expected} השנים מגיעים בדיוק ל-${FRONT.cap.toLocaleString("en-US")}.` },
             n: { ...SYMBOLS.n, value: FRONT.n, from: <>התשלום בעוד {FRONT.n}</> },
             i: { ...SYMBOLS.i, value: pct(FRONT.rate), from: pct(FRONT.rate) },
           }}

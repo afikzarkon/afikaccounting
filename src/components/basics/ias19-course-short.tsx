@@ -323,9 +323,9 @@ export const IAS19_SHORT_SCREENS: Record<string, ScreenContent> = {
         </Part>
         <Part title="למה מחלקים לקבוצות ולא מכפילים ממוצע">
           <P>
-            ההפרשה לא עולה בקו ישר עם הניצול: מי שלא עובר את {ALON.entitlement} הימים תורם 0. שני עובדים שמנצלים {ALON.entitlement} ו-{ALON.entitlement + 3} ימים מנצלים בממוצע{" "}
-            {n(ALON.entitlement + 1.5)} ימים. לפי הממוצע יוצא <L>{`2 × MIN(${ALON.carried[0]}, ${n(1.5)}) = 3`}</L> ימי יתרה. לפי כל עובד לחוד יוצא{" "}
-            <L>{`0 + MIN(${ALON.carried[0]}, ${ALON.entitlement + 3} − ${ALON.entitlement}) = ${ALON.carried[0]}`}</L> ימים. לכן מחלקים את העובדים לקבוצות לפי הניצול הצפוי, וכל קבוצה מקבלת חישוב משלה.
+            ההפרשה לא עולה בקו ישר עם הניצול: מי שלא עובר את {ALON.entitlement} הימים תורם 0. שני עובדים שמנצלים {ALON.entitlement - 2} ו-{ALON.entitlement + 2} ימים מנצלים בממוצע{" "}
+            {ALON.entitlement} ימים בדיוק. לפי הממוצע יוצא <L>{`2 × MIN(${ALON.carried[0]}, ${ALON.entitlement} − ${ALON.entitlement}) = 0`}</L> ימי יתרה. לפי כל עובד לחוד יוצא{" "}
+            <L>{`0 + MIN(${ALON.carried[0]}, ${ALON.entitlement + 2} − ${ALON.entitlement}) = ${Math.min(ALON.carried[0], 2)}`}</L> ימים. הממוצע מחביא את העובד שכן מגיע ליתרה. לכן מחלקים את העובדים לקבוצות לפי הניצול הצפוי, וכל קבוצה מקבלת חישוב משלה.
           </P>
         </Part>
         <Remember>נצברת? מבשילה? ואז: רק הימים שמעבר לזכאות של השנה נלקחים מהיתרה, ורק הם נכנסים להפרשה. מחלקים לקבוצות, לא עובדים עם ממוצע.</Remember>

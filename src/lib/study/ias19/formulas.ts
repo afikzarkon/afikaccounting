@@ -64,7 +64,7 @@ export const FORMULA = {
   tiers: "שנים במדרגה הראשונה × הסכום שלה + שנים במדרגה השנייה × הסכום שלה = ההטבה",
   capWindow: "תקרה ÷ הטבה לשנה = חלון הצבירה",
   counted: "הגיל היום − הגיל שממנו נספר = שנות עבודה שנספרו",
-  window: "גיל הפרישה − הגיל שממנו נספר = חלון הצבירה",
+  window: "הגיל שבו עוד שנת שירות כבר לא מוסיפה הטבה − הגיל שממנו נספר = חלון הצבירה",
   nAge: "גיל התשלום − הגיל היום = n",
   accPv: "מה שנצבר ÷ (1 + i)^n = התחייבות",
   groupsTotal: "סכום היתרות של הקבוצות = יתרת המחלקה",
@@ -227,7 +227,7 @@ export const work = {
   capWindow: (cap: number, perYear: number): Worked => ({ formula: FORMULA.capWindow, numbers: `${amt(cap)} ÷ ${amt(perYear)} = ${num(cap / perYear)}` }),
   /** Years counted: none yet when today is before service starts to count. */
   counted: (age: number, from: number): Worked => ({ formula: FORMULA.counted, numbers: age >= from ? `${age} − ${from} = ${age - from}` : `${age} − ${from} = −${from - age}, כלומר 0` }),
-  window: (retire: number, from: number): Worked => ({ formula: FORMULA.window, numbers: `${retire} − ${from} = ${retire - from}` }),
+  window: (stops: number, from: number): Worked => ({ formula: FORMULA.window, numbers: `${stops} − ${from} = ${stops - from}` }),
   nAge: (payAge: number, age: number): Worked => ({ formula: FORMULA.nAge, numbers: `${payAge} − ${age} = ${payAge - age}` }),
   accPv: (acc: number, i: number, n: number): Worked => ({ formula: FORMULA.accPv, numbers: `${amt(acc)} ÷ ${factor(i)}^${num(n)} = ${money(pv(acc, i, n))}` }),
   groupsTotal: (parts: number[]): Worked => ({ formula: FORMULA.groupsTotal, numbers: sumLine(parts) }),

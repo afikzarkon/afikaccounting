@@ -1352,6 +1352,7 @@ export function tieredQuestion(id: string, title: string, q: TieredInput): BkQue
       `מחלקת ייצור: עד 5 שנות ותק, ${money(P.low)} ₪ לכל שנה. מעל 5 שנים, ${money(P.first)} ₪ לכל אחת מ-5 השנים הראשונות ו-${money(P.next)} ₪ לכל שנה נוספת, עד ${money(P.cap)} ₪ (טבלה 1).`,
       `ב-1.${m + 1}.${y2} הוחלט שמי שיעבוד בייצור מעל ${P.extraAfter} שנים יקבל, נוסף על כך, מענק חד פעמי של ${money(P.extra)} ₪.`,
       `מחלקת שיווק: מענק של ${money(M.grant)} ₪ למי שעבד ברציפות מעל ${M.years} שנה, או למי שסיים לעבוד אחרי גיל ${M.age} (טבלה 2).`,
+      ...M.groups.filter((g) => g.leave).map((g) => `(*) במהלך ${y2} עזבו באופן בלתי צפוי ${g.leave} מתוך ${g.heads} העובדים המסומנים, בלי לקבל מענק. לגבי השאר הצפי לא השתנה.`),
       `שיעור ההיוון: תשואת אג״ח קונצרניות איכותיות, ${pc(r)} ב-${y1}–${y2}. בדצמבר ${y2} הוא ירד ל-${pc(q.rateDec)}.`,
     ],
     tables: [
@@ -1504,9 +1505,12 @@ export function solveLump(q: LumpInput) {
   const y2 = { opening: y1.closing, past: after - before, interest: iB + iA, service: sB + sA, closing: ((q.newGrant * 3) / W) / (1 + rC) ** (T - 3), pn: 0 };
   y2.pn = y2.closing - y2.opening - y2.past - y2.interest - y2.service;
   const a1 = { deposit: q.deposit1, interest: q.deposit1 * rA, closing: q.fv1, pn: q.fv1 - q.deposit1 - q.deposit1 * rA };
-  const a2Interest = q.fv1 * rB + q.deposit2 * ((1 + rM) ** 0.5 - 1);
+  // Split at the amendment like the obligation: the opening at the opening rate to 30.6, then opening and the 1.7 deposit at the 30.6 rate.
+  const a2Before = q.fv1 * ((1 + rB) ** 0.5 - 1);
+  const a2After = (q.fv1 + q.deposit2) * ((1 + rM) ** 0.5 - 1);
+  const a2Interest = a2Before + a2After;
   const a2 = { opening: q.fv1, deposit: q.deposit2, interest: a2Interest, closing: q.fv2, pn: q.fv2 - q.fv1 - q.deposit2 - a2Interest };
-  return { T, y0, y1, before, after, iB, iA, sB, sA, y2, a1, a2 };
+  return { T, y0, y1, before, after, iB, iA, sB, sA, y2, a1, a2, a2Before, a2After };
 }
 
 export type SettleInput = { hired: number; salary: number; raise: number; share: number; rate: number; newRate: number; expected: [number, number]; pay: number };
@@ -1627,7 +1631,9 @@ export function casesQuestion(id: string, title: string, q: LumpSettleInput): Bk
             lines: [
               { label: `ריבית ${y + 1}`, calc: `${money(l.deposit1)} × ${pc(rA)}`, value: L.a1.interest, unit: "₪" },
               { label: `מדידה מחדש ${y + 1}`, calc: `${money(l.fv1)} − ${money(l.deposit1)} − ${d2(L.a1.interest)}`, value: L.a1.pn, unit: "₪" },
-              { label: `ריבית ${y + 2}`, calc: `${money(l.fv1)} × ${pc(rB)} + ${money(l.deposit2)} × (${b(rM)}^0.5 − 1)`, value: L.a2.interest, unit: "₪" },
+              { label: `ריבית עד 30.6.${y + 2}`, calc: `${money(l.fv1)} × (${b(rB)}^0.5 − 1)`, value: L.a2Before, unit: "₪" },
+              { label: `ריבית מ-1.7.${y + 2}`, calc: `(${money(l.fv1)} + ${money(l.deposit2)}) × (${b(rM)}^0.5 − 1)`, value: L.a2After, unit: "₪" },
+              { label: `ריבית ${y + 2}`, calc: `${d2(L.a2Before)} + ${d2(L.a2After)} — מפוצלת כמו ההתחייבות`, value: L.a2.interest, unit: "₪" },
               { label: `מדידה מחדש ${y + 2}`, calc: `${money(l.fv2)} − ${money(l.fv1)} − ${money(l.deposit2)} − ${d2(L.a2.interest)}`, value: L.a2.pn, unit: "₪" },
             ],
           },

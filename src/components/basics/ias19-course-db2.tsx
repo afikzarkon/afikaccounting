@@ -589,7 +589,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
             title="הקופה, 2024"
             rows={[
               { label: "יתרת פתיחה", value: PLAN.assets.opening, kind: "balance" },
-              { label: "הכנסות ריבית", value: PLAN_ASSETS.interest, how: `${pct(PLAN.rate)} על הפתיחה, ועל ההפקדה 9 חודשים` },
+              { label: "הכנסות ריבית", value: PLAN_ASSETS.interest, how: `${pct(PLAN.rate)} על הפתיחה, ועל ההפקדה ${12 - PLAN.assets.month} חודשים` },
               { label: "הפקדות", value: PLAN.assets.contribution },
               { label: "P.N., רווח", value: PLAN_ASSETS.pn, kind: "pn", how: "תשואה מעבר להכנסות הריבית" },
               { label: "שווי בסגירה", value: PLAN.assets.closing, kind: "balance" },
@@ -873,6 +873,14 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
             הטבות ששולמו {NOTE.paidLast.toLocaleString("en-US")} (מהן מהקופה {NOTE.paidFromAssetsLast.toLocaleString("en-US")}), הפקדה לקופה {NOTE.contributionLast.toLocaleString("en-US")}, ושירות עבר {NOTE.pastServiceLast} (תוספת לדרג א׳).
           </p>
           <p className="text-[14.5px]">כל התשלומים והתיקון בסוף השנה; ההפקדה ב-30.6.</p>
+          <p className="text-[14.5px]">
+            כל העובדים התחילו ב-1.1.{EXAM_B.startYear} וצפויים לפרוש ב-31.12.{EXAM_B.retireYear}. ההטבה בפרישה: משכורת חודשית אחרונה לכל שנת שירות. השכר עולה בתחילת כל שנה. ההפקדה לקופה היא אחוז קבוע מהמשכורת
+            החודשית של מי שעבד ב-30.6.
+          </p>
+          <DataTable
+            head={["דרג", `עובדים ב-30.6.${EXAM_B.year - 1}`, `משכורת ${EXAM_B.year - 1}`, "עלייה שנתית"]}
+            rows={EXAM_B.grades.map((g) => [g.id, g.headsLastMid, g.salaryLast, pct(g.raise)])}
+          />
           <TaskSolution
             task="חלצו: ריבית ההיוון, אחוז התשלומים מהקופה, שיעור ההפקדה, ושיעור התוספת לדרג א׳."
             hints={[
