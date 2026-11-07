@@ -27,7 +27,7 @@ import {
 import { fmt, lessonRef, lessonsRef, pct } from "@/lib/study/ias19/shared";
 import { FORMULA, said, tool, work } from "@/lib/study/ias19/formulas";
 import { Ltr, Work } from "./ias19-formula";
-import { DrillBox, RiskTest, SolveTemplate } from "./ias19-interactive";
+import { DrillBox, RiskTest, SolveTemplate } from "./lazy-widgets";
 import { Bridge, ExplainTask, FullSteps, MapBranch, RollForward, T19, TaskSolution } from "./ias19-ui";
 import { Diff, Fork, SplitBar, Timeline, TwoPanel } from "./ias19-visuals";
 import type { QuizItem } from "./inventory-interactive";

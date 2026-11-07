@@ -6,6 +6,7 @@ import { CoursePath, LegacyHashRedirect } from "@/components/study-mode/course";
 import { CourseHeader } from "@/components/study-mode/course-header";
 import { Container } from "@/components/ui/primitives";
 import { BASICS_LESSONS, LEGACY_CHAPTERS, legacyHref } from "@/lib/study/basics";
+import { outlineOf } from "@/lib/study/paths";
 import { visibleLessons } from "@/lib/visibility/server";
 
 // The former long page's chapter anchors, and where each lands now.
@@ -30,7 +31,8 @@ export default async function BasicsPage() {
         <CoursePageHead />
 
         <div className="mt-8">
-          <CoursePath lessons={await visibleLessons(BASICS_LESSONS)} />
+          {/* Outlines only: the path shows titles, counts and progress; the questions stay on the server. */}
+          <CoursePath lessons={(await visibleLessons(BASICS_LESSONS)).map(outlineOf)} />
         </div>
 
         <section id="reference" aria-labelledby="reference-title" className="mt-16 scroll-mt-24">

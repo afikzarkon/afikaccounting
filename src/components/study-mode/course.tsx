@@ -9,7 +9,7 @@ import { Paywall } from "@/components/pricing/paywall";
 import { TierBadge } from "@/components/pricing/tier-badge";
 import { maxXp, pathStatus, type TopicProgress, xpOf } from "@/lib/study/score";
 import type { StudyModule } from "@/lib/study/types";
-import { studyHref } from "@/lib/study";
+import { studyHref } from "@/lib/study/href";
 import { lessonHref } from "@/lib/study/paths";
 import { cn } from "@/lib/utils";
 import { clock } from "./lesson-opening";

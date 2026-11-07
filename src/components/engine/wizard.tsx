@@ -186,14 +186,12 @@ export function Wizard({
       )}
 
       <div className="relative mt-6">
-        <AnimatePresence mode="wait" custom={direction} initial={false}>
+        {/* The next step replaces the last at once and slides in; waiting for an exit left the form empty for a frame. */}
           <motion.div
             key={step}
-            custom={direction}
-            initial={{ opacity: 0, x: direction * -28 }}
+            initial={{ opacity: 0, x: direction * -20 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: direction * 28 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
           >
             {step === 0 && <StandardStep selected={calc?.slug} onChoose={choose} />}
 
@@ -239,7 +237,6 @@ export function Wizard({
               </>
             )}
           </motion.div>
-        </AnimatePresence>
       </div>
 
       {step > 0 && (

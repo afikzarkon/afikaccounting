@@ -1,7 +1,7 @@
 "use client";
 
 import { BookOpenText, ChevronDown, ClipboardCheck, ClipboardPen, Flag, PlayCircle, Sparkles } from "lucide-react";
-import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { MotionConfig, motion } from "motion/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type ReactNode, Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
@@ -38,7 +38,7 @@ import { LessonStats } from "./lesson-stats";
 import { PracticeIntro } from "./practice-intro";
 import { resetTopic, setLast, updateTopic, useTopic } from "./progress-store";
 import { QuestionExercise } from "./question-exercise";
-import { LessonContext } from "./screen-link";
+import { LessonContext } from "./screen-link-view";
 import { Sheet } from "./sheet";
 import { cue } from "./sound";
 import { SummaryCard } from "./summary-card";
@@ -473,17 +473,16 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
               )}
 
               <div ref={body} className="mt-6">
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.div
-                    key={opening ? "opening" : `${place.step}-${place.sub}${checking ? "-check" : ""}`}
-                    initial={{ opacity: 0, x: -28 * dir }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 28 * dir }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
-                  >
-                    {card.content}
-                  </motion.div>
-                </AnimatePresence>
+                {/* The new screen takes the old one's place at once and slides in. No exit animation: waiting for one
+                    left the column empty for a frame (the nav jumped up) and doubled the time each move took. */}
+                <motion.div
+                  key={opening ? "opening" : `${place.step}-${place.sub}${checking ? "-check" : ""}`}
+                  initial={moved ? { opacity: 0, x: -20 * dir } : false}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                >
+                  {card.content}
+                </motion.div>
               </div>
 
               {/* A direct child of the lesson's column, so it sticks to the bottom of the screen all the way down the screen. */}

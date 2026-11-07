@@ -3,7 +3,7 @@
 import { Calculator, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useContext, useId, useState } from "react";
-import { LessonContext } from "@/components/study-mode/screen-link";
+import { LessonContext } from "@/components/study-mode/screen-link-view";
 import { NumberInput, parseNumber } from "@/components/study/inputs";
 import { type Entry, ledger } from "@/lib/learn/basics";
 import { valuatePeriod } from "@/lib/learn/inventory";

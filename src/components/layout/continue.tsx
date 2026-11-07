@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLast } from "@/components/study-mode/progress-store";
 import { EXAMS_HUB, FIRST_LESSON, LEARN_HUB } from "@/lib/catalog";
-import { studyHref } from "@/lib/study";
+import { studyHref } from "@/lib/study/href";
 import { cn } from "@/lib/utils";
 import { openSearch } from "./search";
 import { useVisibility } from "./visibility";

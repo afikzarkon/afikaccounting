@@ -1,17 +1,14 @@
 import type { ReactNode } from "react";
-import { ExchangeCalculator } from "@/components/exchange/calculator";
+import { DepreciationSimulator, ExchangeCalculator, RenovationCalculator, RevaluationCalculator } from "./lazy-widgets";
 import { ExchangeJournalSection } from "@/components/exchange/journal";
 import { NewAssetSection } from "@/components/exchange/new-asset";
 import { ExchangeStepsSection } from "@/components/exchange/steps";
 import { ExamTipsSection } from "@/components/learn/exam-tips";
 import { FundamentalsSection } from "@/components/learn/fundamentals";
 import { MethodologySection } from "@/components/learn/methodology";
-import { DepreciationSimulator } from "@/components/learn/simulator";
 import { WhatIsPpeSection } from "@/components/learn/what-is-ppe";
-import { RenovationCalculator } from "@/components/renovation/calculator";
 import { DistinctionSection } from "@/components/renovation/distinction";
 import { RenovationStepsSection } from "@/components/renovation/steps";
-import { RevaluationCalculator } from "@/components/revaluation/calculator";
 import { CheckTipsSection } from "@/components/revaluation/check-tips";
 import { LandBuildingSection } from "@/components/revaluation/land-building";
 import { RevaluationStandardSection } from "@/components/revaluation/standard";

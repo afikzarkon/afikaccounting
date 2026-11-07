@@ -6,7 +6,7 @@ import { TierBadge } from "@/components/pricing/tier-badge";
 import { useTopics } from "@/components/study-mode/progress-store";
 import { ButtonLink } from "@/components/ui/button";
 import { planHref } from "@/lib/pricing";
-import { studyHref } from "@/lib/study";
+import { studyHref } from "@/lib/study/href";
 import { pathStatus } from "@/lib/study/score";
 import type { StudyModule } from "@/lib/study/types";
 

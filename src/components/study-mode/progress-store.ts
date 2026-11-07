@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { EMPTY_TOPIC, type TopicProgress } from "@/lib/study/score";
 import { mergeTopic } from "@/lib/study/sync";
 
@@ -58,10 +58,25 @@ const write = (change: (s: State) => State) => {
   window.dispatchEvent(new Event(EVENT));
 };
 
-const useStore = () => parse(useSyncExternalStore(subscribe, read, () => EMPTY));
+// Parsed once per stored value: every reader renders from the same object until the progress
+// changes, instead of each render of each reader parsing the whole store again. Read only —
+// writes parse a fresh copy.
+let parsedRaw: string | null = null;
+let parsedState: State = JSON.parse(EMPTY);
+const parseOnce = (raw: string): State => {
+  if (raw !== parsedRaw) {
+    parsedState = parse(raw);
+    parsedRaw = raw;
+  }
+  return parsedState;
+};
 
+const useStore = () => parseOnce(useSyncExternalStore(subscribe, read, () => EMPTY));
+
+/** One lesson's progress; the same object until that lesson's progress changes. */
 export function useTopic(slug: string): TopicProgress {
-  return { ...EMPTY_TOPIC, ...useStore().topics[slug] };
+  const stored = useStore().topics[slug];
+  return useMemo(() => ({ ...EMPTY_TOPIC, ...stored }), [stored]);
 }
 
 export const useSound = () => useStore().sound;
@@ -77,12 +92,14 @@ export const resetTopic = (slug: string) =>
 export const toggleSound = () => write((s) => ({ ...s, sound: !s.sound }));
 
 /** Whether sound is on right now, for event handlers. */
-export const soundOn = () => parse(read()).sound;
+export const soundOn = () => parseOnce(read()).sound;
 
 /** Every lesson's progress, for the course page. */
 export function useTopics(slugs: string[]): Record<string, TopicProgress> {
   const topics = useStore().topics;
-  return Object.fromEntries(slugs.map((s) => [s, { ...EMPTY_TOPIC, ...topics[s] }]));
+  const key = slugs.join("\n");
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` stands for `slugs`, which callers rebuild each render.
+  return useMemo(() => Object.fromEntries(slugs.map((s) => [s, { ...EMPTY_TOPIC, ...topics[s] }])), [topics, key]);
 }
 
 /** Remember the lesson just opened, and how far through it the reader is. Written only when it changes. */

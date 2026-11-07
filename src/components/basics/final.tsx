@@ -11,7 +11,7 @@ import { Tabs } from "./tabs";
 import { Calc, Money, Rule, Stepper, TBTable } from "./ui";
 import { Reveal, TryFirst } from "./year";
 import { WorksheetWalk } from "./worksheet";
-import { WorksheetGame } from "./worksheet-game";
+import { WorksheetGame } from "./lazy-widgets";
 
 const MISTAKES: [string, string][] = [
   ["רושמים משיכת בעלים כהוצאה", "משיכה מקטינה את ההון (ח׳ הון בעלים), ולא נכנסת לרווח והפסד."],

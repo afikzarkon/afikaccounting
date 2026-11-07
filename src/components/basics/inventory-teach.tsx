@@ -2,7 +2,6 @@
 
 import { BookOpen, Check, ChevronLeft, RotateCcw, X } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
-import { ScreenLink } from "@/components/study-mode/screen-link";
 import { cn } from "@/lib/utils";
 
 /**
@@ -138,7 +137,7 @@ export function ChainChips({ items }: { items: string[] }) {
 }
 
 /** "What is missing in your question?": a button per unknown; the answer is the pattern to use and the screen that teaches it. */
-export function PatternPicker({ items }: { items: { missing: string; given: string; pattern: number; screen: string }[] }) {
+export function PatternPicker({ items }: { items: { missing: string; given: string; pattern: number; screen: ReactNode }[] }) {
   const [at, setAt] = useState<number | null>(null);
   const hit = at === null ? null : items[at];
   return (
@@ -164,7 +163,7 @@ export function PatternPicker({ items }: { items: { missing: string; given: stri
       </div>
       {hit ? (
         <p className="anim-step-in rounded-xl border-2 border-accent bg-surface px-4 py-3 text-[15px] text-fg">
-          <strong className="text-accent">תבנית {hit.pattern}.</strong> לומדים אותה במסך <ScreenLink id={hit.screen} />.
+          <strong className="text-accent">תבנית {hit.pattern}.</strong> לומדים אותה במסך {hit.screen}.
         </p>
       ) : (
         <p className="text-[13.5px] text-muted">בחרו — ותקבלו את התבנית, ואת המסך שמלמד אותה.</p>

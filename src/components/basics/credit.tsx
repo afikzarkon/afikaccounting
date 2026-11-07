@@ -7,7 +7,7 @@ import { type Balances, balancesOf, type Entry, ledger, round2, type TAccount } 
 import { adjustment, ALLOW, EREZ, EREZ_LOW, AR, MORIA, NEVO, EXPENSE, CARMEL, EINAV, SCENARIO_A, SCENARIO_B, SCENARIO_C, writeOff, year } from "@/lib/learn/credit-losses";
 import { cn } from "@/lib/utils";
 import { ClosingArrow } from "./closing-arrow";
-import { CreditLossCalculator } from "./credit-calculator";
+import { CreditLossCalculator } from "./lazy-widgets";
 import { EntriesDialog } from "./entries-dialog";
 import { FormulaDialog } from "./formula-dialog";
 import { TCardsDialog } from "./t-dialog";

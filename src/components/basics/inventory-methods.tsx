@@ -386,14 +386,14 @@ export const METHOD_SCREENS: Record<string, ScreenContent> = {
         <p>יש שמונה תבניות שחוזרות בבחינות. אין צורך לזכור את כולן עכשיו — רק לדעת לזהות איזו מתאימה:</p>
         <PatternPicker
           items={[
-            { missing: "דוח עם סימני שאלה", given: "כמה שנים", pattern: 1, screen: "inv-chain" },
-            { missing: "כמות מכירה", given: "העלות שלה ידועה (ממוצע נע)", pattern: 2, screen: "inv-qty" },
-            { missing: "כמות המכירה האחרונה", given: "כמות הסגירה ידועה", pattern: 3, screen: "inv-qty" },
-            { missing: "מחיר מכירה", given: "שיעור רווח גולמי", pattern: 4, screen: "inv-gp" },
-            { missing: "מלאי סגירה / מלאי שנשרף", given: "שיעור רווח גולמי, בלי ספירה", pattern: 5, screen: "inv-gp" },
-            { missing: "מחיר רכישה", given: "עלות ממוצעת", pattern: 6, screen: "inv-avg-price" },
-            { missing: "שיעור הנחה", given: "הנחה בשקלים", pattern: 7, screen: "inv-pct" },
-            { missing: "קניות ומלאי סגירה", given: "״נמכר p% מהקניות״", pattern: 8, screen: "inv-pct" },
+            { missing: "דוח עם סימני שאלה", given: "כמה שנים", pattern: 1, screen: <ScreenLink id="inv-chain" /> },
+            { missing: "כמות מכירה", given: "העלות שלה ידועה (ממוצע נע)", pattern: 2, screen: <ScreenLink id="inv-qty" /> },
+            { missing: "כמות המכירה האחרונה", given: "כמות הסגירה ידועה", pattern: 3, screen: <ScreenLink id="inv-qty" /> },
+            { missing: "מחיר מכירה", given: "שיעור רווח גולמי", pattern: 4, screen: <ScreenLink id="inv-gp" /> },
+            { missing: "מלאי סגירה / מלאי שנשרף", given: "שיעור רווח גולמי, בלי ספירה", pattern: 5, screen: <ScreenLink id="inv-gp" /> },
+            { missing: "מחיר רכישה", given: "עלות ממוצעת", pattern: 6, screen: <ScreenLink id="inv-avg-price" /> },
+            { missing: "שיעור הנחה", given: "הנחה בשקלים", pattern: 7, screen: <ScreenLink id="inv-pct" /> },
+            { missing: "קניות ומלאי סגירה", given: "״נמכר p% מהקניות״", pattern: 8, screen: <ScreenLink id="inv-pct" /> },
           ]}
         />
         <Remember>מחפשים משוואה אחת עם נעלם אחד. פותרים, מציבים — וממשיכים, עד שאין יותר נעלמים.</Remember>

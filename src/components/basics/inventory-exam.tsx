@@ -5,7 +5,7 @@ import { DataTable } from "@/components/study/blocks";
 import { explainPeriod, explainSolve, m, pc } from "@/lib/learn/inventory-explain";
 import { cn } from "@/lib/utils";
 import { GALYAM_GP, galyam, PRACTICE } from "@/lib/learn/inventory-examples";
-import { InventoryCalculator } from "./inventory-calculator";
+import { InventoryCalculator } from "./lazy-widgets";
 import { AnswerCheck, SortQuiz, TryInCalc } from "./inventory-interactive";
 import { ChainChips } from "./inventory-teach";
 import { TraceStepView, TraceView } from "./inventory-trace";

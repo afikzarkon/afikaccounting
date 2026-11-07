@@ -15,7 +15,7 @@ import {
   machineFirstYearByMethod,
   machineSchedule,
 } from "@/lib/learn/ias16-example";
-import { ProrationWidget } from "./widgets";
+import { ProrationWidget } from "@/components/basics/lazy-widgets";
 
 // The chapter's central example: every step works the same machine (it lands on the simulator's defaults).
 const COST_LINES = MACHINE_COST_LINES;

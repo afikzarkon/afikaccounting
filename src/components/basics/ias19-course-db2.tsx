@@ -29,7 +29,7 @@ import { AM_ASSETS, AM_ASSETS_PARTS, AM_EFFECT, AM_YEAR, AMENDED, NOTE, NOTE_ADD
 import { EXAM_B } from "@/lib/learn/ias19-exams";
 import { lessonRef, lessonsRef, pct } from "@/lib/study/ias19/shared";
 import { FormulaFill, Ltr } from "./ias19-formula";
-import { DrillBox, SolveTemplate } from "./ias19-interactive";
+import { DrillBox, SolveTemplate } from "./lazy-widgets";
 import { Bridge, DestTag, ExplainTask, FullSteps, Ladder, MapBranch, RollForward, T19, TaskSolution, TwoBuckets } from "./ias19-ui";
 import { BeforeAfter, Diff, Fork, NetBars, Routing, SplitBar, TwoPanel } from "./ias19-visuals";
 import type { QuizItem } from "./inventory-interactive";

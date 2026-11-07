@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useLast } from "@/components/study-mode/progress-store";
 import { search, SEARCH_KINDS, type SearchItem } from "@/lib/search";
-import { studyHref } from "@/lib/study";
+import { studyHref } from "@/lib/study/href";
 import { cn } from "@/lib/utils";
 
 const OPEN = "afik-open-search";

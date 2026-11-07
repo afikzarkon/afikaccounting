@@ -13,7 +13,7 @@ import { Bridge, DestTag, ExplainTask, FullSteps, Ladder, MapBranch, Recipe5, RE
 import { Diff, Fork, NetBars, Routing, SplitBar, Timeline, TwoPanel } from "./ias19-visuals";
 import type { QuizItem } from "./inventory-interactive";
 import { Sorted, Story } from "./inventory-teach";
-import { DrillBox, SolveTemplate, TermDates, TermTest } from "./ias19-interactive";
+import { DrillBox, SolveTemplate, TermDates, TermTest } from "./lazy-widgets";
 import { PrintButton } from "./print-button";
 import { JE, Money, Rule } from "./ui";
 import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";

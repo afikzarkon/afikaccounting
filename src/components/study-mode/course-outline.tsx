@@ -2,7 +2,7 @@
 
 import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
-import { studyHref } from "@/lib/study";
+import { studyHref } from "@/lib/study/href";
 import { percentOf, practiceGroups } from "@/lib/study/outline";
 import { type Place, pathStatus, STEPS, type TopicProgress } from "@/lib/study/score";
 import type { StudyModule } from "@/lib/study/types";

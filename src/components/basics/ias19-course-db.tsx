@@ -26,7 +26,7 @@ import { CF, CF_PER_YEAR, CHANGED, CHANGED_CLOSING, CHANGED_PER_YEAR, PAID_INTER
 import { lessonRef, pct } from "@/lib/study/ias19/shared";
 import { FORMULA, said, work } from "@/lib/study/ias19/formulas";
 import { FormulaFill, Ltr, type Term, Work } from "./ias19-formula";
-import { DrillBox, PucExplorer, SolveTemplate, WindowExplorer } from "./ias19-interactive";
+import { DrillBox, PucExplorer, SolveTemplate, WindowExplorer } from "./lazy-widgets";
 import { Bridge, ExplainTask, FullSteps, Ladder, MapBranch, Recipe5, RollForward, T19, TaskSolution, TwoBuckets } from "./ias19-ui";
 import { BankStatement, Diff, PeopleGrid, Routing, Timeline, WrongRight, YearBars } from "./ias19-visuals";
 import type { QuizItem } from "./inventory-interactive";
