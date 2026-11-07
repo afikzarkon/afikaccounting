@@ -1,0 +1,2 @@
+# patch-package needs the patches with the line endings they were made with.
+patches/*.patch text eol=lf
