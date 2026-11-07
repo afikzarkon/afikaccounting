@@ -30,14 +30,17 @@ import { Ltr, Work } from "./ias19-formula";
 import { DrillBox, RiskTest, SolveTemplate } from "./ias19-interactive";
 import { Bridge, ExplainTask, FullSteps, MapBranch, RollForward, T19, TaskSolution } from "./ias19-ui";
 import { Diff, Fork, SplitBar, Timeline, TwoPanel } from "./ias19-visuals";
-import { MiniQuiz } from "./inventory-interactive";
+import type { QuizItem } from "./inventory-interactive";
 import { Sorted, Story } from "./inventory-teach";
 import { Card, JE, Money } from "./ui";
 import { ltrQuiz } from "@/lib/study/ias19/ltr";
+import { IasQuiz } from "./ias19-quiz";
 
 /** The employee-benefits course, lessons 3–4: short-term benefits, and defined contribution against defined benefit. */
 
-const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={ltrQuiz(items)} />;
+const quiz = (chapter: string, items: QuizItem[]) => <IasQuiz chapter={chapter} items={ltrQuiz(items)} />;
+/** Questions inside the reading of a page, after a "stop and check" heading. */
+const inlineQuiz = (chapter: string, items: QuizItem[]) => <IasQuiz inline chapter={chapter} items={ltrQuiz(items)} />;
 /** A formula inside a sentence, read left to right. */
 const L = Ltr;
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
@@ -106,7 +109,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
             הפרש של <Money v={Math.round(AVI.salary - AVI_PV)} /> על {fmt(AVI.salary)}. לכן בהטבה לזמן קצר רושמים את הסכום המלא, <strong>בלי היוון</strong>.
           </P>
         </Part>
-        {quiz("emp-short-hook", [
+        {inlineQuiz("emp-short-hook", [
           {
             q: "איזו מההטבות הבאות היא הטבה לזמן קצר?",
             options: ["בונוס על השנה, שישולם במרץ", "פנסיה חודשית אחרי הפרישה", "מענק אחרי 25 שנות עבודה", "בונוס על הרווחים של שלוש השנים הבאות"],
@@ -169,7 +172,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
         <P>
           <strong>טיפ לשאלות:</strong> חפשו בשאלה מילים כמו ״ניתן לצבור״, ״עוברים לשנה הבאה״ או ״פוקעים בסוף השנה״. הן אומרות לכם איזה סוג זה.
         </P>
-        {quiz("emp-short-absence", [
+        {inlineQuiz("emp-short-absence", [
           {
             q: "שתי עובדות ייצאו בשנה הבאה לחופשת לידה, והחברה תשלים להן שכר. כמה הפרשה רושמים השנה?",
             options: ["אפס. חופשת לידה לא נצברת, ונרשמת כשהיא קורית", "את כל השכר שהחברה תשלים להן", "חצי מהשכר", "את הערך הנוכחי של השכר"],
@@ -262,7 +265,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
           <strong>טיפ לשאלות:</strong> מילים כמו ״פדיון״ או ״בעת עזיבה ישולם״ אומרות מבשילה. ״עובד שעוזב אינו זכאי לתשלום״ אומרת לא מבשילה. ואם השאלה נותנת ״לפי הניסיון״ כמה עובדים יעזבו או כמה ימים ינוצלו,
           היא מצפה שתשתמשו בזה.
         </P>
-        {quiz("emp-short-vest", [
+        {inlineQuiz("emp-short-vest", [
           {
             q: "ל-20 עובדים יש 2 ימי מחלה צבורים לכל אחד. הימים לא מבשילים, ו-5 עובדים צפויים לעזוב לפני שינצלו אותם. כל הנשארים צפויים לנצל את כל הימים. על כמה ימים מפרישים?",
             options: ["30 ימים", "40 ימים", "10 ימים", "0 ימים"],
@@ -332,7 +335,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
             שונות: יש מי שמחשב לפי השכר הצפוי בשנה הבאה, כי התקן מדבר על הסכום שהחברה צפויה לשלם. אם השאלה מבקשת במפורש שכר אחר, עובדים לפיה.
           </P>
         </Part>
-        {quiz("emp-short-daycost", [
+        {inlineQuiz("emp-short-daycost", [
           {
             q: "פקיד משתכר 8,400 ₪ בחודש, 21 ימי עבודה, והתוספות על שכרו 17%. מהי עלות יום שלו?",
             options: ["468 ₪", "400 ₪", "417 ₪", "9,828 ₪"],
@@ -393,7 +396,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
         <P>
           <strong>טיפ לשאלות:</strong> ב-LIFO הימים הצבורים יוצאים אחרונים, ולכן הם <strong>הראשונים לפקוע</strong>. עובד שניצל פחות מהזכאות של השנה מאבד את כל הימים הצבורים שלו.
         </P>
-        {quiz("emp-short-lifo", [
+        {inlineQuiz("emp-short-lifo", [
           {
             q: "לעובדת 10 ימים בשנה ו-2 ימים צבורים שפוקעים בסוף השנה. היא ניצלה 11 ימים. לפי LIFO, כמה ימים צבורים פקעו?",
             options: ["יום אחד", "2 ימים", "אפס", "9 ימים"],
@@ -455,7 +458,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
         <P>
           <strong>טיפ לשאלות:</strong> אם השאלה לא אומרת אחרת, <strong>עובדים ב-LIFO</strong>. FIFO <strong>רק כשכתוב במפורש</strong>, למשל ״הניצול לפי FIFO״ או ״העובדים מנצלים קודם את הימים שנצברו״.
         </P>
-        {quiz("emp-short-fifo", [
+        {inlineQuiz("emp-short-fifo", [
           {
             q: "לעובדת 10 ימים בשנה ו-2 ימים צבורים שפוקעים בסוף השנה. היא ניצלה 11 ימים. לפי FIFO, כמה ימים עוברים לשנה הבאה?",
             options: ["יום אחד", "אפס", "2 ימים", "3 ימים"],
@@ -547,7 +550,7 @@ export const IAS19_SIMPLE_SCREENS: Record<string, ScreenContent> = {
         <P>
           <strong>טיפ לשאלות:</strong> חפשו בשאלה שלושה דברים: האם יש הסכם או נוהג, מה הנוסחה, ומי צפוי להיות זכאי ביום התשלום. מי שצפוי לעזוב לפני התשלום לא נכנס להפרשה.
         </P>
-        {quiz("emp-short-bonus", [
+        {inlineQuiz("emp-short-bonus", [
           {
             q: "ההנהלה החליטה בפברואר, אחרי אישור הדוחות, לתת לעובדים בונוס על השנה שעברה. עד היום החברה לא נתנה בונוסים. מכירים בבונוס בדוחות של השנה שעברה?",
             options: ["לא. בסוף השנה לא הייתה מחויבות", "כן, כי הבונוס הוא על השנה שעברה", "כן, אבל רק חצי מהסכום", "כן, בערך הנוכחי שלו"],

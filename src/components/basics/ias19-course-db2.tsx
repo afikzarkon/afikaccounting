@@ -32,14 +32,15 @@ import { FormulaFill, Ltr } from "./ias19-formula";
 import { DrillBox, SolveTemplate } from "./ias19-interactive";
 import { Bridge, DestTag, ExplainTask, FullSteps, Ladder, MapBranch, RollForward, T19, TaskSolution, TwoBuckets } from "./ias19-ui";
 import { BeforeAfter, Diff, Fork, NetBars, Routing, SplitBar, TwoPanel } from "./ias19-visuals";
-import { MiniQuiz } from "./inventory-interactive";
+import type { QuizItem } from "./inventory-interactive";
 import { Sorted, Story } from "./inventory-teach";
 import { Card, JE, Money, Rule } from "./ui";
 import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
+import { IasQuiz } from "./ias19-quiz";
 
 /** The employee-benefits course, lessons 8–10: an amendment mid-year and settlement, plan assets and the ceiling, presentation and reverse engineering. */
 
-const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={ltrQuiz(items)} />;
+const quiz = (chapter: string, items: QuizItem[]) => <IasQuiz chapter={chapter} items={ltrQuiz(items)} />;
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
 /** A formula inside a sentence, read left to right. */
 const L = Ltr;

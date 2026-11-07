@@ -12,6 +12,7 @@ import { ByMode, ClassifyAbsence, DayStrip, ExamCheck, ModeMark } from "./ias19-
 import { Ltr, Work } from "./ias19-formula";
 import { RollForward } from "./ias19-ui";
 import { JE, Money } from "./ui";
+import { TaskFrame, TaskText } from "./ias19-question";
 
 /**
  * Lesson 3, how to solve an absence question: the guide's six steps, worked
@@ -247,9 +248,9 @@ function examScreen(e: AbsenceExam): ScreenContent {
     body: (
       <>
         <Facts lines={e.story} />
-        <P>
-          <strong>נדרש:</strong> יתרת הפתיחה, הוצאות השכר, התשלומים ויתרת הסגירה של ההפרשה לשנת 2026{e.modes.length > 1 ? ", בשתי ההנחות" : ""}.
-        </P>
+        <TaskFrame label="נדרש">
+          <TaskText>יתרת הפתיחה, הוצאות השכר, התשלומים ויתרת הסגירה של ההפרשה לשנת 2026{e.modes.length > 1 ? ", בשתי ההנחות" : ""}.</TaskText>
+        </TaskFrame>
         <ExamCheck id={e.id} sets={runs.map(({ mode, r }) => ({ mode, answers: { opening: r.opening$, expense: r.expense, payments: r.paid, closing: r.closing$ } }))} hints={HINTS} />
         <SolutionBox>
           <div className="rounded-xl bg-surface-2 px-4 py-3 text-[15px] leading-relaxed">

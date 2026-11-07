@@ -9,6 +9,7 @@ import { type Ias19Slug, LESSON_N, prereqLine } from "@/lib/study/ias19/shared";
 import { cn } from "@/lib/utils";
 import { FORMULA_COLORS, Mark } from "./ias19-formula";
 import { Reveal } from "./inventory-teach";
+import { TaskFrame, TaskText } from "./ias19-question";
 
 /**
  * The employee-benefits course's own pieces: the mind map (whole, or as a
@@ -190,11 +191,9 @@ export function DestTag({ to }: { to: keyof typeof DEST }) {
 export function TaskSolution({ task, hints }: { task: ReactNode; hints: [ReactNode, ReactNode, ReactNode, ReactNode] }) {
   const [, approach, first, rest] = hints;
   return (
-    <div className="space-y-3">
-      <p className="text-[15px] leading-relaxed">
-        <strong>המשימה:</strong> {task}
-      </p>
-      <details className="group rounded-2xl border border-line bg-surface p-3.5">
+    <TaskFrame>
+      <TaskText>{task}</TaskText>
+      <details className="group rounded-2xl border border-line bg-surface-2/40 p-3.5">
         <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-lg border border-line-strong px-3 py-1.5 text-[14px] font-semibold text-accent hover:bg-accent-soft [&::-webkit-details-marker]:hidden">
           <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden />
           <span className="group-open:hidden">הצגת הפתרון המלא</span>
@@ -221,7 +220,7 @@ export function TaskSolution({ task, hints }: { task: ReactNode; hints: [ReactNo
           </table>
         </div>
       </details>
-    </div>
+    </TaskFrame>
   );
 }
 
@@ -245,10 +244,7 @@ export function FullSteps({ steps, label }: { steps: { title: ReactNode; body: R
 /** The explain-to-a-friend task: the task first; a model explanation only after trying. */
 export function ExplainTask({ task, model }: { task: ReactNode; model: ReactNode }) {
   return (
-    <section className="space-y-2 rounded-2xl border border-line bg-surface p-3.5">
-      <p className="flex items-center gap-2 font-bold text-fg">
-        <MessageCircle className="h-5 w-5 text-accent" aria-hidden /> להסביר לחבר בדקה
-      </p>
+    <TaskFrame label="משימה: להסביר לחבר בדקה" icon={<MessageCircle className="h-[18px] w-[18px]" aria-hidden />}>
       <Reveal
         label="הסבר לדוגמה"
         steps={[
@@ -258,7 +254,7 @@ export function ExplainTask({ task, model }: { task: ReactNode; model: ReactNode
           </span>,
         ]}
       />
-    </section>
+    </TaskFrame>
   );
 }
 

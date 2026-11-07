@@ -29,15 +29,16 @@ import { FormulaFill, Ltr, type Term, Work } from "./ias19-formula";
 import { DrillBox, PucExplorer, SolveTemplate, WindowExplorer } from "./ias19-interactive";
 import { Bridge, ExplainTask, FullSteps, Ladder, MapBranch, Recipe5, RollForward, T19, TaskSolution, TwoBuckets } from "./ias19-ui";
 import { BankStatement, Diff, PeopleGrid, Routing, Timeline, WrongRight, YearBars } from "./ias19-visuals";
-import { MiniQuiz } from "./inventory-interactive";
+import type { QuizItem } from "./inventory-interactive";
 import { Sorted, Story } from "./inventory-teach";
 import { RollSchedule } from "./roll-schedule";
 import { Card, Money, Rule, Wide } from "./ui";
 import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
+import { IasQuiz } from "./ias19-quiz";
 
 /** The employee-benefits course, lessons 5–7: measuring at one date, attribution to years of service, and a year's roll-forward. */
 
-const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={ltrQuiz(items)} />;
+const quiz = (chapter: string, items: QuizItem[]) => <IasQuiz chapter={chapter} items={ltrQuiz(items)} />;
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
 /** A formula inside a sentence, read left to right. */
 const L = Ltr;

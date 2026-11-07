@@ -1,14 +1,16 @@
-import { Eye, EyeOff, FileText, Handshake, Plane } from "lucide-react";
+import { Eye, EyeOff, FileText, Handshake, ListChecks, Plane } from "lucide-react";
 import type { ReactNode } from "react";
 import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { SIMPLE_BANK, SIMPLE_PV, WHY_GRANT, WHY_PER_YEAR, WHY_PROFIT_ACCRUED, WHY_PROFIT_CASH } from "@/lib/study/ias19/lessons/map";
 import { Bridge, T19 } from "./ias19-ui";
 import { BankStatement, DateWindows, DecisionTree, Fork, PvSlide, Staircase, Timeline, Tree, TwoPanel, YearCompare } from "./ias19-visuals";
-import { MiniQuiz, SortQuiz } from "./inventory-interactive";
+import { type QuizItem, SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { Money, Rule } from "./ui";
 import { ltrQuiz } from "@/lib/study/ias19/ltr";
+import { IasQuiz } from "./ias19-quiz";
+import { TaskFrame } from "./ias19-question";
 
 /**
  * The employee-benefits course, lesson 1: what the standard is for, how it is
@@ -18,8 +20,12 @@ import { ltrQuiz } from "@/lib/study/ias19/ltr";
  * behind it.
  */
 
-const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={ltrQuiz(items)} />;
-const sort = (id: string, items: Parameters<typeof SortQuiz>[0]["items"], options: [string, string][], title?: string) => <SortQuiz prefix="ias19" id={id} items={items} options={options} title={title} />;
+const quiz = (chapter: string, items: QuizItem[]) => <IasQuiz chapter={chapter} items={ltrQuiz(items)} />;
+const sort = (id: string, items: Parameters<typeof SortQuiz>[0]["items"], options: [string, string][], title?: string) => (
+  <TaskFrame label={title ?? "שאלת מיון"} icon={<ListChecks className="h-[18px] w-[18px]" aria-hidden />}>
+    <SortQuiz prefix="ias19" id={id} items={items} options={options} />
+  </TaskFrame>
+);
 const KIND_OPTIONS: [string, string][] = [
   ["short", "לזמן קצר"],
   ["post", "לאחר סיום העסקה"],

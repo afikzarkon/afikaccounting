@@ -11,7 +11,7 @@ import { Eq, Frac } from "./ias19-formula";
 import { PrimerHashOpen } from "./ias19-primer-open";
 import { TwoBuckets } from "./ias19-ui";
 import { BankStatement, PeopleGrid, PvSlide, Timeline, TwoPanel } from "./ias19-visuals";
-import { MiniQuiz } from "./inventory-interactive";
+import { IasQuiz } from "./ias19-quiz";
 import { JE, Money } from "./ui";
 
 /**
@@ -214,8 +214,7 @@ function Card({ c }: { c: PrimerCard }) {
         )}
         {c.rule && <p className="rounded-xl border-s-4 border-accent bg-accent-soft px-3 py-2 font-medium text-fg">הכלל: {ltrFormulas(c.rule)}</p>}
         <div>
-          <p className="mb-1.5 text-[14px] font-bold text-fg">בדיקה עצמית</p>
-          <MiniQuiz bare prefix="ias19" chapter={`primer-${c.id}`} items={ltrQuiz(c.checks)} />
+          <IasQuiz inline chapter={`primer-${c.id}`} items={ltrQuiz(c.checks)} />
         </div>
         <p className="text-[13.5px] text-muted">
           איפה לומדים אותו: {c.taught}.{" "}

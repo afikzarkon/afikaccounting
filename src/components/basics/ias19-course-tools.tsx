@@ -10,8 +10,9 @@ import { ltrQuiz } from "@/lib/study/ias19/ltr";
 import { Ltr, Work } from "./ias19-formula";
 import { RollForward, T19 } from "./ias19-ui";
 import { Diff, Timeline } from "./ias19-visuals";
-import { MiniQuiz } from "./inventory-interactive";
+import type { QuizItem } from "./inventory-interactive";
 import { Money } from "./ui";
+import { IasQuiz } from "./ias19-quiz";
 
 /**
  * The employee-benefits course, lesson 2: the toolkit — present value,
@@ -20,7 +21,8 @@ import { Money } from "./ui";
  * the course's main page, and in Excel. Nothing opens step by step.
  */
 
-const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={ltrQuiz(items)} />;
+/** Questions inside the reading of a page, after a "stop and check" heading. */
+const inlineQuiz = (chapter: string, items: QuizItem[]) => <IasQuiz inline chapter={chapter} items={ltrQuiz(items)} />;
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
 const pct = (r: number, d = 2) => `${(r * 100).toLocaleString("en-US", { maximumFractionDigits: d })}%`;
 /** A formula inside a sentence, read left to right. */
@@ -81,7 +83,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
             { at: HOOK.years, label: `${HOOK.amount.toLocaleString("he-IL")} ₪`, tone: 1 },
           ]}
         />
-        {quiz("emp-tool-hook", [
+        {inlineQuiz("emp-tool-hook", [
           {
             q: "מה תכתוב החברה בדוח?",
             options: [`פחות מ-${fmt(HOOK.amount)} ₪`, `בדיוק ${fmt(HOOK.amount)} ₪, כי זה מה שכתוב בחוזה`, `יותר מ-${fmt(HOOK.amount)} ₪`],
@@ -146,7 +148,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
         <P>
           ומה הקשר לדנה? החוב אליה מתנהג בדיוק כמו פיקדון כזה. כל שנה הוא גדל בריבית, עד שביום הפרישה הוא מגיע ל-<Money v={HOOK.amount} />.
         </P>
-        {quiz("emp-tool-fv", [
+        {inlineQuiz("emp-tool-fv", [
           {
             q: "מפקידים 2,000 ₪ לשנתיים בריבית 5%. כמה יהיה בסוף?",
             options: ["2,205 ₪", "2,200 ₪", "2,100 ₪", "2,000 ₪"],
@@ -204,7 +206,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
             <L>{`${fmt(HOOK.amount)} ÷ ${1 + HOOK.rate}^${HOOK.years - 1} = ${fmt(Math.round(DANA_NEXT))}`}</L> ₪. החוב גדל ב-<Money v={Math.round(DANA_NEXT - DANA_NOW)} /> בלי שקרה שום דבר, רק כי התשלום התקרב. את הגידול הזה נראה במעגל, בהמשך החלק הזה.
           </P>
         </Part>
-        {quiz("emp-tool-pv", [
+        {inlineQuiz("emp-tool-pv", [
           {
             q: "כמה שווים היום 5,000 ₪ שישולמו בעוד שנתיים, בריבית 10%?",
             options: ["4,132 ₪", "4,545 ₪", "4,000 ₪", "6,050 ₪"],
@@ -276,7 +278,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
           </P>
           <Work w={tool.pv(HOOK.amount, HOOK.rate, 2.5)} />
         </Part>
-        {quiz("emp-tool-part", [
+        {inlineQuiz("emp-tool-part", [
           {
             q: "ריבית שנתית 6%. מה השיעור לחצי שנה, בריבית דריבית?",
             options: ["2.956%", "3%", "6%", "1.5%"],
@@ -338,7 +340,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
             בהמשך הקורס המעגלים יהיו ארוכים יותר, עם עוד שורות. אבל השיטה לא משתנה: מחשבים כל שורה שאפשר מהנתונים, והשורה שנשארה היא <strong>מה שמאזן את המעגל</strong>.
           </P>
         </Part>
-        {quiz("emp-tool-roll", [
+        {inlineQuiz("emp-tool-roll", [
           {
             q: "פתיחה 4,000, תשלומים 9,000, סגירה 3,500. מה ההוצאה?",
             options: ["8,500", "9,500", "500", "16,500"],

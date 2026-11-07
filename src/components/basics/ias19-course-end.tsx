@@ -11,16 +11,18 @@ import { lessonRef, lessonsRef, pct } from "@/lib/study/ias19/shared";
 import { Ltr } from "./ias19-formula";
 import { Bridge, DestTag, ExplainTask, FullSteps, Ladder, MapBranch, Recipe5, RECIPE_STEPS, RollForward, T19, TaskSolution } from "./ias19-ui";
 import { Diff, Fork, NetBars, Routing, SplitBar, Timeline, TwoPanel } from "./ias19-visuals";
-import { MiniQuiz } from "./inventory-interactive";
+import type { QuizItem } from "./inventory-interactive";
 import { Sorted, Story } from "./inventory-teach";
 import { DrillBox, SolveTemplate, TermDates, TermTest } from "./ias19-interactive";
 import { PrintButton } from "./print-button";
 import { JE, Money, Rule } from "./ui";
 import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
+import { TaskFrame, TaskText } from "./ias19-question";
+import { IasQuiz } from "./ias19-quiz";
 
 /** The employee-benefits course, lessons 7–8: other long-term and termination benefits, the two exam-level questions, and the cheat sheet. */
 
-const quiz = (chapter: string, items: Parameters<typeof MiniQuiz>[0]["items"]) => <MiniQuiz bare prefix="ias19" chapter={chapter} items={ltrQuiz(items)} />;
+const quiz = (chapter: string, items: QuizItem[]) => <IasQuiz chapter={chapter} items={ltrQuiz(items)} />;
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
 /** A formula inside a sentence, read left to right. */
 const L = Ltr;
@@ -572,9 +574,9 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             { at: 23.5, label: "דצמבר: ריבית ↓, עוזבים", tone: 5 },
           ]}
         />
-        <P>
-          <strong>נדרש:</strong> מעגל ההתחייבות של {y1} ושל {y2}, לכל מחלקה בנפרד.
-        </P>
+        <TaskFrame label="נדרש">
+          <TaskText>מעגל ההתחייבות של {y1} ושל {y2}, לכל מחלקה בנפרד.</TaskText>
+        </TaskFrame>
       </>
     ),
   },
@@ -760,13 +762,14 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             { at: 12, label: "31.12: תיקון ותשלום", tone: "accent" },
           ]}
         />
-        <div className="space-y-1">
-          <p className="font-bold text-fg">נדרש</p>
-          <ol className="list-inside list-[hebrew] space-y-1">
-            <li>מעגל ההתחייבות ל-{EXAM_B.year}.</li>
-            <li>מעגל נכסי התכנית ל-{EXAM_B.year}, וההתחייבות נטו.</li>
-          </ol>
-        </div>
+        <TaskFrame label="נדרש">
+          <TaskText>
+            <ol className="list-[hebrew] space-y-1.5 ps-6">
+              <li>מעגל ההתחייבות ל-{EXAM_B.year}.</li>
+              <li>מעגל נכסי התכנית ל-{EXAM_B.year}, וההתחייבות נטו.</li>
+            </ol>
+          </TaskText>
+        </TaskFrame>
         <Remember>שימו שעון ל-60 דקות, ופתרו על דף. התשובות נבדקות אחת אחת בתרגול שבסוף השיעור.</Remember>
       </>
     ),

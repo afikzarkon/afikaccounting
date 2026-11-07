@@ -10,6 +10,7 @@ import { BookletCheck } from "./ias19-booklet-client";
 import { Ltr } from "./ias19-formula";
 import { rich } from "./ias19-rich";
 import { FullSteps, RollForward } from "./ias19-ui";
+import { TaskFrame, TaskText } from "./ias19-question";
 
 /**
  * The booklet-level questions that close the lessons: the story and its data,
@@ -145,14 +146,15 @@ function booklet(q: BkQuestion): ScreenContent {
         {q.tables.map((t, i) => (
           <DataTable key={i} caption={t.title} head={t.head} rows={t.rows.map((row) => row.map(cell))} foot={t.foot?.map(cell)} />
         ))}
-        <div className="rounded-xl bg-surface-2 px-4 py-3 text-[15px] leading-relaxed">
-          <strong>נדרש:</strong>
-          <ol className="mt-1 list-[hebrew] space-y-1 ps-6">
-            {q.required.map((r) => (
-              <li key={r}>{rich(r)}</li>
-            ))}
-          </ol>
-        </div>
+        <TaskFrame label="נדרש">
+          <TaskText>
+            <ol className="list-[hebrew] space-y-1.5 ps-6">
+              {q.required.map((r) => (
+                <li key={r}>{rich(r)}</li>
+              ))}
+            </ol>
+          </TaskText>
+        </TaskFrame>
         <BookletCheck id={q.id} checks={q.checks} />
         <SolutionBox>
           <p className="mb-3 text-[14px] text-muted">
