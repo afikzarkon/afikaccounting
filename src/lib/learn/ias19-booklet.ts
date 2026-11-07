@@ -224,7 +224,8 @@ export function shortQuestion(id: string, title: string, q: ShortInput): BkQuest
       `ב-31.12.${y - 1} לא צפויות עזיבות. ב-31.12.${y} החברה צופה ש${q.leavers === 1 ? "מנהל אחד יעזוב" : `-${q.leavers} מנהלים יעזבו`} ב-31.12.${y + 1}.`,
       `נופש: ${G.map((g, i) => count(q.retreat.notUsed[i], g)).join(", ")} לא ניצלו את הנופש בשנת ${y}. מתוכם החברה מעריכה ש${G.map((g, i) => count(q.retreat.willUse[i], g)).join(", ")} ינצלו אותו בשנת ${y + 1}, נוסף על נופש ${y + 1}.`,
       `בונוס: בשנת ${y} הוחלט לשלם ל${m} בונוס חד פעמי של ${pc(q.bonusRate)} מהשכר החודשי ברוטו. מההטבות הסוציאליות חל עליו רק ${q.onCosts[0].label}. הוא ישולם במרץ ${y + 1}.`,
-      `${q.maternity.count === 1 ? "מנהלת אחת בהיריון" : `${q.maternity.count} מנהלות בהיריון`}, ${q.maternity.count === 1 ? "צפויה" : "צפויות"} ללדת בתחילת ${y + 1}. לכל אחת ${nf(q.maternity.months, 1)} חודשי חופשת לידה בתשלום.`,
+      `${q.maternity.count === 1 ? "מנהלת אחת בהיריון" : `${q.maternity.count} מנהלות בהיריון`}, ${q.maternity.count === 1 ? "צפויה" : "צפויות"} ללדת בתחילת ${y + 1}. ${q.maternity.count === 1 ? "היא זכאית" : "כל אחת זכאית"} ל-${nf(q.maternity.months, 1)} חודשי חופשת לידה בתשלום.`,
+      `לא היו שינויים במצבת העובדים, בשכר ובהטבות ב-${y - 1} וב-${y}, מלבד האמור.`,
     ],
     tables: [
       { title: "טבלה 1: העובדים", head: ["דרג", "עובדים", "שכר חודשי ברוטו", "ימי עבודה בחודש", "ימי נופש בשנה", "ימי חופשה בשנה"], rows: G.map((g) => [g.name, g.staff, money(g.salary), g.workDays, g.retreat, g.vacation]) },
