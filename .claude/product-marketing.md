@@ -27,7 +27,18 @@ private tutors.
 | Spreadsheet panel | Excel-like sheet next to practice questions | `src/components/sheet` |
 | Gamification today | In-lesson XP (screen 5, right first try 10, right on the second try 5, trap avoided 10), an in-lesson **answer streak** (best run kept), and a summary card with an XP ring. **No daily/return streak, no cross-course mastery view, no social layer yet** | `XP` in `src/lib/study/score.ts`, `src/components/study-mode/lesson-stats.tsx`, `summary-card.tsx` |
 
-## 2. Plans (placeholder prices — owner decides)
+## 1b. Scope & launch (owner decisions, 2026-11-08)
+
+- **Not launched yet.** The site goes public only when every semester-A topic of both years is ready.
+- **Year 1, semester A:** basics from zero · IAS 16 PP&E · IAS 2 inventory · preparing financial statements.
+  **Year 2, semester A:** IAS 19 employee benefits · financial instruments · non-profits (מלכ״רים).
+  Built today: most of year 1 (basics, IAS 2, IAS 16); in year 2 only IAS 19. Not built: preparing financial statements, financial instruments, non-profits.
+- **Multi-institution.** Several colleges/universities, each teaching the topics in a different order; more topics may be added.
+  So the unit of access is the **topic (module)**; an institution's course is a navigation mapping onto modules, not a product.
+- **Each topic** = interactive lessons + full videos; exams with full video solutions are sold as an add-on.
+- Proposed pricing model (not yet approved): `docs/strategy/decisions/2026-11-08-pricing.md` — year bundles + single modules + exam add-ons, one-time payments, no auto-renew.
+
+## 2. Plans in code today (placeholder prices — superseded by the proposal above once approved)
 
 Source: `src/lib/pricing.ts` (`PRICES_ARE_FINAL = false`).
 
