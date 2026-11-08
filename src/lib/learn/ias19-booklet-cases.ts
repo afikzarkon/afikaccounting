@@ -103,7 +103,7 @@ export const THREE_CASE: ThreeInput = {
     staff: 40,
     opening: 2_800_000,
     assetsOpening: 2_100_000,
-    y1: { rate: 0.035, service: 560_000, paid: 290_000, deposits: 180_000, paidFromAssets: 60_000, assetsClosing: 2_300_000, closing: 3_250_000 },
+    y1: { rate: 0.034, service: 560_000, paid: 290_000, deposits: 180_000, paidFromAssets: 60_000, assetsClosing: 2_300_000, closing: 3_250_000 },
     y2: { rate: 0.03, service: 620_000, pn: 260_000, deposits: 230_000, paidFromAssets: 55_000, assetsClosing: 2_600_000, closing: 3_400_000 },
   },
   production: { staff: 25, hired: 2023, salary: 10_200, raise: 0.035 },

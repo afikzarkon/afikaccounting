@@ -61,7 +61,7 @@ describe("the booklet-level questions", () => {
 
   it("three agreements: the note's missing lines, and the golden parachute", () => {
     const s = solveThree(THREE_CASE);
-    near(s.sales.y1.pn, 82_000);
+    near(s.sales.y1.pn, 84_800);
     near(s.sales.y2.paid, 307_500);
     near(s.ceo.y2.past, 25_892);
     near(s.ceo.y2.closing, 240_911);

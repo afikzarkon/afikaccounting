@@ -201,7 +201,12 @@ ${said(work.measure({ perYear: ONEOFF_PER_YEAR, years: 2, heads: 1, n: oneoffAt(
         ],
       ),
     ).filter((x) => x.kind === "number" && x.answer > 0),
-    calc("asm-closing", "מחלקת הרכבה: סגירה", "מחלקת הרכבה, 31.12.2022: כל קבוצה צברה עוד שנה, והתשלום קרוב בשנה. בשיעור 6% — מה יתרת הסגירה של המחלקה (ארבע הקבוצות יחד)?", ASM.year1.closing, [
+    calc(
+      "asm-closing",
+      "מחלקת הרכבה: סגירה",
+      `מחלקת הרכבה: מענק פרישה עם תקרה, שמשויך בקו ישר. ארבע קבוצות עובדים, ב-31.12.2022: ${ASM.groups.map((g) => `קבוצת ${g.id} — ${g.heads} עובדים, ${fmt(g.grants[0].perYear)} ₪ לשנה לעובד על ${g.grants[0].window} שנים לכל היותר, ${g.served + 1 === 1 ? "עבדו שנה אחת" : `עבדו ${g.served + 1} שנים`}, והתשלום בעוד ${g.nEnd} שנים.`).join(" ")} בשיעור היוון 6% — מה יתרת הסגירה של המחלקה (ארבע הקבוצות יחד)?`,
+      ASM.year1.closing,
+      [
       `כל קבוצה לפי ${FORMULA.measure}:`,
       ...ASM.groups.map((g) => `קבוצת ${g.id}:
 ${work.measure({ perYear: g.grants[0].perYear, years: Math.min(g.served + 1, g.grants[0].window), heads: g.heads, n: g.nEnd, i: 0.06 }).numbers}`),
