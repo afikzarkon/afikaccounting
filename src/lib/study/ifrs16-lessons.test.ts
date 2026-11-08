@@ -422,7 +422,7 @@ describe("lesson 7: figures, against a separate calculation over dated cash flow
   const near = (a: number, b: number, label = "") => assert.ok(Math.abs(a - b) <= 1, `${label}: ${a} ≠ ${b}`);
   it("the practice", () => {
     const answer = (id: string) => (Lmd.LESSOR_CHANGES.exercises.find((x) => x.id === id) as { answer: number }).answer;
-    const want: Record<string, number> = { "op-prepaid": 140_000, "op-income-prepaid": 87_000, "op-income-accrued": 90_000, "op-accrued-after": 20_000, "op-to-fin": 77_301, "sep-income": 75_000, "fin-dep": 60_000, "ifrs9-bal": 246_368, "ifrs9-loss": 95_331, "ifrs9-gain": 27_721, "waiver-due": 18_000, "waiver-future": 40_000 };
+    const want: Record<string, number> = { "op-prepaid": 140_000, "op-income-prepaid": 87_000, "op-income-accrued": 90_000, "op-accrued-after": 20_000, "op-to-fin": 77_301, "sep-income": 75_000, "fin-dep": 60_000, "ifrs9-bal": 246_368, "ifrs9-loss": 95_331, "ifrs9-gain": 27_721, "waiver-due": 18_000, "waiver-future": 40_000, "ifrs9-sub-loss": 32_978 };
     for (const [id, v] of Object.entries(want)) assert.equal(answer(id), v, id);
     for (const x of Lmd.LESSOR_CHANGES.exercises) {
       if (x.kind === "number") assert.ok(x.answer > 0, x.id);
@@ -444,6 +444,8 @@ describe("lesson 7: figures, against a separate calculation over dated cash flow
     assert.ok(Lmd.CUT_PV_SHARE < 0.5 && Lmd.CUT_TERM_SHARE < 0.5);
     near(Lmd.LOW_NI, 744_144.2); near(Lmd.LOW_LOSS, 477_703.88); near(Lmd.LOW_WRONG, 684_110.04);
     near(Lmd.LOW_INT, 52_090.09); near(Lmd.LOW_CLOSE, 686_234.3); near(Lmd.LOW_NC, 624_270.7);
+    near(Lmd.SUB_NI, 684_110.04); near(Lmd.SUB_LOSS, 537_738.04); near(Lmd.SUB_INT, 61_569.9); near(Lmd.SUB_CLOSE, 635_679.94);
+    assert.equal(Lmd.SUB_NI + Lmd.SUB_LOSS, Lmd.MACH_NI);
   });
   it("payments forgiven", () => {
     assert.deepEqual(Lmd.WAIVE_ROWS.map((y) => y.closing), [48_000, 24_000, 0]);
@@ -611,5 +613,18 @@ describe("lesson 1: the walk down the standard's flowchart", () => {
     assert.equal(CASES.length, 7);
     assert.ok(CASES.some((c) => c.answer === "lease") && CASES.some((c) => c.answer === "not"));
     for (const c of CASES) assert.ok(c.why.trim(), c.text);
+  });
+});
+
+describe("IFRS 16 course screens", () => {
+  it("keeps Hebrew words out of the left-to-right formula component", () => {
+    const dir = join(process.cwd(), "src/components/basics");
+    const found: string[] = [];
+    for (const file of readdirSync(dir).filter((f) => /^ifrs16-.*\.tsx$/.test(f))) {
+      for (const m of readFileSync(join(dir, file), "utf8").matchAll(/<Ltr>([\s\S]*?)<\/Ltr>/g)) {
+        if (/[\u0590-\u05FF]/.test(m[1].replace(/\$\{[^}]*\}/g, ""))) found.push(`${file}: ${m[1]}`);
+      }
+    }
+    assert.deepEqual(found, []);
   });
 });

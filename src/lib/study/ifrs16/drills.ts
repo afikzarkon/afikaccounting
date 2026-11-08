@@ -352,7 +352,7 @@ export function drill(family: DrillFamily, seed: number): Drill {
     const before = whole(pvEnd(i, years, payment, residual));
     const after = whole(pvEnd(i, years, lower, residual));
     return {
-      prompt: `חכירה מימונית. נשארו ${years} שנים, ${fmt(payment)} ש״ח בסוף כל שנה, בריבית גלומה של ${pct(i)}, ושייר לא מובטח של ${fmt(residual)} ש״ח. בתיקון התשלום ירד ל-${fmt(lower)} ש״ח, והחכירה נשארת מימונית. ריבית השוק היום ${pct(market)}. כמה הפסד נרשם?`,
+      prompt: `חכירה מימונית. נשארו ${years} שנים, ${fmt(payment)} ש״ח בסוף כל שנה, בריבית גלומה של ${pct(i)}, ושייר לא מובטח של ${fmt(residual)} ש״ח. בתיקון התשלום ירד ל-${fmt(lower)} ש״ח, החכירה נשארת מימונית, והתיקון לא מביא לגריעה. ריבית השוק היום ${pct(market)}. כמה הפסד נרשם?`,
       answer: before - after,
       unit: "ש״ח",
       inputs: { payment, years, i, residual, lower },
