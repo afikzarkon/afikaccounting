@@ -6,8 +6,12 @@ import { TOPICS } from "../catalog";
 import { STUDY_MODULES } from ".";
 import { IFRS16_LESSONS } from "./ifrs16";
 import { IFRS16_GLOSSARY } from "./ifrs16/glossary";
-import { CASES, CONTRACT_TEST, CONTRACT_TEST_START, type TestEnd, type TestNode } from "./ifrs16/lessons/what";
+import { TERM_TAUGHT } from "./ifrs16/lessons/term";
+import { CASES, CONTRACT_TEST, CONTRACT_TEST_START, type TestEnd, type TestNode, WHAT_TAUGHT } from "./ifrs16/lessons/what";
 import { LESSON_N, type LeaseQuestion } from "./ifrs16/shared";
+
+/** What teaches each question, lesson by lesson. */
+const TAUGHT: Record<string, Record<string, string>> = { "ifrs16-what": WHAT_TAUGHT, "ifrs16-term": TERM_TAUGHT };
 
 const isEnd = (n: TestNode | TestEnd): n is TestEnd => "verdict" in n;
 
@@ -60,6 +64,20 @@ describe("the leases course", () => {
         assert.equal(t.traps[t.answer], "", t.id);
       }
     }
+  });
+
+  it("nothing is asked before it is taught: every question names a screen of its lesson or an earlier one", () => {
+    IFRS16_LESSONS.forEach((m, i) => {
+      const taught = TAUGHT[m.slug];
+      assert.ok(taught, `${m.slug}: no map of what is taught`);
+      const screens = new Set(IFRS16_LESSONS.slice(0, i + 1).flatMap((l) => l.screens.map((s) => s.id)));
+      const ids = [...m.exercises.map((x) => x.id), ...m.traps.map((t) => t.id)];
+      for (const id of ids) {
+        assert.ok(taught[id], `${m.slug}/${id}: no screen teaches it`);
+        assert.ok(screens.has(taught[id]), `${m.slug}/${id}: ${taught[id]} comes later or doesn't exist`);
+      }
+      assert.deepEqual(Object.keys(taught).sort(), [...ids].sort(), `${m.slug}: stale entries`);
+    });
   });
 
   it("the glossary: no term twice, none empty", () => {

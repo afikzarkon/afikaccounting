@@ -93,7 +93,7 @@ export const CASES: { text: string; answer: "lease" | "not"; why: string }[] = [
   {
     text: "בית ספר שוכר מיניבוס מסוים לשבוע לטיול שנתי. המורים נוהגים בו ובוחרים את המסלול. החוזה מתיר רק הסעת נוסעים, ויש בו מכסת קילומטרים. לספק אין זכות להחליף את הרכב.",
     answer: "lease",
-    why: "נכס מזוהה, וכל ההטבות בתוך היקף החוזה. המטרה נקבעה מראש, אבל בית הספר מפעיל את הרכב והספק לא יכול לשנות את הוראות ההפעלה. שבוע אחד הוא עדיין חכירה, גם אם אפשר ליישם עליו הקלה.",
+    why: "נכס מזוהה, וכל ההטבות בתוך היקף החוזה. המטרה נקבעה מראש, אבל בית הספר מפעיל את הרכב והספק לא יכול לשנות את הוראות ההפעלה. גם חוזה של שבוע אחד יכול להיות חכירה.",
   },
   {
     text: "יצואן שוכר מטוס מטען מסוים לטיסה אחת, והמטען ימלא כמעט את כולו. החוזה קובע מה יוטס, מאיפה, לאן ומתי. חברת התעופה מטיסה ומתחזקת, והיצואן לא יכול להטיס בעצמו. הוא לא תכנן את המטוס.",
@@ -276,6 +276,25 @@ const traps: Trap[] = [
     traps: ["", "אין בדיקה שנתית.", "שינוי בשווי אינו שינוי בתנאי החוזה.", "אין סף כזה בתקן."],
   },
 ];
+
+/** The screen that teaches what each question asks; a test checks that it comes before the question. */
+export const WHAT_TAUGHT: Record<string, string> = {
+  "scope-film": "ls-what-scope",
+  "scope-other": "ls-what-scope",
+  words: "ls-what-words",
+  "swap-later": "ls-what-swap",
+  "swap-repair": "ls-what-swap",
+  capacity: "ls-what-part",
+  percent: "ls-what-benefits",
+  limits: "ls-what-guard",
+  designed: "ls-what-preset",
+  "output-before": "ls-what-preset",
+  "part-term": "ls-what-three",
+  "by-name": "ls-what-three",
+  "who-operates": "ls-what-direct",
+  "swap-unlikely": "ls-what-swap",
+  reassess: "ls-what-words",
+};
 
 /** Lesson 1: what a lease is, the course's map, what the standard leaves out, and the three tests, down to the standard's flowchart. No calculations. */
 export const WHAT: StudyModule = {

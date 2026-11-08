@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { dealerSale, indexYear, lessee, lessorYear, pvEnd, pvStart, rateFor, reduceScope } from "./ifrs16";
+import { allocate, dealerSale, indexYear, leaseTerm, lessee, lessorYear, pvEnd, pvStart, rateFor, reduceScope } from "./ifrs16";
 
 /** Every expected figure below comes from a separate calculation over dated cash flows, not from this solver. */
 const near = (got: number, want: number, label = "") => assert.ok(Math.abs(got - want) <= 0.01, `${label}: ${got} ≠ ${want}`);
@@ -12,6 +12,25 @@ describe("present values", () => {
   });
   it("a zero rate is just the sum", () => near(pvEnd(0, 4, 100), 400));
   it("the rate that gives back a present value", () => near(pvEnd(rateFor(168_494.55, 5, 40_000), 5, 40_000), 168_494.55));
+});
+
+describe("what a contract holds, and for how long", () => {
+  it("splits the consideration by relative standalone prices", () => {
+    assert.deepEqual(allocate(14_000, [12_000, 4_000]), [10_500, 3_500]);
+    assert.deepEqual(allocate(360_000, [150_000, 90_000, 60_000]), [180_000, 108_000, 72_000]);
+  });
+  it("the lease term: options count only when reasonably certain", () => {
+    assert.equal(leaseTerm({ contractYears: 4 }).term, 4);
+    assert.equal(leaseTerm({ contractYears: 4, extendYears: 2, certainToExtend: false }).term, 4);
+    assert.equal(leaseTerm({ contractYears: 4, extendYears: 2, certainToExtend: true }).term, 6);
+    assert.equal(leaseTerm({ contractYears: 8, cancelAfter: 5 }).term, 5);
+    assert.equal(leaseTerm({ contractYears: 8, cancelAfter: 5, certainNotToCancel: true }).term, 8);
+    assert.equal(leaseTerm({ contractYears: 8, cancelAfter: 5 }).nonCancellable, 5);
+  });
+  it("a break that will be used means a later extension is never reached", () => {
+    assert.equal(leaseTerm({ contractYears: 8, cancelAfter: 5, extendYears: 3, certainToExtend: true }).term, 5);
+    assert.equal(leaseTerm({ contractYears: 8, cancelAfter: 5, certainNotToCancel: true, extendYears: 3, certainToExtend: true }).term, 11);
+  });
 });
 
 describe("a lessee", () => {

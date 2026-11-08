@@ -25,6 +25,25 @@ export function rateFor(target: number, n: number, pmt: number, fv = 0) {
   return (lo + hi) / 2;
 }
 
+/** A contract's consideration split by relative standalone prices (paragraph 13). */
+export function allocate(total: number, prices: number[]) {
+  const sum = prices.reduce((a, b) => a + b, 0);
+  return prices.map((p) => (total * p) / sum);
+}
+
+/**
+ * The lease term (paragraph 18), in years: the period that can't be cancelled,
+ * plus an option to extend if it is reasonably certain to be exercised, and the
+ * years after a break option if it is reasonably certain not to be. A break the
+ * lessee is expected to use ends the lease there, so a later extension is never reached.
+ */
+export function leaseTerm(a: { contractYears: number; cancelAfter?: number; certainNotToCancel?: boolean; extendYears?: number; certainToExtend?: boolean }) {
+  const nonCancellable = a.cancelAfter ?? a.contractYears;
+  const reachesEnd = a.cancelAfter === undefined || !!a.certainNotToCancel;
+  const extra = reachesEnd && a.certainToExtend ? (a.extendYears ?? 0) : 0;
+  return { nonCancellable, term: (reachesEnd ? a.contractYears : nonCancellable) + extra };
+}
+
 export type LesseeTerms = {
   /** The payment each year. */
   payment: number;
