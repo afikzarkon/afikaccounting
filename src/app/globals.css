@@ -17,7 +17,7 @@
   --line-strong: rgb(22 38 31 / 0.2);
   --fg: #16261f;
   --muted: #53635a;
-  --subtle: #7f8c85;
+  --subtle: #5f6c65; /* 4.7:1 or more on every light surface (WCAG AA) */
   --brand: #0f3d2e;
   --accent: #1d6b47;
   --accent-fg: #ffffff;
@@ -46,7 +46,7 @@
   --line-strong: rgb(200 222 209 / 0.21);
   --fg: #e4ece6;
   --muted: #9aaaa1;
-  --subtle: #6d7c74;
+  --subtle: #85948b; /* 4.7:1 or more on every dark surface (WCAG AA) */
   --brand: #cfe3d7;
   --accent: #62c08f;
   --accent-fg: #062016;

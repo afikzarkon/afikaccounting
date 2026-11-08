@@ -101,10 +101,11 @@ describe("the site map", () => {
     assert.ok(learn && "items" in learn);
     for (const i of learn.items) assert.ok(i.tier, i.href);
   });
-  it("every learning calculator is in the calculators menu", () => {
-    const tools = site.nav.find((i) => "items" in i && i.label === "כלים");
-    assert.ok(tools && "items" in tools);
-    const hrefs = new Set(tools.items.map((i) => i.href));
-    for (const t of [...LEARNING_TOOLS, ...ENGINE_TOOLS]) assert.ok(hrefs.has(t.href), t.href);
+  it("every learning calculator is in the courses menu, and the solution engine has its own link", () => {
+    const learn = site.nav.find((i) => "items" in i && i.label === "קורסים");
+    assert.ok(learn && "items" in learn);
+    const hrefs = new Set(learn.items.map((i) => i.href));
+    for (const t of LEARNING_TOOLS) assert.ok(hrefs.has(t.href), t.href);
+    assert.ok(site.nav.some((i) => !("items" in i) && i.href === "/engine"));
   });
 });

@@ -5,6 +5,12 @@ import { cn } from "@/lib/utils";
 
 type Step = { label: string; onClick: () => void };
 
+/** "שאלה 10 · שאלות אמריקאיות" → the place ("שאלה 10") in bold, its kind on the small line, so a phone never cuts it off. */
+const split = (label: string) => {
+  const i = label.indexOf(" · ");
+  return i < 0 ? { main: label, kind: "" } : { main: label.slice(0, i), kind: label.slice(i + 3) };
+};
+
 /**
  * "Previous" and "next" at the foot of the lesson, each naming where it goes —
  * a concept, the move into practice, a question, the summary — with the place
@@ -29,8 +35,10 @@ export function LessonNav({ prev, next, position, className }: { prev?: Step; ne
           >
             <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
             <span className="min-w-0">
-              <span className="block text-[11px] text-muted">הקודם</span>
-              <span className="block truncate text-[13.5px] font-semibold text-fg">{prev.label}</span>
+              <span className="block truncate text-[11px] text-muted">הקודם{split(prev.label).kind && ` · ${split(prev.label).kind}`}</span>
+              <span className="block truncate text-[13.5px] font-semibold text-fg" title={prev.label}>
+                {split(prev.label).main}
+              </span>
             </span>
           </button>
         ) : (
@@ -49,8 +57,10 @@ export function LessonNav({ prev, next, position, className }: { prev?: Step; ne
             )}
           >
             <span className="min-w-0 flex-1">
-              <span className="block text-[11px] opacity-80">הבא</span>
-              <span className="block truncate text-[14px] font-bold">{next.label}</span>
+              <span className="block truncate text-[11px] opacity-80">הבא{split(next.label).kind && ` · ${split(next.label).kind}`}</span>
+              <span className="block truncate text-[14px] font-bold" title={next.label}>
+                {split(next.label).main}
+              </span>
             </span>
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent-fg/15">
               <ChevronLeft className="h-4 w-4" aria-hidden />

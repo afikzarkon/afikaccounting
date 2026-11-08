@@ -45,8 +45,9 @@ export function CoursePath({ lessons, locked = [], previews = [] }: { lessons: S
   const topic = lessons[0] ? topicByHref(lessons[0].backHref) : undefined;
   return (
     <>
-      {topic && <CourseGoals course={topic.id} name={topic.standard ?? topic.title} lessons={lessons} topics={topics} />}
-      <div className="card flex flex-wrap items-center gap-x-6 gap-y-4 p-5 sm:px-6">
+      {/* One card: the progress, the single next step, and one thin row of goals (readiness, the exam, the streak). */}
+      <div className="card p-5 sm:px-6">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
         <XpRing xp={xp} max={max} className="h-24 w-24" />
         <div className="min-w-0 flex-[1_1_12rem]">
           <p className="text-[18px] font-bold text-fg">המסלול שלך</p>
@@ -74,6 +75,16 @@ export function CoursePath({ lessons, locked = [], previews = [] }: { lessons: S
         ) : (
           <p className="text-sm text-muted">דילגתם על השיעורים שנותרו — אפשר לחזור לכל אחד מהם מתי שתרצו.</p>
         )}
+      </div>
+      {next && (
+        <ContinueButton
+          lesson={next.m}
+          started={next.status === "started"}
+          locked={locked.includes(next.m.slug)}
+          onLocked={() => setPaywall(next.m)}
+        />
+      )}
+      {topic && <CourseGoals course={topic.id} name={topic.standard ?? topic.title} lessons={lessons} topics={topics} />}
       </div>
 
       <ol className="mt-8" aria-label="שיעורי הקורס">
@@ -343,4 +354,31 @@ export function LegacyHashRedirect({ redirects }: { redirects: Record<string, st
     if (to && !to.startsWith("#")) router.replace(to);
   }, [router, redirects]);
   return null;
+}
+
+/** A lesson's rough length: about a minute a concept and under a minute a question. */
+export const minutesOf = (m: StudyModule) => Math.max(5, Math.round(m.screens.length * 1.2 + (m.exercises.length + m.traps.length) * 0.8));
+
+/** The course's one main action: the lesson to do next, with its length. */
+function ContinueButton({ lesson, started, locked, onLocked }: { lesson: StudyModule; started: boolean; locked: boolean; onLocked: () => void }) {
+  const label = (
+    <>
+      {locked ? <Lock className="h-4 w-4" aria-hidden /> : <PlayCircle className="h-4 w-4" aria-hidden />}
+      <span className="min-w-0 truncate">
+        {started ? "להמשיך" : "להתחיל"}: שיעור {lesson.n} · {lesson.title}
+      </span>
+      <span className="num shrink-0 text-[13px] font-medium opacity-80">~{minutesOf(lesson)} דק׳</span>
+      <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
+    </>
+  );
+  const cls = "mt-4 flex h-12 w-full sm:inline-flex items-center gap-2.5 rounded-xl bg-accent px-5 text-[15px] font-semibold text-accent-fg shadow-[0_10px_24px_-12px_var(--accent)] transition hover:brightness-110 sm:w-auto sm:max-w-full";
+  return locked ? (
+    <button type="button" onClick={onLocked} className={cls}>
+      {label}
+    </button>
+  ) : (
+    <Link href={studyHref(lesson.slug)} className={cls}>
+      {label}
+    </Link>
+  );
 }

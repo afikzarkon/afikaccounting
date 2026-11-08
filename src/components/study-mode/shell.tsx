@@ -472,11 +472,14 @@ export function StudyShell({ module: m, screens, next, course, share }: { module
             </aside>
 
             <div ref={top} className="min-w-0 scroll-mt-32 lg:scroll-mt-20 lg:px-8 lg:pt-6 2xl:px-12" role="region" aria-label={`שיעור אינטראקטיבי: ${m.title}`}>
+              {/* One quiet row: where the lesson sits (on a phone the sticky bar above already says it) and the running score. */}
               <div className="flex items-center gap-3">
-                <div className="min-w-0 flex-1">
+                <div className="hidden min-w-0 flex-1 lg:block">
                   <Breadcrumbs trail={[{ label: course.title, href: course.href }, { label: `שיעור ${m.n}: ${m.title}` }]} />
                 </div>
-                <LessonStats streak={p.streak} xp={xpOf(m, p)} />
+                <div className="ms-auto">
+                  <LessonStats streak={p.streak} xp={xpOf(m, p)} />
+                </div>
               </div>
               <LessonRail module={m} progress={p} place={place} opening={opening} onGo={goTo} className="no-print mt-3 hidden lg:flex" />
 
