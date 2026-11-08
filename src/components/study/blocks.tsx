@@ -146,6 +146,7 @@ export function DataTable({
   foot,
   highlight,
   caption,
+  fit,
 }: {
   head: string[];
   rows: Cell[][];
@@ -153,6 +154,8 @@ export function DataTable({
   /** Row indexes to emphasise (e.g. the year a cap or renovation kicks in). */
   highlight?: number[];
   caption?: ReactNode;
+  /** A table of words: it wraps to the width it has, instead of keeping a minimum width and scrolling. */
+  fit?: boolean;
 }) {
   const cell = (c: Cell) => (typeof c === "number" ? <Num v={c} /> : c);
   // One alignment per column, shared by its header: numeric columns to the end, everything else to the start.
@@ -162,7 +165,7 @@ export function DataTable({
     <div className="my-4 overflow-hidden rounded-xl border border-line">
       {caption && <p className="border-b border-line bg-surface-2/70 px-4 py-2.5 text-sm font-semibold text-fg">{caption}</p>}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[30rem] text-sm">
+        <table className={cn("w-full text-sm", !fit && "min-w-[30rem]")}>
           <thead>
             <tr className="text-xs text-muted">
               {head.map((h, i) => (

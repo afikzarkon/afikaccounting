@@ -38,10 +38,10 @@ export function ExchangeJournalSection() {
       </p>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <div className="card p-5">
+        <div className="card min-w-0 p-5">
           <p className="text-[17px] font-semibold text-fg">פקודת יומן מלאה</p>
           <p className="text-xs text-muted">כשיש מהות מסחרית</p>
-          <DataTable head={["חשבון", "צד", "מתי ובאיזה סכום"]} rows={FULL_RULES} />
+          <DataTable fit head={["חשבון", "צד", "מתי ובאיזה סכום"]} rows={FULL_RULES} />
           <JournalEntry
             title="החלפת המכונה — פקודה מלאה"
             date={EXCHANGE_DATE}
@@ -54,10 +54,10 @@ export function ExchangeJournalSection() {
             }
           />
         </div>
-        <div className="card p-5">
+        <div className="card min-w-0 p-5">
           <p className="text-[17px] font-semibold text-fg">פקודת יומן מקוצרת (נטו)</p>
           <p className="text-xs text-muted">אותה עסקה, בשורה אחת לנכס הישן</p>
-          <DataTable head={["חשבון", "צד", "מתי ובאיזה סכום"]} rows={NET_RULES} />
+          <DataTable fit head={["חשבון", "צד", "מתי ובאיזה סכום"]} rows={NET_RULES} />
           <JournalEntry
             title="החלפת המכונה — פקודה מקוצרת"
             date={EXCHANGE_DATE}
