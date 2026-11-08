@@ -313,3 +313,34 @@ export async function getExamAdmin(id: string): Promise<AdminExam | null> {
     },
   };
 }
+
+// ---- growth funnel -------------------------------------------------------------
+
+export type FunnelSteps = { entered: number; answered: number; activated: number; signedUp: number; returned: number; paywall: number; plan: number; checkout: number; paid: number };
+export type Funnel = {
+  funnel: FunnelSteps;
+  newVisitors: number;
+  sources: { source: string; visitors: number; answered: number; activated: number; signedUp: number; paid: number }[];
+  daily: { day: string; entries: number; learners: number; signups: number; payments: number }[];
+  weekly: { week: string; learners: number }[];
+  retention: { week: string; size: number; d1: number; d7: number; d30: number }[];
+  habits: { reviewSessions: number; reviewers: number; studiers: number; examGoals: number; emailVisits: number; groups: number; groupMembers: number; remindersOn: number };
+  streaks: { s1: number; s2: number; s4: number; s8: number };
+  shares: { clicks: number; byKind: Record<string, number>; visits: number; visitsSignedUp: number };
+  checks: { started: number; completed: number; avgRight: number | null; byCourse: { course: string; started: number; completed: number }[] };
+  lessons: { slug: string; starts: number; learners: number; answers: number; firstTries: number; firstTryRight: number; traps: number; trapFalls: number }[];
+  traps: { slug: string; id: string; answers: number; falls: number }[];
+  paywalls: { gate: string; views: number; clicks: number }[];
+};
+
+/** The growth dashboard for the last `days` days, and the same length of time before it (for the change). */
+export async function getFunnel(days: number, source?: string): Promise<{ now: Funnel; before: Funnel; asOf: number }> {
+  const supabase = await createClient();
+  const end = Date.now();
+  const iso = (ms: number) => new Date(ms).toISOString();
+  const [now, before] = await Promise.all([
+    supabase.rpc("admin_funnel", { since: iso(end - days * 86_400_000), until: iso(end), p_source: source ?? null }),
+    supabase.rpc("admin_funnel", { since: iso(end - 2 * days * 86_400_000), until: iso(end - days * 86_400_000), p_source: source ?? null }),
+  ]);
+  return { now: check(now) as Funnel, before: check(before) as Funnel, asOf: end };
+}

@@ -169,7 +169,7 @@ export function DashboardView({ data, storage, days, grain }: { data: Analytics;
   );
 }
 
-function Segmented({ label, options }: { label: string; options: { label: string; href: string; on: boolean }[] }) {
+export function Segmented({ label, options }: { label: string; options: { label: string; href: string; on: boolean }[] }) {
   return (
     <div className="flex items-center gap-2">
       <span className="text-xs text-muted">{label}</span>

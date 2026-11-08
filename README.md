@@ -69,6 +69,8 @@ Analytics dashboard, media library (uploads to Supabase Storage, or YouTube / Vi
 
 3. Open **מערכת ניהול** from the user menu, or go to `/admin`.
 
+**Growth funnel (`/admin/funnel`).** Apply `supabase/migrations/20261108030000_admin_funnel.sql`. The funnel from entry to payment (entry → first answer → activation → sign-up → back on another day → paywall → plan → checkout → payment), sources (ambassador `?ref=`, `utm_source`, referring site, direct — click one to filter everything), weekly learners with 10+ answers, retention by first-visit week, the habit features (review, streaks, exam dates, groups, reminders, shares), each lesson's accuracy and trap fall rate, the traps that catch most readers, paywall gates and the summary check — each against the period before. Aggregated in the database by `public.admin_funnel()` (admins only, aggregates only); `supabase/tests/funnel.test.ts` checks the numbers.
+
 Access is enforced in three places: the proxy (signed-in only), every admin page and Server Action (`requireAdmin` / `assertAdmin`), and the database itself (`public.is_admin()` in every admin policy; users cannot change their own role).
 
 Usage analytics are anonymous: a random id per browser tab, never linked to an account unless the visitor is signed in. Events are sent with `navigator.sendBeacon` to `/api/track`, validated there, and aggregated in the database (`admin_analytics`). Admin pages are not tracked.
