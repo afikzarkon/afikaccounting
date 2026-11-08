@@ -8,6 +8,7 @@ import { isBalanced } from "../learn/basics";
 import { IFRS16_LESSONS } from "./ifrs16";
 import { drill, DRILL_FAMILIES, type DrillFamily, statementDrill } from "./ifrs16/drills";
 import * as Chg from "./ifrs16/lessons/changes";
+import * as Exm from "./ifrs16/lessons/exam";
 import * as Lsr from "./ifrs16/lessons/lessor";
 import * as Lmd from "./ifrs16/lessons/lessor-changes";
 import * as Spc from "./ifrs16/lessons/special";
@@ -19,7 +20,7 @@ import { CASES, CONTRACT_TEST, CONTRACT_TEST_START, type TestEnd, type TestNode,
 import { LESSON_N, type LeaseQuestion } from "./ifrs16/shared";
 
 /** What teaches each question, lesson by lesson. */
-const TAUGHT: Record<string, Record<string, string>> = { "ifrs16-what": WHAT_TAUGHT, "ifrs16-term": TERM_TAUGHT, "ifrs16-measure": MEASURE_TAUGHT, "ifrs16-subsequent": SUBSEQUENT_TAUGHT, "ifrs16-changes": Chg.CHANGES_TAUGHT, "ifrs16-lessor": Lsr.LESSOR_TAUGHT, "ifrs16-lessor-changes": Lmd.LESSOR_CHANGES_TAUGHT, "ifrs16-special": Spc.SPECIAL_TAUGHT };
+const TAUGHT: Record<string, Record<string, string>> = { "ifrs16-what": WHAT_TAUGHT, "ifrs16-term": TERM_TAUGHT, "ifrs16-measure": MEASURE_TAUGHT, "ifrs16-subsequent": SUBSEQUENT_TAUGHT, "ifrs16-changes": Chg.CHANGES_TAUGHT, "ifrs16-lessor": Lsr.LESSOR_TAUGHT, "ifrs16-lessor-changes": Lmd.LESSOR_CHANGES_TAUGHT, "ifrs16-special": Spc.SPECIAL_TAUGHT, "ifrs16-exam": Exm.EXAM_TAUGHT };
 
 const isEnd = (n: TestNode | TestEnd): n is TestEnd => "verdict" in n;
 
@@ -524,6 +525,59 @@ describe("lesson 8: figures, against a separate calculation over dated cash flow
       walk(start, []);
       assert.deepEqual([...seen].sort(), Object.keys(nodes).sort());
     }
+  });
+});
+
+describe("lesson 9: figures, against a separate calculation over dated cash flows", () => {
+  const near = (a: number, b: number, label = "") => assert.ok(Math.abs(a - b) <= 2, `${label}: ${a} ≠ ${b}`);
+  it("the practice, with no hint to the topic", () => {
+    const answer = (id: string) => (Exm.EXAM.exercises.find((x) => x.id === id) as { answer: number }).answer;
+    const want: Record<string, number> = { "x-dep": 20_000, "x-start": 8_316, "x-nc": 131_216, "x-index": 7_092, "x-cogs": 86_325, "x-opmod": 58_000, "x-slb": 101_441, "x-half": 131_053 };
+    for (const [id, v] of Object.entries(want)) assert.equal(answer(id), v, id);
+    for (const x of Exm.EXAM.exercises) {
+      if (x.kind === "number") assert.ok(x.answer > 0, x.id);
+      if (x.kind === "journal") assert.ok(isBalanced(x.entry), x.id);
+      if (x.kind !== "journal") {
+        assert.ok(!/באותו|באותה|אותם|אותן|כמו בשאלה|השאלה הקודמת/.test(x.prompt), x.id);
+        assert.equal(x.skill, "שאלת מבחן", x.id);
+      }
+    }
+  });
+  it("exam 1: four floors", () => {
+    near(Exm.A_L0, 6_683_001.79); near(Exm.A_FLOOR, 1_670_750.45); near(Exm.A_FLOOR2, 1_253_062.83); near(Exm.A_OPEN, 5_457_097.1); near(Exm.A_CLOSE, 4_750_421.42); near(Exm.A_INT, 493_324.32);
+    near(Exm.AD_DEP, 52_210.95); near(Exm.AD_OCI, 199_148.12); assert.equal(Exm.AD_GAIN, 150_000); assert.equal(Exm.AD_INCOME, 315_000); assert.equal(Exm.AD_LEFT, 105_000);
+    near(Exm.AC_DEP, 104_421.9); near(Exm.AC_GAIN, 351_359.07); assert.ok(Math.abs(Exm.AC_RATE * 100 - 1.09) < 0.01); near(Exm.AC_CLOSE, 1_403_575.14); near(Exm.AC_INT, 95_575.14);
+    near(Exm.AB_ROU, 2_088_438.06); near(Exm.A_DEP, 574_320.47); near(Exm.A_PL, -155_710.58); near(Exm.A_TOTAL, 43_437.53);
+    assert.equal(Exm.A_FLOOR2 - Exm.AD_DEP + Exm.AD_OCI, Exm.AD_FV);
+  });
+  it("exam 2: two floors", () => {
+    near(Exm.B_L0, 8_144_638.94); near(Exm.B_ROU, 8_184_638.94); near(Exm.B_FLOOR, 4_092_319.47); near(Exm.B_DEP, 454_702.16); near(Exm.B_FLOOR2, 3_182_915.14);
+    near(Exm.B_OPEN, 6_840_797.13); near(Exm.B_INT, 478_855.8); near(Exm.B_CLOSE, 6_119_652.93); near(Exm.B_OCI, 444_435.94); assert.equal(Exm.B_LOSS, 100_000);
+    near(Exm.B_SUB_PV, 2_007_267.72); near(Exm.B_LOWER, 2_728_212.98); near(Exm.B_DEP_TOTAL, 682_053.25);
+    assert.ok(Exm.B_SUB_PV / Exm.B.fvJul < 0.9);
+  });
+  it("exam 3: one contract in two sets of books", () => {
+    assert.ok(Math.abs(Exm.C_RATE * 100 - 9.98) < 0.01);
+    near(Exm.C_L0, 1_137_848.37); near(Exm.C_DEP, 227_569.67); near(Exm.C_UP, 7_517.47); near(Exm.C_A2, 690_226.49); near(Exm.C_L2, 753_849.86); near(Exm.C_L3, 652_212.57); near(Exm.C_DOWN, 101_637.3); near(Exm.C_A3, 588_589.19); near(Exm.C_INT3, 52_177.01); near(Exm.C_CLOSE3, 454_389.57); near(Exm.C_NC3, 240_740.74);
+    near(Exm.CR_PVU, 37_290.98); near(Exm.CR_SALES, 1_162_709.02); near(Exm.CR_COGS, 962_709.02); assert.equal(Exm.CR_SALES - Exm.CR_COGS, 200_000);
+    near(Exm.CR_I1, 119_747.18); near(Exm.CR_A1, 999_241.08); near(Exm.CR_LOSS1, 20_506.11); near(Exm.CR_I2, 99_713.59); near(Exm.CR_A2, 776_402.26); near(Exm.CR_LOSS2, 22_552.4); near(Exm.CR_M, 652_013.53); near(Exm.CR_LOSS3, 124_388.73); near(Exm.CR_I3, 65_063.99); near(Exm.CR_C3, 467_077.52); near(Exm.CR_N3, 263_686.87);
+  });
+  it("exam 4: a sale, in advance, then a smaller space", () => {
+    near(Exm.D_GROSS, 2_179_728.19); near(Exm.D_ROU, 1_367_836.91); near(Exm.D_GAIN, 288_108.72); near(Exm.D_DEP, 91_189.13); near(Exm.D_I1, 98_986.41); near(Exm.D_C1, 2_078_714.6); near(Exm.D_I2, 93_935.73); near(Exm.D_C2, 1_972_650.33); near(Exm.D_ROU2, 1_185_458.66);
+    near(Exm.D_AFTER, 1_772_650.33); near(Exm.D_L_OUT, 886_325.16); near(Exm.D_A_OUT, 592_729.33); near(Exm.D_MOD_GAIN, 293_595.83); near(Exm.D_NEW, 754_545.95); near(Exm.D_DOWN, 131_779.21); near(Exm.D_A3, 460_950.12); near(Exm.D_DEP3, 35_457.7); near(Exm.D_I3, 45_272.76); near(Exm.D_C3, 799_818.71); near(Exm.D_RENT, 206_666.67);
+    assert.equal(Exm.D.proceeds + Exm.D_ROU, Exm.D.bookValue + Exm.D_GROSS + Exm.D_GAIN);
+  });
+  it("the map: every road ends in a verdict, and every node can be reached", () => {
+    const seen = new Set<string>();
+    const walk = (at: string, trail: string[]) => {
+      assert.ok(!trail.includes(at), `a loop at ${at}`);
+      seen.add(at);
+      const node = Exm.MAP_WALK[at];
+      assert.ok(node, at);
+      if (!isEnd(node)) for (const a of node.answers) walk(a.to, [...trail, at]);
+    };
+    walk(Exm.MAP_WALK_START, []);
+    assert.deepEqual([...seen].sort(), Object.keys(Exm.MAP_WALK).sort());
   });
 });
 

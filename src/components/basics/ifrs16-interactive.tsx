@@ -78,9 +78,11 @@ export function RouBuilder() {
 }
 
 /** Endless practice: pick a family, solve, check within two shekels, and see the whole solution. */
-export function LeaseDrill({ families }: { families: DrillFamily[] }) {
-  const [family, setFamily] = useState(families[0]);
+/** `mixed` hides the topic: each new exercise comes from the next family, unnamed. */
+export function LeaseDrill({ families, mixed }: { families: DrillFamily[]; mixed?: boolean }) {
+  const [picked, setFamily] = useState(families[0]);
   const [seed, setSeed] = useState(1);
+  const family = mixed ? families[(seed - 1) % families.length] : picked;
   const [typed, setTyped] = useState("");
   const [checked, setChecked] = useState(false);
   const [shown, setShown] = useState(false);
@@ -94,6 +96,7 @@ export function LeaseDrill({ families }: { families: DrillFamily[] }) {
   };
   return (
     <section aria-label="מחולל תרגילים" className="card space-y-3 p-4 sm:p-5">
+      {!mixed && (
       <div className="flex flex-wrap gap-1.5" role="group" aria-label="סוג תרגיל">
         {families.map((f) => (
           <button
@@ -110,6 +113,7 @@ export function LeaseDrill({ families }: { families: DrillFamily[] }) {
           </button>
         ))}
       </div>
+      )}
       <p className="text-[16px] leading-relaxed font-semibold text-fg">{d.prompt}</p>
       <div className="flex flex-wrap items-center gap-2">
         <input
