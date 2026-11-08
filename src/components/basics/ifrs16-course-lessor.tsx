@@ -172,7 +172,7 @@ export const IFRS16_LESSOR_SCREENS: Record<string, ScreenContent> = {
       <>
         <Part title="השקעה נטו">
           <p className="text-[15.5px] font-semibold">
-            <Ltr>{"שווי הוגן + עלויות ישירות = השקעה נטו"}</Ltr>
+            שווי הוגן + עלויות ישירות = השקעה נטו
           </p>
           <p className="mt-1.5 text-[15px]">זו ההגדרה של הריבית הגלומה מהשיעור השלישי, מהצד של המחכיר. לכן העלויות נכנסות מאליהן, ולא נוספות בנפרד (סעיף 69).</p>
         </Part>

@@ -64,7 +64,7 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
       <>
         <Part title="סעיף 39">
           <p className="text-[15.5px] font-semibold">
-            <Ltr>{"יתרת הנכס + הפרש בהתחייבות = הנכס אחרי"}</Ltr>
+            יתרת הנכס + הפרש בהתחייבות = הנכס אחרי
           </p>
         </Part>
         <Story icon={<Wrench />} title="ירידה גדולה מהנכס">
@@ -82,7 +82,7 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
         />
         <Part title="פחת אחרי כל שינוי">
           <p className="text-[15.5px] font-semibold">
-            <Ltr>{"יתרת הנכס אחרי השינוי ÷ השנים שנשארו = פחת"}</Ltr>
+            יתרת הנכס אחרי השינוי ÷ השנים שנשארו = פחת
           </p>
         </Part>
         <Remember>המשמעות: הפחת משתנה מעכשיו והלאה. לא מתקנים שנים קודמות.</Remember>

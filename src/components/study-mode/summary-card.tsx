@@ -81,7 +81,7 @@ export function SummaryCard({
           <RotateCcw className="h-4 w-4" aria-hidden /> התחלה מחדש
         </Button>
         {next && (
-          <ButtonLink href={next.href} size="lg" className="sm:ms-auto">
+          <ButtonLink href={next.href} size="lg" className="h-auto min-h-12 py-2 whitespace-normal sm:ms-auto">
             {next.label} <ArrowLeft className="h-4 w-4" aria-hidden />
           </ButtonLink>
         )}

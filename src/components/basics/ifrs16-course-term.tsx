@@ -6,6 +6,7 @@ import { TaskFrame, TaskText } from "./ias19-question";
 import { Bridge, FullSteps } from "./ias19-ui";
 import { DecisionTree, Fork, Timeline, TwoPanel, WrongRight } from "./ias19-visuals";
 import { TermBuilder } from "./ifrs16-interactive";
+import { Ltr } from "./ias19-formula";
 import { FullSolution, P, quiz, T16, Tbl } from "./ifrs16-parts";
 import { SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
@@ -90,8 +91,8 @@ export const IFRS16_TERM_SCREENS: Record<string, ScreenContent> = {
         <Tbl
           head={["רכיב", "מחיר נפרד", "חלק", "הקצאה לשנה"]}
           rows={[
-            ["חכירת המכונה", SPLIT.rent, `${SPLIT.rent} / ${SPLIT.rent + SPLIT.service}`, SPLIT_LEASE],
-            ["שירות הטכנאי", SPLIT.service, `${SPLIT.service} / ${SPLIT.rent + SPLIT.service}`, SPLIT_SERVICE],
+            ["חכירת המכונה", SPLIT.rent, <span key="part0" className="whitespace-nowrap"><Ltr>{`${SPLIT.rent.toLocaleString("en-US")} / ${(SPLIT.rent + SPLIT.service).toLocaleString("en-US")}`}</Ltr></span>, SPLIT_LEASE],
+            ["שירות הטכנאי", SPLIT.service, <span key="part1" className="whitespace-nowrap"><Ltr>{`${SPLIT.service.toLocaleString("en-US")} / ${(SPLIT.rent + SPLIT.service).toLocaleString("en-US")}`}</Ltr></span>, SPLIT_SERVICE],
           ]}
           foot={["סך הכול", SPLIT.rent + SPLIT.service, "", SPLIT.total]}
         />

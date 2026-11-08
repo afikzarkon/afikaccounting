@@ -50,7 +50,7 @@ export const IFRS16_SUBSEQUENT_SCREENS: Record<string, ScreenContent> = {
       <>
         <Part title="המעגל (סעיפים 36, 37)">
           <p className="text-[15.5px] font-semibold">
-            <Ltr>{"פתיחה + ריבית − תשלום = סגירה"}</Ltr>
+            פתיחה + ריבית − תשלום = סגירה
           </p>
         </Part>
         <Story icon={<Truck />} title="המשאית">
@@ -101,7 +101,7 @@ export const IFRS16_SUBSEQUENT_SCREENS: Record<string, ScreenContent> = {
         />
         <Part title="המעגל, כשהתשלום ב-1.1">
           <p className="text-[15.5px] font-semibold">
-            <Ltr>{"(פתיחה − תשלום) × ריבית = הוצאות מימון"}</Ltr>
+            (פתיחה − תשלום) × ריבית = הוצאות מימון
           </p>
         </Part>
         <P>אותה משאית, אותם תשלומים, והפעם בתחילת כל שנה:</P>
@@ -139,7 +139,7 @@ export const IFRS16_SUBSEQUENT_SCREENS: Record<string, ScreenContent> = {
         />
         <Part title="המעגל (סעיף 30)">
           <p className="text-[15.5px] font-semibold">
-            <Ltr>{"עלות − פחת נצבר = נכס זכות שימוש, נטו"}</Ltr>
+            עלות − פחת נצבר = נכס זכות שימוש, נטו
           </p>
         </Part>
         <P>
@@ -454,7 +454,7 @@ export const IFRS16_SUBSEQUENT_SCREENS: Record<string, ScreenContent> = {
       <>
         <Part title="סעיף 6">
           <p className="text-[15.5px] font-semibold">
-            <Ltr>{"סך התשלומים ÷ תקופת החכירה = הוצאה לתקופה"}</Ltr>
+            סך התשלומים ÷ תקופת החכירה = הוצאה לתקופה
           </p>
         </Part>
         <Story icon={<Store />} title="דוכן לשנה">

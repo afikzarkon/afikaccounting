@@ -52,7 +52,7 @@ export const IFRS16_MEASURE_SCREENS: Record<string, ScreenContent> = {
         </P>
         <Part title="הנוסחה">
           <p className="text-[15.5px] font-semibold">
-            <Ltr>{"תשלום × (1 − (1 + i)^(−n)) ÷ i = ערך נוכחי"}</Ltr>
+            ערך נוכחי = תשלום × <Ltr>{"(1 − (1 + i)^(−n)) ÷ i"}</Ltr>
           </p>
         </Part>
         <Story icon={<Warehouse />} title="ארבעה תשלומים">
@@ -85,7 +85,7 @@ export const IFRS16_MEASURE_SCREENS: Record<string, ScreenContent> = {
         </P>
         <Deeper title="אם יש גם סכום בסוף התקופה">
           <P>
-            מוסיפים אותו מהוון: <Ltr>{"סכום ÷ (1 + i)^n"}</Ltr>. באקסל הוא הפרמטר הרביעי: <Ltr>{"=PV(i;n;-תשלום;-סכום)"}</Ltr>.
+            מוסיפים אותו מהוון: סכום ÷ <Ltr>{"(1 + i)^n"}</Ltr>. באקסל הוא הפרמטר הרביעי: <bdi dir="ltr">=PV(i;n;-<bdi>תשלום</bdi>;-<bdi>סכום</bdi>)</bdi>.
           </P>
         </Deeper>
       </>
@@ -217,7 +217,7 @@ export const IFRS16_MEASURE_SCREENS: Record<string, ScreenContent> = {
       <>
         <Part title="ההגדרה (נספח א׳)">
           <p className="text-[15.5px] font-semibold">
-            <Ltr>{"ערך נוכחי של תשלומי החכירה ושל השייר הלא מובטח = שווי הוגן + עלויות ישירות של המחכיר"}</Ltr>
+            ערך נוכחי של תשלומי החכירה ושל השייר הלא מובטח = שווי הוגן + עלויות ישירות של המחכיר
           </p>
         </Part>
         <Story icon={<Car />} title="אותה חכירה, שני מחכירים">
@@ -286,7 +286,7 @@ export const IFRS16_MEASURE_SCREENS: Record<string, ScreenContent> = {
       <>
         <Part title="הנוסחה (סעיף 24)">
           <p className="text-[15.5px] font-semibold">
-            <Ltr>{"התחייבות + תשלומים שבוצעו − תמריצים + עלויות ישירות + פירוק = עלות"}</Ltr>
+            התחייבות + תשלומים שבוצעו − תמריצים + עלויות ישירות + פירוק = עלות
           </p>
         </Part>
         <P>שחקו עם המספרים, וראו איך כל רכיב משנה את העלות ואת פקודת היומן:</P>
