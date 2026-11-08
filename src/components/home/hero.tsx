@@ -2,14 +2,12 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button";
 import { FIRST_LESSON, LEARN_HUB } from "@/lib/catalog";
-import type { Trap } from "@/lib/study/types";
+import type { FeaturedQuestion } from "@/lib/check";
 import { BUTTONS } from "@/lib/visibility/items";
 import { isHidden, isLinkHidden, labelOf } from "@/lib/visibility/rules";
 import { getVisibility } from "@/lib/visibility/server";
 import { HeroExercise } from "./hero-exercise";
 
-/** The hero's live question: the trap, the line above it, and where "more like this" leads. */
-export type HeroQuestion = { trap: Trap; source: string; href: string; more: string };
 
 /**
  * The home page's opening. It answers the free summary first — a summary says
@@ -18,7 +16,19 @@ export type HeroQuestion = { trap: Trap; source: string; href: string; more: str
  * two doors: from zero (the free course) or "I have an exam" (the courses).
  * What the free course holds is set out like a ledger, down to its total.
  */
-export async function Hero({ question, lessons, exercises, videos }: { question: HeroQuestion; lessons: number; exercises: number; videos: number }) {
+export async function Hero({
+  question,
+  check,
+  lessons,
+  exercises,
+  videos,
+}: {
+  question?: FeaturedQuestion;
+  check?: { href: string; label: string };
+  lessons: number;
+  exercises: number;
+  videos: number;
+}) {
   const v = await getVisibility();
   const { heroStart: start, heroTour: tour } = BUTTONS;
   const showStart = !isHidden(v, start.key) && !isLinkHidden(v.links, FIRST_LESSON);
@@ -44,7 +54,7 @@ export async function Hero({ question, lessons, exercises, videos }: { question:
         </div>
 
         <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:pt-8">
-          <HeroExercise trap={question.trap} source={question.source} href={question.href} more={question.more} />
+          {question && <HeroExercise trap={question.trap} source={question.source} href={question.href} more={question.more} />}
         </div>
 
         <div className="lg:col-start-1 lg:row-start-2">
@@ -81,11 +91,13 @@ export async function Hero({ question, lessons, exercises, videos }: { question:
           <p className="mt-4 max-w-sm text-sm text-muted">
             בלי כרטיס אשראי. הסיכום שלכם טוב לקריאה — כאן בודקים אם יודעים לפתור. עם חשבון, ההתקדמות נשמרת בכל מכשיר.
           </p>
-          <p className="mt-3 max-w-sm text-sm">
-            <Link href="/check/ias16" className="font-semibold text-accent hover:underline">
-              כבר יש לכם סיכום? בדקו אותו: 5 שאלות ב־IAS 16 ←
-            </Link>
-          </p>
+          {check && !isLinkHidden(v.links, check.href) && (
+            <p className="mt-3 max-w-sm text-sm">
+              <Link href={check.href} className="font-semibold text-accent hover:underline">
+                {check.label}
+              </Link>
+            </p>
+          )}
         </div>
       </div>
     </section>

@@ -9,9 +9,9 @@ import { TierBadge } from "@/components/pricing/tier-badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge, Container, SectionHeading } from "@/components/ui/primitives";
 import { FIRST_LESSON, PRICING_HUB, tasteLabel, TOPICS } from "@/lib/catalog";
+import { featuredCheck, featuredQuestion } from "@/lib/check";
 import { studyHref } from "@/lib/study";
 import { BASICS_LESSONS } from "@/lib/study/basics";
-import { IAS16_LESSONS } from "@/lib/study/ias16";
 import type { StudyModule } from "@/lib/study/types";
 import { BUTTONS } from "@/lib/visibility/items";
 import { isHidden, isLinkHidden, labelOf } from "@/lib/visibility/rules";
@@ -48,13 +48,9 @@ const count = (m: StudyModule) => m.exercises.length + m.traps.length;
 const minutes = (m: StudyModule) => Math.max(1, Math.round((m.videos ?? []).reduce((a, v) => a + v.duration, 0) / 60));
 
 export default async function Home() {
-  // The hero's question: a classic exam trap from the free first lesson of IAS 16 (a contractor's land is inventory), which a student already
-  // near an exam recognises; a first-year can still reason it out. Falls back to lesson 1 of the free course.
-  const ias16 = IAS16_LESSONS[0];
-  const examTrap = ias16.traps.find((t) => t.id === "land-dealer");
-  const hero = examTrap
-    ? { trap: examTrap, source: "שאלה מ־IAS 16, רכוש קבוע. יש בה מלכודת.", href: studyHref(ias16.slug), more: "עוד כאלה בשיעור הראשון של IAS 16 — בחינם" }
-    : { trap: BASICS_LESSONS[0].traps[0], source: "נסו שאלה משיעור 1. יש בה מלכודת.", href: FIRST_LESSON, more: "יש עוד כאלה בשיעור 1" };
+  // The hero's question and the summary check it points to: chosen from the catalog (course contents still move), never pinned to a lesson.
+  const hero = featuredQuestion();
+  const check = featuredCheck();
   const total = BASICS_LESSONS.reduce((a, m) => a + count(m), 0);
   // What the admin hid: a section, a button (or its text), a course or a lesson.
   const v = await getVisibility();
@@ -66,7 +62,7 @@ export default async function Home() {
   const freeLessons = BASICS_LESSONS.filter((m) => linked(studyHref(m.slug)));
   return (
     <>
-      <Hero question={hero} lessons={BASICS_LESSONS.length} exercises={total} videos={BASICS_LESSONS.reduce((a, m) => a + (m.videos?.length ?? 0), 0)} />
+      <Hero question={hero} check={check} lessons={BASICS_LESSONS.length} exercises={total} videos={BASICS_LESSONS.reduce((a, m) => a + (m.videos?.length ?? 0), 0)} />
 
       {show("home:pains") && (
         <Container className="pt-16 sm:pt-20">

@@ -18,7 +18,7 @@ private tutors.
 | Asset | What the student actually experiences | Where in code |
 |---|---|---|
 | Free course "חשבונאות מאפס" | 8 full lessons from debit/credit to statements, adjustments and credit losses | `src/lib/catalog.ts` (`basics`), `src/lib/learn/basics*.ts` |
-| Advanced courses | IAS 2 Inventory (12 lessons), IAS 16 PP&E (14), IAS 19 Employee benefits (8) — first lesson free in each | `src/lib/catalog.ts` (`preview`), `src/lib/study/*` |
+| Advanced courses | IAS 2 Inventory, IAS 16 PP&E, IAS 19 Employee benefits — first lesson free in each (lesson counts: read them from the code, they change) | `src/lib/catalog.ts` (`preview`), `src/lib/study/*` |
 | Practice with instant feedback | Exercises (tracked: done / ok / tries) and **traps** (מלכודות) — deliberately tempting wrong answers that get flagged and explained | `src/lib/study/score.ts` |
 | Spaced review | A weak answer (wrong, right on the second try, or a trap fallen into) goes into box 0. It comes back after 1, then 3, then 7 days, and is mastered after 3 right in a row | `src/lib/study/review.ts`, `/review` |
 | Exam-level questions | Booklet-level questions at the end of lessons; full solutions in tables | `src/lib/learn/*-exams.ts` |
@@ -35,6 +35,10 @@ private tutors.
   Built today: most of year 1 (basics, IAS 2, IAS 16); in year 2 only IAS 19. Not built: preparing financial statements, financial instruments, non-profits.
 - **Multi-institution.** Several colleges/universities, each teaching the topics in a different order; more topics may be added.
   So the unit of access is the **topic (module)**; an institution's course is a navigation mapping onto modules, not a product.
+- **Course contents are not final.** Lessons, their order, screens, exercises and traps inside each course are still changing.
+  Never hard-code a lesson slug, a trap id or a lesson count in product code, copy or plans: derive them from `src/lib/catalog.ts`
+  and `src/lib/study/*` (as `src/lib/check.ts` does), write copy without counts or with counts read from code, and write tests
+  that check rules ("five traps, one per lesson, from a free lesson") rather than particular content.
 - **Each topic** = interactive lessons + full videos; exams with full video solutions are sold as an add-on.
 - Proposed pricing model (not yet approved): `docs/strategy/decisions/2026-11-08-pricing.md` — year bundles + single modules + exam add-ons, one-time payments, no auto-renew.
 

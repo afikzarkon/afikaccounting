@@ -38,7 +38,7 @@ Students arrive in two very different states (segments in product-marketing §4)
 **Recommended flagship hook for door B: IAS 16 revaluation/impairment** (or IAS 19 actuarial gains/losses).
 These are the notorious exam killers: high fear, a high trap density, and a visual "aha" (the carrying-amount timeline). The free first lesson
 alone (`ias16-intro`) is an *introduction*, and introductions don't scare anyone into paying. Offer the hard part as a free, single, complete question,
-and keep the *course* (the 14 lessons, the drills, the review of those mistakes, the exams archive) behind the gate.
+and keep the *course* (the rest of its lessons, the drills, the review of those mistakes, the exams archive) behind the gate.
 
 ## 3. Gate placement rules
 

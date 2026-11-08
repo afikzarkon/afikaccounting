@@ -42,3 +42,37 @@ export function scoreCheck(items: CheckItem[], answers: Record<string, number>) 
   const missed = items.filter((it) => it.trap.id in answers && answers[it.trap.id] !== it.trap.answer);
   return { right, missed };
 }
+
+/**
+ * The home page's live question, chosen from the catalog rather than pinned to a lesson, since course
+ * contents still move: a trap from the free lesson of the first course in `prefer` that has one
+ * (the named trap when it still exists there), else the free course's first lesson with a trap.
+ */
+export type FeaturedQuestion = { trap: Trap; source: string; href: string; more: string };
+
+export function featuredQuestion(prefer: string[] = ["ias16", "inventory", "ias19"], trapId = "land-dealer"): FeaturedQuestion | undefined {
+  for (const id of prefer) {
+    const t = TOPICS.find((x) => x.id === id);
+    if (!t) continue;
+    const lesson = lessonsOf(t).find((m) => (t.tier === "free" || t.preview.includes(m.slug)) && m.traps.length);
+    if (!lesson) continue;
+    const name = t.standard ?? t.title;
+    return {
+      trap: lesson.traps.find((x) => x.id === trapId) ?? lesson.traps[0],
+      source: `שאלה מ־${t.standard ? `${t.standard}, ${t.title}` : t.title}. יש בה מלכודת.`,
+      href: `/study/${lesson.slug}`,
+      more: `עוד כאלה בשיעור ${lesson.n} של ${name} — בחינם`,
+    };
+  }
+  const basics = TOPICS.find((t) => t.tier === "free" && t.format === "lessons");
+  const lesson = basics && lessonsOf(basics).find((m) => m.traps.length);
+  if (!lesson) return undefined;
+  return { trap: lesson.traps[0], source: `נסו שאלה משיעור ${lesson.n}. יש בה מלכודת.`, href: `/study/${lesson.slug}`, more: `יש עוד כאלה בשיעור ${lesson.n}` };
+}
+
+/** The check the home page points to: the first of `prefer` that has one, else any; none while no course has enough traps. */
+export function featuredCheck(prefer: string[] = ["ias16", "inventory", "ias19"]) {
+  const id = prefer.find((x) => CHECK_TOPICS.includes(x)) ?? CHECK_TOPICS[0];
+  const t = id ? TOPICS.find((x) => x.id === id) : undefined;
+  return t ? { href: `/check/${t.id}`, label: `כבר יש לכם סיכום? בדקו אותו: ${CHECK_SIZE} שאלות ב־${t.standard ?? t.title} ←` } : undefined;
+}
