@@ -32,7 +32,7 @@ export const site = {
   name: "AfikAccounting",
   tagline: "חשבונאות מאפס ועד המבחן",
   description:
-    "קורס חשבונאות מאפס בחינם, שיעור אחר שיעור — מושגים עם דוגמה חיה, תרגול עם משוב מיידי וטיפים למבחן. ומשם לקורסים המתקדמים: מלאי, רכוש קבוע והטבות עובד, עד רמת מבחן.",
+    "סיכום אומר מה כתוב בתקן — כאן רואים איפה מפסידים נקודות. שאלות ברמת מבחן במלאי, ברכוש קבוע ובהטבות עובד, מלכודות עם הסבר וחזרה על הטעויות שלכם. ולמתחילים: קורס חשבונאות מאפס, חינם כולו.",
   nav: [
     { label: "קורסים", hub: { href: LEARN_HUB.href, label: "למפת הלימוד המלאה" }, items: learnItems },
     { ...EXAMS_HUB, tier: "exams" },
@@ -54,3 +54,16 @@ export function navFor(v: Visibility): NavItem[] {
     return [{ ...item, items, hub: shown(item.hub.href) ? item.hub : (items[0] ?? item.hub) }];
   });
 }
+
+/**
+ * A page's own share card: its title and line, over the site's card image. A page that sets
+ * `openGraph` replaces the root's whole object (the image and site name too), so pages spread this.
+ */
+export const shareCard = (title: string, description: string) => ({
+  type: "website" as const,
+  locale: "he_IL",
+  siteName: site.name,
+  title,
+  description,
+  images: [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: `${site.name} — ${title}` }],
+});

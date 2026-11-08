@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isGuarded } from "@/components/layout/content-guard-view";
+import { cn } from "@/lib/utils";
 import { SheetBoundary } from "./sheet-boundary";
 import type { SheetData } from "./sheet-workbook";
 
@@ -207,10 +208,16 @@ export function SheetDock() {
         onPointerEnter={prefetch}
         onFocus={prefetch}
         onTouchStart={prefetch}
-        className="no-print fixed bottom-20 left-4 z-40 flex items-center gap-2 rounded-full border border-line-strong bg-surface px-4 py-2.5 text-sm font-semibold text-fg shadow-lg transition hover:border-accent hover:text-accent md:bottom-6"
+        aria-label="גיליון אקסל"
+        title="גיליון אקסל"
+        className={cn(
+          // A phone: a small round button above the bottom bar — the tab bar, or a lesson's "previous / next" bar, which is taller — so it never covers "next".
+          "no-print fixed left-3 z-40 flex size-11 items-center justify-center gap-2 rounded-full border border-line-strong bg-surface text-sm font-semibold text-fg shadow-lg transition hover:border-accent hover:text-accent md:bottom-6 md:left-4 md:size-auto md:px-4 md:py-2.5",
+          pathname.startsWith("/study/") ? "bottom-[calc(6.5rem+env(safe-area-inset-bottom))]" : "bottom-[calc(5rem+env(safe-area-inset-bottom))]",
+        )}
       >
-        <SheetIcon className="size-4" aria-hidden />
-        גיליון אקסל
+        <SheetIcon className="size-5 md:size-4" aria-hidden />
+        <span className="hidden md:inline">גיליון אקסל</span>
       </button>
     );
   }

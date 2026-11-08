@@ -10,6 +10,7 @@ import { cue } from "@/components/study-mode/sound";
 import { TrapQuiz } from "@/components/study-mode/trap-quiz";
 import { Button } from "@/components/ui/button";
 import { similarQuestion } from "@/lib/actions/similar";
+import { track } from "@/lib/analytics/track";
 import { planHref } from "@/lib/pricing";
 import { answerReview, type ReviewItem, topicOf } from "@/lib/study/review";
 import { EMPTY_TOPIC, type ExResult, recordExercise } from "@/lib/study/score";
@@ -50,6 +51,8 @@ export function ReviewSession({
   const [right, setRight] = useState(0);
   const [similar, setSimilar] = useState<{ key: string; ex: Exercise; result?: ExResult; n: number } | null>(null);
   const [loading, setLoading] = useState(false);
+  // One review_session per session, on its first settled answer: opening the list without answering is not a review.
+  const [counted, setCounted] = useState(false);
 
   if (at >= queue.length)
     return (
@@ -78,6 +81,10 @@ export function ReviewSession({
   /** The question's first answer in this session moves it on the schedule: right only if right at once. */
   const settle = (ok: boolean) => {
     updateTopic(x.slug, (q) => answerReview(q, x.id, ok, day));
+    if (!counted) {
+      setCounted(true);
+      track({ kind: "review_session", meta: { due: queue.length } });
+    }
     if (ok) setRight((n) => n + 1);
   };
 

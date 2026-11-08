@@ -2,7 +2,6 @@ import { ArrowLeft, PlayCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Hero } from "@/components/home/hero";
-import { TrackEvent } from "@/components/layout/track-event";
 import { HomeExams } from "@/components/pricing/exams-teaser";
 import { Faq } from "@/components/pricing/faq";
 import { PlanCards } from "@/components/pricing/plan-cards";
@@ -12,6 +11,7 @@ import { Badge, Container, SectionHeading } from "@/components/ui/primitives";
 import { FIRST_LESSON, PRICING_HUB, tasteLabel, TOPICS } from "@/lib/catalog";
 import { studyHref } from "@/lib/study";
 import { BASICS_LESSONS } from "@/lib/study/basics";
+import { IAS16_LESSONS } from "@/lib/study/ias16";
 import type { StudyModule } from "@/lib/study/types";
 import { BUTTONS } from "@/lib/visibility/items";
 import { isHidden, isLinkHidden, labelOf } from "@/lib/visibility/rules";
@@ -48,7 +48,13 @@ const count = (m: StudyModule) => m.exercises.length + m.traps.length;
 const minutes = (m: StudyModule) => Math.max(1, Math.round((m.videos ?? []).reduce((a, v) => a + v.duration, 0) / 60));
 
 export default async function Home() {
-  const trap = BASICS_LESSONS[0].traps.find((t) => t.id === "debit-bad") ?? BASICS_LESSONS[0].traps[0];
+  // The hero's question: a classic exam trap from the free first lesson of IAS 16 (a contractor's land is inventory), which a student already
+  // near an exam recognises; a first-year can still reason it out. Falls back to lesson 1 of the free course.
+  const ias16 = IAS16_LESSONS[0];
+  const examTrap = ias16.traps.find((t) => t.id === "land-dealer");
+  const hero = examTrap
+    ? { trap: examTrap, source: "שאלה מ־IAS 16, רכוש קבוע. יש בה מלכודת.", href: studyHref(ias16.slug), more: "עוד כאלה בשיעור הראשון של IAS 16 — בחינם" }
+    : { trap: BASICS_LESSONS[0].traps[0], source: "נסו שאלה משיעור 1. יש בה מלכודת.", href: FIRST_LESSON, more: "יש עוד כאלה בשיעור 1" };
   const total = BASICS_LESSONS.reduce((a, m) => a + count(m), 0);
   // What the admin hid: a section, a button (or its text), a course or a lesson.
   const v = await getVisibility();
@@ -60,8 +66,7 @@ export default async function Home() {
   const freeLessons = BASICS_LESSONS.filter((m) => linked(studyHref(m.slug)));
   return (
     <>
-      <TrackEvent event={{ kind: "landing_view" }} />
-      <Hero trap={trap} lessons={BASICS_LESSONS.length} exercises={total} videos={BASICS_LESSONS.reduce((a, m) => a + (m.videos?.length ?? 0), 0)} />
+      <Hero question={hero} lessons={BASICS_LESSONS.length} exercises={total} videos={BASICS_LESSONS.reduce((a, m) => a + (m.videos?.length ?? 0), 0)} />
 
       {show("home:pains") && (
         <Container className="pt-16 sm:pt-20">

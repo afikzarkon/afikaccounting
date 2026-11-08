@@ -4,29 +4,33 @@ import { ArrowLeft, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { TrapQuiz } from "@/components/study-mode/trap-quiz";
-import { FIRST_LESSON } from "@/lib/catalog";
+import { track } from "@/lib/analytics/track";
 import type { Trap } from "@/lib/study/types";
 
 /**
- * One question from lesson 1, live, in the lesson's own card: the same quiz,
+ * One live question from a course, in the lesson's own card: the same quiz,
  * the same instant feedback and the same "why it tempts" — so the home page
- * shows exactly what the course feels like. Nothing is stored.
+ * shows exactly what the course feels like. Nothing is stored; the answer is counted.
  */
-export function HeroExercise({ trap }: { trap: Trap }) {
+export function HeroExercise({ trap, source, href, more }: { trap: Trap; source: string; href: string; more: string }) {
   const [answered, setAnswered] = useState<{ choice: number; correct: boolean }>();
   // A fresh quiz for each try.
   const [round, setRound] = useState(0);
   return (
     <div className="card overflow-hidden">
       <div className="border-b border-line px-4 py-3 sm:px-5">
-        <p className="text-[17px] font-semibold text-fg">נסו שאלה משיעור 1. יש בה מלכודת.</p>
+        <p className="text-[17px] font-semibold text-fg">{source}</p>
       </div>
       <div className="p-4 sm:p-5">
-        <TrapQuiz key={round} trap={trap} answered={answered} onAnswer={(choice) => setAnswered({ choice, correct: choice === trap.answer })} />
+        <TrapQuiz key={round} trap={trap} answered={answered} onAnswer={(choice) => {
+            const correct = choice === trap.answer;
+            setAnswered({ choice, correct });
+            track({ kind: "exercise_answer", target: "home-hero", ok: correct, meta: { id: trap.id, trap: true, round } });
+          }} />
         {answered && (
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <Link href={FIRST_LESSON} className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent hover:underline">
-              יש עוד כאלה בשיעור 1 <ArrowLeft className="h-4 w-4" aria-hidden />
+            <Link href={href} className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent hover:underline">
+              {more} <ArrowLeft className="h-4 w-4" aria-hidden />
             </Link>
             <button type="button" onClick={() => {
                 setAnswered(undefined);

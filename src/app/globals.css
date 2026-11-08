@@ -148,6 +148,21 @@
     font-variant-numeric: tabular-nums;
   }
   /*
+   * A table wider than the screen: a soft shadow on whichever edge still hides
+   * columns, so a phone reader sees there is more to scroll to. The covers move
+   * with the content (local) and the shadows stay put (scroll), so a shadow
+   * shows only while that edge has something behind it — in either direction.
+   */
+  .scroll-x {
+    overflow-x: auto;
+    background:
+      linear-gradient(to right, var(--surface) 30%, transparent) left center / 2.5rem 100% no-repeat local,
+      linear-gradient(to left, var(--surface) 30%, transparent) right center / 2.5rem 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, color-mix(in oklab, var(--fg) 22%, transparent), transparent) left center / 0.9rem 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, color-mix(in oklab, var(--fg) 22%, transparent), transparent) right center / 0.9rem 100% no-repeat scroll;
+    background-color: var(--surface);
+  }
+  /*
    * KaTeX has no Hebrew glyphs; set \text{} in the site font instead of a fallback.
    * Isolating each run stops the bidi algorithm from merging Hebrew terms across
    * the operators between them and flipping the equation right to left.

@@ -20,7 +20,7 @@ export const legal = {
   /** The district whose courts hear disputes. */
   jurisdiction: "[מחוז, למשל: תל אביב-יפו]",
   /** The date each page was last changed; update it with the text. */
-  updated: { terms: "2 בנובמבר 2026", privacy: "2 בנובמבר 2026", accessibility: "2 בנובמבר 2026" },
+  updated: { terms: "2 בנובמבר 2026", privacy: "8 בנובמבר 2026", accessibility: "2 בנובמבר 2026" },
 };
 
 export const LEGAL_LINKS = [

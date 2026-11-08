@@ -407,7 +407,7 @@ function DrillView({ drill }: { drill: Drill }) {
         <div className="anim-step-in space-y-2.5">
           <SolveTemplate seek={drill.seek} check={drill.check} build={drill.build} compact />
           {drill.table && (
-            <div className="overflow-x-auto rounded-xl border border-line">
+            <div className="scroll-x rounded-xl border border-line">
               <table className="w-full min-w-[30rem] text-[13.5px]">
                 <thead>
                   <tr className="bg-surface-2/70 text-muted">

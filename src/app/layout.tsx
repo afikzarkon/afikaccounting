@@ -25,6 +25,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: `${site.name} — ${site.tagline}`, template: `%s · ${site.name}` },
   description: site.description,
+  // What WhatsApp, Telegram and the social networks show when a link is pasted: a Hebrew title and line, and the card image (app/opengraph-image.png).
+  openGraph: { type: "website", locale: "he_IL", siteName: site.name, title: `${site.name} — ${site.tagline}`, description: site.description },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {

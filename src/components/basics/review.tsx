@@ -97,7 +97,7 @@ export const REVIEW_SCREENS: Record<string, ScreenContent> = {
     lead: "השאלה הראשונה על כל סעיף חתך: מתי נחתם החוזה, ומה כבר נרשם? מאזן הבוחן עצמו נותן את הרמז.",
     body: (
       <>
-        <div className="overflow-x-auto rounded-2xl border border-line">
+        <div className="scroll-x rounded-2xl border border-line">
           <table className="w-full min-w-[40rem] text-[14px]">
             <thead className="bg-surface-2/70 text-[12.5px] text-muted">
               <tr>

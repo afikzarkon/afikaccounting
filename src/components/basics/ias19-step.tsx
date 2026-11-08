@@ -46,7 +46,7 @@ export function Note({ n }: { n: BkNote }) {
     <div className="space-y-2">
       <p className="text-[15px] font-bold">{n.title}</p>
       {n.text && <p className="text-[14.5px] leading-relaxed text-fg/85">{rich(n.text)}</p>}
-      <div className="overflow-x-auto rounded-xl border border-line">
+      <div className="scroll-x rounded-xl border border-line">
         <table className="w-full min-w-[32rem] text-[14px]">
           <thead>
             <tr className="bg-surface-2/70 text-[12.5px] text-muted">

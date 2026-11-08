@@ -1,3 +1,4 @@
+import { shareCard } from "@/lib/site";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -26,7 +27,8 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/study/[topic]">): Promise<Metadata> {
   const m = STUDY_MODULES[(await params).topic];
   if (!m) return { title: "לא נמצא" };
-  return { title: `${m.course} · שיעור ${m.n}: ${m.title}`, description: m.description };
+  const title = `${m.course} · שיעור ${m.n}: ${m.title}`;
+  return { title, description: m.description, openGraph: shareCard(title, m.description) };
 }
 
 /**

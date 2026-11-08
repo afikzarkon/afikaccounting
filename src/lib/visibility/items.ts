@@ -17,8 +17,8 @@ export const HOME_SECTIONS = [
 ] as const;
 
 export const BUTTONS = {
-  heroStart: { key: "cta:hero-start", label: "התחילו את שיעור 1", where: "דף הבית, בראש הדף" },
-  heroTour: { key: "cta:hero-tour", label: "מה יש בקורס", where: "דף הבית, בראש הדף" },
+  heroStart: { key: "cta:hero-start", label: "מתחילים מאפס — שיעור 1", where: "דף הבית, בראש הדף" },
+  heroTour: { key: "cta:hero-tour", label: "יש לי מבחן — לבחור נושא", where: "דף הבית, בראש הדף" },
   freeCourse: { key: "cta:home-free-course", label: "לדף הקורס", where: "דף הבית, ליד הקורס החינמי" },
   freeCourseStart: { key: "cta:home-free-start", label: "התחילו את שיעור 1", where: "דף הבית, מתחת לשיעורי הקורס החינמי" },
   pricingCompare: { key: "cta:home-pricing", label: "להשוואה המלאה", where: "דף הבית, ליד המחירים" },

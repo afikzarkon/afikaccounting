@@ -33,6 +33,7 @@ import { type CourseInfo, CourseOutline } from "./course-outline";
 import { JournalSimulator } from "./journal-simulator";
 import { clock, LessonOpening } from "./lesson-opening";
 import { LessonNav } from "./lesson-nav";
+import { track } from "@/lib/analytics/track";
 import { LessonRail } from "./lesson-rail";
 import { LessonStats } from "./lesson-stats";
 import { PracticeIntro } from "./practice-intro";
@@ -322,6 +323,7 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
       const onCheck = (ok: boolean) => {
         // A weak answer goes up for spaced review, from tomorrow.
         updateTopic(slug, (q) => afterAnswer(recordExercise(q, ex, ok), it, today()));
+        if (!p.exercises[ex.id]?.done) track({ kind: "exercise_answer", target: slug, ok, meta: { id: ex.id, trap: false, try: (p.exercises[ex.id]?.tries ?? 0) + 1 } });
         cue(ok ? "ok" : "bad");
       };
       card = {
@@ -348,6 +350,7 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
             answered={p.traps[t.id]}
             onAnswer={(choice) => {
               updateTopic(slug, (q) => afterAnswer(recordTrap(q, t.id, choice, choice === t.answer), it, today()));
+              if (!p.traps[t.id]) track({ kind: "exercise_answer", target: slug, ok: choice === t.answer, meta: { id: t.id, trap: true } });
               cue(choice === t.answer ? "ok" : "bad");
             }}
           />

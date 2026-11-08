@@ -75,7 +75,7 @@ export function Statement({ title, head = ["₪"], rows, className }: { title: R
   const many = head.length > 1;
   return (
     <figure className={cn("rounded-xl border border-line bg-surface px-4 py-3", className)}>
-      <div className="overflow-x-auto">
+      <div className="scroll-x">
         <table className={cn("w-full text-[14px]", many && "min-w-[34rem]")}>
           <caption className="border-b border-line-strong pb-2 text-start text-[14px] font-bold text-fg">{title}</caption>
           <thead>

@@ -1,3 +1,4 @@
+import { shareCard } from "@/lib/site";
 import { Download, FileText, PlayCircle } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -27,7 +28,8 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/exams/[id]">): Promise<Metadata> {
   const exam = await getExam((await params).id);
   if (!exam) return { title: "לא נמצא" };
-  return { title: `${exam.title} · ${EXAMS_HUB.label}`, description: exam.description };
+  const title = `${exam.title} · ${EXAMS_HUB.label}`;
+  return { title, description: exam.description, openGraph: shareCard(title, exam.description) };
 }
 
 /**

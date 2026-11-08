@@ -23,6 +23,12 @@ export const EVENT_KINDS = [
   "checkout_start",
   "payment_success",
   "subscription_cancel",
+  // Learning: each practice answer (a trap or an exercise try), a review session started, a share, the summary self-check.
+  "exercise_answer",
+  "review_session",
+  "share_click",
+  "check_start",
+  "check_complete",
 ] as const;
 export type EventKind = (typeof EVENT_KINDS)[number];
 
