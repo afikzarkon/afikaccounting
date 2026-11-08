@@ -21,6 +21,7 @@ const COLUMNS = [
     links: [
       ...LEARNING_TOOLS.map((c) => ({ href: c.href, label: c.label })),
       ...CALCULATORS.map((c) => ({ href: `/engine?calc=${c.slug}`, label: `מנוע: ${c.standard} — ${c.category}` })),
+      { href: "/engine/ias19", label: "מנוע: IAS 19 — הטבות עובד" },
     ],
   },
   {

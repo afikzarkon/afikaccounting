@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it } from "node:test";
-import { ENGINE_TOOLS, LEARNING_PATH, LEARNING_TOOLS } from "./catalog";
+import { ENGINE_TOOLS, IAS19_CALCULATOR_SLUG, LEARNING_PATH, LEARNING_TOOLS } from "./catalog";
 import { CALCULATORS } from "./engine/registry";
 import { site } from "./site";
 import { STUDY_MODULES, studyHref } from "./study";
@@ -36,8 +36,9 @@ const links = [
 
 describe("the site map", () => {
   it("lists exactly the engine's calculators", () => {
-    assert.deepEqual(ENGINE_TOOLS.map((c) => c.slug).sort(), CALCULATORS.map((c) => c.slug).sort());
-    for (const t of ENGINE_TOOLS) assert.ok(CALCULATORS.find((c) => c.slug === t.slug)!.standard.startsWith(t.standard), t.slug);
+    const registered = ENGINE_TOOLS.filter((c) => c.slug !== IAS19_CALCULATOR_SLUG);
+    assert.deepEqual(registered.map((c) => c.slug).sort(), CALCULATORS.map((c) => c.slug).sort());
+    for (const t of registered) assert.ok(CALCULATORS.find((c) => c.slug === t.slug)!.standard.startsWith(t.standard), t.slug);
   });
   it("every link goes to a page that exists", () => {
     for (const l of links) {

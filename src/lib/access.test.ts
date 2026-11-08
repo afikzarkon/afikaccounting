@@ -83,6 +83,10 @@ describe("canAccess", () => {
     for (const t of TOPICS) assert.ok(canAccessWith(courses, t), t.id);
     assert.deepEqual(lockedOf(courses, topic("inventory"), ["inventory-what", "inventory-cost"]), []);
   });
+  it("the IAS 19 calculator opens with the course's plan, and not with its free first lesson", () => {
+    assert.ok(!canAccessWith(free, topic("ias19")));
+    assert.ok(canAccessWith(courses, topic("ias19")));
+  });
   it("lists what is locked", () => assert.deepEqual(lockedOf(free, topic("inventory"), ["inventory-what", "inventory-cost", "inventory-exams"]), ["inventory-cost", "inventory-exams"]));
 });
 

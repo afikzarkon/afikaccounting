@@ -136,12 +136,16 @@ export const LEARNING_PATH: Stage[] = [
   },
 ];
 
+/** The IAS 19 calculator has a questionnaire and a page of its own, so it isn't in the engine's registry. */
+export const IAS19_CALCULATOR_SLUG = "ias-19-employee-benefits";
+
 /** The solution engine's calculators (titles as in the engine registry). */
 export const ENGINE_TOOLS: (CatalogLink & { slug: string; standard: string })[] = [
   { slug: "ifrs-16-leases", standard: "IFRS 16", href: "/engine?calc=ifrs-16-leases", label: "חכירות", description: "לוח סילוקין, נכס זכות שימוש ובאור" },
   { slug: "ias-16-property-plant-equipment", standard: "IAS 16", href: "/engine?calc=ias-16-property-plant-equipment", label: "רכוש קבוע", description: "ציר זמן מלא של נכס, עם פקודות ובאור" },
   { slug: "ias-37-provisions", standard: "IAS 37", href: "/engine?calc=ias-37-provisions", label: "הפרשות", description: "עץ ההחלטות, אומדן והיוון" },
   { slug: "corporate-tax-ias-12", standard: "IAS 12", href: "/engine?calc=corporate-tax-ias-12", label: "מס הכנסה על חברות", description: "מס שוטף, מסים נדחים והתאמה" },
+  { slug: IAS19_CALCULATOR_SLUG, standard: "IAS 19", href: "/engine/ias19", label: "הטבות עובד", description: "שאלון, ופתרון מלא לכל הטבה. במסלול קורסים" },
 ];
 
 /** Every calculator inside a learning page, in learning-path order. */

@@ -372,6 +372,19 @@ function StandardStep({ selected, onChoose }: { selected?: string; onChoose: (c:
             </motion.button>
           );
         })}
+        {linkShown("/engine/ias19") && (
+          <Link href="/engine/ias19" className="group card relative flex flex-col p-5 text-start transition-shadow">
+            <div className="flex items-start justify-between gap-3">
+              <Badge>במסלול קורסים</Badge>
+            </div>
+            <p className="mt-4 text-xs font-semibold text-accent">IAS 19</p>
+            <p className="mt-1 font-semibold text-fg">מחשבון הטבות עובד</p>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-muted">שאלון שמוביל לפתרון מלא לכל סוג של הטבה: לזמן קצר, לאחר סיום העסקה, לזמן ארוך ופיטורין.</p>
+            <span className="mt-4 inline-flex items-center gap-1 text-[13px] font-medium text-accent">
+              לשאלון <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+            </span>
+          </Link>
+        )}
       </div>
     </div>
   );
