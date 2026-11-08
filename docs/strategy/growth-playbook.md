@@ -123,9 +123,9 @@ ICE = Impact (paying students per exam period) × Confidence × Ease, each 1–1
 | 6 | Exam-date chip + countdown | Setting a date raises D7 return | D7 return | 7 | 6 | 5 | 210 | proposed |
 | 7 | Daily study streak with rest days | A forgiving streak raises review sessions without lowering accuracy | review sessions/user/week | 6 | 5 | 5 | 150 | proposed |
 | 8 | Ambassador links at 3 programs | TA credibility beats brand posts | signups per ambassador | 7 | 6 | 6 | 252 | proposed |
-| 9 | Home hero V1 (contrast) vs current, question above the fold | Door-B visitors start practising more when the hero speaks to exams | landing → practice start | 8 | 6 | 9 | 432 | proposed — see decisions/2026-11-08-site-review.md |
-| 10 | "Save your review" prompt on the summary card for guests | Endowment + chosen reminder time lifts day-2 return | review_session on day 1–2 | 8 | 6 | 7 | 336 | proposed — see decisions/2026-11-08-site-review.md |
-| 11 | "בדקו את הסיכום שלכם" /check/ias16 | A 5-trap self-check proves value vs free summaries and gets shared | check→signup, shares per completer | 9 | 6 | 5 | 270 | proposed — merges #1 and #3 |
+| 9 | Home hero V1 (contrast) vs current, question above the fold | Door-B visitors start practising more when the hero speaks to exams | landing → practice start | 8 | 6 | 9 | 432 | built, test after launch |
+| 10 | "Save your review" prompt on the summary card for guests | Endowment + chosen reminder time lifts day-2 return | review_session on day 1–2 | 8 | 6 | 7 | 336 | built (without reminders), test after launch |
+| 11 | "בדקו את הסיכום שלכם" /check/ias16 | A 5-trap self-check proves value vs free summaries and gets shared | check→signup, shares per completer | 9 | 6 | 5 | 270 | built: /check/[course] |
 
 ## 8. Weekly growth ritual (30 minutes)
 
