@@ -1,11 +1,19 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { planHref } from "@/lib/pricing";
 import { navFor } from "@/lib/site";
 import { NOTHING_HIDDEN, type Visibility, isHidden, isLinkHidden, labelOf } from "./rules";
 
 const v = (links: string[], hidden: string[] = [], labels: Record<string, string> = {}): Visibility => ({ hidden: [...hidden, ...links.map((l) => `link:${l}`)], links, labels });
 
 describe("which addresses a hidden one covers", () => {
+  it("a hidden pricing page covers every link to a plan, so none of them leads to a 404", () => {
+    assert.equal(isLinkHidden(["/pricing"], "/pricing"), true);
+    assert.equal(isLinkHidden(["/pricing"], planHref("courses")), true);
+    assert.equal(isLinkHidden(["/pricing"], planHref("exams", "/study/some-lesson")), true);
+    assert.equal(isLinkHidden([], planHref("courses")), false);
+  });
+
   it("the same page, with or without a trailing slash or a #fragment", () => {
     assert.equal(isLinkHidden(["/pricing"], "/pricing"), true);
     assert.equal(isLinkHidden(["/pricing"], "/pricing/"), true);

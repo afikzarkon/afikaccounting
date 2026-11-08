@@ -10,6 +10,12 @@ export function VisibilityProvider({ value, children }: { value: Visibility; chi
   return <VisibilityContext.Provider value={value}>{children}</VisibilityContext.Provider>;
 }
 
+/** Its children only while an address is shown: for a link, or a note about it, in a part of the page the server renders. */
+export function WhenLinkShown({ href, children }: { href: string; children: React.ReactNode }) {
+  const v = useContext(VisibilityContext);
+  return isLinkHidden(v.links, href) ? null : children;
+}
+
 export function useVisibility() {
   const v = useContext(VisibilityContext);
   return {

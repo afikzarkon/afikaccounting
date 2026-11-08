@@ -1,6 +1,7 @@
 import { ArrowLeft, Check, CloudUpload, Lock, PlayCircle } from "lucide-react";
 import Link from "next/link";
 import { TrackEvent } from "@/components/layout/track-event";
+import { WhenLinkShown } from "@/components/layout/visibility";
 import { ButtonLink } from "@/components/ui/button";
 import { PRICES_ARE_FINAL, planHref, planOf, priceLabel, type Tier } from "@/lib/pricing";
 import { TasteScore } from "./taste-score";
@@ -103,20 +104,24 @@ export function Paywall({
               <CloudUpload className="h-4 w-4" aria-hidden /> שמרו את ההתקדמות — חינם
             </ButtonLink>
           )}
-          <ButtonLink href={planHref(tier, where)} size="lg" variant={guest ? "secondary" : undefined}>
-            למסלול {plan.name} · <span className="num">{priceLabel(plan)}</span> <ArrowLeft className="h-4 w-4" aria-hidden />
-          </ButtonLink>
+          <WhenLinkShown href={planHref(tier, where)}>
+            <ButtonLink href={planHref(tier, where)} size="lg" variant={guest ? "secondary" : undefined}>
+              למסלול {plan.name} · <span className="num">{priceLabel(plan)}</span> <ArrowLeft className="h-4 w-4" aria-hidden />
+            </ButtonLink>
+          </WhenLinkShown>
           {taste && (
             <ButtonLink href={taste.href} variant="secondary" size="lg">
               <PlayCircle className="h-4 w-4" aria-hidden /> {taste.label}
             </ButtonLink>
           )}
         </div>
-        {PRICES_ARE_FINAL ? (
-          <p className="mt-3 text-xs text-subtle">מבטלים בלחיצה מהפרופיל, והגישה נשארת עד סוף התקופה ששולמה.</p>
-        ) : (
-          <p className="mt-3 text-xs text-subtle">המחירים עדיין לא סופיים, והתשלום ייפתח בקרוב.</p>
-        )}
+        <WhenLinkShown href={planHref(tier, where)}>
+          {PRICES_ARE_FINAL ? (
+            <p className="mt-3 text-xs text-subtle">מבטלים בלחיצה מהפרופיל, והגישה נשארת עד סוף התקופה ששולמה.</p>
+          ) : (
+            <p className="mt-3 text-xs text-subtle">המחירים עדיין לא סופיים, והתשלום ייפתח בקרוב.</p>
+          )}
+        </WhenLinkShown>
         <p className="mt-3 text-sm text-muted">
           עוד לא סיימתם את הבסיס?{" "}
           <Link href="/basics" className="font-medium text-accent hover:underline">
