@@ -244,6 +244,22 @@ export function FunnelView({ now, before, days, source, labels, asOf }: { now: F
         </Panel>
       </div>
 
+      {now.exams && (
+        <Panel className="mt-6" title="מצב מבחן" description="10 שאלות בלי רמזים ובלי משוב עד הסוף. מכאן רואים אם סטודנטים מתרגלים כמו לפני מבחן, ועם שעון או בלי.">
+          <div className="grid gap-3 sm:grid-cols-4">
+            <Stat label="מבחנים שהתחילו" value={count(now.exams.started)} />
+            <Stat label="הוגשו" value={count(now.exams.completed)} hint={pct(now.exams.completed, now.exams.started)} />
+            <Stat label="עם שעון" value={pct(now.exams.timed, now.exams.started)} />
+            <Stat label="נכון בממוצע" value={now.exams.avgShare === null ? "—" : `${Math.round(Number(now.exams.avgShare) * 100)}%`} />
+          </div>
+          {now.exams.byCourse.length > 0 && (
+            <div className="mt-4">
+              <Table head={["קורס", "התחילו", "הוגשו"]} rows={now.exams.byCourse.map((c) => [labels.courses[c.course] ?? c.course, count(c.started), count(c.completed)])} />
+            </div>
+          )}
+        </Panel>
+      )}
+
       <details className="card mt-6 p-5 text-sm">
         <summary className="cursor-pointer font-semibold text-fg">איך כל מספר מחושב</summary>
         <ul className="mt-3 space-y-2 text-muted">

@@ -20,6 +20,7 @@ type F = {
   paywalls: { gate: string; views: number; clicks: number }[];
   shares: { clicks: number; byKind: Record<string, number> };
   checks: { started: number; completed: number; avgRight: number };
+  exams: { started: number; completed: number; timed: number; avgShare: number; byCourse: { course: string; completed: number }[] };
   streaks: Record<string, number>;
 };
 
@@ -55,6 +56,9 @@ before(async () => {
       ev("B", "paywall_view", 3, { target: "/study/ias16-cost" }),
       ev("B", "check_start", 3, { target: "ias16" }),
       ev("B", "check_complete", 3, { target: "ias16", meta: { right: 3, of: 5 } }),
+      // A also runs exam mode: 7 of 10, on a clock — counted apart from the summary check.
+      ev("A", "check_start", 2, { target: "exam-ias16", meta: { mode: "exam", timed: true } }),
+      ev("A", "check_complete", 2, { target: "exam-ias16", meta: { mode: "exam", right: 7, of: 10 } }),
       // C: direct, looks and leaves.
       ev("C", "landing_view", 3),
       // D: an old visitor, outside the window.
@@ -103,8 +107,11 @@ describe("admin_funnel", () => {
     assert.deepEqual(f.paywalls, [{ gate: "/study/ias16-cost", views: 2, clicks: 1 }]);
     assert.equal(f.shares.clicks, 1);
     assert.equal(f.shares.byKind.trap, 1);
-    assert.equal(f.checks.completed, 1);
-    assert.equal(Number(f.checks.avgRight), 3);
+    assert.equal(f.checks.completed, 1, "the summary check alone");
+    assert.equal(Number(f.checks.avgRight), 3, "exam runs (out of ten) stay out of the summary check's average");
+    assert.deepEqual([f.exams.started, f.exams.completed, f.exams.timed], [1, 1, 1]);
+    assert.equal(Number(f.exams.avgShare), 0.7);
+    assert.deepEqual(f.exams.byCourse.map((c) => [c.course, c.completed]), [["ias16", 1]]);
     assert.equal(f.streaks.s2, 1);
     assert.equal(f.retention.reduce((a, r) => a + r.d1, 0), 1);
   });

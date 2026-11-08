@@ -328,6 +328,8 @@ export type Funnel = {
   streaks: { s1: number; s2: number; s4: number; s8: number };
   shares: { clicks: number; byKind: Record<string, number>; visits: number; visitsSignedUp: number };
   checks: { started: number; completed: number; avgRight: number | null; byCourse: { course: string; started: number; completed: number }[] };
+  /** Exam mode runs; absent until the revised function is applied. */
+  exams?: { started: number; completed: number; timed: number; avgShare: number | null; byCourse: { course: string; started: number; completed: number }[] };
   lessons: { slug: string; starts: number; learners: number; answers: number; firstTries: number; firstTryRight: number; traps: number; trapFalls: number }[];
   traps: { slug: string; id: string; answers: number; falls: number }[];
   paywalls: { gate: string; views: number; clicks: number }[];
