@@ -9,9 +9,11 @@
 
 import type { Tier } from "./pricing";
 import { LESSON_N as IAS19_LESSON_N } from "./study/ias19/shared";
+import { LESSON_N as IFRS16_LESSON_N } from "./study/ifrs16/shared";
 
 /** The employee-benefits course's size, from its lessons' numbering (a test checks it against the lessons) — so the menu never ships the lessons themselves. */
 const IAS19_LESSON_COUNT = Object.keys(IAS19_LESSON_N).length;
+const IFRS16_LESSON_COUNT = Object.keys(IFRS16_LESSON_N).length;
 
 export type CatalogLink = { href: string; label: string; description?: string };
 /** A topic's tool; `calculator` lists a tool inside a lesson among the calculators too (other tools of the page always are). */
@@ -131,6 +133,18 @@ export const LEARNING_PATH: Stage[] = [
         tools: [],
         tier: "courses",
         preview: ["ias19-map"],
+      },
+      {
+        id: "ifrs16",
+        format: "lessons",
+        title: "חכירות",
+        standard: "IFRS 16",
+        href: "/basics/ifrs16",
+        description: `${IFRS16_LESSON_COUNT === 1 ? "שיעור אינטראקטיבי ראשון" : `${IFRS16_LESSON_COUNT} שיעורים אינטראקטיביים`}: מתי חוזה הוא חכירה, בשלושה מבחנים, עם תרשים הזרימה של התקן ושאלה מסכמת עם פתרון מלא. שיעורים נוספים בדרך.`,
+        covers: ["מתי חוזה הוא חכירה", "נכס מזוהה וזכות החלפה", "זכות לכוון את השימוש", "שאלה ברמת מבחן"],
+        tools: [],
+        tier: "courses",
+        preview: ["ifrs16-what"],
       },
     ],
   },

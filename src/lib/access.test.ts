@@ -75,8 +75,9 @@ describe("canAccess", () => {
     const { INVENTORY_LESSONS } = await import("./study/inventory");
     const { IAS16_LESSONS } = await import("./study/ias16");
     const { IAS19_LESSONS } = await import("./study/ias19");
+    const { IFRS16_LESSONS } = await import("./study/ifrs16");
     const includes = PLANS.find((p) => p.tier === "courses")!.includes.join(" | ");
-    for (const [name, lessons] of [["מלאי", INVENTORY_LESSONS], ["רכוש קבוע", IAS16_LESSONS], ["הטבות עובד", IAS19_LESSONS]] as const)
+    for (const [name, lessons] of [["מלאי", INVENTORY_LESSONS], ["רכוש קבוע", IAS16_LESSONS], ["הטבות עובד", IAS19_LESSONS], ["חכירות", IFRS16_LESSONS]] as const)
       assert.ok(includes.includes(`${name}`) && new RegExp(`${name}[^|]*כל ${lessons.length} השיעורים`).test(includes), `${name}: ${lessons.length} lessons`);
   });
   it("opens every paid course whole on courses and up", () => {

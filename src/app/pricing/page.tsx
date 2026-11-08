@@ -12,6 +12,7 @@ import { safeNext } from "@/lib/auth/dal";
 import { isTier, PLANS, type Tier } from "@/lib/pricing";
 import { IAS16_LESSONS } from "@/lib/study/ias16";
 import { IAS19_LESSONS } from "@/lib/study/ias19";
+import { IFRS16_LESSONS } from "@/lib/study/ifrs16";
 import { INVENTORY_LESSONS } from "@/lib/study/inventory";
 import { planKey } from "@/lib/visibility/items";
 import { isHidden } from "@/lib/visibility/rules";
@@ -33,6 +34,7 @@ const COMPARE: { label: string; plans: Record<Tier, boolean | string> }[] = [
   { label: "מלאי (IAS 2)", plans: { free: "שיעור 1", courses: all(INVENTORY_LESSONS), exams: all(INVENTORY_LESSONS) } },
   { label: "רכוש קבוע (IAS 16)", plans: { free: "שיעור 1", courses: all(IAS16_LESSONS), exams: all(IAS16_LESSONS) } },
   { label: "הטבות עובד (IAS 19)", plans: { free: "שיעור 1", courses: all(IAS19_LESSONS), exams: all(IAS19_LESSONS) } },
+  { label: "חכירות (IFRS 16)", plans: { free: "שיעור 1", courses: all(IFRS16_LESSONS), exams: all(IFRS16_LESSONS) } },
   { label: "פתרונות מלאים לתרגילים ברמת מבחן", plans: { free: "מבחן לדוגמה", courses: "מבחן לדוגמה", exams: true } },
   { label: "ארכיון מבחנים עם פתרונות", plans: { free: false, courses: false, exams: "בקרוב" } },
 ];

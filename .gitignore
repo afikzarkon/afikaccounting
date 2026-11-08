@@ -100,3 +100,6 @@ next-env.d.ts
 /.zencoder/skills/
 /agent/skills/
 /data/skills/
+
+# IFRS 16 lecture materials (never committed)
+/ifrs16-source/

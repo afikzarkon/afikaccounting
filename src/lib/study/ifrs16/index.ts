@@ -1,0 +1,5 @@
+import { withLtrFormulas } from "../ias19/ltr";
+import { WHAT } from "./lessons/what";
+
+/** The leases course. Each lesson joins as it is built; every formula in its practice reads left to right. */
+export const IFRS16_LESSONS = [WHAT].map(withLtrFormulas);

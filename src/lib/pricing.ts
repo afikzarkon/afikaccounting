@@ -1,4 +1,5 @@
 import { LESSON_N as IAS19_LESSON_N } from "./study/ias19/shared";
+import { LESSON_N as IFRS16_LESSON_N } from "./study/ifrs16/shared";
 
 /**
  * The site's plans: the one source the pricing page, the home page and every
@@ -42,7 +43,7 @@ export const PLANS: Plan[] = [
     tier: "courses",
     name: "קורסים",
     description: "כל הקורסים המתקדמים, עד רמת מבחן",
-    includes: ["כל מה שבחינם", "מלאי (IAS 2) — כל 12 השיעורים", "רכוש קבוע (IAS 16) — כל 14 השיעורים", `הטבות עובד (IAS 19) — כל ${Object.keys(IAS19_LESSON_N).length} השיעורים`, "מחשבון הטבות עובד, עם פתרון מלא לכל הטבה", "מחשבונים שמראים את כל הדרך"],
+    includes: ["כל מה שבחינם", "מלאי (IAS 2) — כל 12 השיעורים", "רכוש קבוע (IAS 16) — כל 14 השיעורים", `הטבות עובד (IAS 19) — כל ${Object.keys(IAS19_LESSON_N).length} השיעורים`, `חכירות (IFRS 16) — כל ${Object.keys(IFRS16_LESSON_N).length} השיעורים`, "מחשבון הטבות עובד, עם פתרון מלא לכל הטבה", "מחשבונים שמראים את כל הדרך"],
     monthly: 49, // PLACEHOLDER
     yearly: 390, // PLACEHOLDER
     featured: true,
