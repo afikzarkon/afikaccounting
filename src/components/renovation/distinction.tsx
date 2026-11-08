@@ -44,7 +44,7 @@ export function DistinctionSection() {
           </div>
         </div>
         <div className="card overflow-hidden">
-          <p className="flex items-center gap-2 border-b border-amber-500/20 bg-amber-500/[0.07] px-5 py-3 text-[15px] font-semibold text-amber-700 dark:text-amber-400">
+          <p className="flex items-center gap-2 border-b border-amber-500/20 bg-amber-500/[0.07] px-5 py-3 text-[15px] font-semibold text-amber-800 dark:text-amber-400">
             <Wrench className="h-5 w-5" /> תחזוקה שוטפת ותיקונים — הוצאה מיידית
           </p>
           <div className="space-y-3 px-5 py-4 text-[14.5px] leading-relaxed text-fg/90">

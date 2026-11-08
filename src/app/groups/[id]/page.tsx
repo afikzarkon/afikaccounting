@@ -38,7 +38,7 @@ async function Room({ params }: Pick<PageProps<"/groups/[id]">, "params">) {
   const courseName = topic ? (topic.standard ?? topic.title) : data.group.course;
   return (
     <>
-      <h1 className="mt-4 text-[2rem] font-black text-fg">{data.group.name}</h1>
+      <h1 className="mt-4 text-[2rem] font-black [overflow-wrap:anywhere] text-fg">{data.group.name}</h1>
       <p className="mt-1 text-[15px] text-muted">{topic ? (topic.standard ? `${topic.standard} · ${topic.title}` : topic.title) : data.group.course}</p>
       <div className="mt-6">
         <GroupRoom group={data.group} members={data.members} me={user.id} courseName={courseName} lessons={lessons} />

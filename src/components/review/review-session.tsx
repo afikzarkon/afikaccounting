@@ -198,7 +198,7 @@ export function ReviewSession({
             ) : (
               <Link
                 href={planHref("courses", "/review")}
-                className="inline-flex items-center gap-2 rounded-xl bg-amber-400/10 px-3.5 py-2 text-sm font-semibold text-amber-700 ring-1 ring-amber-400/35 hover:bg-amber-400/20 dark:text-amber-300"
+                className="inline-flex items-center gap-2 rounded-xl bg-amber-400/10 px-3.5 py-2 text-sm font-semibold text-amber-800 ring-1 ring-amber-400/35 hover:bg-amber-400/20 dark:text-amber-300"
               >
                 <Crown className="h-4 w-4" aria-hidden /> שאלה דומה במספרים חדשים — במנוי
               </Link>

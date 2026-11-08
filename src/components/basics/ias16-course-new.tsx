@@ -93,7 +93,7 @@ function Chain({ boxes }: { boxes: { label: string; value?: ReactNode; unknown?:
             )}
           >
             <span className="text-[12px] font-medium text-muted">{b.label}</span>
-            <span className={cn("num text-[16px] font-bold", b.unknown ? "text-amber-700 dark:text-amber-300" : "text-fg")}>{b.unknown ? "?" : b.value}</span>
+            <span className={cn("num text-[16px] font-bold", b.unknown ? "text-amber-800 dark:text-amber-300" : "text-fg")}>{b.unknown ? "?" : b.value}</span>
           </span>
           {i < boxes.length - 1 && <ArrowLeft className="h-4 w-4 shrink-0 text-subtle" aria-hidden />}
         </li>

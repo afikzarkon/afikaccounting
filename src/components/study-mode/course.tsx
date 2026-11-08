@@ -339,7 +339,7 @@ function LessonRow({ module: m, progress: p, status, gate }: { module: StudyModu
         <p className="num mt-0.5 text-sm text-muted">
           {m.screens.length} מושגים · {m.exercises.length + m.traps.length} שאלות תרגול
           {m.videos?.length ? (
-            <span className="ms-2 inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[12px] font-semibold text-amber-700 dark:text-amber-300">
+            <span className="ms-2 inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[12px] font-semibold text-amber-800 dark:text-amber-300">
               <PlayCircle className="h-3.5 w-3.5" aria-hidden /> {m.videos.length > 1 ? `${m.videos.length} סרטונים` : "סרטון"} {clock(m.videos.reduce((a, v) => a + v.duration, 0))}
             </span>
           ) : null}

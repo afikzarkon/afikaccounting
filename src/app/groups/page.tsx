@@ -49,7 +49,7 @@ async function Groups({ searchParams }: Pick<PageProps<"/groups">, "searchParams
                   <Users className="h-5 w-5" aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block font-semibold text-fg">{g.name}</span>
+                  <span className="block font-semibold [overflow-wrap:anywhere] text-fg">{g.name}</span>
                   <span className="num block text-[13.5px] text-muted">
                     {courseLabel(g.course)} · {g.members} {g.members === 1 ? "חבר" : "חברים"}
                   </span>

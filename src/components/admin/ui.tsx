@@ -40,7 +40,7 @@ export function Kpi({ icon: Icon, label, value, hint, tone }: { icon: LucideIcon
       </p>
       <p className="num mt-2 text-2xl font-semibold tracking-tight text-fg">{value}</p>
       {hint && (
-        <p className={cn("mt-1 text-xs", tone === "good" ? "text-success" : tone === "warn" ? "text-amber-600 dark:text-amber-400" : "text-subtle")}>{hint}</p>
+        <p className={cn("mt-1 text-xs", tone === "good" ? "text-success" : tone === "warn" ? "text-amber-700 dark:text-amber-400" : "text-subtle")}>{hint}</p>
       )}
     </div>
   );
@@ -65,7 +65,7 @@ export function Panel({ title, description, actions, children, className }: { ti
 export function SetupRequired() {
   return (
     <div className="card flex flex-col items-start gap-3 border-amber-500/40 p-6">
-      <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+      <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400">
         <DatabaseZap className="h-5 w-5" />
       </span>
       <p className="font-semibold text-fg">מסד הנתונים עוד לא הוכן למערכת הניהול</p>

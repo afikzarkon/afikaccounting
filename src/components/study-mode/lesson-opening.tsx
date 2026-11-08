@@ -172,7 +172,7 @@ export function LessonOpening({
                       type="button"
                       onClick={() => onVideo!(clip.part, clip.at)}
                       aria-label={`${s.title} בסרטון${videos!.length > 1 ? `, ${videos![clip.part].part ?? ""}` : ""}, מ-${clock(clip.at)}`}
-                      className="num inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[12px] font-bold text-amber-700 ring-1 ring-amber-400/30 transition hover:bg-amber-400/30 dark:text-amber-300"
+                      className="num inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[12px] font-bold text-amber-800 ring-1 ring-amber-400/30 transition hover:bg-amber-400/30 dark:text-amber-300"
                     >
                       <Play className="h-3 w-3 fill-current" aria-hidden /> {videos!.length > 1 && `${videos![clip.part].part} · `}
                       {clock(clip.at)}

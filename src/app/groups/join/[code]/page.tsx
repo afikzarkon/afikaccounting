@@ -32,7 +32,7 @@ async function Join({ params }: Pick<PageProps<"/groups/join/[code]">, "params">
   return (
     <section className="card p-6">
       <p className="text-sm font-semibold text-accent">{TITLE}</p>
-      <h1 className="mt-2 text-[1.75rem] font-black text-fg">{group.name}</h1>
+      <h1 className="mt-2 text-[1.75rem] font-black [overflow-wrap:anywhere] text-fg">{group.name}</h1>
       <p className="num mt-1 text-[15px] text-muted">
         {t ? (t.standard ? `${t.standard} · ${t.title}` : t.title) : group.course} · {group.members} {group.members === 1 ? "חבר" : "חברים"}
         {group.exam_date && ` · מבחן ב־${group.exam_date.split("-").reverse().join(".")}`}

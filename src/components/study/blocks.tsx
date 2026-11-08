@@ -123,7 +123,7 @@ export function JournalEntry({ title, date, lines, note }: { title: string; date
           </span>
         </li>
       </ul>
-      <div className="scroll-x hidden sm:block">
+      <div className="scroll-x hidden sm:block" tabIndex={0} role="region" aria-label={`פקודת יומן: ${title}`}>
         <table className="w-full min-w-[26rem] text-sm">
           <thead>
             <tr className="text-xs text-muted">
@@ -190,7 +190,8 @@ export function DataTable({
   return (
     <div className="my-4 overflow-hidden rounded-xl border border-line">
       {caption && <p className="border-b border-line bg-surface-2/70 px-4 py-2.5 text-sm font-semibold text-fg">{caption}</p>}
-      <div className="scroll-x">
+      {/* Focusable, so a keyboard can scroll a table wider than the screen. */}
+      <div className="scroll-x" tabIndex={0} role="region" aria-label={typeof caption === "string" ? caption : "טבלה"}>
         <table className="w-full min-w-[30rem] text-sm">
           <thead>
             <tr className="text-xs text-muted">

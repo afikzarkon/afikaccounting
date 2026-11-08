@@ -32,7 +32,7 @@ export function SolveTemplate({ seek, check, build, compact }: { seek: ReactNode
         <ul className="space-y-1">
           {check.map((s, i) => (
             <li key={i} className="flex items-start gap-2">
-              <Check className="mt-1 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-300" aria-hidden />
+              <Check className="mt-1 h-3.5 w-3.5 shrink-0 text-amber-700 dark:text-amber-300" aria-hidden />
               <span className="min-w-0">{s}</span>
             </li>
           ))}

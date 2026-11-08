@@ -118,7 +118,7 @@ export function FunnelView({ now, before, days, source, labels, asOf }: { now: F
                     <span className="font-semibold text-fg">{count(v)}</span>{" "}
                     <span className="text-xs text-muted">{pct(v, f.entered)}</span>
                     {from && f[from] > 0 && v <= f[from] && <span className="block text-[11px] text-subtle">{pct(v, f[from])} מהשלב הקודם</span>}
-                    {bad && <span className="block text-[11px] text-amber-600 dark:text-amber-400">הנשירה הגדולה</span>}
+                    {bad && <span className="block text-[11px] text-amber-700 dark:text-amber-400">הנשירה הגדולה</span>}
                   </span>
                 </li>
               );
@@ -208,9 +208,9 @@ export function FunnelView({ now, before, days, source, labels, asOf }: { now: F
             <ol className="space-y-2">
               {now.traps.map((t) => (
                 <li key={`${t.slug}:${t.id}`} className="flex items-start gap-3 text-sm">
-                  <span className="num w-14 shrink-0 font-semibold text-amber-600 dark:text-amber-400">{pct(t.falls, t.answers)}</span>
+                  <span className="num w-14 shrink-0 font-semibold text-amber-700 dark:text-amber-400">{pct(t.falls, t.answers)}</span>
                   <span className="min-w-0">
-                    <span className="block text-fg">{labels.traps[`${t.slug}:${t.id}`] ?? t.id}</span>
+                    <span className="block [overflow-wrap:anywhere] text-fg">{labels.traps[`${t.slug}:${t.id}`] ?? t.id}</span>
                     <span className="num block text-xs text-muted">
                       {labels.lessons[t.slug] ?? t.slug} · {count(t.answers)} תשובות
                     </span>
@@ -320,7 +320,7 @@ function Table({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
           {rows.map((r, ri) => (
             <tr key={ri} className="border-t border-line/70">
               {r.map((c, i) => (
-                <td key={i} className={cn("px-2 py-2", i ? "text-end whitespace-nowrap" : "text-start")}>
+                <td key={i} className={cn("px-2 py-2", i ? "text-end whitespace-nowrap" : "min-w-[8rem] text-start [overflow-wrap:anywhere]")}>
                   {c}
                 </td>
               ))}

@@ -493,7 +493,7 @@ export function StudyShell({ module: m, screens, next, course, share }: { module
                     <button
                       type="button"
                       onClick={() => watch(clip.part, clip.at)}
-                      className="inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2.5 py-0.5 text-[12.5px] font-bold text-amber-700 ring-1 ring-amber-400/35 transition hover:bg-amber-400/25 dark:text-amber-300"
+                      className="inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2.5 py-0.5 text-[12.5px] font-bold text-amber-800 ring-1 ring-amber-400/35 transition hover:bg-amber-400/25 dark:text-amber-300"
                       title="הקטע בסרטון שמסביר את המושג הזה"
                     >
                       <PlayCircle className="h-3.5 w-3.5" aria-hidden />

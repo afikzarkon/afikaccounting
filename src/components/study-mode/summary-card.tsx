@@ -139,7 +139,7 @@ export function SummaryCard({
           <ol className="grid gap-3 px-5 pb-5 lg:grid-cols-2">
             {m.tips.map((t, i) => (
               <li key={t} className="flex gap-3 rounded-xl bg-surface-2/60 p-4 text-[15px] leading-relaxed text-fg/90">
-                <span className="num grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#eda100]/15 text-[13px] font-bold text-amber-700 dark:text-[#f5c04a]">{i + 1}</span>
+                <span className="num grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#eda100]/15 text-[13px] font-bold text-amber-800 dark:text-[#f5c04a]">{i + 1}</span>
                 <span className="min-w-0">{t}</span>
               </li>
             ))}

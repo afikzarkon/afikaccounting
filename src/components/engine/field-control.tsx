@@ -126,7 +126,7 @@ export function FieldControl(props: Props) {
       ) : help ? (
         <p
           id={`${id}-help`}
-          className={cn("mt-1.5 text-xs leading-relaxed", isX ? "text-accent" : disabled ? "text-amber-600 dark:text-amber-400" : "text-muted")}
+          className={cn("mt-1.5 text-xs leading-relaxed", isX ? "text-accent" : disabled ? "text-amber-700 dark:text-amber-400" : "text-muted")}
         >
           {help}
         </p>

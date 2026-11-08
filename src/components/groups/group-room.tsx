@@ -115,7 +115,7 @@ export function GroupRoom({ group, members, me, courseName, lessons }: { group: 
             const today_ = m.studied_on === day;
             return (
               <li key={m.user_id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3">
-                <span className="min-w-0 flex-1 font-semibold text-fg">
+                <span className="min-w-0 flex-1 font-semibold [overflow-wrap:anywhere] text-fg">
                   {m.display_name}
                   {m.user_id === me && <span className="ms-1.5 text-[12px] font-normal text-muted">(אתם)</span>}
                   {m.user_id === group.owner && <span className="ms-1.5 text-[12px] font-normal text-muted">· פתח/ה את הקבוצה</span>}

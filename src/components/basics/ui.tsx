@@ -323,7 +323,9 @@ export function Scroller({ caption, children }: { caption?: ReactNode; children:
   return (
     <div className="my-3 overflow-hidden rounded-2xl border border-line bg-surface">
       {caption && <p className="border-b border-line bg-surface-2/70 px-4 py-3 text-sm font-bold text-fg">{caption}</p>}
-      <div className="scroll-x">{children}</div>
+      <div className="scroll-x" tabIndex={0} role="region" aria-label={typeof caption === "string" ? caption : "טבלה"}>
+        {children}
+      </div>
     </div>
   );
 }

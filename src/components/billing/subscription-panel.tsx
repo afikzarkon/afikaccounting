@@ -125,7 +125,7 @@ export function SubscriptionPanel({ sub, invoices, provider }: Props) {
 
       {provider === "sandbox" && managed && (
         <div className="mt-6 rounded-xl border border-dashed border-amber-500/50 p-4">
-          <p className="flex items-center gap-2 text-xs font-semibold text-amber-700 dark:text-amber-300">
+          <p className="flex items-center gap-2 text-xs font-semibold text-amber-800 dark:text-amber-300">
             <FlaskConical className="h-4 w-4" aria-hidden /> סביבת בדיקות: מה שהספק היה שולח בהמשך
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
