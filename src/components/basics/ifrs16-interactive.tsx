@@ -2,11 +2,170 @@
 
 import { CircleCheck, CircleX, RotateCcw } from "lucide-react";
 import { useState } from "react";
-import { leaseTerm } from "@/lib/learn/ifrs16";
+import { JournalEntry } from "@/components/study/blocks";
+import { leaseTerm, lessee } from "@/lib/learn/ifrs16";
+import { drill, DRILL_FAMILIES, type DrillFamily } from "@/lib/study/ifrs16/drills";
 import { CONTRACT_TEST, CONTRACT_TEST_START, type TestEnd, type TestNode } from "@/lib/study/ifrs16/lessons/what";
 import { cn } from "@/lib/utils";
+import { Tbl } from "./ifrs16-parts";
 
 const isEnd = (n: TestNode | TestEnd): n is TestEnd => "verdict" in n;
+
+/** An amount in a small labelled box. */
+function Amount({ label, value, onChange, step = 1000 }: { label: string; value: number; onChange: (v: number) => void; step?: number }) {
+  return (
+    <label className="block text-[13.5px] text-muted">
+      {label}
+      <input type="number" inputMode="decimal" min={0} step={step} value={value} onChange={(e) => onChange(Math.max(0, +e.target.value || 0))} dir="ltr" className="num mt-1 block min-h-11 w-full rounded-lg border border-line-strong bg-surface px-2 text-[15px] text-fg" />
+    </label>
+  );
+}
+
+/**
+ * The asset's cost, built line by line (paragraph 24): change a figure, and
+ * the liability, the cost and the day's journal entry all follow.
+ */
+export function RouBuilder() {
+  const [payment, setPayment] = useState(40_000);
+  const [years, setYears] = useState(5);
+  const [ratePct, setRatePct] = useState(6);
+  const [atStart, setAtStart] = useState(false);
+  const [prepaid, setPrepaid] = useState(0);
+  const [incentives, setIncentives] = useState(3_000);
+  const [directCosts, setDirectCosts] = useState(2_000);
+  const [restoration, setRestoration] = useState(5_000);
+  const l = lessee({ payment, years, rate: ratePct / 100, timing: atStart ? "start" : "end", prepaid, incentives, directCosts, restoration });
+  const paidToday = atStart ? payment : 0;
+  const net = Math.round(l.liability - paidToday);
+  const cash = paidToday + prepaid - incentives + directCosts;
+  const cost = net + cash + restoration;
+  return (
+    <section aria-label="בונים את עלות הנכס" className="card space-y-4 p-4 sm:p-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Amount label="תשלום לשנה" value={payment} onChange={setPayment} />
+        <Amount label="שנים" value={years} onChange={(v) => setYears(Math.min(30, Math.max(1, Math.round(v))))} step={1} />
+        <Amount label="ריבית (%)" value={ratePct} onChange={(v) => setRatePct(Math.max(0.1, v))} step={0.5} />
+        <Amount label="מקדמות" value={prepaid} onChange={setPrepaid} />
+        <Amount label="תמריצים" value={incentives} onChange={setIncentives} />
+        <Amount label="עלויות ישירות" value={directCosts} onChange={setDirectCosts} />
+        <Amount label="פירוק (ערך נוכחי)" value={restoration} onChange={setRestoration} />
+      </div>
+      <Toggle label="התשלום בתחילת כל שנה, והראשון שולם היום" on={atStart} onChange={setAtStart} />
+      <Tbl
+        head={["רכיב", "סכום"]}
+        rows={[
+          ["התחייבות החכירה", net],
+          ...(paidToday ? ([["תשלום של היום", paidToday]] as [string, number][]) : []),
+          ...(prepaid ? ([["מקדמות", prepaid]] as [string, number][]) : []),
+          ["תמריצים", -incentives],
+          ["עלויות ישירות", directCosts],
+          ["פירוק", restoration],
+        ]}
+        foot={["עלות הנכס", cost]}
+      />
+      <JournalEntry
+        title="פקודת היומן במועד התחילה"
+        lines={[
+          { account: "נכס זכות שימוש", dr: cost },
+          ...(cash < 0 ? [{ account: "מזומן", dr: -cash }] : []),
+          { account: "התחייבות חכירה", cr: net },
+          ...(cash > 0 ? [{ account: "מזומן", cr: cash }] : []),
+          ...(restoration ? [{ account: "הפרשה לפירוק ופינוי", cr: restoration }] : []),
+        ]}
+      />
+    </section>
+  );
+}
+
+/** Endless practice: pick a family, solve, check within two shekels, and see the whole solution. */
+export function LeaseDrill({ families }: { families: DrillFamily[] }) {
+  const [family, setFamily] = useState(families[0]);
+  const [seed, setSeed] = useState(1);
+  const [typed, setTyped] = useState("");
+  const [checked, setChecked] = useState(false);
+  const [shown, setShown] = useState(false);
+  const d = drill(family, seed);
+  const value = Number(typed.replaceAll(",", ""));
+  const right = checked && Number.isFinite(value) && Math.abs(value - d.answer) <= 2;
+  const reset = () => {
+    setTyped("");
+    setChecked(false);
+    setShown(false);
+  };
+  return (
+    <section aria-label="מחולל תרגילים" className="card space-y-3 p-4 sm:p-5">
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label="סוג תרגיל">
+        {families.map((f) => (
+          <button
+            key={f}
+            type="button"
+            aria-pressed={f === family}
+            onClick={() => {
+              setFamily(f);
+              reset();
+            }}
+            className={cn("min-h-11 rounded-lg border px-3 py-1.5 text-[13.5px] font-semibold", f === family ? "border-accent bg-accent-soft text-fg" : "border-line text-muted hover:bg-surface-2")}
+          >
+            {DRILL_FAMILIES[f]}
+          </button>
+        ))}
+      </div>
+      <p className="text-[16px] leading-relaxed font-semibold text-fg">{d.prompt}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          value={typed}
+          onChange={(e) => {
+            setTyped(e.target.value);
+            setChecked(false);
+          }}
+          inputMode="decimal"
+          dir="ltr"
+          aria-label={`התשובה ב${d.unit}`}
+          className="num min-h-11 w-40 rounded-lg border border-line-strong bg-surface px-3 text-[15px] text-fg"
+        />
+        <button type="button" onClick={() => setChecked(true)} disabled={!typed.trim()} className="min-h-11 rounded-lg bg-accent px-4 text-[14.5px] font-semibold text-accent-fg disabled:opacity-50">
+          בדיקה
+        </button>
+        <button type="button" onClick={() => setShown((v) => !v)} className="min-h-11 rounded-lg border border-line-strong px-3 text-[14px] font-semibold text-accent">
+          {shown ? "הסתרת הפתרון" : "הצגת הפתרון המלא"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setSeed((s) => s + 1);
+            reset();
+          }}
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-[14px] font-semibold text-accent hover:underline"
+        >
+          <RotateCcw className="h-4 w-4" aria-hidden /> תרגיל חדש
+        </button>
+      </div>
+      {checked && (
+        <p aria-live="polite" className={cn("text-[15px] font-semibold", right ? "text-success" : "text-danger")}>
+          {right ? "נכון." : "לא בדיוק. נסו שוב, או פתחו את הפתרון המלא."}
+        </p>
+      )}
+      {shown && (
+        <div className="space-y-2.5 rounded-xl border border-line bg-surface-2/40 p-3.5 text-[14.5px]">
+          {d.steps.map((s) => (
+            <div key={s.title}>
+              <p className="font-bold text-fg">{s.title}</p>
+              {s.note && <p>{s.note}</p>}
+              {s.formula && <p dir="ltr" className="text-start break-words text-muted [unicode-bidi:plaintext]">{s.formula}</p>}
+              {s.numbers && <p dir="ltr" className="num break-words">{s.numbers}</p>}
+            </div>
+          ))}
+          <p>
+            <strong>התשובה:</strong> <span className="num">{d.answer.toLocaleString("en-US")}</span> {d.unit}
+          </p>
+          <p>
+            <strong>מלכודת נפוצה:</strong> {d.trap}
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
 
 /** A yes-or-no switch with its label. */
 function Toggle({ label, on, onChange }: { label: string; on: boolean; onChange: (v: boolean) => void }) {

@@ -1,13 +1,12 @@
 import { Calendar, Coffee, Hammer, ListChecks, Scale, Search, Store, Warehouse } from "lucide-react";
 import { Deeper, Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
-import { DataTable } from "@/components/study/blocks";
 import { MASTER, MASTER_EXPEDIENT, MASTER_EXPEDIENT_YEARLY, MASTER_SHARES, MASTER_TERM, MASTER_TOTAL, MASTER_YEARLY, REASSESS_ITEMS, REASSESS_OPTIONS, SPLIT, SPLIT_LEASE, SPLIT_SERVICE } from "@/lib/study/ifrs16/lessons/term";
 import { TaskFrame, TaskText } from "./ias19-question";
-import { Bridge, FullSteps, T19 as T16 } from "./ias19-ui";
+import { Bridge, FullSteps } from "./ias19-ui";
 import { DecisionTree, Fork, Timeline, TwoPanel, WrongRight } from "./ias19-visuals";
 import { TermBuilder } from "./ifrs16-interactive";
-import { FullSolution, P, quiz } from "./ifrs16-parts";
+import { FullSolution, P, quiz, T16, Tbl } from "./ifrs16-parts";
 import { SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { Money, Rule } from "./ui";
@@ -88,7 +87,7 @@ export const IFRS16_TERM_SCREENS: Record<string, ScreenContent> = {
             התשלום לשנה <Money v={SPLIT.total} />. בשוק, חכירת מכונה בלי טכנאי עולה <Money v={SPLIT.rent} />, וטכנאי לבדו <Money v={SPLIT.service} />.
           </p>
         </Story>
-        <DataTable
+        <Tbl
           head={["רכיב", "מחיר נפרד", "חלק", "הקצאה לשנה"]}
           rows={[
             ["חכירת המכונה", SPLIT.rent, `${SPLIT.rent} / ${SPLIT.rent + SPLIT.service}`, SPLIT_LEASE],
@@ -414,7 +413,7 @@ export const IFRS16_TERM_SCREENS: Record<string, ScreenContent> = {
                       <p>
                         סך התמורה: <Money v={MASTER.yearly} /> × {MASTER.years} = <Money v={MASTER_TOTAL} />. מקצים לפי מחירים נפרדים (סעיף 13).
                       </p>
-                      <DataTable
+                      <Tbl
                         head={["רכיב", "מחיר נפרד", "הקצאה לתקופה", "לשנה"]}
                         rows={[
                           ["מלגזה", MASTER.forklift, MASTER_SHARES[0], MASTER_YEARLY[0]],
@@ -434,7 +433,7 @@ export const IFRS16_TERM_SCREENS: Record<string, ScreenContent> = {
                   body: (
                     <>
                       <p>התחזוקה מתאחדת עם המלגזה. המלגזה והטנדר עדיין מופרדים, כי הם שני רכיבי חכירה.</p>
-                      <DataTable
+                      <Tbl
                         head={["רכיב", "מחיר נפרד", "הקצאה לתקופה", "לשנה"]}
                         rows={[
                           ["מלגזה עם תחזוקה", MASTER.forkliftWithService, MASTER_EXPEDIENT[0], MASTER_EXPEDIENT_YEARLY[0]],

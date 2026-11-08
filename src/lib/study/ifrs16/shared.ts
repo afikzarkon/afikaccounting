@@ -10,6 +10,7 @@ export const COURSE_HREF = "/basics/ifrs16";
 export const LESSON_N = {
   "ifrs16-what": 1,
   "ifrs16-term": 2,
+  "ifrs16-measure": 3,
 } as const;
 
 export type Ifrs16Slug = keyof typeof LESSON_N;

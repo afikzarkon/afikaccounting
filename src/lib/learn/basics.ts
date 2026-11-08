@@ -48,6 +48,10 @@ const EXPLICIT: Record<string, AccountType> = {
   "רווח הון": "income",
   "הפסד הון": "expense",
   "הפסד מירידת ערך": "expense",
+  // Leases (the IFRS 16 course).
+  "נכס זכות שימוש": "asset",
+  "התחייבות חכירה": "liability",
+  "הפרשה לפירוק ופינוי": "liability",
   // Employee benefits (the IAS 19 course).
   "התחייבות לחופשה והבראה": "liability",
   "התחייבות לימי מחלה": "liability",

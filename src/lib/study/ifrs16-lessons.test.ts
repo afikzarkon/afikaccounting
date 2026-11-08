@@ -4,14 +4,17 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 import { TOPICS } from "../catalog";
 import { STUDY_MODULES } from ".";
+import { isBalanced } from "../learn/basics";
 import { IFRS16_LESSONS } from "./ifrs16";
+import { drill, DRILL_FAMILIES, type DrillFamily } from "./ifrs16/drills";
 import { IFRS16_GLOSSARY } from "./ifrs16/glossary";
+import { GUAR_WITH, GUAR_WITHOUT, IMPLICIT_LIABILITY, IMPLICIT_LIABILITY_DEALER, MASTER_CASH, MASTER_COST_SHOWN, MASTER_L, MASTER_NET, MASTER_RESTORE, MEASURE, MEASURE_TAUGHT, PV_EX_END, PV_EX_GROSS, PV_EX_NET, WORK1_L, WORK2_L } from "./ifrs16/lessons/measure";
 import { TERM_TAUGHT } from "./ifrs16/lessons/term";
 import { CASES, CONTRACT_TEST, CONTRACT_TEST_START, type TestEnd, type TestNode, WHAT_TAUGHT } from "./ifrs16/lessons/what";
 import { LESSON_N, type LeaseQuestion } from "./ifrs16/shared";
 
 /** What teaches each question, lesson by lesson. */
-const TAUGHT: Record<string, Record<string, string>> = { "ifrs16-what": WHAT_TAUGHT, "ifrs16-term": TERM_TAUGHT };
+const TAUGHT: Record<string, Record<string, string>> = { "ifrs16-what": WHAT_TAUGHT, "ifrs16-term": TERM_TAUGHT, "ifrs16-measure": MEASURE_TAUGHT };
 
 const isEnd = (n: TestNode | TestEnd): n is TestEnd => "verdict" in n;
 
@@ -39,13 +42,13 @@ describe("the leases course", () => {
   it("every practice question has a source, a level and a paragraph, and its solution ends on a common trap", () => {
     for (const m of IFRS16_LESSONS)
       for (const x of m.exercises) {
-        assert.notEqual(x.kind, "journal", `${m.slug}/${x.id}`);
         const q = x as LeaseQuestion;
         assert.ok(q.meta, `${m.slug}/${q.id}: no meta`);
         assert.ok([1, 2, 3].includes(q.meta.level), q.id);
         assert.ok(["הרצאה", "בהשראת הרצאה", "מקורית"].includes(q.meta.source), q.id);
         assert.ok(q.meta.ref.trim(), q.id);
-        assert.ok(q.steps.at(-1)!.startsWith("מלכודת נפוצה:"), q.id);
+        if (x.kind === "journal") assert.ok(x.entry.why?.includes("מלכודת נפוצה:"), x.id);
+        else assert.ok(q.steps.at(-1)!.startsWith("מלכודת נפוצה:"), q.id);
       }
   });
 
@@ -83,6 +86,60 @@ describe("the leases course", () => {
   it("the glossary: no term twice, none empty", () => {
     assert.equal(new Set(IFRS16_GLOSSARY.map(([t]) => t)).size, IFRS16_GLOSSARY.length);
     for (const [t, d] of IFRS16_GLOSSARY) assert.ok(t.trim() && d.trim(), t);
+  });
+});
+
+describe("lesson 3: figures, against a separate calculation over dated cash flows", () => {
+  const answer = (id: string) => (MEASURE.exercises.find((x) => x.id === id) as { answer: number }).answer;
+  it("the practice", () => {
+    const expected: Record<string, number> = { "pv-end": 92_842, "start-net": 83_163, "index-today": 51_954, guarantee: 56_297, "option-price": 59_648, penalty: 61_816, minimum: 87_629, "rou-sum": 112_000, "rou-start": 128_055, "restore-rou": 135_329, implicit: 88_541 };
+    for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
+  });
+  it("the screens", () => {
+    const near = (a: number, b: number) => assert.ok(Math.abs(a - b) < 0.01, `${a} ≠ ${b}`);
+    near(PV_EX_END, 101_616.34);
+    near(PV_EX_GROSS, 108_729.48);
+    near(PV_EX_NET, 78_729.48);
+    near(GUAR_WITH, 115_499.52);
+    near(GUAR_WITHOUT, 109_521.46);
+    near(IMPLICIT_LIABILITY, 129_165.78);
+    near(IMPLICIT_LIABILITY_DEALER, 126_157.67);
+    near(WORK1_L.liability, 280_684.62);
+    near(WORK1_L.cost, 292_684.62);
+    near(WORK2_L.liability, 244_577.89);
+    near(WORK2_L.cost, 243_577.89);
+    near(MASTER_L.liability, 479_652.9);
+    near(MASTER_NET, 389_652.9);
+    near(MASTER_RESTORE, 31_612.58);
+    near(MASTER_L.cost, 528_265.48);
+    assert.equal(MASTER_CASH, 107_000);
+    assert.ok(Math.abs(MASTER_COST_SHOWN - MASTER_L.cost) <= 1);
+  });
+  it("the journal entry balances", () => {
+    const j = MEASURE.exercises.find((x) => x.id === "first-entry");
+    assert.ok(j && j.kind === "journal");
+    assert.ok(isBalanced(j.entry));
+  });
+});
+
+describe("lesson 3: the drills, re-computed from each drill's inputs", () => {
+  const npv = (flows: [number, number][], r: number) => flows.reduce((s, [t, a]) => s + a / (1 + r) ** t, 0);
+  it("every family, four hundred seeds: an answer that follows from the inputs, and no broken text", () => {
+    for (const family of Object.keys(DRILL_FAMILIES) as DrillFamily[])
+      for (let seed = 1; seed <= 400; seed++) {
+        const d = drill(family, seed);
+        const { payment: p, years: n, i } = d.inputs;
+        const flows = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, k): [number, number] => [from + k, p]);
+        let want: number;
+        if (family === "end") want = npv(flows(1, n), i);
+        else if (family === "start") want = npv(flows(1, n - 1), i);
+        else if (family === "guarantee") want = npv([...flows(1, n), [n, d.inputs.shortfall]], i);
+        else want = Math.round(npv(flows(1, n), i)) + d.inputs.prepaid - d.inputs.incentives + d.inputs.directCosts + d.inputs.restoration;
+        assert.ok(Math.abs(d.answer - want) <= 0.51, `${family}/${seed}: ${d.answer} ≠ ${want}`);
+        assert.ok(d.answer > 0, `${family}/${seed}`);
+        const text = [d.prompt, d.trap, ...d.steps.flatMap((s) => [s.title, s.formula ?? "", s.numbers ?? "", s.note ?? ""])].join(" ");
+        assert.ok(!/NaN|undefined|Infinity/.test(text), `${family}/${seed}: ${text}`);
+      }
   });
 });
 
