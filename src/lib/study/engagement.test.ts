@@ -67,3 +67,29 @@ test("withStudyDay keeps days unique, sorted and bounded", () => {
   assert.deepEqual(withStudyDay([3, 1], 2), [1, 2, 3]);
   assert.equal(withStudyDay(Array.from({ length: 60 }, (_, i) => i), 100).length, 60);
 });
+
+import { STUDY_MODULES } from "./index";
+import { UNITS, unitsOf } from "./units";
+
+test("units hold every lesson of a course exactly once, and only lessons that exist", () => {
+  const courses = new Map<string, StudyModule[]>();
+  for (const m of Object.values(STUDY_MODULES)) courses.set(m.backHref, [...(courses.get(m.backHref) ?? []), m]);
+  for (const [href, lessons] of courses) {
+    const sorted = lessons.sort((a, b) => a.n - b.n);
+    const units = unitsOf(sorted);
+    if (!UNITS[href]) {
+      assert.equal(units.length, 0);
+      continue;
+    }
+    const slugs = units.flatMap((u) => u.lessons.map((m) => m.slug));
+    assert.equal(slugs.length, lessons.length, href);
+    assert.equal(new Set(slugs).size, lessons.length, href);
+    assert.ok(units.every((u) => u.lessons.length > 0), href);
+  }
+});
+
+test("a lesson no unit names joins 'more lessons'; a slug that's gone is skipped", () => {
+  const ls = [lesson("x1", 1, 1, 0), lesson("x2", 2, 1, 0)].map((m) => ({ ...m, backHref: "/basics" }));
+  const units = unitsOf(ls);
+  assert.deepEqual(units.map((u) => [u.title, u.lessons.map((m) => m.slug)]), [["שיעורים נוספים", ["x1", "x2"]]]);
+});

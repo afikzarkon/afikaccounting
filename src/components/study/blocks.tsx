@@ -112,7 +112,7 @@ export function JournalEntry({ title, date, lines, note }: { title: string; date
             </li>
           );
         })}
-        <li className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t-2 border-line-strong px-4 py-2 font-semibold">
+        <li className="ledger-total mx-4 flex flex-wrap items-center gap-x-2 gap-y-1 py-2 font-semibold">
           <span className="text-muted">סה״כ</span>
           <span className="ms-auto text-debit">
             ח׳ <Num v={dr} />
@@ -148,7 +148,8 @@ export function JournalEntry({ title, date, lines, note }: { title: string; date
             ))}
           </tbody>
           <tfoot>
-            <tr className="border-t-2 border-line-strong font-semibold">
+            {/* An accountant's total: a single rule above, a double rule below — the site's signature under every entry. */}
+            <tr className="ledger-total font-semibold">
               <td className="px-4 py-2 text-muted">סה״כ</td>
               <td className="px-4 py-2 text-end text-debit">
                 <Num v={dr} />

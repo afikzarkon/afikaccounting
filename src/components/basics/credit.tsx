@@ -341,11 +341,11 @@ const termsGeneral = round2((TERMS_EG.gross - TERMS_EG.specific) * TERMS_EG.gene
 const termsRequired = termsSpecific + termsGeneral;
 
 // The terms that come with a customer who will not pay — every one of them a part of the closing formula. Round illustrative figures.
-/** One colour per figure of the closing formula — the same in the term cards, in the formula and in its examples, so each number can be traced. */
+/** Blue and purple stay for debit and credit, site-wide. One colour per figure of the closing formula — the same in the term cards, in the formula and in its examples, so each number can be traced. */
 const TONES = {
-  gross: "bg-sky-500/15 text-sky-700 ring-sky-500/40 dark:text-sky-300",
+  gross: "bg-teal-500/15 text-teal-700 ring-teal-500/40 dark:text-teal-300",
   specific: "bg-amber-500/15 text-amber-700 ring-amber-500/40 dark:text-amber-300",
-  specificRate: "bg-violet-500/15 text-violet-700 ring-violet-500/40 dark:text-violet-300",
+  specificRate: "bg-rose-500/15 text-rose-700 ring-rose-500/40 dark:text-rose-300",
   general: "bg-emerald-500/15 text-emerald-700 ring-emerald-500/40 dark:text-emerald-300",
 };
 type Tone = keyof typeof TONES;

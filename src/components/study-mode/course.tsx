@@ -3,7 +3,7 @@
 import { ArrowLeft, Calculator, Check, ChevronsLeft, ChevronsRight, CircleCheck, Lock, PlayCircle, RotateCcw, Star } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type ComponentProps, useEffect, useState } from "react";
+import { type ComponentProps, Fragment, useEffect, useState } from "react";
 import { Modal } from "@/components/admin/modal";
 import { Paywall } from "@/components/pricing/paywall";
 import { TierBadge } from "@/components/pricing/tier-badge";
@@ -11,6 +11,7 @@ import { maxXp, pathStatus, type TopicProgress, xpOf } from "@/lib/study/score";
 import type { StudyModule } from "@/lib/study/types";
 import { studyHref } from "@/lib/study/href";
 import { lessonHref } from "@/lib/study/paths";
+import { unitsOf } from "@/lib/study/units";
 import { cn } from "@/lib/utils";
 import { clock } from "./lesson-opening";
 import { topicByHref } from "@/lib/catalog";
@@ -43,10 +44,14 @@ export function CoursePath({ lessons, locked = [], previews = [] }: { lessons: S
   const max = rows.reduce((s, r) => s + maxXp(r.m), 0);
   const next = rows.find((r) => r.status === "new" || r.status === "started");
   const topic = lessons[0] ? topicByHref(lessons[0].backHref) : undefined;
+  // The first lesson of each unit carries the unit's heading and progress (no units: a plain list).
+  const unitStarts = new Map(
+    unitsOf(lessons).map((u) => [u.lessons[0].slug, { title: u.title, total: u.lessons.length, done: u.lessons.filter((m) => rows.find((r) => r.m.slug === m.slug)?.status === "done").length }]),
+  );
   return (
     <>
       {/* One card: the progress, the single next step, and one thin row of goals (readiness, the exam, the streak). */}
-      <div className="card p-5 sm:px-6">
+      <div className="card bg-grid p-5 sm:px-6">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
         <XpRing xp={xp} max={max} className="h-24 w-24" />
         <div className="min-w-0 flex-[1_1_12rem]">
@@ -89,11 +94,33 @@ export function CoursePath({ lessons, locked = [], previews = [] }: { lessons: S
 
       <ol className="mt-8" aria-label="שיעורי הקורס">
         {rows.map((r, i) => {
+          const unit = unitStarts.get(r.m.slug);
           const spotlight = r === next;
           const isDone = r.status === "done";
           const skipped = r.status === "skipped";
           return (
-            <li key={r.m.slug} className="flex gap-3 sm:gap-5">
+            <Fragment key={r.m.slug}>
+            {unit && (
+              // A unit's heading on the path: the line runs on beside it, and its progress is the unit's lessons done.
+              <li className="flex gap-3 sm:gap-5" aria-label={`יחידה: ${unit.title}`}>
+                <div className="flex w-10 shrink-0 justify-center sm:w-12" aria-hidden>
+                  <span className={cn("w-[3px] rounded-full", i === 0 ? "bg-transparent" : rows[i - 1]?.status === "done" ? "bg-success" : "bg-line-strong")} />
+                </div>
+                <div className={cn("min-w-0 flex-1 pb-3", i > 0 && "pt-4")}>
+                  {/* Headed like a T-account: the title over a firm rule. */}
+                  <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b-2 border-fg/60 pb-1.5">
+                    <span className="text-[17px] font-bold text-fg">{unit.title}</span>
+                    <span className="num text-[13px] text-muted">
+                      {unit.done} מתוך {unit.total} שיעורים
+                    </span>
+                  </p>
+                  <span className="mt-1.5 block h-1 w-40 overflow-hidden rounded-full bg-surface-2">
+                    <span className={cn("block h-full rounded-full", unit.done === unit.total ? "bg-success" : "bg-accent")} style={{ width: `${(unit.done / unit.total) * 100}%` }} />
+                  </span>
+                </div>
+              </li>
+            )}
+            <li className="flex gap-3 sm:gap-5">
               <div className="flex w-10 shrink-0 flex-col items-center sm:w-12" aria-hidden>
                 <span className={cn("w-[3px] rounded-full", i === 0 ? "h-0" : spotlight ? "h-6 sm:h-7" : "h-2", rows[i - 1]?.status === "done" ? "bg-success" : "bg-line-strong")} />
                 <span
@@ -121,6 +148,7 @@ export function CoursePath({ lessons, locked = [], previews = [] }: { lessons: S
                 )}
               </div>
             </li>
+            </Fragment>
           );
         })}
       </ol>

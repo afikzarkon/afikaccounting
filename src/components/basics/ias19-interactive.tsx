@@ -25,7 +25,7 @@ const L = ({ children }: { children: ReactNode }) => <bdi dir="ltr">{children}</
 export function SolveTemplate({ seek, check, build, compact }: { seek: ReactNode[]; check: ReactNode[]; build: { title: ReactNode; lines: ReactNode[] }[]; compact?: boolean }) {
   return (
     <div className="space-y-2.5">
-      <TemplatePart icon={<Search className="h-4 w-4" />} title="מה מחפשים" tone="bg-sky-500/10 ring-sky-500/30">
+      <TemplatePart icon={<Search className="h-4 w-4" />} title="מה מחפשים" tone="bg-teal-500/10 ring-teal-500/30">
         <ul className="list-disc space-y-1 ps-5">{seek.map((s, i) => <li key={i}>{s}</li>)}</ul>
       </TemplatePart>
       <TemplatePart icon={<ClipboardList className="h-4 w-4" />} title="מה בודקים" tone="bg-amber-500/10 ring-amber-500/30">
