@@ -1,13 +1,13 @@
 "use client";
 
-import { CircleCheck, CircleX, RotateCcw } from "lucide-react";
-import { useState } from "react";
+import { ChevronLeft, ChevronRight, CircleCheck, CircleX, RotateCcw } from "lucide-react";
+import { Fragment, useState } from "react";
 import { JournalEntry } from "@/components/study/blocks";
-import { leaseTerm, lessee } from "@/lib/learn/ifrs16";
-import { drill, DRILL_FAMILIES, type DrillFamily } from "@/lib/study/ifrs16/drills";
+import { leaseTerm, lessee, shownYears, statementLines } from "@/lib/learn/ifrs16";
+import { drill, DRILL_FAMILIES, type DrillFamily, statementDrill, type StatementTask } from "@/lib/study/ifrs16/drills";
 import { CONTRACT_TEST, CONTRACT_TEST_START, type TestEnd, type TestNode } from "@/lib/study/ifrs16/lessons/what";
 import { cn } from "@/lib/utils";
-import { Tbl } from "./ifrs16-parts";
+import { AssetCycle, LiabilityCycle, StatementTables, Tbl } from "./ifrs16-parts";
 
 const isEnd = (n: TestNode | TestEnd): n is TestEnd => "verdict" in n;
 
@@ -163,6 +163,224 @@ export function LeaseDrill({ families }: { families: DrillFamily[] }) {
           </p>
         </div>
       )}
+    </section>
+  );
+}
+
+/**
+ * A lease, year by year: change the terms, step through the years, and watch
+ * both cycles and the year's lines in the statements. The bars show the two
+ * balances over the whole lease, the year we stand in lit.
+ */
+export function LeaseLab() {
+  const [payment, setPayment] = useState(30_000);
+  const [years, setYears] = useState(4);
+  const [ratePct, setRatePct] = useState(7);
+  const [life, setLife] = useState(6);
+  const [atStart, setAtStart] = useState(false);
+  const [hasOption, setHasOption] = useState(false);
+  const [option, setOption] = useState(10_000);
+  const [at, setAt] = useState(1);
+  const year = Math.min(at, years);
+  const depYears = hasOption ? Math.max(life, years) : Math.min(life, years);
+  const { cost, rows } = shownYears({ payment, years, rate: ratePct / 100, timing: atStart ? "start" : "end", finalAmount: hasOption ? option : 0, depreciationYears: depYears });
+  const row = rows[year - 1];
+  const sections = statementLines(rows, year).map((s) => ({ ...s, rows: s.rows.map((r) => ({ ...r, values: [r.values[year - 1]] })) }));
+  const max = Math.max(cost, ...rows.map((r) => r.opening), 1);
+  return (
+    <section aria-label="מעבדת חכירה, שנה אחרי שנה" className="card space-y-4 p-4 sm:p-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Amount label="תשלום לשנה" value={payment} onChange={setPayment} />
+        <Amount label="שנות חכירה" value={years} onChange={(v) => setYears(Math.min(12, Math.max(2, Math.round(v))))} step={1} />
+        <Amount label="ריבית (%)" value={ratePct} onChange={(v) => setRatePct(Math.max(0.1, v))} step={0.5} />
+        <Amount label="אורך חיים (שנים)" value={life} onChange={(v) => setLife(Math.min(40, Math.max(1, Math.round(v))))} step={1} />
+      </div>
+      <div className="flex flex-wrap gap-x-5">
+        <Toggle label="התשלום בתחילת כל שנה" on={atStart} onChange={setAtStart} />
+        <Toggle label="ודאי שתמומש אופציית רכישה" on={hasOption} onChange={setHasOption} />
+      </div>
+      {hasOption && (
+        <div className="max-w-44">
+          <Amount label="מחיר האופציה, בסוף התקופה" value={option} onChange={setOption} />
+        </div>
+      )}
+      <p className="text-[14.5px] text-fg">
+        עלות הנכס <strong className="num">{cost.toLocaleString("en-US")}</strong>, פחת על פני <strong className="num">{depYears}</strong> שנים.
+      </p>
+      <div>
+        <div className="flex items-end gap-1 border-b-2 border-line-strong" style={{ height: "7rem" }} role="img" aria-label={`יתרות ההתחייבות והנכס בסוף כל שנה. בסוף שנה ${year}: התחייבות ${row.closing}, נכס ${row.rightOfUse}`}>
+          {rows.map((r) => (
+            <button key={r.year} type="button" onClick={() => setAt(r.year)} aria-label={`שנה ${r.year}`} className={cn("flex h-full min-w-0 flex-1 items-end justify-center gap-px rounded-t", r.year === year && "bg-amber-400/20")}>
+              <span className="w-full max-w-5 rounded-t-sm bg-[var(--credit)] transition-[height] duration-300 motion-reduce:transition-none" style={{ height: `${(r.closing / max) * 100}%` }} />
+              <span className="w-full max-w-5 rounded-t-sm bg-accent transition-[height] duration-300 motion-reduce:transition-none" style={{ height: `${(r.rightOfUse / max) * 100}%` }} />
+            </button>
+          ))}
+        </div>
+        <p className="mt-1.5 flex flex-wrap gap-x-4 text-[12.5px] text-muted">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-3 w-3 rounded-sm bg-[var(--credit)]" /> התחייבות בסוף השנה
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-3 w-3 rounded-sm bg-accent" /> נכס בסוף השנה
+          </span>
+        </p>
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <button type="button" disabled={year <= 1} onClick={() => setAt(year - 1)} className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-line-strong px-3 text-[14px] font-semibold text-accent disabled:opacity-40">
+          <ChevronRight className="h-4 w-4" aria-hidden /> קודמת
+        </button>
+        <strong aria-live="polite" className="text-[16px] text-fg">
+          שנה <span className="num">{year}</span> מתוך <span className="num">{years}</span>
+        </strong>
+        <button type="button" disabled={year >= years} onClick={() => setAt(year + 1)} className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-line-strong px-3 text-[14px] font-semibold text-accent disabled:opacity-40">
+          הבאה <ChevronLeft className="h-4 w-4" aria-hidden />
+        </button>
+      </div>
+      <div className="grid gap-x-4 sm:grid-cols-2">
+        <LiabilityCycle rows={[row]} />
+        <AssetCycle rows={[row]} cost={year > 1 ? rows[year - 2].rightOfUse : cost} />
+      </div>
+      <StatementTables sections={sections} years={[year]} />
+    </section>
+  );
+}
+
+const typed = (s: string) => {
+  const n = Number(s.replace(/[,\s()]/g, ""));
+  return s.trim() === "" ? 0 : Math.abs(n);
+};
+
+/**
+ * The statements, to fill in: every line a cell, each checked to within two
+ * shekels, with the whole solution one press away. The first columns can come
+ * filled in, for a first try. A blank cell counts as zero.
+ */
+export function StatementFill({ task, onNext }: { task: StatementTask; onNext?: () => void }) {
+  const [cells, setCells] = useState<Record<string, string>>({});
+  const [checked, setChecked] = useState(false);
+  const [shown, setShown] = useState(false);
+  const yearsCols = Array.from({ length: task.years }, (_, i) => i);
+  const asked = task.sections.flatMap((s) => s.rows.flatMap((r) => yearsCols.filter((i) => i >= task.given).map((i) => ({ key: `${r.id}-${i}`, want: r.values[i] }))));
+  const isRight = (key: string, want: number) => Math.abs(typed(cells[key] ?? "") - want) <= 2;
+  const rightCount = asked.filter((c) => isRight(c.key, c.want)).length;
+  return (
+    <div className="space-y-3">
+      <div className="overflow-hidden rounded-xl border border-line">
+        <table className="w-full table-fixed text-[13px]">
+          <colgroup>
+            <col className="w-[36%] sm:w-[40%]" />
+            {yearsCols.map((i) => (
+              <col key={i} />
+            ))}
+          </colgroup>
+          <thead>
+            <tr className="text-xs text-muted">
+              <th className="px-1.5 py-1.5 text-start font-medium sm:px-3">סעיף</th>
+              {yearsCols.map((i) => (
+                <th key={i} className="px-1 py-1.5 text-center font-medium">
+                  שנה {i + 1}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {task.sections.map((s) => (
+              <Fragment key={s.title}>
+                <tr className="border-t border-line bg-surface-2/60">
+                  <th colSpan={task.years + 1} scope="colgroup" className="px-1.5 py-1 text-start text-[12.5px] font-bold text-fg sm:px-3">
+                    {s.title}
+                  </th>
+                </tr>
+                {s.rows.map((r) => (
+                  <tr key={r.id} className="border-t border-line/70">
+                    <td className={cn("px-1.5 py-1 align-middle leading-tight sm:px-3", r.id === "total" && "font-bold")}>{r.label}</td>
+                    {yearsCols.map((i) => {
+                      const key = `${r.id}-${i}`;
+                      if (i < task.given)
+                        return (
+                          <td key={i} className="px-1 py-1 text-center align-middle">
+                            <bdi dir="ltr" className="num text-muted">
+                              {r.values[i].toLocaleString("en-US")}
+                            </bdi>
+                          </td>
+                        );
+                      const ok = isRight(key, r.values[i]);
+                      return (
+                        <td key={i} className="px-0.5 py-1 align-middle sm:px-1">
+                          <div className="relative">
+                            <input
+                              value={cells[key] ?? ""}
+                              onChange={(e) => {
+                                setCells((c) => ({ ...c, [key]: e.target.value }));
+                                setChecked(false);
+                              }}
+                              inputMode="numeric"
+                              dir="ltr"
+                              aria-label={`${r.label}, שנה ${i + 1}`}
+                              aria-invalid={checked && !ok}
+                              className={cn("num h-10 w-full min-w-0 rounded-md border bg-surface px-1 text-center text-[13px] text-fg", checked ? (ok ? "border-success bg-success/10" : "border-danger bg-danger/5") : "border-line-strong")}
+                            />
+                            {checked && (ok ? <CircleCheck aria-hidden className="absolute -end-0.5 -top-1 h-3.5 w-3.5 rounded-full bg-surface text-success" /> : <CircleX aria-hidden className="absolute -end-0.5 -top-1 h-3.5 w-3.5 rounded-full bg-surface text-danger" />)}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[12.5px] text-muted">סטייה של עד 2 ש״ח נחשבת נכונה. תא ריק נספר כאפס.</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={() => setChecked(true)} className="min-h-11 rounded-lg bg-accent px-4 text-[14.5px] font-semibold text-accent-fg">
+          בדיקת כל התאים
+        </button>
+        <button type="button" onClick={() => setShown((v) => !v)} className="min-h-11 rounded-lg border border-line-strong px-3 text-[14px] font-semibold text-accent">
+          {shown ? "הסתרת הפתרון" : "הצגת הפתרון המלא"}
+        </button>
+        {onNext && (
+          <button type="button" onClick={onNext} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-[14px] font-semibold text-accent hover:underline">
+            <RotateCcw className="h-4 w-4" aria-hidden /> תרגיל חדש
+          </button>
+        )}
+      </div>
+      {checked && (
+        <p aria-live="polite" className={cn("text-[15px] font-semibold", rightCount === asked.length ? "text-success" : "text-danger")}>
+          {rightCount === asked.length ? "כל התאים נכונים." : `${rightCount} מתוך ${asked.length} תאים נכונים. נסו שוב, או פתחו את הפתרון המלא.`}
+        </p>
+      )}
+      {shown && (
+        <div className="rounded-xl border border-line bg-surface-2/40 p-3.5 text-[14.5px]">
+          <p className="font-bold text-fg">
+            עלות הנכס ביום הראשון: <bdi dir="ltr" className="num">{task.cost.toLocaleString("en-US")}</bdi>
+          </p>
+          <LiabilityCycle rows={task.rows.slice(0, task.years)} />
+          <AssetCycle rows={task.rows.slice(0, task.years)} cost={task.cost} />
+          <StatementTables sections={task.sections} />
+          <ul className="list-disc space-y-1 ps-5">
+            {task.notes.map((n) => (
+              <li key={n}>{n}</li>
+            ))}
+          </ul>
+          <p className="mt-2">
+            <strong>מלכודת נפוצה:</strong> {task.trap}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Endless statements: a new lease each press, to fill in cell by cell. */
+export function StatementDrill() {
+  const [seed, setSeed] = useState(1);
+  const task = statementDrill(seed);
+  return (
+    <section aria-label="מחולל דוחות למילוי" className="card space-y-3 p-4 sm:p-5">
+      <p className="text-[16px] leading-relaxed font-semibold text-fg">{task.prompt}</p>
+      <StatementFill key={seed} task={task} onNext={() => setSeed((s) => s + 1)} />
     </section>
   );
 }

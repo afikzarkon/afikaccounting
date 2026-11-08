@@ -414,7 +414,7 @@ export const IFRS16_TERM_SCREENS: Record<string, ScreenContent> = {
                         סך התמורה: <Money v={MASTER.yearly} /> × {MASTER.years} = <Money v={MASTER_TOTAL} />. מקצים לפי מחירים נפרדים (סעיף 13).
                       </p>
                       <Tbl
-                        head={["רכיב", "מחיר נפרד", "הקצאה לתקופה", "לשנה"]}
+                        dense head={["רכיב", "מחיר נפרד", "הקצאה לתקופה", "לשנה"]}
                         rows={[
                           ["מלגזה", MASTER.forklift, MASTER_SHARES[0], MASTER_YEARLY[0]],
                           ["טנדר", MASTER.van, MASTER_SHARES[1], MASTER_YEARLY[1]],
@@ -434,7 +434,7 @@ export const IFRS16_TERM_SCREENS: Record<string, ScreenContent> = {
                     <>
                       <p>התחזוקה מתאחדת עם המלגזה. המלגזה והטנדר עדיין מופרדים, כי הם שני רכיבי חכירה.</p>
                       <Tbl
-                        head={["רכיב", "מחיר נפרד", "הקצאה לתקופה", "לשנה"]}
+                        dense head={["רכיב", "מחיר נפרד", "הקצאה לתקופה", "לשנה"]}
                         rows={[
                           ["מלגזה עם תחזוקה", MASTER.forkliftWithService, MASTER_EXPEDIENT[0], MASTER_EXPEDIENT_YEARLY[0]],
                           ["טנדר", MASTER.van, MASTER_EXPEDIENT[1], MASTER_EXPEDIENT_YEARLY[1]],

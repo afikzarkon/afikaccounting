@@ -108,6 +108,78 @@ export function lessee(t: LesseeTerms) {
   return { liability, cost, depYears, depreciation, rows };
 }
 
+export type ShownYear = Pick<LesseeYear, "year" | "opening" | "paidAtStart" | "interest" | "paidAtEnd" | "closing" | "nonCurrent" | "current" | "depreciation" | "rightOfUse">;
+
+/**
+ * A lessee's table in whole shekels, the way it is worked by hand: each year's
+ * interest on the rounded balance, a level yearly depreciation, and each balance
+ * what those leave, so that every column adds up and a calculator gives the same
+ * figures. The last year that bears interest, and the last year of depreciation,
+ * take up the rounding, so the balances end where they should.
+ */
+export function shownYears(t: LesseeTerms): { cost: number; rows: ShownYear[] } {
+  const { cost, depYears, rows } = lessee(t);
+  const whole = (v: number) => Math.round(v) + 0; // never -0
+  const shownCost = whole(cost);
+  const dep = whole(cost / depYears);
+  const start = t.timing === "start";
+  // Paid in advance with nothing at the end, the last year bears no interest: its payment clears the balance on 1.1.
+  const lastInterest = start && !t.finalAmount ? rows.length - 2 : rows.length - 1;
+  let open = whole(rows[0].opening);
+  let asset = shownCost;
+  const shown: ShownYear[] = rows.map((y, i) => {
+    const paidAtStart = whole(y.paidAtStart);
+    const paidAtEnd = whole(y.paidAtEnd);
+    const closing = i === lastInterest ? (start && !t.finalAmount ? whole(t.payment) : 0) : i > lastInterest ? 0 : open - paidAtStart + whole((open - paidAtStart) * t.rate) - paidAtEnd;
+    const depreciation = y.year < depYears ? dep : y.year === depYears ? asset : 0;
+    const row: ShownYear = { year: y.year, opening: open, paidAtStart, interest: closing - open + paidAtStart + paidAtEnd, paidAtEnd, closing, nonCurrent: 0, current: 0, depreciation, rightOfUse: asset - depreciation };
+    open = closing;
+    asset -= depreciation;
+    return row;
+  });
+  shown.forEach((y, i) => {
+    const next = shown[i + 1];
+    y.nonCurrent = !next ? 0 : !start ? next.closing : i + 2 < shown.length ? y.closing - whole(t.payment) : 0;
+    y.current = y.closing - y.nonCurrent;
+  });
+  return { cost: shownCost, rows: shown };
+}
+
+export type StatementRow = { id: string; label: string; values: number[] };
+export type StatementSection = { title: string; rows: StatementRow[] };
+
+/**
+ * "The relevant lines in the financial statements" for the first `years` years:
+ * profit or loss (depreciation, finance, any other expense, in total) and the
+ * statement of financial position (the asset, net; the liability, current and
+ * non-current), in whole shekels. Expenses are positive.
+ */
+export function statementLines(rows: ShownYear[], years: number, other: { label: string; values: number[] }[] = []): StatementSection[] {
+  const shown = rows.slice(0, years);
+  const dep = shown.map((y) => y.depreciation);
+  const fin = shown.map((y) => y.interest);
+  const total = shown.map((_, i) => dep[i] + fin[i] + other.reduce((s, o) => s + (o.values[i] ?? 0), 0));
+  return [
+    {
+      title: "רווח או הפסד",
+      rows: [
+        { id: "dep", label: "הוצאות פחת", values: dep },
+        { id: "fin", label: "הוצאות מימון", values: fin },
+        ...other.map((o, i) => ({ id: `other-${i}`, label: o.label, values: shown.map((_, k) => o.values[k] ?? 0) })),
+        { id: "total", label: "סך ההוצאות", values: total },
+      ],
+    },
+    {
+      title: "מצב כספי, 31.12",
+      rows: [
+        { id: "rou", label: "נכס זכות שימוש, נטו", values: shown.map((y) => y.rightOfUse) },
+        { id: "cur", label: "התחייבות חכירה, שוטפת", values: shown.map((y) => y.current) },
+        { id: "non", label: "התחייבות חכירה, לא שוטפת", values: shown.map((y) => y.nonCurrent) },
+      ],
+    },
+  ];
+}
+
 /**
  * An index-linked lease, paid at each year's end, in the year the index moves.
  * The year's payment and all later ones follow the new index, at the same rate

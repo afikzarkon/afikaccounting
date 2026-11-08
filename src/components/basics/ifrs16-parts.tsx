@@ -1,5 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
+import type { ShownYear, StatementSection } from "@/lib/learn/ifrs16";
 import { IasQuiz } from "./ias19-quiz";
 import type { QuizItem } from "./inventory-interactive";
 
@@ -26,19 +27,20 @@ export function T16({ he, par }: { he: string; par?: string }) {
 }
 
 type Cell = ReactNode | number;
-const cell = (c: Cell) => (typeof c === "number" ? <bdi dir="ltr" className="num whitespace-nowrap">{c < 0 ? `(${Math.round(-c).toLocaleString("en-US")})` : Math.round(c).toLocaleString("en-US")}</bdi> : c);
+const cell = (c: Cell) => (typeof c === "number" ? <bdi dir="ltr" className="num whitespace-nowrap">{c < 0 ? `(${Math.round(-c).toLocaleString("en-US")})` : (Math.round(c) + 0).toLocaleString("en-US")}</bdi> : c);
 
-/** A table of figures that fits a phone: no minimum width, so the numbers stay in view without scrolling sideways. Amounts show in whole shekels. */
-export function Tbl({ head, rows, foot }: { head: string[]; rows: Cell[][]; foot?: Cell[] }) {
+/** A table of figures that fits a phone: no minimum width, so the numbers stay in view without scrolling sideways. Amounts show in whole shekels. `dense` is for a table of several years. */
+export function Tbl({ head, rows, foot, dense }: { head: string[]; rows: Cell[][]; foot?: Cell[]; dense?: boolean }) {
   const numeric = head.map((_, i) => i > 0 && [...rows, ...(foot ? [foot] : [])].some((r) => typeof r[i] === "number"));
   const side = (i: number) => (numeric[i] ? "text-end" : "text-start");
+  const pad = dense ? "px-1 py-1.5 sm:px-3" : "px-2 py-1.5 sm:px-3";
   return (
     <div className="my-3 overflow-hidden rounded-xl border border-line">
-      <table className="w-full text-[13.5px] sm:text-sm">
+      <table className={`w-full sm:text-sm ${dense ? "text-[12.5px]" : "text-[13.5px]"}`}>
         <thead>
           <tr className="text-xs text-muted">
             {head.map((h, i) => (
-              <th key={i} className={`px-2 py-1.5 font-medium sm:px-3 ${side(i)}`}>
+              <th key={i} className={`${pad} font-medium ${side(i)}`}>
                 {h}
               </th>
             ))}
@@ -48,7 +50,7 @@ export function Tbl({ head, rows, foot }: { head: string[]; rows: Cell[][]; foot
           {rows.map((r, k) => (
             <tr key={k} className="border-t border-line/70">
               {r.map((c, i) => (
-                <td key={i} className={`px-2 py-1.5 sm:px-3 ${side(i)}`}>
+                <td key={i} className={`${pad} ${side(i)}`}>
                   {cell(c)}
                 </td>
               ))}
@@ -59,7 +61,7 @@ export function Tbl({ head, rows, foot }: { head: string[]; rows: Cell[][]; foot
           <tfoot>
             <tr className="border-t-2 border-line font-bold text-fg">
               {foot.map((c, i) => (
-                <td key={i} className={`px-2 py-1.5 sm:px-3 ${side(i)}`}>
+                <td key={i} className={`${pad} ${side(i)}`}>
                   {cell(c)}
                 </td>
               ))}
@@ -68,6 +70,56 @@ export function Tbl({ head, rows, foot }: { head: string[]; rows: Cell[][]; foot
         )}
       </table>
     </div>
+  );
+}
+
+const yearHead = (rows: { year: number }[]) => rows.map((y) => `שנה ${y.year}`);
+
+/** The liability's roll-forward, a column a year. When the payment falls on 1.1 it comes before the year's interest, which is reckoned on what is left. */
+export function LiabilityCycle({ rows }: { rows: ShownYear[] }) {
+  const earlyPay = rows.some((y) => y.paidAtStart);
+  const latePay = rows.some((y) => y.paidAtEnd);
+  return (
+    <Tbl
+      dense
+      head={["התחייבות החכירה", ...yearHead(rows)]}
+      rows={[
+        ["יתרה ב-1.1", ...rows.map((y) => y.opening)],
+        ...(earlyPay ? [["תשלום 1.1", ...rows.map((y) => -y.paidAtStart)]] : []),
+        ["ריבית", ...rows.map((y) => y.interest)],
+        ...(latePay ? [["תשלום 31.12", ...rows.map((y) => -y.paidAtEnd)]] : []),
+      ]}
+      foot={["יתרה ב-31.12", ...rows.map((y) => y.closing)]}
+    />
+  );
+}
+
+/** The asset's roll-forward, a column a year. */
+export function AssetCycle({ rows, cost }: { rows: ShownYear[]; cost: number }) {
+  return (
+    <Tbl
+      dense
+      head={["נכס זכות שימוש", ...yearHead(rows)]}
+      rows={[
+        ["יתרה ב-1.1", ...rows.map((y, i) => (i ? rows[i - 1].rightOfUse : cost))],
+        ["פחת", ...rows.map((y) => -y.depreciation)],
+      ]}
+      foot={["יתרה ב-31.12", ...rows.map((y) => y.rightOfUse)]}
+    />
+  );
+}
+
+/** "The relevant lines in the statements": profit or loss, then financial position, a column a year. */
+export function StatementTables({ sections, years: yearNumbers }: { sections: StatementSection[]; years?: number[] }) {
+  return (
+    <>
+      {sections.map((s) => {
+        const years = s.rows[0].values.map((_, i) => `שנה ${yearNumbers?.[i] ?? i + 1}`);
+        const last = s.rows.at(-1)!;
+        const totalled = last.id === "total";
+        return <Tbl key={s.title} dense head={[s.title, ...years]} rows={(totalled ? s.rows.slice(0, -1) : s.rows).map((r) => [r.label, ...r.values])} foot={totalled ? [last.label, ...last.values] : undefined} />;
+      })}
+    </>
   );
 }
 
