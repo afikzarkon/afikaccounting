@@ -7,6 +7,7 @@ import { STUDY_MODULES } from ".";
 import { isBalanced } from "../learn/basics";
 import { IFRS16_LESSONS } from "./ifrs16";
 import { drill, DRILL_FAMILIES, type DrillFamily, statementDrill } from "./ifrs16/drills";
+import * as Chg from "./ifrs16/lessons/changes";
 import { FILL_TASK, KIOSK_ACCRUED, KIOSK_EXPENSE, LAPTOP_FULL, MASTER_EXP_FORKLIFT, MASTER_EXP_LINES, MASTER_EXP_VAN, MASTER_FORKLIFT, MASTER_LINES, MASTER_VAN, SUBSEQUENT, SUBSEQUENT_TAUGHT, TRUCK_END, TRUCK_START, WORK_S, WORK_SECTIONS } from "./ifrs16/lessons/subsequent";
 import { IFRS16_GLOSSARY } from "./ifrs16/glossary";
 import { GUAR_WITH, GUAR_WITHOUT, IMPLICIT_LIABILITY, IMPLICIT_LIABILITY_DEALER, MASTER_CASH, MASTER_COST_SHOWN, MASTER_L, MASTER_NET, MASTER_RESTORE, MEASURE, MEASURE_TAUGHT, PV_EX_END, PV_EX_GROSS, PV_EX_NET, WORK1_L, WORK2_L } from "./ifrs16/lessons/measure";
@@ -15,7 +16,7 @@ import { CASES, CONTRACT_TEST, CONTRACT_TEST_START, type TestEnd, type TestNode,
 import { LESSON_N, type LeaseQuestion } from "./ifrs16/shared";
 
 /** What teaches each question, lesson by lesson. */
-const TAUGHT: Record<string, Record<string, string>> = { "ifrs16-what": WHAT_TAUGHT, "ifrs16-term": TERM_TAUGHT, "ifrs16-measure": MEASURE_TAUGHT, "ifrs16-subsequent": SUBSEQUENT_TAUGHT };
+const TAUGHT: Record<string, Record<string, string>> = { "ifrs16-what": WHAT_TAUGHT, "ifrs16-term": TERM_TAUGHT, "ifrs16-measure": MEASURE_TAUGHT, "ifrs16-subsequent": SUBSEQUENT_TAUGHT, "ifrs16-changes": Chg.CHANGES_TAUGHT };
 
 const isEnd = (n: TestNode | TestEnd): n is TestEnd => "verdict" in n;
 
@@ -141,8 +142,15 @@ describe("lesson 3: the drills, re-computed from each drill's inputs", () => {
         else if (family === "dep") want = d.inputs.cost / (d.inputs.option ? d.inputs.life : Math.min(d.inputs.life, n));
         // Non-current: whatever is left once next year's payment has gone, whichever day it falls on.
         else if (family === "split") want = npv(flows(1, n - d.inputs.k - 1), i);
+        else if (family === "indexChange") {
+          const { left, index } = d.inputs;
+          want = npv(Array.from({ length: left }, (_, k): [number, number] => [k + 1, (p * index) / 100]), i) - npv(Array.from({ length: left }, (_, k): [number, number] => [k + 1, p]), i);
+        } else if (family === "extendMod") {
+          const { left, extra, newRate } = d.inputs;
+          want = npv(Array.from({ length: left + extra }, (_, k): [number, number] => [k + 1, p]), newRate) - npv(Array.from({ length: left }, (_, k): [number, number] => [k + 1, p]), i);
+        } else if (family === "shrink") want = ((d.inputs.L - d.inputs.asset) * d.inputs.out) / 100;
         else want = Math.round(npv(flows(1, n), i)) + d.inputs.prepaid - d.inputs.incentives + d.inputs.directCosts + d.inputs.restoration;
-        assert.ok(Math.abs(d.answer - want) <= (family === "cycle" || family === "split" ? 2 : 0.51), `${family}/${seed}: ${d.answer} ≠ ${want}`);
+        assert.ok(Math.abs(d.answer - want) <= (family === "cycle" || family === "split" || family === "indexChange" || family === "extendMod" || family === "shrink" ? 2 : 0.51), `${family}/${seed}: ${d.answer} ≠ ${want}`);
         assert.ok(d.answer > 0, `${family}/${seed}`);
         const text = [d.prompt, d.trap, ...d.steps.flatMap((s) => [s.title, s.formula ?? "", s.numbers ?? "", s.note ?? ""])].join(" ");
         assert.ok(!/NaN|undefined|Infinity/.test(text), `${family}/${seed}: ${text}`);
@@ -273,6 +281,67 @@ describe("lesson 4: the statements to fill, re-computed from each task's inputs"
       task.rows.forEach((y) => assert.equal(y.opening - y.paidAtStart + y.interest - y.paidAtEnd, y.closing));
       assert.equal(task.rows.at(-1)!.closing, 0);
     }
+  });
+});
+
+describe("lesson 5: figures, against a separate calculation over dated cash flows", () => {
+  const near = (a: number, b: number, label = "") => assert.ok(Math.abs(a - b) <= 2, `${label}: ${a} ≠ ${b}`);
+  it("the practice", () => {
+    const answer = (id: string) => (Chg.CHANGES.exercises.find((x) => x.id === id) as { answer: number }).answer;
+    const want: Record<string, number> = { "index-up": 3_546, "guar-down": 3_265, "zero-gain": 7_000, "dep-after": 30_000, "term-up": 65_985, "buy-dep": 20_296, extend: 66_360, "shrink-gain": 15_287, "shrink-rem": 7_000, "cut-gain": 16_423, "nc-after": 272_757 };
+    for (const [id, v] of Object.entries(want)) near(answer(id), v, id);
+    for (const x of Chg.CHANGES.exercises) {
+      if (x.kind === "number") assert.ok(x.answer > 0, x.id);
+      if (x.kind === "journal") assert.ok(isBalanced(x.entry), x.id);
+      if (x.kind !== "journal") assert.ok(!/באותו|באותה|אותם|אותן|כמו בשאלה|השאלה הקודמת/.test(x.prompt), x.id);
+    }
+  });
+  it("the index", () => {
+    const [a, b] = Chg.IDX_ROWS;
+    near(Chg.IDX_START, 248_391.75);
+    near(a.interest, 14_903.51); near(a.before, 221_295.26); near(a.after, 234_460.02); near(a.change, 13_164.76); near(a.rou, 230_507.55); near(a.nonCurrent, 206_527.62); near(a.current, 27_932.4); near(a.dep, 31_048.97);
+    near(b.interest, 14_067.6); near(b.before, 205_327.62); near(b.after, 212_428.41); near(b.change, 7_100.79); near(b.dep, 32_929.65); near(b.rou, 204_678.69); near(b.nonCurrent, 181_974.12); near(b.current, 30_454.3);
+  });
+  it("the guarantee", () => {
+    near(Chg.GUAR_COST, 236_163.56); near(Chg.GUAR_DEP1, 47_232.71); near(Chg.GUAR_INT1, 14_169.81); near(Chg.GUAR_BEFORE, 195_333.37); near(Chg.GUAR_AFTER, 191_372.9); near(Chg.GUAR_CHANGE, -3_960.47); near(Chg.GUAR_ROU1, 184_970.38); near(Chg.GUAR_NC1, 147_855.28);
+    near(Chg.GUAR_DEP2, 46_242.59); near(Chg.GUAR_INT2, 11_482.37); near(Chg.GUAR_CLOSE2, 147_855.28); near(Chg.GUAR_ROU2, 138_727.78); near(Chg.GUAR_NC2, 101_726.59);
+  });
+  it("the term", () => {
+    near(Chg.TERM_GROSS, 394_942.89); near(Chg.TERM_COST, 406_942.89); near(Chg.TERM_DEP, 50_867.86); near(Chg.TERM_INT1, 20_096.57); near(Chg.TERM_CLOSE1, 355_039.46); near(Chg.TERM_ROU1, 356_075.03);
+    near(Chg.TERM_BEFORE_L, 170_003.56); near(Chg.TERM_BEFORE_A, 152_603.58); near(Chg.TERM_AFTER_L, 319_764.92); near(Chg.TERM_CHANGE, 149_761.36); near(Chg.TERM_AFTER_A, 302_364.94); near(Chg.TERM_DEP2, 50_394.16);
+    near(Chg.TERM_OPEN7, 277_948.47); near(Chg.TERM_INT7, 15_256.39); near(Chg.TERM_CLOSE7, 233_204.86); near(Chg.TERM_ROU7, 201_576.63);
+  });
+  it("the office, three ways", () => {
+    near(Chg.OFFICE_COST, 639_703.95); near(Chg.OFFICE_A, 284_312.87); near(Chg.OFFICE_L, 319_135.55);
+    near(Chg.EXT_AFTER, 502_414.33); near(Chg.EXT_CHANGE, 183_278.78);
+    near(Chg.HALF_GAIN, 17_411.34); near(Chg.HALF_AFTER, 190_580.81); near(Chg.HALF_REM, 31_013.04); near(Chg.HALF_ASSET, 173_169.47);
+    near(Chg.CUT_KEEP, 167_346.94); near(Chg.CUT_L_OUT, 151_788.61); near(Chg.CUT_A_OUT, 142_156.43); near(Chg.CUT_GAIN, 9_632.17); near(Chg.CUT_R1, 165_005.34); near(Chg.CUT_M1, -2_341.6); near(Chg.CUT_R2, 201_673.19); near(Chg.CUT_M2, 36_667.85); near(Chg.CUT_ASSET, 176_482.69);
+  });
+  it("the shop", () => {
+    near(Chg.SHOP_COST, 1_218_166.1); near(Chg.SHOP_DEP, 203_027.68); near(Chg.SHOP_INT, 60_908.3); near(Chg.SHOP_BEFORE, 1_039_074.4); near(Chg.SHOP_A, 1_015_138.41);
+    near(Chg.SHOP_GAIN, 11_967.99); near(Chg.SHOP_AFTER, 505_483.65); near(Chg.SHOP_REM, -14_053.55); near(Chg.SHOP_ASSET, 493_515.66); near(Chg.SHOP_NC, 415_812.67); near(Chg.SHOP_TOTAL, 257_967.99);
+    near(Chg.SHOP_B_AFTER, 1_465_902.6); near(Chg.SHOP_B_CH, 426_828.2); near(Chg.SHOP_B_ASSET, 1_441_966.61); near(Chg.SHOP_B_NC, 1_205_856.75); near(Chg.SHOP_B_TOTAL, 269_935.99);
+  });
+  it("the store, with an index and a purchase option", () => {
+    near(Chg.STORE_COST, 679_120.01); near(Chg.STORE_DEP, 67_912); near(Chg.STORE_INT, 27_164.8); near(Chg.STORE_BEFORE, 603_284.81); near(Chg.STORE_AFTER, 624_290.97); near(Chg.STORE_CH, 21_006.16); near(Chg.STORE_ROU, 632_214.17); near(Chg.STORE_NC, 546_262.61);
+    assert.equal(Chg.STORE_VAR, 8_000);
+  });
+  it("the closing question", () => {
+    near(Chg.M_COST, 1_180_157.84); near(Chg.M_A, 786_771.89); near(Chg.M_L, 831_625.35);
+    near(Chg.M_TOP_KEEP, 226_415.09); near(Chg.M_TOP_L_OUT, 605_210.25); near(Chg.M_TOP_A_OUT, 590_078.92); near(Chg.M_TOP_GAIN, 15_131.33); near(Chg.M_TOP_AFTER, 194_444.44); near(Chg.M_TOP_REM, -31_970.65); near(Chg.M_TOP_ASSET, 164_722.32);
+    near(Chg.M_REST_L, 2_494_876.04, "three L"); near(Chg.M_REST_A, 2_360_315.68, "three A"); near(Chg.M_REST_AFTER, 2_912_414.19, "three after"); near(Chg.M_REST_CH, 417_538.15, "three change"); near(Chg.M_REST_ASSET, 2_777_853.82, "three asset");
+  });
+  it("the walk: every road ends in a verdict, and every node can be reached", () => {
+    const seen = new Set<string>();
+    const walk = (at: string, trail: string[]) => {
+      assert.ok(!trail.includes(at), `a loop at ${at}`);
+      seen.add(at);
+      const node = Chg.CHANGE_WALK[at];
+      assert.ok(node, at);
+      if (!isEnd(node)) for (const a of node.answers) walk(a.to, [...trail, at]);
+    };
+    walk(Chg.CHANGE_WALK_START, []);
+    assert.deepEqual([...seen].sort(), Object.keys(Chg.CHANGE_WALK).sort());
   });
 });
 

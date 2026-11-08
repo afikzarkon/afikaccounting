@@ -3,7 +3,7 @@
 import { ChevronLeft, ChevronRight, CircleCheck, CircleX, RotateCcw } from "lucide-react";
 import { Fragment, useState } from "react";
 import { JournalEntry } from "@/components/study/blocks";
-import { leaseTerm, lessee, shownYears, statementLines } from "@/lib/learn/ifrs16";
+import { leaseTerm, lessee, pvEnd, shownYears, statementLines } from "@/lib/learn/ifrs16";
 import { drill, DRILL_FAMILIES, type DrillFamily, statementDrill, type StatementTask } from "@/lib/study/ifrs16/drills";
 import { CONTRACT_TEST, CONTRACT_TEST_START, type TestEnd, type TestNode } from "@/lib/study/ifrs16/lessons/what";
 import { cn } from "@/lib/utils";
@@ -460,27 +460,23 @@ export function TermBuilder() {
   );
 }
 
-/**
- * The standard's flowchart (paragraph B31), walked one question at a time: the
- * learner answers about any contract, sees the road they took, and ends on a
- * verdict with its reason.
- */
-export function ContractTest() {
+/** A flowchart, walked one question at a time: the learner answers, sees the road they took, and ends on a verdict with its reason. */
+export function DecisionWalk({ nodes, start, label, again }: { nodes: Record<string, TestNode | TestEnd>; start: string; label: string; again: string }) {
   const [path, setPath] = useState<{ at: string; answer: string }[]>([]);
-  const [at, setAt] = useState(CONTRACT_TEST_START);
-  const node = CONTRACT_TEST[at];
+  const [at, setAt] = useState(start);
+  const node = nodes[at];
   const restart = () => {
     setPath([]);
-    setAt(CONTRACT_TEST_START);
+    setAt(start);
   };
   return (
-    <section aria-label="בוחן החוזה" className="card space-y-3 p-4 sm:p-5">
+    <section aria-label={label} className="card space-y-3 p-4 sm:p-5">
       {path.length > 0 && (
         <ol className="space-y-1.5">
           {path.map((s, i) => (
             <li key={s.at} className="flex flex-wrap items-baseline gap-x-2 text-[14px] text-muted">
               <span className="num font-bold text-accent">{i + 1}.</span>
-              <span>{(CONTRACT_TEST[s.at] as TestNode).q}</span>
+              <span>{(nodes[s.at] as TestNode).q}</span>
               <strong className="font-semibold text-fg">{s.answer}</strong>
             </li>
           ))}
@@ -519,9 +515,116 @@ export function ContractTest() {
       )}
       {path.length > 0 && (
         <button type="button" onClick={restart} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-[14px] font-semibold text-accent hover:underline">
-          <RotateCcw className="h-4 w-4" aria-hidden /> בודקים חוזה אחר
+          <RotateCcw className="h-4 w-4" aria-hidden /> {again}
         </button>
       )}
+    </section>
+  );
+}
+
+/** The standard's flowchart for whether a contract is a lease (paragraph B31). */
+export function ContractTest() {
+  return <DecisionWalk nodes={CONTRACT_TEST} start={CONTRACT_TEST_START} label="בוחן החוזה" again="בודקים חוזה אחר" />;
+}
+
+const CHANGE_KINDS = [
+  ["index", "מדד"],
+  ["guarantee", "ערבות שייר"],
+  ["extend", "הארכה"],
+  ["shrink", "הקטנה"],
+] as const;
+type ChangeKind = (typeof CHANGE_KINDS)[number][0];
+
+/** Before and after: a lease's two balances, one change at a time, and the entry it takes. */
+export function ChangeLab() {
+  const [kind, setKind] = useState<ChangeKind>("index");
+  const [payment, setPayment] = useState(50_000);
+  const [left, setLeft] = useState(5);
+  const [ratePct, setRatePct] = useState(6);
+  const [newRatePct, setNewRatePct] = useState(7);
+  const [asset, setAsset] = useState(190_000);
+  const [index, setIndex] = useState(105);
+  const [shortOld, setShortOld] = useState(6_000);
+  const [shortNew, setShortNew] = useState(1_000);
+  const [extra, setExtra] = useState(3);
+  const [keep, setKeep] = useState(50);
+  const [newPay, setNewPay] = useState(30_000);
+  const i = ratePct / 100;
+  const j = newRatePct / 100;
+  const whole = Math.round;
+  const before = whole(pvEnd(i, left, payment, kind === "guarantee" ? shortOld : 0));
+  const lOut = kind === "shrink" ? whole((before * (100 - keep)) / 100) : 0;
+  const aOut = kind === "shrink" ? whole((asset * (100 - keep)) / 100) : 0;
+  const after = kind === "index" ? whole(pvEnd(i, left, (payment * index) / 100)) : kind === "guarantee" ? whole(pvEnd(i, left, payment, shortNew)) : kind === "extend" ? whole(pvEnd(j, left + extra, payment)) : whole(pvEnd(j, left, newPay));
+  const change = after - (before - lOut);
+  // The asset stops at zero, and whatever is left of a decrease is a gain (paragraph 39).
+  const assetLeft = asset - aOut;
+  const toAsset = Math.max(change, -assetLeft);
+  const overflow = toAsset - change;
+  const assetAfter = assetLeft + toAsset;
+  const gainOut = lOut - aOut;
+  const keepsRate = kind === "index" || kind === "guarantee";
+  return (
+    <section aria-label="מעבדה: לפני ואחרי" className="card space-y-4 p-4 sm:p-5">
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label="סוג השינוי">
+        {CHANGE_KINDS.map(([k, name]) => (
+          <button key={k} type="button" aria-pressed={k === kind} onClick={() => setKind(k)} className={cn("min-h-11 rounded-lg border px-3 py-1.5 text-[13.5px] font-semibold", k === kind ? "border-accent bg-accent-soft text-fg" : "border-line text-muted hover:bg-surface-2")}>
+            {name}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Amount label="תשלום לשנה" value={payment} onChange={setPayment} />
+        <Amount label="תשלומים שנשארו" value={left} onChange={(v) => setLeft(Math.min(20, Math.max(1, Math.round(v))))} step={1} />
+        <Amount label="ריבית ישנה (%)" value={ratePct} onChange={(v) => setRatePct(Math.max(0.1, v))} step={0.5} />
+        <Amount label="יתרת הנכס" value={asset} onChange={setAsset} />
+        {kind === "index" && <Amount label="מדד חדש (בסיס 100)" value={index} onChange={(v) => setIndex(Math.max(1, v))} step={1} />}
+        {kind === "guarantee" && <Amount label="צפוי לתשלום, לפני" value={shortOld} onChange={setShortOld} />}
+        {kind === "guarantee" && <Amount label="צפוי לתשלום, עכשיו" value={shortNew} onChange={setShortNew} />}
+        {(kind === "extend" || kind === "shrink") && <Amount label="ריבית של היום (%)" value={newRatePct} onChange={(v) => setNewRatePct(Math.max(0.1, v))} step={0.5} />}
+        {kind === "extend" && <Amount label="שנים נוספות" value={extra} onChange={(v) => setExtra(Math.min(20, Math.max(1, Math.round(v))))} step={1} />}
+        {kind === "shrink" && <Amount label="שטח שנשאר (%)" value={keep} onChange={(v) => setKeep(Math.min(99, Math.max(1, Math.round(v))))} step={5} />}
+        {kind === "shrink" && <Amount label="תשלום חדש" value={newPay} onChange={setNewPay} />}
+      </div>
+      <p aria-live="polite" className="text-[14.5px] text-fg">
+        {keepsRate ? "הריבית נשארת " : "הריבית מתעדכנת ל-"}
+        <bdi dir="ltr" className="num">{keepsRate ? ratePct : newRatePct}%</bdi>.
+      </p>
+      <Tbl
+        dense
+        head={["", "התחייבות", "נכס"]}
+        rows={[["לפני", before, asset], ...(kind === "shrink" ? ([["גריעה", -lOut, -aOut]] as [string, number, number][]) : []), ["מדידה מחדש", change, toAsset]]}
+        foot={["אחרי", after, assetAfter]}
+      />
+      {kind === "shrink" && (
+        <JournalEntry
+          title="שלב 1: גריעה"
+          lines={[
+            { account: "התחייבות חכירה", dr: lOut },
+            ...(gainOut < 0 ? [{ account: "הפסד מתיקון חכירה", dr: -gainOut }] : []),
+            { account: "נכס זכות שימוש", cr: aOut },
+            ...(gainOut > 0 ? [{ account: "רווח מתיקון חכירה", cr: gainOut }] : []),
+          ]}
+        />
+      )}
+      <JournalEntry
+        title="מדידה מחדש"
+        lines={
+          change >= 0
+            ? [
+                { account: "נכס זכות שימוש", dr: change },
+                { account: "התחייבות חכירה", cr: change },
+              ]
+            : [
+                { account: "התחייבות חכירה", dr: -change },
+                ...(toAsset ? [{ account: "נכס זכות שימוש", cr: -toAsset }] : []),
+                ...(overflow ? [{ account: "רווח מתיקון חכירה", cr: overflow }] : []),
+              ]
+        }
+      />
+      <p className="text-[14.5px] text-fg">
+        פחת מעכשיו: <strong className="num">{whole(assetAfter / (kind === "extend" ? left + extra : left)).toLocaleString("en-US")}</strong> לשנה, אם הנכס חוזר למחכיר בסוף.
+      </p>
     </section>
   );
 }

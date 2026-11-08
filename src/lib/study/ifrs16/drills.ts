@@ -17,6 +17,9 @@ export const DRILL_FAMILIES = {
   cycle: "מעגל ההתחייבות",
   dep: "פחת",
   split: "שוטף ולא שוטף",
+  indexChange: "מדד",
+  extendMod: "הארכה בתיקון",
+  shrink: "הקטנת היקף",
 } as const;
 export type DrillFamily = keyof typeof DRILL_FAMILIES;
 
@@ -155,6 +158,66 @@ export function drill(family: DrillFamily, seed: number): Drill {
             { title: "החלק השוטף", formula: "יתרה − לא שוטף = שוטף", numbers: `${fmt(y.closing)} − ${fmt(y.nonCurrent)} = ${fmt(y.current)}` },
           ],
       trap: start ? "לחשוב שהחלק השוטף הוא הקרן, כמו בתשלום בסוף שנה. התשלום של מחר משולם כולו בתוך 12 חודשים." : "לקחת את כל התשלום הבא כשוטף. חלק ממנו ריבית שעוד לא נוצרה, ולכן השוטף הוא רק הקטנת הקרן.",
+    };
+  }
+  if (family === "indexChange") {
+    const left = r.int(2, 8);
+    const index = 100 + r.int(2, 9);
+    const paid = (payment * index) / 100;
+    const newRate = i + r.int(5, 20) / 1000;
+    const before = whole(pvEnd(i, left, payment));
+    const after = whole(pvEnd(i, left, paid));
+    return {
+      prompt: `אחרי התשלום של 31.12 נשארו ${left} תשלומים של ${fmt(payment)} ש״ח בסוף כל שנה, בריבית ${pct(i)}. המדד עלה מ-100 ל-${index}, והתשלומים הבאים מתעדכנים בהתאם. הריבית התוספתית היום ${pct(newRate)}. בכמה גדלה התחייבות החכירה?`,
+      answer: after - before,
+      unit: "ש״ח",
+      inputs: { payment, left, i, index },
+      steps: [
+        { title: "איזו ריבית", note: `מדד לא משנה ריבית (סעיף 43), ולכן ${pct(i)}, ולא ${pct(newRate)}.` },
+        { title: "התשלום החדש", formula: "תשלום × מדד חדש ÷ מדד בסיס", numbers: `${fmt(payment)} × ${index} ÷ 100 = ${fmt(paid)}` },
+        { title: "לפני ואחרי", numbers: `${fmt(after)} − ${fmt(before)} = ${fmt(after - before)}` },
+      ],
+      trap: "להשתמש בריבית התוספתית של היום. היא נתון מיותר בשינוי מדד.",
+    };
+  }
+  if (family === "extendMod") {
+    const left = r.int(2, 6);
+    const extra = r.int(1, 4);
+    const newRate = i + r.int(5, 15) / 1000;
+    const before = whole(pvEnd(i, left, payment));
+    const after = whole(pvEnd(newRate, left + extra, payment));
+    return {
+      prompt: `נשארו ${left} תשלומים של ${fmt(payment)} ש״ח בסוף כל שנה, בריבית ${pct(i)}. הצדדים הסכימו על עוד ${extra} שנים, באותו תשלום. הריבית התוספתית היום ${pct(newRate)}. בכמה גדל נכס זכות השימוש?`,
+      answer: after - before,
+      unit: "ש״ח",
+      inputs: { payment, left, i, extra, newRate },
+      steps: [
+        { title: "מה זה", note: "אין נכס נוסף, ולכן לא חכירה נפרדת. אין הקטנה, ולכן אין רווח או הפסד. מודדים מחדש כנגד הנכס." },
+        { title: "לפני, בריבית הישנה", numbers: `=PV(${pct(i)};${left};-${payment}) → ${fmt(before)}` },
+        { title: "אחרי, בריבית של היום", numbers: `=PV(${pct(newRate)};${left + extra};-${payment}) → ${fmt(after)}` },
+        { title: "ההפרש", numbers: `${fmt(after)} − ${fmt(before)} = ${fmt(after - before)}` },
+      ],
+      trap: "להוון רק את השנים הנוספות. כל היתרה נמדדת מחדש בריבית החדשה.",
+    };
+  }
+  if (family === "shrink") {
+    const left = r.int(2, 8);
+    const out = r.int(2, 6) * 10;
+    const L = whole(pvEnd(i, left, payment));
+    const asset = Math.round((L * 0.9) / 1_000) * 1_000;
+    const lOut = whole((L * out) / 100);
+    const aOut = whole((asset * out) / 100);
+    return {
+      prompt: `יתרת התחייבות החכירה ${fmt(L)} ש״ח, ויתרת הנכס ${fmt(asset)} ש״ח. הצדדים הסכימו להקטין את השטח ב-${out}%, ובהמשך גם ישתנה התשלום. כמה רווח נרשם בשלב הגריעה?`,
+      answer: lOut - aOut,
+      unit: "ש״ח",
+      inputs: { L, asset, out },
+      steps: [
+        { title: "גריעה מההתחייבות", numbers: `${fmt(L)} × ${out} ÷ 100 = ${fmt(lOut)}` },
+        { title: "גריעה מהנכס", numbers: `${fmt(asset)} × ${out} ÷ 100 = ${fmt(aOut)}` },
+        { title: "רווח", formula: "גריעה מההתחייבות − גריעה מהנכס = רווח", numbers: `${fmt(lOut)} − ${fmt(aOut)} = ${fmt(lOut - aOut)}` },
+      ],
+      trap: "לכלול כאן את השינוי בתשלום. הוא בשלב השני, כנגד הנכס.",
     };
   }
   const prepaid = r.int(0, 9_000, 1_000);

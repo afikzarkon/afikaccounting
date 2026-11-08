@@ -20,6 +20,7 @@ import { IAS19_SHORT_SCREENS } from "./ias19-course-short";
 import { IAS19_SIMPLE_SCREENS } from "./ias19-course-simple";
 import { IAS19_TOOLS_SCREENS } from "./ias19-course-tools";
 import { IFRS16_BASICS_SCREENS } from "./ifrs16-course";
+import { IFRS16_CHANGES_SCREENS } from "./ifrs16-course-changes";
 import { IFRS16_MEASURE_SCREENS } from "./ifrs16-course-measure";
 import { IFRS16_SUBSEQUENT_SCREENS } from "./ifrs16-course-subsequent";
 import { IFRS16_TERM_SCREENS } from "./ifrs16-course-term";
@@ -58,7 +59,7 @@ const SCREENS: Record<string, ScreenContent> = {
   // The employee-benefits course lays every formula in a plain-text lead out left to right.
   ...ltrLeads({ ...IAS19_BASICS_SCREENS, ...IAS19_TOOLS_SCREENS, ...IAS19_SIMPLE_SCREENS, ...IAS19_SHORT_SCREENS, ...IAS19_DB_SCREENS, ...IAS19_DB2_SCREENS, ...IAS19_END_SCREENS, ...IAS19_BOOKLET_SCREENS }),
   // The leases course, formulas laid out the same way.
-  ...ltrLeads({ ...IFRS16_BASICS_SCREENS, ...IFRS16_TERM_SCREENS, ...IFRS16_MEASURE_SCREENS, ...IFRS16_SUBSEQUENT_SCREENS }),
+  ...ltrLeads({ ...IFRS16_BASICS_SCREENS, ...IFRS16_TERM_SCREENS, ...IFRS16_MEASURE_SCREENS, ...IFRS16_SUBSEQUENT_SCREENS, ...IFRS16_CHANGES_SCREENS }),
 };
 
 /** A lesson's concept screens, in its order. A screen listed in the lesson but missing here fails the build. */

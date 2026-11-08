@@ -12,6 +12,7 @@ export const LESSON_N = {
   "ifrs16-term": 2,
   "ifrs16-measure": 3,
   "ifrs16-subsequent": 4,
+  "ifrs16-changes": 5,
 } as const;
 
 export type Ifrs16Slug = keyof typeof LESSON_N;
