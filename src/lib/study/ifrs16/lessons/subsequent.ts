@@ -22,7 +22,7 @@ export const TRUCK_START = shown({ payment: TRUCK.payment, years: TRUCK.years, r
 export const DEP_CASES = [
   { text: "הנכס חוזר למחכיר. חיים 10, תקופה 4", term: 4, life: 10, over: 4, why: "הקצר מביניהם" },
   { text: "הנכס חוזר למחכיר. חיים 3, תקופה 5", term: 5, life: 3, over: 3, why: "הקצר מביניהם" },
-  { text: "ודאי שהאופציה תמומש. חיים 10, תקופה 4", term: 4, life: 10, over: 10, why: "אורך החיים" },
+  { text: "ודאי באופן סביר שאופציית הרכישה תמומש. חיים 10, תקופה 4", term: 4, life: 10, over: 10, why: "אורך החיים" },
   { text: "הבעלות עוברת בסוף. חיים 10, תקופה 4", term: 4, life: 10, over: 10, why: "אורך החיים" },
 ];
 
@@ -143,7 +143,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: ["כשמשלמים בסוף שנה, החוב עומד במלואו כל השנה.\n120,000 × 0.05 = 6,000"],
     trap: "להוריד את התשלום לפני חישוב הריבית. הוא יוצא רק בסוף השנה.",
     level: 1,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיפים 36, 37",
   }),
   askNumber({
@@ -154,7 +154,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: ["200,000 × 0.06 = 12,000 (ריבית)", "200,000 + 12,000 − 50,000 = 162,000"],
     trap: "להוריד 50,000 בלי להוסיף ריבית. קודם החוב גדל בריבית, ואז התשלום מקטין אותו.",
     level: 1,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיף 36",
   }),
   askNumber({
@@ -165,7 +165,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: [`אחרי התשלום נשארים 4 תשלומים.\n24,000 × (1 − 1.06^(−4)) ÷ 0.06 = ${fmt(P_START[0].opening - 24_000)}`, `הריבית על היתרה אחרי התשלום.\n${fmt(P_START[0].opening - 24_000)} × 0.06 = ${fmt(P_START[0].interest)}`],
     trap: "לחשב ריבית על הערך הנוכחי של כל 5 התשלומים. התשלום של היום כבר יצא, ולא נושא ריבית.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיף 37",
   }),
   askNumber({
@@ -176,7 +176,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: [`אחרי התשלום הראשון: 40,000 × (1 − 1.05^(−5)) ÷ 0.05 = ${fmt(P_START2[0].opening - 40_000)}`, `שנה 1: ${fmt(P_START2[0].opening - 40_000)} × 0.05 = ${fmt(P_START2[0].interest)} ריבית, ויתרת סגירה ${fmt(P_START2[0].closing)}`, `שנה 2: (${fmt(P_START2[0].closing)} − 40,000) × 0.05 = ${fmt(P_START2[1].interest)}`],
     trap: "לשכוח את התשלום של 1.1 בשנה השנייה. הוא יוצא לפני שהריבית של השנה נוצרת.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיף 37",
   }),
   askNumber({
@@ -198,7 +198,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: ["הקצר מבין החיים והתקופה: 5 שנים (סעיף 32).\n90,000 ÷ 5 = 18,000"],
     trap: "להפחית על פני 8 שנים. החברה משתמשת בנכס רק 5 שנים.",
     level: 1,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיף 32",
   }),
   askNumber({
@@ -209,7 +209,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: ["החברה תקנה את הנכס, ולכן לאורך החיים: 10 שנים (סעיף 32).\n120,000 ÷ 10 = 12,000"],
     trap: "להפחית על פני תקופת החכירה. אחרי המימוש הנכס נשאר אצל החברה.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיף 32",
   }),
   askNumber({
@@ -231,7 +231,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: [`אחרי התשלום של השנה הבאה יישארו 3 תשלומים.\n30,000 × (1 − 1.06^(−3)) ÷ 0.06 = ${fmt(P_NC_END[0].nonCurrent)}`, `זו גם יתרת הסגירה של השנה השנייה.\nהיתרה עכשיו ${fmt(P_NC_END[0].closing)}, ולכן השוטף הוא ${fmt(P_NC_END[0].current)}.`],
     trap: "לומר שהשוטף הוא 30,000. חלק מהתשלום הבא הוא ריבית שעוד לא נוצרה, ולכן הוא לא חלק מהיתרה היום.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "דוגמת הרצאה",
   }),
   askNumber({
@@ -242,7 +242,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: [`יתרת הסגירה: (${fmt(P_NC_START[0].opening)} − 40,000) × 1.05 = ${fmt(P_NC_START[0].closing)}`, `מחר משלמים 40,000, ולכן זה החלק השוטף.\n${fmt(P_NC_START[0].closing)} − 40,000 = ${fmt(P_NC_START[0].nonCurrent)}`],
     trap: "לחשב את השוטף כהקטנת קרן, כמו בתשלום בסוף שנה. כאן התשלום משולם מחר, ואין ריבית בדרך.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "דוגמת הרצאה",
   }),
   ask({
@@ -254,7 +254,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     why: "מה שישולם בתוך 12 חודשים הוא שוטף, ולא נשאר דבר מעבר לכך.",
     trap: "להשאיר חלק לא שוטף מתוך הרגל. אם לא נשאר תשלום מעבר ל-12 חודשים, הכול שוטף.",
     level: 3,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "דוגמת הרצאה",
   }),
   ask({
@@ -266,7 +266,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     why: "סעיף 38(ב): תשלום משתנה שלא נכלל בהתחייבות מוכר ברווח או הפסד בתקופה שבה קרה האירוע שהפעיל אותו.",
     trap: "להוסיף אותו להתחייבות. הוא מעולם לא היה חלק ממנה.",
     level: 1,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיף 38(ב)",
   }),
   askNumber({
@@ -288,7 +288,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: [`עלות הנכס: ${fmt(P_KIND.rows[0].opening)} − 1,800 = ${fmt(P_KIND.cost)}`, `פחת: ${fmt(P_KIND.cost)} ÷ 3 = ${fmt(P_KIND.rows[0].depreciation)}`, `מימון: (${fmt(P_KIND.rows[0].opening)} − 36,000) × 0.05 = ${fmt(P_KIND.rows[0].interest)}`, "ביטוח: 1,800, בשנה שהוא מכסה.", `סך הכול: ${fmt(P_KIND.rows[0].depreciation)} + ${fmt(P_KIND.rows[0].interest)} + 1,800 = ${fmt(P_KIND.rows[0].depreciation + P_KIND.rows[0].interest + 1_800)}`],
     trap: "לחשוב שביטוח חינם הוא בלי הוצאה. הוא מקטין את עלות הנכס, והחברה צורכת אותו בשנה הראשונה, ולכן הוא הוצאה.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "דוגמת הרצאה",
   }),
   ask({
@@ -312,7 +312,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     why: "סעיף 8: בטווח קצר הבחירה לפי קבוצות של נכסי בסיס דומים. רק בערך נמוך היא לכל חכירה בנפרד.",
     trap: "להחליף בין השתיים. טווח קצר: לפי קבוצה. ערך נמוך: לכל חכירה.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיף 8",
   }),
   ask({
@@ -324,7 +324,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     why: "ב3 ו-ב6: מעריכים לפי הערך של הנכס כשהוא חדש. הגודל של החוכר לא משנה (ב4).",
     trap: "להעריך לפי הערך היום, או לפי מה שמהותי לחברה.",
     level: 1,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "ב3, ב4, ב6",
   }),
   askNumber({
@@ -335,7 +335,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: ["סך התשלומים: 6 × 3,000 = 18,000", "בקו ישר לחודש: 18,000 ÷ 9 = 2,000", "עד 31.12 עברו 3 חודשים: 3 × 2,000 = 6,000"],
     trap: "לרשום אפס כי עדיין לא שילמו. ההוצאה נפרסת על כל התקופה, גם על החודשים בחינם.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיף 6",
   }),
   askNumber({
@@ -380,7 +380,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: ["לכל שנה: 96,000 × 300,000 ÷ 600,000 = 48,000 (משאית), 96,000 × 200,000 ÷ 600,000 = 32,000 (רכב), 96,000 × 100,000 ÷ 600,000 = 16,000 (תחזוקה).", `משאית: נכס ${fmt(P_CONTRACT_A.cost)}, פחת ${fmt(P_CONTRACT_A.rows[0].depreciation)}, ריבית ${fmt(P_CONTRACT_A.rows[0].interest)}.`, `רכב: נכס ${fmt(P_CONTRACT_B.cost)}, פחת ${fmt(P_CONTRACT_B.rows[0].depreciation)}, ריבית ${fmt(P_CONTRACT_B.rows[0].interest)}.`, "תחזוקה: 16,000, הוצאה רגילה.", `סך הכול: ${fmt(P_CONTRACT_A.rows[0].depreciation + P_CONTRACT_A.rows[0].interest)} + ${fmt(P_CONTRACT_B.rows[0].depreciation + P_CONTRACT_B.rows[0].interest)} + 16,000 = ${fmt(P_CONTRACT_A.rows[0].depreciation + P_CONTRACT_A.rows[0].interest + P_CONTRACT_B.rows[0].depreciation + P_CONTRACT_B.rows[0].interest + 16_000)}`],
     trap: "להוון את כל 96,000. התחזוקה אינה חכירה, ולכן היא לא בהתחייבות ולא בנכס.",
     level: 3,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיפים 12, 13, 38",
   }),
   askNumber({
@@ -407,7 +407,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
       `הריבית: ${fmt(P_JOURNAL.rows[0].opening)} × 0.06 = ${fmt(P_JOURNAL.rows[0].interest)}. שאר התשלום מקטין את הקרן. מלכודת נפוצה: לרשום את כל התשלום כהוצאה.`,
       ["הוצאות מימון", "התחייבות חכירה", "מזומן", "הוצאות חכירה", "נכס זכות שימוש"],
     ),
-    { meta: { level: 2 as const, source: "בהשראת הרצאה" as const, ref: "סעיף 36" } },
+    { meta: { level: 2 as const, source: "מקורית" as const, ref: "סעיף 36" } },
   ),
   Object.assign(
     journal(
@@ -421,7 +421,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
       `הקצר מבין החיים והתקופה הוא 5 שנים: ${fmt(P_JOURNAL.cost)} ÷ 5 = ${fmt(P_JOURNAL.rows[0].depreciation)}. מלכודת נפוצה: לזכות את התחייבות החכירה. הפחת נוגע לנכס, ולא לחוב.`,
       ["הוצאות פחת", "פחת נצבר", "התחייבות חכירה", "מזומן", "הוצאות מימון"],
     ),
-    { meta: { level: 1 as const, source: "בהשראת הרצאה" as const, ref: "סעיפים 30, 32" } },
+    { meta: { level: 1 as const, source: "מקורית" as const, ref: "סעיפים 30, 32" } },
   ),
 ];
 

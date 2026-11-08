@@ -404,7 +404,7 @@ export function drill(family: DrillFamily, seed: number): Drill {
     const periods = r.int(2, 5) * 2;
     const half = (1 + annual) ** 0.5 - 1;
     return {
-      prompt: `${periods} תשלומים של ${fmt(payment)} ש״ח, בסוף כל חצי שנה. הריבית השנתית ${pct(annual)}. מהו הערך הנוכחי של התשלומים?`,
+      prompt: `${periods} תשלומים של ${fmt(payment)} ש״ח, בסוף כל חצי שנה. הריבית השנתית האפקטיבית ${pct(annual)}. מהו הערך הנוכחי של התשלומים?`,
       answer: whole(pvEnd(half, periods, payment)),
       unit: "ש״ח",
       inputs: { payment, periods, annual },
@@ -412,7 +412,7 @@ export function drill(family: DrillFamily, seed: number): Drill {
         { title: "ריבית לחצי שנה", formula: "(1 + i)^(1/2) − 1", numbers: `${(half * 100).toFixed(3)}%` },
         { title: "הערך הנוכחי", numbers: `${fmt(payment)} × (1 − (1 + ${half.toFixed(5)})^(−${periods})) ÷ ${half.toFixed(5)} = ${fmt(whole(pvEnd(half, periods, payment)))}` },
       ],
-      trap: "לחלק את הריבית השנתית ב-2. כך מקבלים בשנה יותר מהריבית השנתית.",
+      trap: "לחלק את הריבית השנתית האפקטיבית ב-2. כך מקבלים בשנה יותר מהריבית השנתית.",
     };
   }
   if (family === "slbGain" || family === "slbLow") {

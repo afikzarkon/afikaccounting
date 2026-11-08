@@ -28,7 +28,7 @@ export const lessonRef = (slug: Ifrs16Slug) => `שיעור ${LESSON_N[slug]}`;
 export type QuestionMeta = {
   /** 1: one idea. 2: as in a lecture example. 3: beyond it, several ideas together. */
   level: 1 | 2 | 3;
-  source: "הרצאה" | "בהשראת הרצאה" | "מקורית";
+  source: "הרצאה" | "מקורית";
   /** The paragraph it rests on. */
   ref: string;
 };

@@ -186,7 +186,7 @@ export function LeaseLab() {
   const [option, setOption] = useState(10_000);
   const [at, setAt] = useState(1);
   const year = Math.min(at, years);
-  const depYears = hasOption ? Math.max(life, years) : Math.min(life, years);
+  const depYears = hasOption ? life : Math.min(life, years);
   const { cost, rows } = shownYears({ payment, years, rate: ratePct / 100, timing: atStart ? "start" : "end", finalAmount: hasOption ? option : 0, depreciationYears: depYears });
   const row = rows[year - 1];
   const sections = statementLines(rows, year).map((s) => ({ ...s, rows: s.rows.map((r) => ({ ...r, values: [r.values[year - 1]] })) }));
@@ -622,7 +622,7 @@ export function ChangeLab() {
             : [
                 { account: "התחייבות חכירה", dr: -change },
                 ...(toAsset ? [{ account: "נכס זכות שימוש", cr: -toAsset }] : []),
-                ...(overflow ? [{ account: "רווח מתיקון חכירה", cr: overflow }] : []),
+                ...(overflow ? [{ account: keepsRate ? "רווח מעדכון התחייבות" : "רווח מתיקון חכירה", cr: overflow }] : []),
               ]
         }
       />

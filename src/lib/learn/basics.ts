@@ -53,6 +53,7 @@ const EXPLICIT: Record<string, AccountType> = {
   "התחייבות חכירה": "liability",
   "הפרשה לפירוק ופינוי": "liability",
   "רווח מתיקון חכירה": "income",
+  "רווח מעדכון התחייבות": "income",
   "הפסד מתיקון חכירה": "expense",
   "הפסד מגריעת חייבים": "expense",
   "הפסד מירידת אומדן": "expense",

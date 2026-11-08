@@ -51,7 +51,7 @@ describe("the leases course", () => {
         const q = x as LeaseQuestion;
         assert.ok(q.meta, `${m.slug}/${q.id}: no meta`);
         assert.ok([1, 2, 3].includes(q.meta.level), q.id);
-        assert.ok(["הרצאה", "בהשראת הרצאה", "מקורית"].includes(q.meta.source), q.id);
+        assert.ok(["הרצאה", "מקורית"].includes(q.meta.source), q.id);
         assert.ok(q.meta.ref.trim(), q.id);
         if (x.kind === "journal") assert.ok(x.entry.why?.includes("מלכודת נפוצה:"), x.id);
         else assert.ok(q.steps.at(-1)!.startsWith("מלכודת נפוצה:"), q.id);

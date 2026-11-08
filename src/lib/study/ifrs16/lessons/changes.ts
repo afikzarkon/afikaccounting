@@ -9,6 +9,7 @@ const r = Math.round;
 /** The screen's rule for each kind of change: which rate, and where the change goes. */
 export const RATE_ROWS: [string, string, string, string][] = [
   ["מדד", "ישנה", "נכס", "סעיפים 42(ב), 43"],
+  ["דמי שכירות בשוק", "ישנה", "נכס", "סעיפים 42(ב), 43"],
   ["תשלום צפוי בערבות שייר", "ישנה", "נכס", "סעיפים 42(א), 43"],
   ["הערכת תקופה", "חדשה", "נכס", "סעיף 40(א)"],
   ["הערכת אופציית רכישה", "חדשה", "נכס", "סעיף 40(ב)"],
@@ -238,9 +239,9 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     options: ["5%", "7%", "הממוצע, 6%", "לא מודדים מחדש"],
     answer: 0,
     why: "סעיף 43: בשינוי מדד לא משנים את שיעור ההיוון.",
-    trap: "לעדכן ריבית בכל שינוי. רק שינוי בתקופה, באופציית רכישה או בריבית משתנה מעדכן אותה.",
+    trap: "לעדכן ריבית בכל שינוי. בהערכה מחדש, רק שינוי בתקופה, באופציית רכישה או בריבית משתנה מעדכן אותה.",
     level: 1,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיף 43",
   }),
   ask({
@@ -252,7 +253,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     why: "סעיפים 40(א), 41: שיעור מעודכן. הגלומה אם ניתנת לקביעה בנקל, ואחרת התוספתית במועד ההערכה מחדש.",
     trap: "להשאיר את הריבית הישנה כי החוזה לא השתנה. שינוי תקופה מעדכן ריבית גם בלי תיקון.",
     level: 1,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיפים 40, 41",
   }),
   ask({
@@ -275,7 +276,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: [`לא משנים ריבית (סעיף 43).\nלפני: 20,000 × (1 − 1.05^(−4)) ÷ 0.05 = ${fmt(r(pvEnd(0.05, 4, 20_000)))}`, `אחרי: 21,000 × (1 − 1.05^(−4)) ÷ 0.05 = ${fmt(r(pvEnd(0.05, 4, 21_000)))}`, `${fmt(r(pvEnd(0.05, 4, 21_000)))} − ${fmt(r(pvEnd(0.05, 4, 20_000)))} = ${fmt(P_INDEX)}`],
     trap: "להיוון ב-8%. הריבית התוספתית של היום לא רלוונטית לשינוי מדד.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיפים 42(ב), 43",
   }),
   askNumber({
@@ -286,7 +287,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: ["לפני: 9,000 − 4,000 = 5,000 צפוי לתשלום. אחרי: 9,000 − 8,000 = 1,000.", `${fmt(r(pvEnd(0.07, 3, 30_000, 5_000)))} − ${fmt(r(pvEnd(0.07, 3, 30_000, 1_000)))} = ${fmt(P_GUAR)}`, "באקסל: הפרש בין =PV(7%;3;-30000;-5000) לבין =PV(7%;3;-30000;-1000)"],
     trap: "להוריד 4,000 בלי להוון. השינוי קורה בעוד 3 שנים, ולכן מהוונים אותו.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיפים 42(א), 43",
   }),
   askNumber({
@@ -297,7 +298,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: ["הנכס יורד עד אפס: 15,000 (סעיף 39).", "השאר ברווח או הפסד: 22,000 − 15,000 = 7,000"],
     trap: "להציג נכס שלילי. הנכס עוצר באפס.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיף 39",
   }),
   askNumber({
@@ -308,7 +309,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: ["יתרה ÷ יתרת תקופה = פחת\n120,000 ÷ 4 = 30,000"],
     trap: "להמשיך בפחת הישן ולהוסיף לו. כל שינוי מתפזר על השנים שנשארו.",
     level: 1,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיף 30(ב)",
   }),
   askNumber({
@@ -319,7 +320,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: [`לפני, בריבית הישנה: 50,000 × (1 − 1.06^(−3)) ÷ 0.06 = ${fmt(P_TERM_BEFORE)}`, `אחרי, 5 תשלומים בריבית המעודכנת: 50,000 × (1 − 1.08^(−5)) ÷ 0.08 = ${fmt(P_TERM_AFTER)}`, `${fmt(P_TERM_AFTER)} − ${fmt(P_TERM_BEFORE)} = ${fmt(P_TERM_AFTER - P_TERM_BEFORE)}`],
     trap: "להוון רק את שתי השנים הנוספות. כל היתרה נמדדת מחדש בריבית החדשה.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיפים 40(א), 41",
   }),
   askNumber({
@@ -342,7 +343,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     why: "סעיף 43: כשהשינוי נובע מריבית משתנה, משתמשים בשיעור מעודכן.",
     trap: "להתייחס לזה כמו למדד מחירים. מדד לא משנה ריבית, ריבית משתנה כן.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיף 43",
   }),
   ask({
@@ -354,7 +355,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     why: "הפרשי שער על התחייבות כספית נרשמים לפי IAS 21 ברווח או הפסד. הנכס לא משתנה.",
     trap: "להתייחס למטבע כמו למדד. במדד ההפרש הולך לנכס, במטבע חוץ לרווח או הפסד.",
     level: 3,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "IAS 21",
   }),
   ask({
@@ -366,7 +367,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     why: "סעיף 44: מתקיימים שני התנאים, תוספת זכות שימוש ותמורה לפי המחיר הנפרד.",
     trap: "למדוד מחדש את כל החוזה. התוספת היא חוזה חדש לכל דבר.",
     level: 1,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיף 44",
   }),
   ask({
@@ -378,7 +379,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     why: "סעיפים 44(ב), 45, 46(ב): המחיר אינו המחיר הנפרד, ולכן זו אינה חכירה נפרדת.",
     trap: "לומר ״חכירה נפרדת״ בכל תוספת שטח. נדרשים שני התנאים.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיפים 44–46",
   }),
   ask({
@@ -390,7 +391,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     why: "סעיף 45: מודדים מחדש במועד התחילה של התיקון, המועד שבו הצדדים הסכימו (נספח א׳).",
     trap: "לחכות לביצוע בפועל. ההסכמה קובעת, גם כשההשפעה בעתיד.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיף 45, נספח א׳",
   }),
   askNumber({
@@ -401,7 +402,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: [`לפני: 36,000 × (1 − 1.05^(−4)) ÷ 0.05 = ${fmt(P_EXT_BEFORE)}`, `אחרי: 36,000 × (1 − 1.07^(−7)) ÷ 0.07 = ${fmt(P_EXT_AFTER)}`, `${fmt(P_EXT_AFTER)} − ${fmt(P_EXT_BEFORE)} = ${fmt(P_EXT_AFTER - P_EXT_BEFORE)}`],
     trap: "לחשוב שהארכה היא חכירה נפרדת. אין כאן זכות להשתמש בנכס נוסף.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיפים 45, 46(ב)",
   }),
   askNumber({
@@ -412,7 +413,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: [`ההתחייבות: 70,000 × (1 − 1.05^(−4)) ÷ 0.05 = ${fmt(P_SHR.L)}`, `גריעה: ${fmt(P_SHR.L)} × 0.4 = ${fmt(P_SHR_OUT_L)} מההתחייבות, 210,000 × 0.4 = 84,000 מהנכס.`, `${fmt(P_SHR_OUT_L)} − 84,000 = ${fmt(P_SHR_GAIN)}`],
     trap: "להשוות ישירות להתחייבות החדשה. קודם גורעים, ורק אחר כך מודדים מחדש.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיף 46(א)",
   }),
   askNumber({
@@ -423,7 +424,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: [`אחרי גריעה: ${fmt(P_SHR.L)} − ${fmt(P_SHR_OUT_L)} = ${fmt(P_SHR.L - P_SHR_OUT_L)}`, `אחרי מדידה מחדש: 45,000 × (1 − 1.06^(−4)) ÷ 0.06 = ${fmt(P_SHR_AFTER)}`, `${fmt(P_SHR_AFTER)} − ${fmt(P_SHR.L - P_SHR_OUT_L)} = ${fmt(P_SHR_REM)}`],
     trap: "לרשום גם את ההפרש הזה ברווח או הפסד. המדידה מחדש הולכת לנכס.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיפים 45, 46",
   }),
   askNumber({
@@ -434,7 +435,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: ["קיצור תקופה הוא הקטנת היקף. נשארו 2 מתוך 5 שנים.", `גריעה מהנכס: 270,000 × 3 ÷ 5 = 162,000`, `גריעה מההתחייבות: ${fmt(P_CUT_L)} − ${fmt(P_CUT_KEEP)} = ${fmt(P_CUT_L - P_CUT_KEEP)}`, `רווח: ${fmt(P_CUT_L - P_CUT_KEEP)} − 162,000 = ${fmt(P_CUT_GAIN)}`],
     trap: "לגרוע 60% מההתחייבות. ההתחייבות יורדת לפי מה שנשאר בערך נוכחי, לא באחוז השנים.",
     level: 3,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיף 46(א)",
   }),
   askNumber({
@@ -445,7 +446,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: [`אחרי התשלום הבא נשארים 5 תשלומים, לפי התשלום המעודכן.\n63,000 × (1 − 1.05^(−5)) ÷ 0.05 = ${fmt(P_NC)}`],
     trap: "לחשב לפי התשלום הישן, או לפי תחזית למדד. לוקחים את התשלום החוזי המעודכן.",
     level: 2,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיף 42(ב)",
   }),
   askNumber({
@@ -456,7 +457,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: [`פחת: ${fmt(SHOP_DEP)}. מימון: ${fmt(SHOP_INT)}. לפי הכנסות: ${fmt(SHOP_VAR)}.`, `רווח מהקטנה: ${fmt(SHOP_BEFORE - SHOP_KEEP)} − ${fmt(SHOP_A - SHOP_A_KEEP)} = ${fmt(SHOP_GAIN)}`, `${fmt(SHOP_DEP)} + ${fmt(SHOP_INT)} + ${fmt(SHOP_VAR)} − ${fmt(SHOP_GAIN)} = ${fmt(SHOP_TOTAL)}`],
     trap: "לשכוח את רווח ההקטנה, או לרשום ברווח או הפסד גם את המדידה מחדש.",
     level: 3,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיף 46(א)",
   }),
   askNumber({
@@ -467,7 +468,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     steps: [`עלות: ${fmt(STORE_COST)}. פחת על פני ${STORE.life} שנים: ${fmt(STORE_DEP)}.`, `מימון: ${fmt(STORE_INT)}. תשלום: ${fmt(STORE_PAID)}. לפני מדידה מחדש: ${fmt(STORE_BEFORE)}.`, `אחרי, בריבית הישנה, ומחיר האופציה בלי הצמדה: ${fmt(STORE_AFTER)}. הפרש: ${fmt(STORE_CH)}.`, `נכס: ${fmt(STORE_COST)} − ${fmt(STORE_DEP)} + ${fmt(STORE_CH)} = ${fmt(STORE_ROU)}`],
     trap: "להצמיד גם את מחיר האופציה, או להשתמש בתשלום הישן של 31.12.",
     level: 3,
-    source: "בהשראת הרצאה",
+    source: "מקורית",
     ref: "סעיפים 32, 42(ב), 43",
   }),
   Object.assign(
@@ -480,9 +481,9 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
         { account: "התחייבות חכירה", cr: J.N - J.L },
       ],
       `לפני: ${fmt(J.L)}. אחרי: ${fmt(J.N)}. הפרש: ${fmt(J.N - J.L)}. מלכודת נפוצה: לרשום את ההפרש כהוצאת מימון. הוא מתאים את הנכס (סעיף 39).`,
-      ["נכס זכות שימוש", "התחייבות חכירה", "הוצאות מימון", "מזומן", "רווח מתיקון חכירה"],
+      ["נכס זכות שימוש", "התחייבות חכירה", "הוצאות מימון", "מזומן", "רווח מעדכון התחייבות"],
     ),
-    { meta: { level: 2 as const, source: "בהשראת הרצאה" as const, ref: "סעיף 39" } },
+    { meta: { level: 2 as const, source: "מקורית" as const, ref: "סעיף 39" } },
   ),
   Object.assign(
     journal(
@@ -497,7 +498,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
       `גורעים מחצית משני הצדדים, וההפרש הוא רווח (סעיף 46(א)). מלכודת נפוצה: לזקוף את ההפרש לנכס, כמו במדידה מחדש.`,
       ["התחייבות חכירה", "נכס זכות שימוש", "רווח מתיקון חכירה", "מזומן", "הוצאות מימון"],
     ),
-    { meta: { level: 2 as const, source: "בהשראת הרצאה" as const, ref: "סעיף 46(א)" } },
+    { meta: { level: 2 as const, source: "מקורית" as const, ref: "סעיף 46(א)" } },
   ),
 ];
 
@@ -607,7 +608,7 @@ export const CHANGES: StudyModule = {
   exercises,
   traps,
   tips: [
-    "ריבית ישנה: מדד וערבות שייר. ריבית מעודכנת: תקופה, אופציית רכישה וריבית משתנה.",
+    "הערכה מחדש, ריבית ישנה: מדד וערבות שייר. ריבית מעודכנת: תקופה, אופציית רכישה וריבית משתנה.",
     "ההפרש הולך לנכס. אם הנכס התאפס, השאר ברווח או הפסד.",
     "מטבע חוץ: ריבית ישנה, והפרש לרווח או הפסד.",
     "מדד: רק כשהתשלום החוזי משתנה, ובלי תחזית.",
