@@ -33,6 +33,7 @@ import { type CourseInfo, CourseOutline } from "./course-outline";
 import { JournalSimulator } from "./journal-simulator";
 import { clock, LessonOpening } from "./lesson-opening";
 import { LessonNav } from "./lesson-nav";
+import { track } from "@/lib/analytics/track";
 import { LessonRail } from "./lesson-rail";
 import { LessonStats } from "./lesson-stats";
 import { PracticeIntro } from "./practice-intro";
@@ -41,7 +42,10 @@ import { QuestionExercise } from "./question-exercise";
 import { LessonContext } from "./screen-link-view";
 import { Sheet } from "./sheet";
 import { cue } from "./sound";
-import { SummaryCard } from "./summary-card";
+import { markStudied } from "./study-day";
+import { ShareButton } from "@/components/check/share-button";
+import { inName } from "@/lib/hebrew";
+import { type NextLesson, SummaryCard } from "./summary-card";
 import { TrapQuiz } from "./trap-quiz";
 
 /**
@@ -95,9 +99,17 @@ export type ScreenContent = { lead?: ReactNode; body: ReactNode; check?: ReactNo
  * place. Keys: ← next, → previous (right to left) — unless a control inside
  * the screen already used the key.
  */
-export function StudyShell({ module: m, screens, next, course }: { module: StudyModule; screens: ScreenContent[]; next?: { href: string; label: string }; course: CourseInfo }) {
+/** Where a trap can be sent to friends: the course's summary check, which needs no account. */
+export type ShareTarget = { path: string; course: string; name: string; size: number };
+
+export function StudyShell({ module: m, screens, next, course, share }: { module: StudyModule; screens: ScreenContent[]; next?: NextLesson; course: CourseInfo; share?: ShareTarget }) {
   const slug = m.slug;
   const p = useTopic(slug);
+  // A course's first lesson opens with one of its traps, before the concepts (pretesting): the answer counts as the practice answer.
+  const warmTrap = m.n === 1 ? m.traps[0] : undefined;
+  const warmItem = warmTrap ? practiceOf(m).find((it) => it.kind === "trap" && it.trap.id === warmTrap.id) : undefined;
+  // Answered on this visit: the question and its explanation stay on the opening; answered before, it isn't shown again.
+  const [warmedHere, setWarmedHere] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const place = clampPlace(m, p);
@@ -273,6 +285,21 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
         <LessonOpening
           module={m}
           progress={p}
+          warmup={
+            warmTrap && warmItem && (!p.traps[warmTrap.id] || warmedHere) ? (
+              <TrapQuiz
+                trap={warmTrap}
+                answered={p.traps[warmTrap.id]}
+                onAnswer={(choice) => {
+                  setWarmedHere(true);
+                  updateTopic(slug, (q) => afterAnswer(recordTrap(q, warmTrap.id, choice, choice === warmTrap.answer), warmItem, today()));
+                  markStudied();
+                  if (!p.traps[warmTrap.id]) track({ kind: "exercise_answer", target: slug, ok: choice === warmTrap.answer, meta: { id: warmTrap.id, trap: true, warmup: true } });
+                  cue(choice === warmTrap.answer ? "ok" : "bad");
+                }}
+              />
+            ) : undefined
+          }
           onStart={enter}
           onTool={openTool}
           onVideo={m.videos?.length ? watch : undefined}
@@ -322,6 +349,8 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
       const onCheck = (ok: boolean) => {
         // A weak answer goes up for spaced review, from tomorrow.
         updateTopic(slug, (q) => afterAnswer(recordExercise(q, ex, ok), it, today()));
+        markStudied();
+        if (!p.exercises[ex.id]?.done) track({ kind: "exercise_answer", target: slug, ok, meta: { id: ex.id, trap: false, try: (p.exercises[ex.id]?.tries ?? 0) + 1 } });
         cue(ok ? "ok" : "bad");
       };
       card = {
@@ -342,15 +371,29 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
         eyebrow: count,
         title: it.group.label,
         content: (
-          <TrapQuiz
-            key={t.id}
-            trap={t}
-            answered={p.traps[t.id]}
-            onAnswer={(choice) => {
-              updateTopic(slug, (q) => afterAnswer(recordTrap(q, t.id, choice, choice === t.answer), it, today()));
-              cue(choice === t.answer ? "ok" : "bad");
-            }}
-          />
+          <div>
+            <TrapQuiz
+              key={t.id}
+              trap={t}
+              answered={p.traps[t.id]}
+              onAnswer={(choice) => {
+                updateTopic(slug, (q) => afterAnswer(recordTrap(q, t.id, choice, choice === t.answer), it, today()));
+                markStudied();
+                if (!p.traps[t.id]) track({ kind: "exercise_answer", target: slug, ok: choice === t.answer, meta: { id: t.id, trap: true } });
+                cue(choice === t.answer ? "ok" : "bad");
+              }}
+            />
+            {share && p.traps[t.id] && (
+              <ShareButton
+                className="mt-4"
+                path={share.path}
+                campaign={share.course}
+                kind="trap"
+                label="לשלוח לחברים: מי ייפול?"
+                text={`${p.traps[t.id].correct ? "עברתי מלכודת" : "נפלתי במלכודת"} ${inName(share.name)}. בואו נראה ${p.traps[t.id].correct ? "אתכם" : "אם גם אתם"} — ${share.size} שאלות, בלי הרשמה:`}
+              />
+            )}
+          </div>
         ),
       };
     }
@@ -429,11 +472,14 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
             </aside>
 
             <div ref={top} className="min-w-0 scroll-mt-32 lg:scroll-mt-20 lg:px-8 lg:pt-6 2xl:px-12" role="region" aria-label={`שיעור אינטראקטיבי: ${m.title}`}>
+              {/* One quiet row: where the lesson sits (on a phone the sticky bar above already says it) and the running score. */}
               <div className="flex items-center gap-3">
-                <div className="min-w-0 flex-1">
+                <div className="hidden min-w-0 flex-1 lg:block">
                   <Breadcrumbs trail={[{ label: course.title, href: course.href }, { label: `שיעור ${m.n}: ${m.title}` }]} />
                 </div>
-                <LessonStats streak={p.streak} xp={xpOf(m, p)} />
+                <div className="ms-auto">
+                  <LessonStats streak={p.streak} xp={xpOf(m, p)} />
+                </div>
               </div>
               <LessonRail module={m} progress={p} place={place} opening={opening} onGo={goTo} className="no-print mt-3 hidden lg:flex" />
 
@@ -447,7 +493,7 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
                     <button
                       type="button"
                       onClick={() => watch(clip.part, clip.at)}
-                      className="inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2.5 py-0.5 text-[12.5px] font-bold text-amber-700 ring-1 ring-amber-400/35 transition hover:bg-amber-400/25 dark:text-amber-300"
+                      className="inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2.5 py-0.5 text-[12.5px] font-bold text-amber-800 ring-1 ring-amber-400/35 transition hover:bg-amber-400/25 dark:text-amber-300"
                       title="הקטע בסרטון שמסביר את המושג הזה"
                     >
                       <PlayCircle className="h-3.5 w-3.5" aria-hidden />

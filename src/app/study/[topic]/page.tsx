@@ -1,3 +1,4 @@
+import { shareCard } from "@/lib/site";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -11,6 +12,7 @@ import { Container, Skeleton } from "@/components/ui/primitives";
 import { canAccessWith } from "@/lib/access";
 import { getAccess } from "@/lib/auth/access";
 import { TOPICS, topicByHref } from "@/lib/catalog";
+import { CHECK_SIZE, CHECK_TOPICS } from "@/lib/check";
 import { STUDY_MODULES, studyHref } from "@/lib/study";
 import { outlineOf } from "@/lib/study/paths";
 import { isLinkHidden } from "@/lib/visibility/rules";
@@ -26,7 +28,8 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/study/[topic]">): Promise<Metadata> {
   const m = STUDY_MODULES[(await params).topic];
   if (!m) return { title: "לא נמצא" };
-  return { title: `${m.course} · שיעור ${m.n}: ${m.title}`, description: m.description };
+  const title = `${m.course} · שיעור ${m.n}: ${m.title}`;
+  return { title, description: m.description, openGraph: shareCard(title, m.description) };
 }
 
 /**
@@ -42,7 +45,12 @@ function nextOf(slug: string, hidden: string[]) {
     .filter((x) => x.backHref === m.backHref && x.n > m.n && shown(studyHref(x.slug)))
     .sort((a, b) => a.n - b.n);
   const after = course[0];
-  if (after) return { href: studyHref(after.slug), label: `לשיעור ${after.n}: ${after.title}` };
+  if (after) {
+    const topic = topicByHref(m.backHref)!;
+    // The plan the next lesson needs, when it isn't open to everyone: the summary says so before the click, not after.
+    const tier = topic.tier === "free" || topic.preview.includes(after.slug) ? undefined : topic.tier;
+    return { href: studyHref(after.slug), label: `לשיעור ${after.n}: ${after.title}`, tier };
+  }
   const t = TOPICS.slice(TOPICS.findIndex((x) => x.href === m.backHref) + 1).find((x) => shown(x.href));
   if (!t) return undefined;
   const taste = t.preview.find((p) => p in STUDY_MODULES && shown(studyHref(p)));
@@ -69,7 +77,10 @@ async function Lesson({ params }: Pick<PageProps<"/study/[topic]">, "params">) {
   if (!m) notFound();
   const topic = topicByHref(m.backHref)!;
   const free = topic.tier === "free" || topic.preview.includes(m.slug);
-  if (!free && !canAccessWith(await getAccess(), topic, m.slug)) return <LockedLesson slug={m.slug} />;
+  if (!free) {
+    const access = await getAccess();
+    if (!canAccessWith(access, topic, m.slug)) return <LockedLesson slug={m.slug} guest={!access.signedIn} />;
+  }
   const last = Math.max(...Object.values(STUDY_MODULES).filter((x) => x.backHref === m.backHref).map((x) => x.n));
   // Cached: reading it keeps a free lesson prerendered.
   const { links } = await getVisibility();
@@ -77,7 +88,13 @@ async function Lesson({ params }: Pick<PageProps<"/study/[topic]">, "params">) {
     <>
       <TrackEvent event={{ kind: "lesson_start", target: m.slug, meta: { course: topic.id, n: m.n } }} />
       {topic.tier === "free" && m.n === last && <CourseDone module={m} course={topic.id} />}
-      <StudyShell module={m} screens={screensFor(m)} next={nextOf(m.slug, links)} course={courseOf(m.slug, links)} />
+      <StudyShell
+        module={m}
+        screens={screensFor(m)}
+        next={nextOf(m.slug, links)}
+        course={courseOf(m.slug, links)}
+        share={CHECK_TOPICS.includes(topic.id) && !isLinkHidden(links, `/check/${topic.id}`) ? { path: `/check/${topic.id}`, course: topic.id, name: topic.standard ?? topic.title, size: CHECK_SIZE } : undefined}
+      />
     </>
   );
 }
@@ -97,10 +114,13 @@ function courseOf(slug: string, hidden: string[]) {
 }
 
 /** A locked lesson's place: its name and where it sits in the course, and the paywall. */
-function LockedLesson({ slug }: { slug: string }) {
+function LockedLesson({ slug, guest }: { slug: string; guest: boolean }) {
   const m = STUDY_MODULES[slug];
   const topic = topicByHref(m.backHref)!;
   const taste = topic.preview.find((p) => p in STUDY_MODULES);
+  const free = taste ? STUDY_MODULES[taste] : undefined;
+  // Titles and counts only: the lesson's screens and questions themselves stay on the server.
+  const contents = { screens: m.screens.map((s) => s.title), questions: m.exercises.length + m.traps.length, traps: m.traps.length, videos: m.videos?.length ?? 0 };
   return (
     <Container className="pt-10 pb-16 sm:pt-14">
       <Breadcrumbs trail={[{ label: topic.standard ? `${topic.title} (${topic.standard})` : topic.title, href: topic.href }, { label: `שיעור ${m.n}` }]} />
@@ -114,6 +134,9 @@ function LockedLesson({ slug }: { slug: string }) {
           where={studyHref(m.slug)}
           heading="h1"
           taste={taste ? { href: studyHref(taste), label: `לשיעור ${STUDY_MODULES[taste].n} — בחינם` } : undefined}
+          contents={contents}
+          tasteLesson={free && { slug: free.slug, n: free.n, total: free.exercises.length + free.traps.length }}
+          guest={guest}
         />
       </div>
     </Container>

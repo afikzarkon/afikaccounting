@@ -46,9 +46,9 @@ export function SectionIcon({ name, className }: { name?: string; className?: st
 
 export const ACCENTS: Record<CalculatorSchema["accent"], { tile: string; glow: string; text: string }> = {
   sky: {
-    tile: "from-sky-500/20 to-blue-600/10 text-sky-600 dark:text-sky-300 ring-sky-500/20",
+    tile: "from-sky-500/20 to-blue-600/10 text-sky-700 dark:text-sky-300 ring-sky-500/20",
     glow: "group-hover:shadow-[0_20px_60px_-25px_rgb(14_165_233_/_0.55)]",
-    text: "text-sky-600 dark:text-sky-300",
+    text: "text-sky-700 dark:text-sky-300",
   },
   violet: {
     tile: "from-violet-500/20 to-fuchsia-600/10 text-violet-600 dark:text-violet-300 ring-violet-500/20",
@@ -56,14 +56,14 @@ export const ACCENTS: Record<CalculatorSchema["accent"], { tile: string; glow: s
     text: "text-violet-600 dark:text-violet-300",
   },
   amber: {
-    tile: "from-amber-500/20 to-orange-600/10 text-amber-600 dark:text-amber-300 ring-amber-500/20",
+    tile: "from-amber-500/20 to-orange-600/10 text-amber-700 dark:text-amber-300 ring-amber-500/20",
     glow: "group-hover:shadow-[0_20px_60px_-25px_rgb(245_158_11_/_0.5)]",
-    text: "text-amber-600 dark:text-amber-300",
+    text: "text-amber-700 dark:text-amber-300",
   },
   emerald: {
-    tile: "from-emerald-500/20 to-teal-600/10 text-emerald-600 dark:text-emerald-300 ring-emerald-500/20",
+    tile: "from-emerald-500/20 to-teal-600/10 text-emerald-700 dark:text-emerald-300 ring-emerald-500/20",
     glow: "group-hover:shadow-[0_20px_60px_-25px_rgb(16_185_129_/_0.5)]",
-    text: "text-emerald-600 dark:text-emerald-300",
+    text: "text-emerald-700 dark:text-emerald-300",
   },
 };
 

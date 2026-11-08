@@ -9,7 +9,7 @@ const BADGE_TONES = {
   neutral: "bg-surface-2 text-muted border-line",
   accent: "bg-accent-soft text-accent border-transparent",
   success: "bg-success/10 text-success border-transparent",
-  warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-transparent",
+  warning: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-transparent",
   danger: "bg-danger/10 text-danger border-transparent",
 } as const;
 

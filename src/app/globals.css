@@ -17,7 +17,7 @@
   --line-strong: rgb(22 38 31 / 0.2);
   --fg: #16261f;
   --muted: #53635a;
-  --subtle: #7f8c85;
+  --subtle: #5f6c65; /* 4.7:1 or more on every light surface (WCAG AA) */
   --brand: #0f3d2e;
   --accent: #1d6b47;
   --accent-fg: #ffffff;
@@ -46,7 +46,7 @@
   --line-strong: rgb(200 222 209 / 0.21);
   --fg: #e4ece6;
   --muted: #9aaaa1;
-  --subtle: #6d7c74;
+  --subtle: #85948b; /* 4.7:1 or more on every dark surface (WCAG AA) */
   --brand: #cfe3d7;
   --accent: #62c08f;
   --accent-fg: #062016;
@@ -146,6 +146,21 @@
   }
   .num {
     font-variant-numeric: tabular-nums;
+  }
+  /*
+   * A table wider than the screen: a soft shadow on whichever edge still hides
+   * columns, so a phone reader sees there is more to scroll to. The covers move
+   * with the content (local) and the shadows stay put (scroll), so a shadow
+   * shows only while that edge has something behind it — in either direction.
+   */
+  .scroll-x {
+    overflow-x: auto;
+    background:
+      linear-gradient(to right, var(--surface) 30%, transparent) left center / 2.5rem 100% no-repeat local,
+      linear-gradient(to left, var(--surface) 30%, transparent) right center / 2.5rem 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, color-mix(in oklab, var(--fg) 22%, transparent), transparent) left center / 0.9rem 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, color-mix(in oklab, var(--fg) 22%, transparent), transparent) right center / 0.9rem 100% no-repeat scroll;
+    background-color: var(--surface);
   }
   /*
    * KaTeX has no Hebrew glyphs; set \text{} in the site font instead of a fallback.

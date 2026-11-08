@@ -2,6 +2,7 @@
 
 import { ArrowLeft, BookOpenText, Calculator, CircleCheck, ClipboardPen, Play, RotateCcw, Star, Target } from "lucide-react";
 import { motion } from "motion/react";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { maxXp, PRACTICE_GROUPS, practiceOf, statusOf, type TopicProgress, xpOf } from "@/lib/study/score";
 import { videoAt } from "@/lib/study/paths";
@@ -25,6 +26,7 @@ export function LessonOpening({
   onRestart,
   onTool,
   onVideo,
+  warmup,
 }: {
   module: StudyModule;
   progress: TopicProgress;
@@ -33,6 +35,8 @@ export function LessonOpening({
   onTool: (screen: string) => void;
   /** Opens a part of the lesson's video at a second. */
   onVideo?: (part: number, at: number) => void;
+  /** A course's first lesson, not yet answered: one question before the concepts, doing before reading. */
+  warmup?: ReactNode;
 }) {
   const videos = onVideo ? m.videos : undefined;
   const items = practiceOf(m);
@@ -90,6 +94,16 @@ export function LessonOpening({
           ))}
         </div>
       </StageHero>
+
+      {warmup && (
+        <section aria-labelledby="opening-warmup" className="rounded-2xl bg-surface p-5 ring-1 ring-line sm:p-6">
+          <StageLabel id="opening-warmup" icon={<ClipboardPen className="h-4 w-4 text-accent" aria-hidden />}>
+            לפני שמתחילים: שאלה אחת
+          </StageLabel>
+          <p className="mb-4 text-[14.5px] text-muted">עוד לא למדתם את זה, וזה בסדר לטעות. השיעור מסביר בדיוק את הנקודה הזאת, ומי שניחש לפני כן זוכר אותה טוב יותר.</p>
+          {warmup}
+        </section>
+      )}
 
       <section aria-labelledby="opening-goal" className="rounded-2xl bg-accent-soft/60 p-5 ring-1 ring-accent/20 sm:p-6">
         <StageLabel id="opening-goal" icon={<Target className="h-4 w-4 text-accent" aria-hidden />}>
@@ -158,7 +172,7 @@ export function LessonOpening({
                       type="button"
                       onClick={() => onVideo!(clip.part, clip.at)}
                       aria-label={`${s.title} בסרטון${videos!.length > 1 ? `, ${videos![clip.part].part ?? ""}` : ""}, מ-${clock(clip.at)}`}
-                      className="num inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[12px] font-bold text-amber-700 ring-1 ring-amber-400/30 transition hover:bg-amber-400/30 dark:text-amber-300"
+                      className="num inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[12px] font-bold text-amber-800 ring-1 ring-amber-400/30 transition hover:bg-amber-400/30 dark:text-amber-300"
                     >
                       <Play className="h-3 w-3 fill-current" aria-hidden /> {videos!.length > 1 && `${videos![clip.part].part} · `}
                       {clock(clip.at)}

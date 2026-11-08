@@ -111,7 +111,7 @@ export function RegisterForm() {
     return (
       <>
         {/* Signed up, waiting on the email link. (Signed straight in, the dashboard records it.) */}
-        <TrackEvent event={{ kind: "signup", meta: { plan: plan || "free", confirm: true } }} />
+        <TrackEvent event={{ kind: "signup", meta: { plan: plan || "free", confirm: true } }} once="signup" />
         <FormAlert message={state.message} />
       </>
     );

@@ -28,7 +28,7 @@ export function ExamCard({ exam: e, topic, open, blur = false, sample }: { exam:
         {!open && <Lock className="ms-auto h-4 w-4 text-muted" aria-label="נעול" />}
       </span>
       <span className={cn("mt-2.5 flex items-start gap-2.5", blur && !open && "blur-[3px] select-none")}>
-        <FileCheck2 className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-300" aria-hidden />
+        <FileCheck2 className="mt-0.5 h-5 w-5 shrink-0 text-amber-700 dark:text-amber-300" aria-hidden />
         <span className="min-w-0">
           <span className="block font-semibold text-fg group-hover:text-accent">{e.title}</span>
           <span className="mt-1 line-clamp-2 block text-[13px] leading-relaxed text-muted">{e.description}</span>

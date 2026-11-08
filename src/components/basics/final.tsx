@@ -86,7 +86,7 @@ export const FINAL_SCREENS: Record<string, ScreenContent> = {
             <ol className="space-y-1.5">
               {RIMON.items.map((it) => (
                 <li key={it.entry.id} className="flex gap-2 rounded-lg bg-surface px-3 py-2 text-[14.5px]">
-                  <span className="font-bold text-amber-700 dark:text-amber-400">{it.entry.id}.</span>
+                  <span className="font-bold text-amber-800 dark:text-amber-400">{it.entry.id}.</span>
                   <span>{it.story}</span>
                 </li>
               ))}
@@ -169,7 +169,7 @@ function ExamGiven() {
       {rows.map(([a, v]) => (
         <li key={a} className="flex items-center justify-between gap-2 border-b border-line/60 py-1.5">
           <span>{a}</span>
-          {v === null ? <span className="rounded bg-amber-500/15 px-2 font-bold text-amber-600 dark:text-amber-400">?</span> : <Money v={Math.abs(v)} plain />}
+          {v === null ? <span className="rounded bg-amber-500/15 px-2 font-bold text-amber-700 dark:text-amber-400">?</span> : <Money v={Math.abs(v)} plain />}
         </li>
       ))}
     </ul>

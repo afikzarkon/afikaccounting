@@ -1,11 +1,19 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { planHref } from "@/lib/pricing";
 import { navFor } from "@/lib/site";
 import { NOTHING_HIDDEN, type Visibility, isHidden, isLinkHidden, labelOf } from "./rules";
 
 const v = (links: string[], hidden: string[] = [], labels: Record<string, string> = {}): Visibility => ({ hidden: [...hidden, ...links.map((l) => `link:${l}`)], links, labels });
 
 describe("which addresses a hidden one covers", () => {
+  it("a hidden pricing page covers every link to a plan, so none of them leads to a 404", () => {
+    assert.equal(isLinkHidden(["/pricing"], "/pricing"), true);
+    assert.equal(isLinkHidden(["/pricing"], planHref("courses")), true);
+    assert.equal(isLinkHidden(["/pricing"], planHref("exams", "/study/some-lesson")), true);
+    assert.equal(isLinkHidden([], planHref("courses")), false);
+  });
+
   it("the same page, with or without a trailing slash or a #fragment", () => {
     assert.equal(isLinkHidden(["/pricing"], "/pricing"), true);
     assert.equal(isLinkHidden(["/pricing"], "/pricing/"), true);
@@ -44,18 +52,21 @@ describe("the menu without what the admin hid", () => {
   const labels = (items: ReturnType<typeof navFor>) => items.map((i) => ("items" in i ? i.label : i.href));
 
   it("nothing hidden: the whole menu", () => {
-    assert.deepEqual(labels(navFor(NOTHING_HIDDEN)), ["קורסים", "/exams", "כלים", "/pricing"]);
+    assert.deepEqual(labels(navFor(NOTHING_HIDDEN)), ["קורסים", "/exams", "/review", "/pricing", "/engine"]);
   });
 
   it("a hidden top-level link drops out", () => {
-    assert.deepEqual(labels(navFor(v(["/exams", "/exams/*", "/pricing"]))), ["קורסים", "כלים"]);
+    assert.deepEqual(labels(navFor(v(["/exams", "/exams/*", "/pricing"]))), ["קורסים", "/review", "/engine"]);
   });
 
   it("a hidden course leaves its category; an emptied category with a hidden hub goes", () => {
     const courses = navFor(v(["/basics/inventory"])).find((i) => "items" in i && i.label === "קורסים");
     assert.ok(courses && "items" in courses && !courses.items.some((i) => i.href === "/basics/inventory"));
 
-    const engineAndTools = ["/engine", ...navFor(NOTHING_HIDDEN).flatMap((i) => ("items" in i && i.label === "כלים" ? i.items.map((x) => x.href) : []))];
-    assert.deepEqual(labels(navFor(v(engineAndTools))), ["קורסים", "/exams", "/pricing"]);
+    assert.deepEqual(labels(navFor(v(["/engine", "/engine/*"]))), ["קורסים", "/exams", "/review", "/pricing"]);
+    // Every link of a category hidden, and its hub too: the category goes.
+    const learn = navFor(NOTHING_HIDDEN).find((i) => "items" in i && i.label === "קורסים");
+    const all = learn && "items" in learn ? [learn.hub.href, ...learn.items.map((x) => x.href)] : [];
+    assert.ok(!labels(navFor(v(all))).includes("קורסים"));
   });
 });

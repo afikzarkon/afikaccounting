@@ -23,6 +23,17 @@ export const EVENT_KINDS = [
   "checkout_start",
   "payment_success",
   "subscription_cancel",
+  // Learning: each practice answer (a trap or an exercise try), a review session started, a share, the summary self-check.
+  "exercise_answer",
+  "review_session",
+  "share_click",
+  "check_start",
+  "check_complete",
+  // Habit: the first study action of a day (with the streak), an exam date set for a course.
+  "study_day",
+  "exam_goal_set",
+  // A/B: a visitor saw an experiment's page, with their variant (meta.exp, meta.variant).
+  "experiment_view",
 ] as const;
 export type EventKind = (typeof EVENT_KINDS)[number];
 

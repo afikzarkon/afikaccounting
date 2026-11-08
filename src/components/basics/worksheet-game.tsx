@@ -243,7 +243,7 @@ function SortStage({ c, onDone }: { c: WorksheetCase; onDone: (s: SortStats) => 
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-2xl border-2 border-fg/60 bg-surface">
+          <div className="scroll-x rounded-2xl border-2 border-fg/60 bg-surface">
             <table className="w-full min-w-[34rem] text-[14px]">
               <caption className="border-b-2 border-fg/60 bg-surface-2/60 px-4 py-2.5 text-center">
                 <span className="block text-[17px] font-extrabold text-fg">מאזן ראשוני לפני התאמה</span>
@@ -524,7 +524,7 @@ function AdjustStage({ c, onDone }: { c: WorksheetCase; onDone: () => void }) {
           <p className="text-[14px] text-muted">
             הזינו את הסכומים בשורה של כל חשבון, בצד שלו. חשבון חדש כבר נפתח בשורה משלו. הסכומים בעמודה מצטברים — פקודות קודמות כבר בפנים.
           </p>
-          <div className="overflow-x-auto rounded-xl border border-line">
+          <div className="scroll-x rounded-xl border border-line">
             <table className="w-full min-w-[34rem] text-[13px]">
               <thead className="bg-surface-2/40">
                 <tr>
@@ -672,7 +672,7 @@ function ClassifyStage({ c, onDone }: { c: WorksheetCase; onDone: (profitTries: 
       <p className="text-[14.5px] text-fg">
         כל ההתאמות בפנים. <strong>מאזן הבוחן הסופי</strong>: לכל חשבון — היתרה שלפני ועוד ההתאמות. עכשיו סמנו לכל שורה: <strong>מאזני</strong> או <strong>תוצאתי</strong>.
       </p>
-      <div className="overflow-x-auto rounded-xl border border-line">
+      <div className="scroll-x rounded-xl border border-line">
         <table className="w-full min-w-[44rem] text-[13px]">
           <thead className="bg-surface-2/40">
             <tr className="text-xs">

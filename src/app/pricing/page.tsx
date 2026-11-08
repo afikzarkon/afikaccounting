@@ -72,7 +72,7 @@ export default async function PricingPage({ searchParams }: PageProps<"/pricing"
 
         <section aria-labelledby="compare-title" className="mt-20">
           <SectionHeading title={<span id="compare-title">מה בכל מסלול</span>} />
-          <div className="card mt-6 overflow-x-auto">
+          <div className="card mt-6 overflow-x-auto" tabIndex={0} role="region" aria-label="השוואת המסלולים">
             <table className="w-full min-w-[34rem] text-sm">
               <thead>
                 <tr className="border-b border-line">

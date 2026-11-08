@@ -163,9 +163,11 @@ export const ENGINE_TOOLS: (CatalogLink & { slug: string; standard: string })[] 
 ];
 
 /** Every calculator inside a learning page, in learning-path order. */
-export const LEARNING_TOOLS: (CatalogLink & { topic: string })[] = LEARNING_PATH.flatMap((s) =>
+export const LEARNING_TOOLS: (CatalogLink & { topic: string; tier: Topic["tier"] })[] = LEARNING_PATH.flatMap((s) =>
   s.topics.flatMap((t) =>
-    t.tools.filter((x) => x.calculator || !x.href.startsWith("/study/")).map(({ href, label, description }) => ({ href, label, description, topic: t.standard ? `${t.standard} · ${t.title}` : t.title })),
+    t.tools
+      .filter((x) => x.calculator || !x.href.startsWith("/study/"))
+      .map(({ href, label, description }) => ({ href, label, description, topic: t.standard ? `${t.standard} · ${t.title}` : t.title, tier: t.tier })),
   ),
 );
 

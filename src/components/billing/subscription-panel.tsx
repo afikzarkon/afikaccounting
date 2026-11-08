@@ -2,6 +2,7 @@
 
 import { FileText, FlaskConical, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { WhenLinkShown } from "@/components/layout/visibility";
 import { useState } from "react";
 import { TierBadge } from "@/components/pricing/tier-badge";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -57,9 +58,11 @@ export function SubscriptionPanel({ sub, invoices, provider }: Props) {
         <TierBadge tier={sub && sub.status !== "canceled" ? sub.tier : "free"} />
         <p className="min-w-0 flex-1 text-sm text-muted">{describe(sub)}</p>
         {!managed && (
-          <ButtonLink href="/pricing" size="sm" variant={sub ? "secondary" : "primary"}>
-            {sub && sub.status !== "canceled" ? "למסלולים" : "שדרוג"}
-          </ButtonLink>
+          <WhenLinkShown href="/pricing">
+            <ButtonLink href="/pricing" size="sm" variant={sub ? "secondary" : "primary"}>
+              {sub && sub.status !== "canceled" ? "למסלולים" : "שדרוג"}
+            </ButtonLink>
+          </WhenLinkShown>
         )}
       </div>
 
@@ -125,7 +128,7 @@ export function SubscriptionPanel({ sub, invoices, provider }: Props) {
 
       {provider === "sandbox" && managed && (
         <div className="mt-6 rounded-xl border border-dashed border-amber-500/50 p-4">
-          <p className="flex items-center gap-2 text-xs font-semibold text-amber-700 dark:text-amber-300">
+          <p className="flex items-center gap-2 text-xs font-semibold text-amber-800 dark:text-amber-300">
             <FlaskConical className="h-4 w-4" aria-hidden /> סביבת בדיקות: מה שהספק היה שולח בהמשך
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -147,9 +150,11 @@ export function SubscriptionPanel({ sub, invoices, provider }: Props) {
       {!sub && (
         <p className="mt-3 text-xs text-muted">
           הקורס החינמי והשיעור הראשון בכל קורס פתוחים לכם.{" "}
-          <Link href="/pricing" className="text-accent hover:underline">
-            מה יש במסלולים
-          </Link>
+          <WhenLinkShown href="/pricing">
+            <Link href="/pricing" className="text-accent hover:underline">
+              מה יש במסלולים
+            </Link>
+          </WhenLinkShown>
         </p>
       )}
     </section>

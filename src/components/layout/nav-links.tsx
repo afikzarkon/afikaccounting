@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ChevronDown, Menu, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, Menu, Search, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { TierBadge } from "@/components/pricing/tier-badge";
 import { type NavEntry, type NavGroup, navFor } from "@/lib/site";
 import { cn } from "@/lib/utils";
+import { openSearch } from "./search";
 import { useVisibility } from "./visibility";
 
 const isActive = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`));
@@ -51,7 +52,7 @@ export function NavLinksView({ pathname = "" }: { pathname?: string }) {
             aria-current={active ? "page" : undefined}
             className={cn(
               "relative rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors",
-              item.tier === "exams" ? "font-semibold text-amber-600 hover:text-amber-500 dark:text-amber-300 dark:hover:text-amber-200" : active ? "text-fg" : "text-muted hover:text-fg",
+              item.tier === "exams" ? "font-semibold text-amber-800 hover:text-amber-600 dark:text-amber-300 dark:hover:text-amber-200" : active ? "text-fg" : "text-muted hover:text-fg",
             )}
           >
             {active && <ActivePill />}
@@ -176,7 +177,7 @@ export function MobileNavView({ pathname = "" }: { pathname?: string }) {
         className={cn(
           "flex items-center gap-2 rounded-xl px-4 py-2.5 text-[15px] font-medium",
           nested && "ms-3 border-s-2 border-line-strong ps-4",
-          !nested && tier === "exams" ? "font-semibold text-amber-600 dark:text-amber-300" : on ? "bg-surface-2 text-fg" : "text-muted hover:bg-surface-2 hover:text-fg",
+          !nested && tier === "exams" ? "font-semibold text-amber-700 dark:text-amber-300" : on ? "bg-surface-2 text-fg" : "text-muted hover:bg-surface-2 hover:text-fg",
         )}
       >
         {label}
@@ -208,6 +209,17 @@ export function MobileNavView({ pathname = "" }: { pathname?: string }) {
             transition={{ duration: 0.16 }}
             className="absolute inset-x-3 top-[4.25rem] z-50 max-h-[calc(100vh-5.5rem)] overflow-y-auto rounded-2xl border border-line-strong bg-surface p-2 shadow-xl"
           >
+            {/* On a phone, search lives here: the bottom bar holds the review instead. */}
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                openSearch();
+              }}
+              className="mb-1 flex w-full items-center gap-2 rounded-xl border border-line-strong px-4 py-2.5 text-[15px] text-subtle hover:border-accent/50 hover:text-muted"
+            >
+              <Search className="h-4 w-4" aria-hidden /> חיפוש בכל האתר…
+            </button>
             {nav.map((item) =>
               "items" in item ? (
                 // Each category folds, so the menu stays short; the one you're in starts open.

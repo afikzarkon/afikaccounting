@@ -95,8 +95,36 @@ export function JournalEntry({ title, date, lines, note }: { title: string; date
         )}
         <Badge tone={balanced ? "success" : "danger"}>{balanced ? "✓ מאוזנת" : "✗ לא מאוזנת"}</Badge>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-[13px] sm:min-w-[26rem] sm:text-sm">
+      {/* A phone: one amount column, the side shown by ח׳/ז׳ and the indent of the credits — nothing is cut off. */}
+      <ul className="divide-y divide-line/70 text-sm sm:hidden">
+        {lines.map((l, i) => {
+          const credit = l.cr !== undefined;
+          return (
+            <li key={i} className={cn("flex items-start gap-2 px-4 py-2", credit && "ps-8")}>
+              <span className={cn("mt-px text-xs font-semibold", credit ? "text-credit" : "text-debit")}>{credit ? "ז׳" : "ח׳"}</span>
+              <span className="min-w-0 flex-1 text-fg">
+                {l.account}
+                {l.tag && <span className="ms-2 inline-block align-middle">{l.tag}</span>}
+              </span>
+              <span className={cn("shrink-0", credit ? "text-credit" : "text-debit")}>
+                <Num v={(credit ? l.cr : l.dr) ?? 0} />
+              </span>
+            </li>
+          );
+        })}
+        <li className="ledger-total mx-4 flex flex-wrap items-center gap-x-2 gap-y-1 py-2 font-semibold">
+          <span className="text-muted">סה״כ</span>
+          <span className="ms-auto text-debit">
+            ח׳ <Num v={dr} />
+          </span>
+          <span className="text-muted">{balanced ? "=" : "≠"}</span>
+          <span className="text-credit">
+            ז׳ <Num v={cr} />
+          </span>
+        </li>
+      </ul>
+      <div className="scroll-x hidden sm:block" tabIndex={0} role="region" aria-label={`פקודת יומן: ${title}`}>
+        <table className="w-full min-w-[26rem] text-sm">
           <thead>
             <tr className="text-xs text-muted">
               <th className="px-2 py-2 text-start font-medium sm:px-4">חשבון</th>
@@ -120,9 +148,10 @@ export function JournalEntry({ title, date, lines, note }: { title: string; date
             ))}
           </tbody>
           <tfoot>
-            <tr className="border-t-2 border-line-strong font-semibold">
-              <td className="px-2 py-2 text-muted sm:px-4">סה״כ</td>
-              <td className="px-1.5 py-2 text-end text-debit sm:px-4">
+            {/* An accountant's total: a single rule above, a double rule below — the site's signature under every entry. */}
+            <tr className="ledger-total font-semibold">
+              <td className="px-4 py-2 text-muted">סה״כ</td>
+              <td className="px-4 py-2 text-end text-debit">
                 <Num v={dr} />
               </td>
               <td className="px-1.5 py-2 text-end text-credit sm:px-4">
@@ -164,7 +193,8 @@ export function DataTable({
   return (
     <div className="my-4 overflow-hidden rounded-xl border border-line">
       {caption && <p className="border-b border-line bg-surface-2/70 px-4 py-2.5 text-sm font-semibold text-fg">{caption}</p>}
-      <div className="overflow-x-auto">
+      {/* Focusable, so a keyboard can scroll a table wider than the screen. */}
+      <div className="scroll-x" tabIndex={0} role="region" aria-label={typeof caption === "string" ? caption : "טבלה"}>
         <table className={cn("w-full text-sm", !fit && "min-w-[30rem]")}>
           <thead>
             <tr className="text-xs text-muted">

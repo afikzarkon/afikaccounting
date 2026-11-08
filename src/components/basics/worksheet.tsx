@@ -60,7 +60,7 @@ function Sheet({ c, stage }: { c: WorksheetCase; stage: Stage }) {
   const now = stage.split ? "split" : stage.final ? "final" : stage.adjustments ? "adj" : "before";
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-line">
+    <div className="scroll-x rounded-xl border border-line">
       <table className="w-full min-w-[40rem] text-[13px]">
         <thead className="bg-surface-2/40">
           <tr>

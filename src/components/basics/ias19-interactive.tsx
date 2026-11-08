@@ -25,14 +25,14 @@ const L = ({ children }: { children: ReactNode }) => <bdi dir="ltr">{children}</
 export function SolveTemplate({ seek, check, build, compact }: { seek: ReactNode[]; check: ReactNode[]; build: { title: ReactNode; lines: ReactNode[] }[]; compact?: boolean }) {
   return (
     <div className="space-y-2.5">
-      <TemplatePart icon={<Search className="h-4 w-4" />} title="מה מחפשים" tone="bg-sky-500/10 ring-sky-500/30">
+      <TemplatePart icon={<Search className="h-4 w-4" />} title="מה מחפשים" tone="bg-teal-500/10 ring-teal-500/30">
         <ul className="list-disc space-y-1 ps-5">{seek.map((s, i) => <li key={i}>{s}</li>)}</ul>
       </TemplatePart>
       <TemplatePart icon={<ClipboardList className="h-4 w-4" />} title="מה בודקים" tone="bg-amber-500/10 ring-amber-500/30">
         <ul className="space-y-1">
           {check.map((s, i) => (
             <li key={i} className="flex items-start gap-2">
-              <Check className="mt-1 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-300" aria-hidden />
+              <Check className="mt-1 h-3.5 w-3.5 shrink-0 text-amber-700 dark:text-amber-300" aria-hidden />
               <span className="min-w-0">{s}</span>
             </li>
           ))}
@@ -407,7 +407,7 @@ function DrillView({ drill }: { drill: Drill }) {
         <div className="anim-step-in space-y-2.5">
           <SolveTemplate seek={drill.seek} check={drill.check} build={drill.build} compact />
           {drill.table && (
-            <div className="overflow-x-auto rounded-xl border border-line">
+            <div className="scroll-x rounded-xl border border-line">
               <table className="w-full min-w-[30rem] text-[13.5px]">
                 <thead>
                   <tr className="bg-surface-2/70 text-muted">

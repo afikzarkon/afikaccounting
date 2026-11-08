@@ -421,7 +421,7 @@ function Results({ r, method, inp, year, onYear }: { r: Extract<Result, { ok: tr
           highlight={capped}
         />
         {capped.length > 0 && (
-          <p className="-mt-2 flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400">
+          <p className="-mt-2 flex items-center gap-1.5 text-xs text-amber-800 dark:text-amber-400">
             <TriangleAlert className="h-3.5 w-3.5" /> השורות המודגשות — הפחת נקטע או הושלם כדי לעצור בדיוק על ערך הגרט.
           </p>
         )}
@@ -516,7 +516,7 @@ function LifeYearsTable({ method, lifeYears, b, rate, sydDir }: { method: "db" |
                 }
               />
               {y.cut && (
-                <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:text-amber-400">
                   {y.cut === "floor" ? "נקטע ברצפת הגרט" : "הושלם לגרט בשנה האחרונה"}
                 </span>
               )}
@@ -536,7 +536,7 @@ function Check({ ok, warnOnly, children }: { ok: boolean; warnOnly?: boolean; ch
       {ok ? (
         <CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-success" />
       ) : (
-        <TriangleAlert className={cn("mt-0.5 h-4 w-4 shrink-0", warnOnly ? "text-amber-600 dark:text-amber-400" : "text-danger")} />
+        <TriangleAlert className={cn("mt-0.5 h-4 w-4 shrink-0", warnOnly ? "text-amber-700 dark:text-amber-400" : "text-danger")} />
       )}
       <span className="text-fg/90">{children}</span>
     </li>

@@ -86,7 +86,7 @@ function LetterT({ t, entries, letters, mode }: { t: TAccount; entries: Entry[];
           )}
         </span>
         {letter && mode === "question" ? (
-          <span className="shrink-0 font-bold text-amber-600 dark:text-amber-400">{letter}</span>
+          <span className="shrink-0 font-bold text-amber-700 dark:text-amber-400">{letter}</span>
         ) : (
           <span className="flex shrink-0 items-center gap-1">
             {letter && <span className="text-[11px] font-bold text-success">{letter} =</span>}
@@ -170,7 +170,7 @@ function TwoT({
         <p className="mt-1.5 text-xs text-muted">
           {mode === "question" ? (
             <>
-              <span className="rounded bg-amber-500/15 px-1.5 font-bold text-amber-600 dark:text-amber-400">{LETTERS.slice(0, unknown.length).join(", ")}</span> — נעלמים.
+              <span className="rounded bg-amber-500/15 px-1.5 font-bold text-amber-700 dark:text-amber-400">{LETTERS.slice(0, unknown.length).join(", ")}</span> — נעלמים.
               בכל כרטיס: פתיחה + מה שמגדיל − מה שמקטין = סגירה; הנעלם הוא ההפרש.
             </>
           ) : (
@@ -255,7 +255,7 @@ export function Given({ title, children, asks }: { title: ReactNode; children: R
   return (
     <div className="space-y-2 rounded-2xl border-2 border-amber-500/50 bg-amber-500/[0.08] px-4 py-3.5">
       <p className="flex items-center gap-2 text-[16px] font-bold text-fg">
-        <ClipboardList className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden /> {title}
+        <ClipboardList className="h-5 w-5 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden /> {title}
       </p>
       <div className="space-y-1.5 text-[15px] leading-relaxed text-fg">{children}</div>
       {asks && (
@@ -341,11 +341,11 @@ const termsGeneral = round2((TERMS_EG.gross - TERMS_EG.specific) * TERMS_EG.gene
 const termsRequired = termsSpecific + termsGeneral;
 
 // The terms that come with a customer who will not pay — every one of them a part of the closing formula. Round illustrative figures.
-/** One colour per figure of the closing formula — the same in the term cards, in the formula and in its examples, so each number can be traced. */
+/** Blue and purple stay for debit and credit, site-wide. One colour per figure of the closing formula — the same in the term cards, in the formula and in its examples, so each number can be traced. */
 const TONES = {
-  gross: "bg-sky-500/15 text-sky-700 ring-sky-500/40 dark:text-sky-300",
-  specific: "bg-amber-500/15 text-amber-700 ring-amber-500/40 dark:text-amber-300",
-  specificRate: "bg-violet-500/15 text-violet-700 ring-violet-500/40 dark:text-violet-300",
+  gross: "bg-teal-500/15 text-teal-700 ring-teal-500/40 dark:text-teal-300",
+  specific: "bg-amber-500/15 text-amber-800 ring-amber-500/40 dark:text-amber-300",
+  specificRate: "bg-rose-500/15 text-rose-700 ring-rose-500/40 dark:text-rose-300",
   general: "bg-emerald-500/15 text-emerald-700 ring-emerald-500/40 dark:text-emerald-300",
 };
 type Tone = keyof typeof TONES;
@@ -717,7 +717,7 @@ const RULES: { title: string; body: ReactNode }[] = [
     body: (
       <>
         כל נתון מהשאלה נכנס לכרטיס שלו, בחובה או בזכות. יתרות הפתיחה והסגירה — בצד שבו היתרה יושבת (לקוחות בחובה, הפרשה בזכות), גם כשהן 0. מה שלא ידוע
-        מסמנים באות: <span className="font-bold text-amber-600 dark:text-amber-400">X, Y, Z</span>.
+        מסמנים באות: <span className="font-bold text-amber-700 dark:text-amber-400">X, Y, Z</span>.
       </>
     ),
   },

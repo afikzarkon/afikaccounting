@@ -34,7 +34,7 @@ export function WsAmount({ v, className }: { v: number; className?: string }) {
 
 /** Where a line lands, beside its amount: OCI, profit and loss, the balance sheet. */
 export function LedgerTag({ children }: { children: ReactNode }) {
-  return <span className="whitespace-nowrap rounded bg-amber-500/20 px-1.5 py-px text-[11px] font-bold text-amber-700 dark:text-amber-300">{children}</span>;
+  return <span className="whitespace-nowrap rounded bg-amber-500/20 px-1.5 py-px text-[11px] font-bold text-amber-800 dark:text-amber-300">{children}</span>;
 }
 
 /** The total rule: a line above, a double line below. */
@@ -75,7 +75,7 @@ export function Statement({ title, head = ["₪"], rows, className }: { title: R
   const many = head.length > 1;
   return (
     <figure className={cn("rounded-xl border border-line bg-surface px-4 py-3", className)}>
-      <div className="overflow-x-auto">
+      <div className="scroll-x">
         <table className={cn("w-full text-[14px]", many && "min-w-[34rem]")}>
           <caption className="border-b border-line-strong pb-2 text-start text-[14px] font-bold text-fg">{title}</caption>
           <thead>

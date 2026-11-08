@@ -244,7 +244,7 @@ export function Primer() {
 /** Who needs what: each card, the lessons that use it and where it is taught. */
 export function PrimerTable() {
   return (
-    <div className="overflow-x-auto rounded-xl border border-line">
+    <div className="scroll-x rounded-xl border border-line">
       <table className="w-full min-w-[30rem] text-sm">
         <caption className="sr-only">מי צריך מה</caption>
         <thead>

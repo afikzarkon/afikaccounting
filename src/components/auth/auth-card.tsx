@@ -22,7 +22,7 @@ export function AuthCard({
           <h1 className="mt-6 text-2xl font-semibold tracking-tight text-fg">{title}</h1>
           <p className="mt-1.5 text-sm text-muted">{description}</p>
           {!isSupabaseConfigured && (
-            <p className="mt-5 flex gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-3 text-xs leading-relaxed text-amber-700 dark:text-amber-300">
+            <p className="mt-5 flex gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-3 text-xs leading-relaxed text-amber-800 dark:text-amber-300">
               <Info className="mt-px h-4 w-4 shrink-0" />
               מצב הדגמה: Supabase אינו מוגדר, ולכן החשבונות מושבתים. המנוע ומרכז התוכן פועלים במלואם גם בלי
               להתחבר.

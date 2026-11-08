@@ -3,6 +3,7 @@ import { Skeleton } from "@/components/ui/primitives";
 import { getAccess } from "@/lib/auth/access";
 import { getCurrentUser, getProfile, isAdmin } from "@/lib/auth/dal";
 import { ProgressSync } from "@/components/study-mode/progress-sync";
+import { SessionMark } from "./session-store";
 import { ContinueButton, ContinueView } from "./continue";
 import { Logo } from "./logo";
 import { MobileNav, MobileNavView, NavLinks, NavLinksView } from "./nav-links";
@@ -39,10 +40,17 @@ export function Navbar() {
 /** Reads the session, so it streams in behind its own Suspense boundary. */
 async function AuthArea() {
   const user = await getCurrentUser();
-  if (!user) return <GuestActions />;
+  if (!user)
+    return (
+      <>
+        <SessionMark signedIn={false} tier={(await getAccess()).tier} />
+        <GuestActions />
+      </>
+    );
   const [profile, admin, access] = await Promise.all([getProfile(), isAdmin(), getAccess()]);
   return (
     <>
+      <SessionMark signedIn tier={access.tier} />
       {/* A signed-in reader's lesson progress follows them to every device. */}
       <ProgressSync userId={user.id} />
       {access.tier === "free" && <UpgradeButton />}

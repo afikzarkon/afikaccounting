@@ -69,6 +69,12 @@ Analytics dashboard, media library (uploads to Supabase Storage, or YouTube / Vi
 
 3. Open **מערכת ניהול** from the user menu, or go to `/admin`.
 
+**Growth funnel (`/admin/funnel`).** Apply `supabase/migrations/20261108030000_admin_funnel.sql` and `20261108040000_admin_funnel_exam_mode.sql`. The funnel from entry to payment (entry → first answer → activation → sign-up → back on another day → paywall → plan → checkout → payment), sources (ambassador `?ref=`, `utm_source`, referring site, direct — click one to filter everything), weekly learners with 10+ answers, retention by first-visit week, the habit features (review, streaks, exam dates, groups, reminders, shares), each lesson's accuracy and trap fall rate, the traps that catch most readers, paywall gates, the summary check and exam mode (counted apart) — each against the period before. Aggregated in the database by `public.admin_funnel()` (admins only, aggregates only); `supabase/tests/funnel.test.ts` checks the numbers.
+
+**Ambassadors (`/admin/ambassadors`).** Apply `supabase/migrations/20261108060000_admin_ambassadors.sql`. For each `?ref=` code: browsers that entered through it, Activation, sign-ups and payments. A browser belongs to the first link it came through, so a later return or payment still counts for that code.
+
+**A/B experiments.** Apply `supabase/migrations/20261108050000_experiments.sql`. Experiments live in `src/lib/experiments.ts`: the page under test, its variants (the first is the control) and `active`. While an experiment runs, the proxy puts each visitor in one variant (a 90-day cookie) and serves that variant's prerendered page (`/x/<experiment>/<variant>`, not indexed) at the same address, so the page stays static and nothing flashes. Off, everyone gets the control; `?ab=<experiment>:<variant>` previews a variant either way. Each exposure is an `experiment_view` event; `/admin/funnel` shows every variant's visitors, answers, activation, sign-ups and payments, with a two-proportion test against the control. The first experiment, `hero` (the home headline: summary vs practice, against "two doors"), ships off — turn it on at launch.
+
 Access is enforced in three places: the proxy (signed-in only), every admin page and Server Action (`requireAdmin` / `assertAdmin`), and the database itself (`public.is_admin()` in every admin policy; users cannot change their own role).
 
 Usage analytics are anonymous: a random id per browser tab, never linked to an account unless the visitor is signed in. Events are sent with `navigator.sendBeacon` to `/api/track`, validated there, and aggregated in the database (`admin_analytics`). Admin pages are not tracked.
@@ -90,6 +96,14 @@ Plans and prices live in `src/lib/pricing.ts`; access is always read from `publi
 **Developing without a provider.** `BILLING_PROVIDER=sandbox` (any long `BILLING_WEBHOOK_SECRET`) runs a built-in stand-in: a test payment page at `/billing/sandbox` (any card succeeds, a card ending in `0002` is declined), signed webhooks to the real webhook route, test invoices marked as such, and buttons in `/profile` for what the provider would send later (renewal, failed charge, refund, end of period). It refuses to run unless `NEXT_PUBLIC_SITE_URL` is localhost (or `BILLING_SANDBOX_ALLOW_REMOTE=1` on a staging site).
 
 **Adding a real provider.** Write `src/lib/billing/providers/<name>.ts` implementing `PaymentProvider` (`src/lib/billing/types.ts`): `createCheckout` (its hosted payment page, with our user id and plan in the metadata it echoes back), `verifyWebhook` (its signature scheme, and its event types mapped to ours), `cancelAtPeriodEnd` and `changePlan` (its API). Add it to the switch in `src/lib/billing/index.ts`, its keys to `.env.example`, and its webhook samples to `src/lib/billing/billing.test.ts`.
+
+## Study habits, groups and reminders
+
+Apply `supabase/migrations/20261108020000_habits_groups.sql` (after the earlier migrations).
+
+- **Habits** (`study_habits`): a signed-in reader's study days (the streak) and exam dates follow them between devices; the browser merges them with the account on arrival (`study-mode/progress-sync.tsx`).
+- **Study groups** (`/groups`): a reader opens a group for a course and shares its invite link (`/groups/join/<code>`). Members see who studied today; readiness and streak only for members who chose to share them. Everything goes through row-level security and the `create_study_group` / `join_study_group` / `study_group_preview` functions; `supabase/tests/groups.test.ts` checks the rules.
+- **Reminders** (opt-in in `/profile`): the scheduler in `vercel.json` calls `GET /api/reminders` daily with `Authorization: Bearer <CRON_SECRET>`. A reader gets at most one email a day, only on a day they haven't studied, and only with mistakes due for review or an exam within two weeks. Every email has a one-click unsubscribe (`/api/reminders/unsubscribe`, signed with `REMINDERS_SECRET`). Set `EMAIL_PROVIDER=resend`, `RESEND_API_KEY` and `EMAIL_FROM` to send; without them the route is a dry run that reports what it would send. It needs `SUPABASE_SERVICE_ROLE_KEY`.
 
 ## Scripts
 

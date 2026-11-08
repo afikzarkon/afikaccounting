@@ -172,7 +172,7 @@ export function Recipe5({ values, result, asQuestions }: { values?: ReactNode[];
 
 const DEST = {
   pl: { label: "רווח והפסד", cls: "bg-surface-2 text-fg/85 ring-line-strong" },
-  oci: { label: "OCI", cls: "bg-violet-500/10 text-violet-700 ring-violet-500/30 dark:text-violet-300" },
+  oci: { label: "OCI", cls: "bg-teal-500/10 text-teal-700 ring-teal-500/30 dark:text-teal-300" },
   bs: { label: "מאזן", cls: "bg-accent-soft text-accent ring-accent/30" },
 };
 

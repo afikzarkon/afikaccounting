@@ -27,6 +27,8 @@ export function QuestionExercise({ q, result, onCheck }: { q: Question; result?:
   const [cr, setCr] = useState("");
   // Wrong choices picked on this visit, to mark them; the store keeps only the outcome.
   const [missed, setMissed] = useState<number[]>([]);
+  // An entry's last wrong try: which side was already right, to say so instead of a bare "wrong".
+  const [sides, setSides] = useState<{ dr: boolean; cr: boolean }>();
   const done = !!result?.done;
   const left = triesFor(q) - (result?.tries ?? 0);
 
@@ -37,8 +39,21 @@ export function QuestionExercise({ q, result, onCheck }: { q: Question; result?:
   };
   const check = () => {
     if (q.kind === "number") onCheck(numberRight(q.answer, value));
-    if (q.kind === "entry") onCheck(dr === q.dr && cr === q.cr);
+    if (q.kind === "entry") {
+      setSides({ dr: dr === q.dr, cr: cr === q.cr });
+      onCheck(dr === q.dr && cr === q.cr);
+    }
   };
+  // After a wrong try, one step of help, not the solution: what was already right, or the solution's first step as a hint
+  // (only when the solution has more steps, so the hint never is the answer).
+  const hint =
+    q.kind === "entry" && sides && sides.dr !== sides.cr
+      ? sides.dr
+        ? "צד החובה נכון. בדקו את הזכות: מי נותן בעסקה הזאת?"
+        : "צד הזכות נכון. בדקו את החובה: מי מקבל בעסקה הזאת?"
+      : q.steps.length > 1
+        ? `רמז: ${q.steps[0]}`
+        : undefined;
   const canCheck = q.kind === "number" ? value.trim() !== "" : dr !== "" && cr !== "";
 
   return (
@@ -120,7 +135,7 @@ export function QuestionExercise({ q, result, onCheck }: { q: Question; result?:
         </div>
       )}
 
-      {result && !done && <Feedback key={result.tries} ok={false} title={`לא נכון — נסו שוב (נותר ניסיון ${left})`} />}
+      {result && !done && <Feedback key={result.tries} ok={false} title={`לא בדיוק — נסו שוב (נותר ניסיון ${left})`} text={hint} />}
 
       {done && (
         <>

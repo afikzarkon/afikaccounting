@@ -108,7 +108,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
           {fmt(DEPOSIT.amount * DEPOSIT.rate)}, ויש בחשבון {fmt(DEPOSIT.amount * (1 + DEPOSIT.rate))}. בשנה השנייה הריבית היא {pct(DEPOSIT.rate)} מ-{fmt(DEPOSIT.amount * (1 + DEPOSIT.rate))}, כלומר{" "}
           {fmt(DEPOSIT.amount * (1 + DEPOSIT.rate) * DEPOSIT.rate)}. וכך הלאה:
         </P>
-        <div className="overflow-x-auto rounded-xl border border-line bg-surface px-3 py-2">
+        <div className="scroll-x rounded-xl border border-line bg-surface px-3 py-2">
           <table className="num w-full text-center text-[14.5px]">
             <thead>
               <tr className="text-[13px] text-muted">
@@ -237,7 +237,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
         </P>
         <P>הנוסחה לשיעור של תקופה, בריבית דריבית:</P>
         <Work w={tool.partRate(DEPOSIT.rate, 3)} />
-        <div className="overflow-x-auto rounded-xl border border-line bg-surface px-3 py-2">
+        <div className="scroll-x rounded-xl border border-line bg-surface px-3 py-2">
           <table className="num w-full text-center text-[14.5px]">
             <thead>
               <tr className="text-[13px] text-muted">

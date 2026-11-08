@@ -75,7 +75,7 @@ export function AdjustedTrialBalance({ before, after, moves, caption }: { before
 
   return (
     <div ref={wrap} className="relative ps-0 pe-24">
-      <div className="overflow-x-auto rounded-xl border border-line bg-surface">
+      <div className="scroll-x rounded-xl border border-line bg-surface">
         <table className="w-full min-w-[26rem] text-sm">
           <caption className="border-b border-line px-4 py-2.5 text-start text-[14px] font-semibold text-fg">{caption}</caption>
           <thead>

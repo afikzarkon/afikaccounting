@@ -45,7 +45,7 @@ const td = "num px-3 py-2";
 /** A table with a caption, head and rows; `lit` rows are the ones the step is about. */
 function Table({ caption, head, rows, lit, foot }: { caption: string; head: ReactNode[]; rows: ReactNode[][]; lit?: (i: number) => boolean; foot?: ReactNode[] }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-line bg-surface">
+    <div className="scroll-x rounded-xl border border-line bg-surface">
       <table className="w-full text-[14.5px]">
         <caption className="border-b border-line bg-surface-2/60 px-3 py-2 text-start text-[14px] font-bold text-fg">{caption}</caption>
         <thead>
@@ -88,7 +88,7 @@ function Table({ caption, head, rows, lit, foot }: { caption: string; head: Reac
 export function TipNote({ children }: { children?: ReactNode }) {
   return (
     <div className="flex items-start gap-2.5 rounded-xl border-2 border-amber-500/50 bg-amber-500/[0.08] px-3.5 py-2.5 text-[14.5px] text-fg">
-      <Lightbulb className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden />
+      <Lightbulb className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" aria-hidden />
       <div className="space-y-1">
         <p className="font-bold">טיפ — עוד דרך לפתור, אם תרצו לוודא את עצמכם</p>
         {children && <p>{children}</p>}
@@ -331,7 +331,7 @@ const cogsTo = (rows: CardRow[], i: number) => rows.slice(0, i + 1).reduce((a, r
 /** The stock card up to row `upTo`; the rows added by this step lit, the summary rows set apart. */
 function StockCard({ rows, upTo, from, extraHead }: { rows: CardRow[]; upTo: number; from: number; extraHead: string }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-line bg-surface">
+    <div className="scroll-x rounded-xl border border-line bg-surface">
       <table className="w-full text-[14.5px]">
         <caption className="border-b border-line bg-surface-2/60 px-3 py-2 text-start text-[14px] font-bold text-fg">כרטיס המלאי</caption>
         <thead>

@@ -43,7 +43,7 @@ async function TopicExams({ topic }: { topic: string }) {
   if (!exams.length)
     return (
       <div className="card flex flex-wrap items-center gap-3 p-5">
-        <FileCheck2 className="h-5 w-5 text-amber-600 dark:text-amber-300" aria-hidden />
+        <FileCheck2 className="h-5 w-5 text-amber-700 dark:text-amber-300" aria-hidden />
         <p className="min-w-0 flex-1 text-sm text-muted">המבחנים בנושא הזה בדרך: מבחנים ברמת מבחן, עם פתרון מלא שלב אחר שלב.</p>
       </div>
     );
@@ -80,7 +80,7 @@ async function HomeExamsView({ access }: { access: Awaited<ReturnType<typeof get
   if (!exams.length)
     return (
       <div className="card mt-8 flex items-center gap-3 p-5">
-        <FileCheck2 className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-300" aria-hidden />
+        <FileCheck2 className="h-5 w-5 shrink-0 text-amber-700 dark:text-amber-300" aria-hidden />
         <p className="text-sm text-muted">מתחם המבחנים בדרך: מבחנים ברמת מבחן, עם פתרון מלא שלב אחר שלב.</p>
       </div>
     );

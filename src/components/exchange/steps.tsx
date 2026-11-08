@@ -120,7 +120,7 @@ export function ExchangeStepsSection() {
             </p>
           </div>
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] p-4">
-            <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">ב. אין מהות מסחרית, או שהשווי ההוגן אינו ניתן למדידה מהימנה</p>
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-400">ב. אין מהות מסחרית, או שהשווי ההוגן אינו ניתן למדידה מהימנה</p>
             <p className="mt-2 text-[15px] font-semibold text-fg">לא מכירים ברווח או בהפסד!</p>
             <Formula
               tex={String.raw`\text{עלות נכס חדש} = \text{ערך בספרים נמסר ליום ההחלפה} + \text{מזומן ששולם} - \text{מזומן שהתקבל}`}

@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { EXAMS_HUB, FIRST_LESSON, LEARN_HUB, LEARNING_TOOLS, PRICING_HUB, TOPICS } from "@/lib/catalog";
-import { CALCULATORS } from "@/lib/engine/registry";
+import { ENGINE_HUB, EXAMS_HUB, FIRST_LESSON, LEARN_HUB, PRICING_HUB, TOPICS } from "@/lib/catalog";
 import { LEGAL_LINKS } from "@/lib/legal";
 import { site } from "@/lib/site";
 import { isLinkHidden } from "@/lib/visibility/rules";
@@ -8,6 +7,8 @@ import { getVisibility } from "@/lib/visibility/server";
 import { LogoMark } from "./logo";
 
 // The same map as the menu, from the catalog: the courses, the tools, the videos, and the plans and the account.
+// Short on purpose: the courses, and the few pages around them. The calculators live inside their courses
+// and in the solution engine's own page, so they aren't listed one by one here.
 const COLUMNS = [
   {
     title: "קורסים",
@@ -17,20 +18,13 @@ const COLUMNS = [
     ],
   },
   {
-    title: "כלים",
-    links: [
-      ...LEARNING_TOOLS.map((c) => ({ href: c.href, label: c.label })),
-      ...CALCULATORS.map((c) => ({ href: `/engine?calc=${c.slug}`, label: `מנוע: ${c.standard} — ${c.category}` })),
-      { href: "/engine/ias19", label: "מנוע: IAS 19 — הטבות עובד" },
-    ],
-  },
-  {
     title: "הפלטפורמה",
     links: [
       { href: FIRST_LESSON, label: "שיעור 1 — מתחילים כאן" },
-      PRICING_HUB,
+      { href: "/review", label: "החזרה שלי" },
       { href: EXAMS_HUB.href, label: EXAMS_HUB.label },
-      { href: "/dashboard", label: "הלוח האישי" },
+      PRICING_HUB,
+      { href: ENGINE_HUB.href, label: ENGINE_HUB.label },
       { href: "/about", label: "אודות" },
     ],
   },

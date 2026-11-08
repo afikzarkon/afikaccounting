@@ -1,4 +1,4 @@
-import { ENGINE_HUB, ENGINE_TOOLS, EXAMS_HUB, LEARN_HUB, LEARNING_PATH, LEARNING_TOOLS, PRICING_HUB } from "./catalog";
+import { ENGINE_HUB, EXAMS_HUB, LEARN_HUB, LEARNING_PATH, LEARNING_TOOLS, PRICING_HUB } from "./catalog";
 import type { Tier } from "./pricing";
 import { type Visibility, isLinkHidden } from "./visibility/rules";
 
@@ -22,22 +22,20 @@ const learnItems: NavEntry[] = LEARNING_PATH.flatMap((stage) =>
 // Spaced review sits with the courses: it is their questions, back on their day.
 learnItems.push({ section: "חזרה", href: "/review", label: "החזרה שלי", description: "שאלות שטעיתם בהן, חוזרות בזמן הנכון", tier: "free" });
 
-const toolItems: NavEntry[] = [
-  { section: "מנוע הפתרונות — לתרחישים מקצועיים", href: ENGINE_HUB.href, label: "כל מחשבוני המנוע", description: "תרחיש שלב אחר שלב, עם פקודות יומן ובאור" },
-  ...ENGINE_TOOLS.map((c) => ({ section: "מנוע הפתרונות — לתרחישים מקצועיים", href: c.href, label: `${c.standard} · ${c.label}`, description: c.description })),
-  ...LEARNING_TOOLS.map((c) => ({ section: "מחשבונים לימודיים — עם הדרך המלאה", href: c.href, label: c.label, description: c.topic })),
-];
+// The learning calculators sit with the courses they belong to; the professional solution engine is a quieter link of its own.
+learnItems.push(...LEARNING_TOOLS.map((c) => ({ section: "מחשבונים לימודיים — עם הדרך המלאה", href: c.href, label: c.label, description: c.topic, tier: c.tier })));
 
 export const site = {
   name: "AfikAccounting",
   tagline: "חשבונאות מאפס ועד המבחן",
   description:
-    "קורס חשבונאות מאפס בחינם, שיעור אחר שיעור — מושגים עם דוגמה חיה, תרגול עם משוב מיידי וטיפים למבחן. ומשם לקורסים המתקדמים: מלאי, רכוש קבוע, הטבות עובד וחכירות, עד רמת מבחן.",
+    "סיכום אומר מה כתוב בתקן — כאן רואים איפה מפסידים נקודות. שאלות ברמת מבחן במלאי, ברכוש קבוע, בהטבות עובד ובחכירות, מלכודות עם הסבר וחזרה על הטעויות שלכם. ולמתחילים: קורס חשבונאות מאפס, חינם כולו.",
   nav: [
     { label: "קורסים", hub: { href: LEARN_HUB.href, label: "למפת הלימוד המלאה" }, items: learnItems },
     { ...EXAMS_HUB, tier: "exams" },
-    { label: "כלים", hub: { href: ENGINE_HUB.href, label: "למנוע הפתרונות" }, items: toolItems },
+    { href: "/review", label: "חזרה" },
     PRICING_HUB,
+    { href: ENGINE_HUB.href, label: "מנוע הפתרונות" },
   ] satisfies NavItem[] as NavItem[],
 };
 
@@ -54,3 +52,16 @@ export function navFor(v: Visibility): NavItem[] {
     return [{ ...item, items, hub: shown(item.hub.href) ? item.hub : (items[0] ?? item.hub) }];
   });
 }
+
+/**
+ * A page's own share card: its title and line, over the site's card image. A page that sets
+ * `openGraph` replaces the root's whole object (the image and site name too), so pages spread this.
+ */
+export const shareCard = (title: string, description: string) => ({
+  type: "website" as const,
+  locale: "he_IL",
+  siteName: site.name,
+  title,
+  description,
+  images: [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: `${site.name} — ${title}` }],
+});

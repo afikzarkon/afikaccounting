@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { SubscriptionPanel } from "@/components/billing/subscription-panel";
 import { ProfileForm } from "@/components/profile/profile-form";
+import { ReminderToggle } from "@/components/profile/reminder-toggle";
+import { loadHabits } from "@/lib/actions/habits";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Container, Skeleton } from "@/components/ui/primitives";
 import { signOut } from "@/lib/actions/auth";
@@ -28,7 +30,7 @@ export default function ProfilePage() {
 
 async function ProfileContent() {
   const user = await requireUser("/profile");
-  const [profile, sub, invoices] = await Promise.all([getProfile(), getMySubscription(), listMyInvoices()]);
+  const [profile, sub, invoices, habits] = await Promise.all([getProfile(), getMySubscription(), listMyInvoices(), loadHabits()]);
   const standards = [...new Set(CALCULATORS.map((c) => c.standard.split(" · ")[0]))];
 
   return (
@@ -42,6 +44,8 @@ async function ProfileContent() {
       </section>
 
       <SubscriptionPanel sub={sub} invoices={invoices} provider={billingProvider()?.name ?? null} />
+
+      <ReminderToggle on={!!habits?.reminders} available={habits !== null} />
 
       <section className="card divide-y divide-line">
         <div className="flex flex-wrap items-center gap-4 p-6">

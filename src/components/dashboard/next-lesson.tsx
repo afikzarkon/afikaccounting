@@ -2,6 +2,7 @@
 
 import { ArrowLeft, CircleCheck, Lock, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { WhenLinkShown } from "@/components/layout/visibility";
 import { TierBadge } from "@/components/pricing/tier-badge";
 import { useTopics } from "@/components/study-mode/progress-store";
 import { ButtonLink } from "@/components/ui/button";
@@ -53,9 +54,11 @@ export function NextLesson({ courses, locked, upgrade }: { courses: { title: str
         </div>
         {next &&
           (isLocked ? (
-            <ButtonLink href={planHref("courses")} size="lg">
-              לפתוח את הקורס המלא <ArrowLeft className="h-4 w-4" aria-hidden />
-            </ButtonLink>
+            <WhenLinkShown href={planHref("courses")}>
+              <ButtonLink href={planHref("courses")} size="lg">
+                לפתוח את הקורס המלא <ArrowLeft className="h-4 w-4" aria-hidden />
+              </ButtonLink>
+            </WhenLinkShown>
           ) : (
             <ButtonLink href={studyHref(next.slug)} size="lg">
               {status(next) === "started" ? "להמשיך מאיפה שעצרתי" : "להתחיל את השיעור"} <ArrowLeft className="h-4 w-4" aria-hidden />
@@ -63,17 +66,19 @@ export function NextLesson({ courses, locked, upgrade }: { courses: { title: str
           ))}
       </div>
       {upgrade && (freeDone === free.lessons.length || isLocked) && (
-        <div className="flex flex-wrap items-center gap-3 border-t border-line bg-accent-soft/60 px-5 py-4 sm:px-6">
-          <Sparkles className="h-5 w-5 shrink-0 text-accent" aria-hidden />
-          <p className="min-w-0 flex-1 text-sm text-fg">
-            {freeDone === free.lessons.length ? "סיימתם את הקורס החינמי — כל הכבוד! " : ""}
-            הקורסים המתקדמים ממשיכים בדיוק מכאן, עד רמת מבחן.
-          </p>
-          <TierBadge tier="courses" />
-          <Link href={planHref("courses")} className="text-sm font-semibold text-accent hover:underline">
-            למסלולים
-          </Link>
-        </div>
+        <WhenLinkShown href={planHref("courses")}>
+          <div className="flex flex-wrap items-center gap-3 border-t border-line bg-accent-soft/60 px-5 py-4 sm:px-6">
+            <Sparkles className="h-5 w-5 shrink-0 text-accent" aria-hidden />
+            <p className="min-w-0 flex-1 text-sm text-fg">
+              {freeDone === free.lessons.length ? "סיימתם את הקורס החינמי — כל הכבוד! " : ""}
+              הקורסים המתקדמים ממשיכים בדיוק מכאן, עד רמת מבחן.
+            </p>
+            <TierBadge tier="courses" />
+            <Link href={planHref("courses")} className="text-sm font-semibold text-accent hover:underline">
+              למסלולים
+            </Link>
+          </div>
+        </WhenLinkShown>
       )}
     </section>
   );

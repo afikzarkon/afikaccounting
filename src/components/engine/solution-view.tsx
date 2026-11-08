@@ -541,7 +541,7 @@ function StageStepView({ step, n }: { step: StageStep; n: string }) {
 /** A plain table inside a step: no export buttons, wrapping text columns. */
 function WalkTable({ table }: { table: ScheduleTable }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-line">
+    <div className="scroll-x rounded-xl border border-line">
       <table className="w-full text-[13px]">
         <caption className="border-b border-line bg-surface-2/50 px-3 py-2 text-start text-[12.5px] font-semibold text-fg">{table.title}</caption>
         <thead>
