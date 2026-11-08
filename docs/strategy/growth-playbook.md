@@ -123,7 +123,7 @@ ICE = Impact (paying students per exam period) × Confidence × Ease, each 1–1
 | 6 | Exam-date chip + countdown | Setting a date raises D7 return | D7 return | 7 | 6 | 5 | 210 | built: course page (+ readiness meter) |
 | 7 | Daily study streak with rest days | A forgiving streak raises review sessions without lowering accuracy | review sessions/user/week | 6 | 5 | 5 | 150 | built: course page + review |
 | 8 | Ambassador links at 3 programs | TA credibility beats brand posts | signups per ambassador | 7 | 6 | 6 | 252 | proposed |
-| 12 | Study-group rooms (`/groups`) | Friends studying for the same exam pull each other back; invites bring new readers | group_join via link, D7 of members vs non-members | 7 | 5 | 5 | 175 | built (measure after launch) |
+| 12 | Study-group rooms (`/groups`) | Friends studying for the same exam pull each other back; invites bring new readers | share_click (kind=group), members per group, D7 of members vs non-members | 7 | 5 | 5 | 175 | built (measure after launch) |
 | 13 | Opt-in email reminders | A reminder on a day with due mistakes or a near exam brings the reader back | review_session from utm_source=email | 7 | 6 | 6 | 252 | built; needs an email provider + CRON_SECRET |
 | 9 | Home hero V1 (contrast) vs current, question above the fold | Door-B visitors start practising more when the hero speaks to exams | landing → practice start | 8 | 6 | 9 | 432 | built, test after launch |
 | 10 | "Save your review" prompt on the summary card for guests | Endowment + chosen reminder time lifts day-2 return | review_session on day 1–2 | 8 | 6 | 7 | 336 | built (without reminders), test after launch |
