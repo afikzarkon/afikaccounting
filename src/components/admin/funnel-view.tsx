@@ -350,7 +350,8 @@ function series(daily: Funnel["daily"], days: number): Point[] {
   return [...weeks].map(([k, v]) => ({ label: `שבוע ${fmt(k)}`, tick: fmt(k), values: v }));
 }
 
-function Table({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
+/** `compact`: the first column gives up its minimum width, for a short code that shares a phone's width with four numbers. */
+export function Table({ head, rows, compact = false }: { head: string[]; rows: React.ReactNode[][]; compact?: boolean }) {
   return (
     <div className="scroll-x">
       <table className="num w-full text-sm">
@@ -367,7 +368,7 @@ function Table({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
           {rows.map((r, ri) => (
             <tr key={ri} className="border-t border-line/70">
               {r.map((c, i) => (
-                <td key={i} className={cn("px-2 py-2", i ? "text-end whitespace-nowrap" : "min-w-[8rem] text-start [overflow-wrap:anywhere]")}>
+                <td key={i} className={cn("px-2 py-2", i ? "text-end whitespace-nowrap" : cn("text-start [overflow-wrap:anywhere]", !compact && "min-w-[8rem]"))}>
                   {c}
                 </td>
               ))}

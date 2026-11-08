@@ -347,6 +347,17 @@ export async function getFunnel(days: number, source?: string): Promise<{ now: F
   return { now: check(now) as Funnel, before: check(before) as Funnel, asOf: end };
 }
 
+// ---- ambassadors ---------------------------------------------------------------
+
+export type AmbassadorRow = { code: string; entered: number; answered: number; activated: number; signedUp: number; paid: number };
+
+/** What each ?ref= link brought in: browsers that first came through it in the last `days` days, and what they did since. */
+export async function getAmbassadors(days: number): Promise<AmbassadorRow[]> {
+  const supabase = await createClient();
+  const since = new Date(Date.now() - days * 86_400_000).toISOString();
+  return check(await supabase.rpc("admin_ambassadors", { since })) as AmbassadorRow[];
+}
+
 // ---- experiments ---------------------------------------------------------------
 
 export type VariantResult = { variant: string; visitors: number; answered: number; activated: number; signedUp: number; paid: number };
