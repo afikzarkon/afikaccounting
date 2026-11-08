@@ -21,6 +21,7 @@ export const TYPE_LABEL: Record<AccountType, string> = {
 /** Accounts whose type can't be read off their name. */
 const EXPLICIT: Record<string, AccountType> = {
   מזומן: "asset",
+  "השקעה בחברה בת": "asset",
   לקוחות: "asset",
   "לקוח דוד": "asset",
   חייבים: "asset",
