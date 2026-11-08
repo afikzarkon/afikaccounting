@@ -42,6 +42,13 @@ export function CourseGoals({ course, name, lessons, topics }: { course: string;
       <ReadinessTile score={r.score} next={r.next} />
       <ExamTile course={course} name={name} date={exams[course]} day={day} lessons={lessons} topics={topics} due={r.due} />
       <StreakTile days={streak.days} studiedToday={streak.studiedToday} restFree={streak.restFree} />
+      <p className="text-[13.5px] text-muted md:col-span-3">
+        לומדים עם חברים לאותו מבחן?{" "}
+        <Link href={`/groups?course=${course}`} className="font-semibold text-accent hover:underline">
+          פתחו קבוצת לימוד
+        </Link>{" "}
+        — ספירה לאחור משותפת, ורואים מי למד היום.
+      </p>
     </div>
   );
 }

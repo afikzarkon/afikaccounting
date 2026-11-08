@@ -91,6 +91,14 @@ Plans and prices live in `src/lib/pricing.ts`; access is always read from `publi
 
 **Adding a real provider.** Write `src/lib/billing/providers/<name>.ts` implementing `PaymentProvider` (`src/lib/billing/types.ts`): `createCheckout` (its hosted payment page, with our user id and plan in the metadata it echoes back), `verifyWebhook` (its signature scheme, and its event types mapped to ours), `cancelAtPeriodEnd` and `changePlan` (its API). Add it to the switch in `src/lib/billing/index.ts`, its keys to `.env.example`, and its webhook samples to `src/lib/billing/billing.test.ts`.
 
+## Study habits, groups and reminders
+
+Apply `supabase/migrations/20261108020000_habits_groups.sql` (after the earlier migrations).
+
+- **Habits** (`study_habits`): a signed-in reader's study days (the streak) and exam dates follow them between devices; the browser merges them with the account on arrival (`study-mode/progress-sync.tsx`).
+- **Study groups** (`/groups`): a reader opens a group for a course and shares its invite link (`/groups/join/<code>`). Members see who studied today; readiness and streak only for members who chose to share them. Everything goes through row-level security and the `create_study_group` / `join_study_group` / `study_group_preview` functions; `supabase/tests/groups.test.ts` checks the rules.
+- **Reminders** (opt-in in `/profile`): the scheduler in `vercel.json` calls `GET /api/reminders` daily with `Authorization: Bearer <CRON_SECRET>`. A reader gets at most one email a day, only on a day they haven't studied, and only with mistakes due for review or an exam within two weeks. Every email has a one-click unsubscribe (`/api/reminders/unsubscribe`, signed with `REMINDERS_SECRET`). Set `EMAIL_PROVIDER=resend`, `RESEND_API_KEY` and `EMAIL_FROM` to send; without them the route is a dry run that reports what it would send. It needs `SUPABASE_SERVICE_ROLE_KEY`.
+
 ## Scripts
 
 | Command             | What it does                                      |

@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
+import { loadHabits, saveHabits } from "@/lib/actions/habits";
 import { loadProgress, saveProgress } from "@/lib/actions/progress";
+import { mergeHabits, sameHabits, sanitizeHabits } from "@/lib/study/habits";
 import { isEmptyTopic, isLessonSlug, topicKey } from "@/lib/study/sync";
-import { mergeAccountTopics, onProgressChange, readTopics } from "./progress-store";
+import { mergeAccountHabits, mergeAccountTopics, onProgressChange, readHabits, readTopics } from "./progress-store";
 
 /** Quiet time after the last change before it is sent: a burst of answers goes as one write. */
 const DELAY = 1500;
@@ -25,7 +27,24 @@ export function ProgressSync({ userId }: { userId: string }) {
     // What the account holds, per lesson, as far as this tab knows: a lesson is sent only when it differs.
     const stored = new Map<string, string>();
 
+    // The study days and exam dates, as the account holds them as far as this tab knows.
+    let habitsReady = false;
+    let storedHabits = sanitizeHabits({});
+    const pushHabits = () => {
+      if (!habitsReady) return;
+      const now = sanitizeHabits(readHabits());
+      if (sameHabits(now, storedHabits)) return;
+      const prev = storedHabits;
+      storedHabits = now;
+      saveHabits(now)
+        .then((r) => {
+          if (!r.ok) storedHabits = prev;
+        })
+        .catch(() => (storedHabits = prev));
+    };
+
     const push = () => {
+      pushHabits();
       if (!ready) return;
       clearTimeout(timer);
       const changed = Object.entries(readTopics()).filter(([slug, p]) => isLessonSlug(slug) && !isEmptyTopic(p) && stored.get(slug) !== topicKey(p));
@@ -51,6 +70,17 @@ export function ProgressSync({ userId }: { userId: string }) {
 
     const stop = onProgressChange(later);
     document.addEventListener("visibilitychange", onHide);
+
+    loadHabits()
+      .then((account) => {
+        if (!alive || !account) return;
+        storedHabits = { days: account.days, exams: account.exams };
+        habitsReady = true;
+        const merged = mergeHabits(account, readHabits());
+        if (!sameHabits(merged, readHabits())) mergeAccountHabits(merged);
+        pushHabits();
+      })
+      .catch(() => {});
 
     loadProgress()
       .then((account) => {

@@ -184,3 +184,14 @@ export function setExamDate(course: string, date: string | null) {
 
 /** The days studied on, as stored now (outside React). */
 export const readStudyDays = () => parse(read()).days ?? [];
+
+/** This browser's study days and exam dates, as stored now (outside React), for the account sync. */
+export const readHabits = () => {
+  const s = parse(read());
+  return { days: s.days ?? [], exams: s.exams ?? {} };
+};
+
+/** Join the account's study days and exam dates into this browser's (see mergeHabits). */
+export function mergeAccountHabits(merged: { days: number[]; exams: Record<string, string> }) {
+  write((s) => ({ ...s, days: merged.days, exams: merged.exams }));
+}

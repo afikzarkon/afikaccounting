@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ChevronDown, LayoutDashboard, LogOut, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import { ArrowLeft, ChevronDown, LayoutDashboard, LogOut, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -97,6 +97,9 @@ export function UserMenu({ name, email, admin = false }: { name: string; email: 
             <div className="my-1 h-px bg-line" />
             <MenuLink href="/dashboard" icon={<LayoutDashboard className="h-4 w-4" />} onClick={() => setOpen(false)}>
               לוח אישי
+            </MenuLink>
+            <MenuLink href="/groups" icon={<Users className="h-4 w-4" />} onClick={() => setOpen(false)}>
+              קבוצות לימוד
             </MenuLink>
             <MenuLink href="/profile" icon={<UserRound className="h-4 w-4" />} onClick={() => setOpen(false)}>
               פרופיל
