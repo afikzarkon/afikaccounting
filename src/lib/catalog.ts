@@ -9,11 +9,13 @@
 
 import type { Tier } from "./pricing";
 import { LESSON_N as IAS19_LESSON_N } from "./study/ias19/shared";
+import { LESSON_N as CONSOLIDATED_LESSON_N } from "./study/consolidated/shared";
 import { LESSON_N as IFRS16_LESSON_N } from "./study/ifrs16/shared";
 
 /** The employee-benefits course's size, from its lessons' numbering (a test checks it against the lessons) — so the menu never ships the lessons themselves. */
 const IAS19_LESSON_COUNT = Object.keys(IAS19_LESSON_N).length;
 const IFRS16_LESSON_COUNT = Object.keys(IFRS16_LESSON_N).length;
+const CONSOLIDATED_LESSON_COUNT = Object.keys(CONSOLIDATED_LESSON_N).length;
 
 export type CatalogLink = { href: string; label: string; description?: string };
 /** A topic's tool; `calculator` lists a tool inside a lesson among the calculators too (other tools of the page always are). */
@@ -145,6 +147,18 @@ export const LEARNING_PATH: Stage[] = [
         tools: [],
         tier: "courses",
         preview: ["ifrs16-what"],
+      },
+      {
+        id: "consolidated",
+        format: "lessons",
+        title: "דוחות מאוחדים וצירופי עסקים",
+        standard: "IFRS 3, IFRS 10",
+        href: "/basics/consolidated",
+        description: `${CONSOLIDATED_LESSON_COUNT === 1 ? "שיעור אינטראקטיבי ראשון" : `${CONSOLIDATED_LESSON_COUNT} שיעורים אינטראקטיביים`}: למה קבוצה מדווחת כישות אחת, מתי יש שליטה, שיטת הרכישה, טכניקת האיחוד ושינויים בהחזקה, עד רמת מבחן.`,
+        covers: ["מהו צירוף עסקים", "דוחות עצמאיים, נפרדים ומאוחדים", "פטור מאיחוד"],
+        tools: [],
+        tier: "courses",
+        preview: ["consolidated-what"],
       },
     ],
   },
