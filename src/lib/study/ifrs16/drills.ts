@@ -27,6 +27,11 @@ export const DRILL_FAMILIES = {
   opMod: "תיקון בתפעולית: הכנסה",
   finToOp: "תיקון: הייתה תפעולית",
   finLoss: "תיקון: IFRS 9",
+  landGain: "קרקע ומבנה: רווח",
+  subGain: "חכירת משנה: רווח",
+  halfPv: "ריבית חצי שנתית",
+  slbGain: "מכירה וחכירה בחזרה: רווח",
+  slbLow: "מכירה וחכירה בחזרה: מקדמה",
 } as const;
 export type DrillFamily = keyof typeof DRILL_FAMILIES;
 
@@ -358,6 +363,77 @@ export function drill(family: DrillFamily, seed: number): Drill {
         { title: "ההפסד", numbers: `${fmt(before)} − ${fmt(after)} = ${fmt(before - after)}` },
       ],
       trap: "להוון בריבית השוק. היא נתון מיותר כאן: המחכיר נשאר בריבית המקורית.",
+    };
+  }
+  if (family === "landGain") {
+    const fairValue = r.int(200, 900, 20) * 1_000;
+    const share = r.int(50, 90, 5);
+    const buildingFV = (fairValue * share) / 100;
+    const gain = r.int(5, 40) * 1_000;
+    const bookValue = buildingFV - gain;
+    return {
+      prompt: `מחכיר שאינו סוחר החכיר בניין. השווי ההוגן של הבניין כולו ${fmt(fairValue)} ש״ח, ו-${share}% ממנו במבנה. חכירת המבנה מימונית, וחכירת הקרקע תפעולית. ערך המבנה בספרים ${fmt(bookValue)} ש״ח. בלי עלויות ישירות. כמה רווח הון נרשם?`,
+      answer: gain,
+      unit: "ש״ח",
+      inputs: { fairValue, share, bookValue },
+      steps: [
+        { title: "השקעה נטו במבנה", numbers: `${fmt(fairValue)} × ${share}% = ${fmt(buildingFV)}` },
+        { title: "הרווח", numbers: `${fmt(buildingFV)} − ${fmt(bookValue)} = ${fmt(gain)}` },
+      ],
+      trap: "לגרוע גם את הקרקע. היא בחכירה תפעולית, ולכן נשארת בספרים.",
+    };
+  }
+  if (family === "subGain") {
+    const ni = whole(pvEnd(i, years, payment));
+    const asset = Math.round((ni * r.int(70, 95)) / 100 / 1_000) * 1_000;
+    return {
+      prompt: `חברה החכירה בחכירת משנה את כל ${years} השנים שנשארו לה בחכירה הראשית, ב-${fmt(payment)} ש״ח בסוף כל שנה, בריבית גלומה של ${pct(i)}. נכס זכות השימוש בספרים ${fmt(asset)} ש״ח. כמה רווח הון נרשם?`,
+      answer: ni - asset,
+      unit: "ש״ח",
+      inputs: { payment, years, i, asset },
+      steps: [
+        { title: "סיווג", note: "100% מזכות השימוש שנשארה, ולכן מימונית (סעיף ב58(ב))." },
+        { title: "השקעה נטו", numbers: `=PV(${pct(i)};${years};-${payment}) → ${fmt(ni)}` },
+        { title: "הרווח", numbers: `${fmt(ni)} − ${fmt(asset)} = ${fmt(ni - asset)}` },
+      ],
+      trap: "לגרוע גם את התחייבות החכירה. החברה עדיין חייבת למחכיר הראשי.",
+    };
+  }
+  if (family === "halfPv") {
+    const annual = r.int(40, 100, 5) / 1000;
+    const periods = r.int(2, 5) * 2;
+    const half = (1 + annual) ** 0.5 - 1;
+    return {
+      prompt: `${periods} תשלומים של ${fmt(payment)} ש״ח, בסוף כל חצי שנה. הריבית השנתית ${pct(annual)}. מהו הערך הנוכחי של התשלומים?`,
+      answer: whole(pvEnd(half, periods, payment)),
+      unit: "ש״ח",
+      inputs: { payment, periods, annual },
+      steps: [
+        { title: "ריבית לחצי שנה", formula: "(1 + i)^(1/2) − 1", numbers: `${(half * 100).toFixed(3)}%` },
+        { title: "הערך הנוכחי", numbers: `${fmt(payment)} × (1 − (1 + ${half.toFixed(5)})^(−${periods})) ÷ ${half.toFixed(5)} = ${fmt(whole(pvEnd(half, periods, payment)))}` },
+      ],
+      trap: "לחלק את הריבית השנתית ב-2. כך מקבלים בשנה יותר מהריבית השנתית.",
+    };
+  }
+  if (family === "slbGain" || family === "slbLow") {
+    const L = pvEnd(i, years, payment);
+    const fairValue = Math.round((L * 1.4) / 1_000) * 1_000;
+    const bookValue = Math.round((fairValue * 0.6) / 1_000) * 1_000;
+    const pre = family === "slbLow" ? Math.max(1_000, Math.round((fairValue * 0.05) / 1_000) * 1_000) : 0;
+    const share = (L + pre) / fairValue;
+    const gain = (fairValue - bookValue) * (1 - share);
+    return {
+      prompt: `חברה מכרה נכס וחכרה אותו בחזרה, והקונה השיג שליטה. הערך בספרים ${fmt(bookValue)} ש״ח, השווי ההוגן ${fmt(fairValue)} ש״ח, והתמורה ${fmt(fairValue - pre)} ש״ח. החכירה ל-${years} שנים, ${fmt(payment)} ש״ח בסוף כל שנה, בריבית ${pct(i)}. כמה רווח נרשם?`,
+      answer: whole(gain),
+      unit: "ש״ח",
+      inputs: { payment, years, i, fairValue, bookValue, pre },
+      steps: [
+        { title: "התחייבות", numbers: `=PV(${pct(i)};${years};-${payment}) → ${fmt(whole(L))}` },
+        ...(pre ? [{ title: "מקדמה (סעיף 101(א))", numbers: `${fmt(fairValue)} − ${fmt(fairValue - pre)} = ${fmt(pre)}` }] : []),
+        { title: "החלק שנשאר", numbers: `${fmt(whole(L + pre))} ÷ ${fmt(fairValue)} = ${(share * 100).toFixed(2)}%` },
+        { title: "רווח על החלק שעבר", numbers: `(${fmt(fairValue)} − ${fmt(bookValue)}) × (1 − ${(share * 100).toFixed(2)}%) = ${fmt(whole(gain))}` },
+      ],
+      trap: pre ? "לשכוח את המקדמה בחלק שנשאר. החברה שילמה עליה, והיא חלק מזכות השימוש." : "לרשום את כל ההפרש בין השווי לערך בספרים. חלק מהנכס נשאר אצל החברה.",
     };
   }
   const prepaid = r.int(0, 9_000, 1_000);
