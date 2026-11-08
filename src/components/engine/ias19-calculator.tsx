@@ -119,6 +119,57 @@ function Solution({ s }: { s: CalcSolution }) {
   );
 }
 
+/** Several benefits of one question, added up per year. */
+function Summary({ solutions }: { solutions: CalcSolution[] }) {
+  const rows = solutions.flatMap((s) => (s.summary ? [s.summary] : []));
+  const years = [...new Set(rows.map((r) => r.year))].sort();
+  const n = (x: number) => (
+    <bdi dir="ltr" className="num">
+      {x < 0 ? `(${Math.round(-x).toLocaleString("en-US")})` : Math.round(x).toLocaleString("en-US")}
+    </bdi>
+  );
+  return (
+    <section aria-label="סיכום" className="rounded-2xl border border-line bg-surface p-3.5">
+      <h2 className="text-[15.5px] font-bold text-fg">סיכום כל ההטבות</h2>
+      <p className="mt-0.5 text-[13.5px] text-muted">הוצאה והפסד בחיובי. במאזן: התחייבות בחיובי, נכס בסוגריים.</p>
+      <div className="mt-2 overflow-x-auto">
+        <table className="w-full min-w-[30rem] text-[14px]">
+          <thead>
+            <tr className="text-[12.5px] text-muted">
+              <th className="px-2 py-1.5 text-start font-medium">הטבה</th>
+              <th className="px-2 py-1.5 text-end font-medium">רווח והפסד</th>
+              <th className="px-2 py-1.5 text-end font-medium">OCI</th>
+              <th className="px-2 py-1.5 text-end font-medium">מאזן</th>
+            </tr>
+          </thead>
+          {years.map((y) => {
+            const of = rows.filter((r) => r.year === y);
+            const add = (k: "pl" | "oci" | "balance") => of.reduce((t, r) => t + r[k], 0);
+            return (
+              <tbody key={y} className="border-t border-line">
+                {of.map((r, i) => (
+                  <tr key={i}>
+                    <td className="px-2 py-1.5">{r.label}</td>
+                    <td className="px-2 py-1.5 text-end">{n(r.pl)}</td>
+                    <td className="px-2 py-1.5 text-end">{n(r.oci)}</td>
+                    <td className="px-2 py-1.5 text-end">{n(r.balance)}</td>
+                  </tr>
+                ))}
+                <tr className="font-bold">
+                  <td className="px-2 py-1.5">סה״כ {y}</td>
+                  <td className="px-2 py-1.5 text-end">{n(add("pl"))}</td>
+                  <td className="px-2 py-1.5 text-end">{n(add("oci"))}</td>
+                  <td className="px-2 py-1.5 text-end">{n(add("balance"))}</td>
+                </tr>
+              </tbody>
+            );
+          })}
+        </table>
+      </div>
+    </section>
+  );
+}
+
 export function Ias19Calculator() {
   const [answers, setAnswers] = useState<Answers>({});
   const [at, setAt] = useState(0);
@@ -171,8 +222,8 @@ export function Ias19Calculator() {
   if (solved) {
     return (
       <div className="space-y-6">
-        {earlier.map((s) => (
-          <details key={s.title} className="rounded-2xl border border-line bg-surface p-3.5">
+        {earlier.map((s, i) => (
+          <details key={i} className="rounded-2xl border border-line bg-surface p-3.5">
             <summary className="cursor-pointer text-[15px] font-bold text-fg">{s.title}</summary>
             <div className="mt-3">
               <Solution s={s} />
@@ -180,6 +231,7 @@ export function Ias19Calculator() {
           </details>
         ))}
         <Solution s={solved} />
+        {earlier.length > 0 && <Summary solutions={[...earlier, solved]} />}
         <div className="flex flex-wrap gap-2">
           <Button
             variant="secondary"
@@ -207,6 +259,20 @@ export function Ias19Calculator() {
               <ArrowLeft className="h-4 w-4" aria-hidden />
             </Button>
           )}
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setEarlier((e) => [...e, solved]);
+              setAnswers({});
+              setAt(0);
+              setSolved(null);
+              setErrors([]);
+              window.scrollTo({ top: 0 });
+            }}
+          >
+            <Plus className="h-4 w-4" aria-hidden />
+            הוספת הטבה נוספת לאותה שאלה
+          </Button>
           <Button variant="secondary" onClick={restart}>
             <RotateCcw className="h-4 w-4" aria-hidden />
             שאלה חדשה

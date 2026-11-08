@@ -1,4 +1,5 @@
-import { type CalcSolution, type Ceiling, type DbEvent, type DbGroup, type DbInput, type Terms, solveAbsenceBenefit, solveBonus, solveDbYear, solveDcPlans, solveDisabilityEvent, solveMeasure, solveNonAccumulating, solveNoteYear, solveTermination } from "./ias19-calc";
+import type { BkLine } from "./ias19-booklet";
+import { type CalcSolution, type Ceiling, type DbEvent, type DbGroup, type DbInput, type Terms, withNoteStep, solveAbsenceBenefit, solveBonus, solveDbYear, solveDcPlans, solveDisabilityEvent, solveMeasure, solveNonAccumulating, solveNoteYear, solveTermination } from "./ias19-calc";
 
 /**
  * The IAS 19 calculator's questionnaire: which questions to ask, given the
@@ -104,8 +105,9 @@ const RISK: Question = {
 
 const dayCostFields: Field[] = [
   { id: "name", label: "דרג", text: true, example: "כל העובדים" },
-  { id: "salary", label: "שכר חודשי", unit: "₪", example: 12_000 },
-  { id: "workDays", label: "ימי עבודה בחודש", unit: "ימים", example: 22 },
+  { id: "dayCostGiven", label: "עלות יום, אם היא נתונה", unit: "₪", optional: true, help: "אם מילאתם, אין צורך בשכר ובימי עבודה" },
+  { id: "salary", label: "שכר חודשי", unit: "₪", optional: true, example: 12_000 },
+  { id: "workDays", label: "ימי עבודה בחודש", unit: "ימים", optional: true, example: 22 },
   { id: "onCost", label: "תוספות על השכר", unit: "%", optional: true, help: "ביטוח לאומי, פיצויים, פנסיה: מה שהחברה משלמת מעל השכר", example: 15 },
 ];
 
@@ -133,7 +135,9 @@ function shortQuestions(a: Answers): Question[] {
         why: "מודדים את מה שישולם, עם מה שנלווה אליו, בלי היוון.",
         fields: [
           year,
-          { id: "bonusBase", label: "סכום הבונוס לכולם", unit: "₪", help: "למשל שיעור מהרווח, או משכורת × עובדים", example: 240_000 },
+          { id: "bonusHeads", label: "עובדים שיקבלו", unit: "עובדים", optional: true, example: 40 },
+          { id: "bonusPerHead", label: "בונוס לעובד", unit: "₪", optional: true, example: 6_000 },
+          { id: "bonusBase", label: "או: סכום הבונוס לכולם", unit: "₪", optional: true, help: "למשל שיעור מהרווח" },
           { id: "bonusOnCost", label: "תוספות על הבונוס", unit: "%", optional: true, help: "רק מה שחל על בונוס. לרוב ביטוח לאומי, לא פנסיה ופיצויים", example: 7 },
           { id: "bonusStay", label: "אחוז שצפוי לזכות בו", unit: "%", optional: true, help: "ריק = כולם", example: 95 },
           { id: "bonusOpening", label: "יתרת פתיחה", unit: "₪", optional: true, example: 180_000 },
@@ -197,7 +201,7 @@ function shortQuestions(a: Answers): Question[] {
     why: "יתרת הפתיחה נמדדת לפי מה שציפו אז, לא לפי מה שקרה. כל קבוצה בשורה. אם אין יתרה בפתיחה, השאירו שורה אחת עם 0 עובדים.",
     addLabel: "הוספת קבוצה",
     min: 1,
-    columns: [...gradeCol, { id: "name", label: "קבוצה", text: true, example: "נשארים" }, { id: "staff", label: "עובדים", unit: "עובדים", example: 40 }, { id: "use", label: "ניצול צפוי השנה לעובד", unit: "ימים", example: 14 }, { id: "leaves", label: "צפויים לעזוב", check: true }, { id: "dayCost", label: "עלות יום אחרת", unit: "₪", optional: true, help: "אם תשלום היום יהיה בשכר אחר" }],
+    columns: [...gradeCol, { id: "name", label: "קבוצה", text: true, example: "נשארים" }, { id: "staff", label: "עובדים", unit: "עובדים", example: 40 }, { id: "use", label: "ניצול צפוי השנה לעובד", unit: "ימים", optional: true, help: "כל הניצול, כולל ימי השנה", example: 14 }, { id: "useShare", label: "או: אחוז מהיתרה שינוצל", unit: "%", optional: true }, { id: "leaves", label: "צפויים לעזוב", check: true }, { id: "dayCost", label: "עלות יום אחרת", unit: "₪", optional: true, help: "אם תשלום היום יהיה בשכר אחר" }],
     example: [
       { name: "נשארים, ינצלו יותר", staff: "30", use: "14", leaves: false },
       { name: "נשארים, ינצלו את הזכאות", staff: "16", use: "12", leaves: false },
@@ -215,9 +219,11 @@ function shortQuestions(a: Answers): Question[] {
       ...gradeCol,
       { id: "name", label: "קבוצה", text: true, example: "נשארו" },
       { id: "staff", label: "עובדים", unit: "עובדים", example: 40 },
-      { id: "use", label: "ניצלו השנה לעובד", unit: "ימים", example: 13 },
+      { id: "use", label: "ניצלו השנה לעובד", unit: "ימים", optional: true, example: 13 },
+      { id: "useTotal", label: "או: סה״כ ימים שהקבוצה ניצלה", unit: "ימים", optional: true },
       { id: "leaves", label: "עזבו השנה", check: true },
       { id: "nextUse", label: "ניצול צפוי בשנה הבאה לעובד", unit: "ימים", optional: true, help: "ריק = ניצול מלא" },
+      { id: "nextShare", label: "או: אחוז מהיתרה שינוצל בשנה הבאה", unit: "%", optional: true },
       { id: "nextLeaves", label: "צפויים לעזוב בשנה הבאה", check: true },
       { id: "dayCostPaid", label: "עלות יום בתשלום, אם שונה", unit: "₪", optional: true },
       { id: "dayCostClose", label: "עלות יום בסגירה, אם שונה", unit: "₪", optional: true },
@@ -246,7 +252,7 @@ function dcQuestions(a: Answers): Question[] {
       why: "רק חלק המעסיק. כל הסדר בשורה.",
       addLabel: "הוספת הסדר",
       min: 1,
-      columns: [{ id: "name", label: "הסדר", text: true, example: "פנסיה" }, { id: "payroll", label: "שכר שנתי מבוטח", unit: "₪", example: 3_600_000 }, { id: "rate", label: "שיעור הפקדה", unit: "%", example: 6.5 }, { id: "paid", label: "הועבר עד סוף השנה", unit: "₪", optional: true, help: "ריק = הכול הועבר" }],
+      columns: [{ id: "name", label: "הסדר", text: true, example: "פנסיה" }, { id: "payroll", label: "שכר שנתי מבוטח", unit: "₪", optional: true, example: 3_600_000 }, { id: "dcHeads", label: "או: עובדים", unit: "עובדים", optional: true }, { id: "dcMonthly", label: "× שכר חודשי", unit: "₪", optional: true }, { id: "rate", label: "שיעור הפקדה", unit: "%", example: 6.5 }, { id: "paid", label: "הועבר עד סוף השנה", unit: "₪", optional: true, help: "ריק = הכול הועבר" }],
       example: [{ name: "פנסיה", payroll: "3600000", rate: "6.5", paid: "214500" }],
     });
   if (how === "s14")
@@ -283,8 +289,11 @@ function termFields(prefix: string, a: Answers): Field[] {
       return [
         { id: `${prefix}t1`, label: "סכום לשנה בשנים הראשונות", unit: "₪", example: 1_000 },
         { id: `${prefix}t1Years`, label: "עד כמה שנים", unit: "שנים", example: 5 },
-        { id: `${prefix}t2`, label: "סכום לכל שנה אחריהן", unit: "₪", example: 4_000 },
+        { id: `${prefix}t2`, label: "סכום לכל שנה אחריהן", unit: "₪", optional: true, example: 4_000, help: "ריק אם הסכום גדל באחוז קבוע" },
+        { id: `${prefix}t2Growth`, label: "או: גידול שנתי בסכום אחרי השנים הראשונות", unit: "%", optional: true, help: "כל שנה גבוהה מקודמתה באחוז הזה" },
         { id: `${prefix}cap`, label: "תקרה", unit: "₪", optional: true, help: "הסכום המרבי, אם יש", example: 40_000 },
+        { id: `${prefix}shortUpTo`, label: "מי שיעבוד בסך הכול עד כמה שנים", unit: "שנים", optional: true, help: "כשתקופה קצרה מזכה בסכום אחר על כל השנים" },
+        { id: `${prefix}shortPerYear`, label: "יקבל לכל שנה", unit: "₪", optional: true },
       ];
     case "routes":
       return [
@@ -292,6 +301,12 @@ function termFields(prefix: string, a: Answers): Field[] {
         { id: `${prefix}minAge`, label: "גיל מינימלי במסלול הוותק", unit: "שנים", example: 60 },
         { id: `${prefix}years`, label: "שנות ותק במסלול הוותק", unit: "שנים", example: 25 },
         { id: `${prefix}retire`, label: "גיל הזכאות בלי תנאי ותק", unit: "שנים", example: 67 },
+      ];
+    case "earliest":
+      return [
+        { id: `${prefix}grant`, label: "המענק", unit: "₪", example: 24_000 },
+        { id: `${prefix}years`, label: "ותק שמזכה", unit: "שנים", example: 12 },
+        { id: `${prefix}age`, label: "גיל שמזכה", unit: "שנים", example: 55 },
       ];
     default:
       return [];
@@ -304,8 +319,54 @@ const BENEFIT_OPTIONS: Option[] = [
   { value: "lump", label: "מענק אחד אחרי מספר שנים", hint: "מענק יובל, שבתון, או מענק עם תקופת צבירה" },
   { value: "tiers", label: "מדרגות, אולי עם תקרה", hint: "נבדוק: נוסחת התוכנית או קו ישר" },
   { value: "routes", label: "שני מסלולים לזכאות", hint: "גיל וּותק, או גיל בלבד" },
+  { value: "earliest", label: "מענק בתנאי הראשון שמתקיים", hint: "ותק או גיל, המוקדם ביניהם" },
   { value: "amounts", label: "סכומים שנתיים נתונים", hint: "כמו בונוס על רווח כל שנה" },
 ];
+
+/** Rounded as the course rounds a plan's shares: to 0.1%. A recovered discount rate isn't rounded. */
+const shareOf = (part: number, whole: number) => Math.round((part / whole) * 1000) / 1000;
+
+/** What the question's note gives, once its lines are in: the hidden rate, shares and balance, each with its working. */
+export function noteDerived(a: Answers) {
+  const lines: BkLine[] = [];
+  const out: { rate?: number; paidShare?: number; depositShare?: number; addShare?: number; dcHeads?: number; assetsOpen?: number; lines: BkLine[] } = { lines };
+  if (str(a, "hasNote") !== "yes") return out;
+  const fmt2 = (x: number) => x.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  const interest = num(a, "hInterest"), opening = num(a, "hOpening"), aInterest = num(a, "hAssetInterest"), aOpen = num(a, "hAssetOpen");
+  if (interest !== undefined && opening) {
+    out.rate = interest / opening;
+    lines.push({ label: "שיעור ההיוון", calc: `${fmt2(interest)} ÷ ${fmt2(opening)}`, value: out.rate * 100, unit: "%" });
+  } else if (aInterest !== undefined && aOpen) {
+    out.rate = aInterest / aOpen;
+    lines.push({ label: "שיעור ההיוון", how: "הכנסות הריבית על הנכסים, כשההפקדות ביום האחרון", calc: `${fmt2(aInterest)} ÷ ${fmt2(aOpen)}`, value: out.rate * 100, unit: "%" });
+  }
+  const paid = num(a, "hPaid"), paidAssets = num(a, "hPaidAssets");
+  if (paid && paidAssets !== undefined) {
+    out.paidShare = shareOf(paidAssets, paid);
+    lines.push({ label: "החלק שמשולם מהקרן", calc: `${fmt2(paidAssets)} ÷ ${fmt2(paid)}`, value: out.paidShare * 100, unit: "%" });
+  }
+  const contrib = num(a, "hContrib"), payroll = num(a, "hPayroll");
+  if (contrib !== undefined && payroll) {
+    out.depositShare = shareOf(contrib, payroll);
+    lines.push({ label: "שיעור ההפקדה מהשכר", calc: `${fmt2(contrib)} ÷ ${fmt2(payroll)}`, value: out.depositShare * 100, unit: "%" });
+  }
+  const past = num(a, "hPast"), base = num(a, "hPastBase");
+  if (past !== undefined && base) {
+    out.addShare = shareOf(past, base);
+    lines.push({ label: "התוספת שניתנה בתיקון", calc: `${fmt2(past)} ÷ ${fmt2(base)}`, value: out.addShare * 100, unit: "%" });
+  }
+  const dc = num(a, "hDcDeposit"), perHead = num(a, "hDcPerHead");
+  if (dc !== undefined && perHead) {
+    out.dcHeads = Math.round(dc / perHead);
+    lines.push({ label: "עובדים על הפקדה מוגדרת", calc: `${fmt2(dc)} ÷ ${fmt2(perHead)}`, value: out.dcHeads, unit: "" });
+  }
+  const ac = num(a, "hAssetContrib"), apn = num(a, "hAssetPn");
+  if (aOpen !== undefined && aInterest !== undefined && ac !== undefined) {
+    out.assetsOpen = aOpen + aInterest + ac + (apn ?? 0);
+    lines.push({ label: "הקרן בפתיחת השנה", calc: `${fmt2(aOpen)} + ${fmt2(aInterest)} + ${fmt2(ac)}${apn ? ` + ${fmt2(apn)}` : ""}`, value: out.assetsOpen, unit: "₪" });
+  }
+  return out;
+}
 
 function dbQuestions(a: Answers, plan: "db" | "olt"): Question[] {
   const qs: Question[] = [];
@@ -373,11 +434,41 @@ function dbQuestions(a: Answers, plan: "db" | "olt"): Question[] {
     return qs;
   }
 
+  if (mode === "year" && plan === "db") {
+    qs.push({ id: "hasNote", kind: "choice", title: "יש בשאלה ביאור של שנה קודמת?", why: "ביאור מסתיר נתונים: שיעור, חלק הקרן בתשלומים, שיעור ההפקדה. נחלץ אותם ונשתמש בהם בהמשך.", options: YES_NO("נחלץ ממנו נתונים", "הכול כתוב בשאלה") });
+    if (str(a, "hasNote") === "yes")
+      qs.push({
+        id: "noteHelp",
+        kind: "form",
+        title: "מה כתוב בביאור?",
+        why: "מלאו רק מה שיש. כל זוג נותן נתון אחד, והוא יופיע בפתרון עם החישוב.",
+        fields: [
+          { id: "hInterest", label: "עלות ריבית בביאור", unit: "₪", optional: true, example: 40_000 },
+          { id: "hOpening", label: "יתרת הפתיחה של המחויבות בביאור", unit: "₪", optional: true, help: "ריבית ÷ פתיחה = השיעור", example: 1_000_000 },
+          { id: "hAssetOpen", label: "יתרת הפתיחה של הנכסים בביאור", unit: "₪", optional: true },
+          { id: "hAssetInterest", label: "הכנסות ריבית על הנכסים בביאור", unit: "₪", optional: true },
+          { id: "hAssetContrib", label: "הפקדות בביאור", unit: "₪", optional: true, help: "עם הפתיחה והריבית נותן את הקרן בתחילת השנה הזו" },
+          { id: "hAssetPn", label: "תשואה מעבר לריבית בביאור", unit: "₪", optional: true },
+          { id: "hPaid", label: "סך ההטבות ששולמו בביאור", unit: "₪", optional: true },
+          { id: "hPaidAssets", label: "מהן שולמו מהקרן", unit: "₪", optional: true },
+          { id: "hContrib", label: "הפקדה לקרן בביאור", unit: "₪", optional: true },
+          { id: "hPayroll", label: "השכר שעליו הופקד באותה שנה", unit: "₪", optional: true },
+          { id: "hPast", label: "עלות שירות עבר בביאור", unit: "₪", optional: true },
+          { id: "hPastBase", label: "היתרה של הדרג שקיבל את התיקון, לפני התיקון", unit: "₪", optional: true },
+          { id: "hDcDeposit", label: "הפקדות להפקדה מוגדרת בביאור", unit: "₪", optional: true },
+          { id: "hDcPerHead", label: "הפקדה שנתית לעובד אחד", unit: "₪", optional: true },
+        ],
+      });
+  }
+
   qs.push({ id: "benefit", kind: "choice", title: "איך ההטבה נקבעת?", why: "מכאן נדע איך לייחס אותה לשנות השירות.", options: BENEFIT_OPTIONS });
   if (!ben(a)) return qs;
-  if (ben(a) === "salary") qs.push({ id: "salaryHow", kind: "choice", title: "מה נתון לגבי השכר?", why: "מהוונים את השכר הצפוי ביום התשלום, לא את השכר של היום.", options: [{ value: "final", label: "השכר הצפוי ביום התשלום" }, { value: "grow", label: "השכר של היום ושיעור העלייה", hint: "נחשב: שכר × (1 + עלייה) בחזקת השנים עד התשלום" }] });
+  if (ben(a) === "salary") qs.push({ id: "salaryHow", kind: "choice", title: "מה נתון לגבי השכר?", why: "מהוונים את השכר הצפוי ביום התשלום, לא את השכר של היום.", options: [{ value: "final", label: "השכר הצפוי ביום התשלום" }, { value: "grow", label: "השכר בשנה הזו ושיעור העלייה", hint: "נחשב: שכר × (1 + עלייה) בחזקת השנים עד התשלום" }] });
   const tf = termFields("", a);
-  if (tf.length) qs.push({ id: "termsForm", kind: "form", title: "תנאי ההטבה", why: "לפי מה שכתוב בתוכנית.", fields: tf });
+  const canDiffer = ben(a) !== "amounts";
+  if (canDiffer) qs.push({ id: "perGroup", kind: "choice", title: "לכל הקבוצות אותם תנאים?", why: "למשל דרג שקיבל תוספת, או מחלקה עם מענק משלה. אם לא, נשאל על התנאים בשורה של כל קבוצה.", options: [{ value: "same", label: "כן, אותם תנאים" }, { value: "differ", label: "לא, לכל קבוצה תנאים משלה" }] });
+  const differ = str(a, "perGroup") === "differ";
+  if (tf.length && !differ) qs.push({ id: "termsForm", kind: "form", title: "תנאי ההטבה", why: "לפי מה שכתוב בתוכנית.", fields: tf });
 
   const events = list(a, "events");
   const amend = mode === "year" && events.includes("amend");
@@ -393,6 +484,7 @@ function dbQuestions(a: Answers, plan: "db" | "olt"): Question[] {
         { value: "payments", label: "שולמו הטבות", hint: "כולל פרישה לפי התנאים, גם אם מוקדמת: היא לא סילוק" },
         { value: "amend", label: "התוכנית שונתה באמצע השנה", hint: "תיקון או צמצום: שירות עבר" },
         { value: "settle", label: "סילוק", hint: "תשלום מחוץ לתנאים שמבטל את החוב, כמו העברה למבטח" },
+        { value: "moves", label: "עובד עזב ב-1.1 בלי לקבל כלום, או הצטרף באמצע השנה" },
         { value: "given", label: "יתרות נתונות", hint: "פתיחה או סגירה ששאלה נותנת, במקום למדוד אותן" },
       ],
     });
@@ -401,17 +493,23 @@ function dbQuestions(a: Answers, plan: "db" | "olt"): Question[] {
   const s = ben(a) === "salary";
   const grow = s && str(a, "salaryHow") === "grow";
   const measureOnly = mode === "measure";
+  const amendTiers = amend && str(a, "amendBenefit") === "tiers";
+  const moves = mode === "year" && events.includes("moves");
   const columns: Field[] = [
     { id: "name", label: "קבוצה", text: true, example: "כל העובדים" },
     { id: "heads", label: measureOnly ? "עובדים ביום המדידה" : "עובדים ב-1.1", unit: "עובדים", example: 20 },
     { id: "stay", label: "אחוז שצפוי להגיע לתשלום", unit: "%", optional: true, help: "ריק = כולם", example: 90 },
-    { id: "served", label: measureOnly ? "שנות שירות ביום המדידה" : "שנות שירות ב-1.1", unit: "שנים", example: 5 },
+    { id: "served", label: measureOnly ? "שנות שירות ביום המדידה" : "שנות שירות ב-1.1", unit: "שנים", optional: moves, example: 5 },
+    ...(moves ? [{ id: "joinMonth", label: "הצטרף השנה בתחילת חודש", optional: true, help: "1 עד 12. במקום שנות שירות" }, { id: "leftAtStart", label: "מתוכם עזבו ב-1.1 בלי לקבל כלום", unit: "עובדים" as Unit, optional: true, help: "נשארים בפתיחה, ויוצאים מכל השאר" }] : []),
     ...(ben(a) === "routes" ? [{ id: "hireAge", label: "גיל בקבלה לעבודה", unit: "שנים" as Unit, example: 35 }] : [{ id: "n", label: measureOnly ? "שנים עד התשלום מיום המדידה" : "שנים עד התשלום מסוף השנה", unit: "שנים" as Unit, example: 10, help: "לא שנות השירות! רק מה שנשאר עד התשלום" }]),
-    ...(ben(a) === "tiers" ? [{ id: "expected", label: "שנות שירות צפויות בסך הכול", unit: "שנים" as Unit, example: 15 }] : []),
+    ...(ben(a) === "earliest" ? [{ id: "hireAge", label: "גיל בקבלה לעבודה", unit: "שנים" as Unit, example: 30 }] : []),
+    ...(ben(a) === "tiers" || ben(a) === "earliest" || amendTiers ? [{ id: "expected", label: "שנות שירות צפויות בסך הכול", unit: "שנים" as Unit, example: 15 }] : []),
     ...(ben(a) === "amounts" ? [{ id: "accruedStart", label: "נצבר לעובד עד 1.1", unit: "₪" as Unit, example: 10_000 }, { id: "addedThisYear", label: "נוסף השנה לעובד", unit: "₪" as Unit, example: 12_000 }] : []),
     ...(s && !grow ? [{ id: "salary", label: "שכר צפוי ביום התשלום", unit: "₪" as Unit, example: 28_000 }] : []),
-    ...(grow ? [{ id: "salaryNow", label: "שכר היום", unit: "₪" as Unit, example: 18_000 }, { id: "growth", label: "עלייה שנתית", unit: "%" as Unit, example: 3 }] : []),
-    ...(ben(a) !== "routes" && ben(a) !== "amounts" ? [{ id: "uncounted", label: "שנים בתחילת העבודה שלא נספרות", unit: "שנים" as Unit, optional: true, help: "כשהזכאות מתחילה מאוחר" }] : []),
+    ...(grow ? [{ id: "salaryNow", label: "שכר בשנה הזו", unit: "₪" as Unit, example: 18_000 }, { id: "growth", label: "עלייה שנתית", unit: "%" as Unit, example: 3 }] : []),
+    ...(differ ? tf : []),
+    ...(ben(a) !== "routes" && ben(a) !== "amounts" && ben(a) !== "earliest" ? [{ id: "uncounted", label: "שנים בתחילת העבודה שלא נספרות", unit: "שנים" as Unit, optional: true, help: "כשהזכאות מתחילה מאוחר" }] : []),
+    ...(amend ? [{ id: "amendSkip", label: "התיקון לא חל על הקבוצה", check: true }] : []),
     ...(amend || settle ? [{ id: "headsEvent", label: "עובדים ביום האירוע", unit: "עובדים" as Unit, optional: true, help: "ריק = כמו ב-1.1" }, { id: "stayEvent", label: "אחוז צפוי ביום האירוע", unit: "%" as Unit, optional: true }] : []),
     ...(amend || settle ? (s ? [{ id: "salaryEvent", label: "שכר צפוי לפי הנחות יום האירוע", unit: "₪" as Unit, optional: true }] : []) : []),
     ...(amend ? [{ id: "headsAfter", label: "עובדים צפויים אחרי התיקון", unit: "עובדים" as Unit, optional: true, help: "רק בצמצום. ריק = בלי שינוי" }] : []),
@@ -426,16 +524,9 @@ function dbQuestions(a: Answers, plan: "db" | "olt"): Question[] {
     return qs;
   }
 
-  qs.push({
-    id: "ratesForm",
-    kind: "form",
-    title: "השנה, ושיעורי ההיוון",
-    why: "תשואת אג״ח קונצרני איכותי בכל תאריך. שיעור ממשלתי רק אם אין שוק עמוק (סעיף 83).",
-    fields: [year, { id: "iStart", label: "שיעור ב-1.1", unit: "%", help: "לריבית ולשירות שוטף", example: 5 }, { id: "iEnd", label: "שיעור ב-31.12", unit: "%", help: "לסגירה", example: 4.5 }],
-  });
-
   if (amend) {
-    qs.push({ id: "amendBenefit", kind: "choice", title: "מה ההטבה אחרי התיקון?", why: "לפי התנאים החדשים נמדדת גם היתרה אחרי התיקון.", options: BENEFIT_OPTIONS.filter((o) => o.value !== "amounts" && o.value !== "routes") });
+    qs.push({ id: "amendType", kind: "choice", title: "מה התיקון עושה?", why: "תוספת נשמרת מעל מה שכל קבוצה כבר מקבלת. החלפה קובעת הטבה חדשה במקומה.", options: [{ value: "replace", label: "מחליף את ההטבה" }, { value: "add", label: "מוסיף על ההטבה הקיימת" }] });
+    qs.push({ id: "amendBenefit", kind: "choice", title: str(a, "amendType") === "add" ? "מה מתווסף?" : "מה ההטבה אחרי התיקון?", why: "לפי התנאים החדשים נמדדת גם היתרה אחרי התיקון.", options: BENEFIT_OPTIONS.filter((o) => (str(a, "amendType") === "add" ? ["perYear", "salary", "lump"].includes(o.value) : o.value !== "amounts" && o.value !== "routes" && o.value !== "earliest")) });
     qs.push({
       id: "amendForm",
       kind: "form",
@@ -464,15 +555,35 @@ function dbQuestions(a: Answers, plan: "db" | "olt"): Question[] {
       ],
     });
   }
+  const note = noteDerived(a);
+  const allSettled = settle && num(a, "settleShare") === 100;
+  qs.push({
+    id: "ratesForm",
+    kind: "form",
+    title: "השנה, ושיעורי ההיוון",
+    why: "תשואת אג״ח קונצרני איכותי בכל תאריך. שיעור ממשלתי רק אם אין שוק עמוק (סעיף 83).",
+    fields: [
+      year,
+      { id: "iStart", label: "שיעור ב-1.1", unit: "%", optional: note.rate !== undefined, help: note.rate !== undefined ? `ריק = מהביאור, ${(note.rate * 100).toLocaleString("en-US", { maximumFractionDigits: 3 })}%` : "לריבית ולשירות שוטף", example: 5 },
+      { id: "iEnd", label: "שיעור ב-31.12", unit: "%", optional: allSettled || note.rate !== undefined, help: allSettled ? "לא נחוץ: הכול סולק" : note.rate !== undefined ? "ריק = כמו בתחילת השנה" : "לסגירה", example: 4.5 },
+    ],
+  });
   if (mode === "year" && events.includes("payments"))
     qs.push({
       id: "payments",
       kind: "rows",
       title: "תשלומים לעובדים",
-      why: "מורידים ריבית מיום התשלום. מהקרן יורד רק מה שיצא ממנה.",
+      why: "מורידים ריבית מיום התשלום. מהקרן יורד רק מה שיצא ממנה. אפשר להזין סכום, או לחשב: עובדים × שכר × שנים.",
       addLabel: "הוספת תשלום",
       min: 1,
-      columns: [{ id: "amount", label: "סכום", unit: "₪", example: 60_000 }, { id: "month", label: "שולם בסוף חודש", help: "12 = ביום האחרון", example: 12 }, ...(events.includes("assets") ? [{ id: "fromAssets", label: "שולם מהקרן", check: true }] : [])],
+      columns: [
+        { id: "amount", label: "סכום", unit: "₪", optional: true, example: 60_000 },
+        { id: "retireHeads", label: "או: עובדים שפרשו", unit: "עובדים", optional: true },
+        { id: "retireSalary", label: "× שכר", unit: "₪", optional: true },
+        { id: "retireYears", label: "× שנות שירות", unit: "שנים", optional: true },
+        { id: "month", label: "שולם בסוף חודש", help: "12 = ביום האחרון", example: 12 },
+        ...(events.includes("assets") ? [{ id: "fromAssets", label: "שולם מהקרן", check: true }, { id: "fromPct", label: "אחוז שמשולם מהקרן", unit: "%" as Unit, optional: true, help: note.paidShare !== undefined ? `ריק = מהביאור, ${(note.paidShare * 100).toLocaleString("en-US")}%` : "ריק = הכול" }] : []),
+      ],
       example: [{ amount: "60000", month: "12", fromAssets: false }],
     });
   if (mode === "year" && events.includes("assets")) {
@@ -483,8 +594,9 @@ function dbQuestions(a: Answers, plan: "db" | "olt"): Question[] {
       title: "נכסי התכנית",
       why: "הכנסות הריבית באותו שיעור ובאותו פיצול כמו ההתחייבות (סעיף 125). בדקו שהקרן נפרדת, זמינה רק להטבות ולא לנושים.",
       fields: [
-        { id: "assetsOpen", label: "שווי הוגן ב-1.1", unit: "₪", example: 800_000 },
-        { id: "assetsClose", label: "שווי הוגן ב-31.12", unit: "₪", example: 1_200_000 },
+        { id: "assetsOpen", label: "שווי הוגן ב-1.1", unit: "₪", optional: note.assetsOpen !== undefined, help: note.assetsOpen !== undefined ? "ריק = מהביאור" : undefined, example: 800_000 },
+        { id: "assetsClose", label: "שווי הוגן ב-31.12", unit: "₪", optional: true, example: 1_200_000 },
+        { id: "assetsReturn", label: "או: תשואה מעבר להכנסות הריבית", unit: "₪", optional: true, help: "כשהשאלה לא נותנת שווי הוגן בסוף השנה" },
         ...(hasEvent ? [{ id: "assetsEvent", label: "שווי הוגן ביום האירוע", unit: "₪" as Unit, optional: true, help: "אם נתון, הקרן נמדדת מחדש באותו יום (סעיף 99)" }] : []),
       ],
     });
@@ -492,10 +604,15 @@ function dbQuestions(a: Answers, plan: "db" | "olt"): Question[] {
       id: "contributions",
       kind: "rows",
       title: "הפקדות לקרן",
-      why: "הפקדה מרוויחה ריבית מיומה. ביום האחרון של השנה: בלי ריבית.",
+      why: "הפקדה מרוויחה ריבית מיומה. ביום האחרון של השנה: בלי ריבית. אפשר להזין סכום, או אחוז מהשכר.",
       addLabel: "הוספת הפקדה",
       min: 0,
-      columns: [{ id: "amount", label: "סכום", unit: "₪", example: 300_000 }, { id: "month", label: "הופקד בסוף חודש", help: "12 = ביום האחרון", example: 12 }],
+      columns: [
+        { id: "amount", label: "סכום", unit: "₪", optional: true, example: 300_000 },
+        { id: "contribRate", label: "או: אחוז מהשכר", unit: "%", optional: true, help: note.depositShare !== undefined ? `ריק = מהביאור, ${(note.depositShare * 100).toLocaleString("en-US")}%` : undefined },
+        { id: "contribPayroll", label: "השכר שעליו מפקידים", unit: "₪", optional: true, help: grow ? "ריק = עובדים × שכר של כל הקבוצות" : undefined },
+        { id: "month", label: "הופקד בסוף חודש", help: "12 = ביום האחרון", example: 12 },
+      ],
       example: [{ amount: "300000", month: "12" }],
     });
     qs.push({
@@ -602,11 +719,13 @@ export function errorsFor(q: Question, a: Answers): string[] {
     if (!blankOr(s)) return `${where}${f.label}: צריך מספר.`;
     if (!f.optional && !s.trim()) return `${where}מלאו: ${f.label}.`;
     const n = Number(s.replace(/,/g, ""));
-    if (f.unit === "%" && n < 0) return `${where}${f.label}: אחוז לא יכול להיות שלילי.`;
+    if ((f.unit === "%" || f.unit === "שנים" || f.unit === "עובדים" || f.unit === "ימים" || f.unit === "חודשים") && n < 0) return `${where}${f.label}: לא יכול להיות שלילי.`;
     return null;
   };
   if (q.kind === "form") {
     const errs = q.fields.map((f) => checkField(f, a[f.id])).filter((e): e is string => !!e);
+    if (q.id === "bonusForm" && !errs.length && !str(a, "bonusBase").trim() && !(str(a, "bonusHeads").trim() && str(a, "bonusPerHead").trim())) errs.push("מלאו סכום לכולם, או עובדים ובונוס לעובד.");
+    if (q.id === "assetsForm" && !errs.length && !str(a, "assetsClose").trim() && !str(a, "assetsReturn").trim()) errs.push("מלאו שווי הוגן בסוף השנה, או את התשואה מעבר להכנסות הריבית.");
     if (q.id === "noteOb" && !errs.length) {
       const blanks = ["nOpening", "nService", "nInterest", "nPayments", "nPn", "nClosing"].filter((k) => !str(a, k).trim());
       const interestFromRate = str(a, "nRate").trim() && !str(a, "nInterest").trim();
@@ -623,7 +742,19 @@ export function errorsFor(q: Question, a: Answers): string[] {
   }
   const rows = rowsOf(a, q.id);
   if (rows.length < q.min) return [`הוסיפו לפחות שורה ${q.min === 1 ? "אחת" : ""}.`];
-  return rows.flatMap((r, i) => q.columns.map((c) => checkField(c, r[c.id], `שורה ${i + 1}, `)).filter((e): e is string => !!e));
+  const rowErrors = rows.flatMap((r, i) => q.columns.map((c) => checkField(c, r[c.id], `שורה ${i + 1}, `)).filter((e): e is string => !!e));
+  const filled = (r: Row, id: string) => typeof r[id] === "string" && (r[id] as string).trim() !== "";
+  rows.forEach((r, i) => {
+    const at = `שורה ${i + 1}: `;
+    if (q.id === "grades" && !filled(r, "dayCostGiven") && !(filled(r, "salary") && filled(r, "workDays"))) rowErrors.push(`${at}מלאו עלות יום, או שכר וימי עבודה.`);
+    if (q.id === "openingRows" && !filled(r, "use") && !filled(r, "useShare")) rowErrors.push(`${at}מלאו ניצול צפוי, או אחוז מהיתרה.`);
+    if (q.id === "actualRows" && !filled(r, "use") && !filled(r, "useTotal")) rowErrors.push(`${at}מלאו כמה ניצלו.`);
+    if (q.id === "dcRows" && !filled(r, "payroll") && !(filled(r, "dcHeads") && filled(r, "dcMonthly"))) rowErrors.push(`${at}מלאו שכר שנתי, או עובדים ושכר חודשי.`);
+    if (q.id === "groups" && q.columns.some((c) => c.id === "joinMonth") && !filled(r, "served") && !filled(r, "joinMonth")) rowErrors.push(`${at}מלאו שנות שירות, או חודש הצטרפות.`);
+    if (q.id === "payments" && !filled(r, "amount") && !(filled(r, "retireHeads") && filled(r, "retireSalary") && filled(r, "retireYears"))) rowErrors.push(`${at}מלאו סכום, או עובדים × שכר × שנים.`);
+    if (q.id === "contributions" && !filled(r, "amount") && !filled(r, "contribRate") && noteDerived(a).depositShare === undefined) rowErrors.push(`${at}מלאו סכום, או אחוז מהשכר.`);
+  });
+  return rowErrors;
 }
 
 // ---------------------------------------------------------------------------
@@ -632,35 +763,52 @@ export function errorsFor(q: Question, a: Answers): string[] {
 const dayCostOf = (salary: number, days: number, onCost: number) => (salary / days) * (1 + onCost);
 const dayCalc = (salary: number, days: number, onCost: number) => `${fm(salary)} ÷ ${days}${onCost ? ` × ${(1 + onCost).toLocaleString("en-US", { maximumFractionDigits: 4 })}` : ""}`;
 
-function termsFrom(a: Answers, benefit: string, prefix: string): Terms {
+function termsWith(get: (id: string) => number | undefined, benefit: string, prefix: string): Terms {
+  const v = (id: string) => get(`${prefix}${id}`) ?? 0;
   switch (benefit) {
     case "perYear":
-      return { kind: "perYear", amount: req(a, `${prefix}amount`) };
+      return { kind: "perYear", amount: v("amount") };
     case "salary":
-      return { kind: "salary", share: req(a, `${prefix}share`) / 100 };
+      return { kind: "salary", share: v("share") / 100 };
     case "lump":
-      return { kind: "lump", grant: req(a, `${prefix}grant`), window: req(a, `${prefix}window`) };
-    case "tiers":
-      return { kind: "tiers", tiers: [{ upTo: req(a, `${prefix}t1Years`), perYear: req(a, `${prefix}t1`) }, { perYear: req(a, `${prefix}t2`) }], cap: num(a, `${prefix}cap`) };
+      return { kind: "lump", grant: v("grant"), window: v("window") };
+    case "tiers": {
+      const growth = get(`${prefix}t2Growth`);
+      const shortUpTo = get(`${prefix}shortUpTo`);
+      return {
+        kind: "tiers",
+        tiers: [{ upTo: v("t1Years"), perYear: v("t1") }, { perYear: v("t2") }],
+        cap: get(`${prefix}cap`),
+        growth: growth === undefined ? undefined : growth / 100,
+        short: shortUpTo === undefined ? undefined : { upTo: shortUpTo, perYear: v("shortPerYear") },
+      };
+    }
     case "routes":
-      return { kind: "routes", grant: req(a, `${prefix}grant`), minAge: req(a, `${prefix}minAge`), years: req(a, `${prefix}years`), retire: req(a, `${prefix}retire`) };
+      return { kind: "routes", grant: v("grant"), minAge: v("minAge"), years: v("years"), retire: v("retire") };
+    case "earliest":
+      return { kind: "earliest", grant: v("grant"), years: v("years"), age: v("age") };
     default:
       return { kind: "amounts" };
   }
 }
+const termsFrom = (a: Answers, benefit: string, prefix: string) => termsWith((id) => num(a, id), benefit, prefix);
 
 function groupFrom(a: Answers, r: Row, i: number, settleShare: number): DbGroup {
   const grow = str(a, "salaryHow") === "grow";
   const n = rn(r, "n");
   const stayOf = (id: string) => (rv(r, id) === undefined ? undefined : rn(r, id) / 100);
   const heads = rn(r, "heads");
-  const salary = grow ? rn(r, "salaryNow") * (1 + rn(r, "growth") / 100) ** (n + 1) : rv(r, "salary");
-  const headsEnd = rv(r, "headsEnd") ?? (settleShare ? heads * (1 - settleShare) : undefined);
+  const left = rv(r, "leftAtStart") ?? 0;
+  // This year's salary rises on each 1.1 up to the payment, which is `n` years after this year's end.
+  const salary = grow ? rn(r, "salaryNow") * (1 + rn(r, "growth") / 100) ** n : rv(r, "salary");
+  const headsEnd = rv(r, "headsEnd") ?? (settleShare ? (heads - left) * (1 - settleShare) : undefined);
+  const join = rv(r, "joinMonth");
   return {
     name: rt(r, "name", `קבוצה ${i + 1}`),
     heads,
     stay: stayOf("stay") ?? 1,
-    served: rn(r, "served"),
+    // Someone who joins at the start of a month has that part of this year left to serve.
+    served: join !== undefined ? -(join - 1) / 12 : rn(r, "served"),
     nEnd: n,
     uncounted: rv(r, "uncounted"),
     salary,
@@ -668,6 +816,9 @@ function groupFrom(a: Answers, r: Row, i: number, settleShare: number): DbGroup 
     hireAge: rv(r, "hireAge"),
     accruedStart: rv(r, "accruedStart"),
     addedThisYear: rv(r, "addedThisYear"),
+    terms: str(a, "perGroup") === "differ" ? termsWith((id) => rv(r, id), ben(a), "") : undefined,
+    skipEvent: r.amendSkip === true,
+    leftAtStart: left || undefined,
     atEvent: { heads: rv(r, "headsEvent"), stay: stayOf("stayEvent"), salary: rv(r, "salaryEvent") },
     atEnd: { heads: headsEnd, stay: stayOf("stayEnd"), salary: rv(r, "salaryEnd") },
     headsAfter: rv(r, "headsAfter"),
@@ -679,7 +830,7 @@ export function dbInputFrom(a: Answers, plan: "db" | "olt"): DbInput {
   const terms = termsFrom(a, ben(a), "");
   let event: DbEvent | undefined;
   if (events.includes("amend")) {
-    event = { type: "amend", month: req(a, "amendMonth"), rate: pct(a, "amendRate"), terms: termsFrom(a, str(a, "amendBenefit"), "amend_"), compensation: num(a, "amendComp") };
+    event = { type: "amend", month: req(a, "amendMonth"), rate: pct(a, "amendRate"), terms: termsFrom(a, str(a, "amendBenefit"), "amend_"), add: str(a, "amendType") === "add", compensation: num(a, "amendComp") };
   } else if (events.includes("settle")) {
     event = { type: "settle", month: req(a, "settleMonth"), rate: pct(a, "settleRate"), share: pct(a, "settleShare"), paid: req(a, "settlePaid"), paidFromAssets: str(a, "settleFrom") === "assets" };
   }
@@ -696,16 +847,39 @@ export function dbInputFrom(a: Answers, plan: "db" | "olt"): DbInput {
         return { kind: "none" };
     }
   };
+  const note = noteDerived(a);
+  const iStart = num(a, "iStart") === undefined ? (note.rate ?? 0) : pct(a, "iStart");
+  // Payments: an amount, or heads × salary × years; the part from the fund is its own line.
+  const payments = rowsOf(a, "payments").flatMap((r) => {
+    const amount = rv(r, "amount") ?? rn(r, "retireHeads") * rn(r, "retireSalary") * rn(r, "retireYears");
+    const month = rn(r, "month");
+    if (r.fromAssets !== true) return [{ amount, month }];
+    const share = rv(r, "fromPct") === undefined ? (note.paidShare ?? 1) : rn(r, "fromPct") / 100;
+    return [{ amount: amount * share, month, fromAssets: true }, ...(share < 1 ? [{ amount: amount * (1 - share), month }] : [])];
+  });
+  const payrollNow = rowsOf(a, "groups").reduce((t, r) => t + rn(r, "heads") * rn(r, "salaryNow"), 0);
   return {
     plan: plan === "olt" ? "otherLongTerm" : "postEmployment",
     year: req(a, "year"),
     terms,
     groups: rowsOf(a, "groups").map((r, i) => groupFrom(a, r, i, settleShare)),
-    iStart: pct(a, "iStart"),
-    iEnd: pct(a, "iEnd"),
+    iStart,
+    iEnd: num(a, "iEnd") === undefined ? iStart : pct(a, "iEnd"),
     event,
-    payments: events.includes("payments") ? rowsOf(a, "payments").map((r) => ({ amount: rn(r, "amount"), month: rn(r, "month"), fromAssets: r.fromAssets === true })) : undefined,
-    assets: events.includes("assets") ? { opening: req(a, "assetsOpen"), closing: req(a, "assetsClose"), atEvent: num(a, "assetsEvent"), contributions: rowsOf(a, "contributions").map((r) => ({ amount: rn(r, "amount"), month: rn(r, "month") })), ceiling: ceiling() } : undefined,
+    payments: events.includes("payments") ? payments : undefined,
+    assets: events.includes("assets")
+      ? {
+          opening: num(a, "assetsOpen") ?? note.assetsOpen ?? 0,
+          closing: num(a, "assetsClose"),
+          excessReturn: num(a, "assetsReturn"),
+          atEvent: num(a, "assetsEvent"),
+          contributions: rowsOf(a, "contributions").map((r) => {
+            const rate = rv(r, "contribRate") === undefined ? (note.depositShare ?? 0) : rn(r, "contribRate") / 100;
+            return { amount: rv(r, "amount") ?? rate * (rv(r, "contribPayroll") ?? payrollNow), month: rn(r, "month") };
+          }),
+          ceiling: ceiling(),
+        }
+      : undefined,
     interestInSalary: str(a, "presentation") === "salary",
     openingGiven: events.includes("given") ? num(a, "givenOpen") : undefined,
     closingGiven: events.includes("given") ? num(a, "givenClose") : undefined,
@@ -731,13 +905,11 @@ function solveDbAnswers(a: Answers, plan: "db" | "olt"): CalcSolution {
       rate: pct(a, "rate"),
       groups: rowsOf(a, "groups").map((r, i) => {
         const g = groupFrom(a, r, i, 0);
-        // Years to payment here are from the date itself, so a salary grown to payment takes one rise fewer than a year's opening would.
-        const salary = str(a, "salaryHow") === "grow" ? rn(r, "salaryNow") * (1 + rn(r, "growth") / 100) ** rn(r, "n") : g.salary;
-        return { ...g, salary, servedAtDate: rn(r, "served"), nAtDate: rn(r, "n") };
+        return { ...g, servedAtDate: rn(r, "served"), nAtDate: rn(r, "n") };
       }),
     });
   }
-  return solveDbYear(dbInputFrom(a, plan));
+  return withNoteStep(solveDbYear(dbInputFrom(a, plan)), noteDerived(a).lines);
 }
 
 /** The solution, once every question is answered. */
@@ -748,8 +920,9 @@ export function solveAnswers(a: Answers): CalcSolution {
     case "short": {
       if (str(a, "shortKind") === "bonus") {
         const obligation = str(a, "bonusObligation") === "yes";
-        const base = req(a, "bonusBase");
-        return solveBonus({ year: y || new Date().getFullYear(), obligation, base, baseCalc: "נתון", onCost: pct(a, "bonusOnCost"), stayShare: num(a, "bonusStay") === undefined ? 1 : pct(a, "bonusStay"), opening: req(a, "bonusOpening"), paid: req(a, "bonusPaid") });
+        const perHead = num(a, "bonusHeads") !== undefined && num(a, "bonusPerHead") !== undefined;
+        const base = num(a, "bonusBase") ?? req(a, "bonusHeads") * req(a, "bonusPerHead");
+        return solveBonus({ year: y || new Date().getFullYear(), obligation, base, baseCalc: perHead && num(a, "bonusBase") === undefined ? `${fm(req(a, "bonusHeads"))} × ${fm(req(a, "bonusPerHead"))}` : "נתון", onCost: pct(a, "bonusOnCost"), stayShare: num(a, "bonusStay") === undefined ? 1 : pct(a, "bonusStay"), opening: req(a, "bonusOpening"), paid: req(a, "bonusPaid") });
       }
       if (str(a, "accumulates") === "no") {
         const other = str(a, "payer") === "other";
@@ -767,10 +940,11 @@ export function solveAnswers(a: Answers): CalcSolution {
           const on = rn(r, "onCost") / 100;
           const salary = rn(r, "salary");
           const days = rn(r, "workDays") || 1;
-          return { name: rt(r, "name", `דרג ${i + 1}`), dayCost: dayCostOf(salary, days, on), dayCostCalc: dayCalc(salary, days, on), entitlement: rn(r, "entitlement"), carried: [rn(r, "carried")], years: req(a, "lifeYears") || 1 };
+          const given = rv(r, "dayCostGiven");
+          return { name: rt(r, "name", `דרג ${i + 1}`), dayCost: given ?? dayCostOf(salary, days, on), dayCostCalc: given === undefined ? dayCalc(salary, days, on) : "נתון", entitlement: rn(r, "entitlement"), carried: [rn(r, "carried")], years: req(a, "lifeYears") || 1 };
         }),
-        opening: rowsOf(a, "openingRows").map((r, i) => ({ name: rt(r, "name", `קבוצה ${i + 1}`), grade: Number(r.grade ?? 0) || 0, staff: rn(r, "staff"), use: rn(r, "use"), leaves: r.leaves === true, dayCost: rv(r, "dayCost") })),
-        actual: rowsOf(a, "actualRows").map((r, i) => ({ name: rt(r, "name", `קבוצה ${i + 1}`), grade: Number(r.grade ?? 0) || 0, staff: rn(r, "staff"), use: rn(r, "use"), leaves: r.leaves === true, nextUse: rv(r, "nextUse"), nextLeaves: r.nextLeaves === true, dayCostPaid: rv(r, "dayCostPaid"), dayCostClose: rv(r, "dayCostClose") })),
+        opening: rowsOf(a, "openingRows").map((r, i) => ({ name: rt(r, "name", `קבוצה ${i + 1}`), grade: Number(r.grade ?? 0) || 0, staff: rn(r, "staff"), use: rn(r, "use"), useShare: rv(r, "useShare") === undefined ? undefined : rn(r, "useShare") / 100, leaves: r.leaves === true, dayCost: rv(r, "dayCost") })),
+        actual: rowsOf(a, "actualRows").map((r, i) => ({ name: rt(r, "name", `קבוצה ${i + 1}`), grade: Number(r.grade ?? 0) || 0, staff: rn(r, "staff"), use: rv(r, "useTotal") !== undefined && rn(r, "staff") ? rn(r, "useTotal") / rn(r, "staff") : rn(r, "use"), leaves: r.leaves === true, nextUse: rv(r, "nextUse"), nextShare: rv(r, "nextShare") === undefined ? undefined : rn(r, "nextShare") / 100, nextLeaves: r.nextLeaves === true, dayCostPaid: rv(r, "dayCostPaid"), dayCostClose: rv(r, "dayCostClose") })),
       });
     }
     case "dc": {
@@ -781,8 +955,9 @@ export function solveAnswers(a: Answers): CalcSolution {
               return { name: rt(r, "name", `קבוצה ${i + 1}`), expense, calc: `${fm(rn(r, "staff"))} × ${fm(rn(r, "salary"))}`, paid: rv(r, "paid") ?? expense };
             })
           : rowsOf(a, "dcRows").map((r, i) => {
-              const expense = (rn(r, "payroll") * rn(r, "rate")) / 100;
-              return { name: rt(r, "name", `הסדר ${i + 1}`), expense, calc: `${fm(rn(r, "payroll"))} × ${rn(r, "rate")}%`, paid: rv(r, "paid") ?? expense };
+              const payroll = rv(r, "payroll") ?? rn(r, "dcHeads") * 12 * rn(r, "dcMonthly");
+              const expense = (payroll * rn(r, "rate")) / 100;
+              return { name: rt(r, "name", `הסדר ${i + 1}`), expense, calc: `${rv(r, "payroll") === undefined ? `${fm(rn(r, "dcHeads"))} × 12 × ${fm(rn(r, "dcMonthly"))}` : fm(payroll)} × ${rn(r, "rate")}%`, paid: rv(r, "paid") ?? expense };
             });
       return solveDcPlans({ year: y, plans });
     }
@@ -806,8 +981,16 @@ export function solveAnswers(a: Answers): CalcSolution {
   }
 }
 
-/** Whether "the next year" can follow this solution: a defined benefit or long-term year. */
-export const canContinue = (a: Answers) => (kindOf(a) === "db" || kindOf(a) === "olt") && str(a, "mode") === "year";
+/**
+ * Whether "the next year" can follow this solution: a defined benefit or
+ * long-term year. An addition on top of a grant or tiers has no single form to
+ * carry forward, so that year's closing would have to be entered by hand.
+ */
+export const canContinue = (a: Answers) => {
+  if (!(kindOf(a) === "db" || kindOf(a) === "olt") || str(a, "mode") !== "year") return false;
+  const added = list(a, "events").includes("amend") && str(a, "amendType") === "add";
+  return !added || (str(a, "amendBenefit") === ben(a) && (ben(a) === "salary" || ben(a) === "perYear"));
+};
 
 /** The answers for the year after: closing balances open it, the same plan a year on, the amended terms now in force, this year's events gone. */
 export function nextYearAnswers(a: Answers): Answers {
@@ -816,7 +999,7 @@ export function nextYearAnswers(a: Answers): Answers {
   if (events.includes("assets")) {
     next.assetsOpen = str(a, "assetsClose");
     next.assetsClose = "";
-    next.assetsEvent = "";
+    delete next.assetsEvent;
     next.contributions = [];
     if (str(a, "ceiling") === "amount") {
       next.ceilOpen = str(a, "ceilClose");
@@ -824,18 +1007,32 @@ export function nextYearAnswers(a: Answers): Answers {
     }
     if (str(a, "ceiling") === "mfr") next.mfrYears = String(req(a, "mfrYears") - 1);
   }
-  next.payments = [];
-  next.givenOpen = "";
-  next.givenClose = "";
-  if (events.includes("amend") && str(a, "amendBenefit")) {
+  delete next.payments;
+  delete next.givenOpen;
+  delete next.givenClose;
+  const added = events.includes("amend") && str(a, "amendType") === "add";
+  const addKey = ben(a) === "salary" ? "share" : "amount";
+  const addBy = added ? req(a, `amend_${addKey}`) : 0;
+  if (events.includes("amend") && !added && str(a, "amendBenefit")) {
     next.benefit = str(a, "amendBenefit");
+    next.perGroup = "same";
     for (const k of Object.keys(a)) if (k.startsWith("amend_")) next[k.slice(6)] = a[k];
+  }
+  if (added) {
+    next.perGroup = "differ";
+    next.termsForm = "";
   }
   const settle = events.includes("settle") ? pct(a, "settleShare") : 0;
   next.groups = rowsOf(a, "groups").map((r) => {
-    const out: Row = { ...r, served: String(rn(r, "served") + 1), headsEvent: "", stayEvent: "", salaryEvent: "", headsAfter: "", headsEnd: "", stayEnd: "", salaryEnd: "" };
+    const join = rv(r, "joinMonth");
+    const out: Row = { ...r, served: String((join !== undefined ? -(join - 1) / 12 : rn(r, "served")) + 1) };
+    // What belonged to this year alone doesn't carry over.
+    for (const k of ["joinMonth", "leftAtStart", "amendSkip", "headsEvent", "stayEvent", "salaryEvent", "headsAfter", "headsEnd", "stayEnd", "salaryEnd"]) delete out[k];
     if (rv(r, "n") !== undefined) out.n = String(Math.max(0, rn(r, "n") - 1));
-    const heads = rv(r, "headsEnd") ?? rn(r, "heads") * (1 - settle);
+    // Next year's salary is a raise on this year's, with one year less to payment.
+    if (rv(r, "salaryNow") !== undefined) out.salaryNow = String(rn(r, "salaryNow") * (1 + rn(r, "growth") / 100));
+    if (added) out[addKey] = String((rv(r, addKey) ?? req(a, addKey)) + (r.amendSkip === true ? 0 : addBy));
+    const heads = rv(r, "headsEnd") ?? (rn(r, "heads") - (rv(r, "leftAtStart") ?? 0)) * (1 - settle);
     out.heads = String(heads);
     if (rv(r, "stayEnd") !== undefined) out.stay = String(rv(r, "stayEnd"));
     if (rv(r, "salaryEnd") !== undefined) out.salary = String(rv(r, "salaryEnd"));

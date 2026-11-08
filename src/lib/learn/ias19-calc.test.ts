@@ -572,6 +572,7 @@ describe("the calculator against the course's questions: the rest", () => {
 });
 
 describe("the questionnaire: every branch reaches a solution", () => {
+  const DEFAULTS: Record<string, string> = { hasNote: "no", perGroup: "same", amendType: "replace" };
   /** Walks the questions, answering by script, and by each question's own example where the script says nothing. */
   function walk(script: Record<string, string | string[]>) {
     const a: Answers = {};
@@ -579,8 +580,9 @@ describe("the questionnaire: every branch reaches a solution", () => {
       const q = questionsFor(a).find((x) => !(x.id in a));
       if (!q) break;
       if (q.kind === "choice" || q.kind === "multi") {
-        assert.ok(script[q.id] !== undefined || q.kind === "multi", `no answer scripted for ${q.id}`);
-        a[q.id] = script[q.id] ?? [];
+        const answer = script[q.id] ?? DEFAULTS[q.id];
+        assert.ok(answer !== undefined || q.kind === "multi", `no answer scripted for ${q.id}`);
+        a[q.id] = answer ?? [];
       } else if (q.kind === "form") {
         a[q.id] = "";
         for (const f of q.fields) if (f.example !== undefined) a[f.id] = String(f.example);

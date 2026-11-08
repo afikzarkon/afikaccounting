@@ -1,4 +1,4 @@
-import { accrued, attribution, partInterest, pv, tiered } from "./ias19";
+import { accrued, attribution, type BenefitFormula, partInterest, pv, tiered } from "./ias19";
 import type { BkLine, BkNote, BkRoll, BkStep, BkTable } from "./ias19-booklet";
 
 /**
@@ -14,8 +14,10 @@ export type JournalLine = { account: string; dr?: number; cr?: number };
 export type CalcJournal = { title: string; lines: JournalLine[] };
 export type CalcStep = BkStep & { journal?: CalcJournal[] };
 export type CalcMetric = { label: string; value: number };
+/** What a solution adds to the statements, for a summary of several benefits. Expense and OCI loss are positive; the balance is a liability, a negative one an asset. */
+export type CalcSummary = { year: number; label: string; pl: number; oci: number; balance: number };
 /** `detail` holds the raw figures, for the tests. */
-export type CalcSolution = { title: string; metrics: CalcMetric[]; steps: CalcStep[]; notes: string[]; detail?: unknown };
+export type CalcSolution = { title: string; metrics: CalcMetric[]; steps: CalcStep[]; notes: string[]; summary?: CalcSummary; detail?: unknown };
 
 const nf = (x: number, d = 0) => x.toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: 0 });
 const money = (x: number) => nf(Math.round(x));
@@ -54,19 +56,33 @@ export type Terms =
   | { kind: "salary"; share: number }
   /** A fixed grant earned over a window of years, on a straight line. */
   | { kind: "lump"; grant: number; window: number }
-  /** A formula in tiers, with an optional cap: plan formula, or straight line when later years earn materially more. */
-  | { kind: "tiers"; tiers: { upTo?: number; perYear: number }[]; cap?: number }
+  /**
+   * A formula in tiers, with an optional cap: plan formula, or straight line when later years earn materially more.
+   * `growth`: every year past the first tier earns this much more than the year before.
+   * `short`: a whole stay of up to `upTo` years earns a flat `perYear` instead of the tiers.
+   */
+  | { kind: "tiers"; tiers: { upTo?: number; perYear: number }[]; cap?: number; growth?: number; short?: { upTo: number; perYear: number } }
   /** Two routes to one grant: at `minAge` after `years` of service, or at `retire` whatever the service. */
   | { kind: "routes"; grant: number; minAge: number; years: number; retire: number }
+  /** One grant at the first of two conditions met, service or age; a stay that meets neither earns nothing. */
+  | { kind: "earliest"; grant: number; years: number; age: number }
   /** Amounts given outright: accrued per head at the start of the year, and added this year (a bonus on each year's profit). */
-  | { kind: "amounts" };
+  | { kind: "amounts" }
+  /** An existing benefit with another added to it by an amendment. */
+  | { kind: "sum"; parts: Terms[] };
 
 export type DbGroup = {
   name: string;
   heads: number;
   /** The share of `heads` expected to reach payment. */
   stay: number;
-  /** Years of service at 1.1. */
+  /** Terms of this group alone, when groups differ. */
+  terms?: Terms;
+  /** An amendment doesn't apply to this group. */
+  skipEvent?: boolean;
+  /** Of `heads`, how many left on 1.1 with nothing, unexpectedly: in the opening, out of everything after it. */
+  leftAtStart?: number;
+  /** Years of service at 1.1; negative for someone who joins during the year (a quarter of a year left: −0.75). */
   served: number;
   /** Years from the end of the year to payment. For "routes" it is derived from the ages. */
   nEnd: number;
@@ -89,7 +105,8 @@ export type DbGroup = {
 };
 
 export type DbEvent =
-  | { type: "amend"; month: number; rate: number; terms: Terms; compensation?: number }
+  /** `add`: the terms come on top of each group's own, instead of replacing them. */
+  | { type: "amend"; month: number; rate: number; terms: Terms; add?: boolean; compensation?: number }
   | { type: "settle"; month: number; rate: number; share: number; paid: number; paidFromAssets: boolean };
 
 export type Ceiling =
@@ -103,7 +120,9 @@ export type Ceiling =
 
 export type DbAssets = {
   opening: number;
-  closing: number;
+  /** Fair value at year end; or, when the question gives the return instead, `excessReturn`, and the closing follows. */
+  closing?: number;
+  excessReturn?: number;
   contributions: { amount: number; month: number }[];
   /** Fair value on the event date, when given: the assets are remeasured there (IAS 19.99). */
   atEvent?: number;
@@ -136,10 +155,43 @@ export function routeOf(t: Extract<Terms, { kind: "routes" }>, hireAge: number) 
   return { start: hireAge, end: t.retire, route: "age" as const };
 }
 
+/** The formula of a "tiers" benefit, for this group's whole stay. */
+function tierFormula(t: Extract<Terms, { kind: "tiers" }>, g: DbGroup): BenefitFormula {
+  const expected = (g.expected ?? 0) - (g.uncounted ?? 0);
+  if (t.short && expected > 0 && expected <= t.short.upTo) return tiered([{ perYear: t.short.perYear }]);
+  if (!t.growth) return tiered(t.tiers);
+  const upTo = t.tiers[0].upTo ?? 0;
+  const first = t.tiers[0].perYear;
+  const growth = t.growth;
+  return (years) => {
+    let total = first * Math.min(years, upTo);
+    let amount = first;
+    for (let k = upTo; k < years; k++) {
+      amount *= 1 + growth;
+      total += amount * Math.min(1, years - k);
+    }
+    return total;
+  };
+}
+
+/** How many years an "earliest" grant is earned over; undefined when the stay meets neither condition. */
+export function earliestWindow(t: Extract<Terms, { kind: "earliest" }>, g: DbGroup) {
+  const stay = g.expected ?? 0;
+  const byAge = t.age - (g.hireAge ?? 0);
+  const window = Math.min(byAge <= stay ? byAge : Infinity, t.years <= stay ? t.years : Infinity);
+  return Number.isFinite(window) ? window : undefined;
+}
+
 /** What is accrued per head after `s` years of service, on these terms. */
-export function accruedAt(t: Terms, g: DbGroup, s: number, salary: number) {
+export function accruedAt(t: Terms, g: DbGroup, s: number, salary: number): number {
   const counted = Math.max(0, s - (g.uncounted ?? 0));
   switch (t.kind) {
+    case "sum":
+      return sum(t.parts.map((x) => accruedAt(x, g, s, salary)));
+    case "earliest": {
+      const window = earliestWindow(t, g);
+      return window === undefined ? 0 : (t.grant / window) * Math.min(counted, window);
+    }
     case "perYear":
       return t.amount * counted;
     case "salary":
@@ -147,7 +199,7 @@ export function accruedAt(t: Terms, g: DbGroup, s: number, salary: number) {
     case "lump":
       return (t.grant / t.window) * Math.min(counted, t.window);
     case "tiers": {
-      const f = tiered(t.tiers);
+      const f = tierFormula(t, g);
       const cap = t.cap ?? Infinity;
       return accrued(attribution(f, (g.expected ?? counted) - (g.uncounted ?? 0), cap), f, counted, cap);
     }
@@ -162,6 +214,7 @@ export function accruedAt(t: Terms, g: DbGroup, s: number, salary: number) {
 }
 
 const nEndOf = (t: Terms, g: DbGroup) => (t.kind === "routes" ? t.retire - ((g.hireAge ?? 0) + g.served + 1) : g.nEnd);
+const termsOf = (q: { terms: Terms }, g: DbGroup) => g.terms ?? q.terms;
 
 /** The measurement of one group at one date, as the five steps write it. */
 function measured(heads: number, acc: number, i: number, n: number) {
@@ -171,6 +224,12 @@ function measured(heads: number, acc: number, i: number, n: number) {
 /** One sentence on how a group's benefit reaches the years of service. */
 function attributionText(t: Terms, g: DbGroup): BkLine {
   switch (t.kind) {
+    case "sum":
+      return { label: g.name, text: t.parts.map((x) => attributionText(x, g).text).join(" ועוד: ") };
+    case "earliest": {
+      const w = earliestWindow(t, g);
+      return { label: g.name, text: w === undefined ? "לא מגיע למענק בשום מסלול, ולכן לא נצבר כלום." : `התנאי הראשון שמתקיים אחרי ${w} שנים: ${money(t.grant)} ÷ ${w} = ${money(t.grant / w)} ₪ לשנה.` };
+    }
     case "perYear":
       return { label: g.name, text: `${money(t.amount)} ₪ לכל שנת שירות שנספרת.` };
     case "salary":
@@ -178,7 +237,7 @@ function attributionText(t: Terms, g: DbGroup): BkLine {
     case "lump":
       return { label: g.name, text: `${money(t.grant)} ÷ ${t.window} = ${money(t.grant / t.window)} ₪ לשנה, עד ${t.window} שנים. אחריהן לא נצבר יותר.` };
     case "tiers": {
-      const f = tiered(t.tiers);
+      const f = tierFormula(t, g);
       const cap = t.cap ?? Infinity;
       const a = attribution(f, (g.expected ?? 0) - (g.uncounted ?? 0), cap);
       return a.method === "formula"
@@ -197,8 +256,9 @@ function attributionText(t: Terms, g: DbGroup): BkLine {
 /** Measuring an obligation at one date: the five steps, group by group. */
 export function solveMeasure(q: { plan: DbInput["plan"]; date: string; terms: Terms; rate: number; groups: (DbGroup & { servedAtDate: number; nAtDate: number })[] }): CalcSolution {
   const rows = q.groups.map((g) => {
-    const n = q.terms.kind === "routes" ? q.terms.retire - ((g.hireAge ?? 0) + g.servedAtDate) : g.nAtDate;
-    const acc = accruedAt(q.terms, g, g.servedAtDate, g.salary ?? 0);
+    const own = termsOf(q, g);
+    const n = own.kind === "routes" ? own.retire - ((g.hireAge ?? 0) + g.servedAtDate) : g.nAtDate;
+    const acc = accruedAt(own, g, g.servedAtDate, g.salary ?? 0);
     const heads = g.heads * g.stay;
     return { g, n, acc, heads, ...measured(heads, acc, q.rate, n) };
   });
@@ -207,7 +267,7 @@ export function solveMeasure(q: { plan: DbInput["plan"]; date: string; terms: Te
     title: `מדידת ההתחייבות ב-${q.date}`,
     metrics: [{ label: `התחייבות ב-${q.date}`, value: total }],
     steps: [
-      { title: "לאיזו שנה שייך כל חלק", notes: [{ title: "ייחוס ההטבה לשנות השירות", lines: q.groups.map((g) => attributionText(q.terms, g)) }] },
+      { title: "לאיזו שנה שייך כל חלק", notes: [{ title: "ייחוס ההטבה לשנות השירות", lines: q.groups.map((g) => attributionText(termsOf(q, g), g)) }] },
       {
         title: "חמשת הצעדים",
         text: [`הטבה × שנים × עובדים צפויים, מהוון לפי **השנים עד התשלום** ובשיעור אג״ח קונצרני איכותי (${pc(q.rate)}).`],
@@ -221,6 +281,7 @@ export function solveMeasure(q: { plan: DbInput["plan"]; date: string; terms: Te
       },
     ],
     notes: ["מהוונים לפי השנים עד התשלום, לא לפי שנות הצבירה."],
+    summary: { year: Number(q.date.slice(-4)) || 0, label: `מדידה ב-${q.date}`, pl: 0, oci: 0, balance: total },
   };
 }
 
@@ -268,8 +329,9 @@ function assetsYear(q: DbInput, a: DbAssets, ctx: { m: number; iV: number; settl
   const contributions = sum(a.contributions.map((c) => c.amount));
   const paid = sum(pays.map((p) => p.amount));
   const settled = ctx.settledFromAssets ? ctx.settledPaid : 0;
-  const pn = a.closing - a.opening - interest - contributions + paid + settled;
-  return { interest, contributions, paid, settled, pn, pnEvent, lines };
+  const closing = a.closing ?? a.opening + interest + contributions - paid - settled + (a.excessReturn ?? 0);
+  const pn = closing - a.opening - interest - contributions + paid + settled;
+  return { interest, contributions, paid, settled, pn, pnEvent, lines, closing };
 }
 
 /** The ceiling at the two dates, and how much of the fair value the statements carry. */
@@ -298,37 +360,47 @@ export function solveDbYear(q: DbInput): CalcSolution {
   const m = ev?.month ?? 0;
   const iV = ev?.rate ?? q.iStart;
   const f = m / 12;
-  const newTerms = ev?.type === "amend" ? ev.terms : q.terms;
+  const newTermsOf = (g: DbGroup): Terms => {
+    const own = termsOf(q, g);
+    if (ev?.type !== "amend" || g.skipEvent) return own;
+    return ev.add ? { kind: "sum", parts: [own, ev.terms] } : ev.terms;
+  };
   const share = ev?.type === "settle" ? ev.share : 0;
   const otherLong = q.plan === "otherLongTerm";
 
   const rows = q.groups.map((g) => {
-    const nEnd = nEndOf(q.terms, g);
+    const own = termsOf(q, g);
+    const newTerms = newTermsOf(g);
+    const nEnd = nEndOf(own, g);
     const s0 = g.served;
-    const hS = g.heads * g.stay;
-    const hA = (g.atEvent?.heads ?? g.heads) * (g.atEvent?.stay ?? g.stay);
-    const hE = (g.atEnd?.heads ?? g.heads) * (g.atEnd?.stay ?? g.stay);
+    const left = g.leftAtStart ?? 0;
+    const hOpen = g.heads * g.stay;
+    const hS = (g.heads - left) * g.stay;
+    const hA = (g.atEvent?.heads ?? g.heads - left) * (g.atEvent?.stay ?? g.stay);
+    const hE = (g.atEnd?.heads ?? g.heads - left) * (g.atEnd?.stay ?? g.stay);
     const salS = g.salary ?? 0;
     const salA = g.atEvent?.salary ?? salS;
     const salE = g.atEnd?.salary ?? salS;
-    const acc0 = accruedAt(q.terms, g, s0, salS);
-    const open = measured(hS, acc0, q.iStart, nEnd + 1);
+    const acc0 = accruedAt(own, g, s0, salS);
+    const open = measured(hOpen, acc0, q.iStart, nEnd + 1);
+    // Someone who left on 1.1 is in the opening but earns no interest.
+    const leaver = pv(left * g.stay * acc0, q.iStart, nEnd + 1);
     const end = measured(hE, accruedAt(newTerms, g, s0 + 1, salE), q.iEnd, nEnd);
     if (!ev) {
-      const unit = accruedAt(q.terms, g, s0 + 1, salS) - acc0;
+      const unit = accruedAt(own, g, s0 + 1, salS) - acc0;
       const service = measured(hS, unit, q.iStart, nEnd);
-      return { g, nEnd, open, end, services: [service], before: 0, after: 0, beforeCalc: "", afterCalc: "" };
+      return { g, nEnd, open, leaver, end, services: [service], before: 0, after: 0, beforeCalc: "", afterCalc: "" };
     }
     const nFromDate = nEnd + 1 - f;
     const nA = g.atEvent?.n ?? nFromDate;
-    const unitBefore = accruedAt(q.terms, g, s0 + f, salS) - acc0;
+    const unitBefore = accruedAt(own, g, s0 + f, salS) - acc0;
     const sBefore = measured(hS, unitBefore, q.iStart, nFromDate);
-    const before = measured(hA, accruedAt(q.terms, g, s0 + f, salA), iV, nA);
+    const before = measured(hA, accruedAt(own, g, s0 + f, salA), iV, nA);
     const hAfter = g.headsAfter ?? hA;
     const after = ev.type === "amend" ? measured(hAfter, accruedAt(newTerms, g, s0 + f, salA), iV, nA) : before;
     const unitAfter = accruedAt(newTerms, g, s0 + 1, salA) - accruedAt(newTerms, g, s0 + f, salA);
     const sAfter = m < 12 ? measured(hAfter * (1 - share), unitAfter, iV, nA - (12 - m) / 12) : { value: 0, calc: "" };
-    return { g, nEnd, open, end, services: [sBefore, sAfter], before: before.value, after: after.value, beforeCalc: before.calc, afterCalc: after.calc };
+    return { g, nEnd, open, leaver, end, services: [sBefore, sAfter], before: before.value, after: after.value, beforeCalc: before.calc, afterCalc: after.calc };
   });
 
   const opening = q.openingGiven ?? sum(rows.map((r) => r.open.value));
@@ -347,7 +419,8 @@ export function solveDbYear(q: DbInput): CalcSolution {
   const pays = q.payments ?? [];
   const paidTotal = sum(pays.map((p) => p.amount));
   const payInterest = sum(pays.map((p) => (ev ? (p.month < m ? partInterest(p.amount, q.iStart, m - p.month) : partInterest(p.amount, iV, 12 - p.month)) : partInterest(p.amount, q.iStart, 12 - p.month))));
-  const iBefore = ev ? partInterest(opening, q.iStart, m) : opening * q.iStart;
+  const leaverOpening = sum(rows.map((r) => r.leaver));
+  const iBefore = ev ? partInterest(opening - leaverOpening, q.iStart, m) : (opening - leaverOpening) * q.iStart;
   const iAfter = ev ? partInterest(balanceAfter, iV, 12 - m) : 0;
   const interest = iBefore + iAfter - payInterest;
   const paidBefore = ev ? sum(pays.filter((p) => p.month < m).map((p) => p.amount)) : 0;
@@ -376,8 +449,8 @@ export function solveDbYear(q: DbInput): CalcSolution {
     lines: rows.flatMap((r) => r.services.filter((s) => s.calc).map((s, k) => line(ev ? `${r.g.name}: ${k === 0 ? "לפני האירוע" : "אחרי האירוע"}` : r.g.name, s.calc, s.value))),
   });
   const intLines: BkLine[] = ev
-    ? [line(`ריבית עד חודש ${m}`, `${money(opening)} × (${b(q.iStart)}^(${m}/12) − 1)`, iBefore), line(`ריבית מחודש ${m}`, `${money(balanceAfter)} × (${b(iV)}^(${12 - m}/12) − 1)`, iAfter, "על היתרה אחרי האירוע")]
-    : [line("על יתרת הפתיחה", `${money(opening)} × ${pc(q.iStart)}`, iBefore)];
+    ? [line(`ריבית עד חודש ${m}`, `${money(opening - leaverOpening)} × (${b(q.iStart)}^(${m}/12) − 1)`, iBefore, leaverOpening ? "בלי מי שעזב ב-1.1" : undefined), line(`ריבית מחודש ${m}`, `${money(balanceAfter)} × (${b(iV)}^(${12 - m}/12) − 1)`, iAfter, "על היתרה אחרי האירוע")]
+    : [line("על יתרת הפתיחה", `${money(opening - leaverOpening)} × ${pc(q.iStart)}`, iBefore, leaverOpening ? "בלי מי שעזב ב-1.1" : undefined)];
   if (payInterest) intLines.push(line("פחות: ריבית על תשלומים, מיום התשלום", undefined, -payInterest));
   notes.push({ title: "ביאור 3: עלות ריבית", lines: intLines });
   if (ev?.type === "amend") {
@@ -406,7 +479,9 @@ export function solveDbYear(q: DbInput): CalcSolution {
   });
 
   const steps: CalcStep[] = [];
-  steps.push({ title: "לאיזו שנה שייך כל חלק", notes: [{ title: "ייחוס ההטבה לשנות השירות", lines: q.groups.map((g) => attributionText(q.terms, g)) }] });
+  const attrLines = q.groups.map((g) => attributionText(termsOf(q, g), g));
+  if (ev?.type === "amend") attrLines.push(...q.groups.filter((g) => !g.skipEvent).map((g) => ({ ...attributionText(ev.terms, g), label: `${g.name}: ${ev.add ? "התוספת" : "אחרי התיקון"}` })));
+  steps.push({ title: "לאיזו שנה שייך כל חלק", notes: [{ title: "ייחוס ההטבה לשנות השירות", lines: attrLines }] });
   steps.push({ title: "התנועה בהתחייבות", rolls: [{ title: `התחייבות, ${y}`, rows: obRows, pnTo }], notes });
 
   // Assets, and the ceiling.
@@ -432,15 +507,16 @@ export function solveDbYear(q: DbInput): CalcSolution {
     if (a.paid) assetRows.push({ label: "תשלומים מהקרן", value: -a.paid, note: "רק מה שיצא מהקרן" });
     if (a.settled) assetRows.push({ label: "תשלום הסילוק מהקרן", value: -a.settled, note: "נתון" });
     assetRows.push({ label: "מדידה מחדש", value: a.pn, kind: "pn", note: "השורה המאזנת" });
-    assetRows.push({ label: `שווי הוגן 31.12.${y}`, value: q.assets.closing, kind: "balance" });
+    assetRows.push({ label: `שווי הוגן 31.12.${y}`, value: a.closing, kind: "balance" });
+    const assetsClose = a.closing;
 
     const c = ceilingOf(q.assets.ceiling, q);
     const surplus0 = q.assets.opening - opening;
-    const surplus1 = q.assets.closing - closing;
+    const surplus1 = assetsClose - closing;
     recognisedOpen = surplus0 > 0 ? opening + Math.max(0, Math.min(surplus0, c.open)) : q.assets.opening;
-    recognisedClose = surplus1 > 0 ? closing + Math.max(0, Math.min(surplus1, c.close)) : q.assets.closing;
+    recognisedClose = surplus1 > 0 ? closing + Math.max(0, Math.min(surplus1, c.close)) : assetsClose;
     const effect0 = q.assets.opening - recognisedOpen;
-    const effect1 = q.assets.closing - recognisedClose;
+    const effect1 = assetsClose - recognisedClose;
     effectInterest = effect0 * q.iStart;
     effectChange = effect1 - effect0 - effectInterest;
     const ceilingNotes: BkNote[] = q.assets.ceiling.kind === "none" || (surplus0 <= 0 && surplus1 <= 0)
@@ -448,12 +524,19 @@ export function solveDbYear(q: DbInput): CalcSolution {
       : [
           {
             title: "תקרת הנכס",
-            text: `${c.text} הנכס נטו הוא הנמוך מבין העודף לתקרה (סעיף 64).`,
+            text: `${c.text} הנכס נטו הוא הנמוך מבין העודף לתקרה (סעיף 64).${q.assets.ceiling.kind === "mfr" ? " גם בלי החזרים, הפקדה עתידית נמוכה מעלות השירות היא הטבה כלכלית, ולכן אפשר להכיר בחלק מהעודף כנכס, עד גובה התקרה." : ""}`,
             lines: [
-              line(`עודף 31.12.${y}`, `${money(q.assets.closing)} − ${money(closing)}`, surplus1),
+              ...(surplus0 > 0
+                ? [
+                    line(`עודף 31.12.${y - 1}`, `${money(q.assets.opening)} − ${money(opening)}`, surplus0),
+                    line(`תקרה 31.12.${y - 1}`, undefined, Number.isFinite(c.open) ? c.open : 0),
+                    line(`נכס נטו 31.12.${y - 1}`, undefined, Math.max(0, recognisedOpen - opening)),
+                  ]
+                : []),
+              line(`עודף 31.12.${y}`, `${money(assetsClose)} − ${money(closing)}`, surplus1),
               line(`תקרה 31.12.${y}`, undefined, Number.isFinite(c.close) ? c.close : 0),
               line(`נכס נטו 31.12.${y}`, undefined, Math.max(0, recognisedClose - closing)),
-              line("השפעת התקרה בסוף השנה", `${money(q.assets.closing)} − ${money(recognisedClose)}`, effect1),
+              line("השפעת התקרה בסוף השנה", `${money(assetsClose)} − ${money(recognisedClose)}`, effect1),
               ...(effect0 ? [line("ריבית על השפעת התקרה", `${money(effect0)} × ${pc(q.iStart)}`, effectInterest, "חלק מהריבית נטו"), line("שינוי בהשפעת התקרה, ל-OCI", `${money(effect1)} − ${money(effect0)} − ${money(effectInterest)}`, effectChange)] : [line("שינוי בהשפעת התקרה, ל-OCI", undefined, effectChange)]),
             ],
           },
@@ -513,6 +596,7 @@ export function solveDbYear(q: DbInput): CalcSolution {
     metrics,
     steps,
     notes: resultNotes,
+    summary: { year: y, label: otherLong ? "הטבה אחרת לזמן ארוך" : "הטבה מוגדרת", pl, oci, balance: net },
     detail: { opening, service, past, interest, pn, closing, assetInterest, assetPn, settlementGain, netInterest, oci, pl, net, recognisedClose, effectChange, cash, netOpen } satisfies DbDetail,
   };
 }
@@ -534,6 +618,7 @@ export function solveDisabilityEvent(q: { year: number; amount: number; happened
       },
     ],
     notes: [],
+    summary: { year: q.year, label: "אובדן כושר עבודה", pl: v, oci: 0, balance: v },
   };
 }
 
@@ -639,6 +724,7 @@ export function solveNoteYear(q: { year: number; rate?: number; obligation: Note
     metrics: [{ label: `התחייבות נטו 31.12.${q.year}`, value: net }, { label: "הוצאה ברווח והפסד", value: pl }, { label: oci >= 0 ? "הפסד ב-OCI" : "רווח ב-OCI", value: Math.abs(oci) }],
     steps,
     notes: [],
+    summary: { year: q.year, label: "הטבה מוגדרת (ביאור)", pl, oci, balance: net },
     detail: { ...o, assetInterest: aOut.interest, assetPn: aOut.pn, closingAssets: aOut.closing, rate },
   };
 }
@@ -668,6 +754,7 @@ export function solveDcPlans(q: { year: number; plans: DcPlan[] }): CalcSolution
       },
     ],
     notes: ["חלק העובד בהפקדה אינו הוצאה של החברה."],
+    summary: { year: q.year, label: "הפקדה מוגדרת", pl: expense, oci: 0, balance: gap },
   };
 }
 
@@ -675,8 +762,9 @@ export function solveDcPlans(q: { year: number; plans: DcPlan[] }): CalcSolution
 // Short-term benefits: paid absences.
 
 export type ShortGrade = { name: string; dayCost: number; dayCostCalc?: string; entitlement: number; carried: number[]; years: number };
-export type OpeningRow = { name: string; grade: number; staff: number; use: number; leaves: boolean; dayCost?: number };
-export type ActualRow = { name: string; grade: number; staff: number; use: number; leaves: boolean; nextUse?: number; nextLeaves?: boolean; dayCostPaid?: number; dayCostClose?: number };
+/** `useShare` / `nextShare`: expected use as a share of the balance, when the question gives it so. */
+export type OpeningRow = { name: string; grade: number; staff: number; use: number; useShare?: number; leaves: boolean; dayCost?: number };
+export type ActualRow = { name: string; grade: number; staff: number; use: number; leaves: boolean; nextUse?: number; nextShare?: number; nextLeaves?: boolean; dayCostPaid?: number; dayCostClose?: number };
 export type AbsenceInput = { year: number; order: "lifo" | "fifo"; /** The share of the balance a leaver is paid: 0 non-vesting, 1 vesting. */ vest: number; grades: ShortGrade[]; opening: OpeningRow[]; actual: ActualRow[] };
 
 /** Carried days taken from the balance when `use` days are used: LIFO only past the new entitlement; FIFO from the first day. */
@@ -686,7 +774,7 @@ export function solveAbsences(q: AbsenceInput) {
   const openRows = q.opening.map((r) => {
     const g = q.grades[r.grade];
     const balance = sum(g.carried.slice(0, g.years));
-    const extra = fromBalance(q.order, balance, r.use, g.entitlement);
+    const extra = r.useShare !== undefined ? balance * r.useShare : fromBalance(q.order, balance, r.use, g.entitlement);
     const perHead = r.leaves ? extra + q.vest * (balance - extra) : extra;
     const cost = r.dayCost ?? g.dayCost;
     return { ...r, balance, extra, perHead, cost, amount: r.staff * perHead * cost };
@@ -715,7 +803,7 @@ export function solveAbsences(q: AbsenceInput) {
     const paidCost = r.dayCostPaid ?? g.dayCost;
     const paidDays = r.use + payout;
     const closeCost = r.dayCostClose ?? g.dayCost;
-    const planned = r.nextUse === undefined ? carryOut : fromBalance(q.order, carryOut, r.nextUse, g.entitlement);
+    const planned = r.nextShare !== undefined ? carryOut * r.nextShare : r.nextUse === undefined ? carryOut : fromBalance(q.order, carryOut, r.nextUse, g.entitlement);
     const closeDays = r.leaves ? 0 : r.nextLeaves ? planned + q.vest * (carryOut - planned) : planned;
     return { ...r, balance, fromCarried, remaining, payout, ownLeft, oldLeft, carryOut, lapsed, paidCost, paidDays, paid: r.staff * paidDays * paidCost, closeCost, closeDays, closing: r.staff * closeDays * closeCost };
   });
@@ -790,6 +878,7 @@ export function solveAbsenceBenefit(q: AbsenceInput): CalcSolution {
     metrics: [{ label: `הוצאה ${q.year}`, value: s.expense }, { label: `הפרשה 31.12.${q.year}`, value: s.closing }],
     steps,
     notes: leavers && q.vest === 0 ? ["היעדרות לא מבשילה: מי שעזב לא משולם על היתרה שלו, והיא פשוט יורדת."] : [],
+    summary: { year: q.year, label: "היעדרות נצברת", pl: s.expense, oci: 0, balance: s.closing },
     detail: s,
   };
 }
@@ -809,6 +898,7 @@ export function solveNonAccumulating(q: { year: number; days: number; dayCost: n
       },
     ],
     notes: [],
+    summary: { year: q.year, label: "היעדרות לא נצברת", pl: expense, oci: 0, balance: 0 },
   };
 }
 
@@ -820,6 +910,7 @@ export function solveBonus(q: { year: number; obligation: boolean; base: number;
       metrics: [{ label: `הפרשה 31.12.${q.year}`, value: 0 }],
       steps: [{ title: "יש מחויבות?", text: ["אין מחויבות משפטית, אין נוהג שיוצר מחויבות, ואין מועד שבו החברה כבר לא יכולה לחזור בה. לכן לא מכירים בהפרשה בשנה הזו (סעיף 19)."] }],
       notes: [],
+      summary: { year: q.year, label: "בונוס", pl: 0, oci: 0, balance: 0 },
     };
   }
   const closing = q.base * (1 + q.onCost) * q.stayShare;
@@ -856,6 +947,7 @@ export function solveBonus(q: { year: number; obligation: boolean; base: number;
       },
     ],
     notes: [],
+    summary: { year: q.year, label: "בונוס", pl: expense, oci: 0, balance: closing },
   };
 }
 
@@ -888,6 +980,7 @@ export function solveTermination(q: TermInput): CalcSolution {
         },
       ],
       notes: [],
+      summary: { year: q.year, label: "הטבת פיטורין", pl: 0, oci: 0, balance: 0 },
     };
   }
   const undiscounted = q.heads * q.amount;
@@ -932,5 +1025,12 @@ export function solveTermination(q: TermInput): CalcSolution {
     metrics: [{ label: "הפרשה לפיטורין", value: provision }, ...(q.stay ? [{ label: `תוספת שהוכרה ב-${q.year}`, value: stayAccrued }] : []), { label: "סה״כ הוצאה", value: total }],
     steps,
     notes: ["פיצול שונה בין עוזבים לנשארים לא משנה את הסכום הבסיסי."],
+    summary: { year: q.year, label: "הטבת פיטורין", pl: total, oci: 0, balance: total },
   };
+}
+
+/** What a published note hides: the step that opens a solution when the question gives one. */
+export function withNoteStep(sol: CalcSolution, lines: BkLine[]): CalcSolution {
+  if (!lines.length) return sol;
+  return { ...sol, steps: [{ title: "מה הביאור מסתיר", text: ["קודם מחלצים מהביאור את מה שהשאלה לא אומרת במפורש."], notes: [{ title: "מהביאור", lines }] }, ...sol.steps] };
 }
