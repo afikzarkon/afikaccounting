@@ -334,7 +334,7 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
                   dense
                   head={["", "סכום"]}
                   rows={[
-                    [`הוצאות פחת: ${n(C.TERM_AFTER_A)} ÷ ${C.TERM_NEW_YEARS}`, C.TERM_DEP2],
+                    [<>הוצאות פחת: <Ltr>{`${n(C.TERM_AFTER_A)} ÷ ${C.TERM_NEW_YEARS}`}</Ltr></>, C.TERM_DEP2],
                     ["הוצאות מימון: 7%, אחרי התשלום", C.TERM_INT7],
                     ["נכס זכות שימוש, נטו", C.TERM_ROU7],
                     ["התחייבות, שוטפת", C.TERM.payment],
