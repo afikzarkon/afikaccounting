@@ -346,3 +346,15 @@ export async function getFunnel(days: number, source?: string): Promise<{ now: F
   ]);
   return { now: check(now) as Funnel, before: check(before) as Funnel, asOf: end };
 }
+
+// ---- experiments ---------------------------------------------------------------
+
+export type VariantResult = { variant: string; visitors: number; answered: number; activated: number; signedUp: number; paid: number };
+
+/** Each experiment's variants over the last `days` days (lib/experiments.ts). Empty before the experiments migration. */
+export async function getExperiments(days: number, ids: string[]): Promise<Record<string, VariantResult[]>> {
+  const supabase = await createClient();
+  const since = new Date(Date.now() - days * 86_400_000).toISOString();
+  const rows = await Promise.all(ids.map(async (id) => [id, (await supabase.rpc("admin_experiment", { p_exp: id, since })).data ?? []] as const));
+  return Object.fromEntries(rows) as Record<string, VariantResult[]>;
+}

@@ -32,6 +32,8 @@ export const EVENT_KINDS = [
   // Habit: the first study action of a day (with the streak), an exam date set for a course.
   "study_day",
   "exam_goal_set",
+  // A/B: a visitor saw an experiment's page, with their variant (meta.exp, meta.variant).
+  "experiment_view",
 ] as const;
 export type EventKind = (typeof EVENT_KINDS)[number];
 

@@ -5,7 +5,8 @@ import { type FunnelLabels, FunnelView } from "@/components/admin/funnel-view";
 import { AdminSkeleton, SetupRequired } from "@/components/admin/ui";
 import { requireAdmin } from "@/lib/auth/dal";
 import { TOPICS } from "@/lib/catalog";
-import { getFunnel, unlessSetupRequired } from "@/lib/data/admin";
+import { getExperiments, getFunnel, unlessSetupRequired } from "@/lib/data/admin";
+import { EXPERIMENTS } from "@/lib/experiments";
 import { STUDY_MODULES } from "@/lib/study";
 
 export const metadata: Metadata = { title: "משפך וצמיחה" };
@@ -26,7 +27,7 @@ async function FunnelPage({ searchParams }: { searchParams: PageProps<"/admin/fu
   const days = RANGES.find((r) => String(r.days) === one(sp.range))?.days ?? 30;
   const source = one(sp.source)?.slice(0, 120) || undefined;
 
-  const loaded = await unlessSetupRequired(getFunnel(days, source));
+  const [loaded, experiments] = await Promise.all([unlessSetupRequired(getFunnel(days, source)), getExperiments(days, EXPERIMENTS.map((e) => e.id))]);
   if (!loaded) return <SetupRequired />;
 
   // Names for the ids the numbers come with, from the lessons the site holds now (only those that appear).
@@ -44,5 +45,5 @@ async function FunnelPage({ searchParams }: { searchParams: PageProps<"/admin/fu
   }
   const courses = Object.fromEntries(TOPICS.map((t) => [t.id, t.standard ? `${t.standard} · ${t.title}` : t.title]));
 
-  return <FunnelView now={loaded.now} before={loaded.before} days={days} source={source} labels={{ lessons, traps, courses }} asOf={loaded.asOf} />;
+  return <FunnelView now={loaded.now} before={loaded.before} days={days} source={source} labels={{ lessons, traps, courses }} asOf={loaded.asOf} experiments={experiments} />;
 }

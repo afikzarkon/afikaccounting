@@ -17,12 +17,15 @@ import { HeroExercise } from "./hero-exercise";
  * What the free course holds is set out like a ledger, down to its total.
  */
 export async function Hero({
+  variant,
   question,
   check,
   lessons,
   exercises,
   videos,
 }: {
+  /** The headline's A/B variant (lib/experiments.ts, "hero"); none is the control. */
+  variant?: string;
   question?: FeaturedQuestion;
   check?: { href: string; label: string };
   lessons: number;
@@ -44,13 +47,26 @@ export async function Hero({
       <div className="mx-auto grid max-w-7xl items-start gap-x-16 gap-y-7 px-4 pt-8 pb-16 sm:px-6 sm:pt-16 lg:grid-cols-[1.05fr_1fr] lg:px-8 lg:pb-24">
         <div className="lg:col-start-1 lg:row-start-1">
           <p className="text-[15px] font-semibold text-accent">שאלות ברמת מבחן · בלי הרשמה</p>
-          <h1 className="mt-3 text-[2.15rem] leading-[1.08] font-black text-balance text-fg sm:text-[3.6rem]">
-            הסיכום אומר מה כתוב בתקן.{" "}
-            <span className="text-accent">כאן רואים איפה מפסידים נקודות.</span>
-          </h1>
-          <p className="mt-4 max-w-xl text-[17px] leading-relaxed text-muted sm:mt-5">
-            פותרים שאלות במלאי, ברכוש קבוע ובהטבות עובד, נופלים במלכודות עכשיו ולא במבחן, ורואים בדיוק למה. מתחילים מאפס? הקורס הבסיסי חינם כולו.
-          </p>
+          {variant === "doors" ? (
+            <>
+              <h1 className="mt-3 text-[2.15rem] leading-[1.08] font-black text-balance text-fg sm:text-[3.6rem]">
+                מתחילים חשבונאות — <span className="text-accent">או שהמבחן כבר קרוב?</span>
+              </h1>
+              <p className="mt-4 max-w-xl text-[17px] leading-relaxed text-muted sm:mt-5">
+                קורס מאפס, חינם כולו. וקורסים לנושאים שחוזרים בכל מבחן: מלאי, רכוש קבוע והטבות עובד — שאלות ברמת מבחן, מלכודות עם הסבר, וחזרה על הטעויות שלכם.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="mt-3 text-[2.15rem] leading-[1.08] font-black text-balance text-fg sm:text-[3.6rem]">
+                הסיכום אומר מה כתוב בתקן.{" "}
+                <span className="text-accent">כאן רואים איפה מפסידים נקודות.</span>
+              </h1>
+              <p className="mt-4 max-w-xl text-[17px] leading-relaxed text-muted sm:mt-5">
+                פותרים שאלות במלאי, ברכוש קבוע ובהטבות עובד, נופלים במלכודות עכשיו ולא במבחן, ורואים בדיוק למה. מתחילים מאפס? הקורס הבסיסי חינם כולו.
+              </p>
+            </>
+          )}
         </div>
 
         <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:pt-8">

@@ -116,3 +116,25 @@ describe("admin_funnel", () => {
     assert.equal(f.retention.reduce((a, r) => a + r.d1, 0), 1);
   });
 });
+
+describe("admin_experiment", () => {
+  it("follows each exposed browser from its first exposure, per variant", async () => {
+    await db.exec(
+      [
+        ev("E1", "experiment_view", 2, { meta: { exp: "hero", variant: "control" } }),
+        ev("E1", "exercise_answer", 2, { target: "basics-intro", ok: true, meta: { id: "x" } }),
+        ev("E2", "experiment_view", 2, { meta: { exp: "hero", variant: "doors" } }),
+        ...Array.from({ length: 5 }, (_, i) => ev("E2", "exercise_answer", 2, { target: "basics-intro", ok: true, meta: i ? { id: `y${i}` } : { id: "t", trap: true } })),
+        ev("E2", "signup", 2),
+        ev("E3", "experiment_view", 2, { meta: { exp: "hero", variant: "doors" } }),
+        ev("E3", "experiment_view", 1, { meta: { exp: "other", variant: "b" } }),
+      ].join("\n"),
+    );
+    const [{ r }] = await db.as<{ r: { variant: string; visitors: number; answered: number; activated: number; signedUp: number }[] }>(ADMIN, "select public.admin_experiment('hero', now() - interval '30 days') as r");
+    const by = Object.fromEntries(r.map((x) => [x.variant, x]));
+    assert.deepEqual([by.control.visitors, by.control.answered, by.control.activated], [1, 1, 0]);
+    assert.deepEqual([by.doors.visitors, by.doors.answered, by.doors.activated, by.doors.signedUp], [2, 1, 1, 1]);
+    assert.equal(await db.can(USER, "select public.admin_experiment('hero', now() - interval '30 days')"), false);
+  });
+});
+

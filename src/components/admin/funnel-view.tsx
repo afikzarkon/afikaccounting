@@ -1,6 +1,7 @@
 import { CalendarCheck, Flame, Mail, Repeat, Share2, TrendingUp, UserPlus, Users, Wallet, Zap } from "lucide-react";
 import Link from "next/link";
-import type { Funnel, FunnelSteps } from "@/lib/data/admin";
+import type { Funnel, FunnelSteps, VariantResult } from "@/lib/data/admin";
+import { compare, EXPERIMENTS } from "@/lib/experiments";
 import { cn } from "@/lib/utils";
 import { ColumnChart, type Point } from "./charts";
 import { RANGES, Segmented } from "./dashboard-view";
@@ -43,7 +44,7 @@ const tone = (now: number, before: number) => (before && now > before ? "good" :
  * from, whether they come back, the habit features, and how each lesson and
  * trap performs. Pure: the page loads the data and checks access.
  */
-export function FunnelView({ now, before, days, source, labels, asOf }: { now: Funnel; before: Funnel; days: number; source?: string; labels: FunnelLabels; asOf: number }) {
+export function FunnelView({ now, before, days, source, labels, asOf, experiments = {} }: { now: Funnel; before: Funnel; days: number; source?: string; labels: FunnelLabels; asOf: number; experiments?: Record<string, VariantResult[]> }) {
   const f = now.funnel;
   const b = before.funnel;
   const href = (patch: Record<string, string | undefined>) => {
@@ -259,6 +260,52 @@ export function FunnelView({ now, before, days, source, labels, asOf }: { now: F
           )}
         </Panel>
       )}
+
+      <Panel className="mt-6" title="ניסויים (A/B)" description="כל מבקר מקבל גרסה אחת ונשאר בה. ההשוואה היא על Activation — 5 תשובות עם מלכודת — מול הגרסה הקיימת.">
+        <div className="space-y-6">
+          {EXPERIMENTS.map((e) => {
+            const rows = experiments[e.id] ?? [];
+            const control = rows.find((r) => r.variant === e.variants[0].id);
+            return (
+              <div key={e.id}>
+                <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-fg">
+                  {e.title}
+                  <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", e.active ? "bg-success/15 text-success" : "bg-surface-2 text-muted")}>{e.active ? "פעיל" : "כבוי"}</span>
+                </p>
+                {rows.length === 0 ? (
+                  <p className="mt-1 text-sm text-muted">
+                    {e.active ? "עוד אין חשיפות בטווח הזה." : "הניסוי כבוי: כולם רואים את הגרסה הקיימת."} תצוגה מקדימה של כל גרסה: {e.variants.map((v, i) => (
+                      <a key={v.id} href={`${e.path}?ab=${e.id}:${v.id}`} className="text-accent hover:underline" dir="ltr">
+                        {i ? " · " : ""}?ab={e.id}:{v.id}
+                      </a>
+                    ))}
+                  </p>
+                ) : (
+                  <div className="mt-2">
+                    <Table
+                      head={["גרסה", "ראו", "ענו", "Activation", "נרשמו", "שילמו", "מול הקיימת"]}
+                      rows={e.variants.map((v, i) => {
+                        const r = rows.find((x) => x.variant === v.id) ?? { variant: v.id, visitors: 0, answered: 0, activated: 0, signedUp: 0, paid: 0 };
+                        const c = i && control ? compare({ n: control.visitors, x: control.activated }, { n: r.visitors, x: r.activated }) : null;
+                        return [
+                          <span key="v" className="text-fg">{v.label}</span>,
+                          count(r.visitors),
+                          pct(r.answered, r.visitors),
+                          pct(r.activated, r.visitors),
+                          pct(r.signedUp, r.visitors),
+                          count(r.paid),
+                          i === 0 ? "—" : !c ? "צריך 30+ בכל גרסה" : `${c.lift === null ? "" : `${c.lift >= 0 ? "+" : ""}${(c.lift * 100).toFixed(0)}% · `}${c.p < 0.05 ? "מובהק" : "עוד לא מובהק"} (p=${c.p.toFixed(3)})`,
+                        ];
+                      })}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-4 text-xs text-subtle">מפעילים ומכבים ניסוי ב־<span dir="ltr">src/lib/experiments.ts</span> (active). ״מובהק״: p קטן מ־0.05 במבחן לשני שיעורים — ובכל זאת כדאי להריץ עד הגודל שתכננתם מראש, ולא לעצור ברגע שזה נראה טוב.</p>
+      </Panel>
 
       <details className="card mt-6 p-5 text-sm">
         <summary className="cursor-pointer font-semibold text-fg">איך כל מספר מחושב</summary>
