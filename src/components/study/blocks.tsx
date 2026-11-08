@@ -96,36 +96,36 @@ export function JournalEntry({ title, date, lines, note }: { title: string; date
         <Badge tone={balanced ? "success" : "danger"}>{balanced ? "✓ מאוזנת" : "✗ לא מאוזנת"}</Badge>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[26rem] text-sm">
+        <table className="w-full text-[13px] sm:min-w-[26rem] sm:text-sm">
           <thead>
             <tr className="text-xs text-muted">
-              <th className="px-4 py-2 text-start font-medium">חשבון</th>
-              <th className="w-32 px-4 py-2 text-end font-medium text-debit">חובה</th>
-              <th className="w-32 px-4 py-2 text-end font-medium text-credit">זכות</th>
+              <th className="px-2 py-2 text-start font-medium sm:px-4">חשבון</th>
+              <th className="px-1.5 py-2 text-end font-medium text-debit sm:w-32 sm:px-4">חובה</th>
+              <th className="px-1.5 py-2 text-end font-medium text-credit sm:w-32 sm:px-4">זכות</th>
             </tr>
           </thead>
           <tbody>
             {lines.map((l, i) => (
               <tr key={i} className="border-t border-line/70">
-                <td className={cn("px-4 py-2 text-fg", l.cr !== undefined && "ps-10")}>
-                  <span className={cn("me-2 text-xs font-semibold", l.cr !== undefined ? "text-credit" : "text-debit")}>
+                <td className={cn("px-2 py-2 text-fg sm:px-4", l.cr !== undefined && "ps-4 sm:ps-10")}>
+                  <span className={cn("me-1 text-xs font-semibold sm:me-2", l.cr !== undefined ? "text-credit" : "text-debit")}>
                     {l.cr !== undefined ? "ז׳" : "ח׳"}
                   </span>
                   {l.account}
                   {l.tag && <span className="ms-2 inline-block align-middle">{l.tag}</span>}
                 </td>
-                <td className="px-4 py-2 text-end">{l.dr !== undefined && <Num v={l.dr} />}</td>
-                <td className="px-4 py-2 text-end">{l.cr !== undefined && <Num v={l.cr} />}</td>
+                <td className="px-1.5 py-2 text-end sm:px-4">{l.dr !== undefined && <Num v={l.dr} />}</td>
+                <td className="px-1.5 py-2 text-end sm:px-4">{l.cr !== undefined && <Num v={l.cr} />}</td>
               </tr>
             ))}
           </tbody>
           <tfoot>
             <tr className="border-t-2 border-line-strong font-semibold">
-              <td className="px-4 py-2 text-muted">סה״כ</td>
-              <td className="px-4 py-2 text-end text-debit">
+              <td className="px-2 py-2 text-muted sm:px-4">סה״כ</td>
+              <td className="px-1.5 py-2 text-end text-debit sm:px-4">
                 <Num v={dr} />
               </td>
-              <td className="px-4 py-2 text-end text-credit">
+              <td className="px-1.5 py-2 text-end text-credit sm:px-4">
                 <Num v={cr} />
               </td>
             </tr>
