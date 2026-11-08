@@ -8,6 +8,7 @@ import { isBalanced } from "../learn/basics";
 import { IFRS16_LESSONS } from "./ifrs16";
 import { drill, DRILL_FAMILIES, type DrillFamily, statementDrill } from "./ifrs16/drills";
 import * as Chg from "./ifrs16/lessons/changes";
+import * as Lsr from "./ifrs16/lessons/lessor";
 import { FILL_TASK, KIOSK_ACCRUED, KIOSK_EXPENSE, LAPTOP_FULL, MASTER_EXP_FORKLIFT, MASTER_EXP_LINES, MASTER_EXP_VAN, MASTER_FORKLIFT, MASTER_LINES, MASTER_VAN, SUBSEQUENT, SUBSEQUENT_TAUGHT, TRUCK_END, TRUCK_START, WORK_S, WORK_SECTIONS } from "./ifrs16/lessons/subsequent";
 import { IFRS16_GLOSSARY } from "./ifrs16/glossary";
 import { GUAR_WITH, GUAR_WITHOUT, IMPLICIT_LIABILITY, IMPLICIT_LIABILITY_DEALER, MASTER_CASH, MASTER_COST_SHOWN, MASTER_L, MASTER_NET, MASTER_RESTORE, MEASURE, MEASURE_TAUGHT, PV_EX_END, PV_EX_GROSS, PV_EX_NET, WORK1_L, WORK2_L } from "./ifrs16/lessons/measure";
@@ -16,7 +17,7 @@ import { CASES, CONTRACT_TEST, CONTRACT_TEST_START, type TestEnd, type TestNode,
 import { LESSON_N, type LeaseQuestion } from "./ifrs16/shared";
 
 /** What teaches each question, lesson by lesson. */
-const TAUGHT: Record<string, Record<string, string>> = { "ifrs16-what": WHAT_TAUGHT, "ifrs16-term": TERM_TAUGHT, "ifrs16-measure": MEASURE_TAUGHT, "ifrs16-subsequent": SUBSEQUENT_TAUGHT, "ifrs16-changes": Chg.CHANGES_TAUGHT };
+const TAUGHT: Record<string, Record<string, string>> = { "ifrs16-what": WHAT_TAUGHT, "ifrs16-term": TERM_TAUGHT, "ifrs16-measure": MEASURE_TAUGHT, "ifrs16-subsequent": SUBSEQUENT_TAUGHT, "ifrs16-changes": Chg.CHANGES_TAUGHT, "ifrs16-lessor": Lsr.LESSOR_TAUGHT };
 
 const isEnd = (n: TestNode | TestEnd): n is TestEnd => "verdict" in n;
 
@@ -149,8 +150,12 @@ describe("lesson 3: the drills, re-computed from each drill's inputs", () => {
           const { left, extra, newRate } = d.inputs;
           want = npv(Array.from({ length: left + extra }, (_, k): [number, number] => [k + 1, p]), newRate) - npv(Array.from({ length: left }, (_, k): [number, number] => [k + 1, p]), i);
         } else if (family === "shrink") want = ((d.inputs.L - d.inputs.asset) * d.inputs.out) / 100;
+        else if (family === "opIncome") want = d.inputs.first + (d.inputs.step * (d.inputs.n - 1)) / 2;
+        else if (family === "financeYear") want = (d.inputs.fairValue + d.inputs.costs) * (1 + d.inputs.rate) - d.inputs.receipt;
+        else if (family === "dealerProfit") want = Math.min(d.inputs.fairValue, d.inputs.pv) - d.inputs.cost - d.inputs.costs;
+        else if (family === "residualCogs") want = d.inputs.cost - (d.inputs.estimate - d.inputs.guaranteed) / (1 + d.inputs.rate) ** d.inputs.n;
         else want = Math.round(npv(flows(1, n), i)) + d.inputs.prepaid - d.inputs.incentives + d.inputs.directCosts + d.inputs.restoration;
-        assert.ok(Math.abs(d.answer - want) <= (family === "cycle" || family === "split" || family === "indexChange" || family === "extendMod" || family === "shrink" ? 2 : 0.51), `${family}/${seed}: ${d.answer} ≠ ${want}`);
+        assert.ok(Math.abs(d.answer - want) <= (family === "cycle" || family === "split" || family === "indexChange" || family === "extendMod" || family === "shrink" || family === "financeYear" || family === "residualCogs" ? 2 : 0.51), `${family}/${seed}: ${d.answer} ≠ ${want}`);
         assert.ok(d.answer > 0, `${family}/${seed}`);
         const text = [d.prompt, d.trap, ...d.steps.flatMap((s) => [s.title, s.formula ?? "", s.numbers ?? "", s.note ?? ""])].join(" ");
         assert.ok(!/NaN|undefined|Infinity/.test(text), `${family}/${seed}: ${text}`);
@@ -342,6 +347,64 @@ describe("lesson 5: figures, against a separate calculation over dated cash flow
     };
     walk(Chg.CHANGE_WALK_START, []);
     assert.deepEqual([...seen].sort(), Object.keys(Chg.CHANGE_WALK).sort());
+  });
+});
+
+describe("lesson 6: figures, against a separate calculation over dated cash flows", () => {
+  const near = (a: number, b: number, label = "") => assert.ok(Math.abs(a - b) <= 2, `${label}: ${a} ≠ ${b}`);
+  it("the practice", () => {
+    const answer = (id: string) => (Lsr.LESSOR.exercises.find((x) => x.id === id) as { answer: number }).answer;
+    const want: Record<string, number> = { "op-income": 40_000, "op-accrued": 10_000, "op-dep": 17_000, "ni-start": 124_000, "ni-gain": 25_000, "ni-y2": 91_760, "dealer-sales": 190_000, "dealer-profit": 25_000, "dealer-cap": 95_096, "res-cogs": 80_725, "res-loss": 3_265, "index-income": 2_000 };
+    for (const [id, v] of Object.entries(want)) assert.equal(answer(id), v, id);
+    for (const x of Lsr.LESSOR.exercises) {
+      if (x.kind === "number") assert.ok(x.answer > 0, x.id);
+      if (x.kind === "journal") assert.ok(isBalanced(x.entry), x.id);
+      if (x.kind !== "journal") assert.ok(!/באותו|באותה|אותם|אותן|כמו בשאלה|השאלה הקודמת/.test(x.prompt), x.id);
+    }
+  });
+  it("the operating lease", () => {
+    assert.deepEqual(Lsr.OP_ROWS.map((y) => [y.income, y.accrued, y.asset, y.expense]), [[27_000, 3_000, 183_000, 21_500], [27_000, 3_000, 161_500, 21_500], [27_000, 0, 140_000, 21_500]]);
+  });
+  it("the truck: a finance company, a dealer, an artificial rate", () => {
+    near(Lsr.ND_RATE * 100, 8.05);
+    [[8_286.48, 71_286.48], [5_735.09, 37_021.57], [2_978.43, 0]].forEach(([i, c], k) => {
+      near(Lsr.ND_ROWS[k].income, i);
+      near(Lsr.ND_ROWS[k].closing, c);
+    });
+    near(Lsr.D_RATE * 100, 9.7);
+    [[9_701.03, 69_701.03], [6_761.71, 36_462.74], [3_537.26, 0]].forEach(([i, c], k) => {
+      near(Lsr.D_ROWS[k].income, i);
+      near(Lsr.D_ROWS[k].closing, c);
+    });
+    assert.equal(Lsr.ND_GAIN, 15_000);
+    near(Lsr.LOW_SALES, 90_000);
+    assert.equal(Lsr.LOW_GROSS, Lsr.LOW_SALES - 85_000);
+    near(Lsr.LOW_NAIVE, 99_904);
+    for (const rows of [Lsr.ND_ROWS, Lsr.D_ROWS, Lsr.LOW_ROWS]) rows.forEach((y) => assert.equal(y.opening + y.income - y.receipt, y.closing));
+  });
+  it("the residual", () => {
+    near(Lsr.RES_RATE * 100, 8.66);
+    near(Lsr.RES_SALES, 94_261.45); near(Lsr.RES_PV_UN, 5_738.55); near(Lsr.RES_COGS, 84_261.45);
+    assert.equal(Lsr.RES_GROSS, 10_000);
+    near(Lsr.RES_INT1, 8_660.55); near(Lsr.RES_BEFORE, 80_660.55); near(Lsr.RES_AFTER, 78_322.22); near(Lsr.RES_LOSS, 2_338.33);
+    near(Lsr.RES_INT2, 6_783.14); near(Lsr.RES_CLOSE2, 57_105.36); near(Lsr.RES_NC2, 34_051);
+  });
+  it("the closing question, and the walk", () => {
+    assert.ok(Math.abs(Lsr.STORE_RATE * 100 - 3.28) < 0.01, "rate");
+    assert.equal(Lsr.STORE_INDEX, 3_000);
+    assert.equal(Lsr.STORE_VAR, 8_000);
+    assert.equal(Lsr.STORE_CASH, 111_000);
+    assert.equal(Lsr.STORE_TOTAL, 100_000 - 6_000 + Lsr.STORE_INT + 11_000);
+    const seen = new Set<string>();
+    const walk = (at: string, trail: string[]) => {
+      assert.ok(!trail.includes(at), `a loop at ${at}`);
+      seen.add(at);
+      const node = Lsr.CLASS_WALK[at];
+      assert.ok(node, at);
+      if (!isEnd(node)) for (const a of node.answers) walk(a.to, [...trail, at]);
+    };
+    walk(Lsr.CLASS_WALK_START, []);
+    assert.deepEqual([...seen].sort(), Object.keys(Lsr.CLASS_WALK).sort());
   });
 });
 

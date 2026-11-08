@@ -53,6 +53,7 @@ const EXPLICIT: Record<string, AccountType> = {
   "התחייבות חכירה": "liability",
   "הפרשה לפירוק ופינוי": "liability",
   "רווח מתיקון חכירה": "income",
+  "השקעה נטו בחכירה": "asset",
   // Employee benefits (the IAS 19 course).
   "התחייבות לחופשה והבראה": "liability",
   "התחייבות לימי מחלה": "liability",

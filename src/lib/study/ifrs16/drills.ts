@@ -20,6 +20,10 @@ export const DRILL_FAMILIES = {
   indexChange: "מדד",
   extendMod: "הארכה בתיקון",
   shrink: "הקטנת היקף",
+  opIncome: "תפעולית: הכנסה",
+  financeYear: "מימונית: יתרה",
+  dealerProfit: "סוחר: רווח",
+  residualCogs: "סוחר: שייר",
 } as const;
 export type DrillFamily = keyof typeof DRILL_FAMILIES;
 
@@ -218,6 +222,82 @@ export function drill(family: DrillFamily, seed: number): Drill {
         { title: "רווח", formula: "גריעה מההתחייבות − גריעה מהנכס = רווח", numbers: `${fmt(lOut)} − ${fmt(aOut)} = ${fmt(lOut - aOut)}` },
       ],
       trap: "לכלול כאן את השינוי בתשלום. הוא בשלב השני, כנגד הנכס.",
+    };
+  }
+  if (family === "opIncome") {
+    const first = r.int(10, 40, 2) * 1_000;
+    const step = r.int(1, 6) * 1_000;
+    const n = r.int(2, 5);
+    const rents = Array.from({ length: n }, (_, k) => first + k * step);
+    const total = rents.reduce((a, b) => a + b, 0);
+    return {
+      prompt: `חכירה תפעולית ל-${n} שנים. התשלום בשנה הראשונה ${fmt(first)} ש״ח, ועולה ב-${fmt(step)} ש״ח בכל שנה. מהי הכנסת החכירה בכל שנה, בקו ישר?`,
+      answer: whole(total / n),
+      unit: "ש״ח",
+      inputs: { first, step, n },
+      steps: [
+        { title: "סך התשלומים", numbers: `${rents.map(fmt).join(" + ")} = ${fmt(total)}` },
+        { title: "בקו ישר", formula: "סך התשלומים ÷ שנים = הכנסה", numbers: `${fmt(total)} ÷ ${n} = ${fmt(whole(total / n))}` },
+      ],
+      trap: "לרשום את מה שהתקבל באותה שנה. ההכנסה לא הולכת אחרי הכסף.",
+    };
+  }
+  if (family === "financeYear") {
+    const fairValue = r.int(100, 400, 10) * 1_000;
+    const costs = r.int(1, 9) * 1_000;
+    const rate = r.int(50, 100, 5) / 1000;
+    const receipt = r.int(30, 90, 5) * 1_000;
+    const start = fairValue + costs;
+    const income = whole(start * rate);
+    return {
+      prompt: `מחכיר שאינו יצרן או סוחר. שווי הוגן ${fmt(fairValue)} ש״ח, ועלויות ישירות ${fmt(costs)} ש״ח. הריבית הגלומה ${pct(rate)}, ותקבול של ${fmt(receipt)} ש״ח בסוף השנה. מהי ההשקעה נטו ב-31.12 של השנה הראשונה?`,
+      answer: start + income - receipt,
+      unit: "ש״ח",
+      inputs: { fairValue, costs, rate, receipt },
+      steps: [
+        { title: "השקעה נטו ביום הראשון", formula: "שווי הוגן + עלויות ישירות", numbers: `${fmt(fairValue)} + ${fmt(costs)} = ${fmt(start)}` },
+        { title: "הכנסות מימון", numbers: `${fmt(start)} × ${rate} = ${fmt(income)}` },
+        { title: "היתרה", numbers: `${fmt(start)} + ${fmt(income)} − ${fmt(receipt)} = ${fmt(start + income - receipt)}` },
+      ],
+      trap: "לרשום את העלויות הישירות כהוצאה. זה רק אצל יצרן או סוחר.",
+    };
+  }
+  if (family === "dealerProfit") {
+    const fairValue = r.int(100, 400, 10) * 1_000;
+    const pv = fairValue - r.int(0, 3) * 5_000;
+    const cost = fairValue - r.int(30, 60, 5) * 1_000;
+    const costs = r.int(1, 9) * 1_000;
+    const sales = Math.min(fairValue, pv);
+    return {
+      prompt: `סוחר מחכיר בחכירה מימונית נכס ששוויו ההוגן ${fmt(fairValue)} ש״ח ועלותו ${fmt(cost)} ש״ח. הערך הנוכחי של התשלומים בריבית שוק ${fmt(pv)} ש״ח. עלויות ההשגה ${fmt(costs)} ש״ח. אין שייר. מהי ההשפעה נטו על רווח או הפסד במועד התחילה?`,
+      answer: sales - cost - costs,
+      unit: "ש״ח",
+      inputs: { fairValue, pv, cost, costs },
+      steps: [
+        { title: "מכירות", note: "הנמוך מבין השווי ההוגן והערך הנוכחי בריבית שוק (סעיף 71(א)).", numbers: fmt(sales) },
+        { title: "הרווח", formula: "מכירות − עלות − עלויות השגה", numbers: `${fmt(sales)} − ${fmt(cost)} − ${fmt(costs)} = ${fmt(sales - cost - costs)}` },
+      ],
+      trap: "להוסיף את עלויות ההשגה להשקעה נטו. אצל סוחר הן הוצאה (סעיף 74).",
+    };
+  }
+  if (family === "residualCogs") {
+    const cost = r.int(60, 300, 10) * 1_000;
+    const n = r.int(3, 7);
+    const rate = r.int(50, 100, 5) / 1000;
+    const estimate = r.int(8, 30) * 1_000;
+    const guaranteed = r.int(1, 7) * 1_000;
+    const pvUn = whole((estimate - guaranteed) / (1 + rate) ** n);
+    return {
+      prompt: `סוחר מחכיר רכב ל-${n} שנים, בריבית גלומה של ${pct(rate)}. עלות הרכב ${fmt(cost)} ש״ח. בסוף הוא חוזר, ושוויו הצפוי ${fmt(estimate)} ש״ח, מזה ${fmt(guaranteed)} ש״ח בערבות החוכר. מהי עלות המכר?`,
+      answer: cost - pvUn,
+      unit: "ש״ח",
+      inputs: { cost, n, rate, estimate, guaranteed },
+      steps: [
+        { title: "שייר לא מובטח", numbers: `${fmt(estimate)} − ${fmt(guaranteed)} = ${fmt(estimate - guaranteed)}` },
+        { title: "בערך נוכחי", numbers: `${fmt(estimate - guaranteed)} ÷ ${(1 + rate).toFixed(3)}^${n} = ${fmt(pvUn)}` },
+        { title: "עלות המכר", numbers: `${fmt(cost)} − ${fmt(pvUn)} = ${fmt(cost - pvUn)}` },
+      ],
+      trap: "להוריד גם את הערבות. היא תשלום חכירה, ולכן נשארת במכירות.",
     };
   }
   const prepaid = r.int(0, 9_000, 1_000);
