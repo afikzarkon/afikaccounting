@@ -6,12 +6,9 @@
  */
 
 export const HOME_SECTIONS = [
-  { key: "home:pains", label: "״מכירים את זה?״ — שלוש הבעיות" },
   { key: "home:how", label: "״איך לומדים כאן״ — שלושת הצעדים וצילומי המסך" },
-  { key: "home:free-course", label: "הקורס החינמי ושיעוריו" },
-  { key: "home:courses", label: "הקורסים המתקדמים" },
-  { key: "home:exams", label: "מתחם המבחנים (״השלב הבא״)" },
-  { key: "home:pricing", label: "המחירים" },
+  { key: "home:courses", label: "הקורסים (החינמי והמתקדמים)" },
+  { key: "home:check", label: "״יש לכם סיכום? תבדקו אותו״" },
   { key: "home:faq", label: "שאלות נפוצות" },
   { key: "home:final", label: "הקריאה לפעולה בתחתית הדף" },
 ] as const;
@@ -19,9 +16,6 @@ export const HOME_SECTIONS = [
 export const BUTTONS = {
   heroStart: { key: "cta:hero-start", label: "מתחילים מאפס — שיעור 1", where: "דף הבית, בראש הדף" },
   heroTour: { key: "cta:hero-tour", label: "יש לי מבחן — לבחור נושא", where: "דף הבית, בראש הדף" },
-  freeCourse: { key: "cta:home-free-course", label: "לדף הקורס", where: "דף הבית, ליד הקורס החינמי" },
-  freeCourseStart: { key: "cta:home-free-start", label: "התחילו את שיעור 1", where: "דף הבית, מתחת לשיעורי הקורס החינמי" },
-  pricingCompare: { key: "cta:home-pricing", label: "להשוואה המלאה", where: "דף הבית, ליד המחירים" },
   finalStart: { key: "cta:home-final", label: "התחילו את שיעור 1", where: "דף הבית, בתחתית" },
   headerLogin: { key: "cta:header-login", label: "התחברות", where: "הכותרת העליונה, לאורחים" },
   headerStart: { key: "cta:header-start", label: "התחילו בחינם", where: "הכותרת העליונה, לאורחים" },

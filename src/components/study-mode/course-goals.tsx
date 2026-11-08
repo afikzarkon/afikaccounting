@@ -82,7 +82,10 @@ export function CourseGoals({ course, name, lessons, topics }: { course: string;
         </Item>
       </div>
       <p className="mt-3 text-[12.5px] text-muted">
-        לומדים עם חברים?{" "}
+        <Link href={`/exam-mode/${course}`} className="font-semibold text-accent hover:underline">
+          מצב מבחן
+        </Link>{" "}
+        — 10 שאלות בלי רמזים, עם שעון אם תרצו. · לומדים עם חברים?{" "}
         <Link href={`/groups?course=${course}`} className="font-semibold text-accent hover:underline">
           קבוצת לימוד
         </Link>{" "}
