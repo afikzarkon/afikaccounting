@@ -7,6 +7,7 @@ import { JournalSimulator } from "@/components/study-mode/journal-simulator";
 import { updateTopic } from "@/components/study-mode/progress-store";
 import { QuestionExercise } from "@/components/study-mode/question-exercise";
 import { cue } from "@/components/study-mode/sound";
+import { markStudied } from "@/components/study-mode/study-day";
 import { TrapQuiz } from "@/components/study-mode/trap-quiz";
 import { Button } from "@/components/ui/button";
 import { similarQuestion } from "@/lib/actions/similar";
@@ -81,6 +82,7 @@ export function ReviewSession({
   /** The question's first answer in this session moves it on the schedule: right only if right at once. */
   const settle = (ok: boolean) => {
     updateTopic(x.slug, (q) => answerReview(q, x.id, ok, day));
+    markStudied();
     if (!counted) {
       setCounted(true);
       track({ kind: "review_session", meta: { due: queue.length } });

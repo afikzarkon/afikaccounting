@@ -3,6 +3,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 import { EMPTY_TOPIC, type TopicProgress } from "@/lib/study/score";
 import { MASTERED as REVIEW_MASTERED } from "@/lib/study/review";
+import { withStudyDay } from "@/lib/study/streak";
 import { mergeTopic } from "@/lib/study/sync";
 
 /**
@@ -13,7 +14,8 @@ import { mergeTopic } from "@/lib/study/sync";
 /** The lesson opened last, for "continue where you left off": enough to show and link it without loading the lesson. */
 export type LastLesson = { slug: string; title: string; course: string; n: number; percent: number };
 /** `owner` is the account this browser's progress was last joined with; none for a guest's. */
-type State = { sound: boolean; topics: Record<string, TopicProgress>; last?: LastLesson; owner?: string };
+/** `days`: the days (see review.ts dayOf) the reader studied on, for the streak; `exams`: an exam date per course id ("YYYY-MM-DD"). Both kept in this browser. */
+type State = { sound: boolean; topics: Record<string, TopicProgress>; last?: LastLesson; owner?: string; days?: number[]; exams?: Record<string, string> };
 
 const KEY = "afik.study.v2";
 const EVENT = "afik-study-progress";
@@ -42,7 +44,9 @@ const parse = (raw: string): State => {
     const s = JSON.parse(raw) as Partial<State>;
     const last = s.last && typeof s.last === "object" && typeof s.last.slug === "string" ? s.last : undefined;
     const owner = typeof s.owner === "string" ? s.owner : undefined;
-    return { sound: s.sound !== false, topics: s.topics && typeof s.topics === "object" ? s.topics : {}, last, owner };
+    const days = Array.isArray(s.days) ? s.days.filter((d): d is number => Number.isInteger(d)) : undefined;
+    const exams = s.exams && typeof s.exams === "object" ? Object.fromEntries(Object.entries(s.exams).filter(([, v]) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v))) : undefined;
+    return { sound: s.sound !== false, topics: s.topics && typeof s.topics === "object" ? s.topics : {}, last, owner, days, exams };
   } catch {
     return JSON.parse(EMPTY);
   }
@@ -127,7 +131,7 @@ export const onProgressChange = (cb: () => void) => subscribe(cb);
  */
 export function mergeAccountTopics(account: Record<string, TopicProgress>, owner: string) {
   write((s) => {
-    if (s.owner && s.owner !== owner) return { ...s, topics: account, last: undefined, owner };
+    if (s.owner && s.owner !== owner) return { ...s, topics: account, last: undefined, owner, days: undefined, exams: undefined };
     const topics = { ...s.topics };
     for (const [slug, p] of Object.entries(account)) topics[slug] = topics[slug] ? mergeTopic(p, { ...EMPTY_TOPIC, ...topics[slug] }) : p;
     return { ...s, topics, owner };
@@ -147,3 +151,36 @@ export function useReviewDue(day: number): number {
     return n;
   }, [topics, day]);
 }
+
+const NO_DAYS: number[] = [];
+const NO_EXAMS: Record<string, string> = {};
+
+/** The days studied on, oldest first (none on the server). */
+export const useStudyDays = () => useStore().days ?? NO_DAYS;
+
+/**
+ * Note that the reader studied today: a lesson answer, a review answer, a summary check. Returns true
+ * the first time on a given day (to count it once).
+ */
+export function recordStudyDay(day: number): boolean {
+  const cur = parse(read()).days ?? [];
+  if (cur.includes(day)) return false;
+  write((s) => ({ ...s, days: withStudyDay(s.days ?? [], day) }));
+  return true;
+}
+
+/** Exam dates by course id. */
+export const useExamDates = () => useStore().exams ?? NO_EXAMS;
+
+/** Set (or, with null, clear) a course's exam date. */
+export function setExamDate(course: string, date: string | null) {
+  write((s) => {
+    const exams = { ...s.exams };
+    if (date) exams[course] = date;
+    else delete exams[course];
+    return { ...s, exams };
+  });
+}
+
+/** The days studied on, as stored now (outside React). */
+export const readStudyDays = () => parse(read()).days ?? [];

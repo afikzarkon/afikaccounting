@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useSession } from "@/components/layout/session-store";
 import { updateTopic } from "@/components/study-mode/progress-store";
 import { cue } from "@/components/study-mode/sound";
+import { markStudied } from "@/components/study-mode/study-day";
 import { TrapQuiz } from "@/components/study-mode/trap-quiz";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { track } from "@/lib/analytics/track";
@@ -37,6 +38,7 @@ export function CheckQuiz({ check, url }: { check: Check; url: string }) {
     setAnswers(next);
     cue(ok ? "ok" : "bad");
     updateTopic(it.slug, (q) => afterAnswer(recordTrap(q, it.trap.id, choice, ok), { kind: "trap", trap: it.trap, group: PRACTICE_GROUPS[1] }, today()));
+    markStudied();
     if (at === 0) track({ kind: "check_start", target: topic.id });
     track({ kind: "exercise_answer", target: it.slug, ok, meta: { id: it.trap.id, trap: true, check: topic.id } });
     if (Object.keys(next).length === items.length) track({ kind: "check_complete", target: topic.id, meta: { right: scoreCheck(items, next).right, of: items.length } });

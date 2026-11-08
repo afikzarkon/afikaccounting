@@ -117,11 +117,11 @@ ICE = Impact (paying students per exam period) × Confidence × Ease, each 1–1
 |---|---|---|---|---|---|---|---|---|
 | 1 | Free IAS 16 exam question, no signup | A complete hard question converts panic visitors better than an intro lesson | landing → signup | 8 | 7 | 7 | 392 | proposed |
 | 2 | "Save your mistakes for tomorrow" signup prompt | Endowment after the first trap lifts signup | lesson_start → signup | 7 | 7 | 8 | 392 | proposed |
-| 3 | Trap share card | Students share traps they fell into; friends answer without signup | share_click, k | 8 | 5 | 6 | 240 | proposed |
+| 3 | Trap share card | Students share traps they fell into; friends answer without signup | share_click, k | 8 | 5 | 6 | 240 | built: share under lesson traps → course check |
 | 4 | Paywall: continuation-first vs price-first copy | Naming the next lesson beats leading with price | paywall → payment_success | 6 | 6 | 9 | 324 | proposed |
 | 5 | No-renew semester pass beside monthly | Removing renewal fear raises conversion more than it lowers LTV | payment_success, revenue/visitor | 8 | 5 | 5 | 200 | needs owner |
-| 6 | Exam-date chip + countdown | Setting a date raises D7 return | D7 return | 7 | 6 | 5 | 210 | proposed |
-| 7 | Daily study streak with rest days | A forgiving streak raises review sessions without lowering accuracy | review sessions/user/week | 6 | 5 | 5 | 150 | proposed |
+| 6 | Exam-date chip + countdown | Setting a date raises D7 return | D7 return | 7 | 6 | 5 | 210 | built: course page (+ readiness meter) |
+| 7 | Daily study streak with rest days | A forgiving streak raises review sessions without lowering accuracy | review sessions/user/week | 6 | 5 | 5 | 150 | built: course page + review |
 | 8 | Ambassador links at 3 programs | TA credibility beats brand posts | signups per ambassador | 7 | 6 | 6 | 252 | proposed |
 | 9 | Home hero V1 (contrast) vs current, question above the fold | Door-B visitors start practising more when the hero speaks to exams | landing → practice start | 8 | 6 | 9 | 432 | built, test after launch |
 | 10 | "Save your review" prompt on the summary card for guests | Endowment + chosen reminder time lifts day-2 return | review_session on day 1–2 | 8 | 6 | 7 | 336 | built (without reminders), test after launch |

@@ -1,13 +1,14 @@
 "use client";
 
-import { ArrowLeft, CalendarCheck, CalendarClock, Repeat } from "lucide-react";
+import { ArrowLeft, CalendarCheck, CalendarClock, Flame, Repeat } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
-import { useTopics } from "@/components/study-mode/progress-store";
+import { useStudyDays, useTopics } from "@/components/study-mode/progress-store";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/primitives";
 import { FIRST_LESSON } from "@/lib/catalog";
 import { questions, type ReviewItem, reviewItems, today, topicOf } from "@/lib/study/review";
+import { streakOf } from "@/lib/study/streak";
 import type { StudyModule } from "@/lib/study/types";
 import { ReviewSession } from "./review-session";
 
@@ -29,12 +30,14 @@ export function ReviewBoard({ courses, premium, similarIds }: { courses: ReviewC
   // The day is the reader's own (their midnight), so it is read in the browser only.
   const day = useSyncExternalStore(noSubscribe, today, () => -1);
   const [session, setSession] = useState<{ title: string; items: ReviewItem[] } | null>(null);
+  const studyDays = useStudyDays();
 
   if (day < 0) return null;
   const byLesson = new Map(lessons.map((m) => [m.slug, m]));
   const all = lessons.flatMap((m) => reviewItems(m, topics[m.slug], day));
   const due = all.filter((x) => x.due <= day);
   const next = all.filter((x) => x.due > day).reduce((n, x) => Math.min(n, x.due), Infinity);
+  const streak = streakOf(studyDays, day);
 
   if (session)
     return <ReviewSession title={session.title} items={session.items} lessons={byLesson} premium={premium} similarIds={similar} day={day} onDone={() => setSession(null)} />;
@@ -62,6 +65,11 @@ export function ReviewBoard({ courses, premium, similarIds }: { courses: ReviewC
               {questions(all.length)} בחזרה בסך הכול
               {Number.isFinite(next) && ` · הבאה בעוד ${next - day === 1 ? "יום" : `${next - day} ימים`}`}
             </p>
+            {streak.days > 0 && (
+              <p className="num mt-1.5 flex items-center gap-1.5 text-[14px] text-fg/90">
+                <Flame className="h-4 w-4 text-[#f97316]" aria-hidden /> {streak.days} ימי למידה ברצף{streak.studiedToday ? " · היום כבר נספר" : " · תשובה אחת היום ממשיכה אותו"}
+              </p>
+            )}
           </div>
           {due.length > 0 ? (
             <Button size="lg" onClick={() => setSession({ title: "החזרה של היום", items: due })}>

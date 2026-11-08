@@ -42,6 +42,9 @@ import { QuestionExercise } from "./question-exercise";
 import { LessonContext } from "./screen-link-view";
 import { Sheet } from "./sheet";
 import { cue } from "./sound";
+import { markStudied } from "./study-day";
+import { ShareButton } from "@/components/check/share-button";
+import { inName } from "@/lib/hebrew";
 import { type NextLesson, SummaryCard } from "./summary-card";
 import { TrapQuiz } from "./trap-quiz";
 
@@ -96,7 +99,10 @@ export type ScreenContent = { lead?: ReactNode; body: ReactNode; check?: ReactNo
  * place. Keys: ← next, → previous (right to left) — unless a control inside
  * the screen already used the key.
  */
-export function StudyShell({ module: m, screens, next, course }: { module: StudyModule; screens: ScreenContent[]; next?: NextLesson; course: CourseInfo }) {
+/** Where a trap can be sent to friends: the course's summary check, which needs no account. */
+export type ShareTarget = { path: string; course: string; name: string; size: number };
+
+export function StudyShell({ module: m, screens, next, course, share }: { module: StudyModule; screens: ScreenContent[]; next?: NextLesson; course: CourseInfo; share?: ShareTarget }) {
   const slug = m.slug;
   const p = useTopic(slug);
   // A course's first lesson opens with one of its traps, before the concepts (pretesting): the answer counts as the practice answer.
@@ -287,6 +293,7 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
                 onAnswer={(choice) => {
                   setWarmedHere(true);
                   updateTopic(slug, (q) => afterAnswer(recordTrap(q, warmTrap.id, choice, choice === warmTrap.answer), warmItem, today()));
+                  markStudied();
                   if (!p.traps[warmTrap.id]) track({ kind: "exercise_answer", target: slug, ok: choice === warmTrap.answer, meta: { id: warmTrap.id, trap: true, warmup: true } });
                   cue(choice === warmTrap.answer ? "ok" : "bad");
                 }}
@@ -342,6 +349,7 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
       const onCheck = (ok: boolean) => {
         // A weak answer goes up for spaced review, from tomorrow.
         updateTopic(slug, (q) => afterAnswer(recordExercise(q, ex, ok), it, today()));
+        markStudied();
         if (!p.exercises[ex.id]?.done) track({ kind: "exercise_answer", target: slug, ok, meta: { id: ex.id, trap: false, try: (p.exercises[ex.id]?.tries ?? 0) + 1 } });
         cue(ok ? "ok" : "bad");
       };
@@ -363,16 +371,29 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
         eyebrow: count,
         title: it.group.label,
         content: (
-          <TrapQuiz
-            key={t.id}
-            trap={t}
-            answered={p.traps[t.id]}
-            onAnswer={(choice) => {
-              updateTopic(slug, (q) => afterAnswer(recordTrap(q, t.id, choice, choice === t.answer), it, today()));
-              if (!p.traps[t.id]) track({ kind: "exercise_answer", target: slug, ok: choice === t.answer, meta: { id: t.id, trap: true } });
-              cue(choice === t.answer ? "ok" : "bad");
-            }}
-          />
+          <div>
+            <TrapQuiz
+              key={t.id}
+              trap={t}
+              answered={p.traps[t.id]}
+              onAnswer={(choice) => {
+                updateTopic(slug, (q) => afterAnswer(recordTrap(q, t.id, choice, choice === t.answer), it, today()));
+                markStudied();
+                if (!p.traps[t.id]) track({ kind: "exercise_answer", target: slug, ok: choice === t.answer, meta: { id: t.id, trap: true } });
+                cue(choice === t.answer ? "ok" : "bad");
+              }}
+            />
+            {share && p.traps[t.id] && (
+              <ShareButton
+                className="mt-4"
+                path={share.path}
+                campaign={share.course}
+                kind="trap"
+                label="לשלוח לחברים: מי ייפול?"
+                text={`${p.traps[t.id].correct ? "עברתי מלכודת" : "נפלתי במלכודת"} ${inName(share.name)}. בואו נראה ${p.traps[t.id].correct ? "אתכם" : "אם גם אתם"} — ${share.size} שאלות, בלי הרשמה:`}
+              />
+            )}
+          </div>
         ),
       };
     }

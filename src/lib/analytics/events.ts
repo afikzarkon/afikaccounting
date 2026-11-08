@@ -29,6 +29,9 @@ export const EVENT_KINDS = [
   "share_click",
   "check_start",
   "check_complete",
+  // Habit: the first study action of a day (with the streak), an exam date set for a course.
+  "study_day",
+  "exam_goal_set",
 ] as const;
 export type EventKind = (typeof EVENT_KINDS)[number];
 

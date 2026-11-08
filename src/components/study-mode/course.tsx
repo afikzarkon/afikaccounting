@@ -13,6 +13,8 @@ import { studyHref } from "@/lib/study/href";
 import { lessonHref } from "@/lib/study/paths";
 import { cn } from "@/lib/utils";
 import { clock } from "./lesson-opening";
+import { topicByHref } from "@/lib/catalog";
+import { CourseGoals } from "./course-goals";
 import { XpRing } from "./ring";
 import { updateTopic, useTopics } from "./progress-store";
 
@@ -40,8 +42,10 @@ export function CoursePath({ lessons, locked = [], previews = [] }: { lessons: S
   const xp = rows.reduce((s, r) => s + xpOf(r.m, r.p), 0);
   const max = rows.reduce((s, r) => s + maxXp(r.m), 0);
   const next = rows.find((r) => r.status === "new" || r.status === "started");
+  const topic = lessons[0] ? topicByHref(lessons[0].backHref) : undefined;
   return (
     <>
+      {topic && <CourseGoals course={topic.id} name={topic.standard ?? topic.title} lessons={lessons} topics={topics} />}
       <div className="card flex flex-wrap items-center gap-x-6 gap-y-4 p-5 sm:px-6">
         <XpRing xp={xp} max={max} className="h-24 w-24" />
         <div className="min-w-0 flex-[1_1_12rem]">
