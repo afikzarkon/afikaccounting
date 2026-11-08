@@ -1,15 +1,23 @@
 "use client";
 
-import { ArrowLeft, BookOpen, BookOpenText, ClipboardPen, Flame, Repeat, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowLeft, BookOpen, BookOpenText, ClipboardPen, CloudUpload, Flame, Lock, Repeat, RotateCcw, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
+import { useSession } from "@/components/layout/session-store";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { planOf, type Tier, tierAllows } from "@/lib/pricing";
+import { MASTERED } from "@/lib/study/review";
 import { maxXp, missedOf, scoreOf, type TopicProgress, xpOf } from "@/lib/study/score";
 import type { StudyModule } from "@/lib/study/types";
 import { cn } from "@/lib/utils";
 import { XpRing } from "./ring";
 import { StageHero, StageLabel } from "./stage";
+
+/** Where the summary leads; `tier` is the plan the next lesson needs, when it isn't open to everyone. */
+export type NextLesson = { href: string; label: string; tier?: Tier };
+
+const DISMISS = "afik.save-prompt.dismissed";
 
 /** The last step: the XP as a ring, the score by step and the best streak, a way back to the questions not solved yet, the golden tips, and where to go next. */
 export function SummaryCard({
@@ -21,7 +29,7 @@ export function SummaryCard({
 }: {
   module: StudyModule;
   progress: TopicProgress;
-  next?: { href: string; label: string };
+  next?: NextLesson;
   onRestart: () => void;
   onRetry: () => void;
 }) {
@@ -29,6 +37,27 @@ export function SummaryCard({
   const missed = missedOf(m, p).length;
   const xp = xpOf(m, p);
   const max = maxXp(m);
+  const session = useSession();
+  // The questions on this lesson's review schedule and not yet mastered: what a guest would lose with this browser's storage.
+  const scheduled = Object.values(p.review ?? {}).filter((e) => e.box < MASTERED).length;
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return typeof window !== "undefined" && sessionStorage.getItem(DISMISS) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const offerSave = session.known && !session.signedIn && scheduled > 0 && !dismissed;
+  // Said before the click, not after it: the next lesson is in a plan this reader doesn't have.
+  const nextLocked = !!next?.tier && session.known && !tierAllows(session.tier, next.tier);
+  const dismiss = () => {
+    setDismissed(true);
+    try {
+      sessionStorage.setItem(DISMISS, "1");
+    } catch {
+      // Storage blocked: hidden for this view only.
+    }
+  };
   return (
     <div className="space-y-6">
       <StageHero badge={<XpRing xp={xp} max={max} />}>
@@ -57,6 +86,22 @@ export function SummaryCard({
             </Button>
           </div>
         )}
+
+        {offerSave && (
+          <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl bg-surface-2 px-4 py-3 ring-1 ring-line">
+            <CloudUpload className="h-5 w-5 shrink-0 text-accent" aria-hidden />
+            <p className="num min-w-0 flex-1 text-[14.5px] text-fg">
+              <strong>{scheduled === 1 ? "השאלה שטעיתם בה חוזרת" : `${scheduled} השאלות שטעיתם בהן חוזרות`} מחר</strong>, לחזרה של כמה דקות. כרגע{" "}
+              {scheduled === 1 ? "היא שמורה" : "הן שמורות"} רק בדפדפן הזה. בחשבון חינמי {scheduled === 1 ? "היא תחכה" : "הן יחכו"} לכם בכל מכשיר.
+            </p>
+            <div className="flex items-center gap-2">
+              <ButtonLink href={`/register?next=${encodeURIComponent("/review")}`}>שמירה בחשבון — חינם</ButtonLink>
+              <Button variant="ghost" onClick={dismiss}>
+                אחר כך
+              </Button>
+            </div>
+          </div>
+        )}
       </StageHero>
 
       <section aria-labelledby="golden-tips">
@@ -81,11 +126,16 @@ export function SummaryCard({
           <RotateCcw className="h-4 w-4" aria-hidden /> התחלה מחדש
         </Button>
         {next && (
-          <ButtonLink href={next.href} size="lg" className="sm:ms-auto">
-            {next.label} <ArrowLeft className="h-4 w-4" aria-hidden />
+          <ButtonLink href={next.href} size="lg" variant={nextLocked ? "secondary" : undefined} className="sm:ms-auto">
+            {nextLocked && <Lock className="h-4 w-4" aria-hidden />} {next.label} <ArrowLeft className="h-4 w-4" aria-hidden />
           </ButtonLink>
         )}
       </div>
+      {nextLocked && next?.tier && (
+        <p className="text-[14px] text-muted sm:text-end">
+          השיעור הבא הוא חלק מהקורס המלא, במסלול <strong className="text-fg">{planOf(next.tier).name}</strong>. מה שכבר פתוח לכם — השיעור הזה, החזרה והקורס הבסיסי — נשאר פתוח.
+        </p>
+      )}
     </div>
   );
 }

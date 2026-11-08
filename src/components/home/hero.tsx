@@ -1,4 +1,5 @@
 import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button";
 import { FIRST_LESSON, LEARN_HUB } from "@/lib/catalog";
 import type { Trap } from "@/lib/study/types";
@@ -79,6 +80,11 @@ export async function Hero({ question, lessons, exercises, videos }: { question:
           </table>
           <p className="mt-4 max-w-sm text-sm text-muted">
             בלי כרטיס אשראי. הסיכום שלכם טוב לקריאה — כאן בודקים אם יודעים לפתור. עם חשבון, ההתקדמות נשמרת בכל מכשיר.
+          </p>
+          <p className="mt-3 max-w-sm text-sm">
+            <Link href="/check/ias16" className="font-semibold text-accent hover:underline">
+              כבר יש לכם סיכום? בדקו אותו: 5 שאלות ב־IAS 16 ←
+            </Link>
           </p>
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { useMemo, useSyncExternalStore } from "react";
 import { EMPTY_TOPIC, type TopicProgress } from "@/lib/study/score";
+import { MASTERED as REVIEW_MASTERED } from "@/lib/study/review";
 import { mergeTopic } from "@/lib/study/sync";
 
 /**
@@ -131,4 +132,18 @@ export function mergeAccountTopics(account: Record<string, TopicProgress>, owner
     for (const [slug, p] of Object.entries(account)) topics[slug] = topics[slug] ? mergeTopic(p, { ...EMPTY_TOPIC, ...topics[slug] }) : p;
     return { ...s, topics, owner };
   });
+}
+
+/**
+ * How many review questions are due by `day`, across every lesson in this browser, read from the
+ * schedules alone (no lesson data, so the phone's tab bar can show it). -1 before the day is known.
+ */
+export function useReviewDue(day: number): number {
+  const topics = useStore().topics;
+  return useMemo(() => {
+    if (day < 0) return -1;
+    let n = 0;
+    for (const p of Object.values(topics)) for (const e of Object.values(p?.review ?? {})) if (e.box < REVIEW_MASTERED && e.due <= day) n++;
+    return n;
+  }, [topics, day]);
 }

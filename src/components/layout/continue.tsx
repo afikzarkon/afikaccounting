@@ -1,13 +1,14 @@
 "use client";
 
-import { ArrowLeft, BookOpen, Crown, Play, Search, UserRound } from "lucide-react";
+import { ArrowLeft, BookOpen, Crown, Play, Repeat, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useLast } from "@/components/study-mode/progress-store";
+import { useSyncExternalStore } from "react";
+import { useLast, useReviewDue } from "@/components/study-mode/progress-store";
 import { EXAMS_HUB, FIRST_LESSON, LEARN_HUB } from "@/lib/catalog";
 import { studyHref } from "@/lib/study/href";
+import { today } from "@/lib/study/review";
 import { cn } from "@/lib/utils";
-import { openSearch } from "./search";
 import { useVisibility } from "./visibility";
 
 /** A ring that fills with the lesson's progress, its number inside. */
@@ -49,9 +50,11 @@ export function ContinueView({ pathname = "" }: { pathname?: string }) {
   );
 }
 
+const noSubscribe = () => () => {};
+
 /**
  * The phone's bottom bar, always in reach: the courses, the exams area,
- * continue (the lesson opened last, or lesson 1), search, and the account.
+ * continue (the lesson opened last, or lesson 1), the review (with what is due today), and the account.
  * Not inside a lesson, whose own "previous / next" bar sits there; not in the admin.
  */
 export function MobileTabBar() {
@@ -60,6 +63,8 @@ export function MobileTabBar() {
 
 export function MobileTabBarView({ pathname = "" }: { pathname?: string }) {
   const last = useLast();
+  const day = useSyncExternalStore(noSubscribe, today, () => -1);
+  const due = useReviewDue(day);
   const { linkShown } = useVisibility();
   if (pathname.startsWith("/study/") || pathname.startsWith("/admin")) return null;
   const on = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
@@ -78,7 +83,7 @@ export function MobileTabBarView({ pathname = "" }: { pathname?: string }) {
           </Link>
         )}
         {linkShown(EXAMS_HUB.href) && (
-          <Link href={EXAMS_HUB.href} aria-current={on(EXAMS_HUB.href) ? "page" : undefined} className={cn(tab, "h-16", on(EXAMS_HUB.href) ? "text-amber-700 dark:text-amber-300" : "text-amber-700/80 dark:text-amber-300/80")}>
+          <Link href={EXAMS_HUB.href} aria-current={on(EXAMS_HUB.href) ? "page" : undefined} className={cn(tab, "h-16", on(EXAMS_HUB.href) ? "text-amber-700 dark:text-amber-300" : "text-muted")}>
             <Crown className="h-5 w-5" aria-hidden /> מבחנים
           </Link>
         )}
@@ -88,9 +93,18 @@ export function MobileTabBarView({ pathname = "" }: { pathname?: string }) {
           </span>
           {last ? "להמשיך" : "להתחיל"}
         </Link>
-        <button type="button" onClick={openSearch} className={cn(tab, "h-16 text-muted")}>
-          <Search className="h-5 w-5" aria-hidden /> חיפוש
-        </button>
+        <Link href="/review" aria-current={on("/review") ? "page" : undefined} className={cn(tab, "relative h-16", on("/review") ? "text-accent" : "text-muted")}>
+          <span className="relative">
+            <Repeat className="h-5 w-5" aria-hidden />
+            {due > 0 && (
+              <span className="num absolute -end-2.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-accent-fg">
+                {due > 99 ? "99+" : due}
+              </span>
+            )}
+          </span>
+          חזרה
+          {due > 0 && <span className="sr-only">: {due} שאלות מחכות היום</span>}
+        </Link>
         <Link href="/profile" aria-current={on("/profile") || on("/dashboard") ? "page" : undefined} className={cn(tab, "h-16", on("/profile") || on("/dashboard") ? "text-accent" : "text-muted")}>
           <UserRound className="h-5 w-5" aria-hidden /> אני
         </Link>

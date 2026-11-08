@@ -42,7 +42,7 @@ import { QuestionExercise } from "./question-exercise";
 import { LessonContext } from "./screen-link-view";
 import { Sheet } from "./sheet";
 import { cue } from "./sound";
-import { SummaryCard } from "./summary-card";
+import { type NextLesson, SummaryCard } from "./summary-card";
 import { TrapQuiz } from "./trap-quiz";
 
 /**
@@ -96,9 +96,14 @@ export type ScreenContent = { lead?: ReactNode; body: ReactNode; check?: ReactNo
  * place. Keys: ← next, → previous (right to left) — unless a control inside
  * the screen already used the key.
  */
-export function StudyShell({ module: m, screens, next, course }: { module: StudyModule; screens: ScreenContent[]; next?: { href: string; label: string }; course: CourseInfo }) {
+export function StudyShell({ module: m, screens, next, course }: { module: StudyModule; screens: ScreenContent[]; next?: NextLesson; course: CourseInfo }) {
   const slug = m.slug;
   const p = useTopic(slug);
+  // A course's first lesson opens with one of its traps, before the concepts (pretesting): the answer counts as the practice answer.
+  const warmTrap = m.n === 1 ? m.traps[0] : undefined;
+  const warmItem = warmTrap ? practiceOf(m).find((it) => it.kind === "trap" && it.trap.id === warmTrap.id) : undefined;
+  // Answered on this visit: the question and its explanation stay on the opening; answered before, it isn't shown again.
+  const [warmedHere, setWarmedHere] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const place = clampPlace(m, p);
@@ -274,6 +279,20 @@ export function StudyShell({ module: m, screens, next, course }: { module: Study
         <LessonOpening
           module={m}
           progress={p}
+          warmup={
+            warmTrap && warmItem && (!p.traps[warmTrap.id] || warmedHere) ? (
+              <TrapQuiz
+                trap={warmTrap}
+                answered={p.traps[warmTrap.id]}
+                onAnswer={(choice) => {
+                  setWarmedHere(true);
+                  updateTopic(slug, (q) => afterAnswer(recordTrap(q, warmTrap.id, choice, choice === warmTrap.answer), warmItem, today()));
+                  if (!p.traps[warmTrap.id]) track({ kind: "exercise_answer", target: slug, ok: choice === warmTrap.answer, meta: { id: warmTrap.id, trap: true, warmup: true } });
+                  cue(choice === warmTrap.answer ? "ok" : "bad");
+                }}
+              />
+            ) : undefined
+          }
           onStart={enter}
           onTool={openTool}
           onVideo={m.videos?.length ? watch : undefined}

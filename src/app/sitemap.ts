@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { ENGINE_HUB, ENGINE_TOOLS, EXAMS_HUB, LEARN_HUB, LEARNING_PATH, PRICING_HUB } from "@/lib/catalog";
 import { SITE_URL } from "@/lib/env";
+import { CHECK_TOPICS } from "@/lib/check";
 import { STUDY_MODULES, studyHref } from "@/lib/study";
 
 /**
@@ -17,6 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       for (const p of t.pages ?? []) paths.add(p.href);
     }
   for (const slug of Object.keys(STUDY_MODULES)) paths.add(studyHref(slug));
+  for (const id of CHECK_TOPICS) paths.add(`/check/${id}`);
   for (const c of ENGINE_TOOLS) if (!c.href.includes("?")) paths.add(c.href);
   return [...paths]
     .filter((p) => !p.includes("?") && !p.includes("#"))
