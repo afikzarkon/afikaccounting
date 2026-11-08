@@ -9,6 +9,7 @@ import { IFRS16_LESSONS } from "./ifrs16";
 import { drill, DRILL_FAMILIES, type DrillFamily, statementDrill } from "./ifrs16/drills";
 import * as Chg from "./ifrs16/lessons/changes";
 import * as Lsr from "./ifrs16/lessons/lessor";
+import * as Lmd from "./ifrs16/lessons/lessor-changes";
 import { FILL_TASK, KIOSK_ACCRUED, KIOSK_EXPENSE, LAPTOP_FULL, MASTER_EXP_FORKLIFT, MASTER_EXP_LINES, MASTER_EXP_VAN, MASTER_FORKLIFT, MASTER_LINES, MASTER_VAN, SUBSEQUENT, SUBSEQUENT_TAUGHT, TRUCK_END, TRUCK_START, WORK_S, WORK_SECTIONS } from "./ifrs16/lessons/subsequent";
 import { IFRS16_GLOSSARY } from "./ifrs16/glossary";
 import { GUAR_WITH, GUAR_WITHOUT, IMPLICIT_LIABILITY, IMPLICIT_LIABILITY_DEALER, MASTER_CASH, MASTER_COST_SHOWN, MASTER_L, MASTER_NET, MASTER_RESTORE, MEASURE, MEASURE_TAUGHT, PV_EX_END, PV_EX_GROSS, PV_EX_NET, WORK1_L, WORK2_L } from "./ifrs16/lessons/measure";
@@ -17,7 +18,7 @@ import { CASES, CONTRACT_TEST, CONTRACT_TEST_START, type TestEnd, type TestNode,
 import { LESSON_N, type LeaseQuestion } from "./ifrs16/shared";
 
 /** What teaches each question, lesson by lesson. */
-const TAUGHT: Record<string, Record<string, string>> = { "ifrs16-what": WHAT_TAUGHT, "ifrs16-term": TERM_TAUGHT, "ifrs16-measure": MEASURE_TAUGHT, "ifrs16-subsequent": SUBSEQUENT_TAUGHT, "ifrs16-changes": Chg.CHANGES_TAUGHT, "ifrs16-lessor": Lsr.LESSOR_TAUGHT };
+const TAUGHT: Record<string, Record<string, string>> = { "ifrs16-what": WHAT_TAUGHT, "ifrs16-term": TERM_TAUGHT, "ifrs16-measure": MEASURE_TAUGHT, "ifrs16-subsequent": SUBSEQUENT_TAUGHT, "ifrs16-changes": Chg.CHANGES_TAUGHT, "ifrs16-lessor": Lsr.LESSOR_TAUGHT, "ifrs16-lessor-changes": Lmd.LESSOR_CHANGES_TAUGHT };
 
 const isEnd = (n: TestNode | TestEnd): n is TestEnd => "verdict" in n;
 
@@ -154,8 +155,11 @@ describe("lesson 3: the drills, re-computed from each drill's inputs", () => {
         else if (family === "financeYear") want = (d.inputs.fairValue + d.inputs.costs) * (1 + d.inputs.rate) - d.inputs.receipt;
         else if (family === "dealerProfit") want = Math.min(d.inputs.fairValue, d.inputs.pv) - d.inputs.cost - d.inputs.costs;
         else if (family === "residualCogs") want = d.inputs.cost - (d.inputs.estimate - d.inputs.guaranteed) / (1 + d.inputs.rate) ** d.inputs.n;
+        else if (family === "opMod") want = (d.inputs.pay * d.inputs.left + (d.inputs.ahead ? d.inputs.bal : -d.inputs.bal)) / d.inputs.left;
+        else if (family === "finToOp") want = npv([...flows(1, n), [n, d.inputs.residual]], i) / d.inputs.lifeLeft;
+        else if (family === "finLoss") want = npv(flows(1, n), i) - npv(Array.from({ length: n }, (_, k): [number, number] => [k + 1, d.inputs.lower]), i);
         else want = Math.round(npv(flows(1, n), i)) + d.inputs.prepaid - d.inputs.incentives + d.inputs.directCosts + d.inputs.restoration;
-        assert.ok(Math.abs(d.answer - want) <= (family === "cycle" || family === "split" || family === "indexChange" || family === "extendMod" || family === "shrink" || family === "financeYear" || family === "residualCogs" ? 2 : 0.51), `${family}/${seed}: ${d.answer} ≠ ${want}`);
+        assert.ok(Math.abs(d.answer - want) <= (family === "cycle" || family === "split" || family === "indexChange" || family === "extendMod" || family === "shrink" || family === "financeYear" || family === "residualCogs" || family === "finToOp" || family === "finLoss" ? 2 : 0.51), `${family}/${seed}: ${d.answer} ≠ ${want}`);
         assert.ok(d.answer > 0, `${family}/${seed}`);
         const text = [d.prompt, d.trap, ...d.steps.flatMap((s) => [s.title, s.formula ?? "", s.numbers ?? "", s.note ?? ""])].join(" ");
         assert.ok(!/NaN|undefined|Infinity/.test(text), `${family}/${seed}: ${text}`);
@@ -405,6 +409,57 @@ describe("lesson 6: figures, against a separate calculation over dated cash flow
     };
     walk(Lsr.CLASS_WALK_START, []);
     assert.deepEqual([...seen].sort(), Object.keys(Lsr.CLASS_WALK).sort());
+  });
+});
+
+describe("lesson 7: figures, against a separate calculation over dated cash flows", () => {
+  const near = (a: number, b: number, label = "") => assert.ok(Math.abs(a - b) <= 1, `${label}: ${a} ≠ ${b}`);
+  it("the practice", () => {
+    const answer = (id: string) => (Lmd.LESSOR_CHANGES.exercises.find((x) => x.id === id) as { answer: number }).answer;
+    const want: Record<string, number> = { "op-prepaid": 140_000, "op-income-prepaid": 87_000, "op-income-accrued": 90_000, "op-accrued-after": 20_000, "op-to-fin": 77_301, "sep-income": 75_000, "fin-dep": 60_000, "ifrs9-bal": 246_368, "ifrs9-loss": 95_331, "ifrs9-gain": 27_721, "waiver-due": 18_000, "waiver-future": 40_000 };
+    for (const [id, v] of Object.entries(want)) assert.equal(answer(id), v, id);
+    for (const x of Lmd.LESSOR_CHANGES.exercises) {
+      if (x.kind === "number") assert.ok(x.answer > 0, x.id);
+      if (x.kind === "journal") assert.ok(isBalanced(x.entry), x.id);
+      if (x.kind !== "journal") assert.ok(!/באותו|באותה|אותם|אותן|כמו בשאלה|השאלה הקודמת/.test(x.prompt), x.id);
+    }
+  });
+  it("an operating lease, paid ahead and accrued, and rewritten as a finance lease", () => {
+    assert.deepEqual([Lmd.PRE_BAL, Lmd.PRE_TOTAL, Lmd.PRE_INCOME, Lmd.PRE_FALL, Lmd.PRE_ROWS.at(-1)!.closing], [190_000, 640_000, 128_000, 38_000, 0]);
+    assert.deepEqual([Lmd.ACC_YEAR, Lmd.ACC_BAL, Lmd.ACC_NET, Lmd.ACC_TOTAL, Lmd.ACC_INCOME, Lmd.ACC_ROWS[0].closing, Lmd.ACC_ROWS[1].closing], [170_000, 60_000, 420_000, 370_000, 185_000, 15_000, 0]);
+    near(Lmd.TO_FIN_NI, 650_131.43);
+    near(Lmd.TO_FIN_GAIN, 170_131.43);
+    assert.equal(Lmd.TO_FIN_NI, Lmd.ACC_NET + Lmd.ACC_BAL + Lmd.TO_FIN_GAIN);
+  });
+  it("the machine: a separate lease, cut to four years, a lower payment", () => {
+    near(Lmd.MACH_FV, 1_496_012.04); near(Lmd.MACH_NI, 1_221_848.08);
+    near(Lmd.MACH_INT, 85_529.37); near(Lmd.MACH_CLOSE, 1_117_377.45);
+    near(Lmd.CUT_PV, 643_570.14); near(Lmd.CUT_DEP, 135_760.9); near(Lmd.CUT_ASSET, 1_086_087.18);
+    assert.ok(Lmd.CUT_PV_SHARE < 0.5 && Lmd.CUT_TERM_SHARE < 0.5);
+    near(Lmd.LOW_NI, 744_144.2); near(Lmd.LOW_LOSS, 477_703.88); near(Lmd.LOW_WRONG, 684_110.04);
+    near(Lmd.LOW_INT, 52_090.09); near(Lmd.LOW_CLOSE, 686_234.3); near(Lmd.LOW_NC, 624_270.7);
+  });
+  it("payments forgiven", () => {
+    assert.deepEqual(Lmd.WAIVE_ROWS.map((y) => y.closing), [48_000, 24_000, 0]);
+  });
+  it("the closing question, four assumptions", () => {
+    near(Lmd.CRANE_FV, 2_027_677.98); near(Lmd.CRANE_NI, 1_553_735.05);
+    near(Lmd.CA_PV, 1_130_984.59); near(Lmd.CA_DEP, 141_248.64); near(Lmd.CA_ASSET, 1_412_486.41);
+    near(Lmd.CB_NI, 1_181_147.42); near(Lmd.CB_LOSS, 372_587.63); near(Lmd.CB_INT, 70_868.85); near(Lmd.CB_CLOSE, 1_082_016.27); near(Lmd.CB_NC, 976_937.24);
+    near(Lmd.CC_INT, 93_224.1); near(Lmd.CC_CLOSE, 1_416_959.15); near(Lmd.CC_NC, 1_271_976.7);
+    near(Lmd.CD_LOSS, 216_981.13); near(Lmd.CD_NI, 1_336_753.92); near(Lmd.CD_INT, 80_205.24); near(Lmd.CD_CLOSE, 1_416_959.15); near(Lmd.CD_NC, 1_271_976.7);
+  });
+  it("the walk: every road ends in a verdict, and every node can be reached", () => {
+    const seen = new Set<string>();
+    const walk = (at: string, trail: string[]) => {
+      assert.ok(!trail.includes(at), `a loop at ${at}`);
+      seen.add(at);
+      const node = Lmd.MOD_WALK[at];
+      assert.ok(node, at);
+      if (!isEnd(node)) for (const a of node.answers) walk(a.to, [...trail, at]);
+    };
+    walk(Lmd.MOD_WALK_START, []);
+    assert.deepEqual([...seen].sort(), Object.keys(Lmd.MOD_WALK).sort());
   });
 });
 

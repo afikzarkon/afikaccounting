@@ -24,6 +24,9 @@ export const DRILL_FAMILIES = {
   financeYear: "מימונית: יתרה",
   dealerProfit: "סוחר: רווח",
   residualCogs: "סוחר: שייר",
+  opMod: "תיקון בתפעולית: הכנסה",
+  finToOp: "תיקון: הייתה תפעולית",
+  finLoss: "תיקון: IFRS 9",
 } as const;
 export type DrillFamily = keyof typeof DRILL_FAMILIES;
 
@@ -298,6 +301,63 @@ export function drill(family: DrillFamily, seed: number): Drill {
         { title: "עלות המכר", numbers: `${fmt(cost)} − ${fmt(pvUn)} = ${fmt(cost - pvUn)}` },
       ],
       trap: "להוריד גם את הערבות. היא תשלום חכירה, ולכן נשארת במכירות.",
+    };
+  }
+  if (family === "opMod") {
+    const left = r.int(3, 6);
+    const pay = r.int(40, 120, 5) * 1_000;
+    const bal = r.int(10, 60, 2) * 1_000;
+    const ahead = r.int(0, 1);
+    const future = pay * left;
+    const total = ahead ? future + bal : future - bal;
+    return {
+      prompt: `חכירה תפעולית תוקנה ב-1.1. נשארו ${left} שנים, בתשלום של ${fmt(pay)} ש״ח בסוף כל שנה. ביום התיקון יש יתרת ${ahead ? "הכנסות מראש" : "הכנסות לקבל"} של ${fmt(bal)} ש״ח. מהי ההכנסה השנתית מכאן והלאה?`,
+      answer: whole(total / left),
+      unit: "ש״ח",
+      inputs: { left, pay, bal, ahead },
+      steps: [
+        { title: "התשלומים העתידיים", numbers: `${fmt(pay)} × ${left} = ${fmt(future)}` },
+        { title: ahead ? "הכנסות מראש מתווספות" : "הכנסות לקבל יורדות", note: ahead ? "הכסף כבר התקבל, ועוד לא הוכר." : "ההכנסה כבר הוכרה, והכסף רק יגיע.", numbers: `${fmt(future)} ${ahead ? "+" : "−"} ${fmt(bal)} = ${fmt(total)}` },
+        { title: "בקו ישר (סעיף 87)", numbers: `${fmt(total)} ÷ ${left} = ${fmt(whole(total / left))}` },
+      ],
+      trap: ahead ? "להתעלם מההכנסות מראש. כך הן לא יהפכו אף פעם להכנסה." : "להוסיף את ההכנסות לקבל. הן כבר הוכרו בעבר.",
+    };
+  }
+  if (family === "finToOp") {
+    const residual = r.int(5, 40) * 1_000;
+    const lifeLeft = years + r.int(1, 4);
+    const ni = whole(pvEnd(i, years, payment, residual));
+    return {
+      prompt: `חכירה מימונית. נשארו ${years} שנים, ${fmt(payment)} ש״ח בסוף כל שנה, בריבית גלומה של ${pct(i)}, ושייר לא מובטח של ${fmt(residual)} ש״ח. בתיקון קיצרו את החכירה, ואילו התיקון היה בתוקף מההתחלה, היא הייתה תפעולית. לנכס נשארו ${lifeLeft} שנות חיים, והפחת בקו ישר בלי ערך שייר. מהו הפחת השנתי מכאן והלאה?`,
+      answer: whole(ni / lifeLeft),
+      unit: "ש״ח",
+      inputs: { payment, years, i, residual, lifeLeft },
+      steps: [
+        { title: "ההשקעה נטו מיד לפני התיקון", note: "לפי התנאים הישנים, כולל השייר.", numbers: `=PV(${pct(i)};${years};-${payment};-${residual}) → ${fmt(ni)}` },
+        { title: "הנכס חוזר לספרים (סעיף 80(א))", note: "בסכום הזה, בלי רווח או הפסד." },
+        { title: "הפחת", numbers: `${fmt(ni)} ÷ ${lifeLeft} = ${fmt(whole(ni / lifeLeft))}` },
+      ],
+      trap: "להחזיר את הנכס לפי השווי ההוגן, או להפחית על פני יתרת החכירה. הנכס שוב של המחכיר, ולכן על פני החיים שנשארו לו.",
+    };
+  }
+  if (family === "finLoss") {
+    const residual = r.int(5, 40) * 1_000;
+    const lower = payment - r.int(2, 6) * 1_000;
+    const market = i + r.int(10, 25) / 1000;
+    const before = whole(pvEnd(i, years, payment, residual));
+    const after = whole(pvEnd(i, years, lower, residual));
+    return {
+      prompt: `חכירה מימונית. נשארו ${years} שנים, ${fmt(payment)} ש״ח בסוף כל שנה, בריבית גלומה של ${pct(i)}, ושייר לא מובטח של ${fmt(residual)} ש״ח. בתיקון התשלום ירד ל-${fmt(lower)} ש״ח, והחכירה נשארת מימונית. ריבית השוק היום ${pct(market)}. כמה הפסד נרשם?`,
+      answer: before - after,
+      unit: "ש״ח",
+      inputs: { payment, years, i, residual, lower },
+      steps: [
+        { title: "המסלול", note: "לא נוסף נכס, והחכירה נשארת מימונית. לכן IFRS 9, בריבית המקורית (סעיף 80(ב))." },
+        { title: "לפני", numbers: `=PV(${pct(i)};${years};-${payment};-${residual}) → ${fmt(before)}` },
+        { title: "אחרי", numbers: `=PV(${pct(i)};${years};-${lower};-${residual}) → ${fmt(after)}` },
+        { title: "ההפסד", numbers: `${fmt(before)} − ${fmt(after)} = ${fmt(before - after)}` },
+      ],
+      trap: "להוון בריבית השוק. היא נתון מיותר כאן: המחכיר נשאר בריבית המקורית.",
     };
   }
   const prepaid = r.int(0, 9_000, 1_000);
