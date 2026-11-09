@@ -1,5 +1,6 @@
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { BasicsDrill } from "./basics-drill";
+import { WorksheetLevels } from "./worksheet-levels";
 
 /** The practice-without-end screen at the end of lessons 5, 6 and 7: only what the lesson taught, in three levels and mixed. */
 export const DRILL_SCREENS: Record<string, ScreenContent> = {
@@ -10,6 +11,10 @@ export const DRILL_SCREENS: Record<string, ScreenContent> = {
   "rev-drill": {
     lead: "מאזן בוחן ראשוני בלי סוף: חוזים ישנים, יתרות ״?״, תיקונים ורכוש קבוע. כל תרגיל עם פתרון מלא.",
     body: <BasicsDrill lesson={6} />,
+  },
+  "ws-levels": {
+    lead: "גיליון רב-טורי בלי סוף, בחמש רמות. בכל לחיצה חברה חדשה, עם מאזן בוחן ראשוני ונתונים משלה. מתחילים ברמה 1, ומגיעים לרמה 5, רמת הבוחן.",
+    body: <WorksheetLevels />,
   },
   "cl-drill": {
     lead: "הפסדי אשראי בכל השילובים: השלמה, מחיקה, ספציפית וכללית, חוב שחזר, ונעלמים. כל לחיצה מביאה מספרים חדשים.",

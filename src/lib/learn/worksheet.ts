@@ -23,6 +23,8 @@ export type WorksheetCase = {
   notes?: Record<string, string>;
   /** An account whose balance the question leaves out: its side and amount are what makes the trial balance balance. */
   unknown?: string;
+  /** Balances the question leaves out that are worked out from the story (an old contract's prepaid, accumulated depreciation), each with its story and how to get it. */
+  computed?: { account: string; story: string; why: string }[];
   /** At the end, the closing retained earnings too — not only the profit. */
   askRetained?: boolean;
 };

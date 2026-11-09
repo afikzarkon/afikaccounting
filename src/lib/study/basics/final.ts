@@ -16,12 +16,14 @@ export const FINAL: StudyModule = {
     "לפתור לבד שאלת בחינה שמשלבת את כל הנושאים",
   ],
   backHref: COURSE_HREF,
+  tools: [{ screen: "ws-levels", label: "גיליון רב-טורי בלי סוף" }],
   screens: [
     { id: "worksheet", title: "גיליון רב-טורי: העמודות" },
     { id: "ws-question", title: "שאלה מלאה: רימון בע״מ" },
     { id: "ws-solve", title: "הפתרון, עמודה אחר עמודה" },
     { id: "ws-game", title: "המשחק: פתרו גיליון שלם" },
     { id: "ws-game-hard", title: "משחק מתקדם: גיליון עם נעלמים" },
+    { id: "ws-levels", title: "גיליון בלי סוף: חמש רמות" },
     { id: "ws-exam", title: "שאלת הבחינה המסכמת: אלמוג בע״מ" },
   ],
   exercises: [

@@ -94,7 +94,10 @@ function SortStage({ c, onDone }: { c: WorksheetCase; onDone: (s: SortStats) => 
   const [order, setOrder] = useState(accounts);
   const [placed, setPlaced] = useState<Record<string, Side>>({});
   const [picked, setPicked] = useState<string>();
-  const [missing, setMissing] = useState("");
+  const [missing, setMissing] = useState<Record<string, string>>({});
+  const computed = useMemo(() => new Set((c.computed ?? []).map((x) => x.account)), [c]);
+  const typed = (a: string) => a === c.unknown || computed.has(a);
+  const filled = accounts.filter(typed).every((a) => (missing[a] ?? "").trim());
   const [wrong, setWrong] = useState<Set<string>>(new Set());
   const [mistakes, setMistakes] = useState(0);
   const [timed, setTimed] = useState(false);
@@ -120,10 +123,10 @@ function SortStage({ c, onDone }: { c: WorksheetCase; onDone: (s: SortStats) => 
   const pool = order.filter((a) => !placed[a]);
   const done = doneAt !== undefined;
   const elapsed = start ? (doneAt ?? now) - start : 0;
-  // The "?" account counts with the amount typed for it.
-  const amountOf = (a: string) => (a === c.unknown ? parse(missing) : Math.abs(c.preliminary[a]));
+  // A "?" account counts with the amount typed for it.
+  const amountOf = (a: string) => (typed(a) ? parse(missing[a] ?? "") : Math.abs(c.preliminary[a]));
   const total = (s: Side) => round2(Object.entries(placed).filter(([, v]) => v === s).reduce((t, [a]) => t + amountOf(a), 0));
-  const missingOff = (a: string) => a === c.unknown && Math.abs(parse(missing) - Math.abs(c.preliminary[a])) > 0.5;
+  const missingOff = (a: string) => typed(a) && Math.abs(parse(missing[a] ?? "") - Math.abs(c.preliminary[a])) > 0.5;
 
   const go = () => {
     // A fresh deal each time: the order is shuffled when the clock starts.
@@ -164,7 +167,7 @@ function SortStage({ c, onDone }: { c: WorksheetCase; onDone: (s: SortStats) => 
   };
   const reset = () => {
     setPlaced({});
-    setMissing("");
+    setMissing({});
     setWrong(new Set());
     setMistakes(0);
     setStart(undefined);
@@ -198,7 +201,7 @@ function SortStage({ c, onDone }: { c: WorksheetCase; onDone: (s: SortStats) => 
       )}
     >
       <GripVertical className="h-3.5 w-3.5 text-subtle" aria-hidden />
-      {a === c.unknown ? <span className="px-1 font-extrabold text-accent">?</span> : <Money v={Math.abs(c.preliminary[a])} plain />}
+      {typed(a) ? <span className="px-1 font-extrabold text-accent">?</span> : <Money v={Math.abs(c.preliminary[a])} plain />}
     </span>
   );
 
@@ -216,6 +219,18 @@ function SortStage({ c, onDone }: { c: WorksheetCase; onDone: (s: SortStats) => 
             </>
           )}
         </p>
+        {!!c.computed?.length && (
+          <div className="w-full space-y-1.5 rounded-lg bg-surface px-3 py-2.5 text-[14px]">
+            <p className="font-bold text-fg">יתרות שחסרות במאזן, ואת הסכום שלהן מחשבים מהסיפור:</p>
+            <ul className="list-disc space-y-1 ps-5 marker:text-subtle">
+              {c.computed.map((x) => (
+                <li key={x.account}>
+                  <strong>״{x.account}״:</strong> {x.story}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {!start && !done && (
           <label className="flex items-center gap-2 text-[14px] font-semibold text-fg">
             <input type="checkbox" checked={timed} onChange={(e) => setTimed(e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" />
@@ -270,7 +285,19 @@ function SortStage({ c, onDone }: { c: WorksheetCase; onDone: (s: SortStats) => 
                         </span>
                         {wrong.has(a) && s && (
                           <span className="mt-1 block text-[12.5px] leading-snug text-fg">
-                            {a === c.unknown ? (
+                            {computed.has(a) ? (
+                              s !== sideOf(c.preliminary[a]) ? (
+                                <>
+                                  <strong className="text-danger">לא {SIDE[s]}. </strong>
+                                  {whySide(a, sideOf(c.preliminary[a]))}
+                                </>
+                              ) : (
+                                <>
+                                  <strong className="text-danger">הצד נכון, הסכום לא. </strong>
+                                  {c.computed?.find((x) => x.account === a)?.why}
+                                </>
+                              )
+                            ) : a === c.unknown ? (
                               s !== sideOf(c.preliminary[a]) ? (
                                 <>
                                   <strong className="text-danger">לא {SIDE[s]}. </strong>
@@ -298,15 +325,16 @@ function SortStage({ c, onDone }: { c: WorksheetCase; onDone: (s: SortStats) => 
                           onDrop={onDrop(x)}
                           className={cn("px-2 py-1 text-center align-middle", x === "dr" ? "border-s-2 border-fg/60" : "border-s border-line")}
                         >
-                          {s === x && a === c.unknown ? (
+                          {s === x && typed(a) ? (
                             <span className="inline-flex items-center gap-1">
                               <input
                                 dir="ltr"
                                 inputMode="decimal"
                                 disabled={done}
-                                value={done ? Math.abs(c.preliminary[a]).toLocaleString("en-US") : missing}
+                                value={done ? Math.abs(c.preliminary[a]).toLocaleString("en-US") : (missing[a] ?? "")}
                                 onChange={(e) => {
-                                  setMissing(typedAmount(e));
+                                  const v = typedAmount(e);
+                                  setMissing((m) => ({ ...m, [a]: v }));
                                   setWrong((w) => {
                                     const n = new Set(w);
                                     n.delete(a);
@@ -384,13 +412,13 @@ function SortStage({ c, onDone }: { c: WorksheetCase; onDone: (s: SortStats) => 
 
           {!done ? (
             <div className="flex flex-wrap items-center gap-3">
-              <Button onClick={check} disabled={pool.length > 0 || (!!c.unknown && !missing.trim())}>
+              <Button onClick={check} disabled={pool.length > 0 || !filled}>
                 <Scale className="h-4 w-4" aria-hidden /> בדיקה
               </Button>
               {pool.length > 0 ? (
                 <span className="text-[13px] text-muted">כדי לבדוק, ממיינים את כל הכרטיסים.</span>
               ) : (
-                c.unknown && !missing.trim() && <span className="text-[13px] text-muted">נשאר למלא את הסכום של ״{c.unknown}״.</span>
+                !filled && <span className="text-[13px] text-muted">נשאר למלא את הסכום של {accounts.filter((a) => typed(a) && !(missing[a] ?? "").trim()).map((a) => `״${a}״`).join(", ")}.</span>
               )}
               {wrong.size > 0 && (
                 <span className="text-[13.5px] font-semibold text-danger">
