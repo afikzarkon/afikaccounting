@@ -6,6 +6,7 @@ import { RETURNS } from "./lessons/returns";
 import { WHAT } from "./lessons/what";
 import { WORKSHEET } from "./lessons/worksheet";
 import { POLICY } from "./lessons/policy";
+import { FINANCE } from "./lessons/finance";
 
 /** The consolidated statements course; every formula in its practice reads left to right. */
-export const CONSOLIDATED_LESSONS = [WHAT, CONTROL, RETURNS, ACQUISITION, GOODWILL, WORKSHEET, POLICY].map(withLtrFormulas);
+export const CONSOLIDATED_LESSONS = [WHAT, CONTROL, RETURNS, ACQUISITION, GOODWILL, WORKSHEET, POLICY, FINANCE].map(withLtrFormulas);

@@ -2,7 +2,7 @@
 
 import { RotateCcw } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { type Books, consolidate, excessTable, goodwillCalc, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, revalue, whole } from "@/lib/learn/consolidated";
+import { type Books, consolidate, excessTable, goodwillCalc, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, pvBond, revalue, whole, amortizedCost } from "@/lib/learn/consolidated";
 import { drill, DRILL_FAMILIES, type DrillFamily } from "@/lib/study/consolidated/drills";
 import { ARMON, NOFAR } from "@/lib/study/consolidated/lessons/worksheet";
 import { cn } from "@/lib/utils";
@@ -337,6 +337,33 @@ export function RevalLab() {
           ["אצל הקבוצה", group.pl, group.oci],
         ]}
         foot={["ההתאמה במאוחד", group.pl - sub.pl, group.oci - sub.oci]}
+      />
+    </section>
+  );
+}
+
+/** Gome's bond: the subsidiary's schedule is fixed; move the market rate on the day of acquisition and watch the group's schedule, the excess and each year's adjustment. */
+export function BondLab() {
+  const [rate, setRate] = useState(5);
+  const sub = amortizedCost({ start: whole(pvBond(0.06, 4, 4_500, 100_000)), rate: 0.06, coupon: 4_500, years: 4, face: 100_000 });
+  const fair = whole(pvBond(rate / 100, 3, 4_500, 100_000));
+  const group = amortizedCost({ start: fair, rate: rate / 100, coupon: 4_500, years: 3, face: 100_000 });
+  return (
+    <section aria-label="מעבדה: שתי ריביות" className="card space-y-4 p-4 sm:p-5">
+      <Percent label="ריבית השוק ביום הרכישה" value={rate} onChange={setRate} min={2} max={9} />
+      <Tbl
+        head={["ביום הרכישה", "סכום"]}
+        rows={[
+          ["עלות מופחתת אצל הבת", sub[0].close],
+          ["שווי הוגן: העלות לקבוצה", fair],
+        ]}
+        foot={["עודף עלות", fair - sub[0].close]}
+      />
+      <Tbl
+        dense
+        head={["הכנסות מימון", "הבת", "הקבוצה", "התאמה"]}
+        rows={group.map((g, i) => [String(2025 + i), sub[i + 1].interest, g.interest, g.interest - sub[i + 1].interest])}
+        foot={["סך הכול", sub.slice(1).reduce((a, x) => a + x.interest, 0), group.reduce((a, x) => a + x.interest, 0), fair - sub[0].close === 0 ? 0 : -(fair - sub[0].close)]}
       />
     </section>
   );

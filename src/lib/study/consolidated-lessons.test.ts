@@ -13,6 +13,7 @@ import { ATTEND_NO, ATTEND_YES, BOARD, CONTROL, CONTROL_TAUGHT, CONVERTED, MASTE
 import { ACQUISITION, ACQUISITION_TAUGHT, BOND, ITEMS, LESSEE, LESSOR, MASTER4_TABLE, STORY_TABLE } from "./consolidated/lessons/acquisition";
 import { G_FAIR, G_NET, G_PREMIUM, G_SHARE, GOODWILL, GOODWILL_TAUGHT, M5, PAYS, PERIOD, PERIOD_TEST, PERIOD_TEST_START } from "./consolidated/lessons/goodwill";
 import { AGENT_TEST, AGENT_TEST_START, AGENTS, FUND_LARGE, FUND_SMALL, MASTER3_POSITION, MASTER3_REWARD, MASTER3_SISTER, MASTER3_TOGETHER, RETURNS, RETURNS_TAUGHT } from "./consolidated/lessons/returns";
+import { BOND8, BOND8_OCI, DEBT_TEST, DEBT_TEST_START, FINANCE, FINANCE_TAUGHT, IMPAIR8, M8, NEEDS, SHARES8_FIG } from "./consolidated/lessons/finance";
 import { BUILDING, LAND, M7, M7_2025, M7_NCI, POLICY, POLICY_TAUGHT, POLICY_TEST, POLICY_TEST_START, ADJUST, TABLE7_2025, TABLE7_2026 } from "./consolidated/lessons/policy";
 import { M6, STORY6, WHOSE, WORKSHEET, WORKSHEET_TAUGHT, YEAR2, YEAR2_NCI_END } from "./consolidated/lessons/worksheet";
 import { CASES, EXEMPT_TEST, EXEMPT_TEST_START, MASTER_POSITION, MASTER_PROFIT, MASTER_SEPARATE, STORY_POSITION, STORY_PROFIT, STORY_SEPARATE, WHAT, WHAT_TAUGHT } from "./consolidated/lessons/what";
@@ -20,7 +21,7 @@ import { type ConsolidatedQuestion, LESSON_N } from "./consolidated/shared";
 import { ltrFormulas } from "./ias19/ltr";
 
 /** What teaches each question, lesson by lesson. */
-const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT, "consolidated-acquisition": ACQUISITION_TAUGHT, "consolidated-goodwill": GOODWILL_TAUGHT, "consolidated-worksheet": WORKSHEET_TAUGHT, "consolidated-policy": POLICY_TAUGHT };
+const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT, "consolidated-acquisition": ACQUISITION_TAUGHT, "consolidated-goodwill": GOODWILL_TAUGHT, "consolidated-worksheet": WORKSHEET_TAUGHT, "consolidated-policy": POLICY_TAUGHT, "consolidated-finance": FINANCE_TAUGHT };
 
 describe("the consolidated statements course", () => {
   it("lessons numbered in order, on the course's page, the first free", () => {
@@ -507,6 +508,47 @@ describe("lesson 7: the walk, the sorting and the figures, against a separate ca
     const answer = (id: string) => (POLICY.exercises.find((x) => x.id === id) as { answer: number }).answer;
     for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
     assert.deepEqual(POLICY.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
+  });
+});
+
+describe("lesson 8: the walk, the sorting and the figures, against a separate calculation in Python", () => {
+  it("every path of the walk ends, and both verdicts are reachable", () => {
+    const ends = new Set<boolean>();
+    const reach = (id: string, seen: string[]): void => {
+      const node = DEBT_TEST[id];
+      assert.ok(node, id);
+      assert.ok(!seen.includes(id), `loop at ${id}`);
+      if ("verdict" in node) return void ends.add(node.lease);
+      node.answers.forEach((a) => reach(a.to, [...seen, id]));
+    };
+    reach(DEBT_TEST_START, []);
+    assert.deepEqual([...ends].sort(), [false, true]);
+  });
+  it("eight cases to sort, both answers among them", () => {
+    assert.equal(NEEDS.length, 8);
+    assert.ok(NEEDS.some((x) => x.answer === "yes") && NEEDS.some((x) => x.answer === "no"));
+  });
+  it("the shares", () => {
+    assert.deepEqual(SHARES8_FIG, { subReserveX: 9_240, groupReserveX: 4_620, reserveY: 2_310, ociX: 4_620, subReserve: 11_550, groupReserve: 6_930, owners: 4_851, nci: 2_079, saleSub: 11_550, saleGroup: 6_930, saleOwners: 4_851 });
+  });
+  it("the bond at amortized cost, at fair value, and its impairment", () => {
+    assert.equal(BOND8.price, 94_802);
+    assert.equal(BOND8.fairAt, 98_638);
+    assert.deepEqual(BOND8.sub.map((r) => [r.interest, r.close]), [[5_688, 95_990], [5_759, 97_249], [5_835, 98_584], [5_916, 100_000]]);
+    assert.deepEqual(BOND8.group.map((r) => [r.interest, r.close]), [[4_932, 99_070], [4_954, 99_524], [4_976, 100_000]]);
+    assert.deepEqual(BOND8.group.map((g, i) => g.close - BOND8.sub[i + 1].close), [1_821, 940, 0]);
+    assert.equal(BOND8.fairAt - BOND8.sub[0].close, 2_648);
+    assert.deepEqual(BOND8_OCI, { sub: -3_259, group: -2_432, subReserve: -611, groupReserve: -2_432 });
+    assert.deepEqual(IMPAIR8, { sub: 9_434, group: 9_524 });
+  });
+  it("the closing question", () => {
+    assert.deepEqual(M8, { sharesSub: 13_860, sharesGroup: 4_620, sharesOwners: 3_696, subInterest: 3_325, groupInterest: 2_450, excessAt: 1_500, excessEnd: 625, adjusted: 119_125, nciProfit: 23_825, nciOci: 924, benefit: 6_000, nciEnd: 115_749 });
+  });
+  it("calculations in the practice", () => {
+    const expected: Record<string, number> = { "equity-share": 12_000, "ac-excess": 3_000, "ac-amort": 1_460, "equity-before": 3_850, "equity-sale": 4_312, "fvoci-adj": 700, "controller-nci": 15_000, "impair-group": 19_048, "ac-two": 2_300, "sub-adj-fin": 13_860, "controller-total": 60_000, "controller-b-nci": 8_000, "oci-same": 7_000, "fvoci-sale": 3_000 };
+    const answer = (id: string) => (FINANCE.exercises.find((x) => x.id === id) as { answer: number }).answer;
+    for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
+    assert.deepEqual(FINANCE.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
   });
 });
 

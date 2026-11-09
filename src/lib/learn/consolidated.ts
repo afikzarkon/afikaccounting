@@ -265,3 +265,19 @@ export function revalue(r: { carrying: number; fairValue: number; surplus: numbe
   const oci = -Math.min(r.surplus, -d);
   return { pl: d - oci + 0, oci: oci + 0 };
 }
+
+/**
+ * A debt instrument at amortized cost, year by year: interest at the effective
+ * rate, rounded to a whole shekel, less the coupon. The last year's interest
+ * closes the balance on the face, so rounding never leaves a remainder.
+ */
+export function amortizedCost(a: { start: number; rate: number; coupon: number; years: number; face: number }) {
+  const rows: { open: number; interest: number; close: number }[] = [];
+  let c = a.start;
+  for (let y = 0; y < a.years; y++) {
+    const interest = y === a.years - 1 ? a.face + a.coupon - c : whole(c * a.rate);
+    rows.push({ open: c, interest, close: c + interest - a.coupon });
+    c += interest - a.coupon;
+  }
+  return rows;
+}

@@ -37,6 +37,10 @@ export const DRILL_FAMILIES = {
   ipexcess: "עודף על נדל״ן להשקעה",
   modelloss: "הפסד במעבר להערכה מחדש",
   resowners: "קרן של הבעלים",
+  eqbefore: "קרן על מניות מלפני הרכישה",
+  finadj: "התאמת הכנסות מימון",
+  acbalance: "יתרת עודף על אג״ח",
+  ncibenefit: "הטבה לזשמ״ש",
 } as const;
 
 export type DrillFamily = keyof typeof DRILL_FAMILIES;
@@ -391,6 +395,61 @@ export function drill(family: DrillFamily, seed: number): Drill {
       answer: share,
       steps: [{ title: "רק החלק של האם בקרן", numbers: `${fmt(reserve)} × ${pct}% = ${fmt(share)}` }],
       trap: "להציג את כל הקרן בהון הבעלים.",
+    };
+  }
+  if (family === "eqbefore") {
+    const cost = r.int(10, 40) * 1_000;
+    const at = cost + r.int(2, 15) * 1_000;
+    const end = at + r.int(2, 60) * 500;
+    const reserve = whole((end - at) * 0.77);
+    return {
+      prompt: `הבת קנתה מניות ב־${fmt(cost)} ש״ח לפני הרכישה, ומודדת אותן בשווי הוגן דרך רווח כולל אחר. ביום הרכישה שוויין ${fmt(at)} ש״ח, ובסוף השנה ${fmt(end)} ש״ח. שיעור המס 23%. מה הקרן על המניות במאוחד בסוף השנה, נטו?`,
+      answer: reserve,
+      steps: [{ title: "לקבוצה העלות היא השווי ההוגן ביום הרכישה", numbers: `(${fmt(end)} − ${fmt(at)}) × 77% = ${fmt(reserve)}` }],
+      trap: "לחשב מול העלות המקורית של הבת.",
+    };
+  }
+  if (family === "finadj") {
+    const subOpen = r.int(40, 120) * 1_000;
+    const groupOpen = subOpen + r.int(1, 5) * 1_000;
+    const subRate = r.int(6, 8);
+    const groupRate = subRate - r.int(2, 3);
+    const subInt = whole((subOpen * subRate) / 100);
+    const groupInt = whole((groupOpen * groupRate) / 100);
+    return {
+      prompt: `אג״ח של הבת בעלות מופחתת, שקנתה לפני הרכישה: בספריה ${fmt(subOpen)} ש״ח בתחילת השנה, בריבית אפקטיבית של ${subRate}%. אצל הקבוצה ${fmt(groupOpen)} ש״ח, בריבית אפקטיבית של ${groupRate}%. התעלמו ממסים. בכמה מקטינים במאוחד את הכנסות המימון של הבת?`,
+      answer: subInt - groupInt,
+      steps: [
+        { title: "הכנסות המימון של הבת", numbers: `${fmt(subOpen)} × ${subRate}% = ${fmt(subInt)}` },
+        { title: "הכנסות המימון של הקבוצה", numbers: `${fmt(groupOpen)} × ${groupRate}% = ${fmt(groupInt)}` },
+        { title: "ההפרש: הפחתת עודף העלות", numbers: `${fmt(subInt)} − ${fmt(groupInt)} = ${fmt(subInt - groupInt)}` },
+      ],
+      trap: "להפחית את העודף בקו ישר.",
+    };
+  }
+  if (family === "acbalance") {
+    const excess = r.int(4, 12) * 1_000;
+    const subInt = r.int(40, 80) * 100;
+    const groupInt = subInt - r.int(3, 20) * 100;
+    const end = excess - (subInt - groupInt);
+    return {
+      prompt: `ביום הרכישה עודף העלות על אג״ח של הבת ${fmt(excess)} ש״ח. השנה הבת רשמה הכנסות מימון של ${fmt(subInt)} ש״ח, ולפי הריבית של הקבוצה הן ${fmt(groupInt)} ש״ח. התעלמו ממסים. מה יתרת העודף בסוף השנה?`,
+      answer: end,
+      steps: [
+        { title: "ההפחתה: ההפרש בהכנסות המימון", numbers: `${fmt(subInt)} − ${fmt(groupInt)} = ${fmt(subInt - groupInt)}` },
+        { title: "היתרה", numbers: `${fmt(excess)} − ${fmt(subInt - groupInt)} = ${fmt(end)}` },
+      ],
+      trap: "להוסיף את ההפרש לעודף.",
+    };
+  }
+  if (family === "ncibenefit") {
+    const expense = r.int(2, 40) * 5_000;
+    const benefit = whole((expense * out) / 100);
+    return {
+      prompt: `האם מחזיקה ${pct}% מהבת. האם שילמה הוצאה של הבת, ${fmt(expense)} ש״ח, בלי לקבל תמורה. כמה עובר במאוחד מהבעלים של האם לזשמ״ש?`,
+      answer: benefit,
+      steps: [{ title: `החלק של הזשמ״ש בהטבה, ${out}%`, numbers: `${fmt(expense)} × ${out}% = ${fmt(benefit)}` }],
+      trap: "להעביר את החלק של האם.",
     };
   }
   if (family === "ncieq")
