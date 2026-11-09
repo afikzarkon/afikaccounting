@@ -43,6 +43,7 @@ export const REVIEW: StudyModule = {
     "לקבוע איך כל טעות השפיעה על הרווח",
   ],
   backHref: COURSE_HREF,
+  tools: [{ screen: "rev-drill", label: "מחולל תרגילים: מאזן בוחן ראשוני" }],
   screens: [
     { id: "rev-method", title: "שלוש שאלות לכל סעיף" },
     { id: "rev-contract", title: "חוזה ישן או חדש?" },
@@ -50,6 +51,7 @@ export const REVIEW: StudyModule = {
     { id: "rev-ppe", title: "יתרות ״?״ ברכוש קבוע" },
     { id: "rev-fix", title: "פקודות תיקון: חשבון שגוי, צד הפוך, או שניהם" },
     { id: "rev-profit", title: "מה כל טעות עשתה לרווח" },
+    { id: "rev-drill", title: "תרגול בלי סוף: מאזן בוחן ראשוני" },
   ],
   exercises: [
     journal(

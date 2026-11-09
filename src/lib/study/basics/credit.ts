@@ -68,8 +68,12 @@ export const CREDIT: StudyModule = {
     { id: "cl-recovery", title: "מסיחים וחוב שחזר" },
     { id: "cl-exam", title: "שאלה ברמת בחינה: כרמל בע״מ" },
     { id: "cl-calc", title: "מחשבון: בדקו את התשובה שלכם" },
+    { id: "cl-drill", title: "תרגול בלי סוף: הפסדי אשראי" },
   ],
-  tools: [{ screen: "cl-calc", label: "מחשבון הפסדי אשראי" }],
+  tools: [
+    { screen: "cl-calc", label: "מחשבון הפסדי אשראי" },
+    { screen: "cl-drill", label: "מחולל תרגילים: הפסדי אשראי" },
+  ],
   exercises: [
     journal(
       "same-day",

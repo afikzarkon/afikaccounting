@@ -67,6 +67,7 @@ export const ADJUST: StudyModule = {
     "לרשום את כל פקודות ההתאמה של חברה שלמה",
   ],
   backHref: COURSE_HREF,
+  tools: [{ screen: "adj-drill", label: "מחולל תרגילים: התאמות" }],
   screens: [
     { id: "accrual", title: "חשבונות חתך: שם של הוצאה, מקום במאזן" },
     { id: "prepaid", title: "הוצאות מראש — נכס" },
@@ -81,6 +82,7 @@ export const ADJUST: StudyModule = {
     { id: "ppe-accum", title: "פחת נצבר ועלות מופחתת" },
     { id: "ppe-sell", title: "מכירת רכוש קבוע" },
     { id: "adj-example", title: "דוגמה מלאה: שחר ייעוץ בע״מ" },
+    { id: "adj-drill", title: "תרגול בלי סוף: התאמות" },
   ],
   exercises: [
     // Prepaid expenses.

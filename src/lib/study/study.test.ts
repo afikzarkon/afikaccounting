@@ -202,7 +202,7 @@ describe("interactive lessons: the accounting in the new questions", () => {
 
   it("a lesson's tools open screens it has: the credit-loss calculator straight from the course page", () => {
     for (const m of modules) for (const t of m.tools ?? []) assert.ok(m.screens.some((s) => s.id === t.screen), `${m.slug}: no screen ${t.screen}`);
-    assert.deepEqual(STUDY_MODULES["basics-credit"].tools?.map((t) => t.screen), ["cl-calc"]);
+    assert.deepEqual(STUDY_MODULES["basics-credit"].tools?.map((t) => t.screen), ["cl-calc", "cl-drill"]);
   });
 });
 
