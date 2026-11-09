@@ -13,13 +13,14 @@ import { ATTEND_NO, ATTEND_YES, BOARD, CONTROL, CONTROL_TAUGHT, CONVERTED, MASTE
 import { ACQUISITION, ACQUISITION_TAUGHT, BOND, ITEMS, LESSEE, LESSOR, MASTER4_TABLE, STORY_TABLE } from "./consolidated/lessons/acquisition";
 import { G_FAIR, G_NET, G_PREMIUM, G_SHARE, GOODWILL, GOODWILL_TAUGHT, M5, PAYS, PERIOD, PERIOD_TEST, PERIOD_TEST_START } from "./consolidated/lessons/goodwill";
 import { AGENT_TEST, AGENT_TEST_START, AGENTS, FUND_LARGE, FUND_SMALL, MASTER3_POSITION, MASTER3_REWARD, MASTER3_SISTER, MASTER3_TOGETHER, RETURNS, RETURNS_TAUGHT } from "./consolidated/lessons/returns";
+import { BUILDING, LAND, M7, M7_2025, M7_NCI, POLICY, POLICY_TAUGHT, POLICY_TEST, POLICY_TEST_START, ADJUST, TABLE7_2025, TABLE7_2026 } from "./consolidated/lessons/policy";
 import { M6, STORY6, WHOSE, WORKSHEET, WORKSHEET_TAUGHT, YEAR2, YEAR2_NCI_END } from "./consolidated/lessons/worksheet";
 import { CASES, EXEMPT_TEST, EXEMPT_TEST_START, MASTER_POSITION, MASTER_PROFIT, MASTER_SEPARATE, STORY_POSITION, STORY_PROFIT, STORY_SEPARATE, WHAT, WHAT_TAUGHT } from "./consolidated/lessons/what";
 import { type ConsolidatedQuestion, LESSON_N } from "./consolidated/shared";
 import { ltrFormulas } from "./ias19/ltr";
 
 /** What teaches each question, lesson by lesson. */
-const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT, "consolidated-acquisition": ACQUISITION_TAUGHT, "consolidated-goodwill": GOODWILL_TAUGHT, "consolidated-worksheet": WORKSHEET_TAUGHT };
+const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT, "consolidated-acquisition": ACQUISITION_TAUGHT, "consolidated-goodwill": GOODWILL_TAUGHT, "consolidated-worksheet": WORKSHEET_TAUGHT, "consolidated-policy": POLICY_TAUGHT };
 
 describe("the consolidated statements course", () => {
   it("lessons numbered in order, on the course's page, the first free", () => {
@@ -451,6 +452,61 @@ describe("lesson 6: the worksheet, against a separate calculation in Python", ()
     const answer = (id: string) => (WORKSHEET.exercises.find((x) => x.id === id) as { answer: number }).answer;
     for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
     assert.deepEqual(WORKSHEET.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
+  });
+});
+
+describe("lesson 7: the walk, the sorting and the figures, against a separate calculation in Python", () => {
+  it("every path of the walk ends, and both verdicts are reachable", () => {
+    const ends = new Set<boolean>();
+    const reach = (id: string, seen: string[]): void => {
+      const node = POLICY_TEST[id];
+      assert.ok(node, id);
+      assert.ok(!seen.includes(id), `loop at ${id}`);
+      if ("verdict" in node) return void ends.add(node.lease);
+      node.answers.forEach((a) => reach(a.to, [...seen, id]));
+    };
+    reach(POLICY_TEST_START, []);
+    assert.deepEqual([...ends].sort(), [false, true]);
+  });
+  it("eight cases to sort, both answers among them", () => {
+    assert.equal(ADJUST.length, 8);
+    assert.ok(ADJUST.some((a) => a.answer === "yes") && ADJUST.some((a) => a.answer === "no"));
+  });
+  it("the table of excess cost over the years", () => {
+    assert.deepEqual(TABLE7_2025.items.map((r) => [r.at, r.amortized, r.end]), [[22_000, 21_000, 43_000], [0, -14_000, -14_000]]);
+    assert.deepEqual([TABLE7_2025.tax.at, TABLE7_2025.tax.amortized, TABLE7_2025.tax.end], [-5_060, -1_610, -6_670]);
+    assert.deepEqual(TABLE7_2025.total, { at: 16_940, amortized: 5_390, end: 22_330 });
+    assert.deepEqual([TABLE7_2026.tax.at, TABLE7_2026.tax.amortized, TABLE7_2026.tax.end], [3_220, 1_610, 4_830]);
+    assert.deepEqual(TABLE7_2026.total, { at: -10_780, amortized: -5_390, end: -16_170 });
+  });
+  it("the building, seen by the subsidiary and by the group", () => {
+    assert.equal(BUILDING.carrying25, 144_000);
+    assert.equal(BUILDING.lossLeft, 16_000);
+    assert.deepEqual([BUILDING.sub25, BUILDING.group25], [{ pl: 16_000, oci: 8_000 }, { pl: 0, oci: 24_000 }]);
+    assert.deepEqual([BUILDING.subNet, BUILDING.groupNet, BUILDING.subRealised, BUILDING.groupRealised], [6_160, 18_480, 770, 2_310]);
+    assert.deepEqual([BUILDING.ownersReserve, BUILDING.nciReserve, BUILDING.ownersRealised], [12_936, 5_544, 1_617]);
+    assert.deepEqual([BUILDING.carrying26, BUILDING.subSurplus26, BUILDING.groupSurplus26], [147_000, 7_000, 21_000]);
+    assert.deepEqual([BUILDING.sub26, BUILDING.group26], [{ pl: -14_000, oci: -7_000 }, { pl: 0, oci: -21_000 }]);
+    assert.deepEqual([16_000 * 0.23, 16_000 * 0.77, 14_000 * 0.23, 14_000 * 0.77].map(Math.round), [3_680, 12_320, 3_220, 10_780]);
+  });
+  it("the land on the move to revaluation", () => {
+    assert.deepEqual([LAND.sub, LAND.group], [{ pl: 0, oci: 24_000 }, { pl: -12_000, oci: 0 }]);
+    assert.deepEqual([36_000 * 0.23, 24_000 * 0.77, 12_000 * 0.23].map(Math.round), [8_280, 18_480, 2_760]);
+  });
+  it("the closing question", () => {
+    assert.deepEqual(M7_2025.total, { at: -6_160, amortized: 6_160, end: 0 });
+    assert.deepEqual([M7_2025.tax.at, M7_2025.tax.amortized, M7_2025.tax.end], [1_840, -1_840, 0]);
+    assert.deepEqual([M7.sub, M7.group], [{ pl: 0, oci: -7_000 }, { pl: -7_000, oci: 0 }]);
+    assert.equal(M7.adjusted, 90_770);
+    assert.equal(M7_NCI, 18_154);
+    assert.deepEqual(M7.table26.total, { at: 8_470, amortized: 6_160, end: 14_630 });
+    assert.deepEqual([M7.table26.tax.at, M7.table26.tax.amortized, M7.table26.tax.end], [-2_530, -1_840, -4_370]);
+  });
+  it("calculations in the practice", () => {
+    const expected: Record<string, number> = { "ip-excess-l1": 19_000, "reserve-share-l1": 21_000, "qual-effect": 6_160, "ip-amort": 9_000, "group-pl": 12_000, "oci-adjust": 7_700, "model-pl": 15_000, "table-net": 18_480, "sub-adjusted7": 81_540, "nci-cut": 1_540, "realised-owners": 800, "change-oci": 18_000 };
+    const answer = (id: string) => (POLICY.exercises.find((x) => x.id === id) as { answer: number }).answer;
+    for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
+    assert.deepEqual(POLICY.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
   });
 });
 

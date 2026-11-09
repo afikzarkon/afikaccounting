@@ -2,7 +2,7 @@
 
 import { RotateCcw } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { type Books, consolidate, excessTable, goodwillCalc, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, whole } from "@/lib/learn/consolidated";
+import { type Books, consolidate, excessTable, goodwillCalc, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, revalue, whole } from "@/lib/learn/consolidated";
 import { drill, DRILL_FAMILIES, type DrillFamily } from "@/lib/study/consolidated/drills";
 import { ARMON, NOFAR } from "@/lib/study/consolidated/lessons/worksheet";
 import { cn } from "@/lib/utils";
@@ -294,6 +294,50 @@ export function WorksheetLab() {
           ]}
         />
       )}
+    </section>
+  );
+}
+
+/** One fair value, two histories: how the subsidiary and the group each split a revaluation, and the adjustment between them. The scenarios are the lesson's building and land. */
+const REVAL_CASES = [
+  { key: "b25", label: "המבנה, 2025", fair: 168_000, sub: { carrying: 144_000, surplus: 0, priorLoss: 16_000 }, group: { carrying: 144_000, surplus: 0, priorLoss: 0 } },
+  { key: "b26", label: "המבנה, 2026", fair: 126_000, sub: { carrying: 147_000, surplus: 7_000, priorLoss: 0 }, group: { carrying: 147_000, surplus: 21_000, priorLoss: 0 } },
+  { key: "land", label: "הקרקע, מעבר להערכה מחדש", fair: 324_000, sub: { carrying: 300_000, surplus: 0, priorLoss: 0 }, group: { carrying: 336_000, surplus: 0, priorLoss: 0 } },
+] as const;
+
+export function RevalLab() {
+  const [key, setKey] = useState<(typeof REVAL_CASES)[number]["key"]>("b25");
+  const c = REVAL_CASES.find((x) => x.key === key)!;
+  const [fairs, setFairs] = useState<Record<string, number>>({});
+  const fair = fairs[key] ?? c.fair;
+  const sub = revalue({ ...c.sub, fairValue: fair });
+  const group = revalue({ ...c.group, fairValue: fair });
+  return (
+    <section aria-label="מעבדה: אותו שערוך, שני פיצולים" className="card space-y-4 p-4 sm:p-5">
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label="המקרה">
+        {REVAL_CASES.map((x) => (
+          <button key={x.key} type="button" aria-pressed={key === x.key} onClick={() => setKey(x.key)} className={cn("min-h-11 rounded-lg border px-3 py-1.5 text-[13.5px] font-semibold", key === x.key ? "border-accent bg-accent-soft text-fg" : "border-line text-muted hover:bg-surface-2")}>
+            {x.label}
+          </button>
+        ))}
+      </div>
+      <Tbl
+        head={["לפני השערוך", "הבת", "הקבוצה"]}
+        rows={[
+          ["ערך בספרים", c.sub.carrying, c.group.carrying],
+          ["קרן על הנכס, ברוטו", c.sub.surplus, c.group.surplus],
+          ["הפסד שערוך קודם שעוד לא הופחת", c.sub.priorLoss, c.group.priorLoss],
+        ]}
+      />
+      <Amount label="השווי ההוגן ביום השערוך" value={fair} onChange={(v) => setFairs((f) => ({ ...f, [key]: v }))} step={1_000} />
+      <Tbl
+        head={["השערוך, לפני מס", "רווח או הפסד", "רווח כולל אחר"]}
+        rows={[
+          ["אצל הבת", sub.pl, sub.oci],
+          ["אצל הקבוצה", group.pl, group.oci],
+        ]}
+        foot={["ההתאמה במאוחד", group.pl - sub.pl, group.oci - sub.oci]}
+      />
     </section>
   );
 }

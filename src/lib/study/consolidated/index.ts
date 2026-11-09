@@ -5,6 +5,7 @@ import { GOODWILL } from "./lessons/goodwill";
 import { RETURNS } from "./lessons/returns";
 import { WHAT } from "./lessons/what";
 import { WORKSHEET } from "./lessons/worksheet";
+import { POLICY } from "./lessons/policy";
 
 /** The consolidated statements course; every formula in its practice reads left to right. */
-export const CONSOLIDATED_LESSONS = [WHAT, CONTROL, RETURNS, ACQUISITION, GOODWILL, WORKSHEET].map(withLtrFormulas);
+export const CONSOLIDATED_LESSONS = [WHAT, CONTROL, RETURNS, ACQUISITION, GOODWILL, WORKSHEET, POLICY].map(withLtrFormulas);

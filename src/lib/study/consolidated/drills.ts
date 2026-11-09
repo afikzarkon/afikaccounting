@@ -33,6 +33,10 @@ export const DRILL_FAMILIES = {
   nciadj: "זשמ״ש ברווח",
   ncibal: "יתרת זשמ״ש",
   divelim: "ביטול דיבידנד",
+  qualchg: "שינוי בהסתייגות",
+  ipexcess: "עודף על נדל״ן להשקעה",
+  modelloss: "הפסד במעבר להערכה מחדש",
+  resowners: "קרן של הבעלים",
 } as const;
 
 export type DrillFamily = keyof typeof DRILL_FAMILIES;
@@ -335,6 +339,58 @@ export function drill(family: DrillFamily, seed: number): Drill {
       answer: elim,
       steps: [{ title: "מבטלים את מה שהאם רשמה: חלקה בדיבידנד", numbers: `${fmt(dividend)} × ${pct}% = ${fmt(elim)}` }],
       trap: "לבטל את כל הדיבידנד. החלק של המיעוט מקטין את הזשמ״ש.",
+    };
+  }
+  if (family === "qualchg") {
+    const start = r.int(0, 20) * 1_000;
+    const grow = r.int(1, 30) * 1_000;
+    const effect = whole(grow * 0.77);
+    return {
+      prompt: `רואה החשבון של הבת הסתייג בגלל הפרשה שלא נרשמה. היתרה החסרה הייתה ${fmt(start)} ש״ח בתחילת השנה ו־${fmt(start + grow)} ש״ח בסופה. שיעור המס 23%. בכמה יורד הרווח המתוקן של הבת השנה?`,
+      answer: effect,
+      steps: [
+        { title: "רק השינוי של השנה עובר דרך הרווח", numbers: `${fmt(start + grow)} − ${fmt(start)} = ${fmt(grow)}` },
+        { title: "נטו ממס", numbers: `${fmt(grow)} × 77% = ${fmt(effect)}` },
+      ],
+      trap: "להוריד את כל היתרה של סוף השנה.",
+    };
+  }
+  if (family === "ipexcess") {
+    const book = r.int(20, 60) * 5_000;
+    const dep = r.int(2, 8) * 1_000;
+    const extra = r.int(1, 30) * 1_000;
+    const fair = book - dep + extra;
+    return {
+      prompt: `הבת מודדת נדל״ן להשקעה במודל העלות: ${fmt(book)} ש״ח בתחילת השנה, ופחת של ${fmt(dep)} ש״ח בשנה. הקבוצה מודדת בשווי הוגן, ובסוף השנה השווי ${fmt(fair)} ש״ח. מה יתרת עודף העלות בסוף השנה, לפני מס?`,
+      answer: extra,
+      steps: [
+        { title: "הערך בספרי הבת בסוף השנה", numbers: `${fmt(book)} − ${fmt(dep)} = ${fmt(book - dep)}` },
+        { title: "עודף העלות: השווי ההוגן פחות הערך בספרים", numbers: `${fmt(fair)} − ${fmt(book - dep)} = ${fmt(extra)}` },
+      ],
+      trap: "להשוות לערך של תחילת השנה, ולשכוח את הפחת שהבת רשמה.",
+    };
+  }
+  if (family === "modelloss") {
+    const subCost = r.int(10, 40) * 10_000;
+    const excess = r.int(4, 16) * 5_000;
+    const above = r.int(1, excess / 1_000 - 1) * 1_000;
+    const fair = subCost + above;
+    const loss = excess - above;
+    return {
+      prompt: `קרקע עלתה לבת ${fmt(subCost)} ש״ח, ולקבוצה ${fmt(subCost + excess)} ש״ח, השווי ההוגן ביום הרכישה. בסוף השנה שתי החברות עוברות למודל הערכה מחדש, והשווי ההוגן ${fmt(fair)} ש״ח. מה ההפסד ברווח או הפסד בדוח המאוחד, לפני מס?`,
+      answer: loss,
+      steps: [{ title: "מנקודת המבט של הקבוצה: העלות שלה פחות השווי ההוגן", numbers: `${fmt(subCost + excess)} − ${fmt(fair)} = ${fmt(loss)}` }],
+      trap: "לרשום רווח כולל אחר כמו בבת.",
+    };
+  }
+  if (family === "resowners") {
+    const reserve = r.int(5, 60) * 2_000;
+    const share = whole((reserve * pct) / 100);
+    return {
+      prompt: `לבת קרן הערכה מחדש של ${fmt(reserve)} ש״ח, על נכס שקנתה אחרי הרכישה. האם מחזיקה ${pct}% מהבת. בכמה מוצגת הקרן בהון של בעלי מניות האם?`,
+      answer: share,
+      steps: [{ title: "רק החלק של האם בקרן", numbers: `${fmt(reserve)} × ${pct}% = ${fmt(share)}` }],
+      trap: "להציג את כל הקרן בהון הבעלים.",
     };
   }
   if (family === "ncieq")

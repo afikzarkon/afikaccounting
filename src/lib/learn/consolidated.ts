@@ -248,3 +248,20 @@ export function consolidate(c: { a: Books; b: Books; holding: number; paid: numb
     changes: { open, acquisition, dividends, comprehensive: compLine, close },
   };
 }
+
+/**
+ * A revaluation under IAS 16, paragraphs 39 and 40, in gross amounts: a rise
+ * first reverses a loss that went through profit or loss, and the rest goes to
+ * other comprehensive income; a fall first uses the asset's surplus, and the
+ * rest is a loss. The subsidiary and the group can split the same movement
+ * differently, because each has its own cost, surplus and past losses.
+ */
+export function revalue(r: { carrying: number; fairValue: number; surplus: number; priorLoss: number }) {
+  const d = r.fairValue - r.carrying;
+  if (d >= 0) {
+    const pl = Math.min(r.priorLoss, d);
+    return { pl, oci: d - pl };
+  }
+  const oci = -Math.min(r.surplus, -d);
+  return { pl: d - oci + 0, oci: oci + 0 };
+}
