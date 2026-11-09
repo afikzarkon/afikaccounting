@@ -27,6 +27,7 @@ import { CONSOLIDATED_RETURNS_SCREENS } from "./consolidated-course-returns";
 import { CONSOLIDATED_WORKSHEET_SCREENS } from "./consolidated-course-worksheet";
 import { CONSOLIDATED_POLICY_SCREENS } from "./consolidated-course-policy";
 import { CONSOLIDATED_FINANCE_SCREENS } from "./consolidated-course-finance";
+import { CONSOLIDATED_IMPAIRMENT_SCREENS } from "./consolidated-course-impairment";
 import { IFRS16_BASICS_SCREENS } from "./ifrs16-course";
 import { IFRS16_CHANGES_SCREENS } from "./ifrs16-course-changes";
 import { IFRS16_EXAM_SCREENS } from "./ifrs16-course-exam";
@@ -71,7 +72,7 @@ const SCREENS: Record<string, ScreenContent> = {
   // The employee-benefits course lays every formula in a plain-text lead out left to right.
   ...ltrLeads({ ...IAS19_BASICS_SCREENS, ...IAS19_TOOLS_SCREENS, ...IAS19_SIMPLE_SCREENS, ...IAS19_SHORT_SCREENS, ...IAS19_DB_SCREENS, ...IAS19_DB2_SCREENS, ...IAS19_END_SCREENS, ...IAS19_BOOKLET_SCREENS }),
   // The consolidated statements course, formulas laid out the same way.
-  ...ltrLeads({ ...CONSOLIDATED_BASICS_SCREENS, ...CONSOLIDATED_CONTROL_SCREENS, ...CONSOLIDATED_RETURNS_SCREENS, ...CONSOLIDATED_ACQUISITION_SCREENS, ...CONSOLIDATED_GOODWILL_SCREENS, ...CONSOLIDATED_WORKSHEET_SCREENS, ...CONSOLIDATED_POLICY_SCREENS, ...CONSOLIDATED_FINANCE_SCREENS }),
+  ...ltrLeads({ ...CONSOLIDATED_BASICS_SCREENS, ...CONSOLIDATED_CONTROL_SCREENS, ...CONSOLIDATED_RETURNS_SCREENS, ...CONSOLIDATED_ACQUISITION_SCREENS, ...CONSOLIDATED_GOODWILL_SCREENS, ...CONSOLIDATED_WORKSHEET_SCREENS, ...CONSOLIDATED_POLICY_SCREENS, ...CONSOLIDATED_FINANCE_SCREENS, ...CONSOLIDATED_IMPAIRMENT_SCREENS }),
   // The leases course, formulas laid out the same way.
   ...ltrLeads({ ...IFRS16_BASICS_SCREENS, ...IFRS16_TERM_SCREENS, ...IFRS16_MEASURE_SCREENS, ...IFRS16_SUBSEQUENT_SCREENS, ...IFRS16_CHANGES_SCREENS, ...IFRS16_LESSOR_SCREENS, ...IFRS16_LESSOR_CHANGES_SCREENS, ...IFRS16_SPECIAL_SCREENS, ...IFRS16_EXAM_SCREENS }),
 };

@@ -281,3 +281,37 @@ export function amortizedCost(a: { start: number; rate: number; coupon: number; 
   }
   return rows;
 }
+
+/**
+ * An asset the subsidiary held before the acquisition, tested for impairment
+ * at each year's end. Each side shows the lower of its amortized cost without
+ * impairments and the recoverable amount, so a reversal never goes above that
+ * cost. The excess cost is the difference; its first entry is the acquisition date.
+ */
+export function impairmentViews(a: { subBook: number; groupCost: number; years: number; recoverable: number[] }) {
+  const subDep = a.subBook / a.years;
+  const groupDep = a.groupCost / a.years;
+  const rows = a.recoverable.map((rec, i) => {
+    const subAc = whole(a.subBook - subDep * (i + 1));
+    const groupAc = whole(a.groupCost - groupDep * (i + 1));
+    const sub = Math.min(subAc, rec);
+    const group = Math.min(groupAc, rec);
+    return { subAc, groupAc, recoverable: rec, sub, group, excess: group - sub };
+  });
+  return { excessAt: a.groupCost - a.subBook, rows };
+}
+
+/** The group's deferred tax asset on the subsidiary's carried-forward loss, by the lecturer's rule: the higher of the liability on the excess cost and the asset the subsidiary's own forecast supports. */
+export const groupDeferredTaxAsset = (d: { liabilityOnExcess: number; subAsset: number }) => Math.max(d.liabilityOnExcess, d.subAsset);
+
+/**
+ * The subsidiary's profit split when it has preference shares classified as
+ * equity: the preference shares take this year's accrual if cumulative, or the
+ * dividend declared on them if not; the ordinary shares take the rest. Each
+ * part is split by the parent's holding in that instrument.
+ */
+export function preferenceSplit(p: { profit: number; toPreference: number; holdingOrdinary: number; holdingPreference: number }) {
+  const ordinary = p.profit - p.toPreference;
+  const nci = whole(p.toPreference * (1 - p.holdingPreference) + ordinary * (1 - p.holdingOrdinary));
+  return { preference: p.toPreference, ordinary, nci, owners: p.profit - nci };
+}

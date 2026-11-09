@@ -13,6 +13,7 @@ import { ATTEND_NO, ATTEND_YES, BOARD, CONTROL, CONTROL_TAUGHT, CONVERTED, MASTE
 import { ACQUISITION, ACQUISITION_TAUGHT, BOND, ITEMS, LESSEE, LESSOR, MASTER4_TABLE, STORY_TABLE } from "./consolidated/lessons/acquisition";
 import { G_FAIR, G_NET, G_PREMIUM, G_SHARE, GOODWILL, GOODWILL_TAUGHT, M5, PAYS, PERIOD, PERIOD_TEST, PERIOD_TEST_START } from "./consolidated/lessons/goodwill";
 import { AGENT_TEST, AGENT_TEST_START, AGENTS, FUND_LARGE, FUND_SMALL, MASTER3_POSITION, MASTER3_REWARD, MASTER3_SISTER, MASTER3_TOGETHER, RETURNS, RETURNS_TAUGHT } from "./consolidated/lessons/returns";
+import { DATES9, DTA9, IMP9, IMPAIRMENT, IMPAIRMENT_TAUGHT, M9, M9_NCI_END, PREF9, PREF_PROFIT } from "./consolidated/lessons/impairment";
 import { BOND8, BOND8_OCI, DEBT_TEST, DEBT_TEST_START, FINANCE, FINANCE_TAUGHT, IMPAIR8, M8, NEEDS, SHARES8_FIG } from "./consolidated/lessons/finance";
 import { BUILDING, LAND, M7, M7_2025, M7_NCI, POLICY, POLICY_TAUGHT, POLICY_TEST, POLICY_TEST_START, ADJUST, TABLE7_2025, TABLE7_2026 } from "./consolidated/lessons/policy";
 import { M6, STORY6, WHOSE, WORKSHEET, WORKSHEET_TAUGHT, YEAR2, YEAR2_NCI_END } from "./consolidated/lessons/worksheet";
@@ -21,7 +22,7 @@ import { type ConsolidatedQuestion, LESSON_N } from "./consolidated/shared";
 import { ltrFormulas } from "./ias19/ltr";
 
 /** What teaches each question, lesson by lesson. */
-const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT, "consolidated-acquisition": ACQUISITION_TAUGHT, "consolidated-goodwill": GOODWILL_TAUGHT, "consolidated-worksheet": WORKSHEET_TAUGHT, "consolidated-policy": POLICY_TAUGHT, "consolidated-finance": FINANCE_TAUGHT };
+const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT, "consolidated-acquisition": ACQUISITION_TAUGHT, "consolidated-goodwill": GOODWILL_TAUGHT, "consolidated-worksheet": WORKSHEET_TAUGHT, "consolidated-policy": POLICY_TAUGHT, "consolidated-finance": FINANCE_TAUGHT, "consolidated-impairment": IMPAIRMENT_TAUGHT };
 
 describe("the consolidated statements course", () => {
   it("lessons numbered in order, on the course's page, the first free", () => {
@@ -549,6 +550,37 @@ describe("lesson 8: the walk, the sorting and the figures, against a separate ca
     const answer = (id: string) => (FINANCE.exercises.find((x) => x.id === id) as { answer: number }).answer;
     for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
     assert.deepEqual(FINANCE.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
+  });
+});
+
+describe("lesson 9: the sorting and the figures, against a separate calculation in Python", () => {
+  it("eight preference shares to sort, both answers among them", () => {
+    assert.equal(PREF_PROFIT.length, 8);
+    assert.ok(PREF_PROFIT.some((x) => x.answer === "accrual") && PREF_PROFIT.some((x) => x.answer === "declared"));
+  });
+  it("the impairment, seen by the subsidiary and by the group", () => {
+    assert.equal(IMP9.excessAt, 48_000);
+    assert.deepEqual(IMP9.rows.map((r) => [r.subAc, r.groupAc, r.sub, r.group, r.excess]), [[105_000, 147_000, 105_000, 140_000, 35_000], [90_000, 126_000, 84_000, 84_000, 0], [75_000, 105_000, 75_000, 105_000, 30_000]]);
+  });
+  it("the deferred tax asset on the carried-forward loss", () => {
+    assert.deepEqual([DTA9.liabilityAt, DTA9.liabilityEnd, DTA9.full], [11_040, 8_050, 46_000]);
+    assert.deepEqual(DTA9.cases, [{ forecast: 0, subAsset: 0, group: 8_050, excess: 8_050 }, { forecast: 25_000, subAsset: 5_750, group: 8_050, excess: 2_300 }, { forecast: 90_000, subAsset: 20_700, group: 20_700, excess: 0 }]);
+  });
+  it("reporting dates and the preference screens", () => {
+    assert.deepEqual(DATES9, { lossNet: 12_320, nciProfit: 11_920, dividendNci: 5_000 });
+    assert.deepEqual(PREF9, { preference: 4_000, ordinary: 56_000, nci: 14_200, owners: 45_800 });
+  });
+  it("the closing question", () => {
+    assert.deepEqual([M9.liability, M9.net, M9.ordinaryNet, M9.cost, M9.goodwill, M9.premium, M9.ownersGoodwill, M9.nciGoodwill], [14_720, 387_280, 295_280, 488_000, 100_720, 12_000, 78_540, 22_180]);
+    assert.deepEqual(M9.split, { preference: 8_000, ordinary: 96_000, nci: 32_000, owners: 72_000 });
+    assert.deepEqual([M9.prefEnd, M9.nciOrdinaryEnd, M9_NCI_END, M9.nonCumulativeNci], [100_000, 120_000, 220_000, 26_000]);
+    assert.equal(M9_NCI_END, 96_000 + 92_000 + M9.split.nci);
+  });
+  it("calculations in the practice", () => {
+    const expected: Record<string, number> = { "pref-issue": 36_000, "dta-min": 12_650, "impair-group": 27_000, "impair-loss": 7_000, "reversal-cap": 88_000, "dta-higher": 16_100, "pref-accrual": 6_300, "nci-profit-pref": 37_410, noncum: 18_000, "pref-na-ordinary": 65_000, "goodwill-pref": 87_000, "pref-na-end": 88_000, "impair-excess-change": 23_100, "dates-nci": 15_690, "mixed-holding": 20_000 };
+    const answer = (id: string) => (IMPAIRMENT.exercises.find((x) => x.id === id) as { answer: number }).answer;
+    for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
+    assert.deepEqual(IMPAIRMENT.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
   });
 });
 

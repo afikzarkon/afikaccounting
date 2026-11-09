@@ -16,6 +16,7 @@ export const LESSON_N = {
   "consolidated-worksheet": 6,
   "consolidated-policy": 7,
   "consolidated-finance": 8,
+  "consolidated-impairment": 9,
 } as const;
 
 export type ConsolidatedSlug = keyof typeof LESSON_N;

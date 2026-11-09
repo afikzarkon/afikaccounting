@@ -2,7 +2,7 @@
 
 import { RotateCcw } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { type Books, consolidate, excessTable, goodwillCalc, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, pvBond, revalue, whole, amortizedCost } from "@/lib/learn/consolidated";
+import { impairmentViews, type Books, consolidate, excessTable, goodwillCalc, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, pvBond, revalue, whole, amortizedCost } from "@/lib/learn/consolidated";
 import { drill, DRILL_FAMILIES, type DrillFamily } from "@/lib/study/consolidated/drills";
 import { ARMON, NOFAR } from "@/lib/study/consolidated/lessons/worksheet";
 import { cn } from "@/lib/utils";
@@ -365,6 +365,27 @@ export function BondLab() {
         rows={group.map((g, i) => [String(2025 + i), sub[i + 1].interest, g.interest, g.interest - sub[i + 1].interest])}
         foot={["סך הכול", sub.slice(1).reduce((a, x) => a + x.interest, 0), group.reduce((a, x) => a + x.interest, 0), fair - sub[0].close === 0 ? 0 : -(fair - sub[0].close)]}
       />
+    </section>
+  );
+}
+
+/** Levana's machine: change the recoverable amounts and see the balance at the subsidiary, at the group, and the excess between them. */
+export function ImpairLab() {
+  const [rec, setRec] = useState([140_000, 84_000, 112_000]);
+  const v = impairmentViews({ subBook: 120_000, groupCost: 168_000, years: 8, recoverable: rec });
+  return (
+    <section aria-label="מעבדה: שתי ירידות ערך" className="card space-y-4 p-4 sm:p-5">
+      <div className="grid grid-cols-3 gap-3">
+        {rec.map((x, i) => (
+          <Amount key={i} label={`סכום בר השבה ${2025 + i}`} value={x} onChange={(val) => setRec((r) => r.map((y, k) => (k === i ? val : y)))} step={2_000} />
+        ))}
+      </div>
+      <Tbl
+        dense
+        head={["31.12", "הבת", "הקבוצה", "עודף"]}
+        rows={v.rows.map((r, i) => [String(2025 + i), r.sub, r.group, r.excess])}
+      />
+      <p className="text-[14px] text-muted">העלות המופחתת בלי ירידות ערך: אצל הבת {v.rows.map((r) => r.subAc.toLocaleString("en-US")).join(", ")}. אצל הקבוצה {v.rows.map((r) => r.groupAc.toLocaleString("en-US")).join(", ")}.</p>
     </section>
   );
 }

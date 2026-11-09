@@ -1,4 +1,4 @@
-import { adjustedProfit, afterConversion, excessTable, goodwillCalc, whole, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, separateInvestment } from "../../learn/consolidated";
+import { adjustedProfit, afterConversion, groupDeferredTaxAsset, preferenceSplit, excessTable, goodwillCalc, whole, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, separateInvestment } from "../../learn/consolidated";
 import { fmt } from "./shared";
 
 /** Endless practice with new numbers: each family is one calculation, a seed always gives the same exercise, and every answer is whole, in shekels unless the family says otherwise. */
@@ -41,6 +41,10 @@ export const DRILL_FAMILIES = {
   finadj: "התאמת הכנסות מימון",
   acbalance: "יתרת עודף על אג״ח",
   ncibenefit: "הטבה לזשמ״ש",
+  impexcess: "עודף אחרי ירידת ערך",
+  dtagroup: "נכס מס במאוחד",
+  prefnci: "זשמ״ש ברווח עם בכורה",
+  ordna: "זשמ״ש ברגילות",
 } as const;
 
 export type DrillFamily = keyof typeof DRILL_FAMILIES;
@@ -450,6 +454,68 @@ export function drill(family: DrillFamily, seed: number): Drill {
       answer: benefit,
       steps: [{ title: `החלק של הזשמ״ש בהטבה, ${out}%`, numbers: `${fmt(expense)} × ${out}% = ${fmt(benefit)}` }],
       trap: "להעביר את החלק של האם.",
+    };
+  }
+  if (family === "impexcess") {
+    const subAc = r.int(40, 120) * 1_000;
+    const groupAc = subAc + r.int(10, 60) * 1_000;
+    const rec = subAc + r.int(1, (groupAc - subAc) / 1_000 + 10) * 1_000;
+    const sub = Math.min(subAc, rec);
+    const group = Math.min(groupAc, rec);
+    return {
+      prompt: `מכונה שהבת החזיקה לפני הרכישה. בסוף השנה יש סימן לירידת ערך, והסכום בר ההשבה ${fmt(rec)} ש״ח. העלות המופחתת בלי ירידות ערך: אצל הבת ${fmt(subAc)} ש״ח, ואצל הקבוצה ${fmt(groupAc)} ש״ח. מה יתרת עודף העלות, לפני מס?`,
+      answer: group - sub,
+      steps: [
+        { title: "הבת: הנמוך מבין העלות המופחתת לסכום בר ההשבה", numbers: `MIN(${fmt(subAc)}, ${fmt(rec)}) = ${fmt(sub)}` },
+        { title: "הקבוצה: אותו דבר, מהעלות שלה", numbers: `MIN(${fmt(groupAc)}, ${fmt(rec)}) = ${fmt(group)}` },
+        { title: "העודף", numbers: `${fmt(group)} − ${fmt(sub)} = ${fmt(group - sub)}` },
+      ],
+      trap: "להעלות את הנכס מעל העלות המופחתת שלו.",
+    };
+  }
+  if (family === "dtagroup") {
+    const excess = r.int(10, 60) * 1_000;
+    const forecast = r.int(0, 30) * 5_000;
+    const liability = whole(excess * 0.23);
+    const subAsset = whole(forecast * 0.23);
+    const group = groupDeferredTaxAsset({ liabilityOnExcess: liability, subAsset });
+    return {
+      prompt: `במאוחד יש עודפי עלות של ${fmt(excess)} ש״ח, ושיעור המס 23%. לבת הפסד מועבר, ולפי התחזית שלה, אחרי אירוע שקרה אחרי הרכישה, היא צופה הכנסה חייבת של ${fmt(forecast)} ש״ח. מה נכס המס הנדחה במאוחד, לפי המרצה?`,
+      answer: group,
+      steps: [
+        { title: "ההתחייבות על עודפי העלות", numbers: `${fmt(excess)} × 23% = ${fmt(liability)}` },
+        { title: "הנכס לפי התחזית של הבת", numbers: `${fmt(forecast)} × 23% = ${fmt(subAsset)}` },
+        { title: "הגבוה מבין השניים", numbers: `MAX(${fmt(liability)}, ${fmt(subAsset)}) = ${fmt(group)}` },
+      ],
+      trap: "לחבר את שניהם.",
+    };
+  }
+  if (family === "prefnci") {
+    const par = r.int(2, 10) * 10_000;
+    const rate = r.int(6, 10);
+    const accrual = whole((par * rate) / 100);
+    const profit = r.int(3, 15) * 20_000;
+    const sp = preferenceSplit({ profit, toPreference: accrual, holdingOrdinary: h, holdingPreference: 0 });
+    return {
+      prompt: `רווח הבת ${fmt(profit)} ש״ח. לבת מניות בכורה צוברות בערך נקוב של ${fmt(par)} ש״ח, ${rate}% בשנה, וכולן בידי אחרים. השנה לא הוכרז דיבידנד. האם מחזיקה ${pct}% מהמניות הרגילות. מה חלק הזשמ״ש ברווח?`,
+      answer: sp.nci,
+      steps: [
+        { title: "הצבירה של הבכורה השנה", numbers: `${fmt(par)} × ${rate}% = ${fmt(accrual)}` },
+        { title: "למניות הרגילות", numbers: `${fmt(profit)} − ${fmt(accrual)} = ${fmt(sp.ordinary)}` },
+        { title: `הזשמ״ש: כל הבכורה, ועוד ${out}% מהרגילות`, numbers: `${fmt(accrual)} + ${fmt(sp.ordinary)} × ${out}% = ${fmt(sp.nci)}` },
+      ],
+      trap: "לחלק את כל הרווח לפי המניות הרגילות.",
+    };
+  }
+  if (family === "ordna") {
+    const na = r.int(20, 80) * 10_000;
+    const pref = r.int(2, 15) * 5_000;
+    const share = whole(((na - pref) * out) / 100);
+    return {
+      prompt: `ביום הרכישה הנמ״נ של הבת ${fmt(na)} ש״ח, והשווי ההוגן של מניות הבכורה שלה, שמסווגות כהון, ${fmt(pref)} ש״ח. האם קנתה ${pct}% מהמניות הרגילות, והזשמ״ש ברגילות לפי חלקם בנמ״נ. מה סכומם?`,
+      answer: share,
+      steps: [{ title: `הנמ״נ של הרגילות, כפול ${out}%`, numbers: `(${fmt(na)} − ${fmt(pref)}) × ${out}% = ${fmt(share)}` }],
+      trap: "לא להוריד את הבכורה מהנמ״נ.",
     };
   }
   if (family === "ncieq")
