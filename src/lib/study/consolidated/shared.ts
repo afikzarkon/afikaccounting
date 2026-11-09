@@ -9,6 +9,7 @@ export const COURSE_HREF = "/basics/consolidated";
 /** Each lesson's number on the site, by slug. A lesson joins here when it is built; a test checks this against the course's order. */
 export const LESSON_N = {
   "consolidated-what": 1,
+  "consolidated-control": 2,
 } as const;
 
 export type ConsolidatedSlug = keyof typeof LESSON_N;

@@ -53,3 +53,25 @@ export function separateInvestment(s: { cost: number; holding: number; subProfit
     atEquity: { balance: s.cost + profitShare - dividendShare, income: profitShare },
   };
 }
+
+/** Percentages are kept to four decimals, so a whole percent prints whole. */
+const tidy = (v: number) => Math.round(v * 10_000) / 10_000;
+
+/** At a meeting decided by a majority of those present: the investor's share of the votes in the room, whether it decides alone, and the attendance above which it no longer does. All in percent of all the votes. */
+export function meetingShare(m: { holding: number; attendance: number }) {
+  return { share: tidy((m.holding / m.attendance) * 100), decides: m.holding * 2 > m.attendance, lostAbove: m.holding * 2 };
+}
+
+/** How many of the largest other holders must join to outvote the investor. Null: all of them together can't. */
+export function partnersToBeat(holding: number, others: number[]) {
+  let total = 0;
+  const sorted = [...others].sort((a, b) => b - a);
+  for (let i = 0; i < sorted.length; i++) {
+    total += sorted[i];
+    if (total > holding) return i + 1;
+  }
+  return null;
+}
+
+/** The holding in percent after converting into new shares: the new shares join both the investor's count and the total. */
+export const afterConversion = (c: { shares: number; total: number; newShares: number }) => tidy(((c.shares + c.newShares) / (c.total + c.newShares)) * 100);

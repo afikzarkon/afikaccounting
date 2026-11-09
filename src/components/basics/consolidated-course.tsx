@@ -2,6 +2,7 @@ import { Building2, FileSignature, Handshake, ListChecks, Wheat } from "lucide-r
 import { JournalEntry } from "@/components/study/blocks";
 import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
+import { ltrFormulas } from "@/lib/study/ias19/ltr";
 import { CASE_OPTIONS, CASES, EXEMPT_TEST, EXEMPT_TEST_START, MASTER, MASTER_POSITION, MASTER_PROFIT, MASTER_SEPARATE, STORY, STORY_POSITION, STORY_PROFIT, STORY_SEPARATE } from "@/lib/study/consolidated/lessons/what";
 import { ConsolidatedDrill, GroupLab } from "./consolidated-interactive";
 import { Calc, Expansion, HoldingChart, LecturerNote, quiz } from "./consolidated-parts";
@@ -407,7 +408,7 @@ export const CONSOLIDATED_BASICS_SCREENS: Record<string, ScreenContent> = {
     body: (
       <Story icon={<FileSignature />} title="הפתרון">
         <p>השאלה: חברה מחזיקה 90 מתוך 100 המניות של הבת שלה. לאם נכסים של 540,000 ש״ח בלי ההשקעה, ולבת נכסים של 230,000 ש״ח והתחייבויות של 60,000 ש״ח. לא שולם מוניטין.</p>
-        <p>הפתרון: ״סך הנכסים המאוחדים: 540,000 + 230,000 × 90% = 747,000. יתרת הזשמ״ש: 230,000 × 10% = 23,000, ומציגים אותה בהתחייבויות.״</p>
+        <p>{ltrFormulas("הפתרון: ״סך הנכסים המאוחדים: 540,000 + 230,000 × 90% = 747,000. יתרת הזשמ״ש: 230,000 × 10% = 23,000. מציגים אותה בהתחייבויות.״")}</p>
       </Story>
     ),
     check: quiz("ls-con-mistake", [

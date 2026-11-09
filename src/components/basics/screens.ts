@@ -20,6 +20,7 @@ import { IAS19_SHORT_SCREENS } from "./ias19-course-short";
 import { IAS19_SIMPLE_SCREENS } from "./ias19-course-simple";
 import { IAS19_TOOLS_SCREENS } from "./ias19-course-tools";
 import { CONSOLIDATED_BASICS_SCREENS } from "./consolidated-course";
+import { CONSOLIDATED_CONTROL_SCREENS } from "./consolidated-course-control";
 import { IFRS16_BASICS_SCREENS } from "./ifrs16-course";
 import { IFRS16_CHANGES_SCREENS } from "./ifrs16-course-changes";
 import { IFRS16_EXAM_SCREENS } from "./ifrs16-course-exam";
@@ -64,7 +65,7 @@ const SCREENS: Record<string, ScreenContent> = {
   // The employee-benefits course lays every formula in a plain-text lead out left to right.
   ...ltrLeads({ ...IAS19_BASICS_SCREENS, ...IAS19_TOOLS_SCREENS, ...IAS19_SIMPLE_SCREENS, ...IAS19_SHORT_SCREENS, ...IAS19_DB_SCREENS, ...IAS19_DB2_SCREENS, ...IAS19_END_SCREENS, ...IAS19_BOOKLET_SCREENS }),
   // The consolidated statements course, formulas laid out the same way.
-  ...ltrLeads({ ...CONSOLIDATED_BASICS_SCREENS }),
+  ...ltrLeads({ ...CONSOLIDATED_BASICS_SCREENS, ...CONSOLIDATED_CONTROL_SCREENS }),
   // The leases course, formulas laid out the same way.
   ...ltrLeads({ ...IFRS16_BASICS_SCREENS, ...IFRS16_TERM_SCREENS, ...IFRS16_MEASURE_SCREENS, ...IFRS16_SUBSEQUENT_SCREENS, ...IFRS16_CHANGES_SCREENS, ...IFRS16_LESSOR_SCREENS, ...IFRS16_LESSOR_CHANGES_SCREENS, ...IFRS16_SPECIAL_SCREENS, ...IFRS16_EXAM_SCREENS }),
 };

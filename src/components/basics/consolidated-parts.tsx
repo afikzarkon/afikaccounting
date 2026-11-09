@@ -1,11 +1,12 @@
 import { BookOpen, ChevronDown, MessageCircleQuestion } from "lucide-react";
 import type { ReactNode } from "react";
+import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
 import { IasQuiz } from "./ias19-quiz";
 import type { QuizItem } from "./inventory-interactive";
 
 /** What the consolidated course's screens share. */
 
-export const quiz = (chapter: string, items: QuizItem[]) => <IasQuiz prefix="consolidated" chapter={chapter} items={items} />;
+export const quiz = (chapter: string, items: QuizItem[]) => <IasQuiz prefix="consolidated" chapter={chapter} items={ltrQuiz(items)} />;
 
 function Fold({ tag, title, icon, children, foot }: { tag: string; title: ReactNode; icon: ReactNode; children: ReactNode; foot: ReactNode }) {
   return (
@@ -65,6 +66,55 @@ function Line({ children }: { children: ReactNode }) {
       <bdi dir="ltr" className="num">{children}</bdi>
       <span className="h-3 w-px bg-line-strong" aria-hidden />
     </div>
+  );
+}
+
+/** Worked cases, one card each: long text doesn't fit a three-column table on a phone. */
+export function CaseList({ cases }: { cases: { story: string; verdict: string; yes: boolean; why: string }[] }) {
+  return (
+    <ul className="space-y-2.5">
+      {cases.map((c, i) => (
+        <li key={i} className="rounded-xl border border-line bg-surface p-3.5 text-[15px] leading-relaxed">
+          <p className="text-fg">{ltrFormulas(c.story)}</p>
+          <p className={`mt-1.5 font-bold ${c.yes ? "text-success" : "text-danger"}`}>{c.verdict}</p>
+          <p className="mt-0.5 text-muted">{ltrFormulas(c.why)}</p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Down() {
+  return <span className="mx-auto block h-3 w-px bg-line-strong" aria-hidden />;
+}
+
+/** The way through the question of power, from the relevant activities to who holds the votes, in the order of the lecturer's chart. */
+export function PowerFlow() {
+  return (
+    <figure aria-label="קודם מזהים את הפעילויות הרלוונטיות, אחר כך את הזכויות הקיימות, ואז את הגורם הדומיננטי. בזכויות הצבעה בודקים אם יש רוב. אם קשה להכריע, עוברים לראיות ולסימנים" className="rounded-2xl border border-line bg-surface p-3.5">
+      <Box strong>זיהוי הפעילויות הרלוונטיות</Box>
+      <Down />
+      <Box strong>זיהוי הזכויות הקיימות, שאינן מגינות</Box>
+      <Down />
+      <Box strong>מהו הגורם הדומיננטי בהתוויית הפעילויות?</Box>
+      <Down />
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1">
+          <p className="text-center text-[13px] font-semibold text-muted">זכויות הצבעה</p>
+          <Box>האם יש רוב קולות?</Box>
+          <Down />
+          <Box>יש: האם הזכויות ממשיות? בודקים גם זכויות של אחרים</Box>
+          <Down />
+          <Box>אין: הסדרים חוזיים, גודל יחסי ופיזור, זכויות פוטנציאליות</Box>
+        </div>
+        <div className="space-y-1">
+          <p className="text-center text-[13px] font-semibold text-muted">לא זכויות הצבעה</p>
+          <Box>בוחנים את הזכויות החוזיות, יחד עם המטרה, המבנה והסיכונים של הישות</Box>
+        </div>
+      </div>
+      <Down />
+      <Box>קשה להכריע? ראיות אחרות לכוח השפעה, וסימנים ליחסים מיוחדים</Box>
+    </figure>
   );
 }
 

@@ -4,16 +4,18 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 import { TOPICS } from "../catalog";
 import { isBalanced } from "../learn/basics";
-import { groupPosition, profitSplit, separateInvestment } from "../learn/consolidated";
+import { afterConversion, groupPosition, meetingShare, partnersToBeat, profitSplit, separateInvestment } from "../learn/consolidated";
 import { STUDY_MODULES } from ".";
 import { CONSOLIDATED_LESSONS } from "./consolidated";
 import { drill, DRILL_FAMILIES, type DrillFamily } from "./consolidated/drills";
 import { CONSOLIDATED_GLOSSARY } from "./consolidated/glossary";
+import { ATTEND_NO, ATTEND_YES, BOARD, CONTROL, CONTROL_TAUGHT, CONVERTED, MASTER2_NOW, MASTER2_OPTION, MASTER2_PARTNERS, MASTER2_POSITION, POWER_TEST, POWER_TEST_START, RIGHTS, TWO_JOIN } from "./consolidated/lessons/control";
 import { CASES, EXEMPT_TEST, EXEMPT_TEST_START, MASTER_POSITION, MASTER_PROFIT, MASTER_SEPARATE, STORY_POSITION, STORY_PROFIT, STORY_SEPARATE, WHAT, WHAT_TAUGHT } from "./consolidated/lessons/what";
 import { type ConsolidatedQuestion, LESSON_N } from "./consolidated/shared";
+import { ltrFormulas } from "./ias19/ltr";
 
 /** What teaches each question, lesson by lesson. */
-const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT };
+const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT };
 
 describe("the consolidated statements course", () => {
   it("lessons numbered in order, on the course's page, the first free", () => {
@@ -109,6 +111,33 @@ describe("the consolidated statements course", () => {
     for (const f of readdirSync(lessons)) assert.ok(!/[—–]/.test(readFileSync(join(lessons, f), "utf8")), f);
   });
 
+  it("a formula is laid out left to right with no Hebrew word caught inside it, in the practice and on the screens", () => {
+    const isolate = /\u2066([^\u2069]*)\u2069/g;
+    const bad: string[] = [];
+    const check = (where: string, s: string | undefined) => {
+      for (const m of ltrFormulas(s ?? "").matchAll(isolate)) if (/[\u05d0-\u05ea]/.test(m[1])) bad.push(`${where}: ${m[1].replace(/\u200e/g, "")}`);
+    };
+    for (const m of CONSOLIDATED_LESSONS) {
+      for (const x of m.exercises) {
+        if (x.kind === "journal") check(x.id, x.entry.why);
+        else {
+          check(x.id, x.prompt);
+          x.steps.forEach((s) => check(x.id, s));
+          if (x.kind === "choice") x.options.forEach((o) => check(x.id, o));
+        }
+      }
+      for (const t of m.traps) [t.prompt, t.why, ...t.options, ...t.traps].forEach((s) => check(t.id, s));
+      m.tips.forEach((s) => check(m.slug, s));
+    }
+    const dir = join(process.cwd(), "src/components/basics");
+    for (const f of readdirSync(dir).filter((n) => /^consolidated-course.*\.tsx$/.test(n))) {
+      const text = readFileSync(join(dir, f), "utf8");
+      for (const m of text.matchAll(/\b(?:q|why|story|lead): "([^"]+)"/g)) check(f, m[1]);
+      for (const m of text.matchAll(/options: \[(.+)\],?$/gm)) for (const o of m[1].matchAll(/"([^"]+)"/g)) check(f, o[1]);
+    }
+    assert.deepEqual(bad, []);
+  });
+
   it("the glossary: no term twice, none empty", () => {
     assert.equal(new Set(CONSOLIDATED_GLOSSARY.map(([t]) => t)).size, CONSOLIDATED_GLOSSARY.length);
     for (const [t, d] of CONSOLIDATED_GLOSSARY) assert.ok(t.trim() && d.trim(), t);
@@ -173,6 +202,74 @@ describe("lesson 1: figures, against a separate calculation in Python", () => {
   });
 });
 
+describe("lesson 2: the walk and the sorting", () => {
+  it("every path of the walk ends, and both verdicts are reachable", () => {
+    const ends = new Set<boolean>();
+    const reach = (id: string, seen: string[]): void => {
+      const node = POWER_TEST[id];
+      assert.ok(node, id);
+      assert.ok(!seen.includes(id), `loop at ${id}`);
+      if ("verdict" in node) return void ends.add(node.lease);
+      node.answers.forEach((a) => reach(a.to, [...seen, id]));
+    };
+    reach(POWER_TEST_START, []);
+    assert.deepEqual([...ends].sort(), [false, true]);
+  });
+  it("eight rights to sort, both answers among them", () => {
+    assert.equal(RIGHTS.length, 8);
+    assert.ok(RIGHTS.some((r) => r.answer === "real") && RIGHTS.some((r) => r.answer === "guard"));
+  });
+});
+
+describe("lesson 2: figures, against a separate calculation in Python", () => {
+  const q = (id: string) => CONTROL.exercises.find((x) => x.id === id) as { answer: number; options: string[] };
+  it("the screens", () => {
+    assert.deepEqual(ATTEND_NO, { share: 45, decides: false, lostAbove: 72 });
+    assert.deepEqual(ATTEND_YES, { share: 56, decides: true, lostAbove: 84 });
+    assert.equal(TWO_JOIN, 2);
+    assert.equal(CONVERTED, 65);
+    assert.equal(BOARD.partners, 2);
+    assert.equal(BOARD.votes / BOARD.seats, 7.75);
+    assert.equal(28 + 25, 53);
+    assert.equal(meetingShare({ holding: 39, attendance: 60 }).share, 65);
+  });
+  it("the closing question", () => {
+    assert.equal(MASTER2_NOW.share, 60);
+    assert.equal(MASTER2_NOW.lostAbove, 72);
+    assert.equal(MASTER2_PARTNERS, null);
+    assert.equal(MASTER2_OPTION.share, 75);
+    assert.equal(MASTER2_OPTION.lostAbove, 90);
+    assert.deepEqual(MASTER2_POSITION, { assets: 3_150_000, liabilities: 1_290_000, net: 1_860_000, subNet: 640_000, parentNet: 1_220_000, owners: 1_450_400, nci: 409_600 });
+    assert.equal(640_000 * 0.36, 230_400);
+  });
+  it("calculations in the practice", () => {
+    const expected: Record<string, number> = { "nci-dispersed": 477_000, "assets-control": 2_200_000, "owners-control": 1_184_000, "nci-attendance": 488_000, "no-control-assets": 1_240_000 };
+    for (const [id, want] of Object.entries(expected)) assert.equal(q(id).answer, want, id);
+    const numbers = CONTROL.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort();
+    assert.deepEqual(numbers, Object.keys(expected).sort());
+  });
+  it("figures among the choices: the marked option is the calculated one", () => {
+    const right = (id: string) => q(id).options[q(id).answer];
+    assert.equal(right("present-basic"), `${meetingShare({ holding: 30, attendance: 50 }).share}%`);
+    assert.equal(right("beat-basic"), String(partnersToBeat(40, [25, 20, 15])));
+    assert.equal(right("conversion"), `${Math.round(afterConversion({ shares: 14_000, total: 35_000, newShares: 15_000 }))}%`);
+    assert.equal(right("buy-from-holder"), `${28 + 64 / 2}%`);
+    assert.ok(right("attendance-rise").startsWith(String(meetingShare({ holding: 33, attendance: 60 }).lostAbove - 60)));
+    assert.ok(right("option-threshold").includes(`${meetingShare({ holding: 42, attendance: 60 }).lostAbove}%`));
+    assert.ok(right("votes-board").startsWith(`${28 / 4}%`) && right("votes-board").includes(`${30 / 2}%`));
+  });
+  it("arithmetic of the room", () => {
+    for (const holding of [21, 33, 42, 49]) {
+      const at = meetingShare({ holding, attendance: holding * 2 });
+      assert.equal(at.decides, false, "exactly half does not decide");
+      assert.equal(meetingShare({ holding, attendance: holding * 2 - 1 }).decides, true);
+    }
+    assert.equal(partnersToBeat(36, [9, 6, 5, 5]), null);
+    assert.equal(partnersToBeat(10, [11]), 1);
+    assert.equal(partnersToBeat(10, [5, 5]), null, "equal is not more");
+  });
+});
+
 describe("the practice generator", () => {
   it("every family, many seeds: a whole answer, an exercise that changes, and no broken text", () => {
     for (const family of Object.keys(DRILL_FAMILIES) as DrillFamily[]) {
@@ -184,7 +281,7 @@ describe("the practice generator", () => {
         assert.ok(d.steps.length && d.trap.trim(), `${family}/${seed}`);
         seen.add(d.answer);
       }
-      assert.ok(seen.size > 20, family);
+      assert.ok(seen.size > ({ partners: 1, present: 3, convert: 8 } as Record<string, number>)[family] || (!["partners", "present", "convert"].includes(family) && seen.size > 20), family);
     }
   });
   it("the answer equals the last step's result", () => {

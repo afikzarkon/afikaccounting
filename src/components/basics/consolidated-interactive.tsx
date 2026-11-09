@@ -1,8 +1,8 @@
 "use client";
 
 import { RotateCcw } from "lucide-react";
-import { useState } from "react";
-import { groupPosition, profitSplit } from "@/lib/learn/consolidated";
+import { type ReactNode, useState } from "react";
+import { groupPosition, meetingShare, partnersToBeat, profitSplit } from "@/lib/learn/consolidated";
 import { drill, DRILL_FAMILIES, type DrillFamily } from "@/lib/study/consolidated/drills";
 import { cn } from "@/lib/utils";
 import { Tbl } from "./ifrs16-parts";
@@ -57,6 +57,55 @@ export function GroupLab() {
   );
 }
 
+function Percent({ label, value, onChange, min = 0, max = 100 }: { label: ReactNode; value: number; onChange: (v: number) => void; min?: number; max?: number }) {
+  return (
+    <label className="block text-[14px] font-semibold text-fg">
+      {label}: <bdi dir="ltr" className="num">{value}%</bdi>
+      <input type="range" min={min} max={max} value={value} onChange={(e) => onChange(+e.target.value)} dir="ltr" className="mt-2 block w-full accent-[var(--color-accent)]" aria-label={typeof label === "string" ? label : undefined} />
+    </label>
+  );
+}
+
+/** Move the holding and the attendance, and watch who decides in the room. It calculates; the decision on power weighs more than this. */
+export function AttendanceLab() {
+  const [holding, setHolding] = useState(42);
+  const [attendance, setAttendance] = useState(75);
+  const [a, setA] = useState(8);
+  const [b, setB] = useState(6);
+  const [c, setC] = useState(4);
+  const present = Math.max(attendance, holding);
+  const m = meetingShare({ holding, attendance: present });
+  const others = [a, b, c].filter((v) => v > 0);
+  const partners = partnersToBeat(holding, others);
+  const share = Math.round(m.share * 10) / 10;
+  const verdict = holding > 50 ? { tone: "text-success", text: "יש לו רוב מכלל הקולות, והנוכחות לא משנה." } : m.decides ? { tone: "text-success", text: "יש לו יותר ממחצית הקולות באסיפה. הוא מכריע לבד כל עוד הנוכחות נשארת כזו." } : { tone: "text-danger", text: "אין לו יותר ממחצית הקולות באסיפה. בלי קולות של אחרים הוא לא מעביר החלטה." };
+  return (
+    <section aria-label="מעבדה: נוכחות ואחוזים" className="card space-y-4 p-4 sm:p-5">
+      <Percent label="המשקיע מחזיק" value={holding} onChange={setHolding} min={5} max={60} />
+      <Percent label="נוכחים באסיפה, כולל המשקיע" value={present} onChange={setAttendance} min={holding} />
+      <div aria-hidden className="flex h-7 overflow-hidden rounded-lg border border-line">
+        <div className="bg-accent" style={{ width: `${(holding / present) * 100}%` }} />
+        <div className="flex-1 bg-surface-2" />
+      </div>
+      <Tbl
+        head={["בחדר", "אחוז"]}
+        rows={[
+          ["המשקיע", `${share}%`],
+          ["כל שאר הנוכחים", `${Math.round((100 - share) * 10) / 10}%`],
+          ["מאיזו נוכחות הוא מאבד את הרוב בחדר", holding * 2 > 100 ? "לעולם לא" : `${m.lostAbove}%`],
+        ]}
+      />
+      <p aria-live="polite" className={cn("text-[15px] font-semibold", verdict.tone)}>{verdict.text}</p>
+      <div className="grid grid-cols-3 gap-3">
+        <Amount label="בעל מניות א, %" value={a} onChange={setA} step={1} />
+        <Amount label="בעל מניות ב, %" value={b} onChange={setB} step={1} />
+        <Amount label="בעל מניות ג, %" value={c} onChange={setC} step={1} />
+      </div>
+      <p className="text-[15px] text-fg">{partners === null ? "גם שלושתם יחד לא מגיעים להחזקה שלו." : partners === 1 ? "מספיק אחד מהם כדי שיהיו לו יותר קולות ממנו." : `צריך ${partners} מהם יחד כדי שיהיו להם יותר קולות ממנו.`}</p>
+    </section>
+  );
+}
+
 /** Endless practice with new numbers: pick a calculation, solve, check, and see the whole solution. */
 export function ConsolidatedDrill({ families }: { families: DrillFamily[] }) {
   const [family, setFamily] = useState(families[0]);
@@ -100,7 +149,7 @@ export function ConsolidatedDrill({ families }: { families: DrillFamily[] }) {
           }}
           inputMode="decimal"
           dir="ltr"
-          aria-label="התשובה בש״ח"
+          aria-label={d.unit === "percent" ? "התשובה באחוזים" : d.unit === "holders" ? "מספר בעלי המניות" : "התשובה בש״ח"}
           className="num min-h-11 w-40 rounded-lg border border-line-strong bg-surface px-3 text-[15px] text-fg"
         />
         <button type="button" onClick={() => setChecked(true)} disabled={!typed.trim()} className="min-h-11 rounded-lg bg-accent px-4 text-[14.5px] font-semibold text-accent-fg disabled:opacity-50">
@@ -134,7 +183,7 @@ export function ConsolidatedDrill({ families }: { families: DrillFamily[] }) {
             </div>
           ))}
           <p>
-            <strong>התשובה:</strong> <span className="num">{d.answer.toLocaleString("en-US")}</span> ש״ח
+            <strong>התשובה:</strong> <bdi dir="ltr" className="num">{d.answer.toLocaleString("en-US")}{d.unit === "percent" ? "%" : ""}</bdi> {d.unit === "holders" ? "בעלי מניות" : d.unit === "percent" ? "" : "ש״ח"}
           </p>
           <p>
             <strong>מלכודת נפוצה:</strong> {d.trap}
