@@ -2,6 +2,7 @@ import { BookOpen, ChevronDown, MessageCircleQuestion } from "lucide-react";
 import type { ReactNode } from "react";
 import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
 import { IasQuiz } from "./ias19-quiz";
+import { Tbl } from "./ifrs16-parts";
 import type { QuizItem } from "./inventory-interactive";
 
 /** What the consolidated course's screens share. */
@@ -116,6 +117,13 @@ export function PowerFlow() {
       <Box>קשה להכריע? ראיות אחרות לכוח השפעה, וסימנים ליחסים מיוחדים</Box>
     </figure>
   );
+}
+
+type TableRow = { name: string; at: number; amortized: number; end: number };
+
+/** The table of excess cost: the attribution, its amortization and the balance, assets positive and liabilities negative. */
+export function ExcessTbl({ table }: { table: { items: TableRow[]; tax: TableRow; total: { at: number; amortized: number; end: number } } }) {
+  return <Tbl dense head={["", "ייחוס", "הפחתה", "יתרה"]} rows={[...table.items, table.tax].map((r) => [r.name, r.at, r.amortized, r.end])} foot={["סך הכול", table.total.at, table.total.amortized, table.total.end]} />;
 }
 
 /** Who owns what: the parent's shareholders, the parent, the subsidiary, and the non-controlling interests beside them. */

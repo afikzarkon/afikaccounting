@@ -2,9 +2,10 @@
 
 import { RotateCcw } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit } from "@/lib/learn/consolidated";
+import { excessTable, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit } from "@/lib/learn/consolidated";
 import { drill, DRILL_FAMILIES, type DrillFamily } from "@/lib/study/consolidated/drills";
 import { cn } from "@/lib/utils";
+import { ExcessTbl } from "./consolidated-parts";
 import { Tbl } from "./ifrs16-parts";
 
 function Amount({ label, value, onChange, step = 10_000 }: { label: string; value: number; onChange: (v: number) => void; step?: number }) {
@@ -143,6 +144,48 @@ export function ManagerLab() {
         התגמול תואם את השירות, ובתנאי שוק
       </label>
       <p aria-live="polite" className={cn("text-[15px] font-semibold", verdict.tone)}>{verdict.text}</p>
+    </section>
+  );
+}
+
+/** Change an item's figures, how much was sold and how long has passed: the table of excess cost builds itself. */
+export function ExcessLab() {
+  const [invBook, setInvBook] = useState(140_000);
+  const [invFair, setInvFair] = useState(155_000);
+  const [soldPct, setSoldPct] = useState(60);
+  const [eqBook, setEqBook] = useState(300_000);
+  const [eqFair, setEqFair] = useState(348_000);
+  const [life, setLife] = useState(8);
+  const [months, setMonths] = useState(6);
+  const [suit, setSuit] = useState(20_000);
+  const [tax, setTax] = useState(23);
+  const inv = invFair - invBook;
+  const eq = eqFair - eqBook;
+  const table = excessTable(
+    [
+      { name: "מלאי", at: inv, end: (inv * (100 - soldPct)) / 100 },
+      { name: "ציוד", at: eq, end: eq - (eq * months) / 12 / Math.max(life, 1) },
+      { name: "תביעה", at: -suit, end: -suit },
+    ],
+    tax / 100,
+  );
+  return (
+    <section aria-label="מעבדה: בונים טבלה" className="card space-y-4 p-4 sm:p-5">
+      <div className="grid grid-cols-2 gap-3">
+        <Amount label="מלאי: בספרים" value={invBook} onChange={setInvBook} />
+        <Amount label="מלאי: שווי הוגן" value={invFair} onChange={setInvFair} />
+        <Amount label="ציוד: בספרים" value={eqBook} onChange={setEqBook} />
+        <Amount label="ציוד: שווי הוגן" value={eqFair} onChange={setEqFair} />
+        <Amount label="ציוד: שנות חיים" value={life} onChange={setLife} step={1} />
+        <Amount label="תביעה: שווי הוגן" value={suit} onChange={setSuit} />
+      </div>
+      <Percent label="מהמלאי נמכרו" value={soldPct} onChange={setSoldPct} />
+      <label className="block text-[14px] font-semibold text-fg">
+        חודשים עד סוף השנה: <bdi dir="ltr" className="num">{months}</bdi>
+        <input type="range" min={1} max={12} value={months} onChange={(e) => setMonths(+e.target.value)} dir="ltr" className="mt-2 block w-full accent-[var(--color-accent)]" aria-label="חודשים עד סוף השנה" />
+      </label>
+      <Percent label="שיעור המס" value={tax} onChange={setTax} max={40} />
+      <ExcessTbl table={table} />
     </section>
   );
 }

@@ -10,13 +10,14 @@ import { CONSOLIDATED_LESSONS } from "./consolidated";
 import { drill, DRILL_FAMILIES, type DrillFamily } from "./consolidated/drills";
 import { CONSOLIDATED_GLOSSARY } from "./consolidated/glossary";
 import { ATTEND_NO, ATTEND_YES, BOARD, CONTROL, CONTROL_TAUGHT, CONVERTED, MASTER2_NOW, MASTER2_OPTION, MASTER2_PARTNERS, MASTER2_POSITION, POWER_TEST, POWER_TEST_START, RIGHTS, TWO_JOIN } from "./consolidated/lessons/control";
+import { ACQUISITION, ACQUISITION_TAUGHT, BOND, ITEMS, LESSEE, LESSOR, MASTER4_TABLE, STORY_TABLE } from "./consolidated/lessons/acquisition";
 import { AGENT_TEST, AGENT_TEST_START, AGENTS, FUND_LARGE, FUND_SMALL, MASTER3_POSITION, MASTER3_REWARD, MASTER3_SISTER, MASTER3_TOGETHER, RETURNS, RETURNS_TAUGHT } from "./consolidated/lessons/returns";
 import { CASES, EXEMPT_TEST, EXEMPT_TEST_START, MASTER_POSITION, MASTER_PROFIT, MASTER_SEPARATE, STORY_POSITION, STORY_PROFIT, STORY_SEPARATE, WHAT, WHAT_TAUGHT } from "./consolidated/lessons/what";
 import { type ConsolidatedQuestion, LESSON_N } from "./consolidated/shared";
 import { ltrFormulas } from "./ias19/ltr";
 
 /** What teaches each question, lesson by lesson. */
-const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT };
+const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT, "consolidated-acquisition": ACQUISITION_TAUGHT };
 
 describe("the consolidated statements course", () => {
   it("lessons numbered in order, on the course's page, the first free", () => {
@@ -136,6 +137,17 @@ describe("the consolidated statements course", () => {
       for (const m of text.matchAll(/\b(?:q|why|story|lead): "([^"]+)"/g)) check(f, m[1]);
       for (const m of text.matchAll(/options: \[(.+)\],?$/gm)) for (const o of m[1].matchAll(/"([^"]+)"/g)) check(f, o[1]);
     }
+    assert.deepEqual(bad, []);
+  });
+
+  it("a bare formula in a table cell would read backwards: it sits in an isolate or in a Calc", () => {
+    const dir = join(process.cwd(), "src/components/basics");
+    const bad: string[] = [];
+    for (const f of readdirSync(dir).filter((n) => /^consolidated-course.*\.tsx$/.test(n)))
+      for (const line of readFileSync(join(dir, f), "utf8").split(/\r?\n/)) {
+        if (!/^\s*\[/.test(line) || line.includes("<Calc") || line.includes("<bdi")) continue;
+        for (const m of line.matchAll(/"([^"]+)"/g)) if (/^[\d,.% ]+[×÷/+−=][\d,.% ×÷/+−=]*$/.test(m[1])) bad.push(`${f}: ${m[1]}`);
+      }
     assert.deepEqual(bad, []);
   });
 
@@ -306,6 +318,36 @@ describe("lesson 3: the walk, the sorting and the figures, against a separate ca
     assert.deepEqual(RETURNS.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
     const share = RETURNS.exercises.find((x) => x.id === "share-of-result") as { answer: number; options: string[] };
     assert.equal(share.options[share.answer], `${FUND_LARGE.share}%`);
+  });
+});
+
+describe("lesson 4: figures, against a separate calculation in Python", () => {
+  it("the bond", () => {
+    assert.deepEqual([BOND.need, BOND.book, BOND.needEnd, BOND.bookEnd], [192_768, 207_654, 199_401, 210_746]);
+  });
+  it("the worked table", () => {
+    assert.deepEqual(STORY_TABLE.items.map((r) => [r.at, r.amortized, r.end]), [[15_000, -9_000, 6_000], [48_000, -3_000, 45_000], [50_000, -5_000, 45_000], [12_000, -4_000, 8_000], [-20_000, 0, -20_000], [14_886, -3_541, 11_345]]);
+    assert.deepEqual([STORY_TABLE.tax.at, STORY_TABLE.tax.amortized, STORY_TABLE.tax.end], [-27_574, 5_645, -21_929]);
+    assert.deepEqual(STORY_TABLE.total, { at: 92_312, amortized: -18_896, end: 73_416 });
+  });
+  it("the lease on each side", () => {
+    assert.deepEqual(LESSEE, { liabilityNeed: 30_925, liabilityBook: 32_076, rouNeed: 33_502, rouBook: 30_329 });
+    assert.deepEqual(LESSOR, { value: 131_464, plain: 127_654, excess: 41_464 });
+  });
+  it("the closing question", () => {
+    assert.deepEqual(MASTER4_TABLE.items.map((r) => [r.at, r.amortized, r.end]), [[12_000, -9_000, 3_000], [60_000, 0, 60_000], [30_000, -4_500, 25_500], [32_000, -6_000, 26_000], [5_000, -3_000, 2_000], [-18_000, 0, -18_000]]);
+    assert.deepEqual([MASTER4_TABLE.tax.at, MASTER4_TABLE.tax.amortized, MASTER4_TABLE.tax.end], [-27_830, 5_175, -22_655]);
+    assert.deepEqual(MASTER4_TABLE.total, { at: 93_170, amortized: -17_325, end: 75_845 });
+  });
+  it("calculations in the practice", () => {
+    const expected: Record<string, number> = { "inv-rest": 7_800, "eq-amort": 6_000, "tax-sum": 13_800, "hfs-excess": 12_000, "suit-higher": 18_000, "table-net": 55_440, "table-end": 45_661, "cost-sales": 72_000, "lessee-liability": 37_188 };
+    const answer = (id: string) => (ACQUISITION.exercises.find((x) => x.id === id) as { answer: number }).answer;
+    for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
+    assert.deepEqual(ACQUISITION.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
+  });
+  it("eight items to sort, both answers among them", () => {
+    assert.equal(ITEMS.length, 8);
+    assert.ok(ITEMS.some((i) => i.answer === "yes") && ITEMS.some((i) => i.answer === "no"));
   });
 });
 

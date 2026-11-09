@@ -85,3 +85,25 @@ export function managerReward(m: { nav: number; feeRate: number; profit: number;
   const total = fee + performance + fromHolding;
   return { fee, performance, left, fromHolding, total, share: tidy((total / m.profit) * 100) };
 }
+
+/** The present value of equal payments at each year's end. */
+export const pvAnnuity = (rate: number, years: number, payment: number) => (payment * (1 - (1 + rate) ** -years)) / rate;
+
+/** The present value of a bond paying a coupon at each year's end and its face at the last. */
+export const pvBond = (rate: number, years: number, coupon: number, face: number) => pvAnnuity(rate, years, coupon) + face * (1 + rate) ** -years;
+
+export type ExcessRow = { name: string; at: number; end: number };
+
+/**
+ * The table of excess cost: each item's excess at the acquisition date and at
+ * the year's end, in whole shekels, assets positive and liabilities negative.
+ * Deferred tax is the tax rate on all of them, with the opposite sign.
+ */
+export function excessTable(rows: ExcessRow[], taxRate: number) {
+  const items = rows.map((r) => ({ name: r.name, at: whole(r.at), amortized: whole(r.end) - whole(r.at), end: whole(r.end) }));
+  const sum = (key: "at" | "amortized" | "end") => items.reduce((a, r) => a + r[key], 0);
+  const taxAt = whole(-sum("at") * taxRate);
+  const taxEnd = whole(-sum("end") * taxRate);
+  const tax = { name: "מס נדחה", at: taxAt, amortized: taxEnd - taxAt, end: taxEnd };
+  return { items, tax, total: { at: sum("at") + taxAt, amortized: sum("amortized") + taxEnd - taxAt, end: sum("end") + taxEnd } };
+}

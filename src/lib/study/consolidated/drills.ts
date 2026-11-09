@@ -1,4 +1,4 @@
-import { afterConversion, whole, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, separateInvestment } from "../../learn/consolidated";
+import { afterConversion, excessTable, whole, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, separateInvestment } from "../../learn/consolidated";
 import { fmt } from "./shared";
 
 /** Endless practice with new numbers: each family is one calculation, a seed always gives the same exercise, and every answer is whole, in shekels unless the family says otherwise. */
@@ -21,6 +21,10 @@ export const DRILL_FAMILIES = {
   fundshare: "החלק ברווח",
   nciagent: "זשמ״ש עם סוכן",
   silo: "נכסים עם סילו",
+  invrest: "יתרת מלאי",
+  eqamort: "הפחתת ציוד",
+  dtax: "מס נדחה",
+  tablenet: "טבלה נטו",
 } as const;
 
 export type DrillFamily = keyof typeof DRILL_FAMILIES;
@@ -170,6 +174,56 @@ export function drill(family: DrillFamily, seed: number): Drill {
       answer: own + siloAssets,
       steps: [{ title: "מאחדים רק את הסילו", numbers: `${fmt(own)} + ${fmt(siloAssets)} = ${fmt(own + siloAssets)}` }],
       trap: "להוסיף גם את שאר הישות. שליטה יש רק בחלק המבודד.",
+    };
+  }
+  if (family === "invrest") {
+    const excess = r.int(3, 20) * 2_000;
+    const soldPct = r.int(2, 18) * 5;
+    const rest = whole((excess * (100 - soldPct)) / 100);
+    return {
+      prompt: `במועד הרכישה יוחס למלאי עודף עלות של ${fmt(excess)} ש״ח. עד סוף השנה נמכרו ${soldPct}% מהמלאי. מה יתרת עודף העלות בסוף השנה?`,
+      answer: rest,
+      steps: [{ title: `נשאר החלק שלא נמכר, ${100 - soldPct}%`, numbers: `${fmt(excess)} × ${100 - soldPct}% = ${fmt(rest)}` }],
+      trap: "לחשב את מה שנמכר. זו ההפחתה, ולא היתרה.",
+    };
+  }
+  if (family === "eqamort") {
+    const years = r.int(2, 8);
+    const months = [3, 6, 9, 12][r.int(0, 3)];
+    const excess = years * r.int(2, 30) * 4_000;
+    const amort = whole((excess * months) / 12 / years);
+    return {
+      prompt: `לציוד יוחס עודף עלות של ${fmt(excess)} ש״ח. נותרו לו ${years} שנות חיים במועד הרכישה, וממועד הרכישה עד סוף השנה עברו ${months} חודשים. מה ההפחתה עד סוף השנה?`,
+      answer: amort,
+      steps: [{ title: "על פני יתרת החיים, לפי החודשים שעברו", numbers: `${fmt(excess)} × ${months} / 12 / ${years} = ${fmt(amort)}` }],
+      trap: "להפחית שנה שלמה, גם כשעברו פחות חודשים.",
+    };
+  }
+  if (family === "dtax" || family === "tablenet") {
+    const inv = r.int(5, 30) * 4_000;
+    const eq = r.int(5, 30) * 4_000;
+    const suit = r.int(1, 8) * 4_000;
+    const table = excessTable([{ name: "מלאי", at: inv, end: inv }, { name: "ציוד", at: eq, end: eq }, { name: "תביעה", at: -suit, end: -suit }], 0.25);
+    const before = inv + eq - suit;
+    const tax = whole(before * 0.25);
+    if (family === "dtax")
+      return {
+        prompt: `עודפי עלות במועד הרכישה: מלאי ${fmt(inv)} ש״ח, ציוד ${fmt(eq)} ש״ח, ותביעה בסימן של התחייבות ${fmt(suit)} ש״ח. שיעור המס 25%. מה סכום המס הנדחה, בערך מוחלט?`,
+        answer: Math.abs(tax),
+        steps: [
+          { title: "הסך לפני מס, עם הסימנים", numbers: `${fmt(inv)} + ${fmt(eq)} − ${fmt(suit)} = ${fmt(before)}` },
+          { title: "כפול שיעור המס", numbers: `${fmt(Math.abs(before))} × 25% = ${fmt(Math.abs(tax))}` },
+        ],
+        trap: "לחשב מס על הנכסים בלבד.",
+      };
+    return {
+      prompt: `עודפי עלות במועד הרכישה: מלאי ${fmt(inv)} ש״ח, ציוד ${fmt(eq)} ש״ח, ותביעה בסימן של התחייבות ${fmt(suit)} ש״ח. שיעור המס 25%. מה סך עודף העלות נטו ממס, בערך מוחלט?`,
+      answer: Math.abs(table.total.at),
+      steps: [
+        { title: "הסך לפני מס, עם הסימנים", numbers: `${fmt(inv)} + ${fmt(eq)} − ${fmt(suit)} = ${fmt(before)}` },
+        { title: "נטו ממס", numbers: `${fmt(Math.abs(before))} × 75% = ${fmt(Math.abs(table.total.at))}` },
+      ],
+      trap: "לשכוח להוריד את המס, או לחבר את התביעה כנכס.",
     };
   }
   if (family === "ncieq")
