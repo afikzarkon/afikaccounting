@@ -136,6 +136,49 @@ export const STORE_CASH = STORE.payment + STORE_INDEX + STORE_VAR;
 export const STORE_GROSS = STORE.fairValue - STORE.cost;
 export const STORE_TOTAL = STORE_GROSS - STORE.costs + STORE_INT + STORE_INDEX + STORE_VAR;
 
+/**
+ * Worked: a farm lets its old tractor, and all we are told is the rate built into the lease.
+ * The net investment is the present value of what will come in, at that rate: the payments,
+ * the residual the lessee guarantees, and the part nobody guarantees.
+ */
+export const TRAC = { payment: 60_000, years: 5, rate: 0.07, guaranteed: 20_000, unguaranteed: 10_000, bookValue: 230_000, costs: 4_000, life: 7 };
+export const TRAC_RESIDUAL = TRAC.guaranteed + TRAC.unguaranteed;
+export const TRAC_NI = r(pvEnd(TRAC.rate, TRAC.years, TRAC.payment, TRAC_RESIDUAL));
+export const TRAC_PV_PAY = r(pvEnd(TRAC.rate, TRAC.years, TRAC.payment));
+export const TRAC_PV_GUAR = r(TRAC.guaranteed / (1 + TRAC.rate) ** TRAC.years);
+/** What is left of the net investment once the payments and the guarantee are in, so the three parts add up to it. */
+export const TRAC_PV_UN = TRAC_NI - TRAC_PV_PAY - TRAC_PV_GUAR;
+/** The fair value the rate implies: by the definition of the implicit rate, net investment = fair value + direct costs. */
+export const TRAC_FV = TRAC_NI - TRAC.costs;
+export const TRAC_GAIN = TRAC_NI - TRAC.costs - TRAC.bookValue;
+/** The lease payments alone, the guarantee included: the test of paragraph 63(d). */
+export const TRAC_LEASE_PV = TRAC_PV_PAY + TRAC_PV_GUAR;
+export const TRAC_SHARE = TRAC_LEASE_PV / TRAC_FV;
+/** The common slip: the unguaranteed part left out. */
+export const TRAC_NO_UN = r(pvEnd(TRAC.rate, TRAC.years, TRAC.payment, TRAC.guaranteed));
+export const TRAC_NO_UN_GAIN = TRAC_NO_UN - TRAC.costs - TRAC.bookValue;
+/** The tractor comes back at the end: what is left on the last day is the whole residual. */
+export const TRAC_ROWS = investRows(TRAC_NI, TRAC.rate, TRAC.payment, TRAC.years, TRAC_RESIDUAL);
+
+/**
+ * Worked: laundry machines let to a laundry with their upkeep in the price. The lessor splits
+ * each payment by stand-alone prices: the lease share goes into the net investment, the service
+ * share is income as the service is given.
+ */
+export const WASH = { total: 100_000, leasePrice: 90_000, servicePrice: 22_500, years: 4, rate: 0.06, bookValue: 250_000, lifeLeft: 10 };
+export const WASH_PRICES = WASH.leasePrice + WASH.servicePrice;
+export const WASH_LEASE = r((WASH.total * WASH.leasePrice) / WASH_PRICES);
+export const WASH_SERVICE = WASH.total - WASH_LEASE;
+export const WASH_NI = r(pvEnd(WASH.rate, WASH.years, WASH_LEASE));
+export const WASH_GAIN = WASH_NI - WASH.bookValue;
+export const WASH_ROWS = investRows(WASH_NI, WASH.rate, WASH_LEASE, WASH.years);
+/** The common slip: the whole payment discounted, service and all. */
+export const WASH_WRONG_NI = r(pvEnd(WASH.rate, WASH.years, WASH.total));
+export const WASH_WRONG_GAIN = WASH_WRONG_NI - WASH.bookValue;
+/** The same contract as an operating lease: the machines stay, the lease share is straight-line income. */
+export const WASH_OP_DEP = WASH.bookValue / WASH.lifeLeft;
+export const WASH_OP_PL = WASH_OP_DEP - WASH_LEASE - WASH_SERVICE;
+
 /** Finance or operating: the walk through paragraphs 63 to 65. */
 export const CLASS_WALK: Record<string, TestNode | TestEnd> = {
   owner: { q: "הבעלות עוברת לחוכר בסוף?", par: "סעיף 63(א)", help: "אם כן, בודקים עוד דבר אחד: איך החוכר משלם.", answers: [{ label: "כן", to: "price" }, { label: "לא", to: "option" }] },
@@ -158,6 +201,9 @@ const P_CAP = r(pvEnd(0.1, 4, 30_000));
 const P_RES_RATE = rateFor(150_000, 6, 30_000, 24_000);
 const P_RES_PVU = r(8_000 / (1 + P_RES_RATE) ** 6);
 const P_LOSS = r(6_000 / 1.08 ** 5);
+const P_RATE_NI = r(pvEnd(0.08, 4, 40_000, 12_000));
+const P_RATE_GAIN_NI = r(pvEnd(0.06, 3, 50_000, 15_000));
+const P_SVC_NI = r(pvEnd(0.05, 3, 40_000));
 
 const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
   ask({ id: "class-own", skill: "סיווג", prompt: "מחכיר מחכיר מכונה ל-3 שנים מתוך 10 שנות חיים. בסוף התקופה הבעלות עוברת לחוכר בלי תשלום נוסף. איך מסווגים?", options: ["מימונית", "תפעולית, כי התקופה קצרה", "לפי בחירת המחכיר", "לא חכירה"], answer: 0, why: "סעיף 63(א): העברת בעלות היא סימן למימונית, גם כשהתקופה קצרה.", trap: "לבדוק רק את אורך התקופה. כל סימן לבדו יכול להספיק.", level: 1, source: "מקורית", ref: "סעיף 63(א)" }),
@@ -172,6 +218,9 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
   askNumber({ id: "ni-start", skill: "מימונית", prompt: "מחכיר שאינו יצרן או סוחר. השווי ההוגן של הנכס 120,000 ש״ח, והעלויות הישירות שלו 4,000 ש״ח. מהי ההשקעה נטו במועד התחילה?", answer: 124_000, steps: ["שווי הוגן + עלויות ישירות = השקעה נטו\n120,000 + 4,000 = 124,000 (סעיף 69)"], trap: "לרשום את העלויות כהוצאה. זה רק אצל יצרן או סוחר.", level: 1, source: "מקורית", ref: "סעיף 69" }),
   askNumber({ id: "ni-gain", skill: "מימונית", prompt: "חברה מחכירה בחכירה מימונית מכונה שהייתה רכוש קבוע שלה, והיא אינה סוחרת. ערך המכונה בספרים 95,000 ש״ח, ושוויה ההוגן 120,000 ש״ח. כמה רווח הון נרשם?", answer: 25_000, steps: ["המכונה יוצאת לפי הערך בספרים, ובמקומה נכנס חייב לפי השווי ההוגן (סעיף 67, והגדרת הריבית הגלומה בנספח א׳)", "ההפרש הוא הרווח: 120,000 − 95,000 = 25,000"], trap: "לרשום הכנסות ממכירה ועלות מכר. אצל מי שאינו סוחר זה רווח הון אחד.", level: 2, source: "מקורית", ref: "סעיף 67, נספח א׳" }),
   askNumber({ id: "ni-y2", skill: "מימונית", prompt: "השקעה נטו של 150,000 ש״ח, בריבית גלומה של 8%. תקבול של 40,000 ש״ח בסוף כל שנה. מהי היתרה ב-31.12 של השנה השנייה?", answer: P_NI_Y2, steps: [`שנה 1: 150,000 × 1.08 − 40,000 = ${fmt(P_NI_Y1)}`, `שנה 2: ${fmt(P_NI_Y1)} × 1.08 − 40,000 = ${fmt(P_NI_Y2)}`], trap: "להוריד את כל התקבול בלי להוסיף הכנסת מימון.", level: 2, source: "מקורית", ref: "סעיף 75" }),
+  askNumber({ id: "rate-ni", skill: "ריבית נתונה", prompt: "מחכיר שאינו יצרן או סוחר מחכיר ציוד ל-4 שנים, תמורת 40,000 ש״ח בסוף כל שנה. בסוף הציוד חוזר אליו, ושוויו הצפוי אז 12,000 ש״ח, בלי ערבות. השווי ההוגן לא ידוע, והריבית הגלומה בחכירה 8%. מהי ההשקעה נטו במועד התחילה?", answer: P_RATE_NI, steps: [`ערך נוכחי בריבית הגלומה של התשלומים ושל השייר הלא מובטח:\n40,000 × (1 − 1.08^(−4)) ÷ 0.08 + 12,000 ÷ 1.08^4 = ${fmt(P_RATE_NI)}`, `באקסל: =PV(8%;4;-40000;-12000) → ${fmt(P_RATE_NI)}`], trap: "להשאיר את השייר בחוץ כי אף אחד לא ערב לו. הוא לא תשלום חכירה, אבל הוא חלק מההשקעה נטו.", level: 2, source: "הרצאה", ref: "סעיפים 67, 68, נספח א׳" }),
+  askNumber({ id: "rate-gain", skill: "ריבית נתונה", prompt: "חברה שאינה סוחרת מחכירה בחכירה מימונית מכונה מהרכוש הקבוע שלה, ל-3 שנים, תמורת 50,000 ש״ח בסוף כל שנה. החוכר ערב לכך שבסוף המכונה תהיה שווה 15,000 ש״ח, ואין מעבר לזה שייר צפוי. הריבית הגלומה 6%, ושווי הוגן לא נתון. ערך המכונה בספרים 120,000 ש״ח, ועל עורך דין שולמו 3,000 ש״ח. כמה רווח הון נרשם?", answer: P_RATE_GAIN_NI - 123_000, steps: [`השקעה נטו: =PV(6%;3;-50000;-15000) → ${fmt(P_RATE_GAIN_NI)}`, "ההשקעה נטו כבר כוללת את העלויות הישירות, כי לפי הגדרת הריבית הגלומה היא שווי הוגן ועוד העלויות", `רווח הון = השקעה נטו − עלויות ישירות − ערך בספרים\n${fmt(P_RATE_GAIN_NI)} − 3,000 − 120,000 = ${fmt(P_RATE_GAIN_NI - 123_000)}`], trap: "לשכוח להוריד את 3,000. הם יושבים בתוך ההשקעה נטו, אבל זה כסף שהמחכיר הוציא, ולא שווי של המכונה.", level: 3, source: "הרצאה", ref: "סעיפים 67, 69, נספח א׳" }),
+  ask({ id: "rate-market", skill: "ריבית נתונה", prompt: "מחכיר שאינו יצרן או סוחר. נתונים השווי ההוגן של הנכס, התשלומים, וגם ריבית השוק. באיזו ריבית מודדים את ההשקעה נטו?", options: ["בריבית הגלומה, שמחשבים מהשווי ההוגן ומהתשלומים. ריבית השוק לא נחוצה", "בריבית השוק", "בנמוכה מבין השתיים", "בממוצע של השתיים"], answer: 0, why: "אצל מי שאינו סוחר ההשקעה נטו היא השווי ההוגן ועוד העלויות הישירות, והריבית הגלומה נגזרת מזה (סעיף 69, נספח א׳). ריבית שוק משמשת אצל סוחר, בסעיף 71.", trap: "להעתיק את הכלל של הסוחר, שבודק ערך נוכחי בריבית שוק.", level: 1, source: "הרצאה", ref: "סעיף 69, נספח א׳" }),
   askNumber({ id: "dealer-sales", skill: "סוחר", prompt: "סוחר מחכיר בחכירה מימונית נכס ששוויו ההוגן 200,000 ש״ח. הערך הנוכחי של תשלומי החכירה, בריבית שוק, 190,000 ש״ח. אין שייר. כמה הכנסות ממכירות נרשמות?", answer: 190_000, steps: ["הנמוך מבין השווי ההוגן והערך הנוכחי בריבית שוק (סעיף 71(א)): 190,000"], trap: "לרשום תמיד את השווי ההוגן.", level: 2, source: "מקורית", ref: "סעיף 71(א)" }),
   askNumber({ id: "dealer-profit", skill: "סוחר", prompt: "סוחר מחכיר בחכירה מימונית נכס ששוויו ההוגן 100,000 ש״ח, ועלותו 70,000 ש״ח. הערך הנוכחי בריבית שוק שווה לשווי ההוגן. עלויות השגת החכירה 5,000 ש״ח. מהי ההשפעה נטו על רווח או הפסד במועד התחילה?", answer: 25_000, steps: ["100,000 − 70,000 − 5,000 = 25,000 (סעיפים 71, 74)"], trap: "להוסיף את 5,000 להשקעה נטו. אצל סוחר הן הוצאה.", level: 2, source: "מקורית", ref: "סעיפים 71, 74" }),
   askNumber({ id: "dealer-cap", skill: "ריבית נמוכה", prompt: "סוחר מפרסם ריבית נמוכה במיוחד. הלקוח ישלם 30,000 ש״ח בסוף כל שנה, 4 שנים. שווי הנכס 110,000 ש״ח, עלותו 75,000 ש״ח, וריבית השוק 10%. מהן ההכנסות ממכירות?", answer: P_CAP, steps: [`בריבית השוק: 30,000 × (1 − 1.1^(−4)) ÷ 0.1 = ${fmt(P_CAP)}`, `נמוך מ-110,000, ולכן זו ההכנסה (סעיף 73). הרווח: ${fmt(P_CAP)} − 75,000 = ${fmt(P_CAP - 75_000)}`], trap: "להוון בריבית שפרסם. הרווח מוגבל למה שהיה בריבית שוק.", level: 3, source: "מקורית", ref: "סעיפים 71, 73" }),
@@ -182,6 +231,9 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
   ask({ id: "third-party", skill: "ערבות", prompt: "צד שלישי בעל יכולת פיננסית, שאינו קשור למחכיר, ערב למחכיר לערך השייר. האם הערבות נכללת בתשלומי החכירה של המחכיר?", options: ["כן", "לא, רק ערבות של החוכר", "רק אם החוכר משלם עליה", "רק במחכיר סוחר"], answer: 0, why: "סעיף 70(ג): ערבות מהחוכר, מצד קשור אליו, או מצד שלישי בעל יכולת, שאינו קשור למחכיר.", trap: "לבדוק רק אם החוכר ערב.", level: 3, source: "מקורית", ref: "סעיף 70(ג)" }),
   ask({ id: "index-ni", skill: "מדד", prompt: "חכירה מימונית, ותשלומים צמודים למדד. המדד עלה, והחוכר שילם יותר. מה עושה המחכיר?", options: ["לא מודד מחדש. התוספת היא הכנסה נפרדת", "מודד מחדש את ההשקעה נטו", "מוסיף את התוספת להכנסות ממכירות", "מקטין את עלות המכר"], answer: 0, why: "התקן לא אומר זאת במפורש, וזו הקריאה של הקורס: סעיף 70(ב) מודד לפי המדד של מועד התחילה, אין מקבילה לסעיף 42(ב), וסעיף 90(א)(iii) עוסק בהכנסה ממשתנים שלא נכללו.", trap: "להעתיק את הטיפול מהחוכר.", level: 2, source: "מקורית", ref: "סעיפים 70(ב), 90(א)" }),
   askNumber({ id: "index-income", skill: "מדד", prompt: "חכירה מימונית. התשלום הבסיסי 50,000 ש״ח, צמוד למדד. מדד הבסיס 100, והיום 104. כמה מהתקבול השנה הוא הכנסה נפרדת מהצמדה?", answer: 2_000, steps: ["50,000 × 104 ÷ 100 = 52,000", "52,000 − 50,000 = 2,000"], trap: "להוריד את כל 52,000 מההשקעה נטו. רק הסכום שנמדד בה מקטין אותה.", level: 2, source: "מקורית", ref: "סעיפים 70(ב), 90(א)" }),
+  askNumber({ id: "svc-alloc", skill: "שירות", prompt: "מחכיר גובה 60,000 ש״ח בשנה על חכירת מכונות קפה למשרד, והמחיר כולל ניקוי שבועי. בנפרד היה גובה 54,000 ש״ח על החכירה ו-18,000 ש״ח על הניקוי. כמה מהתשלום השנתי הם תשלום חכירה?", answer: 45_000, steps: ["מקצים לפי מחירים נפרדים (סעיף 17, שמפנה ל-IFRS 15):\n60,000 × 54,000 ÷ (54,000 + 18,000) = 45,000", "הניקוי: 60,000 − 45,000 = 15,000, הכנסה משירות"], trap: "לקחת את 54,000 כמו שהוא. המחירים הנפרדים הם רק בסיס לחלוקה, וביחד הם יותר מהתשלום.", level: 1, source: "הרצאה", ref: "סעיף 17, IFRS 15" }),
+  askNumber({ id: "svc-ni", skill: "שירות", prompt: "חכירה מימונית ל-3 שנים. החוכר משלם 50,000 ש״ח בסוף כל שנה, והתשלום כולל שירות. לפי מחירים נפרדים הוקצו 40,000 ש״ח לחכירה ו-10,000 ש״ח לשירות. הריבית הגלומה 5%. מהי ההשקעה נטו במועד התחילה?", answer: P_SVC_NI, steps: [`רק חלק החכירה נכנס:\n40,000 × (1 − 1.05^(−3)) ÷ 0.05 = ${fmt(P_SVC_NI)}`, `באקסל: =PV(5%;3;-40000) → ${fmt(P_SVC_NI)}`], trap: "להוון את כל 50,000. השירות עוד לא ניתן, ולכן אין עליו חוב של החוכר.", level: 2, source: "מקורית", ref: "סעיפים 17, 67" }),
+  ask({ id: "svc-expedient", skill: "שירות", prompt: "מחכיר של רכבים כולל בחוזה גם טיפולים שוטפים. הוא רוצה לטפל בכל התשלום כתשלום חכירה, כמו שחוכר רשאי. מה נכון?", options: ["אסור לו. ההקלה של סעיף 15 היא לחוכר בלבד, והמחכיר מקצה לפי IFRS 15", "מותר, אם הוא בוחר כך לכל קבוצת נכסים", "מותר רק בחכירה תפעולית", "מותר רק אם השירות קטן מ-10%"], answer: 0, why: "סעיף 15 נותן את ההקלה לחוכר. סעיף 17 מחייב את המחכיר להקצות את התמורה לפי IFRS 15.", trap: "להחיל על המחכיר את ההקלה של החוכר.", level: 2, source: "הרצאה", ref: "סעיפים 15, 17" }),
   Object.assign(
     journal("op-entry", "פקודת יומן", "חכירה תפעולית עם תשלום נמוך בהתחלה. הכנסה בקו ישר 50,000 ש״ח, ובשנה הראשונה התקבלו 15,000 ש״ח. רשמו את הפקודה של 31.12.", [{ account: "מזומן", dr: 15_000 }, { account: "הכנסות לקבל", dr: 35_000 }, { account: "הכנסות מהשכרה", cr: 50_000 }], "ההכנסה בקו ישר, וההפרש הוא נכס. מלכודת נפוצה: לרשום הכנסה רק במה שהתקבל.", ["מזומן", "הכנסות לקבל", "הכנסות מהשכרה", "השקעה נטו בחכירה", "הכנסות מימון"]),
     { meta: { level: 2 as const, source: "מקורית" as const, ref: "סעיף 81" } },
@@ -241,6 +293,12 @@ export const LESSOR_TAUGHT: Record<string, string> = {
   "ni-start": "ls-lsr-nondealer",
   "ni-gain": "ls-lsr-nondealer",
   "ni-y2": "ls-lsr-nondealer",
+  "rate-ni": "ls-lsr-rate",
+  "rate-gain": "ls-lsr-rate",
+  "rate-market": "ls-lsr-rate",
+  "svc-alloc": "ls-lsr-service",
+  "svc-ni": "ls-lsr-service",
+  "svc-expedient": "ls-lsr-service",
   "dealer-sales": "ls-lsr-dealer",
   "dealer-profit": "ls-lsr-dealer",
   "dealer-cap": "ls-lsr-low",
@@ -270,10 +328,11 @@ export const LESSOR: StudyModule = {
   outcomes: [
     "לסווג חכירה לפי הסימנים בתקן",
     "לרשום חכירה תפעולית: הכנסה בקו ישר, הכנסות לקבל ופחת",
-    "למדוד השקעה נטו ולחשב הכנסת מימון",
+    "למדוד השקעה נטו ולחשב הכנסת מימון, גם כשנתונה רק הריבית הגלומה",
     "לרשום מכירה של יצרן או סוחר, גם בריבית נמוכה מלאכותית",
     "לטפל בשייר לא מובטח ובירידה באומדן שלו",
     "לטפל בתשלום צמוד מדד ובתשלום לפי מכירות אצל המחכיר",
+    "להפריד שירות מחכירה אצל המחכיר, בתפעולית ובמימונית",
   ],
   backHref: COURSE_HREF,
   screens: [
@@ -282,10 +341,12 @@ export const LESSOR: StudyModule = {
     { id: "ls-lsr-when", title: "מתי מסווגים" },
     { id: "ls-lsr-op", title: "תפעולית: הנכס נשאר" },
     { id: "ls-lsr-nondealer", title: "מימונית: במקום נכס, השקעה נטו" },
+    { id: "ls-lsr-rate", title: "כשנתונה רק הריבית הגלומה" },
     { id: "ls-lsr-dealer", title: "יצרן או סוחר: מכירה ואז ריבית" },
     { id: "ls-lsr-low", title: "ריבית נמוכה מלאכותית" },
     { id: "ls-lsr-resid", title: "שייר: מובטח ולא מובטח" },
     { id: "ls-lsr-index", title: "מדד ומכירות אצל המחכיר" },
+    { id: "ls-lsr-service", title: "חכירה עם שירות" },
     { id: "ls-lsr-credit", title: "הפסדי אשראי" },
     { id: "ls-lsr-map", title: "מפה: מה נרשם בכל מודל" },
     { id: "ls-lsr-drill", title: "מתרגלים: מספרים חדשים בכל פעם" },
@@ -301,6 +362,8 @@ export const LESSOR: StudyModule = {
     "תפעולית: הנכס נשאר, הכנסה בקו ישר, והפרש בהכנסות לקבל.",
     "עלויות ישירות בתפעולית: על הנכס, ונפרסות על החכירה.",
     "מימונית שאינו סוחר: השקעה נטו = שווי הוגן + עלויות ישירות.",
+    "אין שווי הוגן, יש ריבית גלומה: השקעה נטו = ערך נוכחי של התשלומים, הערבות והשייר הלא מובטח. זה אותו מספר.",
+    "שירות בחוזה: המחכיר תמיד מקצה. רק חלק החכירה נכנס להשקעה נטו.",
     "סוחר: מכירות לפי הנמוך מבין שווי הוגן וערך נוכחי בריבית שוק. העלויות הוצאה.",
     "שייר לא מובטח: יורד גם ממכירות וגם מעלות המכר.",
     "מדד אצל המחכיר, בקריאה של הקורס: בלי מדידה מחדש. התוספת היא הכנסה נפרדת.",

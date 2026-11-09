@@ -1,4 +1,4 @@
-import { pvEnd, rateFor } from "../../../learn/ifrs16";
+import { allocate, pvEnd, rateFor } from "../../../learn/ifrs16";
 import { journal } from "../../inventory/shared";
 import type { StudyModule, Trap } from "../../types";
 import { ask, askNumber, COURSE, COURSE_HREF, fmt, type LeaseQuestion } from "../shared";
@@ -151,6 +151,168 @@ export const D_I3 = r(D_NEW * D.newRate);
 export const D_C3 = D_NEW + D_I3;
 export const D_RENT = r((D.payment * D.years + D_PRE) / D.years);
 
+type Line = { account: string; dr?: number; cr?: number };
+
+/** Exam E: a shop the lessee fits out with the lessor's help, a change on 1.10, and a machine paid by the dollar. Year 2 is asked. */
+export const E = { payment: 120_000, years: 6, rate: 0.06, incentive: 60_000, works: 180_000, worksLife: 10, readyMonth: 3, modMonth: 9, newPayment: 105_000, newYears: 9, newRate: 0.07, usd: 49_000, usdYears: 4, usdRate: 0.05, fxStart: 3.5, fxEnd: 3.75 };
+export const E_L0 = r(pvEnd(E.rate, E.years, E.payment));
+export const E_ROU0 = E_L0 - E.incentive;
+export const E_DEP = r(E_ROU0 / E.years);
+export const E_I1 = r(E_L0 * E.rate);
+export const E_L1 = E_L0 + E_I1 - E.payment;
+export const E_ROU1 = E_ROU0 - E_DEP;
+/** The improvements serve from 1.4 of year 1 to the end of the term, 69 months, shorter than their 10 years. */
+export const E_IMP_MONTHS = E.years * 12 - E.readyMonth;
+export const E_IMP_DEP1 = r((E.works * (12 - E.readyMonth)) / E_IMP_MONTHS);
+export const E_IMP1 = E.works - E_IMP_DEP1;
+export const E_STUB = (1 + E.rate) ** (E.modMonth / 12) - 1;
+export const E_STUB_INT = r(E_L1 * E_STUB);
+export const E_L_BEFORE = E_L1 + E_STUB_INT;
+/** From 1.10 of year 2: eight payments, the first on 31.12, three months away. */
+export const E_NEW_N = E.newYears - 1;
+export const E_L_MOD = r(pvEnd(E.newRate, E_NEW_N, E.newPayment) * (1 + E.newRate) ** (E.modMonth / 12));
+export const E_UP = E_L_MOD - E_L_BEFORE;
+export const E_DEP_9 = r((E_ROU0 * E.modMonth) / (E.years * 12));
+export const E_ROU_BEFORE = E_ROU1 - E_DEP_9;
+export const E_ROU_MOD = E_ROU_BEFORE + E_UP;
+export const E_LEFT = (E.newYears - 2) * 12 + (12 - E.modMonth);
+export const E_DEP_3 = r((E_ROU_MOD * (12 - E.modMonth)) / E_LEFT);
+export const E_ROU2 = E_ROU_MOD - E_DEP_3;
+export const E_DEP2 = E_DEP_9 + E_DEP_3;
+export const E_QUARTER = (1 + E.newRate) ** ((12 - E.modMonth) / 12) - 1;
+export const E_INT_3 = r(E_L_MOD * E_QUARTER);
+export const E_L2 = E_L_MOD + E_INT_3 - E.newPayment;
+export const E_INT2 = E_STUB_INT + E_INT_3;
+export const E_L2_NC = r(pvEnd(E.newRate, E_NEW_N - 2, E.newPayment));
+export const E_IMP_DEP_9 = r((E.works * E.modMonth) / E_IMP_MONTHS);
+export const E_IMP_MOD = E_IMP1 - E_IMP_DEP_9;
+export const E_IMP_DEP_3 = r((E_IMP_MOD * (12 - E.modMonth)) / E_LEFT);
+export const E_IMP2 = E_IMP_MOD - E_IMP_DEP_3;
+export const E_IMP_DEP2 = E_IMP_DEP_9 + E_IMP_DEP_3;
+/** Simple interest for the nine months, which some questions ask for instead. */
+export const E_STUB_SIMPLE = r((E_L1 * E.rate * E.modMonth) / 12);
+/** The machine: the liability lives in dollars, the asset stays at the first day's rate. */
+export const E_USD0 = r(pvEnd(E.usdRate, E.usdYears, E.usd));
+export const E_USD_INT = r(E_USD0 * E.usdRate);
+export const E_USD1 = E_USD0 + E_USD_INT - E.usd;
+export const E_USD_NC = r(pvEnd(E.usdRate, E.usdYears - 2, E.usd));
+export const E_M_ROU0 = r(E_USD0 * E.fxStart);
+export const E_M_DEP = r(E_M_ROU0 / E.usdYears);
+export const E_M_ROU1 = E_M_ROU0 - E_M_DEP;
+export const E_M_INT = r(E_USD_INT * E.fxEnd);
+export const E_M_PAY = r(E.usd * E.fxEnd);
+export const E_M_CLOSE = r(E_USD1 * E.fxEnd);
+export const E_M_FX = E_M_CLOSE - E_M_ROU0 - E_M_INT + E_M_PAY;
+export const E_M_NC = r(E_USD_NC * E.fxEnd);
+export const E_PL = E_DEP2 + E_IMP_DEP2 + E_M_DEP + E_INT2 + E_M_INT + E_M_FX;
+export const E_ENTRY_START: Line[] = [
+  { account: "נכס זכות שימוש", dr: E_ROU0 },
+  { account: "מזומן: השתתפות המחכיר", dr: E.incentive },
+  { account: "התחייבות חכירה", cr: E_L0 },
+];
+export const E_ENTRY_MOD: Line[] = [
+  { account: "נכס זכות שימוש", dr: E_UP },
+  { account: "התחייבות חכירה", cr: E_UP },
+];
+
+/** Exam F: a lessor, a rate and no fair value, maintenance inside the rent, a change of mind, then a shorter lease. */
+export const F = { receipt: 270_000, leasePrice: 250_000, servicePrice: 50_000, years: 5, life: 7, rate: 0.08, residual: 60_000, bookValue: 880_000, costs: 12_000, extendYears: 2, intentMonth: 3, newReceipt: 230_000, newService: 45_000, newYears: 2, comp: 40_000 };
+const [F_LEASE_RAW, F_SERVICE_RAW] = allocate(F.receipt, [F.leasePrice, F.servicePrice]);
+export const F_LEASE = r(F_LEASE_RAW);
+export const F_SERVICE = r(F_SERVICE_RAW);
+export const F_NI0 = r(pvEnd(F.rate, F.years, F_LEASE, F.residual));
+export const F_FV = F_NI0 - F.costs;
+export const F_PV_PAY = r(pvEnd(F.rate, F.years, F_LEASE));
+export const F_GAIN = F_NI0 - F.bookValue - F.costs;
+export const F_I1 = r(F_NI0 * F.rate);
+export const F_NI1 = F_NI0 + F_I1 - F_LEASE;
+/** What two past papers would book on 1.4 of year 2: the net investment again at 8%, with the two option years and nothing left at the end. */
+export const F_OLD_APR = r(F_NI1 * (1 + F.rate) ** (F.intentMonth / 12));
+export const F_NEW_APR = r(pvEnd(F.rate, F.years - 1 + F.extendYears, F_LEASE) * (1 + F.rate) ** (F.intentMonth / 12));
+export const F_PAPERS = F_NEW_APR - F_OLD_APR;
+export const F_I2 = r(F_NI1 * F.rate);
+export const F_NI2 = F_NI1 + F_I2 - F_LEASE;
+export const F_NEW_LEASE = F.newReceipt - F.newService;
+/** The test of paragraph 80(a): the modified payments, at the rate of the first day, against the first day's fair value. */
+export const F_MOD_PV = r(F_LEASE / (1 + F.rate) + (F_LEASE + F.comp) / (1 + F.rate) ** 2 + F_NEW_LEASE / (1 + F.rate) ** 3 + F_NEW_LEASE / (1 + F.rate) ** 4);
+export const F_INCOME3 = (F_NEW_LEASE * F.newYears + F.comp) / F.newYears;
+export const F_DEFER3 = F.comp - (F_INCOME3 - F_NEW_LEASE);
+export const F_LEFT_LIFE = F.life - 2;
+export const F_DEP3 = r(F_NI2 / F_LEFT_LIFE);
+export const F_MACHINE3 = F_NI2 - F_DEP3;
+/** Profit, years 1 to 3. */
+export const F_PL1 = F_GAIN + F_I1 + F_SERVICE;
+export const F_PL2 = F_I2 + F_SERVICE;
+export const F_PL3 = F_INCOME3 + F.newService - F_DEP3;
+export const F_ENTRY_START: Line[] = [
+  { account: "השקעה נטו בחכירה", dr: F_NI0 },
+  { account: "מכונות", cr: F.bookValue },
+  { account: "מזומן: עלויות ישירות", cr: F.costs },
+  { account: "רווח הון", cr: F_GAIN },
+];
+export const F_ENTRY_Y1: Line[] = [
+  { account: "מזומן", dr: F.receipt },
+  { account: "השקעה נטו בחכירה", cr: F_LEASE - F_I1 },
+  { account: "הכנסות מימון", cr: F_I1 },
+  { account: "הכנסות משירותי תחזוקה", cr: F_SERVICE },
+];
+export const F_ENTRY_MOD: Line[] = [
+  { account: "מכונות", dr: F_NI2 },
+  { account: "מזומן: פיצוי", dr: F.comp },
+  { account: "השקעה נטו בחכירה", cr: F_NI2 },
+  { account: "הכנסות מראש", cr: F.comp },
+];
+
+/** Exam G: a sublease with an incentive, an office lease with deferred tax, a floor still to come, and a building sold with a right to buy it back. Year 3 is asked. */
+export const G = { whPayment: 210_000, whYears: 8, whRate: 0.05, subReceipt: 250_000, subYears: 6, subFv: 1_150_000, incentive: 50_000, offPayment: 150_000, offYears: 5, offRate: 0.06, tax: 0.23, floorPayment: 160_000, floorYears: 5, bookValue: 2_400_000, bldLife: 30, proceeds: 3_000_000, slbPayment: 200_000, slbYears: 4, callPrice: 2_700_000 };
+export const G_WH_ROU0 = r(pvEnd(G.whRate, G.whYears, G.whPayment));
+export const G_WH_DEP = r(G_WH_ROU0 / G.whYears);
+export const G_WH_ROU2 = G_WH_ROU0 - G_WH_DEP * 2;
+export const G_WH_L2 = r(pvEnd(G.whRate, G.whYears - 2, G.whPayment));
+export const G_WH_I3 = r(G_WH_L2 * G.whRate);
+export const G_WH_L3 = G_WH_L2 + G_WH_I3 - G.whPayment;
+export const G_NI0 = G.subFv + G.incentive;
+export const G_SUB_RATE = rateFor(G_NI0, G.subYears, G.subReceipt);
+export const G_SUB_GAIN = G.subFv - G_WH_ROU2;
+export const G_SUB_I3 = r(G_NI0 * G_SUB_RATE);
+export const G_NI3 = G_NI0 + G_SUB_I3 - G.subReceipt;
+/** The shortcut a student may try: the incentive as an expense at once, and a higher rate on the fair value alone. */
+export const G_ALT_RATE = rateFor(G.subFv, G.subYears, G.subReceipt);
+export const G_ALT_I3 = r(G.subFv * G_ALT_RATE);
+/** How much lower the shortcut makes year 3's profit: the whole incentive at once, less the extra income it earns back. */
+export const G_ALT_DIFF = G.incentive + G_SUB_I3 - G_ALT_I3;
+export const G_OFF_L0 = r(pvEnd(G.offRate, G.offYears, G.offPayment));
+export const G_OFF_DEP = r(G_OFF_L0 / G.offYears);
+export const G_OFF_ROU1 = G_OFF_L0 - G_OFF_DEP;
+export const G_OFF_I = r(G_OFF_L0 * G.offRate);
+export const G_OFF_L1 = G_OFF_L0 + G_OFF_I - G.offPayment;
+export const G_DT0 = r(G_OFF_L0 * G.tax);
+export const G_DTL1 = r(G_OFF_ROU1 * G.tax);
+export const G_DTA1 = r(G_OFF_L1 * G.tax);
+export const G_DT_NET = G_DTA1 - G_DTL1;
+export const G_SLB_RATE = rateFor(G.proceeds, G.slbYears, G.slbPayment, G.callPrice);
+export const G_SLB_I = r(G.proceeds * G_SLB_RATE);
+export const G_SLB_L1 = G.proceeds + G_SLB_I - G.slbPayment;
+export const G_BLD_DEP = r(G.bookValue / G.bldLife);
+export const G_BLD1 = G.bookValue - G_BLD_DEP;
+export const G_PL = G_SUB_GAIN + G_SUB_I3 + G_DT_NET - G_WH_I3 - G_OFF_DEP - G_OFF_I - G_BLD_DEP - G_SLB_I;
+export const G_ENTRY_SUB: Line[] = [
+  { account: "השקעה נטו בחכירה", dr: G_NI0 },
+  { account: "נכס זכות שימוש: מחסן", cr: G_WH_ROU2 },
+  { account: "מזומן: תמריץ לחוכר המשנה", cr: G.incentive },
+  { account: "רווח מחכירת משנה", cr: G_SUB_GAIN },
+];
+export const G_ENTRY_OFF: Line[] = [
+  { account: "נכס זכות שימוש: משרדים", dr: G_OFF_L0 },
+  { account: "נכס מסים נדחים", dr: G_DT0 },
+  { account: "התחייבות חכירה: משרדים", cr: G_OFF_L0 },
+  { account: "התחייבות מסים נדחים", cr: G_DT0 },
+];
+export const G_ENTRY_SLB: Line[] = [
+  { account: "מזומן", dr: G.proceeds },
+  { account: "התחייבות פיננסית", cr: G.proceeds },
+];
+
 const P_START = r(pvEnd(0.06, 4, 40_000) * 0.06);
 const P_NC = r(pvEnd(0.07, 3, 50_000));
 const P_IDX_OLD = r(pvEnd(0.05, 4, 40_000));
@@ -163,6 +325,17 @@ const P_SLB_ROU = r((400_000 * P_SLB_L) / 700_000);
 const P_SLB_GAIN = 700_000 + P_SLB_ROU - 400_000 - P_SLB_L;
 const P_HALF = r(pvEnd(0.04, 6, 25_000));
 const P_SUB = r(pvEnd(0.07, 4, 81_500));
+const P_INS_L = r(pvEnd(0.06, 3, 30_000));
+const P_INS = P_INS_L - 3_000;
+const P_CAP_PAY = 100_000 * (1 + Math.min(0.045, 0.03));
+const P_CAP = r(pvEnd(0.05, 3, P_CAP_PAY));
+const P_TAX = r((330_000 - 320_000) * 0.25);
+const P_EXIT = 270_000 - (300_000 - 40_000);
+const P_STUB = r(400_000 * 1.06 ** 0.5);
+const P_USD = r(100_000 * (3.7 - 3.5));
+const P_IMP = r((150_000 / 54) * 6);
+const P_LSR_NI = r(pvEnd(0.07, 4, 100_000, 20_000));
+const P_LSR = P_LSR_NI - 330_000 - 5_000;
 
 const SKILL = "שאלת מבחן";
 const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
@@ -181,6 +354,21 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
   askNumber({ id: "x-slb", skill: SKILL, prompt: "ערך נכס בספרים 400,000 ש״ח. הוא נמכר בשוויו ההוגן, 700,000 ש״ח, והשליטה עברה לקונה. המוכר חוכר אותו בחזרה ל-10 שנים, 60,000 ש״ח בסוף כל שנה, בריבית 5%. כמה רווח נרשם?", answer: P_SLB_GAIN, steps: [`התחייבות: =PV(5%;10;-60000) → ${fmt(P_SLB_L)}`, `נכס: 400,000 × ${fmt(P_SLB_L)} ÷ 700,000 = ${fmt(P_SLB_ROU)}`, `700,000 + ${fmt(P_SLB_ROU)} − 400,000 − ${fmt(P_SLB_L)} = ${fmt(P_SLB_GAIN)}`], trap: "לרשום את כל 300,000.", level: 3, source: "מקורית", ref: "סעיף 100" }),
   askNumber({ id: "x-half", skill: SKILL, prompt: "6 תשלומים של 25,000 ש״ח, בסוף כל חצי שנה. הריבית השנתית האפקטיבית 8.16%, ושקולה ל-4% לחצי שנה. מהו הערך הנוכחי?", answer: P_HALF, steps: [`=PV(4%;6;-25000) → ${fmt(P_HALF)}`], trap: "לחלק את הריבית השנתית ב-2.", level: 2, source: "מקורית", ref: "סעיף 26" }),
   ask({ id: "x-land", skill: SKILL, prompt: "חכירת בניין ל-13 שנים, כשלמבנה 15 שנות חיים. הקרקע מהותית, ואין הקצאה מהימנה. המחכיר אינו סוחר. מה נגרע מספריו?", options: ["גם הקרקע וגם המבנה", "רק המבנה", "רק הקרקע", "שום דבר"], answer: 0, why: "כשאין הקצאה, והמרכיבים לא ברור שתפעוליים, הכול מימונית (סעיף ב56).", trap: "להפריד בכל זאת.", level: 3, source: "מקורית", ref: "סעיף ב56" }),
+  ask({ id: "x-swap-late", skill: SKILL, prompt: "ספק מעמיד ללקוח מכונת אריזה ל-6 שנים. לפי החוזה, רק מתחילת השנה הרביעית הוא רשאי להחליף אותה במכונה אחרת, וההחלפה תחסוך לו עלויות. הלקוח מחליט מתי ומה לארוז. האם יש נכס מזוהה?", options: ["כן. בשלוש השנים הראשונות אין לספק זכות להחליף, ולכן זכות ההחלפה אינה ממשית", "לא. לספק יש זכות החלפה, והוא מרוויח ממנה", "לא, אבל רק בשלוש השנים האחרונות", "אין מספיק נתונים לדעת"], answer: 0, why: "זכות החלפה ממשית רק אם לספק יש יכולת מעשית להחליף לאורך כל תקופת השימוש, וגם תועלת כלכלית מההחלפה (ב14). כאן בחצי מהתקופה אין לו זכות כזו בכלל, ולכן המכונה מזוהה, והלקוח מכוון את השימוש: יש חכירה.", trap: "לראות שהספק מרוויח מההחלפה ולעצור שם. שני התנאים צריכים להתקיים לאורך כל התקופה.", level: 2, source: "מקורית", ref: "סעיף ב14" }),
+  ask({ id: "x-consent", skill: SKILL, prompt: "חוזה שכירות של אולם ל-5 שנים. בסופו השוכר רשאי להאריך ב-3 שנים בדמי שכירות נמוכים בהרבה ממחיר השוק, אבל רק אם המשכיר יסכים להארכה כשיגיע המועד. מהי תקופת החכירה?", options: ["5 שנים", "8 שנים, כי המחיר הנמוך הוא תמריץ ברור להאריך", "8 שנים, אם השוכר מעריך שהמשכיר יסכים", "4 שנים, כי למשכיר יש זכות לסרב"], answer: 0, why: "תקופת החכירה כוללת הארכה רק כשזו אופציה של החוכר, שהוא ודאי באופן סביר שיממש (סעיף 18). כאן בלי הסכמת המשכיר אין לשוכר זכות להאריך, ובשנים שאחרי 5 החוזה כבר אינו אכיף (ב34). התקן לא מזכיר הסכמה במילים, וזו הקריאה של סעיפים 18 ו-ב34 יחד.", trap: "לספור את 3 השנים בגלל המחיר הנמוך. מחיר נמוך הוא סימן רק כשההחלטה בידי החוכר לבדו.", level: 2, source: "מקורית", ref: "סעיפים 18, ב34" }),
+  ask({ id: "x-fees", skill: SKILL, prompt: "שכירות משרד: 20,000 ש״ח בחודש. בחשבונית מופיעים 1,500 ש״ח ״דמי ביטוח״, שבהם המשכיר מממן את ביטוח המבנה שלו, ו-2,500 ש״ח ״דמי ניהול״, שמממנים ניקיון ושמירה של הלובי והחניון. השוכר לא בחר בהקלה של סעיף 15. מה מהם הוא רכיב נפרד שאינו חכירה?", options: ["רק דמי הניהול", "שני הסכומים", "רק דמי הביטוח", "אף אחד מהם, הכול שכירות"], answer: 0, why: "ביטוח המבנה הוא עלות של המשכיר, והשוכר לא מקבל ממנו שום שירות, ולכן הוא לא רכיב בפני עצמו. הוא חלק מהתמורה שמחלקים בין הרכיבים (ב33). ניקיון ושמירה הם שירות שהשוכר מקבל, ולכן רכיב שאינו חכירה (סעיף 12), גם אם קוראים לו דמי ניהול.", trap: "ללכת לפי השם בחשבונית. שואלים מה השוכר מקבל בפועל תמורת הכסף.", level: 2, source: "מקורית", ref: "סעיפים 12, ב33" }),
+  askNumber({ id: "x-insure", skill: SKILL, prompt: "ב-1.1 חברה חכרה רכב ל-3 שנים, 30,000 ש״ח בסוף כל שנה, בריבית 6%. במועד התחילה המחכיר נתן לה בחינם פוליסת ביטוח חובה לשנה הראשונה, ששוויה 3,000 ש״ח. ביטוח החובה הוא חובה של החוכר. מהי עלות נכס זכות השימוש?", answer: P_INS, steps: [`התחייבות: =PV(6%;3;-30000) → ${fmt(P_INS_L)}`, "המחכיר שילם עלות של החוכר, ולכן זה תמריץ, והוא מקטין את עלות הנכס", `${fmt(P_INS_L)} − 3,000 = ${fmt(P_INS)}. הפוליסה נרשמת כהוצאה מראש של 3,000 ש״ח, והופכת להוצאות ביטוח במשך השנה`], trap: "להתעלם מהפוליסה, כי לא עבר כסף. תמריץ יכול להיות גם תשלום של עלות במקום החוכר.", level: 2, source: "הרצאה", ref: "נספח א׳, סעיף 24" }),
+  askNumber({ id: "x-improve", skill: SKILL, prompt: "ב-1.1 חברה חכרה חנות ל-5 שנים, בלי אופציות. היא שיפצה אותה על חשבונה ב-150,000 ש״ח, והחנות המשופצת מוכנה לשימוש ב-1.7. אורך החיים של השיפוץ 10 שנים. מהו הפחת של השיפור בשנה הראשונה?", answer: P_IMP, steps: ["השיפור הוא רכוש קבוע, והפחת מתחיל כשהוא מוכן לשימוש (IAS 16 סעיף 55)", "מפחיתים על פני הקצר מבין 10 שנות החיים ו-4.5 השנים שנשארו לחכירה (IAS 16 סעיף 56(ד))", `150,000 ÷ 54 × 6 = ${fmt(P_IMP)}`], trap: "להפחית על פני 10 שנים, או מ-1.1. אחרי החכירה השיפור נשאר אצל המחכיר.", level: 2, source: "הרצאה", ref: "IAS 16 סעיפים 55, 56(ד)" }),
+  askNumber({ id: "x-stub", skill: SKILL, prompt: "ב-31.12, אחרי התשלום, יתרת התחייבות החכירה 400,000 ש״ח, בריבית שנתית של 6%, והתשלומים בסוף כל שנה. ב-1.7 הצדדים תיקנו את החוזה. ריבית לחלק משנה מחושבת בריבית דריבית. מהי יתרת ההתחייבות ב-1.7, רגע לפני המדידה מחדש?", answer: P_STUB, steps: ["מגלגלים את היתרה ליום התיקון, חצי שנה, בריבית של חצי שנה", `400,000 × 1.06^(6/12) = ${fmt(P_STUB)}`, `ב-Excel: =400000*(1+6%)^(6/12)`], trap: "לקחת 3%, כלומר 412,000. זו ריבית פשוטה, שיש שאלות שמבקשות אותה במפורש, וכאן לא.", level: 2, source: "מקורית", ref: "סעיף 45" }),
+  askNumber({ id: "x-usd", skill: SKILL, prompt: "ב-1.1 חוכר הכיר בהתחייבות של 100,000 דולר, בריבית 4% לדולר. השער ב-1.1 היה 3.50 ש״ח לדולר, וב-31.12 3.70 ש״ח. ב-31.12 נרשמה הריבית, בשער של יום זה, ושולמו 30,000 דולר. כמה הפרשי שער נרשמים בשנה?", answer: P_USD, steps: ["ההתחייבות היא פריט כספי, ולכן מתורגמת בשער הסגירה (IAS 21 סעיף 23(א))", "הריבית והתשלום נרשמו בשער של 31.12, ולכן רק היתרה של 1.1 עברה משער לשער", `100,000 × (3.70 − 3.50) = ${fmt(P_USD)}, הוצאה ברווח או הפסד`], trap: "לתרגם גם את הנכס. זכות השימוש אינה פריט כספי, ונשארת בשער של יום התחילה (סעיף 23(ב)).", level: 2, source: "מקורית", ref: "IAS 21 סעיף 23" }),
+  ask({ id: "x-later", skill: SKILL, prompt: "ב-1.10 של שנה 1 חוכר ומחכיר הסכימו שהמחכיר יעמיד לחוכר מחסן נוסף מ-1.3 של שנה 2, ל-4 שנים, במחיר שוק למחסן כזה. מה נרשם בשנה 1?", options: ["שום דבר. זו חכירה נפרדת, והיא תוכר במועד התחילה שלה, 1.3 של שנה 2", "נכס והתחייבות ב-1.10, ביום ההסכמה", "מדידה מחדש של החכירה הקיימת ב-1.10, בריבית מעודכנת", "התחייבות בלבד ב-1.10, ונכס ב-1.3"], answer: 0, why: "נוסף נכס, והתמורה גדלה במחיר הנפרד שלו, ולכן זו חכירה נפרדת (סעיף 44). חכירה מוכרת במועד התחילה, כשהנכס עומד לרשות החוכר (סעיף 22). רק תיקון שאינו חכירה נפרדת מטופל ביום ההסכמה (סעיף 45).", trap: "לרשום ביום החתימה. יום ההסכמה קובע רק כשמשנים את החוזה הקיים.", level: 2, source: "מקורית", ref: "סעיפים 22, 44, 45" }),
+  ask({ id: "x-sameday", skill: SKILL, prompt: "ב-31.12 קרו שני דברים: החוכר כבר לא ודאי שיממש אופציית הארכה שנכללה בתקופה, והצדדים גם הסכימו לקצר בשנה את התקופה שאי אפשר לבטל ולהוריד את דמי השכירות. איך מטפלים?", options: ["קודם הערכה מחדש של התקופה, בריבית מעודכנת, כנגד הנכס. אחר כך התיקון: גריעה עם רווח או הפסד על השנה שההסכם קיצר, ומדידה מחדש", "תיקון אחד: גריעה עם רווח או הפסד על כל השנים שירדו", "הערכה מחדש אחת כנגד הנכס, בלי רווח או הפסד", "קודם התיקון, ואחר כך הערכה מחדש בריבית המקורית"], answer: 0, why: "האופציה שיצאה מהתקופה היא הערכה מחדש (סעיפים 20, 40), וההפרש שלה נרשם כנגד הנכס. רק מה שההסכם שינה הוא תיקון, ורק עליו גריעה עם רווח או הפסד (סעיף 46(א)). התקן לא קובע סדר במפורש. זו הדרך שבה פותרים מבחנים, ויש לשאול את המרצה.", trap: "לטפל בכל הקיצור כתיקון. כך רווח או הפסד נרשם גם על שנים שיצאו בגלל הערכה מחדש.", level: 3, source: "מקורית", ref: "סעיפים 40, 46" }),
+  askNumber({ id: "x-cap", skill: SKILL, prompt: "דמי שכירות של 100,000 ש״ח בסוף כל שנה, צמודים למדד, אבל העלייה מוגבלת ל-3% בשנה. ב-31.12, אחרי התשלום, נשארו 3 תשלומים, בריבית 5%. ביום זה התשלומים הבאים מתעדכנים לפי המדד, שעלה ב-4.5%. מהי ההתחייבות אחרי העדכון?", answer: P_CAP, steps: ["התשלום עדיין תלוי במדד, והוא מתעדכן לפי הנמוך מבין עליית המדד לבין התקרה", `100,000 × 1.03 = ${fmt(P_CAP_PAY)}`, `=PV(5%;3;-103000) → ${fmt(P_CAP)}. הריבית נשארת 5% (סעיף 43)`], trap: "לעדכן ב-4.5%, או לחזות עליות של השנים הבאות.", level: 2, source: "מקורית", ref: "סעיפים 27(ב), 28, 42(ב)" }),
+  askNumber({ id: "x-exit", skill: SKILL, prompt: "ב-31.12, אחרי התשלום, התחייבות החכירה 300,000 ש״ח ונכס זכות השימוש 270,000 ש״ח. לחוכר הייתה אופציה לסיים את החכירה בקנס של 40,000 ש״ח, ובתקופה הניחו שלא יממש. ביום זה הוא מימש, שילם את הקנס ועזב. כמה הפסד נרשם?", answer: P_EXIT, steps: ["מימוש אופציה שלא נכללה משנה את התקופה (סעיף 21(א)). ההתחייבות יורדת לקנס, 40,000, והנכס יורד באותו סכום", "300,000 − 40,000 = 260,000. הנכס: 270,000 − 260,000 = 10,000", `לא נשארה תקופה, ולכן מה שנשאר בנכס נמחק: הפסד של ${fmt(P_EXIT)}`], trap: "לרשום רווח של 30,000, ההפרש בין ההתחייבות לנכס, ולשכוח את הקנס.", level: 3, source: "מקורית", ref: "סעיפים 21, 39" }),
+  askNumber({ id: "x-lsr-rate", skill: SKILL, prompt: "מחכיר שאינו סוחר. 4 תקבולים של 100,000 ש״ח בסוף כל שנה, ושייר לא מובטח של 20,000 ש״ח. הריבית הגלומה 7%. ערך הנכס בספרים 330,000 ש״ח, והמחכיר שילם 5,000 ש״ח עלויות ישירות. השווי ההוגן לא נתון, והחכירה מימונית. כמה רווח נרשם במועד התחילה?", answer: P_LSR, steps: ["ההשקעה נטו היא ערך נוכחי בריבית הגלומה של התקבולים ושל השייר", `=PV(7%;4;-100000;-20000) → ${fmt(P_LSR_NI)}`, `${fmt(P_LSR_NI)} − 330,000 − 5,000 = ${fmt(P_LSR)}. לפי הגדרת הריבית הגלומה, זה בדיוק השווי ההוגן פחות הערך בספרים`], trap: "לא להוריד את העלויות הישירות. הריבית הגלומה מחושבת כך שההשקעה נטו כבר כוללת אותן, והמזומן ששולם עליהן יצא.", level: 3, source: "הרצאה", ref: "נספח א׳, סעיפים 67–70" }),
+  ask({ id: "x-expect", skill: SKILL, prompt: "מחכיר בחכירה מימונית. באמצע השנה החוכר מודיע שכבר לא מתכוון לממש אופציית הארכה שנכללה בתקופה. החוזה לא השתנה, והאופציה עוד לא פקעה. מה המחכיר רושם?", options: ["כלום. אין תיקון, ושינוי בהערכה לא משנה את ההשקעה נטו", "הפסד, במדידה מחדש בריבית המקורית", "מדידה מחדש בריבית של היום, כנגד ההכנסות", "סיווג מחדש לתפעולית"], answer: 0, why: "סעיף 20 עוסק בחוכר. סעיף 21 משנה תקופה רק כשהתקופה שאי אפשר לבטל משתנה, וסעיף 66 אומר ששינוי באומדן לא משנה סיווג. ההשקעה נטו משתנה בתיקון (סעיפים 79, 80) או בבדיקת השייר (סעיף 77). בשני מבחני עבר נרשם כאן הפסד, ויש לשאול את המרצה.", trap: "להעתיק מהחוכר. לחוכר יש סעיף 20, ולמחכיר אין.", level: 3, source: "מקורית", ref: "סעיפים 20, 21, 66" }),
+  ask({ id: "x-put", skill: SKILL, prompt: "יצרן מכר ללקוח מכונה ב-500,000 ש״ח. ללקוח זכות למכור אותה בחזרה ליצרן כעבור שנתיים ב-400,000 ש״ח, והשווי הצפוי שלה אז 250,000 ש״ח. איך היצרן מטפל?", options: ["חכירה. ההכנסה היא רק 100,000 ש״ח, לאורך שנתיים, ו-400,000 ש״ח הם התחייבות", "מכירה: הכנסה של 500,000 ש״ח מיד", "מימון: הלוואה של 500,000 ש״ח, עם ריבית", "מכירה עם זכות החזרה: הכנסה של 100,000 ש״ח מיד"], answer: 0, why: "זו אופציית מכר בידי הלקוח, במחיר נמוך ממחיר המכירה. מחיר ההחזרה גבוה בהרבה מהשווי הצפוי, ולכן ללקוח יש תמריץ כלכלי משמעותי לממש (IFRS 15 סעיפים ב70, ב71). אז זו חכירה, והיצרן הוא המחכיר. מה שהלקוח יקבל בחזרה אינו הכנסה.", trap: "לבחור במימון. מימון הוא כשמחיר ההחזרה לפחות כמחיר המכירה, וגבוה מהשווי הצפוי (ב73).", level: 3, source: "מקורית", ref: "IFRS 15 סעיפים ב70–ב73" }),
+  askNumber({ id: "x-tax", skill: SKILL, prompt: "ב-1.1 חברה הכירה בהתחייבות חכירה ובנכס זכות שימוש של 400,000 ש״ח כל אחד. לצורכי מס התשלומים מותרים בניכוי כשהם משולמים, ושיעור המס 25%. ב-31.12, אחרי התשלום, הנכס 320,000 ש״ח וההתחייבות 330,000 ש״ח. מהי יתרת נכס המסים הנדחים נטו ב-31.12?", answer: P_TAX, steps: ["לנכס ולהתחייבות אין בסיס מס. ב-1.1 נוצרו הפרש חייב במס והפרש מותר בניכוי, שווים, ולכן פטור ההכרה לראשונה לא חל (IAS 12 סעיפים 15(ב)(iii), 22א): נכס מסים נדחים 100,000 והתחייבות 100,000", "ב-31.12: נכס 330,000 × 25% = 82,500, התחייבות 320,000 × 25% = 80,000", `נטו: ${fmt(P_TAX)} נכס, אם מתקיימים תנאי הקיזוז`], trap: "לא לרשום מס נדחה בגלל פטור ההכרה לראשונה. בחכירה ההפרשים שווים, ולכן הפטור לא חל.", level: 3, source: "מקורית", ref: "IAS 12 סעיפים 15, 22א" }),
   ask({ id: "x-ip", skill: SKILL, prompt: "חברה הפסיקה להשתמש בקומה חכורה, שאפשר להחכיר בנפרד, והחכירה אותה הלאה לזמן קצר. נדל״ן להשקעה נמדד בשווי הוגן. ביום סיום השימוש השווי גבוה מהערך בספרים, ולא הוכרה ירידת ערך קודמת. איפה נרשם ההפרש?", options: ["ברווח כולל אחר", "ברווח או הפסד", "מקטין את ההתחייבות", "לא נרשם"], answer: 0, why: "IAS 40 סעיף 62(ב). אחרי המעבר, שינויי שווי הולכים לרווח או הפסד.", trap: "לבלבל בין יום המעבר לבין מה שאחריו.", level: 3, source: "מקורית", ref: "IAS 40 סעיף 62" }),
   Object.assign(
     journal("x-j1", "פקודת יומן", "חוכר העריך מחדש את הסכום שישלם בגלל ערבות שייר. ההתחייבות גדלה ב-9,000 ש״ח. רשמו את הפקודה.", [{ account: "נכס זכות שימוש", dr: 9_000 }, { account: "התחייבות חכירה", cr: 9_000 }], "ההפרש כנגד הנכס (סעיף 39). מלכודת נפוצה: לרשום הוצאה.", ["נכס זכות שימוש", "התחייבות חכירה", "הוצאות מימון", "מזומן"]),
@@ -245,6 +433,21 @@ export const EXAM_TAUGHT: Record<string, string> = {
   "x-half": "ls-spc-rates",
   "x-land": "ls-spc-whole",
   "x-ip": "ls-spc-ip",
+  "x-swap-late": "ls-what-swap",
+  "x-consent": "ls-term-consent",
+  "x-fees": "ls-term-fees",
+  "x-insure": "ls-term-fees",
+  "x-improve": "ls-sub-improve",
+  "x-stub": "ls-chg-stub",
+  "x-usd": "ls-chg-usd",
+  "x-later": "ls-chg-mod",
+  "x-sameday": "ls-chg-sameday",
+  "x-cap": "ls-chg-index",
+  "x-exit": "ls-chg-exit",
+  "x-lsr-rate": "ls-lsr-rate",
+  "x-expect": "ls-lmd-expect",
+  "x-put": "ls-spc-ifrs15",
+  "x-tax": "ls-spc-tax",
   "x-j1": "ls-chg-asset",
   "x-j2": "ls-lsr-resid",
   "x-who-rate": "ls-lmd-sides",
@@ -259,7 +462,7 @@ export const EXAM: StudyModule = {
   course: COURSE,
   n: 9,
   title: "מבחני סיכום ומפת התקן",
-  description: "ארבע שאלות ארוכות ברמת מועצה, בלי רמז לנושא, עם פתרון מלא. לפניהן מפה של כל התקן והנקודות הקשות, ואחריהן תרגול מעורב.",
+  description: "שבע שאלות ארוכות ברמת מועצה, בלי רמז לנושא, עם פתרון מלא. לפניהן מפה של כל התקן והנקודות הקשות, ואחריהן תרגול מעורב.",
   goal: "לזהות לבד מה השאלה דורשת, ולפתור שאלה ארוכה ברמת מבחן, עד הדוחות הכספיים.",
   outcomes: [
     "לנווט בכל התקן לפי שאלה אחת: מה לפניי",
@@ -267,6 +470,9 @@ export const EXAM: StudyModule = {
     "לפתור שאלה עם ערבות, תשלום חצי שנתי ומעבר לנדל״ן להשקעה",
     "לפתור חוזה אחד בשני הספרים, ולהסביר למה התוצאות שונות",
     "לחבר מכירה וחכירה בחזרה, תשלום מראש ותיקון שמקטין היקף",
+    "לפתור חוכר עם שיפורים במושכר, תיקון באמצע שנה וחכירה צמודה לדולר",
+    "לפתור מחכיר עם רכיב שירות, ריבית בלי שווי הוגן, ותיקון שהופך את החכירה לתפעולית",
+    "לחבר חכירת משנה עם תמריץ, מס נדחה, חכירה שעוד לא התחילה ומכירה עם זכות לקנות בחזרה",
   ],
   backHref: COURSE_HREF,
   screens: [
@@ -277,6 +483,9 @@ export const EXAM: StudyModule = {
     { id: "ls-exm-b", title: "מבחן 2: שתי קומות ותוכנית התייעלות" },
     { id: "ls-exm-c", title: "מבחן 3: צי רכב" },
     { id: "ls-exm-d", title: "מבחן 4: מטה שנמכר" },
+    { id: "ls-exm-e", title: "מבחן 5: חנות משופצת ומכונה בדולרים" },
+    { id: "ls-exm-f", title: "מבחן 6: קו ייצור עם תחזוקה" },
+    { id: "ls-exm-g", title: "מבחן 7: מחסן, משרדים ומטה ישן" },
     { id: "ls-exm-drill", title: "מתרגלים בלי לדעת על מה" },
   ],
   exercises,
@@ -291,6 +500,8 @@ export const EXAM: StudyModule = {
     "החוכר רואה רק את מה שצפוי לשלם בערבות. המחכיר רואה הכול.",
     "שייר לא מובטח אצל סוחר: יורד גם ממכירות וגם מעלות המכר.",
     "חכירת משנה: מול זכות השימוש.",
-    "מכירה וחכירה בחזרה: רווח רק על החלק שעבר.",
+    "מכירה וחכירה בחזרה: רווח רק על החלק שעבר. אם המוכר יכול לקנות בחזרה, אין מכירה בכלל.",
+    "תיקון באמצע שנה: קודם מגלגלים את ההתחייבות ליום התיקון, ורק אחר כך מודדים מחדש.",
+    "חכירה בדולר: ההתחייבות בשער של היום, הנכס בשער של יום התחילה.",
   ],
 };

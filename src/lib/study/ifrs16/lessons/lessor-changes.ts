@@ -108,6 +108,52 @@ export const SUB_LOSS = REST_NI - SUB_NI;
 export const SUB_INT = r(SUB_NI * REST.marketRate);
 export const SUB_CLOSE = SUB_NI + SUB_INT - REST.newPayment;
 
+/**
+ * A tour boat let for six years with three more the lessee was reasonably certain to take.
+ * At the end of year 2 the lessor no longer expects the extension; nothing was agreed and
+ * nothing exercised. By the standard nothing is booked; some solutions remeasure at the
+ * original rate, over the six years only, with the boat back at its estimated value then.
+ */
+export const BOAT = { payment: 90_000, base: 6, extra: 3, life: 10, rate: 0.08, residualLate: 40_000, residualEarly: 250_000, done: 2 };
+export const BOAT_TERM = BOAT.base + BOAT.extra;
+export const BOAT_NI = r(pvEnd(BOAT.rate, BOAT_TERM, BOAT.payment, BOAT.residualLate));
+export const BOAT_ROWS = investRows(BOAT_NI, BOAT.rate, BOAT.payment, BOAT_TERM, BOAT.residualLate);
+/** The net investment at the end of year 2, when the view changes. */
+export const BOAT_BEFORE = BOAT_ROWS[BOAT.done - 1].closing;
+/** Year 3 by the standard: the plan goes on. */
+export const BOAT_INT3 = BOAT_ROWS[BOAT.done].income;
+export const BOAT_CLOSE3 = BOAT_ROWS[BOAT.done].closing;
+/** Year 3 the other way: four payments left and the boat back at the end of year 6. */
+export const BOAT_ALT_NI = r(pvEnd(BOAT.rate, BOAT.base - BOAT.done, BOAT.payment, BOAT.residualEarly));
+export const BOAT_ALT_LOSS = BOAT_BEFORE - BOAT_ALT_NI;
+export const BOAT_ALT_INT3 = r(BOAT_ALT_NI * BOAT.rate);
+export const BOAT_ALT_CLOSE3 = BOAT_ALT_NI + BOAT_ALT_INT3 - BOAT.payment;
+
+/**
+ * Operating: a showroom let for six years; after three, the lessee asks to leave a year early
+ * and pays a lump sum for it on the day it is agreed. The lump sum joins the new lease's payments.
+ */
+export const HALL = { rent: 120_000, years: 6, done: 3, left: 2, comp: 60_000 };
+export const HALL_TOTAL = HALL.comp + HALL.rent * HALL.left;
+export const HALL_INCOME = HALL_TOTAL / HALL.left;
+export const HALL_FALL = HALL_INCOME - HALL.rent;
+export const HALL_ROWS = Array.from({ length: HALL.left }, (_, k) => ({ year: HALL.done + 1 + k, cash: HALL.rent, income: HALL_INCOME, opening: HALL.comp - HALL_FALL * k, closing: HALL.comp - HALL_FALL * (k + 1) }));
+/** The cash of the first year after the change: the lump sum and the rent. */
+export const HALL_CASH1 = HALL.comp + HALL.rent;
+/** The common slip: the lump sum taken to income on the day. */
+export const HALL_WRONG = [HALL.comp + HALL.rent, HALL.rent];
+
+/**
+ * Finance, cut short so that it would have been an operating lease, and the lessee pays a lump sum
+ * on the day. The machine comes back at the net investment, and the lump sum is spread over the new lease.
+ */
+export const MILL = { ni: 420_000, comp: 30_000, left: 2, payment: 55_000, lifeLeft: 7 };
+export const MILL_TOTAL = MILL.comp + MILL.payment * MILL.left;
+export const MILL_INCOME = MILL_TOTAL / MILL.left;
+export const MILL_FALL = MILL_INCOME - MILL.payment;
+export const MILL_DEP = MILL.ni / MILL.lifeLeft;
+export const MILL_ROWS = Array.from({ length: MILL.left }, (_, k) => ({ year: k + 1, cash: MILL.payment, income: MILL_INCOME, dep: MILL_DEP, asset: MILL.ni - MILL_DEP * (k + 1), opening: MILL.comp - MILL_FALL * k, closing: MILL.comp - MILL_FALL * (k + 1) }));
+
 /** Payments forgiven. */
 export const WAIVE = { overdue: 25_000, payment: 72_000, left: 3 };
 export const WAIVE_TOTAL = WAIVE.payment * (WAIVE.left - 1);
@@ -183,6 +229,12 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
   askNumber({ id: "ifrs9-gain", skill: "IFRS 9", prompt: "חכירה מימונית. נשארו 4 שנים, 50,000 ש״ח בסוף כל שנה, בריבית גלומה של 6%, ושייר לא מובטח של 8,000 ש״ח. בתיקון התשלום עלה ל-58,000 ש״ח, החכירה נשארת מימונית, והתיקון לא מביא לגריעה. כמה רווח נרשם?", answer: P_G_NEW - P_G_OLD, steps: [`לפני: =PV(6%;4;-50000;-8000) → ${fmt(P_G_OLD)}`, `אחרי: =PV(6%;4;-58000;-8000) → ${fmt(P_G_NEW)}`, `${fmt(P_G_NEW)} − ${fmt(P_G_OLD)} = ${fmt(P_G_NEW - P_G_OLD)}`], trap: "לחשוב שהעלאה נפרסת על פני התקופה. ההפרש נרשם ביום התיקון, והריבית נשארת.", level: 3, source: "מקורית", ref: "סעיף 80(ב), IFRS 9 סעיף 5.4.3" }),
   ask({ id: "ifrs9-sub-what", skill: "IFRS 9", prompt: "תיקון של חכירה מימונית מביא לגריעה של ההשקעה נטו, כי זה שינוי מהותי. איך נמדד הנכס החדש?", options: ["בשווי הוגן, וההפרש ברווח או הפסד", "בערך נוכחי בריבית המקורית", "ביתרה הקודמת, בלי הפרש", "ברווח כולל אחר"], answer: 0, why: "IFRS 9 סעיפים 3.2.12, 5.1.1. מכאן הריבית האפקטיבית היא של הנכס החדש.", trap: "להשתמש בריבית המקורית גם כשהנכס נגרע. היא מיועדת למקרה שבו הנכס נשאר.", level: 2, source: "מקורית", ref: "IFRS 9 סעיפים 3.2.12, 5.1.1" }),
   askNumber({ id: "ifrs9-sub-loss", skill: "IFRS 9", prompt: "השקעה נטו בספרים 230,000 ש״ח. תיקון מהותי מביא לגריעה. בתנאים החדשים: 60,000 ש״ח בסוף כל שנה, 4 שנים, ושייר של 10,000 ש״ח. ריבית השוק היום 10%, והריבית המקורית 7%. כמה הפסד נרשם?", answer: 230_000 - P_SUB_FV, steps: [`שווי הוגן: =PV(10%;4;-60000;-10000) → ${fmt(P_SUB_FV)}`, `230,000 − ${fmt(P_SUB_FV)} = ${fmt(230_000 - P_SUB_FV)}`], trap: "להשתמש ב-7%. עם גריעה הנכס החדש נמדד בשווי הוגן.", level: 3, source: "מקורית", ref: "IFRS 9 סעיפים 3.2.12, 5.1.1" }),
+  ask({ id: "expect-none", skill: "צפי של המחכיר", prompt: "חכירה מימונית. תקופת החכירה כללה הארכה שהחוכר היה ודאי באופן סביר שיממש. השנה המחכיר כבר לא מצפה שהחוכר יאריך. הצדדים לא שינו דבר בחוזה, והאופציה עוד לא הגיעה למועד המימוש. מה רושם המחכיר?", options: ["כלום. ההשקעה נטו ממשיכה לפי התוכנית", "מחשב מחדש את ההשקעה נטו בריבית המקורית, וההפסד ברווח או הפסד", "מסווג מחדש את החכירה", "מטפל בזה כתיקון חכירה לפי סעיף 80"], answer: 0, why: "סעיף 20 מחייב לבחון מחדש רק את החוכר. סעיף 21 מעדכן תקופה רק כשהתקופה שאינה ניתנת לביטול השתנתה. אין תיקון, כי לא הוסכם כלום, ושינוי אומדן לא משנה סיווג (סעיף 66).", trap: "להעתיק מהחוכר. אצל המחכיר אין סעיף שמעדכן תשלומים לפי שינוי בצפי.", level: 2, source: "מקורית", ref: "סעיפים 20, 21, 66" }),
+  ask({ id: "expect-par", skill: "צפי של המחכיר", prompt: "באיזה מצב סעיף 21 מחייב לעדכן את תקופת החכירה, גם אצל המחכיר?", options: ["החוכר מימש בפועל אופציה שלא נכללה בתקופה, או לא מימש אופציה שנכללה", "המחכיר העריך מחדש את הסיכוי שהחוכר יאריך", "החוכר שיפץ את הנכס, וההארכה נראית סבירה יותר", "ריבית השוק השתנתה"], answer: 0, why: "סעיף 21 עוסק בשינוי בתקופה שאינה ניתנת לביטול: מימוש או אי מימוש בפועל, או אירוע שמחייב או אוסר מבחינה חוזית. הוא חל על הישות, ולכן גם על המחכיר.", trap: "לבלבל בין סעיף 21 לסעיף 20. אירוע בשליטת החוכר שמשנה את הצפי הוא עניין של החוכר בלבד.", level: 3, source: "הרצאה", ref: "סעיפים 20, 21" }),
+  askNumber({ id: "expect-income", skill: "צפי של המחכיר", prompt: "השקעה נטו של 400,000 ש״ח ב-1.1, בריבית גלומה של 7%. ב-1.1 המחכיר הגיע למסקנה שהחוכר כנראה לא יממש הארכה שנכללה בתקופה. לא הוסכם דבר, ואין מימוש. מהן הכנסות המימון של השנה?", answer: 28_000, steps: ["אין רישום בגלל שינוי בצפי, וההשקעה נטו לא משתנה (סעיפים 21, 66)", "400,000 × 7% = 28,000"], trap: "למדוד מחדש את ההשקעה נטו בלי ההארכה, ולחשב ריבית על יתרה קטנה יותר.", level: 2, source: "מקורית", ref: "סעיפים 21, 66, 75" }),
+  askNumber({ id: "cash-op-income", skill: "פיצוי בתיקון", prompt: "חכירה תפעולית של משרדים, בתשלום שווה כל שנה ובלי יתרות של הכנסות מראש או לקבל. ב-1.1 הצדדים הסכימו לקצר אותה, ונשארו 3 שנים בתשלום של 80,000 ש״ח בסוף כל שנה. ביום ההסכמה החוכר גם שילם למחכיר 45,000 ש״ח פיצוי על הקיצור. מהי הכנסת השכירות השנתית מכאן והלאה?", answer: 95_000, steps: ["הפיצוי שולם במסגרת התיקון, ולכן הוא חלק מתשלומי החכירה החדשה (סעיף 87)", "45,000 + 3 × 80,000 = 285,000", "285,000 ÷ 3 = 95,000"], trap: "לרשום את 45,000 כהכנסה ביום התיקון. הם חלק מהתמורה על שלוש השנים שנשארו, ולכן נפרסים עליהן.", level: 2, source: "מקורית", ref: "סעיפים 81, 87" }),
+  askNumber({ id: "cash-op-bal", skill: "פיצוי בתיקון", prompt: "חכירה תפעולית תוקנה ב-1.1, והחוכר שילם ביום התיקון פיצוי של 45,000 ש״ח. נשארו 3 שנים, בתשלום של 80,000 ש״ח בסוף כל שנה, ואין יתרות מהחוזה הישן. מהי יתרת ההכנסות מראש ב-31.12 של השנה הראשונה אחרי התיקון?", answer: 30_000, steps: ["הכנסה שנתית: (45,000 + 3 × 80,000) ÷ 3 = 95,000", "בשנה התקבלו 80,000, כלומר 15,000 פחות מההכנסה", "45,000 − 15,000 = 30,000"], trap: "לחשוב שהיתרה נעלמת בסוף השנה הראשונה. היא יורדת בשווה עד סוף החכירה החדשה.", level: 3, source: "מקורית", ref: "סעיף 87" }),
+  ask({ id: "cash-fin-op", skill: "פיצוי בתיקון", prompt: "חכירה מימונית תוקנה, ואילו התיקון היה בתוקף מההתחלה החכירה הייתה תפעולית. ההשקעה נטו מיד לפני התיקון 300,000 ש״ח, וביום התיקון החוכר שילם פיצוי של 20,000 ש״ח. מה נרשם ברווח או הפסד ביום התיקון?", options: ["כלום. הנכס חוזר ב-300,000, והפיצוי נרשם כהכנסות מראש ונפרס על החכירה החדשה", "רווח של 20,000 ש״ח", "הפסד של 20,000 ש״ח", "רווח של 20,000 ש״ח, והנכס חוזר ב-280,000"], answer: 0, why: "סעיף 80(א): חכירה חדשה מיום התיקון, והנכס חוזר לפי ההשקעה נטו. הפיצוי הוא תשלום של החכירה החדשה, ולכן נכנס להכנסה בקו ישר לאורכה (סעיף 81).", trap: "להקטין בפיצוי את ערך הנכס, או לרשום אותו מיד כרווח.", level: 2, source: "מקורית", ref: "סעיפים 80(א), 81" }),
   askNumber({ id: "waiver-due", skill: "ויתור", prompt: "מחכיר ויתר לחוכר על תשלום של 18,000 ש״ח שמועד פירעונו כבר עבר. מה ההפסד שנרשם מיד?", answer: 18_000, steps: ["תשלום שהגיע מועדו הוא נכס פיננסי. גורעים אותו כנגד רווח או הפסד: 18,000"], trap: "לפרוס את הוויתור על יתרת החכירה. פריסה היא רק לתשלומים שעוד לא הגיע מועדם.", level: 1, source: "מקורית", ref: "IFRS 9 סעיף 2.1(ב)(i)" }),
   askNumber({ id: "waiver-future", skill: "ויתור", prompt: "חכירה תפעולית. נשארו 3 שנים, 60,000 ש״ח בסוף כל שנה. המחכיר ויתר על התשלום של השנה הקרובה, ועל השנתיים האחרות לא. אין יתרות של הכנסות מראש או לקבל. מהי ההכנסה השנתית מכאן והלאה?", answer: 40_000, steps: ["ויתור על תשלום עתידי הוא תיקון, ולכן חכירה חדשה (סעיף 87)", "נשארו תשלומים של 60,000 × 2 = 120,000", "120,000 ÷ 3 = 40,000"], trap: "לרשום אפס הכנסה בשנה שבה לא משלמים. ההכנסה בקו ישר, גם בשנה בלי תקבול.", level: 2, source: "מקורית", ref: "סעיף 87" }),
   ask({ id: "sides-rate", skill: "השוואה", prompt: "תיקון אחד בשני הצדדים: התשלום ירד, התקופה לא השתנתה, והחכירה מימונית אצל המחכיר. הריבית הגלומה ביום התיקון ניתנת לקביעה, ושונה מהמקורית. באיזו ריבית כל צד מודד?", options: ["חוכר: בריבית המעודכנת. מחכיר: בריבית המקורית", "שניהם: בריבית המעודכנת", "שניהם: בריבית המקורית", "חוכר: בריבית המקורית. מחכיר: בריבית המעודכנת"], answer: 0, why: "החוכר לפי סעיף 45(ג). המחכיר לפי סעיף 80(ב), שמפנה ל-IFRS 9 (סעיף 5.4.3).", trap: "להניח שהצדדים מראה זה של זה. במודל התיקונים הם שונים.", level: 3, source: "מקורית", ref: "סעיפים 45(ג), 80(ב), IFRS 9 סעיף 5.4.3" }),
@@ -247,6 +299,12 @@ export const LESSOR_CHANGES_TAUGHT: Record<string, string> = {
   "ifrs9-gain": "ls-lmd-ifrs9",
   "ifrs9-sub-what": "ls-lmd-ifrs9-new",
   "ifrs9-sub-loss": "ls-lmd-ifrs9-new",
+  "expect-none": "ls-lmd-expect",
+  "expect-par": "ls-lmd-expect",
+  "expect-income": "ls-lmd-expect",
+  "cash-op-income": "ls-lmd-cash",
+  "cash-op-bal": "ls-lmd-cash",
+  "cash-fin-op": "ls-lmd-cash",
   "waiver-due": "ls-lmd-waiver",
   "waiver-future": "ls-lmd-waiver",
   "sides-rate": "ls-lmd-sides",
@@ -271,6 +329,8 @@ export const LESSOR_CHANGES: StudyModule = {
     "להחזיר נכס לספרים לפי ההשקעה נטו, כשהחכירה הייתה תפעולית",
     "לחשב מחדש השקעה נטו בריבית המקורית, ולרשום רווח או הפסד",
     "להבדיל בין ויתור על תשלום שמועדו עבר לבין ויתור על תשלום עתידי",
+    "לפרוס פיצוי שהחוכר משלם ביום התיקון על החכירה החדשה",
+    "לזהות שינוי בצפי של המחכיר שאינו מחייב רישום",
   ],
   backHref: COURSE_HREF,
   screens: [
@@ -281,9 +341,11 @@ export const LESSOR_CHANGES: StudyModule = {
     { id: "ls-lmd-tofin", title: "תפעולית שהופכת למימונית" },
     { id: "ls-lmd-sep", title: "מימונית: חכירה נפרדת" },
     { id: "ls-lmd-would", title: "מימונית: הייתה תפעולית" },
+    { id: "ls-lmd-cash", title: "פיצוי שמשולם ביום התיקון" },
     { id: "ls-lmd-ifrs9", title: "מימונית: נשארת מימונית" },
     { id: "ls-lmd-ifrs9-new", title: "מימונית: תיקון מהותי שמביא לגריעה" },
     { id: "ls-lmd-sides", title: "חוכר מול מחכיר" },
+    { id: "ls-lmd-expect", title: "כשהמחכיר כבר לא מצפה להארכה" },
     { id: "ls-lmd-waiver", title: "ויתור על תשלומים" },
     { id: "ls-lmd-drill", title: "מתרגלים: מספרים חדשים בכל פעם" },
     { id: "ls-lmd-mistake", title: "מצאו את הטעות" },
@@ -300,7 +362,9 @@ export const LESSOR_CHANGES: StudyModule = {
     "הייתה תפעולית: הנכס חוזר לפי ההשקעה נטו, בלי רווח או הפסד.",
     "הייתה מימונית: מחשבים מחדש בריבית המקורית, כולל השייר, וההפרש ברווח או הפסד.",
     "תיקון מהותי שמביא לגריעה: נכס חדש בשווי הוגן, וההפרש ברווח או הפסד.",
+    "פיצוי שהחוכר משלם ביום התיקון: חלק מתשלומי החכירה החדשה, ונפרס עליה. לא הכנסה מיידית.",
     "החוכר עובר לריבית מעודכנת. המחכיר, במסלול של IFRS 9, נשאר בריבית המקורית.",
+    "המחכיר כבר לא מצפה להארכה, ולא הוסכם כלום: לפי התקן אין רישום.",
     "ויתור: מה שמועדו עבר הוא הפסד מיידי. מה שעוד לא הגיע הוא תיקון.",
   ],
 };

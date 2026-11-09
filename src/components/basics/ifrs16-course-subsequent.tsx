@@ -1,9 +1,9 @@
 import { Banknote, ListChecks, PiggyBank, Printer, Scale, Search, ShieldCheck, Store, Truck } from "lucide-react";
-import { Part, Remember } from "@/components/study-mode/screen-parts";
+import { Deeper, Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { JournalEntry } from "@/components/study/blocks";
 import { pvEnd } from "@/lib/learn/ifrs16";
-import { CASH_ITEMS, CASH_OPTIONS, DEP_CASES, FILL_TASK, KIOSK, KIOSK_ACCRUED, KIOSK_EXPENSE, KIOSK_PAID, KIOSK_PER_MONTH, KIOSK_TOTAL, LAPTOP, LAPTOP_FULL, LOW_ITEMS, LOW_OPTIONS, MASTER, MASTER_EXP_FORKLIFT, MASTER_EXP_LINES, MASTER_EXP_SHARES, MASTER_EXP_VAN, MASTER_EXP_YEARLY, MASTER_FORKLIFT, MASTER_LINES, MASTER_SHARES, MASTER_TOTAL, MASTER_VAN, MASTER_YEARLY, SHORT_ITEMS, SHORT_OPTIONS, TRUCK, TRUCK_END, TRUCK_START, WORK, WORK_S, WORK_SECTIONS, WORK_VARIABLE } from "@/lib/study/ifrs16/lessons/subsequent";
+import { CASH_ITEMS, CASH_OPTIONS, DEP_CASES, FILL_TASK, IMPROVE, IMPROVE_DEP1, IMPROVE_FIRST_MONTHS, IMPROVE_L, IMPROVE_LIABILITY, IMPROVE_MONTHS, IMPROVE_MONTHS_LEFT, IMPROVE_PL1, IMPROVE_WRONG_PL1, IMPROVE_WRONG_ROU_DEP, IMPROVE_WRONG_WORKS_DEP, KIOSK, KIOSK_ACCRUED, KIOSK_EXPENSE, KIOSK_PAID, KIOSK_PER_MONTH, KIOSK_TOTAL, LAPTOP, LAPTOP_FULL, LOW_ITEMS, LOW_OPTIONS, MASTER, MASTER_EXP_FORKLIFT, MASTER_EXP_LINES, MASTER_EXP_SHARES, MASTER_EXP_VAN, MASTER_EXP_YEARLY, MASTER_FORKLIFT, MASTER_LINES, MASTER_SHARES, MASTER_TOTAL, MASTER_VAN, MASTER_YEARLY, SHORT_ITEMS, SHORT_OPTIONS, TRUCK, TRUCK_END, TRUCK_START, WORK, WORK_S, WORK_SECTIONS, WORK_VARIABLE } from "@/lib/study/ifrs16/lessons/subsequent";
 import { INKIND, INKIND_YEARLY } from "@/lib/study/ifrs16/lessons/measure";
 import { Ltr } from "./ias19-formula";
 import { TaskFrame, TaskText } from "./ias19-question";
@@ -389,6 +389,96 @@ export const IFRS16_SUBSEQUENT_SCREENS: Record<string, ScreenContent> = {
         options: ["7,000 ש״ח", "16,000 ש״ח", "9,000 ש״ח", "8,000 ש״ח"],
         answer: 0,
         why: "סעיף 38(ב): רק לפי האירוע של השנה. 700,000 × 0.01 = 7,000.",
+      },
+    ]),
+  },
+  "ls-sub-improve": {
+    lead: "חוכר שבונה בנכס מחיצות, מטבח או מערכת מיזוג משקיע בנכס של עצמו. הוא לא משלם כאן למחכיר על הזכות להשתמש.",
+    body: (
+      <>
+        <P>
+          תשלומי חכירה הם מה שהחוכר משלם למחכיר על הזכות להשתמש בנכס. עבודות שהחוכר מזמין מקבלן כדי להתאים את המקום לצרכיו לא עונות לזה, ולכן הן לא נכנסות להתחייבות ולא לעלות נכס זכות השימוש. הן מטופלות לפי IAS 16 (בדומה ל-ב44, שמדבר על עלויות כאלה לפני מועד התחילה), כרכוש קבוע של החוכר שנקרא <strong>שיפורים במושכר</strong>. אילו חיברנו אותן לנכס זכות השימוש, הן היו מופחתות מהיום הראשון של החכירה, גם בחודשים שבהם עוד בנו אותן.
+        </P>
+        <P>
+          לשיפורים יש לוח זמנים משלהם. הפחת שלהם מתחיל כשהם זמינים לשימוש (IAS 16 סעיף 55), ולא במועד התחילה של החכירה. והחיים שלהם אצל החוכר נגמרים לכל המאוחר כשהנכס חוזר למחכיר, כי הם נשארים בו (IAS 16 סעיף 56(ד)). לכן מפחיתים על פני הקצר מבין אורך החיים שלהם ומה שנשאר מתקופת החכירה ביום שהם מוכנים. זו תקופת החכירה מהשיעור השני, כולל הארכה שוודאי באופן סביר שתמומש. וזה עובד גם בכיוון ההפוך: שיפורים יקרים שיהיו שווים הרבה בסוף התקופה הם לפעמים מה שהופך הארכה לוודאית (ב37(ב)).
+        </P>
+        <P>
+          משרד אדריכלים חכר קומה מ-1.1 ל-{IMPROVE.years} שנים, ב-<M v={IMPROVE.payment} /> בסוף כל שנה, בריבית {pct(IMPROVE.rate)}. מינואר עד מרץ הוא בנה בה חללי עבודה ב-<M v={IMPROVE.works} />, והם מוכנים לשימוש ב-1.{IMPROVE.readyMonth}. בלי קשר לחכירה הם היו מחזיקים {IMPROVE.worksLife} שנים. ב-1.1 המחכיר העביר למשרד <M v={IMPROVE.lessorShare} /> כהשתתפות בעבודות.
+        </P>
+        <P>
+          השיפורים הם נכס של החוכר, וההשתתפות מחזירה לו חלק מעלות שלו. בקורס רואים בה <T16 he="תמריץ חכירה" par="נספח א׳" />, כי ההגדרה כוללת במפורש החזר של עלויות החוכר על ידי המחכיר. התמריץ מקטין את עלות נכס זכות השימוש (סעיף 24(ב)). את השיפורים הוא לא מקטין. שיפוץ שהמחכיר עושה על חשבונו בבניין שלו הוא עניין אחר. הוא לא חוסך לחוכר שום הוצאה, ולכן אינו תמריץ, כמו שראינו בשיעור 3.
+        </P>
+        <p className="text-[15.5px] font-semibold">התחייבות − תמריץ שהתקבל = עלות נכס זכות השימוש</p>
+        <p>
+          <Ltr>{`${n(IMPROVE.payment)} × (1 − 1.05^(−${IMPROVE.years})) ÷ 0.05 = ${n(IMPROVE_LIABILITY)}`}</Ltr>
+        </p>
+        <p>
+          <Ltr>{`${n(IMPROVE_LIABILITY)} − ${n(IMPROVE.lessorShare)} = ${n(IMPROVE_L.cost)}`}</Ltr>
+        </p>
+        <p>
+          באקסל: <Ltr>{`=PV(5%;${IMPROVE.years};-${IMPROVE.payment})-${IMPROVE.lessorShare} → ${n(IMPROVE_L.cost)}`}</Ltr>
+        </p>
+        <P>
+          הנכס מופחת מ-1.1 על פני {IMPROVE.years} שנים, גם בחודשים של העבודות, כי הזכות להשתמש בקומה קיימת מאז: <Ltr>{`${n(IMPROVE_L.cost)} ÷ ${IMPROVE.years} = ${n(IMPROVE_L.rows[0].depreciation)}`}</Ltr>. השיפורים מופחתים רק מ-1.{IMPROVE.readyMonth}. מאז נשארו מהחכירה <Ltr>{`${IMPROVE.years} × 12 − ${IMPROVE.readyMonth - 1} = ${IMPROVE_MONTHS_LEFT}`}</Ltr> חודשים, פחות מ-{IMPROVE.worksLife * 12} חודשי החיים שלהם, ולכן:
+        </P>
+        <p className="text-[15.5px] font-semibold">עלות השיפורים ÷ החודשים שנשארו × החודשים בשנה = פחת השנה</p>
+        <p>
+          <Ltr>{`${n(IMPROVE.works)} ÷ ${IMPROVE_MONTHS} × ${IMPROVE_FIRST_MONTHS} = ${n(IMPROVE_DEP1)}`}</Ltr>
+        </p>
+        <p>
+          באקסל: <Ltr>{`=${IMPROVE.works}/${IMPROVE_MONTHS}*${IMPROVE_FIRST_MONTHS} → ${n(IMPROVE_DEP1)}`}</Ltr>
+        </p>
+        <Tbl
+          head={["שנה 1", "נכס זכות שימוש", "שיפורים במושכר"]}
+          rows={[
+            ["עלות", IMPROVE_L.cost, IMPROVE.works],
+            ["פחת", -IMPROVE_L.rows[0].depreciation, -IMPROVE_DEP1],
+          ]}
+          foot={["יתרה ב-31.12", IMPROVE_L.rows[0].rightOfUse, IMPROVE.works - IMPROVE_DEP1]}
+        />
+        <P>
+          הריבית של השנה היא על כל ההתחייבות, כי התשלום רק בסוף השנה: <Ltr>{`${n(IMPROVE_LIABILITY)} × 5% = ${n(IMPROVE_L.rows[0].interest)}`}</Ltr>. כך נראית השנה בדוח רווח או הפסד:
+        </P>
+        <Tbl
+          head={["רווח או הפסד, שנה 1", "סכום"]}
+          rows={[
+            ["פחת נכס זכות שימוש", IMPROVE_L.rows[0].depreciation],
+            ["פחת שיפורים במושכר", IMPROVE_DEP1],
+            ["הוצאות מימון", IMPROVE_L.rows[0].interest],
+          ]}
+          foot={["סך ההוצאות", IMPROVE_PL1]}
+        />
+        <JournalEntry
+          title="1.1 של שנה 1, מועד התחילה"
+          lines={[
+            { account: "נכס זכות שימוש", dr: IMPROVE_L.cost },
+            { account: "מזומן (מהמחכיר)", dr: IMPROVE.lessorShare },
+            { account: "התחייבות חכירה", cr: IMPROVE_LIABILITY },
+          ]}
+          note={`את העבודות רושמים בנפרד, כשהן מתבצעות: חובה שיפורים במושכר, זכות מזומן או ספקים, ${n(IMPROVE.works)} בסך הכול.`}
+        />
+        <Deeper title="ומה אם מורידים את ההשתתפות מהשיפורים">
+          <p>
+            זו הדרך האחרת שאפשר לפגוש. אז הנכס נשאר ב-{n(IMPROVE_LIABILITY)} ומופחת ב-{n(IMPROVE_WRONG_ROU_DEP)} בשנה, והשיפורים יורדים ל-{n(IMPROVE.works - IMPROVE.lessorShare)} ומופחתים ב-{n(IMPROVE_WRONG_WORKS_DEP)} בשנה הראשונה. סך ההוצאות יוצא {n(IMPROVE_WRONG_PL1)} במקום {n(IMPROVE_PL1)}. בקורס עובדים לפי הגדרת תמריץ החכירה, כי המחכיר החזיר לחוכר עלות שלו.
+          </p>
+          <p>
+            לתקן אין דוגמה על השתתפות של מחכיר בעבודות התאמה. דוגמה כזו הייתה בדוגמה המבארת 13, וה-IASB מחק אותה ב-2020. יש לשאול את המרצה.
+          </p>
+        </Deeper>
+        <Deeper title="אם השיפוץ נרשם בחשבון נכס זכות השימוש">
+          <p>
+            בחלק מפתרונות המרצה, בשיעורי הבית ובמבחנים, עלות השיפוץ נרשמת בחובה לחשבון נכס זכות השימוש ולא לשורה נפרדת. גם שם הפחת של השיפוץ מתחיל רק כשהוא מוכן, על פני השנים שנשארו, והנכס עצמו מופחת מהיום הראשון. אז הסכומים זהים, ורק השורה במאזן שונה. בקורס זו שורה נפרדת, כי לפי סיכום ההרצאה עלויות התאמה של הנכס הן רכוש קבוע ולא תשלומי חכירה.
+          </p>
+        </Deeper>
+        <Remember>שיפורים של החוכר הם רכוש קבוע נפרד. הפחת שלהם מתחיל כשהם מוכנים ונגמר לכל המאוחר בסוף החכירה, ונכס זכות השימוש ממשיך בשלו מהיום הראשון.</Remember>
+      </>
+    ),
+    check: quiz("ls-sub-improve", [
+      {
+        q: "חוכר בנה בנכס שיפורים שיחזיקו 15 שנים. תקופת החכירה 8 שנים, כולל הארכה שוודאי באופן סביר שתמומש, והשיפורים היו מוכנים ביום הראשון. על פני כמה שנים מפחיתים אותם?",
+        options: ["8", "15", "תקופת החוזה בלי ההארכה", "11.5"],
+        answer: 0,
+        why: "הקצר מבין אורך החיים ומה שנשאר מתקופת החכירה (IAS 16 סעיף 56(ד)). תקופת החכירה כוללת את ההארכה הוודאית.",
       },
     ]),
   },

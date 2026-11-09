@@ -251,6 +251,143 @@ export const M_REST_AFTER = r(pvEnd(MASTER.newRate, MASTER.newYears, MASTER.newP
 export const M_REST_CH = M_REST_AFTER - M_REST_L;
 export const M_REST_ASSET = M_REST_A + M_REST_CH;
 
+/** A lease in dollars: payments each 31.12, the debt kept in dollars and shown in shekels at the day's rate, the asset frozen at the first day's rate. */
+export const USD = { payment: 40_000, years: 5, rate: 0.05, open: 3.6, avg: 3.7, close: 3.8 };
+export const USD_L0 = r(pvEnd(USD.rate, USD.years, USD.payment));
+export const USD_L1 = r(pvEnd(USD.rate, USD.years - 1, USD.payment));
+/** The year's dollar interest; it carries the rounding, so the dollar column adds up. */
+export const USD_INT = USD_L1 + USD.payment - USD_L0;
+export const USD_L0_ILS = r(USD_L0 * USD.open);
+export const USD_INT_ILS = r(USD_INT * USD.avg);
+export const USD_PAID_ILS = r(USD.payment * USD.close);
+export const USD_L1_ILS = r(USD_L1 * USD.close);
+/** What is left once the debt is restated at the closing rate: the exchange difference, a loss when the dollar rose. */
+export const USD_FX = USD_L1_ILS - USD_L0_ILS - USD_INT_ILS + USD_PAID_ILS;
+export const USD_DEP = r(USD_L0_ILS / USD.years);
+export const USD_ROU1 = USD_L0_ILS - USD_DEP;
+export const USD_NC_USD = r(pvEnd(USD.rate, USD.years - 2, USD.payment));
+export const USD_NC = r(USD_NC_USD * USD.close);
+export const USD_CUR = USD_L1_ILS - USD_NC;
+export const USD_FIN = USD_INT_ILS + USD_FX;
+/** What the asset would have been, wrongly, at the closing rate. */
+export const USD_ROU_WRONG = r(USD_L0 * USD.close) - USD_DEP;
+
+/** A termination option actually used: the lessee leaves after year 3, pays the penalty, and the asset that is left has no term to run. */
+export const QUIT = { payment: 90_000, years: 8, rate: 0.06, breakYear: 3, penalty: 50_000 };
+export const QUIT_COST = r(pvEnd(QUIT.rate, QUIT.years, QUIT.payment));
+export const QUIT_DEP = r(QUIT_COST / QUIT.years);
+export const QUIT_A = QUIT_COST - QUIT.breakYear * QUIT_DEP;
+export const QUIT_L = r(pvEnd(QUIT.rate, QUIT.years - QUIT.breakYear, QUIT.payment));
+export const QUIT_CHANGE = QUIT.penalty - QUIT_L;
+export const QUIT_LOSS = QUIT_A + QUIT_CHANGE;
+
+/** A purchase option that stops being reasonably certain: the price leaves the debt at today's rate, and depreciation moves to the lease term. */
+export const DROP = { payment: 60_000, years: 5, rate: 0.06, option: 30_000, life: 10, passed: 2, newRate: 0.08 };
+export const DROP_LEFT = DROP.years - DROP.passed;
+export const DROP_COST = r(pvEnd(DROP.rate, DROP.years, DROP.payment, DROP.option));
+export const DROP_DEP = r(DROP_COST / DROP.life);
+export const DROP_A = DROP_COST - DROP.passed * DROP_DEP;
+export const DROP_BEFORE = r(pvEnd(DROP.rate, DROP_LEFT, DROP.payment, DROP.option));
+export const DROP_AFTER = r(pvEnd(DROP.newRate, DROP_LEFT, DROP.payment));
+export const DROP_CHANGE = DROP_AFTER - DROP_BEFORE;
+export const DROP_ASSET = DROP_A + DROP_CHANGE;
+export const DROP_DEP2 = r(DROP_ASSET / DROP_LEFT);
+
+/** A modification between payment dates: payments on each 31.12, and the parties agree on 1.10 of year 3. */
+export const STUB = { payment: 150_000, years: 6, rate: 0.06, passed: 2, months: 9, newPayment: 135_000, extra: 2, newRate: 0.08 };
+export const STUB_COST = r(pvEnd(STUB.rate, STUB.years, STUB.payment));
+export const STUB_DEP = r(STUB_COST / STUB.years);
+export const STUB_LEFT = STUB.years - STUB.passed;
+export const STUB_L0 = r(pvEnd(STUB.rate, STUB_LEFT, STUB.payment));
+export const STUB_A0 = STUB_COST - STUB.passed * STUB_DEP;
+/** The rate for nine months, compounded: (1 + i)^(m/12) − 1. */
+export const STUB_PERIOD = (1 + STUB.rate) ** (STUB.months / 12) - 1;
+export const STUB_INT1 = r(STUB_L0 * STUB_PERIOD);
+export const STUB_L_BEFORE = STUB_L0 + STUB_INT1;
+export const STUB_DEP1 = r((STUB_DEP * STUB.months) / 12);
+export const STUB_A_BEFORE = STUB_A0 - STUB_DEP1;
+/** After the change: the four payments left and two more, the first of them this 31.12, three months away. */
+export const STUB_NEW_N = STUB_LEFT + STUB.extra;
+export const STUB_REST = 12 - STUB.months;
+export const STUB_PV_YEAR = r(pvEnd(STUB.newRate, STUB_NEW_N, STUB.newPayment));
+export const STUB_L_AFTER = r(pvEnd(STUB.newRate, STUB_NEW_N, STUB.newPayment) * (1 + STUB.newRate) ** (STUB.months / 12));
+export const STUB_CHANGE = STUB_L_AFTER - STUB_L_BEFORE;
+export const STUB_A_AFTER = STUB_A_BEFORE + STUB_CHANGE;
+export const STUB_MONTHS_LEFT = STUB_REST + 12 * (STUB_NEW_N - 1);
+export const STUB_DEP2 = r((STUB_A_AFTER * STUB_REST) / STUB_MONTHS_LEFT);
+export const STUB_A_CLOSE = STUB_A_AFTER - STUB_DEP2;
+export const STUB_PERIOD2 = (1 + STUB.newRate) ** (STUB_REST / 12) - 1;
+export const STUB_L_CLOSE = r(pvEnd(STUB.newRate, STUB_NEW_N - 1, STUB.newPayment));
+/** Three months at the new rate; the closing balance is what Excel gives, so this line carries the rounding. */
+export const STUB_INT2 = STUB_L_CLOSE + STUB.newPayment - STUB_L_AFTER;
+export const STUB_INT = STUB_INT1 + STUB_INT2;
+export const STUB_DEP_YEAR = STUB_DEP1 + STUB_DEP2;
+export const STUB_NC = r(pvEnd(STUB.newRate, STUB_NEW_N - 2, STUB.newPayment));
+export const STUB_CUR = STUB_L_CLOSE - STUB_NC;
+/** The same year with simple interest for the part-periods: i × m/12. */
+export const STUB_S_INT1 = r((STUB_L0 * STUB.rate * STUB.months) / 12);
+export const STUB_S_BEFORE = STUB_L0 + STUB_S_INT1;
+export const STUB_S_AFTER = r((STUB.newPayment + STUB_L_CLOSE) / (1 + (STUB.newRate * STUB_REST) / 12));
+export const STUB_S_CHANGE = STUB_S_AFTER - STUB_S_BEFORE;
+export const STUB_S_INT2 = STUB_L_CLOSE + STUB.newPayment - STUB_S_AFTER;
+export const STUB_S_INT = STUB_S_INT1 + STUB_S_INT2;
+/** The remeasurement differs, so the asset and its depreciation differ too. */
+export const STUB_S_A_AFTER = STUB_A_BEFORE + STUB_S_CHANGE;
+export const STUB_S_DEP2 = r((STUB_S_A_AFTER * STUB_REST) / STUB_MONTHS_LEFT);
+export const STUB_S_A_CLOSE = STUB_S_A_AFTER - STUB_S_DEP2;
+export const STUB_EXPENSE = STUB_INT + STUB_DEP_YEAR;
+export const STUB_S_EXPENSE = STUB_S_INT + STUB_DEP1 + STUB_S_DEP2;
+
+/** A reassessment and a modification on one day: an extension stops being certain, and the same day 40% of the space goes back. */
+export const SAME = { payment: 120_000, fixed: 6, option: 4, rate: 0.05, passed: 4, newRate: 0.07, returned: 0.4, newPayment: 75_000 };
+export const SAME_YEARS = SAME.fixed + SAME.option;
+export const SAME_WAS_LEFT = SAME_YEARS - SAME.passed;
+export const SAME_LEFT = SAME.fixed - SAME.passed;
+export const SAME_COST = r(pvEnd(SAME.rate, SAME_YEARS, SAME.payment));
+export const SAME_A0 = r((SAME_COST * SAME_WAS_LEFT) / SAME_YEARS);
+export const SAME_L0 = r(pvEnd(SAME.rate, SAME_WAS_LEFT, SAME.payment));
+/** Step 1, the reassessment: two payments at today's rate, the whole difference against the asset. */
+export const SAME_L1 = r(pvEnd(SAME.newRate, SAME_LEFT, SAME.payment));
+export const SAME_CH1 = SAME_L1 - SAME_L0;
+export const SAME_A1 = SAME_A0 + SAME_CH1;
+/** Step 2, the modification: 40% leaves both balances, then what stays is measured at the new rent. */
+export const SAME_L_OUT = r(SAME_L1 * SAME.returned);
+export const SAME_A_OUT = r(SAME_A1 * SAME.returned);
+export const SAME_GAIN = SAME_L_OUT - SAME_A_OUT;
+export const SAME_KEEP = SAME_L1 - SAME_L_OUT;
+export const SAME_AFTER = r(pvEnd(SAME.newRate, SAME_LEFT, SAME.newPayment));
+export const SAME_REM = SAME_AFTER - SAME_KEEP;
+export const SAME_ASSET = SAME_A1 - SAME_A_OUT + SAME_REM;
+export const SAME_DEP = r(SAME_ASSET / SAME_LEFT);
+/** The one-step reading: everything treated as the modification, on the balances before either change. */
+export const SAME_ONE_KEEP_SHARE = ((1 - SAME.returned) * SAME_LEFT) / SAME_WAS_LEFT;
+export const SAME_ONE_A_OUT = r(SAME_A0 * (1 - SAME_ONE_KEEP_SHARE));
+export const SAME_ONE_KEEP = r(pvEnd(SAME.rate, SAME_LEFT, SAME.payment) * (1 - SAME.returned));
+export const SAME_ONE_L_OUT = SAME_L0 - SAME_ONE_KEEP;
+export const SAME_ONE_GAIN = SAME_ONE_L_OUT - SAME_ONE_A_OUT;
+export const SAME_ONE_REM = SAME_AFTER - SAME_ONE_KEEP;
+export const SAME_ONE_ASSET = SAME_A0 - SAME_ONE_A_OUT + SAME_ONE_REM;
+
+/** An index with a ceiling: the payment follows the index, but by no more than 3% a year. */
+export const CAP = { payment: 80_000, base: 100, index: 105, cap: 0.03, left: 4, rate: 0.05 };
+export const CAP_PAYMENT = r(CAP.payment * Math.min(CAP.index / CAP.base, 1 + CAP.cap));
+export const CAP_CHANGE = r(pvEnd(CAP.rate, CAP.left, CAP_PAYMENT)) - r(pvEnd(CAP.rate, CAP.left, CAP.payment));
+
+/** The practice on the additions, each figure from its own inputs. */
+const Q_STUB_INT = r(400_000 * (1.06 ** (3 / 12) - 1));
+const Q_STUB_NEW = r(pvEnd(0.08, 4, 50_000) * 1.08 ** (3 / 12));
+const Q_USD = { open: 50_000, rate: 0.05, paid: 10_000, s0: 3.5, avg: 3.6, s1: 3.8 };
+const Q_USD_INT = Q_USD.open * Q_USD.rate;
+const Q_USD_CLOSE = Q_USD.open + Q_USD_INT - Q_USD.paid;
+const Q_USD_FX = r(Q_USD_CLOSE * Q_USD.s1 - Q_USD.open * Q_USD.s0 - Q_USD_INT * Q_USD.avg + Q_USD.paid * Q_USD.s1);
+const Q_SAME = { L: 400_000, A: 360_000, L1: 250_000, out: 0.2 };
+const Q_SAME_A1 = Q_SAME.A - (Q_SAME.L - Q_SAME.L1);
+const Q_SAME_GAIN = r(Q_SAME.L1 * Q_SAME.out - Q_SAME_A1 * Q_SAME.out);
+const Q_EXIT = { L: 200_000, A: 170_000, penalty: 40_000 };
+const Q_EXIT_LOSS = Q_EXIT.A - (Q_EXIT.L - Q_EXIT.penalty);
+const Q_DROP = { A: 120_000, before: 100_000, after: 82_000, left: 3, life: 9 };
+const Q_DROP_DEP = r((Q_DROP.A + Q_DROP.after - Q_DROP.before) / Q_DROP.left);
+
 /** What changed, and what to do: the course's walk through paragraphs 39 to 46. */
 export const CHANGE_WALK: Record<string, TestNode | TestEnd> = {
   changed: { q: "הצדדים שינו את תנאי החוזה?", par: "נספח א׳", help: "תיקון הוא שינוי בהיקף או בתמורה, שלא היה חלק מהתנאים המקוריים.", answers: [{ label: "כן, יש תיקון", to: "adds" }, { label: "לא, השתנו אומדן או מדד", to: "what" }] },
@@ -446,8 +583,8 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     prompt: "ב-1.1 הצדדים הסכימו שקומה אחת תוחזר רק בעוד שנה. מתי מטפלים בתיקון?",
     options: ["ב-1.1, במועד שבו הצדדים הסכימו", "בעוד שנה, כשהקומה מוחזרת", "בסוף השנה", "רק אם ההחזרה מיידית"],
     answer: 0,
-    why: "סעיף 45: מודדים מחדש במועד התחילה של התיקון, המועד שבו הצדדים הסכימו (נספח א׳).",
-    trap: "לחכות לביצוע בפועל. ההסכמה קובעת, גם כשההשפעה בעתיד.",
+    why: "החזרת קומה לא מוסיפה נכס, ולכן זה תיקון שאינו חכירה נפרדת. תיקון כזה מטפלים בו במועד התחילה של התיקון, היום שבו הצדדים הסכימו (סעיף 45, נספח א׳).",
+    trap: "לחכות לביצוע בפועל. בתיקון שאינו חכירה נפרדת יום ההסכמה קובע, גם כשההשפעה בעתיד. רק חכירה נפרדת נרשמת ביום שהנכס הנוסף מועמד לרשות החוכר.",
     level: 2,
     source: "מקורית",
     ref: "סעיף 45, נספח א׳",
@@ -528,6 +665,119 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     level: 3,
     source: "מקורית",
     ref: "סעיפים 32, 42(ב), 43",
+  }),
+  askNumber({
+    id: "cap-index",
+    skill: "מדד",
+    prompt: "דמי החכירה צמודים למדד, אבל לפי החוזה הם עולים בשנה ב-3% לכל היותר. התשלום הבסיסי 80,000 ש״ח, ומדד הבסיס 100. ביום שבו התשלום מתעדכן, המדד הוא 105. מהו התשלום החדש?",
+    answer: CAP_PAYMENT,
+    steps: ["התשלום עדיין תלוי במדד, ולכן מעדכנים אותו ביום שבו הוא משתנה (סעיף 42(ב)). לוקחים את הנמוך מבין עליית המדד לבין התקרה.", "עליית המדד: 105 ÷ 100 − 1 = 5%. התקרה: 3%. הנמוך: 3%.", `80,000 × 1.03 = ${fmt(CAP_PAYMENT)}`],
+    trap: "להצמיד במלוא 5%, או להכניס תחזית שהמדד ימשיך לעלות. התקרה חלה ביום העדכון, ומדד עתידי לא מנחשים.",
+    level: 2,
+    source: "מקורית",
+    ref: "סעיפים 27(ב), 28, 42(ב)",
+  }),
+  ask({
+    id: "usd-rou",
+    skill: "מטבע חוץ",
+    prompt: "התשלומים בחכירה נקובים בדולר. ביום תחילת החכירה השער היה 3.6, ובסוף השנה הוא 3.8. באיזה שער מוצג נכס זכות השימוש בסוף השנה?",
+    options: ["3.6, השער של יום תחילת החכירה, ולא מתרגמים אותו מחדש", "3.8, השער של סוף השנה", "הממוצע של השנה", "3.8, וההפרש לרווח או הפסד"],
+    answer: 0,
+    why: "הנכס אינו פריט כספי, ולכן נשאר בשער של יום העסקה (IAS 21, סעיף 23(ב)). רק ההתחייבות, שהיא פריט כספי, מתורגמת לשער הסגירה (סעיף 23(א)).",
+    trap: "לתרגם את הנכס יחד עם ההתחייבות. הפרש השער נוגע לחוב בלבד, והוא הולך לרווח או הפסד.",
+    level: 1,
+    source: "מקורית",
+    ref: "IAS 21, סעיף 23",
+  }),
+  askNumber({
+    id: "usd-fx",
+    skill: "מטבע חוץ",
+    prompt: "ב-1.1 יתרת התחייבות חכירה 50,000 דולר, והשער 3.5 ש״ח לדולר. הריבית על החוב 5% לשנה, בדולרים. ב-31.12 שולם תשלום של 10,000 דולר, בשער 3.8, שהוא גם שער הסגירה. השער הממוצע לשנה 3.6, ובו מתרגמים את הריבית. מהו הפסד הפרשי השער של השנה, בש״ח?",
+    answer: Q_USD_FX,
+    steps: ["מנהלים את החוב בדולרים, ואז מתרגמים כל שורה לפי השער שלה. מה שנשאר כדי להגיע ליתרת הסגירה הוא הפרש השער.", `בדולרים: 50,000 + ${fmt(Q_USD_INT)} − 10,000 = ${fmt(Q_USD_CLOSE)}`, `בש״ח: פתיחה 50,000 × 3.5 = ${fmt(r(Q_USD.open * Q_USD.s0))}. ריבית ${fmt(Q_USD_INT)} × 3.6 = ${fmt(r(Q_USD_INT * Q_USD.avg))}. תשלום 10,000 × 3.8 = ${fmt(r(Q_USD.paid * Q_USD.s1))}. סגירה ${fmt(Q_USD_CLOSE)} × 3.8 = ${fmt(r(Q_USD_CLOSE * Q_USD.s1))}.`, `סגירה − פתיחה − ריבית + תשלום = הפרש שער\n${fmt(r(Q_USD_CLOSE * Q_USD.s1))} − ${fmt(r(Q_USD.open * Q_USD.s0))} − ${fmt(r(Q_USD_INT * Q_USD.avg))} + ${fmt(r(Q_USD.paid * Q_USD.s1))} = ${fmt(Q_USD_FX)}`],
+    trap: "לזקוף את ההפרש לנכס, כמו בשינוי מדד. במטבע חוץ הנכס נשאר בשער הראשון, וההפרש הולך לרווח או הפסד.",
+    level: 3,
+    source: "מקורית",
+    ref: "IAS 21, סעיף 23(א)",
+  }),
+  askNumber({
+    id: "exit-loss",
+    skill: "יציאה מוקדמת",
+    prompt: "לחוכר יש זכות לצאת מהחכירה בקנס של 40,000 ש״ח. ביום החתימה היה ודאי באופן סביר שלא ישתמש בה, ולכן הקנס לא נכלל בהתחייבות. היום, אחרי התשלום השנתי, הוא משתמש בזכות, משלם את הקנס ומפנה את הנכס. יתרת ההתחייבות 200,000 ש״ח, ויתרת הנכס 170,000 ש״ח. כמה הפסד נרשם?",
+    answer: Q_EXIT_LOSS,
+    steps: ["החוכר מימש אופציה שלא הייתה בתקופה, ולכן התקופה מתעדכנת (סעיף 21(א)). מה שנשאר לשלם הוא הקנס בלבד, והוא משולם היום, בלי היוון.", `ההתחייבות יורדת ל-40,000: ירידה של 200,000 − 40,000 = ${fmt(Q_EXIT.L - Q_EXIT.penalty)}, והנכס יורד באותו סכום (סעיף 39).`, `נשאר בנכס: 170,000 − ${fmt(Q_EXIT.L - Q_EXIT.penalty)} = ${fmt(Q_EXIT_LOSS)}. לא נשארה תקופת שימוש, ולכן היתרה נמחקת להפסד.`],
+    trap: "לרשום את כל הקנס כהוצאה, או להשאיר את יתרת הנכס בספרים. הקנס מחליף את החוב, ומה שנשאר בנכס הוא ההפסד.",
+    level: 2,
+    source: "מקורית",
+    ref: "סעיפים 21(א), 39",
+  }),
+  askNumber({
+    id: "buy-drop",
+    skill: "אופציית רכישה",
+    prompt: "עד היום היה ודאי באופן סביר שהחוכר יקנה את המכונה בסוף החכירה, ולכן הפחית אותה על פני אורך החיים. אירוע בשליטתו שינה את זה, וכבר לא ודאי שיקנה. לפני השינוי יתרת הנכס 120,000 ש״ח ויתרת ההתחייבות 100,000 ש״ח. בלי מחיר האופציה, בריבית של היום, ההתחייבות 82,000 ש״ח. נשארו 3 שנות חכירה ו-9 שנות חיים. מהו הפחת השנתי מעכשיו?",
+    answer: Q_DROP_DEP,
+    steps: ["מחיר האופציה יוצא מהחוב, בריבית מעודכנת (סעיף 40(ב)), וההפרש מקטין את הנכס.", `נכס: 120,000 + 82,000 − 100,000 = ${fmt(Q_DROP.A + Q_DROP.after - Q_DROP.before)}`, `המכונה חוזרת למחכיר בסוף, ולכן מפחיתים על פני יתרת התקופה (סעיף 32).\n${fmt(Q_DROP.A + Q_DROP.after - Q_DROP.before)} ÷ 3 = ${fmt(Q_DROP_DEP)}`],
+    trap: "להמשיך להפחית על פני 9 שנות החיים. בלי אופציה ודאית הנכס יוצא מהספרים בסוף החכירה.",
+    level: 2,
+    source: "מקורית",
+    ref: "סעיפים 32, 40(ב)",
+  }),
+  ask({
+    id: "later-separate",
+    skill: "מועד התיקון",
+    prompt: "בנובמבר החוכר חתם על תוספת לחוזה: מכונה נוספת, במחיר הנפרד שלה, שתגיע ותועמד לרשותו במרץ בשנה הבאה. מה נרשם בדוחות של 31.12?",
+    options: ["כלום. זו חכירה נפרדת, והיא נרשמת ביום שהמכונה מועמדת לרשותו", "נכס והתחייבות ביום החתימה בנובמבר", "מדידה מחדש של החוזה הקיים בריבית של נובמבר", "הוצאה על החודשים שעד מרץ"],
+    answer: 0,
+    why: "נוסף נכס במחיר הנפרד שלו, ולכן זו חכירה נפרדת (סעיף 44). חכירה חדשה מכירים במועד התחילה שלה (סעיף 22), כשהמכונה מגיעה.",
+    trap: "להחיל כאן את כלל יום ההסכמה. הוא שייך לתיקון שאינו חכירה נפרדת. חכירה נפרדת מחכה ליום שהנכס מועמד לרשות החוכר.",
+    level: 2,
+    source: "מקורית",
+    ref: "סעיפים 22, 44",
+  }),
+  askNumber({
+    id: "stub-int",
+    skill: "תיקון באמצע שנה",
+    prompt: "התשלומים בחכירה ב-31.12 של כל שנה. אחרי התשלום יתרת ההתחייבות 400,000 ש״ח, בריבית שנתית 6%. ב-1.4 הצדדים מסכימים על תיקון. מהי הריבית מ-1.1 עד 1.4, אם מחשבים בשיעור תקופתי מצטבר?",
+    answer: Q_STUB_INT,
+    steps: ["לפני כל תיקון מגלגלים את החוב ליום התיקון. שלושה חודשים הם רבע שנה, והשיעור שלהם מצטבר.", "שיעור תקופתי: 1.06^(3/12) − 1", `400,000 × (1.06^(3/12) − 1) = ${fmt(Q_STUB_INT)}`, "באקסל: =400000*(1.06^(3/12)-1)"],
+    trap: "לחשב 6% × 3/12 כשהשאלה מבקשת שיעור מצטבר, או להתחיל את המדידה מחדש מהיתרה של 1.1 בלי הריבית של שלושת החודשים.",
+    level: 2,
+    source: "מקורית",
+    ref: "סעיפים 36, 45",
+  }),
+  askNumber({
+    id: "stub-new",
+    skill: "תיקון באמצע שנה",
+    prompt: "ב-1.4 הצדדים תיקנו חכירה, ואחרי התיקון נשארו 4 תשלומים של 50,000 ש״ח, ב-31.12 של כל שנה, הראשון בעוד 9 חודשים. הריבית התוספתית ביום התיקון 8%. מהי ההתחייבות ב-1.4 אחרי המדידה מחדש? חשבו בשיעור תקופתי מצטבר.",
+    answer: Q_STUB_NEW,
+    steps: ["=PV נותן ערך לשנה לפני התשלום הראשון. כאן התשלום הראשון קרוב יותר, בעוד 9 חודשים, ולכן מקדמים את הערך ב-3 חודשים.", `50,000 × (1 − 1.08^(−4)) ÷ 0.08 = ${fmt(r(pvEnd(0.08, 4, 50_000)))}`, `${fmt(r(pvEnd(0.08, 4, 50_000)))} × 1.08^(3/12) = ${fmt(Q_STUB_NEW)}`, "באקסל: =PV(8%;4;-50000)*1.08^(3/12)"],
+    trap: "להשאיר את התוצאה של =PV כמו שהיא. היא מניחה שהתשלום הראשון בעוד שנה שלמה.",
+    level: 3,
+    source: "מקורית",
+    ref: "סעיף 45",
+  }),
+  ask({
+    id: "same-order",
+    skill: "שני שינויים ביום אחד",
+    prompt: "ביום אחד קרו שני דברים. אופציית הארכה שנספרה בתקופה כבר לא ודאית, בעקבות החלטה של החוכר. ובו ביום הצדדים הסכימו להחזיר למחכיר חלק מהשטח. איך עובדים לפי שיטת הקורס?",
+    options: ["קודם הערכה מחדש כנגד הנכס, בלי רווח או הפסד. אחר כך גריעה של השטח שהוחזר לפי היתרות החדשות, ומדידה מחדש", "הכול כתיקון אחד, על היתרות שלפני שני השינויים", "קודם הגריעה, ורק אחר כך ההערכה מחדש", "הכול כהערכה מחדש כנגד הנכס, בלי רווח או הפסד"],
+    answer: 0,
+    why: "יש כאן שתי סיבות, ומטפלים בכל אחת לפי הסעיף שלה. השנים שיצאו בגלל האופציה הן הערכה מחדש (סעיפים 20, 40(א)), והשטח שהוחזר הוא הקטנת היקף בתיקון (סעיף 46(א)). התקן לא קובע סדר, ובקורס עובדים קודם לפי ההערכה מחדש.",
+    trap: "לגרוע את כל השנים שיצאו כחלק מהתיקון. כך יוצא רווח או הפסד גם על שנים שיצאו בלי שום הסכמה.",
+    level: 2,
+    source: "מקורית",
+    ref: "סעיפים 40(א), 46(א)",
+  }),
+  askNumber({
+    id: "same-gain",
+    skill: "שני שינויים ביום אחד",
+    prompt: "יתרת התחייבות חכירה 400,000 ש״ח, ויתרת הנכס 360,000 ש״ח. היום אופציית הארכה שנספרה כבר לא ודאית, בעקבות החלטה של החוכר, ובריבית של היום ההתחייבות יורדת ל-250,000 ש״ח. ובו ביום הצדדים הסכימו שהחוכר מחזיר 20% מהשטח. כמה רווח או הפסד נרשם על ההחזרה, לפי שיטת הקורס? הקלידו את הסכום.",
+    answer: Q_SAME_GAIN,
+    steps: ["קודם ההערכה מחדש, כולה כנגד הנכס.", `נכס: 360,000 − (400,000 − 250,000) = ${fmt(Q_SAME_A1)}`, `אחר כך גריעה של 20% מהיתרות החדשות: ${fmt(Q_SAME.L1 * Q_SAME.out)} מההתחייבות, ${fmt(Q_SAME_A1 * Q_SAME.out)} מהנכס.`, `${fmt(Q_SAME.L1 * Q_SAME.out)} − ${fmt(Q_SAME_A1 * Q_SAME.out)} = ${fmt(Q_SAME_GAIN)}, רווח.`],
+    trap: "לגרוע 20% מהיתרות שלפני ההערכה מחדש. הגריעה נעשית על מה שיש בספרים אחרי שהשנים של האופציה כבר יצאו.",
+    level: 3,
+    source: "מקורית",
+    ref: "סעיפים 40(א), 46(א)",
   }),
   Object.assign(
     journal(
@@ -624,6 +874,16 @@ export const CHANGES_TAUGHT: Record<string, string> = {
   order: "ls-chg-shrink",
   "extend-separate": "ls-chg-extend",
   "dep-old": "ls-chg-asset",
+  "cap-index": "ls-chg-index",
+  "usd-rou": "ls-chg-usd",
+  "usd-fx": "ls-chg-usd",
+  "exit-loss": "ls-chg-exit",
+  "buy-drop": "ls-chg-exit",
+  "later-separate": "ls-chg-mod",
+  "stub-int": "ls-chg-stub",
+  "stub-new": "ls-chg-stub",
+  "same-order": "ls-chg-sameday",
+  "same-gain": "ls-chg-sameday",
 };
 
 /** Lesson 5: the lessee when something changes. Reassessment against modification, and how to carry out each. */
@@ -632,7 +892,7 @@ export const CHANGES: StudyModule = {
   course: COURSE,
   n: 5,
   title: "חוכר: הערכה מחדש ותיקוני חכירה",
-  description: "מדד עולה, אופציה הופכת לוודאית, שטח מצטמצם. מתי הריבית נשארת ומתי מתעדכנת, מתי רושמים רווח, ואיך נראים הנכס וההתחייבות אחרי כל שינוי.",
+  description: "מדד עולה, אופציה הופכת לוודאית, שטח מצטמצם, דולר מתחזק. מתי הריבית נשארת ומתי מתעדכנת, מתי רושמים רווח, ואיך נראים הנכס וההתחייבות אחרי כל שינוי, גם כשהוא קורה באמצע השנה.",
   goal: "להבדיל הערכה מחדש מתיקון חכירה, ולבצע כל אחד מהם עד פקודת היומן והדוחות.",
   outcomes: [
     "להחליט איזו ריבית משמשת בכל שינוי, ולאן הולך ההפרש",
@@ -641,6 +901,9 @@ export const CHANGES: StudyModule = {
     "לחשב פחת על היתרה החדשה, לפי השנים שנשארו",
     "להחליט אם תיקון הוא חכירה נפרדת",
     "לבצע הקטנת היקף בשני שלבים, גם כשמדובר בקיצור תקופה",
+    "לנהל חכירה בדולרים: חוב בשער הסגירה, נכס בשער הראשון, והפרש שער לרווח או הפסד",
+    "לרשום יציאה מוקדמת בקנס, ואופציית רכישה שהפסיקה להיות ודאית",
+    "לטפל בתיקון בין שני מועדי תשלום, ובהערכה מחדש ותיקון שקורים באותו יום",
   ],
   backHref: COURSE_HREF,
   screens: [
@@ -649,13 +912,17 @@ export const CHANGES: StudyModule = {
     { id: "ls-chg-asset", title: "לאן הולך ההפרש, ומה קורה לפחת" },
     { id: "ls-chg-index", title: "מדד: התשלום מתעדכן רק פעם בשנתיים" },
     { id: "ls-chg-guar", title: "ערבות שייר: האומדן השתנה" },
+    { id: "ls-chg-usd", title: "חכירה בדולרים: חוב שזז עם השער" },
     { id: "ls-chg-term", title: "תקופה: החלטה שמשנה את ההערכה" },
     { id: "ls-chg-buy", title: "אופציית רכישה הופכת לוודאית" },
+    { id: "ls-chg-exit", title: "בכיוון ההפוך: יציאה בקנס, ואופציה שנופלת" },
     { id: "ls-chg-mod", title: "תיקון חכירה: שלוש דרכים" },
     { id: "ls-chg-sep", title: "מתי זו חכירה נפרדת" },
     { id: "ls-chg-shrink", title: "הקטנה: קודם גריעה" },
     { id: "ls-chg-cut", title: "קיצור תקופה הוא הקטנה" },
     { id: "ls-chg-extend", title: "הארכה או שינוי מחיר: מדידה מחדש" },
+    { id: "ls-chg-stub", title: "תיקון באמצע השנה" },
+    { id: "ls-chg-sameday", title: "הערכה מחדש ותיקון באותו יום" },
     { id: "ls-chg-shop", title: "דוגמה פתורה: חנות קטנה וגדלה" },
     { id: "ls-chg-store", title: "שאלה שלמה: מדד, אופציה והכנסות" },
     { id: "ls-chg-lab", title: "מעבדה: לפני ואחרי" },
@@ -668,8 +935,13 @@ export const CHANGES: StudyModule = {
   tips: [
     "הערכה מחדש, ריבית ישנה: מדד וערבות שייר. ריבית מעודכנת: תקופה, אופציית רכישה וריבית משתנה.",
     "ההפרש הולך לנכס. אם הנכס התאפס, השאר ברווח או הפסד.",
-    "מטבע חוץ: ריבית ישנה, והפרש לרווח או הפסד.",
-    "מדד: רק ביום שהתשלום החוזי משתנה, ובלי תחזית.",
+    "מטבע חוץ: החוב בדולרים, בשער הסגירה. הנכס נשאר בשער של היום הראשון. הפרש השער לרווח או הפסד.",
+    "מדד: רק ביום שהתשלום החוזי משתנה, ובלי תחזית. עם תקרה לוקחים את הנמוך מבין המדד לתקרה.",
+    "יציאה בקנס שלא נספר: החוב יורד לקנס, הנכס יורד באותו סכום, ומה שנשאר בו הוא הפסד.",
+    "אופציית רכישה שכבר לא ודאית: המחיר יוצא מהחוב בריבית מעודכנת, והפחת עובר ליתרת התקופה.",
+    "תיקון באמצע השנה: מגלגלים ריבית ופחת עד יום התיקון, מודדים מחדש, וממשיכים עד 31.12.",
+    "הערכה מחדש ותיקון באותו יום: קודם ההערכה מחדש, ואז התיקון על היתרות החדשות.",
+    "חכירה נפרדת שמתחילה מאוחר יותר נרשמת רק ביום שהנכס הנוסף מגיע.",
     "פחת אחרי שינוי: היתרה החדשה חלקי השנים שנשארו.",
     "חכירה נפרדת: גם נכס נוסף, וגם מחיר נפרד.",
     "תיקון שאינו נפרד: ריבית מעודכנת במועד שבו הצדדים הסכימו.",

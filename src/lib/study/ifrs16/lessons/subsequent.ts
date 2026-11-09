@@ -50,6 +50,26 @@ export const WORK_S = { cost: workCost, rows: workRows };
 export const WORK_VARIABLE = WORK.copies.map((c) => (c / 1_000) * WORK.perThousand);
 export const WORK_SECTIONS = statementLines(WORK_S.rows, WORK.years, [{ label: "הוצאות חכירה משתנות", values: WORK_VARIABLE }]);
 
+/**
+ * Improvements the lessee builds: an architects' office leased from 1.1 for six years, paid at each
+ * year's end. The fit-out runs January to March and is ready on 1.4; it would last ten years, but the
+ * office goes back to the lessor before that. On 1.1 the lessor paid a share of the fit-out: an incentive.
+ */
+export const IMPROVE = { payment: 60_000, years: 6, rate: 0.05, works: 207_000, worksLife: 10, readyMonth: 4, lessorShare: 30_000 };
+export const IMPROVE_L = shown({ payment: IMPROVE.payment, years: IMPROVE.years, rate: IMPROVE.rate, timing: "end", incentives: IMPROVE.lessorShare });
+export const IMPROVE_LIABILITY = IMPROVE_L.rows[0].opening;
+/** Months from the day the works are ready to the end of the lease, and to the end of their own life. */
+export const IMPROVE_MONTHS_LEFT = IMPROVE.years * 12 - (IMPROVE.readyMonth - 1);
+export const IMPROVE_MONTHS = Math.min(IMPROVE_MONTHS_LEFT, IMPROVE.worksLife * 12);
+export const IMPROVE_PER_MONTH = IMPROVE.works / IMPROVE_MONTHS;
+export const IMPROVE_FIRST_MONTHS = 12 - (IMPROVE.readyMonth - 1);
+export const IMPROVE_DEP1 = IMPROVE_PER_MONTH * IMPROVE_FIRST_MONTHS;
+export const IMPROVE_PL1 = IMPROVE_L.rows[0].depreciation + IMPROVE_DEP1 + IMPROVE_L.rows[0].interest;
+/** The wrong way: the lessor's share taken off the works, and the right-of-use asset left at the full liability. */
+export const IMPROVE_WRONG_ROU_DEP = Math.round(IMPROVE_LIABILITY / IMPROVE.years);
+export const IMPROVE_WRONG_WORKS_DEP = Math.round(((IMPROVE.works - IMPROVE.lessorShare) / IMPROVE_MONTHS) * IMPROVE_FIRST_MONTHS);
+export const IMPROVE_WRONG_PL1 = IMPROVE_WRONG_ROU_DEP + IMPROVE_WRONG_WORKS_DEP + IMPROVE_L.rows[0].interest;
+
 /** The statements to fill in by hand, the first year given. */
 export const FILL = { payment: 40_000, years: 4, rate: 0.05, directCosts: 3_000, life: 8, shown: 3 };
 export const FILL_TASK = statementTask({
@@ -151,6 +171,11 @@ const P_CONTRACT_B = exact({ payment: 32_000, years: 5, rate: 0.05, timing: "end
 const P_OPT = shown({ payment: 55_000, years: 4, rate: 0.06, timing: "end", finalAmount: 8_000, depreciationYears: 7 });
 const P_NOOPT = shown({ payment: 55_000, years: 4, rate: 0.06, timing: "end" });
 const P_JOURNAL = exact({ payment: 25_000, years: 5, rate: 0.06, timing: "end" });
+const P_WORKS = { cost: 126_000, years: 4, readyMonth: 7, life: 8 };
+const P_WORKS_MONTHS = Math.min(P_WORKS.years * 12 - (P_WORKS.readyMonth - 1), P_WORKS.life * 12);
+const P_WORKS_DEP1 = (P_WORKS.cost / P_WORKS_MONTHS) * (12 - (P_WORKS.readyMonth - 1));
+const P_REIMB = { payment: 40_000, years: 5, rate: 0.06, share: 25_000, works: 90_000 };
+const P_REIMB_L = exact({ payment: P_REIMB.payment, years: P_REIMB.years, rate: P_REIMB.rate, timing: "end", incentives: P_REIMB.share });
 
 const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
   askNumber({
@@ -308,6 +333,49 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     level: 2,
     source: "מקורית",
     ref: "סעיף 24(ב), נספח א׳",
+  }),
+  ask({
+    id: "improve-where",
+    skill: "שיפורים במושכר",
+    prompt: "חברה חכרה קומה ריקה, ובנתה בה על חשבונה מחיצות, תקרה אקוסטית ומערכת מיזוג. איך היא מטפלת בעלות העבודות?",
+    options: ["כרכוש קבוע נפרד, שיפורים במושכר, לפי IAS 16", "מוסיפה אותה לעלות נכס זכות השימוש", "מוסיפה אותה לתשלומי החכירה ולהתחייבות", "רושמת אותה כהוצאה ביום שהעבודות הסתיימו"],
+    answer: 0,
+    why: "העבודות לא משולמות למחכיר תמורת הזכות להשתמש בקומה, ולכן הן לא תשלומי חכירה ולא חלק מעלות הנכס. עלויות של החוכר לבנייה או להתאמה של נכס הבסיס מטופלות לפי IAS 16, בדומה ל-ב44. הן רכוש קבוע של החברה, שנקרא שיפורים במושכר.",
+    trap: "לחבר אותן לנכס זכות השימוש, כי הן נמצאות בתוך הנכס החכור. אלה שני נכסים נפרדים, עם עלות ופחת משלהם.",
+    level: 1,
+    source: "הרצאה",
+    ref: "IAS 16, בדומה ל-ב44",
+  }),
+  askNumber({
+    id: "improve-dep",
+    skill: "שיפורים במושכר",
+    prompt: `חברה חכרה חנות מ-1.1 ל-${P_WORKS.years} שנים, בלי אופציות. היא שיפצה אותה על חשבונה ב-${fmt(P_WORKS.cost)} ש״ח, והשיפוץ היה מוכן לשימוש ב-1.${P_WORKS.readyMonth}. אורך החיים של השיפוץ ${P_WORKS.life} שנים, והוא יישאר בחנות כשתחזור למחכיר. הפחת בקו ישר. מהי הוצאת הפחת של השיפוץ בשנה הראשונה?`,
+    answer: P_WORKS_DEP1,
+    steps: [
+      `הפחת מתחיל כשהשיפוץ זמין לשימוש, ב-1.${P_WORKS.readyMonth} (IAS 16 סעיף 55). מפחיתים על פני הקצר מבין אורך החיים ומה שנשאר מתקופת החכירה (IAS 16 סעיף 56(ד)).\nחודשים שנשארו: ${P_WORKS.years} × 12 − ${P_WORKS.readyMonth - 1} = ${P_WORKS_MONTHS}, פחות מ-${P_WORKS.life * 12} חודשי החיים.`,
+      `פחת לחודש = עלות ÷ חודשים\n${fmt(P_WORKS.cost)} ÷ ${P_WORKS_MONTHS} = ${fmt(P_WORKS.cost / P_WORKS_MONTHS)}\nבשנה הראשונה ${12 - (P_WORKS.readyMonth - 1)} חודשים: ${fmt(P_WORKS.cost / P_WORKS_MONTHS)} × ${12 - (P_WORKS.readyMonth - 1)} = ${fmt(P_WORKS_DEP1)}`,
+      `באקסל: =${P_WORKS.cost}/${P_WORKS_MONTHS}*${12 - (P_WORKS.readyMonth - 1)}`,
+    ],
+    trap: `להפחית על פני ${P_WORKS.life} שנים, או מ-1.1. השיפוץ לא ישמש את החברה אחרי סוף החכירה, והוא לא היה מוכן לפני 1.${P_WORKS.readyMonth}.`,
+    level: 2,
+    source: "מקורית",
+    ref: "IAS 16 סעיפים 55, 56(ד)",
+  }),
+  askNumber({
+    id: "improve-rou",
+    skill: "שיפורים במושכר",
+    prompt: `חברה חכרה קומה ל-${P_REIMB.years} שנים, ב-${fmt(P_REIMB.payment)} ש״ח בסוף כל שנה, בריבית 6%. היא תבנה בקומה על חשבונה שיפורים ב-${fmt(P_REIMB.works)} ש״ח, ובמועד התחילה המחכיר העביר לה ${fmt(P_REIMB.share)} ש״ח כהשתתפות בעלות השיפורים. מהי עלות נכס זכות השימוש במועד התחילה?`,
+    answer: r(P_REIMB_L.cost),
+    steps: [
+      `השיפורים הם נכס של החברה, וההשתתפות מחזירה לה חלק מעלות שלה. הגדרת תמריץ חכירה כוללת החזר של עלויות החוכר על ידי המחכיר, ולכן בקורס היא תמריץ. היא מקטינה את עלות נכס זכות השימוש (סעיף 24(ב)), ולא את עלות השיפורים.`,
+      `התחייבות: ${fmt(P_REIMB.payment)} × (1 − 1.06^(−${P_REIMB.years})) ÷ 0.06 = ${fmt(r(P_REIMB_L.rows[0].opening))}`,
+      `עלות הנכס = התחייבות − תמריץ שהתקבל\n${fmt(r(P_REIMB_L.rows[0].opening))} − ${fmt(P_REIMB.share)} = ${fmt(r(P_REIMB_L.cost))}`,
+      `באקסל: =PV(6%;${P_REIMB.years};-${P_REIMB.payment})-${P_REIMB.share}`,
+    ],
+    trap: "לעבוד בדרך האחרת, ולהוריד את ההשתתפות מעלות השיפורים. בקורס רואים בה תמריץ חכירה, כי היא מחזירה לחוכר עלות שלו, ולכן היא מקטינה את נכס זכות השימוש. לתקן אין דוגמה על מקרה כזה, ויש לשאול את המרצה.",
+    level: 3,
+    source: "מקורית",
+    ref: "נספח א׳ (תמריצי חכירה), סעיף 24(ב)",
   }),
   ask({
     id: "short-option",
@@ -494,6 +562,9 @@ export const SUBSEQUENT_TAUGHT: Record<string, string> = {
   "sales-exp": "ls-sub-other",
   "pl-total": "ls-sub-show",
   "in-kind": "ls-sub-other",
+  "improve-where": "ls-sub-improve",
+  "improve-dep": "ls-sub-improve",
+  "improve-rou": "ls-sub-improve",
   "short-option": "ls-sub-short",
   "short-class": "ls-sub-short",
   "low-car": "ls-sub-low",
@@ -525,6 +596,7 @@ export const SUBSEQUENT: StudyModule = {
     "לחלק את ההתחייבות לשוטף ולא שוטף",
     "להציג את החכירה בדוח רווח או הפסד, בדוח על המצב הכספי ובדוח על תזרימי המזומנים",
     "לזהות תשלומים שעוברים ישר לרווח או הפסד",
+    "לטפל בשיפורים שהחוכר בונה בנכס, ובהשתתפות של המחכיר בהם",
     "להחליט מתי אפשר ליישם את ההקלות, ולחשב הוצאה בקו ישר",
   ],
   backHref: COURSE_HREF,
@@ -537,6 +609,7 @@ export const SUBSEQUENT: StudyModule = {
     { id: "ls-sub-current", title: "שוטף ולא שוטף" },
     { id: "ls-sub-lab", title: "מעבדה: חכירה שנה אחרי שנה" },
     { id: "ls-sub-other", title: "מה עובר ישר לרווח או הפסד" },
+    { id: "ls-sub-improve", title: "שיפורים שהחוכר בונה בנכס" },
     { id: "ls-sub-show", title: "איך זה נראה בדוחות" },
     { id: "ls-sub-worked", title: "דוגמה פתורה: מהחוזה ועד הדוחות" },
     { id: "ls-sub-fill", title: "עכשיו אתם: דוחות למילוי" },
@@ -558,6 +631,7 @@ export const SUBSEQUENT: StudyModule = {
     "לא שוטף, תשלום בסוף שנה: היתרה של סוף השנה הבאה.",
     "לא שוטף, תשלום בתחילת שנה: היתרה פחות התשלום הבא. לא נשאר תשלום מעבר ל-12 חודשים? הכול שוטף.",
     "תשלום לפי מכירות או שימוש, תחזוקה, ושירות שהמחכיר שילם: הוצאה בשנה שאליה הם שייכים.",
+    "שיפורים שהחוכר בונה: רכוש קבוע נפרד. פחת מהיום שהם מוכנים, על פני הקצר מבין החיים שלהם ומה שנשאר מתקופת החכירה. השתתפות של המחכיר בהם היא תמריץ, והיא מקטינה את נכס זכות השימוש.",
     "טווח קצר: עד 12 חודשים, בלי אופציית רכישה, לפי קבוצה.",
     "ערך נמוך: לכל חכירה, לפי נכס חדש, בלי קשר לגודל החוכר.",
     "תזרים: קרן במימון. ריבית לפי IAS 7. הקלות ומשתנים בשוטפת.",

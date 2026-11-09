@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowRight, Bus, ChevronDown, CircleParking, CircleSlash, Coffee, Container, FileSignature, KeyRound, ListChecks, Package, Printer, Zap } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
-import { Part, Remember } from "@/components/study-mode/screen-parts";
+import { Deeper, Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { CASE_OPTIONS, CASES } from "@/lib/study/ifrs16/lessons/what";
 import { TaskFrame, TaskText } from "./ias19-question";
@@ -356,6 +356,14 @@ export const IFRS16_BASICS_SCREENS: Record<string, ScreenContent> = {
               ["הספק מחליף רק מכולה שנפגעה, או לתחזוקה ולשדרוג טכני", "ב18 קובע שהחלפה כזו לא מונעת נכס מזוהה. הוא לא אומר במפורש למה. אפשר להבין את זה כך: היא נועדה לתחזק את הנכס או לעדכן אותו, ולא לתת לספק רווח מעצם ההחלפה."],
             ]}
           />
+          <P>
+            בקורס אנחנו קוראים את השורה הראשונה בטבלה גם על התנאי השני. הפתיחה של <T16 he="ב14" /> מדברת על זכות ממשית ״לאורך כל תקופת השימוש״, ו<T16 he="ב16" /> אומר שבודקים את זה במועד ההתקשרות. נניח שהספק יכול לתת ליצואן מכולה אחרת כבר מהבוקר הראשון, אבל זה ישתלם לו רק בעוד שנתיים, כשייפתח לו מגרש שני ליד הנמל. במועד ההתקשרות כבר ברור שבשנתיים הראשונות הוא לא ירוויח מהחלפה, ולכן לא יחליף, והיצואן ימשיך להעמיס על מכולה 4417. לפי הקריאה הזו הזכות אינה ממשית, והמכולה מזוהה.
+          </P>
+          <Deeper title="מה כתוב בתקן, ומה הקריאה שלנו">
+            <P>
+              התנאי השני של <T16 he="ב14" />, ההטבה הכלכלית, לא כולל מילים על זמן. ״לאורך כל תקופת השימוש״ מופיע בפתיחה של הסעיף, ו<T16 he="ב16" /> אומר שמעריכים לפי העובדות במועד ההתקשרות. מכאן הקריאה שלנו: אם כבר אז ידוע שבשנים הראשונות ההחלפה לא תשתלם, הזכות אינה ממשית. התקן לא אומר את זה במשפט אחד. יש לשאול את המרצה.
+            </P>
+          </Deeper>
           <P>ואם היצואן פשוט לא יודע? הלקוח לרוב לא רואה את העלויות של הספק, ולכן התקן מכריע במקומו: אם הוא לא יכול לקבוע את זה בקלות, הזכות אינה ממשית (ב19).</P>
         </Part>
         <Remember>אם הלקוח לא יכול לקבוע בקלות, הוא מניח שזכות ההחלפה <strong>אינה</strong> ממשית (ב19).</Remember>

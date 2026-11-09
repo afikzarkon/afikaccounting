@@ -98,6 +98,27 @@ export const BRANCH_NI_CLOSE = BRANCH_NI + BRANCH_NI_INT - BRANCH.subPayment;
 export const BRANCH_L_INT = r(BRANCH_L * BRANCH.rate);
 export const BRANCH_L_CLOSE = BRANCH_L + BRANCH_L_INT - BRANCH.payment;
 
+/** A finance sublease with an incentive paid on the day it starts: offices handed on to a start-up. */
+export const SUBINC = { payment: 180_000, years: 10, rate: 0.05, done: 4, left: 6, subPayment: 175_000, rightFV: 880_000, incentive: 40_000 };
+export const SUBINC_L0 = r(pvEnd(SUBINC.rate, SUBINC.years, SUBINC.payment));
+export const SUBINC_DEP = r(SUBINC_L0 / SUBINC.years);
+export const SUBINC_ROU = SUBINC_L0 - SUBINC_DEP * SUBINC.done;
+export const SUBINC_L = r(pvEnd(SUBINC.rate, SUBINC.left, SUBINC.payment));
+export const SUBINC_GAIN = SUBINC.rightFV - SUBINC_ROU;
+export const SUBINC_NI = SUBINC.rightFV + SUBINC.incentive;
+export const SUBINC_RATE = rateFor(SUBINC_NI, SUBINC.left, SUBINC.subPayment);
+export const SUBINC_INT = r(SUBINC_NI * SUBINC_RATE);
+export const SUBINC_CLOSE = SUBINC_NI + SUBINC_INT - SUBINC.subPayment;
+/** What a student may try: the incentive to expense at once, and the net investment at the fair value alone. */
+export const SUBINC_ALT_RATE = rateFor(SUBINC.rightFV, SUBINC.left, SUBINC.subPayment);
+export const SUBINC_ALT_INT = r(SUBINC.rightFV * SUBINC_ALT_RATE);
+export const SUBINC_ALT_CLOSE = SUBINC.rightFV + SUBINC_ALT_INT - SUBINC.subPayment;
+export const SUBINC_Y1 = SUBINC_GAIN + SUBINC_INT;
+export const SUBINC_ALT_Y1 = SUBINC_GAIN - SUBINC.incentive + SUBINC_ALT_INT;
+/** Finance income over the whole sublease: what comes in, less what the net investment started at. */
+export const SUBINC_TOTAL = SUBINC.subPayment * SUBINC.left - SUBINC_NI;
+export const SUBINC_ALT_TOTAL = SUBINC.subPayment * SUBINC.left - SUBINC.rightFV;
+
 /** An operating sublease with a stepped rent: a training centre. */
 export const CENTRE = { payment: 150_000, years: 10, rate: 0.05, done: 3, left: 7, subRents: [80_000, 120_000], subYears: 2, subRate: 0.07, rightFV: 600_000 };
 export const CENTRE_L0 = r(pvEnd(CENTRE.rate, CENTRE.years, CENTRE.payment));
@@ -189,6 +210,56 @@ export const LOGI_GAIN = LOGI.price + LOGI_ROU - LOGI.bookValue - LOGI_L;
 export const LOGI_RENT = (LOGI.payment * LOGI.years + LOGI_PRE) / LOGI.years;
 export const LOGI_FALL = LOGI_RENT - LOGI.payment;
 
+/** Sale and leaseback with a right to buy back: a data centre, a loan by IFRS 15 B66 and IFRS 9. */
+export const REPO = { price: 3_000_000, bookValue: 2_100_000, lifeLeft: 15, payment: 180_000, years: 4, buyBack: 2_700_000 };
+export const REPO_DEP = REPO.bookValue / REPO.lifeLeft;
+export const REPO_ASSET1 = REPO.bookValue - REPO_DEP;
+export const REPO_GAP = REPO.price - REPO.bookValue;
+export const REPO_RATE = rateFor(REPO.price, REPO.years, REPO.payment, REPO.buyBack);
+export const REPO_INT = r(REPO.price * REPO_RATE);
+export const REPO_CLOSE = REPO.price + REPO_INT - REPO.payment;
+export const REPO_INT2 = r(REPO_CLOSE * REPO_RATE);
+export const REPO_CLOSE2 = REPO_CLOSE + REPO_INT2 - REPO.payment;
+export const REPO_EXP = REPO_DEP + REPO_INT;
+/** Interest over the four years: everything paid, less what was received. */
+export const REPO_TOTAL_INT = REPO.payment * REPO.years + REPO.buyBack - REPO.price;
+
+/** A plain sale with a repurchase feature (IFRS 15 B64–B73): a crane sold to a builder. */
+export const MACH = { price: 1_000_000, cost: 700_000, years: 2, putPrice: 750_000, expectedValue: 500_000, life: 10, highCall: 1_050_000, highValue: 820_000 };
+export const MACH_DEFERRED = MACH.price - MACH.putPrice;
+export const MACH_INCOME = MACH_DEFERRED / MACH.years;
+export const MACH_DEF1 = MACH_DEFERRED - MACH_INCOME;
+export const MACH_DEP = MACH.cost / MACH.life;
+export const MACH_ASSET1 = MACH.cost - MACH_DEP;
+export const MACH_NET1 = MACH_INCOME - MACH_DEP;
+export const MACH_SALE_PROFIT = MACH.price - MACH.cost;
+export const MACH_EDGE = MACH.putPrice - MACH.expectedValue;
+export const MACH_FIN_RATE = (MACH.highCall / MACH.price) ** (1 / MACH.years) - 1;
+export const MACH_FIN_INT1 = r(MACH.price * MACH_FIN_RATE);
+export const MACH_FIN_TOTAL = MACH.highCall - MACH.price;
+
+/** Deferred tax on a lease (IAS 12, paragraphs 15(b)(iii), 22A): a lessee whose tax deducts the payments as paid, and a lessor taxed on rent received ahead. */
+export const TAX = { payment: 100_000, years: 5, rate: 0.06, taxRate: 0.23, prepaidRent: 80_000, prepaidYears: 3 };
+export const TAX_L = r(pvEnd(TAX.rate, TAX.years, TAX.payment));
+export const TAX_DEP = r(TAX_L / TAX.years);
+export const TAX_INT = r(TAX_L * TAX.rate);
+export const TAX_L1 = TAX_L + TAX_INT - TAX.payment;
+export const TAX_L_FALL = TAX_L - TAX_L1;
+export const TAX_ROU1 = TAX_L - TAX_DEP;
+export const TAX_D0 = r(TAX_L * TAX.taxRate);
+export const TAX_DTL1 = r(TAX_ROU1 * TAX.taxRate);
+export const TAX_DTA1 = r(TAX_L1 * TAX.taxRate);
+export const TAX_NET1 = TAX_DTA1 - TAX_DTL1;
+export const TAX_DTL_FALL = TAX_D0 - TAX_DTL1;
+export const TAX_DTA_FALL = TAX_D0 - TAX_DTA1;
+export const TAX_EXP = TAX_DEP + TAX_INT;
+export const TAX_GAP = TAX_EXP - TAX.payment;
+export const TAX_PRE_CASH = TAX.prepaidRent * TAX.prepaidYears;
+export const TAX_PRE_DEF1 = TAX_PRE_CASH - TAX.prepaidRent;
+export const TAX_PRE_DTA = r(TAX_PRE_DEF1 * TAX.taxRate);
+export const TAX_PRE_CURRENT = r(TAX_PRE_CASH * TAX.taxRate);
+export const TAX_PRE_EXPENSE = TAX_PRE_CURRENT - TAX_PRE_DTA;
+
 /** The closing question: three parties to one building. */
 export const CH = { payment: 400_000, years: 12, firstYears: 9, optionYears: 3, marketRent: 550_000, life: 13, fairValue: 2_860_000, bookValue: 1_900_000, implicit: 0.09, ibr: 0.1, costs: 5_000, renovation: 60_000, subPayment: 470_000, subYears: 11, subRate: 0.07, subIbr: 0.08 };
 export const CH_HEAD_PV = r(pvEnd(CH.implicit, CH.years, CH.payment));
@@ -231,6 +302,18 @@ const P_HIGH_GAIN = 480_000 + P_HIGH_ROU - 200_000 - P_HIGH_L;
 const P_HALF = r(pvEnd(0.04, 4, 200_000));
 const P_MON = r(pvEnd(0.01, 36, 10_000));
 const P_MON_OPEN = r(pvEnd(0.01, 48, 10_000));
+const P_INC_RATE = rateFor(630_000, 5, 150_000);
+const P_INC_INT = r(630_000 * P_INC_RATE);
+const P_REPO_RATE = rateFor(1_000_000, 3, 60_000, 900_000);
+const P_REPO_INT = r(1_000_000 * P_REPO_RATE);
+const P_FWD_RATE = rateFor(800_000, 2, 40_000, 820_000);
+const P_FWD_INT = r(800_000 * P_FWD_RATE);
+const P_TAX_L = r(pvEnd(0.05, 4, 50_000));
+const P_TAX_DEP = r(P_TAX_L / 4);
+const P_TAX_INT = r(P_TAX_L * 0.05);
+const P_TAX_L1 = P_TAX_L + P_TAX_INT - 50_000;
+const P_TAX_ROU1 = P_TAX_L - P_TAX_DEP;
+const P_TAX_NET = r(P_TAX_L1 * 0.25) - r(P_TAX_ROU1 * 0.25);
 
 const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
   ask({ id: "land-sep", skill: "קרקע ומבנה", prompt: "מחכיר מחכיר בניין עם הקרקע שמתחתיו. סכום הקרקע מהותי. איך מסווגים?", options: ["כל מרכיב בנפרד", "הכול כמבנה", "הכול כקרקע", "לפי המרכיב הגדול"], answer: 0, why: "המבנה מתבלה והקרקע לא, ולכן כל אחד מסווג לבד (סעיף ב55).", trap: "לסווג חכירה אחת לפי הבניין. קרקע ומבנה הם נכסים שונים מאוד.", level: 1, source: "מקורית", ref: "סעיף ב55" }),
@@ -263,7 +346,19 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
   askNumber({ id: "slb-low", skill: "מכירה וחכירה בחזרה", prompt: "חברה מכרה בית דפוס. ערך בספרים 800,000 ש״ח, שווי הוגן 1,200,000 ש״ח, ותמורה 1,100,000 ש״ח, והשליטה עברה לקונה. היא חוכרת אותו בחזרה ל-8 שנים, ב-90,000 ש״ח בסוף כל שנה, בריבית 5%. מהי עלות נכס זכות השימוש?", answer: P_LOW_ROU, steps: ["התמורה נמוכה ב-100,000: מקדמה על החכירה (סעיף 101(א))", `התחייבות: =PV(5%;8;-90000) → ${fmt(P_LOW_L)}`, `החלק שנשאר = (התחייבות + מקדמה) ÷ שווי הוגן = ${fmt(P_LOW_L + 100_000)} ÷ 1,200,000`, `נכס = ערך בספרים × החלק שנשאר = 800,000 × ${fmt(P_LOW_L + 100_000)} ÷ 1,200,000 = ${fmt(P_LOW_ROU)}`], trap: "לשכוח את המקדמה בחלק שנשאר. היא חלק מזכות השימוש שהחברה שילמה עליה.", level: 3, source: "מקורית", ref: "סעיף 101(א)" }),
   askNumber({ id: "slb-high", skill: "מכירה וחכירה בחזרה", prompt: "חברה מכרה מעבדה. ערך בספרים 200,000 ש״ח, שווי הוגן 450,000 ש״ח, ותמורה 480,000 ש״ח, והשליטה עברה לקונה. היא חוכרת אותה בחזרה ל-12 שנים, ב-40,000 ש״ח בסוף כל שנה, בריבית 4%. כמה רווח נרשם?", answer: P_HIGH_GAIN, steps: ["התמורה גבוהה ב-30,000: הלוואה (סעיף 101(ב))", `ערך נוכחי של התשלומים: =PV(4%;12;-40000) → ${fmt(P_HIGH_L)}`, `התחייבות חכירה: ${fmt(P_HIGH_L)} − 30,000 = ${fmt(P_HIGH_L - 30_000)}`, `נכס זכות שימוש: 200,000 × ${fmt(P_HIGH_L - 30_000)} ÷ 450,000 = ${fmt(P_HIGH_ROU)}`, `רווח: 480,000 + ${fmt(P_HIGH_ROU)} − 200,000 − ${fmt(P_HIGH_L)} = ${fmt(P_HIGH_GAIN)}`], trap: "לכלול את 30,000 ברווח. זה חוב, ולא תמורה על הנכס.", level: 3, source: "מקורית", ref: "סעיף 101(ב)" }),
   ask({ id: "slb-buyer", skill: "מכירה וחכירה בחזרה", prompt: "ההעברה היא מכירה. מה עושה הקונה-מחכיר?", options: ["רושם את הנכס לפי התקן הרלוונטי, ומסווג את החכירה כרגיל", "רושם השקעה נטו בכל מקרה", "רושם הלוואה לקבל", "לא רושם כלום עד סוף החכירה"], answer: 0, why: "מבחינתו הוא קנה נכס והחכיר אותו (סעיף 100(ב)).", trap: "לחשוב שעסקה כזו היא תמיד מימונית. מבחן הסיווג רגיל.", level: 2, source: "מקורית", ref: "סעיף 100(ב)" }),
-  ask({ id: "slb-measure", skill: "מכירה וחכירה בחזרה", prompt: "במכירה וחכירה בחזרה, השווי ההוגן של הנכס קשה למדידה, אבל התשלומים לפי מחירי שוק ידועים. איך מודדים את התיאום?", options: ["לפי ההפרש בין הערך הנוכחי של התשלומים בחוזה ובשוק", "לא עושים תיאום", "לפי הערך בספרים", "תמיד לפי השווי ההוגן"], answer: 0, why: "סעיף 102: לפי מה שקל יותר לקבוע.", trap: "לחשוב שיש רק דרך אחת.", level: 3, source: "מקורית", ref: "סעיף 102" }),
+  askNumber({ id: "subinc-ni", skill: "חכירת משנה", prompt: "חוכר החכיר את כל השנים שנשארו לו בחכירת משנה מימונית. השווי ההוגן של זכות השימוש שהעביר 600,000 ש״ח. ביום תחילת חכירת המשנה הוא שילם לחוכר המשנה 30,000 ש״ח כהשתתפות בעלויות המעבר שלו. אין עלויות ישירות. מהי ההשקעה נטו ביום התחילה?", answer: 630_000, steps: ["תמריץ ששולם ביום התחילה נכלל בהשקעה נטו: תשלומי החכירה הם נטו מתמריצים, ולכן מה שהמחכיר יקבל צריך להחזיר גם אותו", "השקעה נטו = שווי הוגן + עלויות ישירות + תמריץ ששולם", "600,000 + 0 + 30,000 = 630,000"], trap: "לרשום את 30,000 כהוצאה מיד, ולהשאיר את ההשקעה נטו על 600,000.", level: 2, source: "מקורית", ref: "נספח א׳: תשלומי חכירה, ריבית גלומה; סעיף 70(א)" }),
+  ask({ id: "subinc-way", skill: "חכירת משנה", prompt: "מחכיר ביניים שילם לחוכר המשנה תמריץ ביום שחכירת משנה מימונית התחילה. לפי שיטת הקורס, מה התמריץ עושה לדוחות שלו?", options: ["מגדיל את ההשקעה נטו, ומקטין את הכנסות המימון לאורך חכירת המשנה", "נרשם כהוצאה ביום התחילה", "מקטין את הרווח על גריעת נכס זכות השימוש", "מקטין את התחייבות החכירה לבעלים"], answer: 0, why: "ההשקעה נטו עולה בגובה התמריץ, והריבית הגלומה מחושבת מחדש כך שהתקבולים יחזירו אותה. כך התמריץ נפרס כהכנסה נמוכה יותר על פני השנים. זו הקריאה של הקורס להגדרת תשלומי החכירה ולסעיף 70(א). הוצאה מיד היא הדרך האחרת, והתקן לא מכריע ביניהן במשפט מפורש.", trap: "להקטין את רווח הגריעה. הרווח הוא השווי ההוגן פחות נכס זכות השימוש, והתמריץ לא נכנס אליו.", level: 1, source: "מקורית", ref: "נספח א׳: תשלומי חכירה; סעיף 70(א)" }),
+  askNumber({ id: "subinc-int", skill: "חכירת משנה", prompt: "חכירת משנה מימונית ל-5 שנים, 150,000 ש״ח בסוף כל שנה. השווי ההוגן של זכות השימוש 600,000 ש״ח. ביום החתימה המחכיר שילם לחוכר המשנה תמריץ של 30,000 ש״ח. אין עלויות ישירות. מהן הכנסות המימון בשנה הראשונה?", answer: P_INC_INT, steps: ["השקעה נטו: 600,000 + 30,000 = 630,000", `הריבית הגלומה, שבה התקבולים שווים להשקעה נטו: =RATE(5;150000;-630000) → ${(P_INC_RATE * 100).toFixed(4)}%`, `הכנסות מימון = השקעה נטו × ריבית: 630,000 × ${(P_INC_RATE * 100).toFixed(4)}% = ${fmt(P_INC_INT)}`], trap: "לחשב את הריבית על 600,000. אז התמריץ יוצא פעמיים: פעם כהוצאה, ופעם בריבית גבוהה מדי.", level: 3, source: "מקורית", ref: "נספח א׳: ריבית גלומה; סעיף 75" }),
+  ask({ id: "repo-books", skill: "מכירה עם רכישה חוזרת", prompt: "חברה מכרה בניין לקרן וחכרה אותו בחזרה. לפי החוזה יש לה זכות לקנות אותו בחזרה בסוף החכירה. מה היא רושמת ביום העסקה?", options: ["הבניין נשאר בספרים, והתמורה היא התחייבות פיננסית", "גורעת את הבניין ורושמת רווח על החלק שעבר", "נכס זכות שימוש והתחייבות חכירה", "גורעת את הבניין ורושמת את כל הרווח"], answer: 0, why: "כשלמוכר יש זכות או חובה לקנות בחזרה, הקונה לא משיג שליטה (IFRS 15 סעיף ב66). בלי מכירה, הכסף הוא הלוואה (סעיף 103).", trap: "לטפל בזה כמו בכל מכירה וחכירה בחזרה. זכות הרכישה מבטלת את המכירה עוד לפני שמגיעים לחישוב הרווח.", level: 1, source: "מקורית", ref: "IFRS 15 סעיף ב66; סעיף 103" }),
+  askNumber({ id: "repo-int", skill: "מכירה עם רכישה חוזרת", prompt: "חברה מכרה מבנה ב-1,000,000 ש״ח וחכרה אותו בחזרה ל-3 שנים, 60,000 ש״ח בסוף כל שנה. בסוף השנה השלישית היא חייבת לקנות אותו בחזרה ב-900,000 ש״ח. מהן הוצאות המימון בשנה הראשונה?", answer: P_REPO_INT, steps: ["חובה לקנות בחזרה: אין מכירה, והתמורה היא התחייבות פיננסית לפי IFRS 9", `ריבית אפקטיבית, עם מחיר הרכישה כתזרים האחרון: =RATE(3;60000;-1000000;900000) → ${(P_REPO_RATE * 100).toFixed(4)}%`, `1,000,000 × ${(P_REPO_RATE * 100).toFixed(4)}% = ${fmt(P_REPO_INT)}`], trap: "להשאיר את 900,000 מחוץ לחישוב הריבית. הוא התשלום האחרון על ההלוואה, ובלעדיו הריבית יוצאת שלילית.", level: 2, source: "מקורית", ref: "IFRS 15 סעיפים ב66, ב68" }),
+  askNumber({ id: "repo-pl", skill: "מכירה עם רכישה חוזרת", prompt: "חברה מכרה מבנה ב-800,000 ש״ח. ערכו בספרים 500,000 ש״ח, ונשארו לו 10 שנות חיים. היא חוכרת אותו בחזרה לשנתיים, 40,000 ש״ח בסוף כל שנה, וחייבת לקנות אותו בחזרה בסוף השנה השנייה ב-820,000 ש״ח. מה סך ההוצאות ברווח או הפסד בשנה הראשונה?", answer: 50_000 + P_FWD_INT, steps: ["אין מכירה: המבנה נשאר, והפחת נמשך: 500,000 ÷ 10 = 50,000", `ריבית אפקטיבית: =RATE(2;40000;-800000;820000) → ${(P_FWD_RATE * 100).toFixed(4)}%`, `הוצאות מימון: 800,000 × ${(P_FWD_RATE * 100).toFixed(4)}% = ${fmt(P_FWD_INT)}`, `סך ההוצאות: 50,000 + ${fmt(P_FWD_INT)} = ${fmt(50_000 + P_FWD_INT)}`], trap: "לרשום 40,000 כהוצאות שכירות. אין חכירה בספרים: התשלומים הם החזר של הלוואה, והריבית עליה.", level: 3, source: "מקורית", ref: "IFRS 15 סעיפים ב66(ב), ב68" }),
+  askNumber({ id: "put-income", skill: "מכירה עם רכישה חוזרת", prompt: "יצרן מכר מכונה ללקוח ב-400,000 ש״ח. הלקוח יכול לדרוש מהיצרן לקנות אותה בחזרה בעוד 4 שנים ב-240,000 ש״ח, ושווי השוק הצפוי שלה אז 150,000 ש״ח. בלי ריבית. כמה הכנסה מחכירה רושם היצרן בכל שנה?", answer: 40_000, steps: ["מחיר הרכישה גבוה בהרבה משווי השוק הצפוי, וללקוח יש תמריץ כלכלי משמעותי לממש: זו חכירה (IFRS 15 סעיף ב70)", "הכנסה בכל שנה = (מחיר − מחיר הרכישה החוזרת) ÷ שנים", "(400,000 − 240,000) ÷ 4 = 40,000"], trap: "לרשום הכנסה של 400,000 ביום המכירה. 240,000 מתוכם יחזרו ללקוח, והם התחייבות.", level: 2, source: "מקורית", ref: "IFRS 15 סעיפים ב70, ב71" }),
+  ask({ id: "put-none", skill: "מכירה עם רכישה חוזרת", prompt: "יצרן מכר ציוד ב-500,000 ש״ח. הלקוח יכול לדרוש ממנו לקנות את הציוד בחזרה בעוד שנתיים ב-300,000 ש״ח, ושווי השוק הצפוי אז 360,000 ש״ח. איך מטפלים?", options: ["מכירה עם זכות החזרה", "חכירה", "הסדר מימון", "לא מכירים בהכנסה עד שהזכות פוקעת"], answer: 0, why: "מחיר הרכישה נמוך מהשווי הצפוי, ולכן אין ללקוח תמריץ כלכלי משמעותי לממש. לפי IFRS 15 סעיף ב72 זו מכירה עם זכות החזרה.", trap: "לקרוא לכל אופציית מכר חכירה. חכירה רק כשיש ללקוח תמריץ משמעותי לממש.", level: 2, source: "מקורית", ref: "IFRS 15 סעיפים ב71, ב72" }),
+  ask({ id: "call-high", skill: "מכירה עם רכישה חוזרת", prompt: "חברה מכרה נכס ללקוח, ושמרה לעצמה זכות לקנות אותו בחזרה בעוד שנה במחיר גבוה ממחיר המכירה. אין כאן חכירה בחזרה. איך מטפלים?", options: ["הסדר מימון: הנכס נשאר, התמורה התחייבות, וההפרש ריבית", "חכירה, והחברה מחכירה", "מכירה רגילה", "מכירה עם זכות החזרה"], answer: 0, why: "כשמחיר הרכישה החוזרת שווה למחיר המכירה או גבוה ממנו, זה הסדר מימון (IFRS 15 סעיפים ב66(ב), ב68).", trap: "לקבוע חכירה. חכירה היא רק כשמחיר הרכישה נמוך ממחיר המכירה.", level: 1, source: "מקורית", ref: "IFRS 15 סעיפים ב66, ב68" }),
+  ask({ id: "tax-start", skill: "מסים נדחים", prompt: "רשות המסים מתירה לחוכר לנכות את דמי החכירה כשהם משולמים. מה קורה למסים הנדחים במועד התחילה?", options: ["נרשמים נכס מס נדחה והתחייבות מס נדחה בסכומים שווים", "לא נרשם כלום, בגלל הפטור על הכרה לראשונה", "נרשמת רק התחייבות מס נדחה", "נרשם רק נכס מס נדחה"], answer: 0, why: "נכס זכות השימוש יוצר הפרש חייב במס, וההתחייבות יוצרת הפרש מותר בניכוי, שווים ביום התחילה. הפטור לא חל על עסקה כזו (IAS 12 סעיפים 15(ב)(iii), 22א).", trap: "להפעיל את הפטור על הכרה לראשונה. הוא לא חל כשנוצרים הפרשים שווים בשני הכיוונים.", level: 1, source: "מקורית", ref: "IAS 12 סעיפים 15(ב)(iii), 22א" }),
+  askNumber({ id: "tax-y1", skill: "מסים נדחים", prompt: "חכירה ל-4 שנים, 50,000 ש״ח בסוף כל שנה, בריבית 5%. אין עלויות ישירות. רשות המסים מתירה לנכות את התשלומים כשהם משולמים, ושיעור המס 25%. מהי יתרת נכס המס הנדחה נטו ב-31.12 של השנה הראשונה?", answer: P_TAX_NET, steps: [`התחייבות: =PV(5%;4;-50000) → ${fmt(P_TAX_L)}, וזו גם עלות הנכס`, `נכס ב-31.12: ${fmt(P_TAX_L)} − ${fmt(P_TAX_DEP)} = ${fmt(P_TAX_ROU1)}`, `התחייבות ב-31.12: ${fmt(P_TAX_L)} + ${fmt(P_TAX_INT)} − 50,000 = ${fmt(P_TAX_L1)}`, `נכס מס נדחה: ${fmt(P_TAX_L1)} × 25% = ${fmt(r(P_TAX_L1 * 0.25))}. התחייבות מס נדחה: ${fmt(P_TAX_ROU1)} × 25% = ${fmt(r(P_TAX_ROU1 * 0.25))}`, `נטו: ${fmt(r(P_TAX_L1 * 0.25))} − ${fmt(r(P_TAX_ROU1 * 0.25))} = ${fmt(P_TAX_NET)}`], trap: "לחשוב שהיתרות מתקזזות לאפס כל החכירה. הן שוות רק ביום התחילה, ואחר כך הנכס יורד מהר יותר מההתחייבות.", level: 3, source: "מקורית", ref: "IAS 12 סעיף 22א" }),
+  askNumber({ id: "tax-lessor", skill: "מסים נדחים", prompt: "מחכיר בחכירה תפעולית קיבל ביום התחילה 150,000 ש״ח, שכר דירה מראש לשלוש שנים. רשות המסים מחייבת אותו במס כשהכסף מתקבל, ושיעור המס 23%. מהו נכס המס הנדחה ב-31.12 של השנה הראשונה?", answer: 23_000, steps: ["הכנסה בקו ישר: 150,000 ÷ 3 = 50,000 בשנה", "הכנסות מראש ב-31.12: 150,000 − 50,000 = 100,000. בסיס המס שלהן אפס, כי הכסף כבר מוסה", "100,000 × 23% = 23,000"], trap: "לרשום התחייבות מס נדחה. המס שולם לפני שההכנסה נרשמה, ולכן זה נכס: בעתיד ההכנסה תירשם בלי מס נוסף.", level: 2, source: "מקורית", ref: "IAS 12 סעיף 8" }),
+  ask({ id: "slb-measure",skill: "מכירה וחכירה בחזרה", prompt: "במכירה וחכירה בחזרה, השווי ההוגן של הנכס קשה למדידה, אבל התשלומים לפי מחירי שוק ידועים. איך מודדים את התיאום?", options: ["לפי ההפרש בין הערך הנוכחי של התשלומים בחוזה ובשוק", "לא עושים תיאום", "לפי הערך בספרים", "תמיד לפי השווי ההוגן"], answer: 0, why: "סעיף 102: לפי מה שקל יותר לקבוע.", trap: "לחשוב שיש רק דרך אחת.", level: 3, source: "מקורית", ref: "סעיף 102" }),
   Object.assign(
     journal("sub-entry", "פקודת יומן", "חכירת משנה מימונית ב-1.1. ההשקעה נטו 500,000 ש״ח, ונכס זכות השימוש בספרים 430,000 ש״ח. רשמו את הפקודה ביום חכירת המשנה.", [{ account: "השקעה נטו בחכירה", dr: 500_000 }, { account: "נכס זכות שימוש", cr: 430_000 }, { account: "רווח הון", cr: 70_000 }], "הנכס יוצא, וההתחייבות נשארת. מלכודת נפוצה: לגרוע גם את התחייבות החכירה.", ["השקעה נטו בחכירה", "נכס זכות שימוש", "התחייבות חכירה", "רווח הון", "מזומן"]),
     { meta: { level: 2 as const, source: "מקורית" as const, ref: "סעיף 67" } },
@@ -353,15 +448,27 @@ export const SPECIAL_TAUGHT: Record<string, string> = {
   "ip-reserve": "ls-spc-ip",
   "slb-profit": "ls-spc-fair",
   "half-how": "ls-spc-rates",
+  "subinc-ni": "ls-spc-subincent",
+  "subinc-way": "ls-spc-subincent",
+  "subinc-int": "ls-spc-subincent",
+  "repo-books": "ls-spc-repo",
+  "repo-int": "ls-spc-repo",
+  "repo-pl": "ls-spc-repo",
+  "put-income": "ls-spc-ifrs15",
+  "put-none": "ls-spc-ifrs15",
+  "call-high": "ls-spc-ifrs15",
+  "tax-start": "ls-spc-tax",
+  "tax-y1": "ls-spc-tax",
+  "tax-lessor": "ls-spc-tax",
 };
 
-/** Lesson 8: land and buildings, subleases, and sale and leaseback. */
+/** Lesson 8: land and buildings, subleases, sale and leaseback, repurchase features, and deferred tax. */
 export const SPECIAL: StudyModule = {
   slug: "ifrs16-special",
   course: COURSE,
   n: 8,
   title: "נדל״ן, חכירת משנה, מכירה וחכירה בחזרה",
-  description: "שלושה מקרים שכל הכלים שלמדנו נפגשים בהם: בניין עם קרקע, חוזה עם שלושה צדדים, ומי שמוכר נכס ומיד חוכר אותו בחזרה. בדרך: מעבר לנדל״ן להשקעה, וריבית שאינה שנתית.",
+  description: "שלושה מקרים שכל הכלים שלמדנו נפגשים בהם: בניין עם קרקע, חוזה עם שלושה צדדים, ומי שמוכר נכס ומיד חוכר אותו בחזרה. בדרך: מעבר לנדל״ן להשקעה, ריבית שאינה שנתית, תמריץ בחכירת משנה, מכירה עם רכישה חוזרת, ומסים נדחים על חכירה.",
   goal: "לזהות כל אחד משלושת המקרים המיוחדים, ולפתור אותו עד הדוחות הכספיים.",
   outcomes: [
     "לסווג חכירה של קרקע ומבנה, ולהקצות תשלומים ביניהן",
@@ -370,6 +477,9 @@ export const SPECIAL: StudyModule = {
     "לעבוד בריבית חודשית ובריבית חצי שנתית",
     "להכריע אם עסקה היא מכירה וחכירה בחזרה, ואם יש בה מכירה",
     "לחשב נכס זכות שימוש ורווח על החלק שנמכר, גם כשהתמורה שונה מהשווי ההוגן",
+    "לכלול בהשקעה נטו תמריץ ששילם מחכיר ביניים ביום התחילה, ולחשב את הריבית מחדש",
+    "לזהות מכירה עם זכות או חובה לקנות בחזרה, ולרשום אותה כהלוואה, כחכירה או כמכירה",
+    "לחשב מסים נדחים על נכס זכות השימוש ועל ההתחייבות, ביום התחילה ובסוף השנה",
   ],
   backHref: COURSE_HREF,
   screens: [
@@ -379,6 +489,7 @@ export const SPECIAL: StudyModule = {
     { id: "ls-spc-whole", title: "בלי הקצאה, או קרקע לא מהותית" },
     { id: "ls-spc-sub", title: "חכירת משנה: מול מה מסווגים" },
     { id: "ls-spc-subfin", title: "חכירת משנה מימונית" },
+    { id: "ls-spc-subincent", title: "חכירת משנה: תמריץ ששילם המחכיר" },
     { id: "ls-spc-subop", title: "חכירת משנה תפעולית" },
     { id: "ls-spc-ip", title: "מעבר לנדל״ן להשקעה בשווי הוגן" },
     { id: "ls-spc-rates", title: "ריבית חודשית וחצי שנתית" },
@@ -386,6 +497,9 @@ export const SPECIAL: StudyModule = {
     { id: "ls-spc-fair", title: "מכירה בתנאי שוק: רווח על החלק שעבר" },
     { id: "ls-spc-high", title: "תנאים מעל השוק: הלוואה" },
     { id: "ls-spc-low", title: "תנאים מתחת לשוק: מקדמה" },
+    { id: "ls-spc-repo", title: "מכירה וחכירה בחזרה, עם רכישה חוזרת" },
+    { id: "ls-spc-ifrs15", title: "מכירה רגילה עם רכישה חוזרת" },
+    { id: "ls-spc-tax", title: "מסים נדחים על חכירה" },
     { id: "ls-spc-drill", title: "מתרגלים: מספרים חדשים בכל פעם" },
     { id: "ls-spc-mistake", title: "מצאו את הטעות" },
     { id: "ls-spc-master", title: "שאלה מסכמת: בניין אחד, שלוש חברות" },
@@ -404,5 +518,9 @@ export const SPECIAL: StudyModule = {
     "מכירה וחכירה בחזרה: קודם ב46, אחר כך סעיף 99. בלי מכירה זו הלוואה.",
     "רווח רק על החלק שעבר. נכס זכות השימוש הוא חלק מהערך בספרים.",
     "תנאים מתחת לשוק: מקדמה. תנאים מעל השוק: הלוואה.",
+    "תמריץ ששילם מחכיר ביניים ביום התחילה: נכנס להשקעה נטו, והריבית מחושבת מחדש.",
+    "מכירה וחכירה בחזרה עם זכות או חובה לקנות בחזרה: אין מכירה. הנכס נשאר, והתמורה היא הלוואה שמחיר הרכישה הוא התשלום האחרון שלה.",
+    "מכירה רגילה עם רכישה חוזרת: מתחת למחיר המכירה חכירה, ומעליו מימון. באופציה של הלקוח, חכירה רק כשיש לו תמריץ משמעותי לממש.",
+    "מסים נדחים על חכירה: ביום התחילה נכס והתחייבות שווים. אחר כך הם נפרדים, וההפרש עובר ברווח או הפסד.",
   ],
 };
