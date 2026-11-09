@@ -18,9 +18,10 @@ const LEVELS = [
  * and open the whole solution — the tool, the formula, the numbers, the Excel
  * way, the journal entry and the common trap.
  */
-export function BasicsDrill({ lesson }: { lesson: 5 | 6 | 7 }) {
-  const all = familiesOf(lesson);
-  const [level, setLevel] = useState<1 | 2 | 3 | "mixed">(1);
+export function BasicsDrill({ lesson }: { lesson: 5 | 6 | 7 | "all" }) {
+  // The whole course: every family of lessons 5 to 7, opening mixed.
+  const all = lesson === "all" ? (Object.keys(DRILL_FAMILIES) as DrillFamily[]) : familiesOf(lesson);
+  const [level, setLevel] = useState<1 | 2 | 3 | "mixed">(lesson === "all" ? "mixed" : 1);
   const inLevel = level === "mixed" ? all : all.filter((f) => DRILL_FAMILIES[f].level === level);
   const [picked, setPicked] = useState<DrillFamily>(inLevel[0]);
   const [seed, setSeed] = useState(1);

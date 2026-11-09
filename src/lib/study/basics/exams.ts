@@ -16,6 +16,7 @@ export const EXAMS: StudyModule = {
     "לפתור גיליון רב-טורי מלא בזמן של בחינה",
   ],
   backHref: COURSE_HREF,
+  tools: [{ screen: "ex-mixed", label: "תרגול מעורב מכל הקורס" }],
   screens: [
     { id: "ex-approach", title: "איך ניגשים לשאלת גיליון" },
     { id: "ex-1", title: "מבחן 1" },
@@ -24,6 +25,9 @@ export const EXAMS: StudyModule = {
     { id: "ex-4", title: "מבחן 4" },
     { id: "ex-5", title: "מבחן 5" },
     { id: "ex-6", title: "מבחן 6" },
+    { id: "ex-7", title: "מבחן 7" },
+    { id: "ex-8", title: "מבחן 8" },
+    { id: "ex-mixed", title: "תרגול מעורב מכל הקורס" },
   ],
   exercises: [
     {

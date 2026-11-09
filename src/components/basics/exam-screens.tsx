@@ -2,7 +2,8 @@ import { Clock } from "lucide-react";
 import type { ReactNode } from "react";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { ledger, trialBalance } from "@/lib/learn/basics";
-import { EXAM1, EXAM2, EXAM3, EXAM4, EXAM5, EXAM6, solveWorksheet, type WorksheetExam } from "@/lib/learn/basics-exams";
+import { EXAM1, EXAM2, EXAM3, EXAM4, EXAM5, EXAM6, EXAM7, EXAM8, solveWorksheet, type WorksheetExam } from "@/lib/learn/basics-exams";
+import { BasicsDrill } from "./basics-drill";
 import { Remember } from "@/components/study-mode/screen-parts";
 import { Given } from "./credit";
 import { Calc, JE, Money, TBTable, TCard } from "./ui";
@@ -205,6 +206,21 @@ export const EXAM_LESSON_SCREENS: Record<string, ScreenContent> = {
   "ex-6": {
     lead: "גיליון רב-טורי מלא. יתרה אחת חסרה מסתתרת במשוואה.",
     body: <WorksheetExamScreen x={EXAM6} />,
+  },
+
+  "ex-7": {
+    lead: "גיליון רב-טורי מלא. היתרה החסרה הפעם היא של ההפרשה, ומוצאים אותה מהלקוחות נטו.",
+    body: <WorksheetExamScreen x={EXAM7} />,
+  },
+
+  "ex-8": {
+    lead: "הגיליון הקשה בקורס: שלוש יתרות חסרות, שתי מכירות של אותו נכס, ותיקונים שמשנים את ההפרשה.",
+    body: <WorksheetExamScreen x={EXAM8} />,
+  },
+
+  "ex-mixed": {
+    lead: "תרגול מעורב מכל הקורס: 26 סוגי שאלות, בלי שם של נושא. כל לחיצה מביאה שאלה חדשה, וקודם מזהים מה היא דורשת.",
+    body: <BasicsDrill lesson="all" />,
   },
 
   "ex-4": {

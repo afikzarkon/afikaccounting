@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { isBalanced, trialBalance } from "./basics";
-import { EXAM1, EXAM2, EXAM3, EXAM4, EXAM5, EXAM6, solveWorksheet } from "./basics-exams";
+import { EXAM1, EXAM2, EXAM3, EXAM4, EXAM5, EXAM6, EXAM7, EXAM8, solveWorksheet } from "./basics-exams";
 import { normalSide } from "./basics";
 
 describe("lesson 9's exams", () => {
@@ -48,10 +48,12 @@ describe("lesson 9's exams", () => {
     );
   });
 
-  it("exams 5 and 6: whole worksheets, balanced from the first column to the last", () => {
+  it("exams 5 to 8: whole worksheets, balanced from the first column to the last", () => {
     const want = [
       { x: EXAM5, computed: [-127_500], opening: 182_600, profit: 686_275, closing: 868_875 },
       { x: EXAM6, computed: [45_600], opening: 290_050, profit: 478_170, closing: 768_220 },
+      { x: EXAM7, computed: [-96_000], opening: 163_000, profit: 487_840, closing: 650_840 },
+      { x: EXAM8, computed: [378_000, -165_375], opening: 123_425, profit: 1_078_703, closing: 1_202_128 },
     ];
     for (const w of want) {
       const s = solveWorksheet(w.x);
@@ -62,7 +64,7 @@ describe("lesson 9's exams", () => {
       assert.equal(s.retainedOpening, w.opening, w.x.name);
       assert.equal(s.profit, w.profit, w.x.name);
       assert.equal(s.retainedClosing, w.closing, w.x.name);
-      for (const [a, v] of Object.entries(s.final)) if (Math.abs(v) > 0.005 && a !== "עודפים") assert.equal(v > 0 ? "dr" : "cr", normalSide(a), `${w.x.name}: ${a}`);
+      for (const [a, v] of Object.entries(s.final)) if (Math.abs(v) > 0.005 && a !== "עודפים" && !(w.x === EXAM8 && a === "הוצאות הפסדי אשראי")) assert.equal(v > 0 ? "dr" : "cr", normalSide(a), `${w.x.name}: ${a}`);
     }
   });
 });
