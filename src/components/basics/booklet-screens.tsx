@@ -41,7 +41,7 @@ export const BOOKLET_SCREENS: Record<string, ScreenContent> = {
     lead: "שאלה ברמת החוברת: מאזן בוחן ראשוני עם שתי יתרות חסרות, תיקונים וחוזים. מגיעים עד הרווח ועודפי הסגירה.",
     body: (
       <>
-        <Given title={`נתון: ${GILAD.name}, מאזן בוחן ראשוני ליום 31.12.2025`} asks="השלמת היתרות החסרות, פקודות התאמה ותיקון, מאזן בוחן מתוקן, רווח השנה ועודפי הסגירה.">
+        <Given title={`נתון: ${GILAD.name}, מאזן בוחן ראשוני ליום 31.12.2025`} asks="השלמת היתרות החסרות, פקודות התאמה ותיקון, מאזן בוחן מתוקן (סופי), רווח השנה ועודפי הסגירה.">
           <ul className="divide-y divide-amber-500/20 text-[14.5px]">
             {[...Object.entries(GILAD.given), ...GILAD.unknowns.map((u) => [u, null] as [string, null])].map(([a, v]) => (
               <li key={a} className="flex justify-between gap-3 py-1">

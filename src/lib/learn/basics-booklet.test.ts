@@ -13,13 +13,13 @@ describe("booklet-level questions", () => {
     assert.equal(AGAM.facts.length, 8);
   });
 
-  it("Gilad: insurance 42,000 and retained 47,000 found; profit 156,000; retained closing 203,000; the corrected trial balance balances", () => {
-    assert.deepEqual(GILAD.found, { insurance: 42_000, retained: 47_000 });
+  it("Gilad: insurance 42,000 and retained 51,000 found; profit 138,000; retained closing 189,000; the corrected trial balance balances", () => {
+    assert.deepEqual(GILAD.found, { insurance: 42_000, retained: 51_000 });
     for (const e of GILAD.entries) assert.ok(isBalanced(e), e.id);
     const t = trialBalance(GILAD.final);
     assert.equal(t.dr, t.cr);
-    assert.equal(GILAD.profit, 156_000);
-    assert.equal(GILAD.closingRetained, 203_000);
+    assert.equal(GILAD.profit, 138_000);
+    assert.equal(GILAD.closingRetained, 189_000);
     for (const u of GILAD.unknowns) assert.ok(!(u in GILAD.given), u);
     assert.equal(GILAD.final["הוצאות שכירות מראש"], 0);
     assert.equal(GILAD.final["מקדמות מלקוחות"], -18_000);

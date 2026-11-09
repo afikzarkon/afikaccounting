@@ -722,10 +722,10 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
           />
           <OddCase
             n={4}
-            title="בונוס חד-פעמי בתוך השכר"
+            title="שי חד-פעמי בתוך השכר"
             story={
               <>
-                שכר ינואר עד נובמבר, <Money v={ODD.bonus.recorded} />, נרשם. בסכום הזה כלול שי לחג שחולק באפריל: <Money v={ODD.bonus.gift} /> לכל אחד מ-{ODD.bonus.staff} עובדים. שכר דצמבר ישולם ב-10.1.
+                שכר ינואר עד נובמבר, <Money v={ODD.bonus.recorded} />, נרשם. בסכום הזה כלול שי לחג שחולק באפריל: <Money v={ODD.bonus.gift} /> לכל אחד מ-{ODD.bonus.staff} עובדים. השכר החודשי קבוע, ושכר דצמבר ישולם ב-10.1.
               </>
             }
             steps={[

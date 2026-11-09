@@ -186,7 +186,7 @@ export function worksheet(level: WorksheetLevel, seed: number): WorksheetCase {
     const amount = r.int(8, 80) * 1_000;
     const fix = level >= 3 ? r.pick(["cheque", "advance"] as const) : r.pick(["cheque", "advance", "credit"] as const);
     if (fix === "cheque") parts.push({ balances: {}, items: [{ title: "תיקון: צ׳ק דחוי", story: `בדצמבר נמכרה סחורה, וחלק מהתמורה, ${f(amount)} ₪, התקבל בצ׳ק דחוי לפברואר 2026. הכול נרשם: ח׳ מזומן / ז׳ מכירות.`, entry: two(id(), "תיקון: הצ׳ק הדחוי שנרשם כמזומן", "לקוחות", "מזומן", amount, "המכירה נכונה. הצ׳ק הדחוי הוא חוב של הלקוח, לא מזומן."), accounts: ["לקוחות", "מזומן", "מכירות", "ספקים"] }] });
-    else if (fix === "advance") parts.push({ balances: {}, items: [{ title: "תיקון: מקדמה לספק", story: `בנובמבר שולמה מקדמה של ${f(amount)} ₪ לספק, על סחורה שתגיע במרץ 2026. נרשם: ח׳ קניות / ז׳ מזומן.`, entry: two(id(), "תיקון: מקדמה שנרשמה כקנייה", "מקדמות לספקים", "קניות", amount, "המזומן נכון. הסחורה לא הגיעה, ולכן זו לא קנייה אלא נכס."), accounts: ["מקדמות לספקים", "קניות", "מזומן", "ספקים"] }] });
+    else if (fix === "advance") parts.push({ balances: {}, items: [{ title: "תיקון: מקדמה לספק", story: `בנובמבר שולמה מקדמה של ${f(amount)} ₪ לספק, על סחורה שתגיע במרץ 2026. נרשם: ח׳ קניות / ז׳ מזומן.`, entry: two(id(), "תיקון: מקדמה שנרשמה כקנייה", "מקדמות לספקים", "קניות", amount, "המזומן נכון. הסחורה לא הגיעה, ולכן התשלום הוא נכס: מקדמות לספקים."), accounts: ["מקדמות לספקים", "קניות", "מזומן", "ספקים"] }] });
     else parts.push({ balances: {}, items: [{ title: "תיקון: קנייה באשראי", story: `קנייה באשראי של ${f(amount)} ₪ נרשמה: ח׳ קניות / ז׳ מזומן.`, entry: two(id(), "תיקון: אשראי שנרשם במזומן", "מזומן", "ספקים", amount, "הקניות נכונות. המזומן חוזר, ונוצר חוב לספק."), accounts: ["מזומן", "ספקים", "קניות", "לקוחות"] }] });
     if (fix === "cheque") parts.push({ balances: { __cheque: amount }, items: [] });
   }
@@ -210,7 +210,7 @@ export function worksheet(level: WorksheetLevel, seed: number): WorksheetCase {
         {
           title: "ההפרשה להפסדי אשראי",
           story: `החברה מפרישה ${pct(p)} מחוב של לקוח בקשיים, שחייב ${f(specific)} ₪, ו-${pct(g)} משאר הלקוחות.`,
-          entry: two(id(), "השלמת ההפרשה", EXPENSE, ALLOW, topUp, `לקוחות אחרי ${cheque ? "התיקון והמחיקה" : "המחיקה"}: ${f(after)}. נדרש: ${f(specific)} × ${pct(p)} + ${f(after - specific)} × ${pct(g)} = ${f(required)}. יש: ${f(allowance)} − ${f(written)} = ${f(allowance - written)}. ההשלמה: ${f(topUp)}.`),
+          entry: two(id(), "השלמת ההפרשה", EXPENSE, ALLOW, topUp, `לקוחות אחרי ${cheque ? "התיקון והמחיקה" : "המחיקה"}: ${f(after)}. נדרש: ${f(specific)} × ${pct(p)} + ${f(after - specific)} × ${pct(g)} = ${f(required)}. יש: ${f(allowance)} − ${f(written)} = ${allowance - written < 0 ? `${f(written - allowance)} בחובה` : f(allowance - written)}. ההשלמה: ${f(topUp)}.`),
           accounts: [EXPENSE, ALLOW, "לקוחות", "מזומן"],
         },
       ],

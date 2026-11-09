@@ -195,7 +195,7 @@ export function drill(family: DrillFamily, seed: number): BasicsDrill {
     const answer = opening + purchases - closing;
     return {
       ...base,
-      prompt: `${co}: מלאי פתיחה ${fmt(opening)} ₪, קניות השנה ${fmt(purchases)} ₪. מלאי הסגירה עלה ${fmt(cost)} ₪, ושווי המימוש נטו שלו ${fmt(nrv)} ₪. מהי עלות המכר?`,
+      prompt: `${co}: מלאי פתיחה ${fmt(opening)} ₪, קניות השנה ${fmt(purchases)} ₪. עלות מלאי הסגירה ${fmt(cost)} ₪, ושווי המימוש נטו שלו ${fmt(nrv)} ₪. מהי עלות המכר?`,
       answer,
       asks: "עלות המכר",
       tool: "מלאי הסגירה נרשם לפי הנמוך מבין העלות לשווי המימוש נטו, ואז נכנס לנוסחת עלות המכר.",
@@ -289,7 +289,7 @@ export function drill(family: DrillFamily, seed: number): BasicsDrill {
     const months = monthsBetween({ year, month }, { year: 2025, month: soldMonth });
     return {
       ...base,
-      prompt: `${co} קנתה ב-1.${month}.${year} ${name} ב-${fmt(cost)} ₪, ${how}. בסוף ${MONTHS[soldMonth]} 2025 ${name === "מחשבים" ? "הם נמכרו" : "הוא נמכר"} ב-${fmt(proceeds)} ₪ במזומן. הפחת של 2025 עוד לא נרשם. מה הסכום של רווח ההון או של הפסד ההון?`,
+      prompt: `${co} קנתה ב-1.${month}.${year} ${name} ב-${fmt(cost)} ₪, ${how}. בסוף ${MONTHS[soldMonth]} 2025 ${name === "מחשבים" ? "הם נמכרו" : name === "מכונה" ? "היא נמכרה" : "הוא נמכר"} ב-${fmt(proceeds)} ₪ במזומן. הפחת של 2025 עוד לא נרשם. מה הסכום של רווח ההון או של הפסד ההון?`,
       answer: Math.abs(result),
       asks: "רווח או הפסד ההון (בלי סימן)",
       tool: "קודם פחת עד יום המכירה, אחר כך עלות מופחתת, ובסוף התמורה מול העלות המופחתת.",
@@ -473,7 +473,7 @@ export function drill(family: DrillFamily, seed: number): BasicsDrill {
       tool: "במאזן בוחן ראשוני היתרה היא של סוף 2024: מה שנשאר אחרי החודשים שנוצלו עד אז.",
       steps: [
         { title: "תשלום לחודש", numbers: `${fmt(paid)} ÷ ${months} = ${fmt(monthly)}` },
-        { title: "נוצלו עד סוף 2024", numbers: `${usedBefore} חודשים` },
+        { title: "נוצלו עד סוף 2024", note: `${usedBefore} חודשים.` },
         { title: "היתרה", formula: "תשלום לחודש × חודשים שנשארו", numbers: `${fmt(monthly)} × ${left} = ${fmt(balance)}` },
       ],
       excel: `=${paid}/${months}*(${months}-${usedBefore})`,
@@ -513,7 +513,7 @@ export function drill(family: DrillFamily, seed: number): BasicsDrill {
       prompt: `מ-1.1.${first} ${co} משלמת מראש על ${name} ל-${years} שנים, ${fmt(monthly)} ₪ לחודש, ורושמת כל תשלום כ״מראש״. החוזה מתחדש בכל פעם שהוא נגמר, באותו מחיר. מה ההוצאה של 2025?`,
       answer,
       asks: "ההוצאה של 2025",
-      tool: "בחוזה שמתחדש באותו מחיר כל שנה עולה אותו דבר. צריך רק לדעת מתי שולם המחזור, כדי לדעת מה היתרה.",
+      tool: "כשהחוזה מתחדש באותו מחיר, ההוצאה של כל שנה זהה: 12 חודשים כפול התשלום החודשי. מתי שולם המחזור משנה רק את היתרה במאזן.",
       steps: [
         { title: "המחזור של 2025", note: `המחזורים מתחילים כל ${years} שנים מ-${first}. המחזור של 2025 התחיל ב-1.1.${cycleStart}.` },
         { title: "ההוצאה", numbers: `${fmt(monthly)} × 12 = ${fmt(answer)}` },
@@ -531,7 +531,7 @@ export function drill(family: DrillFamily, seed: number): BasicsDrill {
     const cases = {
       creditAsCash: { story: `קנייה באשראי של ${fmt(amount)} ₪ נרשמה: ח׳ קניות / ז׳ מזומן.`, fix: two("תיקון", "מזומן", "ספקים", amount), factor: 1, why: "הקניות נכונות ולא משתתפות. המזומן חוזר, והחוב לספק נוצר." },
       chequeAsCash: { story: `מכירה שחלקה, ${fmt(amount)} ₪, שולם בצ׳ק דחוי, נרשמה כולה במזומן.`, fix: two("תיקון", "לקוחות", "מזומן", amount), factor: 1, why: "המכירה נכונה. החלק בצ׳ק דחוי הוא חוב של הלקוח, לא מזומן." },
-      advanceAsPurchase: { story: `מקדמה של ${fmt(amount)} ₪ לספק, על סחורה שתגיע בשנה הבאה, נרשמה: ח׳ קניות / ז׳ מזומן.`, fix: two("תיקון", "מקדמות לספקים", "קניות", amount), factor: 1, why: "המזומן נכון. הסחורה לא הגיעה, ולכן זו לא קנייה אלא נכס." },
+      advanceAsPurchase: { story: `מקדמה של ${fmt(amount)} ₪ לספק, על סחורה שתגיע בשנה הבאה, נרשמה: ח׳ קניות / ז׳ מזומן.`, fix: two("תיקון", "מקדמות לספקים", "קניות", amount), factor: 1, why: "המזומן נכון. הסחורה לא הגיעה, ולכן התשלום הוא נכס: מקדמות לספקים." },
       reversed: { story: `התקבלה במזומן מקדמה של ${fmt(amount)} ₪ מלקוח. נרשם: ח׳ מקדמות מלקוחות / ז׳ מזומן.`, fix: two("תיקון", "מזומן", "מקדמות מלקוחות", amount * 2), factor: 2, why: "הצדדים הפוכים. מבטלים את מה שנרשם ורושמים את מה שצריך: פעמיים הסכום." },
     } as const;
     const c = cases[variant];

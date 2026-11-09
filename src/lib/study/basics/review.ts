@@ -131,7 +131,7 @@ export const REVIEW: StudyModule = {
       kind: "number",
       id: "ppe-unknown-cost",
       skill: "עלות ״?״",
-      prompt: `ב-1.7.2023 נקנו ${TRUCKS.count} משאיות ב-${fmt(TRUCKS.each)} ₪ כל אחת, ל-${TRUCKS.years} שנים. ב-31.12.2024 נמכרה אחת מהן בעלותה המופחתת, והמכירה נרשמה. מה העלות של ״משאיות״ במאזן הבוחן הראשוני של 31.12.2025?`,
+      prompt: `ב-1.7.2023 נקנו ${TRUCKS.count} משאיות ב-${fmt(TRUCKS.each)} ₪ כל אחת, ל-${TRUCKS.years} שנים. ב-31.12.2024 נמכרה אחת מהן בעלותה המופחתת, והמכירה נרשמה. המשאיות רשומות בחשבון ״כלי רכב״. מה העלות של ״כלי רכב״ במאזן הבוחן הראשוני של 31.12.2025?`,
       answer: trucksCost,
       steps: ["המשאית שנמכרה כבר יצאה מהספרים, עם העלות שלה.", `נשארו ${TRUCKS.count - TRUCKS.sold}: ${TRUCKS.count - TRUCKS.sold} × ${fmt(TRUCKS.each)} = ${fmt(trucksCost)}.`],
     },

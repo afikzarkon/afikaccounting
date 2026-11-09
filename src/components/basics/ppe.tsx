@@ -291,10 +291,10 @@ export const PPE_SCREENS: Record<string, ScreenContent> = {
         />
         <NetColumn name="טנדר" cost={VAN.cost} accumulated={VAN_ACC_2} />
         <p>
-          העלות פחות הפחת הנצבר נקראת <strong>עלות מופחתת</strong>. זה הסכום שהטנדר שווה בספרים, ולא מה שאפשר למכור אותו בשוק.
+          העלות פחות הפחת הנצבר נקראת <strong>עלות מופחתת</strong>. זה הסכום שהטנדר שווה בספרים. בשוק אפשר למכור אותו ביותר או בפחות.
         </p>
         <Fx title="עלות מופחתת" formula="עלות מופחתת = עלות − פחת נצבר" numbers={`${n(VAN.cost)} − ${n(VAN_ACC_2)}`} result={VAN_BV_2} excel={`=${VAN.cost}-${VAN_ACC_2}`} />
-        <p className="font-semibold text-fg">בגיליון הרב-טורי כל רכוש קבוע נותן שלוש שורות:</p>
+        <p className="font-semibold text-fg">בגיליון הרב-טורי כל רכוש קבוע נותן שלוש שורות. כך הן נראות במאזן הבוחן הסופי של {VAN.bought.year + 1}:</p>
         <WorksheetRows
           rows={[
             { account: "כלי רכב", dr: VAN.cost, where: "מאזני, נכס", carries: "נשאר בעלות עד שהטנדר נמכר" },
@@ -422,7 +422,7 @@ export const PPE_SCREENS: Record<string, ScreenContent> = {
         />
         <p className="font-semibold text-fg">מקרה ב׳: רק הפחת הנצבר ידוע</p>
         <p>
-          ב-1.{DEVICES.bought.month}.{DEVICES.bought.year} נקנו {DEVICES.tablets} טאבלטים ו-{DEVICES.laptops} מחשבים ניידים, ל-{DEVICES_YEARS} שנים. נייד עולה פי {DEVICES.laptopTimes} מטאבלט. במאזן הבוחן של 31.12.{DEVICES.year} הפחת הנצבר הוא <Money v={DEVICES.accumulated} />, והעלות ״?״.
+          ב-1.{DEVICES.bought.month}.{DEVICES.bought.year} נקנו {DEVICES.tablets} טאבלטים ו-{DEVICES.laptops} מחשבים ניידים, ל-{DEVICES_YEARS} שנים. נייד עולה פי {DEVICES.laptopTimes} מטאבלט. במאזן הבוחן הראשוני של 31.12.{DEVICES.year} הפחת הנצבר הוא <Money v={DEVICES.accumulated} />, והעלות ״?״.
         </p>
         <Steps
           items={[

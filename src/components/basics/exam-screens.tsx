@@ -90,7 +90,7 @@ const ORDER = [
   "העודפים אחרונים: הם ההפרש שמאזן את מאזן הבוחן הראשוני.",
   "פקודות לפי סדר הנתונים. לכל נתון: מה נרשם, מה צריך, והתיקון הוא ההפרש.",
   "תיקונים שמשנים את הלקוחות לפני ההפרשה. פחת עד יום המכירה לפני המכירה.",
-  "מאזן בוחן מתוקן: לכל שורה, יתרה ראשונית ועוד ההתאמות. חשבון חדש מקבל שורה משלו.",
+  "מאזן בוחן מתוקן (נקרא גם סופי): לכל שורה, יתרה ראשונית ועוד ההתאמות. חשבון חדש מקבל שורה משלו.",
   "מסווגים למאזני ותוצאתי, מחשבים רווח, ומוסיפים אותו לעודפי הפתיחה.",
 ];
 const CHECKS = [
@@ -183,14 +183,14 @@ export const EXAM_LESSON_SCREENS: Record<string, ScreenContent> = {
   },
 
   "ex-3": {
-    lead: "עשרה נתונים לסוף השנה. חלקם התאמה, חלקם תיקון, ואחד מהם דורש שתי פקודות.",
+    lead: "שמונה נתונים לסוף השנה. חלקם התאמה, חלקם תיקון, ושניים מהם דורשים שתי פקודות כל אחד.",
     body: (
       <>
         <Time minutes={EXAM3.time} />
         <Given title={`נתון: ${EXAM3.name}, 31.12.2025`} asks={EXAM3.asks}>
           <Facts items={EXAM3.facts} />
         </Given>
-        <Reveal prompt="רשמו את כל הפקודות. שימו לב לנתון שדורש שתיים." label="הצגת הפתרון המלא">
+        <Reveal prompt="רשמו את כל הפקודות. שימו לב לשני הנתונים שדורשים שתי פקודות." label="הצגת הפתרון המלא">
           <Entries entries={EXAM3.entries} />
           <Trap>{EXAM3.trap}</Trap>
         </Reveal>
@@ -214,7 +214,7 @@ export const EXAM_LESSON_SCREENS: Record<string, ScreenContent> = {
   },
 
   "ex-8": {
-    lead: "הגיליון הקשה בקורס: שלוש יתרות חסרות, שתי מכירות של אותו נכס, ותיקונים שמשנים את ההפרשה.",
+    lead: "הגיליון הקשה בקורס: שלוש יתרות חסרות, שתי מכונות מאותה קנייה שנמכרו בשנים שונות, ותיקונים שמשנים את ההפרשה.",
     body: <WorksheetExamScreen x={EXAM8} />,
   },
 
@@ -232,12 +232,12 @@ export const EXAM_LESSON_SCREENS: Record<string, ScreenContent> = {
           <Facts items={EXAM4.facts} />
         </Given>
         <Reveal prompt="פתרו לפי הסדר: כל סעיף משתמש בתשובה של הקודם." label="הצגת הפתרון המלא">
-          <Calc result={<Money v={EXAM4.grossOpening} />}>א. לקוחות ברוטו: 488,800 ÷ 0.94</Calc>
-          <Calc result={<Money v={EXAM4.allowOpening} />}>א. ההפרשה: 520,000 − 488,800</Calc>
+          <Calc result={<Money v={EXAM4.grossOpening} />}>א. לקוחות ברוטו: <bdi dir="ltr" className="num">488,800 ÷ 0.94</bdi></Calc>
+          <Calc result={<Money v={EXAM4.allowOpening} />}>א. ההפרשה: <bdi dir="ltr" className="num">520,000 − 488,800</bdi></Calc>
           <Calc result={<Money v={EXAM4.collected} />}>ב. גבייה: 520,000 + 2,300,000 + 4,000 (החוב שחזר) − 18,000 (מחיקה) − 620,000 (סגירה)</Calc>
-          <Calc result={<Money v={EXAM4.allowClosing} />}>ג. הפרשה בסוף השנה: 31,200 − 18,000 + 4,000 + 27,800</Calc>
-          <Calc result={<Money v={EXAM4.specificDebt} />}>ד. X × 40% + (620,000 − X) × 5% = 45,000, ולכן 0.35X = 45,000 − 31,000</Calc>
-          <Calc result={<Money v={EXAM4.netClosing} />}>ה. לקוחות נטו: 620,000 − 45,000</Calc>
+          <Calc result={<Money v={EXAM4.allowClosing} />}>ג. הפרשה בסוף השנה: <bdi dir="ltr" className="num">31,200 − 18,000 + 4,000 + 27,800</bdi></Calc>
+          <Calc result={<Money v={EXAM4.specificDebt} />}>ד. <bdi dir="ltr" className="num">X × 40% + (620,000 − X) × 5% = 45,000</bdi>, ולכן <bdi dir="ltr" className="num">0.35X = 45,000 − 31,000</bdi></Calc>
+          <Calc result={<Money v={EXAM4.netClosing} />}>ה. לקוחות נטו: <bdi dir="ltr" className="num">620,000 − 45,000</bdi></Calc>
           <Trap>{EXAM4.trap}</Trap>
         </Reveal>
       </>
