@@ -356,3 +356,30 @@ export function assetTransfer(a: { groupCost: number; price: number; years: numb
     return { group, buyer, unrealized: buyer - group, depDiff: k === 0 ? 0 : whole(bDep - gDep) };
   });
 }
+
+/**
+ * Bonds of one group company bought in the market by another: for the group a
+ * redemption. The gain or loss is the issuer's carrying amount less the price,
+ * recognised only in the consolidated statements and borne by the issuer.
+ * A year later both sides' interest goes, and the gap realises part of it.
+ * The deferred tax is a rounded share of what is left at each date.
+ */
+export function bondRedemption(a: { carrying: number; issuerRate: number; price: number; marketRate: number; coupon: number; taxRate: number }) {
+  const gain = a.carrying - a.price;
+  const tax = whole(gain * a.taxRate);
+  const income = whole(a.price * a.marketRate);
+  const expense = whole(a.carrying * a.issuerRate);
+  const investorEnd = a.price + income - a.coupon;
+  const issuerEnd = a.carrying + expense - a.coupon;
+  const left = issuerEnd - investorEnd;
+  const taxEnd = whole(left * a.taxRate);
+  return { gain, tax, net: gain - tax, income, expense, adjust: expense - income, taxMove: tax - taxEnd, investorEnd, issuerEnd, left, taxEnd };
+}
+
+/** A lease the lessor keeps as operating while the lessee books a right-of-use asset: what the lessee recorded in the first year, all of which goes, against the lessor's income. */
+export function rightOfUseYear(a: { payment: number; years: number; rate: number }) {
+  const asset = whole(pvAnnuity(a.rate, a.years, a.payment));
+  const dep = whole(asset / a.years);
+  const interest = whole(asset * a.rate);
+  return { asset, dep, interest, net: dep + interest - a.payment, assetEnd: asset - dep, liabilityEnd: asset + interest - a.payment };
+}

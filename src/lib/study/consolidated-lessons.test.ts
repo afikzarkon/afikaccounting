@@ -13,6 +13,7 @@ import { ATTEND_NO, ATTEND_YES, BOARD, CONTROL, CONTROL_TAUGHT, CONVERTED, MASTE
 import { ACQUISITION, ACQUISITION_TAUGHT, BOND, ITEMS, LESSEE, LESSOR, MASTER4_TABLE, STORY_TABLE } from "./consolidated/lessons/acquisition";
 import { G_FAIR, G_NET, G_PREMIUM, G_SHARE, GOODWILL, GOODWILL_TAUGHT, M5, PAYS, PERIOD, PERIOD_TEST, PERIOD_TEST_START } from "./consolidated/lessons/goodwill";
 import { AGENT_TEST, AGENT_TEST_START, AGENTS, FUND_LARGE, FUND_SMALL, MASTER3_POSITION, MASTER3_REWARD, MASTER3_SISTER, MASTER3_TOGETHER, RETURNS, RETURNS_TAUGHT } from "./consolidated/lessons/returns";
+import { BEFORE11, BOND11, BOND11_FIG, BOND11_PRICE, FIN11, FV11, LEASEBONDS, LEASEBONDS_TAUGHT, M11, M11_FIG, M11_PRICE, RESALE11, ROU11, ROU11_NCI, WHO11 } from "./consolidated/lessons/leasebonds";
 import { BORROW10, DEFER10, INTERCOMPANY, INTERCOMPANY_TAUGHT, INV10, LAND10, LOSS10, M10, MACH10, MACH10_FIG, MISTAKE10, PRIOR10, SAME10, SPLIT10, WD10 } from "./consolidated/lessons/intercompany";
 import { DATES9, DTA9, IMP9, IMPAIRMENT, IMPAIRMENT_TAUGHT, M9, M9_NCI_END, PREF9, PREF_PROFIT } from "./consolidated/lessons/impairment";
 import { BOND8, BOND8_OCI, DEBT_TEST, DEBT_TEST_START, FINANCE, FINANCE_TAUGHT, IMPAIR8, M8, NEEDS, SHARES8_FIG } from "./consolidated/lessons/finance";
@@ -23,7 +24,7 @@ import { type ConsolidatedQuestion, LESSON_N } from "./consolidated/shared";
 import { ltrFormulas } from "./ias19/ltr";
 
 /** What teaches each question, lesson by lesson. */
-const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT, "consolidated-acquisition": ACQUISITION_TAUGHT, "consolidated-goodwill": GOODWILL_TAUGHT, "consolidated-worksheet": WORKSHEET_TAUGHT, "consolidated-policy": POLICY_TAUGHT, "consolidated-finance": FINANCE_TAUGHT, "consolidated-impairment": IMPAIRMENT_TAUGHT, "consolidated-intercompany": INTERCOMPANY_TAUGHT };
+const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT, "consolidated-acquisition": ACQUISITION_TAUGHT, "consolidated-goodwill": GOODWILL_TAUGHT, "consolidated-worksheet": WORKSHEET_TAUGHT, "consolidated-policy": POLICY_TAUGHT, "consolidated-finance": FINANCE_TAUGHT, "consolidated-impairment": IMPAIRMENT_TAUGHT, "consolidated-intercompany": INTERCOMPANY_TAUGHT, "consolidated-leasebonds": LEASEBONDS_TAUGHT };
 
 describe("the consolidated statements course", () => {
   it("lessons numbered in order, on the course's page, the first free", () => {
@@ -616,6 +617,38 @@ describe("lesson 10: the sorting and the figures, against a separate calculation
     const answer = (id: string) => (INTERCOMPANY.exercises.find((x) => x.id === id) as { answer: number }).answer;
     for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
     assert.deepEqual(INTERCOMPANY.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
+  });
+});
+
+describe("lesson 11: the sorting and the figures, against a separate calculation in Python", () => {
+  it("eight adjustments to sort, both answers among them", () => {
+    assert.equal(WHO11.length, 8);
+    assert.ok(WHO11.some((x) => x.answer === "issuer") && WHO11.some((x) => x.answer === "investor"));
+  });
+  it("the leases", () => {
+    assert.deepEqual(ROU11, { asset: 159_708, dep: 31_942, interest: 12_777, net: 4_719, assetEnd: 127_766, liabilityEnd: 132_485 });
+    assert.equal(ROU11_NCI, 944);
+    assert.deepEqual([FIN11.investment, FIN11.gain, FIN11.lesseeDep, FIN11.interest, FIN11.total, FIN11.lessor, FIN11.tax, FIN11.net], [215_288, 35_288, 43_058, 17_223, -28_230, -28_230, 6_493, -21_737]);
+  });
+  it("the bonds: redemption, the year after, resale, fair value, before the combination", () => {
+    assert.equal(BOND11_PRICE, 90_281);
+    assert.deepEqual([BOND11.gain, BOND11.tax, BOND11.net, BOND11.income, BOND11.adjust, BOND11.investorEnd, BOND11.left, BOND11.taxEnd, BOND11.taxMove], [9_719, 2_235, 7_484, 8_125, -2_125, 92_406, 7_594, 1_747, 488]);
+    assert.deepEqual(BOND11_FIG, { nci: 1_497, plNet: -1_637, plNci: -327 });
+    assert.deepEqual(RESALE11, { sale: 102_723, parentGain: 10_317, liability: 2_723, issuer: 7_594, seller: -10_317 });
+    assert.equal(RESALE11.issuer + RESALE11.seller, -RESALE11.liability);
+    assert.deepEqual(FV11, { fair: 97_376, income: 13_095, investor: -4_970, total: -7_095 });
+    assert.deepEqual(BEFORE11, { fairAt: 168_714, excess: 8_714, carrying: 165_950, price: 162_933, groupGain: 3_017, subView: -2_933 });
+  });
+  it("the closing question", () => {
+    assert.equal(M11_PRICE, 111_871);
+    assert.deepEqual([M11.gain, M11.tax, M11.net, M11.income, M11.adjust, M11.taxMove, M11.investorEnd, M11.left], [8_129, 1_870, 6_259, 7_831, -1_831, 421, 113_702, 6_298]);
+    assert.deepEqual(M11_FIG, { plNet: -1_410, effect: 4_849, nci: 18_970, liability: 180_000 });
+  });
+  it("calculations in the practice", () => {
+    const expected: Record<string, number> = { "redeem-net": 9_240, "redeem-loss": 4_500, "after-adj": 1_650, "rou-net": 2_600, "redeem-nci": 16_925, "before-gain": 2_500, "resale-seller": 5_000, "resale-liab": 3_000, "fv-investor": 2_300, "fin-dep": 25_000, "fin-lessor-part": 18_000, "redeem-price": 3_567, "rou-nci": 16_800 };
+    const answer = (id: string) => (LEASEBONDS.exercises.find((x) => x.id === id) as { answer: number }).answer;
+    for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
+    assert.deepEqual(LEASEBONDS.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
   });
 });
 

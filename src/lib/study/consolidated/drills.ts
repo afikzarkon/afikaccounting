@@ -49,6 +49,10 @@ export const DRILL_FAMILIES = {
   icdep: "מימוש בקצב הפחת",
   icnci: "זשמ״ש כשהבת מכרה",
   icprior: "דחייה ביתרת פתיחה",
+  bdgain: "רווח מפדיון",
+  bdreal: "מימוש דרך הריבית",
+  lsrou: "חכירה: החוכר הכיר בנכס",
+  lsfin: "חכירה מימונית: המחכיר",
 } as const;
 
 export type DrillFamily = keyof typeof DRILL_FAMILIES;
@@ -584,6 +588,70 @@ export function drill(family: DrillFamily, seed: number): Drill {
         { title: "אחרי מס", numbers: `${fmt(profit)} × 77% = ${fmt(net)}` },
       ],
       trap: "להקטין את העודפים בכל הרווח, בלי נכס המס.",
+    };
+  }
+  if (family === "bdgain") {
+    const face = r.int(5, 30) * 10_000;
+    const price = face - r.int(1, 48) * 500;
+    const gain = face - price;
+    const net = whole(gain * 0.77);
+    return {
+      prompt: `אג״ח של הבת רשומות אצלה ב־${fmt(face)} ש״ח, לפי הערך הנקוב. האם קנתה את כולן בשוק ב־${fmt(price)} ש״ח. שיעור המס 23%. מה הרווח נטו מהפדיון במאוחד?`,
+      answer: net,
+      steps: [
+        { title: "ההתחייבות פחות התמורה", numbers: `${fmt(face)} − ${fmt(price)} = ${fmt(gain)}` },
+        { title: "אחרי מס", numbers: `${fmt(gain)} × 77% = ${fmt(net)}` },
+      ],
+      trap: "לחשוב שאין רווח, כי אף חברה לא רשמה אותו.",
+    };
+  }
+  if (family === "bdreal") {
+    const price = r.int(80, 98) * 1_000;
+    const market = r.int(6, 9);
+    const coupon = r.int(2, market - 2);
+    const income = whole((price * market) / 100);
+    const expense = coupon * 1_000;
+    return {
+      prompt: `לפני שנה האם קנתה בשוק את כל האג״ח של הבת ב־${fmt(price)} ש״ח, בריבית שוק של ${market}%, ומודדת אותן בעלות מופחתת. אצל הבת האג״ח רשומות ב־100,000 ש״ח, לפי הערך הנקוב, בריבית ${coupon}%. בכמה קטן הרווח המאוחד השנה בגלל ביטול הריבית, לפני מס?`,
+      answer: income - expense,
+      steps: [
+        { title: "הכנסות הריבית של האם", numbers: `${fmt(price)} × ${market}% = ${fmt(income)}` },
+        { title: "הוצאות הריבית של הבת", numbers: `100,000 × ${coupon}% = ${fmt(expense)}` },
+        { title: "הפער: המימוש של הפדיון", numbers: `${fmt(income)} − ${fmt(expense)} = ${fmt(income - expense)}` },
+      ],
+      trap: "לחשוב שהביטול מתקזז לאפס.",
+    };
+  }
+  if (family === "lsrou") {
+    const asset = r.int(3, 15) * 20_000;
+    const years = r.int(4, 5);
+    const rate = r.int(5, 10);
+    const dep = whole(asset / years);
+    const interest = whole((asset * rate) / 100);
+    const gap = r.int(1, interest / 250 - 1) * 250;
+    const payment = dep + interest - gap;
+    return {
+      prompt: `בלי מסים. החכירה תפעולית אצל האם, המחכירה. הבת הכירה בנכס זכות שימוש של ${fmt(asset)} ש״ח, מופחת על פני ${years} שנים, ובריבית של ${rate}%. האם רשמה הכנסות מחכירה של ${fmt(payment)} ש״ח. בכמה גדל הרווח המאוחד בשנה הראשונה?`,
+      answer: gap,
+      steps: [
+        { title: "הפחת והריבית של הבת", numbers: `${fmt(asset)} ÷ ${years} + ${fmt(asset)} × ${rate}% = ${fmt(dep + interest)}` },
+        { title: "פחות ההכנסות של האם", numbers: `${fmt(dep + interest)} − ${fmt(payment)} = ${fmt(gap)}` },
+      ],
+      trap: "לבטל רק את ההכנסות של האם.",
+    };
+  }
+  if (family === "lsfin") {
+    const years = r.int(3, 8);
+    const gain = r.int(2, 20) * years * 1_000;
+    const left = gain - gain / years;
+    return {
+      prompt: `בלי מסים. האם החכירה לבת מכונה בחכירה מימונית, ורשמה בתחילת החכירה רווח של ${fmt(gain)} ש״ח. המכונה עוברת לבת, ומופחתת על פני ${years} שנים. בכמה קטן הרווח המאוחד בשנה הראשונה, על חשבון האם?`,
+      answer: left,
+      steps: [
+        { title: "המימוש בשנה הראשונה, דרך הפחת", numbers: `${fmt(gain)} ÷ ${years} = ${fmt(gain / years)}` },
+        { title: "הרווח שבוטל, פחות המימוש", numbers: `${fmt(gain)} − ${fmt(gain / years)} = ${fmt(left)}` },
+      ],
+      trap: "לבטל את כל הרווח, בלי המימוש של השנה.",
     };
   }
   if (family === "ncieq")

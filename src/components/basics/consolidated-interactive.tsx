@@ -2,7 +2,7 @@
 
 import { RotateCcw } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { impairmentViews, inventoryDeferral, type Books, consolidate, excessTable, goodwillCalc, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, pvBond, revalue, whole, amortizedCost } from "@/lib/learn/consolidated";
+import { bondRedemption, impairmentViews, inventoryDeferral, type Books, consolidate, excessTable, goodwillCalc, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, pvBond, revalue, whole, amortizedCost } from "@/lib/learn/consolidated";
 import { drill, DRILL_FAMILIES, type DrillFamily } from "@/lib/study/consolidated/drills";
 import { ARMON, NOFAR } from "@/lib/study/consolidated/lessons/worksheet";
 import { cn } from "@/lib/utils";
@@ -420,6 +420,45 @@ export function IntercoLab() {
         ]}
       />
       <Tbl head={["מי נושא בדחייה נטו", "סכום"]} rows={[["הבעלים של צאלון", v.owners], ["זשמ״ש, 30%", v.nci]]} />
+    </section>
+  );
+}
+
+/** Kalanit's bonds: pick the market rate on the day Nurit buys and the share she buys, and see the gain on redemption and its realisation the year after. */
+export function BondRedeemLab() {
+  const [rate, setRate] = useState(9);
+  const [share, setShare] = useState(50);
+  const face = 200_000 * (share / 100);
+  const coupon = face * 0.06;
+  const price = whole(pvBond(rate / 100, 4, coupon, face));
+  const v = bondRedemption({ carrying: face, issuerRate: 0.06, price, marketRate: rate / 100, coupon, taxRate: 0.23 });
+  return (
+    <section aria-label="מעבדה: ריבית ביום הקנייה" className="card space-y-4 p-4 sm:p-5">
+      <Percent label="ריבית השוק ביום הקנייה" value={rate} onChange={setRate} min={3} max={12} />
+      <div className="flex flex-wrap gap-2">
+        {[25, 50, 75, 100].map((x) => (
+          <button key={x} type="button" aria-pressed={share === x} onClick={() => setShare(x)} className={cn("min-h-11 rounded-lg border px-3 py-1.5 text-[13.5px] font-semibold", share === x ? "border-accent bg-accent-soft text-fg" : "border-line text-muted hover:bg-surface-2")}>
+            {`נורית קונה ${x}%`}
+          </button>
+        ))}
+      </div>
+      <Tbl
+        head={["31.12.2025", "סכום"]}
+        rows={[
+          ["ההתחייבות בספרי כלנית", face],
+          ["התמורה ששילמה נורית", price],
+          [v.gain >= 0 ? "רווח מפדיון" : "הפסד מפדיון", Math.abs(v.gain)],
+          ["אחרי מס, על חשבון כלנית", Math.abs(v.net)],
+        ]}
+      />
+      <Tbl
+        head={["2026", "סכום"]}
+        rows={[
+          ["הכנסות הריבית של נורית", v.income],
+          ["הוצאות הריבית של כלנית", v.expense],
+          [v.adjust <= 0 ? "ביטול הריבית מקטין את הרווח ב־" : "ביטול הריבית מגדיל את הרווח ב־", Math.abs(v.adjust)],
+        ]}
+      />
     </section>
   );
 }
