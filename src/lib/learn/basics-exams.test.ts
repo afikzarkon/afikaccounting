@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { isBalanced, trialBalance } from "./basics";
-import { EXAM1, EXAM2, EXAM3, EXAM4 } from "./basics-exams";
+import { EXAM1, EXAM2, EXAM3, EXAM4, EXAM5, EXAM6, solveWorksheet } from "./basics-exams";
+import { normalSide } from "./basics";
 
 describe("lesson 9's exams", () => {
   it("exam 1: seventeen balanced entries, a trial balance of 398,000, cash 240,940", () => {
@@ -45,5 +46,23 @@ describe("lesson 9's exams", () => {
       [EXAM4.grossOpening, EXAM4.allowOpening, EXAM4.collected, EXAM4.allowClosing, EXAM4.specificDebt, EXAM4.netClosing],
       [520_000, 31_200, 2_186_000, 45_000, 40_000, 575_000],
     );
+  });
+
+  it("exams 5 and 6: whole worksheets, balanced from the first column to the last", () => {
+    const want = [
+      { x: EXAM5, computed: [-127_500], opening: 182_600, profit: 686_275, closing: 868_875 },
+      { x: EXAM6, computed: [45_600], opening: 290_050, profit: 478_170, closing: 768_220 },
+    ];
+    for (const w of want) {
+      const s = solveWorksheet(w.x);
+      assert.deepEqual(w.x.computed.map((c) => c.value), w.computed, w.x.name);
+      for (const e of w.x.entries) assert.ok(isBalanced(e), `${w.x.name}: ${e.id}`);
+      const t = trialBalance(s.final);
+      assert.equal(t.dr, t.cr, w.x.name);
+      assert.equal(s.retainedOpening, w.opening, w.x.name);
+      assert.equal(s.profit, w.profit, w.x.name);
+      assert.equal(s.retainedClosing, w.closing, w.x.name);
+      for (const [a, v] of Object.entries(s.final)) if (Math.abs(v) > 0.005 && a !== "עודפים") assert.equal(v > 0 ? "dr" : "cr", normalSide(a), `${w.x.name}: ${a}`);
+    }
   });
 });

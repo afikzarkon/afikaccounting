@@ -22,6 +22,8 @@ export const EXAMS: StudyModule = {
     { id: "ex-2", title: "מבחן 2" },
     { id: "ex-3", title: "מבחן 3" },
     { id: "ex-4", title: "מבחן 4" },
+    { id: "ex-5", title: "מבחן 5" },
+    { id: "ex-6", title: "מבחן 6" },
   ],
   exercises: [
     {

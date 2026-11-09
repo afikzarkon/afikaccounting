@@ -2,7 +2,7 @@ import { Clock } from "lucide-react";
 import type { ReactNode } from "react";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { ledger, trialBalance } from "@/lib/learn/basics";
-import { EXAM1, EXAM2, EXAM3, EXAM4 } from "@/lib/learn/basics-exams";
+import { EXAM1, EXAM2, EXAM3, EXAM4, EXAM5, EXAM6, solveWorksheet, type WorksheetExam } from "@/lib/learn/basics-exams";
 import { Remember } from "@/components/study-mode/screen-parts";
 import { Given } from "./credit";
 import { Calc, JE, Money, TBTable, TCard } from "./ui";
@@ -42,6 +42,44 @@ function Trap({ children }: { children: ReactNode }) {
     <p className="rounded-xl bg-surface-2/70 px-3.5 py-2.5 text-[14.5px]">
       <strong>מלכודת נפוצה:</strong> {children}
     </p>
+  );
+}
+
+/** A whole worksheet question: the trial balance with its "?" balances, the facts, and the whole solution behind one button. */
+function WorksheetExamScreen({ x }: { x: WorksheetExam }) {
+  const s = solveWorksheet(x);
+  const unknowns = [...x.computed.map((c) => c.account), "עודפים"];
+  return (
+    <>
+      <Time minutes={x.time} />
+      <Given title={`נתון: ${x.name}, מאזן בוחן ראשוני ליום 31.12.2025`} asks="השלמת היתרות החסרות, פקודות התאמה ותיקון, מאזן בוחן מתוקן (גיליון עבודה מלא), רווח 2025 ועודפי הסגירה.">
+        <ul className="divide-y divide-amber-500/20 text-[14.5px]">
+          {[...Object.entries(x.given), ...unknowns.map((u) => [u, null] as [string, null])].map(([a, v]) => (
+            <li key={a} className="flex justify-between gap-3 py-1">
+              <span>{a}</span>
+              {v === null ? <strong className="text-accent">?</strong> : <Money v={Math.abs(v)} plain />}
+            </li>
+          ))}
+        </ul>
+        <p className="pt-1 font-semibold">נתונים נוספים:</p>
+        <Facts items={x.facts} />
+      </Given>
+      <Reveal prompt="פתרו את כל הגיליון: היתרות החסרות, הפקודות, מאזן הבוחן המתוקן, הרווח והעודפים." label="הצגת הפתרון המלא">
+        {x.computed.map((c) => (
+          <Calc key={c.account} result={<Money v={Math.abs(c.value)} />}>
+            {c.account}: {c.why}
+          </Calc>
+        ))}
+        <Calc result={<Money v={Math.abs(s.retainedOpening)} />}>עודפים: ההפרש שמאזן את מאזן הבוחן, {s.retainedOpening >= 0 ? "בזכות" : "בחובה"}</Calc>
+        <Entries entries={x.entries} />
+        <TBTable tb={trialBalance(s.final)} caption={`מאזן בוחן מתוקן · ${x.name} · 31.12.2025`} kind />
+        <Calc result={<Money v={s.profit} />}>רווח 2025: הכנסות פחות הוצאות במאזן הבוחן המתוקן</Calc>
+        <Calc result={<Money v={s.retainedClosing} />}>
+          עודפי סגירה: <Money v={s.retainedOpening} /> + <Money v={s.profit} />
+        </Calc>
+        <Trap>{x.trap}</Trap>
+      </Reveal>
+    </>
   );
 }
 
@@ -157,6 +195,16 @@ export const EXAM_LESSON_SCREENS: Record<string, ScreenContent> = {
         </Reveal>
       </>
     ),
+  },
+
+  "ex-5": {
+    lead: "גיליון רב-טורי מלא, ברמת הבוחן. שתי יתרות חסרות, אחת מהן מהסיפור.",
+    body: <WorksheetExamScreen x={EXAM5} />,
+  },
+
+  "ex-6": {
+    lead: "גיליון רב-טורי מלא. יתרה אחת חסרה מסתתרת במשוואה.",
+    body: <WorksheetExamScreen x={EXAM6} />,
   },
 
   "ex-4": {

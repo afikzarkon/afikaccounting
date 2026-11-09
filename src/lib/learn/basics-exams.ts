@@ -198,3 +198,142 @@ export const EXAM4 = {
   netClosing: round2(E4.closing - allowClosing),
   trap: "חוב שחזר עובר דרך הלקוחות: קודם מחזירים אותו (ח׳ לקוחות / ז׳ הפרשה), ואז גובים. לכן הגבייה כוללת אותו, וההפרשה גדלה בו.",
 };
+
+// ---------------------------------------------------------------------------
+// Exams 5 to 8: whole worksheets. One shape for all: a trial balance with "?" balances, the facts, the entries,
+// and everything after them computed from the data.
+
+export type WorksheetExam = {
+  name: string;
+  time: number;
+  /** The trial balance as the question prints it: debit positive, credit negative; the "?" accounts are missing. */
+  given: Balances;
+  /** "?" balances worked out from the story, with how. Retained earnings, the balancing figure, are not listed here. */
+  computed: { account: string; value: number; why: string }[];
+  facts: string[];
+  entries: Entry[];
+  trap: string;
+};
+
+/** Everything after the question: the preliminary trial balance with every "?" found, the final one, profit and closing retained earnings. */
+export function solveWorksheet(x: WorksheetExam) {
+  const withComputed: Balances = { ...x.given, ...Object.fromEntries(x.computed.map((c) => [c.account, c.value])) };
+  const retained = round2(-Object.values(withComputed).reduce((s, v) => s + v, 0));
+  const preliminary: Balances = { ...withComputed, עודפים: retained };
+  const final = balancesOf(ledger(x.entries, preliminary));
+  const profit = statements(final).profit;
+  // Retained earnings as the question reads them: credit positive.
+  const opening = -retained;
+  return { preliminary, retainedOpening: opening, final, profit, retainedClosing: round2(opening + profit) };
+}
+
+// Exam 5: vans with a "?" accumulated depreciation and a sale, credit losses, an old lease, a loan, consulting received in advance.
+const V5 = { count: 4, each: 68_000, rate: 0.125, bought: { year: 2021, month: 4 }, soldMonth: 9, proceeds: 33_000 };
+const v5Cost = V5.count * V5.each;
+const v5Acc = accumulatedTo(v5Cost, { rate: V5.rate }, V5.bought, { year: 2024, month: 12 });
+const v5Kept = depreciationOfYear((V5.count - 1) * V5.each, { rate: V5.rate }, V5.bought, 2025);
+const v5SoldPart = round2((V5.each * V5.rate * V5.soldMonth) / 12);
+const v5SoldAcc = accumulatedTo(V5.each, { rate: V5.rate }, V5.bought, { year: 2025, month: V5.soldMonth });
+const v5Sale = sale(V5.each, v5SoldAcc, V5.proceeds);
+const C5 = { customers: 840_000, allowance: 30_000, written: 12_000, specific: 46_000, p: 0.5, g: 0.04 };
+const c5After = C5.customers - C5.written;
+const c5Required = round2(C5.specific * C5.p + (c5After - C5.specific) * C5.g);
+const C5c = { got: 54_000, months: 18, start: 9 };
+const L5 = { amount: 240_000, rate: 0.09, start: 6 };
+
+export const EXAM5: WorksheetExam = {
+  name: "אופק ריהוט בע״מ",
+  time: 50,
+  given: {
+    מזומן: 812_000,
+    לקוחות: C5.customers,
+    "הפרשה להפסדי אשראי חזויים": -C5.allowance,
+    "מלאי פתיחה": 240_000,
+    קניות: 1_650_000,
+    "כלי רכב": v5Cost,
+    "הוצאות שכירות מראש": 64_000,
+    ספקים: -410_000,
+    "הלוואה שהתקבלה": -L5.amount,
+    "הון מניות": -400_000,
+    מכירות: -3_100_000,
+    "הכנסות ייעוץ": -C5c.got,
+    "הוצאות שכר": 610_000,
+    "הוצאות חשמל": 56_100,
+  },
+  computed: [{ account: "כלי רכב – פחת נצבר", value: -v5Acc, why: `${f(v5Cost)} × ${V5.rate * 100}% × 45/12: מאפריל 2021 עד סוף 2024, כי הפחת של 2025 עוד לא נרשם.` }],
+  facts: [
+    `כלי רכב: ב-1.4.2021 נקנו ${V5.count} טנדרים זהים ב-${f(V5.each)} ₪ כל אחד, בפחת של ${V5.rate * 100}% בשנה. הפחת הנצבר לא נתון במאזן הבוחן. בסוף ספטמבר 2025 נמכר טנדר אחד ב-${f(V5.proceeds)} ₪ במזומן. לא נרשמו לא המכירה ולא הפחת של 2025.`,
+    "החשמל של ינואר עד נובמבר נרשם, בשווה בכל חודש. בדצמבר החשבון גבוה ב-20% מחודש רגיל, והוא ישולם בינואר.",
+    `ב-31.12.2025 התברר שחוב של ${f(C5.written)} ₪ אבוד, וטרם נמחק. החברה מפרישה ${C5.p * 100}% מחוב של לקוח בקשיים שחייב ${f(C5.specific)} ₪, ו-${C5.g * 100}% משאר הלקוחות.`,
+    `ב-1.${C5c.start}.2025 התקבלו ${f(C5c.got)} ₪ על ייעוץ ל-${C5c.months} חודשים, ונרשמו כולם כהכנסה.`,
+    "השכירות: ב-1.5.2024 שולמו 96,000 ₪ על שנתיים, ונרשמו כ״מראש״. ב-2025 עוד לא נרשם דבר.",
+    `ההלוואה נלקחה ב-1.${L5.start}.2025 בריבית שנתית של ${L5.rate * 100}%, שתשולם עם הקרן ב-2028.`,
+    "מלאי הסגירה: עלות 276,000 ₪, שווי מימוש נטו 262,000 ₪.",
+  ],
+  entries: [
+    two("1", "31.12.2025", "פחת הטנדרים: שלושה לשנה, ואחד עד ספטמבר", "הוצאות פחת", "כלי רכב – פחת נצבר", round2(v5Kept + v5SoldPart), `שלושה: ${f((V5.count - 1) * V5.each)} × ${V5.rate * 100}% = ${f(v5Kept)}. הטנדר שנמכר, 9 חודשים: ${f(v5SoldPart)}.`),
+    { ...saleEntry("2", "מכירת הטנדר", { account: "כלי רכב", accumulatedAccount: "כלי רכב – פחת נצבר", cost: V5.each, accumulated: v5SoldAcc }, V5.proceeds), date: "30.9.2025", why: `פחת נצבר על הטנדר: ${f(V5.each)} × ${V5.rate * 100}% × 54/12 = ${f(v5SoldAcc)}. עלות מופחתת ${f(V5.each - v5SoldAcc)}. רווח הון ${f(v5Sale.result)}.` },
+    two("3", "31.12.2025", "חשמל דצמבר", "הוצאות חשמל", "הוצאות חשמל לשלם", 6_120, "56,100 ÷ 11 = 5,100. דצמבר: × 1.2."),
+    two("4", "31.12.2025", "מחיקת החוב האבוד", "הפרשה להפסדי אשראי חזויים", "לקוחות", C5.written),
+    two("5", "31.12.2025", "השלמת ההפרשה", "הוצאות הפסדי אשראי", "הפרשה להפסדי אשראי חזויים", round2(c5Required - (C5.allowance - C5.written)), `לקוחות אחרי המחיקה ${f(c5After)}. נדרש: ${f(C5.specific * C5.p)} + ${f(c5After - C5.specific)} × ${C5.g * 100}% = ${f(c5Required)}. יש: ${f(C5.allowance - C5.written)}.`),
+    two("6", "31.12.2025", "ייעוץ: מה ששייך לשנים הבאות", "הכנסות ייעוץ", "הכנסות ייעוץ מראש", (C5c.got / C5c.months) * (C5c.months - 4), `${f(C5c.got / C5c.months)} לחודש. ב-2025 ניתנו 4 חודשים, ונשארו ${C5c.months - 4}.`),
+    two("7", "31.12.2025", "שכירות: 12 החודשים של 2025", "הוצאות שכירות", "הוצאות שכירות מראש", 48_000, "חוזה ישן: 4,000 לחודש × 12."),
+    two("8", "31.12.2025", "ריבית על ההלוואה", "הוצאות ריבית", "הוצאות ריבית לשלם", round2((L5.amount * L5.rate * (13 - L5.start)) / 12), `${f(L5.amount)} × ${L5.rate * 100}% × ${13 - L5.start}/12.`),
+    two("9", "31.12.2025", "מלאי הסגירה", "מלאי סגירה מאזני", "מלאי סגירה רווח או הפסד", 262_000, "שווי המימוש נמוך מהעלות, ולכן נרשם הוא."),
+  ],
+  trap: "בטנדרים: הפחת הנצבר במאזן הבוחן הוא עד סוף 2024, ובמכירה מוציאים רק את העלות ואת הפחת של הטנדר שנמכר. ובהפרשה: קודם מוחקים, ואז מחשבים על הלקוחות שנשארו.",
+};
+
+// Exam 6: computers whose cost comes back through X, a new vehicle, an entry recorded backwards, a returned cheque before the allowance.
+const D6 = { regular: 10, laptops: 6, times: 1.5, x: 2_400, years: 4, bought: { year: 2023, month: 4 } };
+const d6Cost = (D6.regular + D6.laptops * D6.times) * D6.x;
+const d6Acc = accumulatedTo(d6Cost, { years: D6.years }, D6.bought, { year: 2024, month: 12 });
+const d6Year = depreciationOfYear(d6Cost, { years: D6.years }, D6.bought, 2025);
+const K6 = { cost: 132_000, rate: 0.15, month: 8 };
+const k6Year = depreciationOfYear(K6.cost, { rate: K6.rate }, { year: 2025, month: K6.month }, 2025);
+const R6 = { customers: 560_000, cheque: 22_000, fee: 80, allowance: 24_000, rate: 0.05 };
+const r6Required = round2((R6.customers + R6.cheque) * R6.rate);
+
+export const EXAM6: WorksheetExam = {
+  name: "שקמה מתוקים בע״מ",
+  time: 50,
+  given: {
+    מזומן: 486_000,
+    לקוחות: R6.customers,
+    "הפרשה להפסדי אשראי חזויים": -R6.allowance,
+    "מלאי פתיחה": 176_000,
+    קניות: 1_240_000,
+    "מחשבים – פחת נצבר": -d6Acc,
+    "כלי רכב": K6.cost,
+    ספקים: -230_000,
+    "מקדמות מלקוחות": -24_000,
+    "הון מניות": -300_000,
+    מכירות: -2_480_000,
+    "הוצאות שכר": 594_000,
+    "הוצאות פרסום": 38_400,
+    "הוצאות שכירות": 96_000,
+  },
+  computed: [{ account: "מחשבים", value: d6Cost, why: `עלות = ${D6.regular}X + ${D6.laptops} × ${D6.times}X = ${D6.regular + D6.laptops * D6.times}X. מאפריל 2023 עד סוף 2024: 21 חודשים מתוך 48. ${D6.regular + D6.laptops * D6.times}X × 21/48 = ${f(d6Acc)}, ולכן X = ${f(D6.x)}.` }],
+  facts: [
+    `מחשבים: ב-1.4.2023 נקנו ${D6.regular} מחשבים רגילים ו-${D6.laptops} מחשבים ניידים, ל-${D6.years} שנים. נייד עולה פי ${D6.times} ממחשב רגיל. העלות לא נתונה במאזן הבוחן, והפחת של 2025 לא נרשם.`,
+    `ב-1.${K6.month}.2025 נקנה רכב ב-${f(K6.cost)} ₪ במזומן, והקנייה נרשמה. שיעור הפחת ${K6.rate * 100}% בשנה, והפחת לא נרשם.`,
+    "בנובמבר התקבלה במזומן מקדמה של 16,000 ₪ מלקוח. נרשם: ח׳ מקדמות מלקוחות / ז׳ מזומן.",
+    `ב-29.12.2025 חזר צ׳ק של לקוח על ${f(R6.cheque)} ₪, והבנק חייב עמלה של ${R6.fee} ₪. לא נרשם דבר.`,
+    `החברה מעמידה את ההפרשה להפסדי אשראי על ${R6.rate * 100}% מיתרת הלקוחות.`,
+    "ב-1.10.2025 שולמו 38,400 ₪ על פרסום לשנה, ונרשמו כולם כהוצאה.",
+    "השכר של ינואר עד נובמבר נרשם, בשווה בכל חודש. מדצמבר השכר עלה ב-10%, ושכר דצמבר ישולם ב-10.1.2026.",
+    "מלאי הסגירה: עלות 198,000 ₪, שווי מימוש נטו 205,000 ₪.",
+  ],
+  entries: [
+    two("1", "31.12.2025", "פחת המחשבים", "הוצאות פחת", "מחשבים – פחת נצבר", d6Year, `${f(d6Cost)} ÷ ${D6.years} = ${f(d6Year)}.`),
+    two("2", "31.12.2025", "פחת הרכב", "הוצאות פחת", "כלי רכב – פחת נצבר", k6Year, `${f(K6.cost)} × ${K6.rate * 100}% × 5/12: אוגוסט עד דצמבר.`),
+    two("3", "31.12.2025", "תיקון: מקדמה שנרשמה הפוך", "מזומן", "מקדמות מלקוחות", 32_000, "מבטלים את מה שנרשם ורושמים את מה שצריך: פעמיים 16,000."),
+    two("4", "29.12.2025", "הצ׳ק שחזר", "לקוחות", "מזומן", R6.cheque, "הלקוח שוב חייב, והמזומן לא באמת נכנס."),
+    two("5", "29.12.2025", "עמלת הבנק", "הוצאות עמלות", "מזומן", R6.fee),
+    two("6", "31.12.2025", "השלמת ההפרשה", "הוצאות הפסדי אשראי", "הפרשה להפסדי אשראי חזויים", round2(r6Required - R6.allowance), `לקוחות אחרי הצ׳ק שחזר: ${f(R6.customers + R6.cheque)}. נדרש: × ${R6.rate * 100}% = ${f(r6Required)}. יש: ${f(R6.allowance)}.`),
+    two("7", "31.12.2025", "פרסום: מה ששייך ל-2026", "הוצאות פרסום מראש", "הוצאות פרסום", 28_800, "3,200 לחודש. 9 חודשים שייכים ל-2026."),
+    two("8", "31.12.2025", "שכר דצמבר", "הוצאות שכר", "הוצאות שכר לשלם", 59_400, "594,000 ÷ 11 = 54,000. דצמבר: × 1.1."),
+    two("9", "31.12.2025", "מלאי הסגירה", "מלאי סגירה מאזני", "מלאי סגירה רווח או הפסד", 198_000, "העלות נמוכה משווי המימוש."),
+  ],
+  trap: "הצ׳ק שחזר מגדיל את הלקוחות, ולכן נרשם לפני ההפרשה. ובמקדמה שנרשמה הפוך, התיקון כפול.",
+};
