@@ -75,3 +75,13 @@ export function partnersToBeat(holding: number, others: number[]) {
 
 /** The holding in percent after converting into new shares: the new shares join both the investor's count and the total. */
 export const afterConversion = (c: { shares: number; total: number; newShares: number }) => tidy(((c.shares + c.newShares) / (c.total + c.newShares)) * 100);
+
+/** What a fund's manager earns from it in a year: a fee on net assets, a share of the profit above a level, and its holding's share of what is left. The profit is before those two. */
+export function managerReward(m: { nav: number; feeRate: number; profit: number; hurdle: number; perfRate: number; holding: number }) {
+  const fee = whole(m.nav * m.feeRate);
+  const performance = whole(Math.max(0, m.profit - m.hurdle) * m.perfRate);
+  const left = m.profit - fee - performance;
+  const fromHolding = whole(left * m.holding);
+  const total = fee + performance + fromHolding;
+  return { fee, performance, left, fromHolding, total, share: tidy((total / m.profit) * 100) };
+}

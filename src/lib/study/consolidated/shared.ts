@@ -10,6 +10,7 @@ export const COURSE_HREF = "/basics/consolidated";
 export const LESSON_N = {
   "consolidated-what": 1,
   "consolidated-control": 2,
+  "consolidated-returns": 3,
 } as const;
 
 export type ConsolidatedSlug = keyof typeof LESSON_N;

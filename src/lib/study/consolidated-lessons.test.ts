@@ -10,12 +10,13 @@ import { CONSOLIDATED_LESSONS } from "./consolidated";
 import { drill, DRILL_FAMILIES, type DrillFamily } from "./consolidated/drills";
 import { CONSOLIDATED_GLOSSARY } from "./consolidated/glossary";
 import { ATTEND_NO, ATTEND_YES, BOARD, CONTROL, CONTROL_TAUGHT, CONVERTED, MASTER2_NOW, MASTER2_OPTION, MASTER2_PARTNERS, MASTER2_POSITION, POWER_TEST, POWER_TEST_START, RIGHTS, TWO_JOIN } from "./consolidated/lessons/control";
+import { AGENT_TEST, AGENT_TEST_START, AGENTS, FUND_LARGE, FUND_SMALL, MASTER3_POSITION, MASTER3_REWARD, MASTER3_SISTER, MASTER3_TOGETHER, RETURNS, RETURNS_TAUGHT } from "./consolidated/lessons/returns";
 import { CASES, EXEMPT_TEST, EXEMPT_TEST_START, MASTER_POSITION, MASTER_PROFIT, MASTER_SEPARATE, STORY_POSITION, STORY_PROFIT, STORY_SEPARATE, WHAT, WHAT_TAUGHT } from "./consolidated/lessons/what";
 import { type ConsolidatedQuestion, LESSON_N } from "./consolidated/shared";
 import { ltrFormulas } from "./ias19/ltr";
 
 /** What teaches each question, lesson by lesson. */
-const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT };
+const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT };
 
 describe("the consolidated statements course", () => {
   it("lessons numbered in order, on the course's page, the first free", () => {
@@ -270,6 +271,44 @@ describe("lesson 2: figures, against a separate calculation in Python", () => {
   });
 });
 
+describe("lesson 3: the walk, the sorting and the figures, against a separate calculation in Python", () => {
+  it("every path of the walk ends, and both verdicts are reachable", () => {
+    const ends = new Set<boolean>();
+    const reach = (id: string, seen: string[]): void => {
+      const node = AGENT_TEST[id];
+      assert.ok(node, id);
+      assert.ok(!seen.includes(id), `loop at ${id}`);
+      if ("verdict" in node) return void ends.add(node.lease);
+      node.answers.forEach((a) => reach(a.to, [...seen, id]));
+    };
+    reach(AGENT_TEST_START, []);
+    assert.deepEqual([...ends].sort(), [false, true]);
+  });
+  it("seven cases to sort, both answers among them", () => {
+    assert.equal(AGENTS.length, 7);
+    assert.ok(AGENTS.some((a) => a.answer === "agent") && AGENTS.some((a) => a.answer === "principal"));
+  });
+  it("the fund on the screens", () => {
+    assert.deepEqual(FUND_SMALL, { fee: 600_000, performance: 600_000, left: 3_800_000, fromHolding: 114_000, total: 1_314_000, share: 26.28 });
+    assert.deepEqual(FUND_LARGE, { fee: 600_000, performance: 600_000, left: 3_800_000, fromHolding: 950_000, total: 2_150_000, share: 43 });
+  });
+  it("the closing question", () => {
+    assert.deepEqual(MASTER3_REWARD, { fee: 900_000, performance: 450_000, left: 3_650_000, fromHolding: 912_500, total: 2_262_500, share: 45.25 });
+    assert.equal(MASTER3_SISTER, 547_500);
+    assert.equal(MASTER3_TOGETHER, 2_810_000);
+    assert.equal((MASTER3_TOGETHER / 5_000_000) * 100, 56.2);
+    assert.deepEqual(MASTER3_POSITION, { assets: 73_000_000, liabilities: 11_000_000, net: 62_000_000, subNet: 60_000_000, parentNet: 2_000_000, owners: 17_000_000, nci: 45_000_000 });
+  });
+  it("calculations in the practice", () => {
+    const expected: Record<string, number> = { "fee-only": 600_000, "manager-total": 1_055_000, "silo-assets": 1_300_000, "silo-rest": 4_500_000, "nci-agent": 420_000, "expired-nci": 153_000, "agent-own-assets": 7_400_000 };
+    const answer = (id: string) => (RETURNS.exercises.find((x) => x.id === id) as { answer: number }).answer;
+    for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
+    assert.deepEqual(RETURNS.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
+    const share = RETURNS.exercises.find((x) => x.id === "share-of-result") as { answer: number; options: string[] };
+    assert.equal(share.options[share.answer], `${FUND_LARGE.share}%`);
+  });
+});
+
 describe("the practice generator", () => {
   it("every family, many seeds: a whole answer, an exercise that changes, and no broken text", () => {
     for (const family of Object.keys(DRILL_FAMILIES) as DrillFamily[]) {
@@ -281,7 +320,7 @@ describe("the practice generator", () => {
         assert.ok(d.steps.length && d.trap.trim(), `${family}/${seed}`);
         seen.add(d.answer);
       }
-      assert.ok(seen.size > ({ partners: 1, present: 3, convert: 8 } as Record<string, number>)[family] || (!["partners", "present", "convert"].includes(family) && seen.size > 20), family);
+      assert.ok(seen.size > ({ partners: 1, present: 3, convert: 8, fundshare: 8 } as Record<string, number>)[family] || (!["partners", "present", "convert", "fundshare"].includes(family) && seen.size > 20), family);
     }
   });
   it("the answer equals the last step's result", () => {

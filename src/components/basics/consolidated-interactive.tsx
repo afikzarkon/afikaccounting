@@ -2,7 +2,7 @@
 
 import { RotateCcw } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { groupPosition, meetingShare, partnersToBeat, profitSplit } from "@/lib/learn/consolidated";
+import { groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit } from "@/lib/learn/consolidated";
 import { drill, DRILL_FAMILIES, type DrillFamily } from "@/lib/study/consolidated/drills";
 import { cn } from "@/lib/utils";
 import { Tbl } from "./ifrs16-parts";
@@ -102,6 +102,47 @@ export function AttendanceLab() {
         <Amount label="בעל מניות ג, %" value={c} onChange={setC} step={1} />
       </div>
       <p className="text-[15px] text-fg">{partners === null ? "גם שלושתם יחד לא מגיעים להחזקה שלו." : partners === 1 ? "מספיק אחד מהם כדי שיהיו לו יותר קולות ממנו." : `צריך ${partners} מהם יחד כדי שיהיו להם יותר קולות ממנו.`}</p>
+    </section>
+  );
+}
+
+/** Move a fund manager's holding and the fund's profit, and see how much of the result reaches the manager. It decides only where a rule decides. */
+export function ManagerLab() {
+  const [holding, setHolding] = useState(3);
+  const [profit, setProfit] = useState(5_000_000);
+  const [singleRemover, setSingleRemover] = useState(false);
+  const [marketFee, setMarketFee] = useState(true);
+  const m = managerReward({ nav: 40_000_000, feeRate: 0.015, profit, hurdle: 1_000_000, perfRate: 0.15, holding: holding / 100 });
+  const verdict = singleRemover
+    ? { tone: "text-danger", text: "סוכן. צד יחיד שיכול להדיח בלי סיבה מכריע לבדו." }
+    : !marketFee
+      ? { tone: "text-success", text: "לא יכול להיות סוכן. עם כוח השפעה, הוא שולט." }
+      : { tone: "text-fg", text: "אין כלל שמכריע. שוקלים את החשיפה יחד עם הסמכות שלו ועם הזכויות של האחרים." };
+  return (
+    <section aria-label="מעבדה: כמה מגיע למנהל" className="card space-y-4 p-4 sm:p-5">
+      <Percent label="המנהל מחזיק מהקרן" value={holding} onChange={setHolding} max={40} />
+      <Amount label="רווח הקרן לפני עמלות" value={profit} onChange={setProfit} step={500_000} />
+      <Tbl
+        head={["הנכסים נטו 40,000,000. עמלה 1.5%, ו־15% מעל 1,000,000", "סכום"]}
+        rows={[
+          ["עמלה קבועה", m.fee],
+          ["עמלה על ביצועים", m.performance],
+          ["החלק במה שנשאר", m.fromHolding],
+        ]}
+        foot={["סך הכול למנהל", m.total]}
+      />
+      <p className="text-[15px] font-semibold text-fg">
+        {m.left < 0 ? "העמלות גדולות מהרווח, ולכן אחרי העמלות הקרן בהפסד, והמנהל נושא בחלקו." : <>מגיע אליו <bdi dir="ltr" className="num">{Math.round(m.share * 10) / 10}%</bdi> מהרווח</>}
+      </p>
+      <label className="flex min-h-11 items-center gap-2 text-[15px] text-fg">
+        <input type="checkbox" checked={singleRemover} onChange={(e) => setSingleRemover(e.target.checked)} className="h-5 w-5 accent-[var(--color-accent)]" />
+        צד יחיד יכול להדיח אותו בלי סיבה
+      </label>
+      <label className="flex min-h-11 items-center gap-2 text-[15px] text-fg">
+        <input type="checkbox" checked={marketFee} onChange={(e) => setMarketFee(e.target.checked)} className="h-5 w-5 accent-[var(--color-accent)]" />
+        התגמול תואם את השירות, ובתנאי שוק
+      </label>
+      <p aria-live="polite" className={cn("text-[15px] font-semibold", verdict.tone)}>{verdict.text}</p>
     </section>
   );
 }

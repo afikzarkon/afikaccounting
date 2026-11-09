@@ -1,4 +1,4 @@
-import { afterConversion, whole, groupPosition, meetingShare, partnersToBeat, profitSplit, separateInvestment } from "../../learn/consolidated";
+import { afterConversion, whole, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, separateInvestment } from "../../learn/consolidated";
 import { fmt } from "./shared";
 
 /** Endless practice with new numbers: each family is one calculation, a seed always gives the same exercise, and every answer is whole, in shekels unless the family says otherwise. */
@@ -17,6 +17,10 @@ export const DRILL_FAMILIES = {
   threshold: "עד איזו נוכחות",
   partners: "כמה צריך נגדו",
   convert: "אחרי המרה",
+  reward: "כמה מקבל המנהל",
+  fundshare: "החלק ברווח",
+  nciagent: "זשמ״ש עם סוכן",
+  silo: "נכסים עם סילו",
 } as const;
 
 export type DrillFamily = keyof typeof DRILL_FAMILIES;
@@ -109,6 +113,63 @@ export function drill(family: DrillFamily, seed: number): Drill {
       unit: "percent",
       steps: [{ title: "המניות החדשות נוספות גם לו וגם לסך", numbers: `(${fmt(shares)} + ${fmt(total)}) / (${fmt(total)} + ${fmt(total)}) × 100 = ${after}` }],
       trap: "לשכוח להוסיף את המניות החדשות גם לסך המניות.",
+    };
+  }
+  if (family === "reward" || family === "fundshare") {
+    // A fee on a round net-asset figure, and a holding in fives of a remainder that divides by twenty: everything lands on a whole shekel.
+    const nav = r.int(10, 60) * 2_000_000;
+    const hurdle = r.int(1, 3) * 1_000_000;
+    const profit = hurdle + r.int(2, 8) * 1_000_000;
+    const holdingPct = r.int(1, 6) * 5;
+    const m = managerReward({ nav, feeRate: 0.015, profit, hurdle, perfRate: 0.15, holding: holdingPct / 100 });
+    if (family === "reward")
+      return {
+        prompt: `מנהל קרן מקבל 1.5% מהנכסים נטו, שהם ${fmt(nav)} ש״ח, ועוד 15% מהרווח מעל ${fmt(hurdle)} ש״ח. הוא מחזיק ${holdingPct}% מהקרן. רווח הקרן לפני העמלות הוא ${fmt(profit)} ש״ח. כמה מקבל המנהל בסך הכול?`,
+        answer: m.total,
+        steps: [
+          { title: "עמלה קבועה", numbers: `${fmt(nav)} × 1.5% = ${fmt(m.fee)}` },
+          { title: "עמלה על ביצועים", numbers: `(${fmt(profit)} − ${fmt(hurdle)}) × 15% = ${fmt(m.performance)}` },
+          { title: "החלק במה שנשאר", numbers: `${fmt(m.left)} × ${holdingPct}% = ${fmt(m.fromHolding)}` },
+          { title: "סך הכול", numbers: `${fmt(m.fee)} + ${fmt(m.performance)} + ${fmt(m.fromHolding)} = ${fmt(m.total)}` },
+        ],
+        trap: "לחשב את ההחזקה מכל הרווח. קודם יורדות העמלות.",
+      };
+    // The share of the profit, from a total that divides into it evenly.
+    const total = r.int(2, 18) * 250_000;
+    const whole5m = 5_000_000;
+    const share = whole((total / whole5m) * 100);
+    return {
+      prompt: `רווח קרן לפני עמלות הוא ${fmt(whole5m)} ש״ח. המנהל מקבל ממנה בסך הכול ${fmt(total)} ש״ח, מעמלות ומההחזקה שלו. איזה אחוז מהרווח מגיע אליו?`,
+      answer: share,
+      unit: "percent",
+      steps: [{ title: "מה שהוא מקבל, חלקי הרווח", numbers: `${fmt(total)} / ${fmt(whole5m)} × 100 = ${share}` }],
+      trap: "להשוות רק את ההחזקה. גם התגמול הוא חשיפה.",
+    };
+  }
+  if (family === "nciagent") {
+    const own = r.int(5, 8) * 5;
+    const agent = r.int(3, 5) * 5;
+    const net = r.int(10, 80) * 20_000;
+    const nci = whole((net * (100 - own)) / 100);
+    return {
+      prompt: `חברה מחזיקה ${own}% מישות. חברת אחות, שהיא סוכן בפועל שלה ואינה בקבוצה, מחזיקה עוד ${agent}%. נקבע שהחברה שולטת. הנכסים נטו של הישות הם ${fmt(net)} ש״ח, ולא שולם מוניטין. מהי יתרת הזשמ״ש בדוח המאוחד?`,
+      answer: nci,
+      steps: [
+        { title: "החלק של מי שאינו האם", numbers: `100% − ${own}% = ${100 - own}%` },
+        { title: "הזשמ״ש", numbers: `${fmt(net)} × ${100 - own}% = ${fmt(nci)}` },
+      ],
+      trap: "להוריד גם את האחות. היא נספרת בבחינת השליטה, ולא בחלוקת ההון.",
+    };
+  }
+  if (family === "silo") {
+    const own = r.int(20, 90) * 20_000;
+    const siloAssets = r.int(5, 30) * 20_000;
+    const rest = r.int(5, 40) * 20_000;
+    return {
+      prompt: `לחברה נכסים של ${fmt(own)} ש״ח. היא שולטת בסילו בתוך ישות אחרת, והנכסים שלו ${fmt(siloAssets)} ש״ח. לשאר הישות, שהיא לא שולטת בו, יש נכסים של ${fmt(rest)} ש״ח. מה סך הנכסים בדוח המאוחד של החברה?`,
+      answer: own + siloAssets,
+      steps: [{ title: "מאחדים רק את הסילו", numbers: `${fmt(own)} + ${fmt(siloAssets)} = ${fmt(own + siloAssets)}` }],
+      trap: "להוסיף גם את שאר הישות. שליטה יש רק בחלק המבודד.",
     };
   }
   if (family === "ncieq")
