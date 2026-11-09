@@ -13,12 +13,13 @@ import { ATTEND_NO, ATTEND_YES, BOARD, CONTROL, CONTROL_TAUGHT, CONVERTED, MASTE
 import { ACQUISITION, ACQUISITION_TAUGHT, BOND, ITEMS, LESSEE, LESSOR, MASTER4_TABLE, STORY_TABLE } from "./consolidated/lessons/acquisition";
 import { G_FAIR, G_NET, G_PREMIUM, G_SHARE, GOODWILL, GOODWILL_TAUGHT, M5, PAYS, PERIOD, PERIOD_TEST, PERIOD_TEST_START } from "./consolidated/lessons/goodwill";
 import { AGENT_TEST, AGENT_TEST_START, AGENTS, FUND_LARGE, FUND_SMALL, MASTER3_POSITION, MASTER3_REWARD, MASTER3_SISTER, MASTER3_TOGETHER, RETURNS, RETURNS_TAUGHT } from "./consolidated/lessons/returns";
+import { M6, STORY6, WHOSE, WORKSHEET, WORKSHEET_TAUGHT, YEAR2, YEAR2_NCI_END } from "./consolidated/lessons/worksheet";
 import { CASES, EXEMPT_TEST, EXEMPT_TEST_START, MASTER_POSITION, MASTER_PROFIT, MASTER_SEPARATE, STORY_POSITION, STORY_PROFIT, STORY_SEPARATE, WHAT, WHAT_TAUGHT } from "./consolidated/lessons/what";
 import { type ConsolidatedQuestion, LESSON_N } from "./consolidated/shared";
 import { ltrFormulas } from "./ias19/ltr";
 
 /** What teaches each question, lesson by lesson. */
-const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT, "consolidated-acquisition": ACQUISITION_TAUGHT, "consolidated-goodwill": GOODWILL_TAUGHT };
+const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT, "consolidated-acquisition": ACQUISITION_TAUGHT, "consolidated-goodwill": GOODWILL_TAUGHT, "consolidated-worksheet": WORKSHEET_TAUGHT };
 
 describe("the consolidated statements course", () => {
   it("lessons numbered in order, on the course's page, the first free", () => {
@@ -405,6 +406,51 @@ describe("lesson 5: the walk, the sorting and the figures, against a separate ca
     const answer = (id: string) => (GOODWILL.exercises.find((x) => x.id === id) as { answer: number }).answer;
     for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
     assert.deepEqual(GOODWILL.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
+  });
+});
+
+describe("lesson 6: the worksheet, against a separate calculation in Python", () => {
+  it("eight adjustments to sort, both answers among them", () => {
+    assert.equal(WHOSE.length, 8);
+    assert.ok(WHOSE.some((w) => w.answer === "parent") && WHOSE.some((w) => w.answer === "sub"));
+  });
+  it("the worked example: excess cost, goodwill and the profit", () => {
+    assert.equal(STORY6.netAt, 148_000);
+    assert.deepEqual(STORY6.goodwill, { nci: 40_000, cost: 180_000, goodwill: 32_000, ownersGoodwill: 29_000, nciGoodwill: 3_000 });
+    assert.equal(STORY6.premium, 20_000);
+    assert.deepEqual(STORY6.table.total, { at: 24_000, amortized: -12_000, end: 12_000 });
+    assert.deepEqual([STORY6.adjusted.a.total, STORY6.adjusted.b.total], [1_000, 16_000]);
+    assert.deepEqual(STORY6.income.map((r) => r.total), [310_000, -182_000, -76_000, 0, -35_000]);
+    assert.deepEqual(STORY6.split, { profit: { total: 17_000, nci: 4_000, owners: 13_000 }, comprehensive: { total: 40_000, nci: 6_000, owners: 34_000 } });
+  });
+  it("the worked example: position, equity and its changes", () => {
+    assert.deepEqual([STORY6.assets, STORY6.liabilities], [489_000, 95_000]);
+    assert.deepEqual(STORY6.equity, { netA: 202_000, netB: 160_000, owners: 351_000, nci: 43_000, total: 394_000, capital: 40_000, premium: 60_000, reserve: 21_000, retained: 230_000 });
+    assert.equal(STORY6.assets - STORY6.liabilities, STORY6.equity.total);
+    assert.deepEqual(STORY6.changes.close, { capital: 40_000, premium: 60_000, reserve: 21_000, retained: 230_000, owners: 351_000, nci: 43_000, total: 394_000 });
+    assert.deepEqual([STORY6.changes.dividends.retained, STORY6.changes.dividends.nci, STORY6.changes.acquisition.nci], [-16_000, -3_000, 40_000]);
+  });
+  it("the second year", () => {
+    assert.deepEqual(YEAR2, { armonOpen: 148_000, excessOpen: 12_000, nciOpen: 43_000, adjusted: 37_000, nciProfit: 9_250, nciDividend: 4_000, excessEnd: 9_000, nofarRetainedOpen: 227_000 });
+    assert.equal(YEAR2_NCI_END, 48_250);
+    assert.equal((148_000 + 40_000 - 16_000 + 9_000) * 0.25 + 3_000, YEAR2_NCI_END);
+  });
+  it("the closing question", () => {
+    assert.equal(M6.netAt, 261_000);
+    assert.deepEqual(M6.goodwill, { nci: 52_200, cost: 282_200, goodwill: 21_200, ownersGoodwill: 21_200, nciGoodwill: 0 });
+    assert.deepEqual([M6.adjusted.a.total, M6.adjusted.b.total], [35_000, 29_000]);
+    assert.deepEqual(M6.income.map((r) => r.total), [600_000, -388_000, -120_000, 0, -28_000]);
+    assert.deepEqual(M6.split.profit, { total: 64_000, nci: 5_800, owners: 58_200 });
+    assert.deepEqual([M6.assets, M6.liabilities], [811_200, 145_000]);
+    assert.deepEqual([M6.equity.owners, M6.equity.nci, M6.equity.total, M6.equity.retained], [612_200, 54_000, 666_200, 462_200]);
+    assert.equal(M6.changes.close.nci, 54_000);
+    assert.equal(M6.changes.close.retained, M6.equity.retained);
+  });
+  it("calculations in the practice", () => {
+    const expected: Record<string, number> = { "nci-share-l1": 15_600, "div-out-l1": 21_000, "sub-adjusted": 55_000, "parent-adjusted": 68_000, "owners-profit": 112_000, "nci-balance": 67_000, "reserve-cons": 36_000, "nci-dividend": 12_000, "re-close": 361_000, "nci-close": 48_000, "year2-nci-open": 64_000, "owners-full": 103_500, "comp-nci": 18_600, "re-pn": 350_000 };
+    const answer = (id: string) => (WORKSHEET.exercises.find((x) => x.id === id) as { answer: number }).answer;
+    for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
+    assert.deepEqual(WORKSHEET.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
   });
 });
 

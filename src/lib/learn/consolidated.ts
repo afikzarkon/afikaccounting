@@ -120,3 +120,131 @@ export function goodwillCalc(g: { paid: number; prior: number; holding: number; 
   const ownersGoodwill = whole(g.paid + g.prior - g.net * g.holding);
   return { nci, cost, goodwill: cost - g.net, ownersGoodwill, nciGoodwill: cost - g.net - ownersGoodwill };
 }
+
+/** A subsidiary's profit as the group sees it: its own, less the year's amortization of excess cost net of the tax on it. `amortized` is negative when it lowers profit. */
+export const adjustedProfit = (a: { profit: number; amortized: number; taxRate: number }) => whole(a.profit + a.amortized * (1 - a.taxRate));
+
+/** A company's figures for the year, as its trial balance gives them, all positive. The reserve arose this year, so it is also the year's other comprehensive income. */
+export type Books = {
+  cash: number;
+  inventory: number;
+  ppe: number;
+  investment: number;
+  suppliers: number;
+  deferredTax: number;
+  capital: number;
+  premium: number;
+  reserve: number;
+  retainedOpen: number;
+  sales: number;
+  cogs: number;
+  admin: number;
+  dividendIncome: number;
+  tax: number;
+  dividend: number;
+};
+
+/** An item of excess cost: the balance-sheet row it joins, and the expense its amortization joins. */
+export type WorksheetExcess = { name: string; row: string; at: number; amortized: number; line: "cogs" | "admin" };
+
+/** One row of a worksheet: each company, the adjustments on each one's account, and the consolidated amount. */
+export type WsRow = { name: string; a: number; b: number; adjA: number; adjB: number; total: number };
+
+const net = (k: Books) => k.cash + k.inventory + k.ppe + k.investment - k.suppliers - k.deferredTax;
+const profitOf = (k: Books) => k.sales - k.cogs - k.admin + k.dividendIncome - k.tax;
+
+/**
+ * The consolidation worksheet for the year the parent bought the subsidiary,
+ * on 1.1 for cash. Income and assets are positive, expenses and liabilities
+ * negative, as on the lecturer's worksheet. What the parent earned from the
+ * subsidiary, and what it capitalized into the investment, is adjusted on the
+ * parent's account; the excess cost on the subsidiary's.
+ */
+export function consolidate(c: { a: Books; b: Books; holding: number; paid: number; nciFair?: number; costsInInvestment?: number; excess: WorksheetExcess[]; taxRate: number }) {
+  const { a, b, holding } = c;
+  const out = 1 - holding;
+  const costs = c.costsInInvestment ?? 0;
+  const table = excessTable(c.excess.map((e) => ({ name: e.name, at: e.at, end: e.at + e.amortized })), c.taxRate);
+  // The subsidiary's reserve arose after the acquisition, so its equity then was its capital, premium and opening retained earnings.
+  const subEquityAt = b.capital + b.premium + b.retainedOpen;
+  const netAt = subEquityAt + table.total.at;
+  const goodwill = goodwillCalc({ paid: c.paid, prior: 0, holding, net: netAt, nciFair: c.nciFair });
+  const premium = c.nciFair === undefined ? 0 : whole(c.paid - (c.nciFair * holding) / out);
+
+  const dividendOut = whole(b.dividend * holding);
+  const adjA = { separate: profitOf(a), dividend: -dividendOut, costs: -costs };
+  const adjB = { separate: profitOf(b), excess: table.total.amortized };
+  const adjustedA = adjA.separate + adjA.dividend + adjA.costs;
+  const adjustedB = adjB.separate + adjB.excess;
+  const amort = (line: "cogs" | "admin") => c.excess.filter((e) => e.line === line).reduce((s, e) => s + whole(e.amortized), 0);
+  const row = (name: string, va: number, vb: number, xa: number, xb: number): WsRow => ({ name, a: va, b: vb, adjA: xa, adjB: xb, total: va + vb + xa + xb });
+  const income = [
+    row("מכירות", a.sales, b.sales, 0, 0),
+    row("עלות המכירות", -a.cogs, -b.cogs, 0, amort("cogs")),
+    row("הוצאות הנהלה וכלליות", -a.admin, -b.admin, -costs, amort("admin")),
+    row("הכנסות מדיבידנד", a.dividendIncome, b.dividendIncome, -dividendOut, 0),
+    row("הוצאות מסים", -a.tax, -b.tax, 0, table.tax.amortized),
+  ];
+  const profit = row("רווח נקי", profitOf(a), profitOf(b), adjA.dividend + adjA.costs, adjB.excess);
+  const oci = row("רווח כולל אחר: הערכה מחדש", a.reserve, b.reserve, 0, 0);
+  const comprehensive = row("סך הרווח הכולל", profit.a + oci.a, profit.b + oci.b, profit.adjA, profit.adjB);
+
+  const nciProfit = whole(adjustedB * out);
+  const nciComprehensive = whole((adjustedB + b.reserve) * out);
+  const split = {
+    profit: { total: profit.total, nci: nciProfit, owners: profit.total - nciProfit },
+    comprehensive: { total: comprehensive.total, nci: nciComprehensive, owners: comprehensive.total - nciComprehensive },
+  };
+
+  // The statement of financial position: each excess item's balance joins its row, or opens one.
+  const excessEnd = (r: string) => c.excess.filter((e) => e.row === r).reduce((s, e) => s + whole(e.at + e.amortized), 0);
+  const pos = (name: string, va: number, vb: number, adj: number) => ({ name, a: va, b: vb, adj, total: va + vb + adj });
+  const extraRows = [...new Set(c.excess.map((e) => e.row))].filter((r) => !["מלאי", "רכוש קבוע"].includes(r));
+  const position = [
+    pos("מזומנים", a.cash, b.cash, 0),
+    pos("מלאי", a.inventory, b.inventory, excessEnd("מלאי")),
+    pos("רכוש קבוע", a.ppe, b.ppe, excessEnd("רכוש קבוע")),
+    ...extraRows.map((r) => pos(r, 0, 0, excessEnd(r))),
+    pos("השקעה בחברה בת", a.investment, 0, -a.investment),
+    pos("מוניטין", 0, 0, goodwill.goodwill),
+    pos("ספקים", -a.suppliers, -b.suppliers, 0),
+    pos("מסים נדחים", -a.deferredTax, -b.deferredTax, table.tax.end),
+  ];
+  const assets = position.filter((r) => r.total > 0).reduce((s, r) => s + r.total, 0);
+  const liabilities = -position.filter((r) => r.total < 0).reduce((s, r) => s + r.total, 0);
+
+  // Splitting equity: each company's net assets as the group sees them, by holding, and each group's goodwill.
+  const netA = net(a) - a.investment;
+  const netB = net(b) + table.total.end;
+  const ownersEquity = whole(netA + netB * holding + goodwill.ownersGoodwill);
+  const nciEquity = whole(netB * out + goodwill.nciGoodwill);
+  const reserve = whole(a.reserve + b.reserve * holding);
+  const retained = ownersEquity - a.capital - a.premium - reserve;
+
+  const line = (capital: number, prem: number, res: number, ret: number, nci: number) => ({ capital, premium: prem, reserve: res, retained: ret, owners: capital + prem + res + ret, nci, total: capital + prem + res + ret + nci });
+  const open = line(a.capital, a.premium, 0, a.retainedOpen, 0);
+  const acquisition = line(0, 0, 0, 0, goodwill.nci);
+  const dividends = line(0, 0, 0, -a.dividend, -whole(b.dividend * out));
+  const compLine = line(0, 0, reserve, split.profit.owners, split.comprehensive.nci);
+  const close = line(a.capital, a.premium, reserve, a.retainedOpen - a.dividend + split.profit.owners, open.nci + acquisition.nci + dividends.nci + compLine.nci);
+
+  return {
+    table,
+    netAt,
+    subEquityAt,
+    goodwill,
+    premium,
+    dividendOut,
+    adjusted: { a: { ...adjA, total: adjustedA }, b: { ...adjB, total: adjustedB } },
+    income,
+    profit,
+    oci,
+    comprehensive,
+    split,
+    position,
+    assets,
+    liabilities,
+    equity: { netA, netB, owners: ownersEquity, nci: nciEquity, total: ownersEquity + nciEquity, capital: a.capital, premium: a.premium, reserve, retained },
+    changes: { open, acquisition, dividends, comprehensive: compLine, close },
+  };
+}

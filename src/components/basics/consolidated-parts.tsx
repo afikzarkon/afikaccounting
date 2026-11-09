@@ -135,6 +135,67 @@ export function PowerFlow() {
   );
 }
 
+/** One line of a worksheet. A null cell stays empty. */
+export type SheetRow = { label: string; cells: (number | null)[]; total?: boolean };
+
+const sheetNum = (v: number | null) => (v === null ? "" : v < 0 ? `−${Math.round(-v).toLocaleString("en-US")}` : (Math.round(v) + 0).toLocaleString("en-US"));
+
+/**
+ * A consolidation worksheet, in the lecturer's layout: a column for each
+ * company, the adjustments, and the consolidated amount. On a phone each
+ * line's name sits above its figures, so five columns of figures still fit.
+ */
+export function Worksheet({ head, rows, label }: { head: string[]; rows: SheetRow[]; label: string }) {
+  // Five columns of figures inside a solution box are tight on a phone: a smaller type and less padding there.
+  const tight = head.length >= 5;
+  const numCell = `${tight ? "px-0.5" : "px-1"} py-1 text-end sm:px-2`;
+  const figures = (r: SheetRow) =>
+    r.cells.map((v, i) => (
+      <td key={i} className={`${numCell} ${i === r.cells.length - 1 ? "font-semibold text-fg" : ""}`}>
+        <bdi dir="ltr" className="num whitespace-nowrap">{sheetNum(v)}</bdi>
+      </td>
+    ));
+  return (
+    <figure aria-label={label} className="my-3 overflow-hidden rounded-xl border border-line">
+      <table className={`w-full sm:hidden ${tight ? "text-[11px]" : "text-[12px]"}`}>
+        <thead>
+          <tr className="text-[11px] text-muted">
+            {head.map((h) => (
+              <th key={h} className={`${tight ? "px-0.5" : "px-1"} py-1.5 text-end align-bottom font-medium leading-tight`}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.flatMap((r, k) => [
+            <tr key={`${k}-l`} className={k ? (r.total ? "border-t-2 border-line" : "border-t border-line/70") : ""}>
+              <th colSpan={head.length} scope="colgroup" className={`px-2 pt-1.5 text-start text-[12.5px] ${r.total ? "font-bold text-fg" : "font-medium text-fg/85"}`}>{r.label}</th>
+            </tr>,
+            <tr key={`${k}-n`} className={r.total ? "font-bold" : ""}>{figures(r)}</tr>,
+          ])}
+        </tbody>
+      </table>
+      <table className="hidden w-full text-[13.5px] sm:table">
+        <thead>
+          <tr className="text-xs text-muted">
+            <th className="px-3 py-1.5 text-start font-medium" />
+            {head.map((h) => (
+              <th key={h} className="px-2 py-1.5 text-end font-medium">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, k) => (
+            <tr key={k} className={`${r.total ? "border-t-2 border-line font-bold" : "border-t border-line/70"}`}>
+              <th scope="row" className={`px-3 py-1.5 text-start ${r.total ? "font-bold text-fg" : "font-normal"}`}>{r.label}</th>
+              {figures(r)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </figure>
+  );
+}
+
 type TableRow = { name: string; at: number; amortized: number; end: number };
 
 /** The table of excess cost: the attribution, its amortization and the balance, assets positive and liabilities negative. */

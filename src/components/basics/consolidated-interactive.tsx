@@ -2,8 +2,9 @@
 
 import { RotateCcw } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { excessTable, goodwillCalc, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit } from "@/lib/learn/consolidated";
+import { type Books, consolidate, excessTable, goodwillCalc, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, whole } from "@/lib/learn/consolidated";
 import { drill, DRILL_FAMILIES, type DrillFamily } from "@/lib/study/consolidated/drills";
+import { ARMON, NOFAR } from "@/lib/study/consolidated/lessons/worksheet";
 import { cn } from "@/lib/utils";
 import { ExcessTbl } from "./consolidated-parts";
 import { Tbl } from "./ifrs16-parts";
@@ -227,6 +228,72 @@ export function GoodwillLab() {
             : ([["מוניטין", g.goodwill], ["מתוכו של בעלי מניות האם", g.ownersGoodwill], ["מתוכו של הזשמ״ש", g.nciGoodwill]] as [string, number][])),
         ]}
       />
+    </section>
+  );
+}
+
+/** Change the deal and the subsidiary's year, starting from Nofar and Armon, and watch what moves in the consolidated statements. The dividend never moves the consolidated profit. */
+export function WorksheetLab() {
+  const [paid, setPaid] = useState(140_000);
+  const [pct, setPct] = useState(75);
+  const [fairWay, setFairWay] = useState(true);
+  const [nciFair, setNciFair] = useState(40_000);
+  const [profit, setProfit] = useState(28_000);
+  const [dividend, setDividend] = useState(12_000);
+  const [inv, setInv] = useState(12_000);
+  const [eq, setEq] = useState(20_000);
+  const [life, setLife] = useState(5);
+  const holding = pct / 100;
+  const dividendIncome = whole(dividend * holding);
+  const a: Books = { ...NOFAR, investment: paid, dividendIncome, cash: NOFAR.cash + dividendIncome - NOFAR.dividendIncome - (paid - NOFAR.investment) };
+  const b: Books = { ...ARMON, sales: ARMON.sales + profit - 28_000, cash: ARMON.cash + (profit - 28_000) - (dividend - ARMON.dividend), dividend };
+  const s = consolidate({
+    a,
+    b,
+    holding,
+    paid,
+    nciFair: fairWay ? nciFair : undefined,
+    excess: [
+      { name: "מלאי", row: "מלאי", at: inv, amortized: -inv, line: "cogs" },
+      { name: "ציוד", row: "רכוש קבוע", at: eq, amortized: -eq / Math.max(life, 1), line: "admin" },
+    ],
+    taxRate: 0.25,
+  });
+  return (
+    <section aria-label="מעבדה: דף העבודה" className="card space-y-4 p-4 sm:p-5">
+      <div className="grid grid-cols-2 gap-3">
+        <Amount label="תמורה ששולמה" value={paid} onChange={setPaid} />
+        <Amount label="ערמון: רווח השנה" value={profit} onChange={setProfit} step={2_000} />
+        <Amount label="ערמון: דיבידנד שהוכרז" value={dividend} onChange={setDividend} step={2_000} />
+        <Amount label="עודף עלות: מלאי, נמכר" value={inv} onChange={setInv} step={2_000} />
+        <Amount label="עודף עלות: ציוד" value={eq} onChange={setEq} step={2_000} />
+        <Amount label="ציוד: שנות חיים" value={life} onChange={setLife} step={1} />
+      </div>
+      <Percent label="נופר מחזיקה" value={pct} onChange={setPct} min={51} max={95} />
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label="מדידת הזשמ״ש">
+        {[true, false].map((v) => (
+          <button key={String(v)} type="button" aria-pressed={fairWay === v} onClick={() => setFairWay(v)} className={cn("min-h-11 rounded-lg border px-3 py-1.5 text-[13.5px] font-semibold", fairWay === v ? "border-accent bg-accent-soft text-fg" : "border-line text-muted hover:bg-surface-2")}>
+            {v ? "זשמ״ש בשווי הוגן" : "זשמ״ש לפי חלק בנמ״נ"}
+          </button>
+        ))}
+      </div>
+      {fairWay && <Amount label="שווי הוגן של הזשמ״ש" value={nciFair} onChange={setNciFair} step={2_000} />}
+      {s.goodwill.goodwill < 0 ? (
+        <p aria-live="polite" className="text-[15px] font-semibold text-danger">יוצא רווח מרכישה במחיר הזדמנותי. המעבדה לא מטפלת בו: הגדילו את התמורה.</p>
+      ) : (
+        <Tbl
+          head={["", "סכום"]}
+          rows={[
+            ["מוניטין", s.goodwill.goodwill],
+            ["הרווח המתוקן של ערמון", s.adjusted.b.total],
+            ["רווח נקי מאוחד", s.split.profit.total],
+            ["מתוכו לזשמ״ש", s.split.profit.nci],
+            ["מתוכו לבעלים של נופר", s.split.profit.owners],
+            ["זשמ״ש בהון בסוף השנה", s.equity.nci],
+            ["עודפים במאוחד בסוף השנה", s.equity.retained],
+          ]}
+        />
+      )}
     </section>
   );
 }

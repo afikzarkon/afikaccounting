@@ -1,4 +1,4 @@
-import { afterConversion, excessTable, goodwillCalc, whole, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, separateInvestment } from "../../learn/consolidated";
+import { adjustedProfit, afterConversion, excessTable, goodwillCalc, whole, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, separateInvestment } from "../../learn/consolidated";
 import { fmt } from "./shared";
 
 /** Endless practice with new numbers: each family is one calculation, a seed always gives the same exercise, and every answer is whole, in shekels unless the family says otherwise. */
@@ -29,6 +29,10 @@ export const DRILL_FAMILIES = {
   gwshare: "מוניטין, חלק בנמ״נ",
   gwowners: "מוניטין של האם",
   premium: "פרמיית שליטה",
+  subadj: "רווח מתוקן של הבת",
+  nciadj: "זשמ״ש ברווח",
+  ncibal: "יתרת זשמ״ש",
+  divelim: "ביטול דיבידנד",
 } as const;
 
 export type DrillFamily = keyof typeof DRILL_FAMILIES;
@@ -281,6 +285,56 @@ export function drill(family: DrillFamily, seed: number): Drill {
         { title: "הפרמיה", numbers: `${fmt(paid)} − ${fmt(shares * price)} = ${fmt(extra)}` },
       ],
       trap: "להשוות למחיר של כל המניות בחברה.",
+    };
+  }
+  if (family === "subadj" || family === "nciadj") {
+    // A profit in fours of thousands and an amortization in fours, so the after-tax amount is whole thousands, and a holding in fives.
+    const profit = r.int(20, 60) * 4_000;
+    const inv = r.int(1, 10) * 4_000;
+    const years = r.int(2, 5);
+    const yearly = r.int(1, 10) * 4_000;
+    const amort = inv + yearly;
+    const adjusted = adjustedProfit({ profit, amortized: -amort, taxRate: 0.25 });
+    const facts = `רווח הבת בדוח העצמאי ${fmt(profit)} ש״ח. השנה הופחתו עודפי עלות לפני מס: ${fmt(inv)} ש״ח על מלאי שנמכר, ו־${fmt(yearly)} ש״ח פחת שנתי על ציוד בעודף עלות של ${fmt(yearly * years)} ש״ח ל־${years} שנים. שיעור המס 25%.`;
+    const steps = [
+      { title: "ההפחתה לפני מס", numbers: `${fmt(inv)} + ${fmt(yearly)} = ${fmt(amort)}` },
+      { title: "הרווח המתוקן: מורידים את ההפחתה נטו ממס", numbers: `${fmt(profit)} − ${fmt(amort)} × 75% = ${fmt(adjusted)}` },
+    ];
+    if (family === "subadj") return { prompt: `${facts} מה הרווח המתוקן של הבת?`, answer: adjusted, steps, trap: "להוריד את ההפחתה בלי המס." };
+    const nci = whole((adjusted * out) / 100);
+    return {
+      prompt: `${facts} האם מחזיקה ${pct}% מהבת. מה חלק הזשמ״ש ברווח הנקי המאוחד?`,
+      answer: nci,
+      steps: [...steps, { title: `חלק הזשמ״ש, ${out}%`, numbers: `${fmt(adjusted)} × ${out}% = ${fmt(nci)}` }],
+      trap: "לחשב מהרווח בדוח העצמאי, לפני הפחתת עודפי העלות.",
+    };
+  }
+  if (family === "ncibal") {
+    const subNet = r.int(10, 60) * 20_000;
+    const excessGross = r.int(1, 15) * 4_000;
+    const excessNet = whole(excessGross * 0.75);
+    const nciGoodwill = r.int(0, 8) * 1_000;
+    const share = whole(((subNet + excessNet) * out) / 100);
+    const nci = share + nciGoodwill;
+    return {
+      prompt: `בסוף השנה הנכסים נטו של הבת בדוח העצמאי ${fmt(subNet)} ש״ח, ויתרת עודפי העלות לפני מס ${fmt(excessGross)} ש״ח. שיעור המס 25%. האם מחזיקה ${pct}% מהבת. המוניטין המיוחס לזשמ״ש ${fmt(nciGoodwill)} ש״ח. מה יתרת הזשמ״ש בדוח המאוחד?`,
+      answer: nci,
+      steps: [
+        { title: "עודפי העלות נטו ממס", numbers: `${fmt(excessGross)} × 75% = ${fmt(excessNet)}` },
+        { title: `חלק הזשמ״ש בנמ״נ המתוקנים, ${out}%`, numbers: `(${fmt(subNet)} + ${fmt(excessNet)}) × ${out}% = ${fmt(share)}` },
+        { title: "ועוד המוניטין שלהם", numbers: `${fmt(share)} + ${fmt(nciGoodwill)} = ${fmt(nci)}` },
+      ],
+      trap: "לשכוח את עודפי העלות, או את המוניטין של הזשמ״ש.",
+    };
+  }
+  if (family === "divelim") {
+    const dividend = r.int(1, 20) * 2_000;
+    const elim = whole((dividend * pct) / 100);
+    return {
+      prompt: `האם מחזיקה ${pct}% מהבת ומודדת אותה לפי עלות. הבת הכריזה על דיבידנד של ${fmt(dividend)} ש״ח. כמה הכנסות מדיבידנד מבטלים בדוח המאוחד?`,
+      answer: elim,
+      steps: [{ title: "מבטלים את מה שהאם רשמה: חלקה בדיבידנד", numbers: `${fmt(dividend)} × ${pct}% = ${fmt(elim)}` }],
+      trap: "לבטל את כל הדיבידנד. החלק של המיעוט מקטין את הזשמ״ש.",
     };
   }
   if (family === "ncieq")
