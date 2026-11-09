@@ -67,6 +67,7 @@ export const CREDIT: StudyModule = {
     { id: "cl-specific", title: "הפרשה ספציפית וכללית" },
     { id: "cl-recovery", title: "מסיחים וחוב שחזר" },
     { id: "cl-exam", title: "שאלה ברמת בחינה: כרמל בע״מ" },
+    { id: "cl-booklet", title: "שאלה ברמת החוברת: נווה, שלוש שנים" },
     { id: "cl-calc", title: "מחשבון: בדקו את התשובה שלכם" },
     { id: "cl-drill", title: "תרגול בלי סוף: הפסדי אשראי" },
   ],

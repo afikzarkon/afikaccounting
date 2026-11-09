@@ -82,6 +82,7 @@ export const ADJUST: StudyModule = {
     { id: "ppe-accum", title: "פחת נצבר ועלות מופחתת" },
     { id: "ppe-sell", title: "מכירת רכוש קבוע" },
     { id: "adj-example", title: "דוגמה מלאה: שחר ייעוץ בע״מ" },
+    { id: "adj-booklet", title: "שאלה ברמת החוברת: אגם שיווק בע״מ" },
     { id: "adj-drill", title: "תרגול בלי סוף: התאמות" },
   ],
   exercises: [

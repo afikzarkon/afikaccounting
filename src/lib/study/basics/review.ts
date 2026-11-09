@@ -51,6 +51,7 @@ export const REVIEW: StudyModule = {
     { id: "rev-ppe", title: "יתרות ״?״ ברכוש קבוע" },
     { id: "rev-fix", title: "פקודות תיקון: חשבון שגוי, צד הפוך, או שניהם" },
     { id: "rev-profit", title: "מה כל טעות עשתה לרווח" },
+    { id: "rev-booklet", title: "שאלה ברמת החוברת: גלעד ציוד בע״מ" },
     { id: "rev-drill", title: "תרגול בלי סוף: מאזן בוחן ראשוני" },
   ],
   exercises: [
