@@ -45,13 +45,29 @@ export function Expansion({ title, children }: { title: ReactNode; children: Rea
 }
 
 /** A table row's label with its calculation under it, so a row fits a phone without squeezing the figures. */
-export function Calc({ label, formula }: { label: string; formula: string }) {
+/** A row label with its working under it. Hebrew words go in `words` (read right to left); `formula` holds only the math. */
+export function Calc({ label, formula, words }: { label: string; formula?: string; words?: string }) {
+  if (!words)
+    return (
+      <span>
+        {label}
+        <bdi dir="ltr" className="num block text-start text-[12.5px] text-muted">
+          {formula}
+        </bdi>
+      </span>
+    );
   return (
     <span>
       {label}
-      <bdi dir="ltr" className="num block text-start text-[12.5px] text-muted">
-        {formula}
-      </bdi>
+      <span className="block text-start text-[12.5px] text-muted">
+        {words}
+        {formula && (
+          <>
+            {" "}
+            <bdi dir="ltr" className="num whitespace-nowrap">{formula}</bdi>
+          </>
+        )}
+      </span>
     </span>
   );
 }

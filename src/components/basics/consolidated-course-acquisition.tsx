@@ -301,7 +301,7 @@ export const CONSOLIDATED_ACQUISITION_SCREENS: Record<string, ScreenContent> = {
           head={["", "סכום"]}
           rows={[
             [<Calc key="שווי" label="שווי הציוד, עם החכירה" formula="40,000/1.05 + 36,000/1.05² + 36,000/1.05³ + 36,000/1.05⁴" />, LESSOR.value],
-            [<Calc key="ספרים" label="ערך בספרים" formula="נתון" />, -90_000],
+            [<Calc key="ספרים" label="ערך בספרים" words="נתון" />, -90_000],
           ]}
           foot={["עודף עלות", LESSOR.excess]}
         />

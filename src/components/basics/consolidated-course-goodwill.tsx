@@ -260,7 +260,7 @@ export const CONSOLIDATED_GOODWILL_SCREENS: Record<string, ScreenContent> = {
           head={["", "בשווי הוגן", "בחלק בנמ״נ"]}
           rows={[
             [<Calc key="א" label="בעלי מניות האם" formula="183,000 + 24,000 − 202,000 × 80%" />, G_FAIR.ownersGoodwill, G_SHARE.ownersGoodwill],
-            [<Calc key="ב" label="זשמ״ש" formula="הזשמ״ש − 202,000 × 20%" />, G_FAIR.nciGoodwill, G_SHARE.nciGoodwill],
+            [<Calc key="ב" label="זשמ״ש" words="הזשמ״ש פחות" formula="202,000 × 20%" />, G_FAIR.nciGoodwill, G_SHARE.nciGoodwill],
           ]}
           foot={["סך המוניטין", G_FAIR.goodwill, G_SHARE.goodwill]}
         />

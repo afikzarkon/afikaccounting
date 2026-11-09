@@ -152,6 +152,15 @@ describe("the consolidated statements course", () => {
     assert.deepEqual(bad, []);
   });
 
+  it("a Calc formula is pure math: Hebrew words go in `words`, outside the left-to-right span", () => {
+    const dir = join(process.cwd(), "src/components/basics");
+    const bad: string[] = [];
+    for (const f of readdirSync(dir).filter((n) => /^consolidated-.*\.tsx$/.test(n)))
+      for (const m of readFileSync(join(dir, f), "utf8").matchAll(/<Calc\b[^>]*?\bformula=(?:"([^"]*)"|\{`([^`]*)`\})/g))
+        if (/[א-ת]/.test(m[1] ?? m[2])) bad.push(`${f}: ${m[1] ?? m[2]}`);
+    assert.deepEqual(bad, []);
+  });
+
   it("the glossary: no term twice, none empty", () => {
     assert.equal(new Set(CONSOLIDATED_GLOSSARY.map(([t]) => t)).size, CONSOLIDATED_GLOSSARY.length);
     for (const [t, d] of CONSOLIDATED_GLOSSARY) assert.ok(t.trim() && d.trim(), t);
