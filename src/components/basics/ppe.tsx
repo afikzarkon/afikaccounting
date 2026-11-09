@@ -10,6 +10,7 @@ import {
   deviceResults,
   FORKLIFTS,
   forkliftResults,
+  monthsBetween,
   monthsInYear,
   OVEN,
   PRESS,
@@ -21,7 +22,7 @@ import {
 import { Deeper, Remember } from "@/components/study-mode/screen-parts";
 import { cn } from "@/lib/utils";
 import { MiniQuiz } from "./inventory-interactive";
-import { Calc, JE, Money } from "./ui";
+import { JE, Money } from "./ui";
 
 // Every figure below comes from the fixed-asset solver; none is typed by hand.
 const OVEN_YEAR = yearly(OVEN.cost, OVEN.wear);
@@ -32,6 +33,7 @@ const VAN_MONTHS_1 = monthsInYear(VAN.bought, VAN.bought.year);
 const VAN_DEP_1 = depreciationOfYear(VAN.cost, VAN.wear, VAN.bought, VAN.bought.year);
 const VAN_ACC_2 = accumulatedTo(VAN.cost, VAN.wear, VAN.bought, { year: VAN.bought.year + 1, month: 12 });
 const VAN_BV_2 = bookValue(VAN.cost, VAN_ACC_2);
+const VAN_MONTHS_TO_2 = monthsBetween(VAN.bought, { year: VAN.bought.year + 1, month: 12 });
 const PRESS_YEAR = yearly(PRESS.cost, PRESS.wear);
 const PRESS_YEARS = "years" in PRESS.wear ? PRESS.wear.years : 0;
 const PRESS_PARTS = [PRESS.bought.year, PRESS.bought.year + 1, PRESS.bought.year + 2, PRESS.sold.year].map((y) => ({
@@ -128,6 +130,29 @@ function NetColumn({ name, cost, accumulated }: { name: string; cost: number; ac
   );
 }
 
+/** A formula of the course: the rule in words, the example's numbers under it, and the same calculation in Excel. */
+function Fx({ title, formula, numbers, result, excel, note }: { title: string; formula: ReactNode; numbers: string; result: number; excel: string; note?: ReactNode }) {
+  return (
+    <div className="min-w-0 rounded-2xl border-2 border-accent/40 bg-surface p-4" role="group" aria-label={`${title}: ${numbers} = ${n(result)}. באקסל: ${excel}`}>
+      <p className="text-[13px] font-bold text-muted">{title}</p>
+      <p className="mt-1 text-[17px] font-extrabold text-fg">{formula}</p>
+      <p className="mt-2 flex flex-wrap items-baseline gap-x-2 rounded-lg bg-accent-soft px-3 py-2 text-[15.5px] text-fg">
+        <span className="shrink-0 rounded bg-accent px-1.5 py-0.5 text-[11px] font-bold text-accent-fg">בדוגמה</span>
+        <bdi dir="ltr" className="num">
+          {numbers} = <strong>{n(result)}</strong>
+        </bdi>
+      </p>
+      <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-[14px] text-muted">
+        <span className="shrink-0 rounded bg-surface-2 px-1.5 py-0.5 text-[11px] font-bold text-fg ring-1 ring-line">באקסל</span>
+        <bdi dir="ltr" className="font-mono text-fg">
+          {excel}
+        </bdi>
+      </p>
+      {note && <p className="mt-1.5 text-[13.5px] text-muted">{note}</p>}
+    </div>
+  );
+}
+
 function Steps({ items }: { items: ReactNode[] }) {
   return (
     <ol className="space-y-1.5">
@@ -188,27 +213,31 @@ export const PPE_SCREENS: Record<string, ScreenContent> = {
     lead: "בקו ישר כל שנה מלאה מקבלת את אותו פחת. השאלה נותנת מספר שנים או אחוז בשנה, ובשנת הקנייה סופרים רק את החודשים שהנכס היה בעסק.",
     body: (
       <>
-        <div className="rounded-2xl border-2 border-accent/40 bg-surface p-4">
-          <p className="text-[17px] font-extrabold text-fg">פחת שנתי = עלות ÷ שנות השימוש</p>
-          <p className="mt-1 text-[17px] font-extrabold text-fg">פחת שנתי = עלות × שיעור הפחת</p>
-          <p className="mt-2 text-[14px] text-muted">
-            אלה שתי צורות של אותו דבר. {OVEN_YEARS} שנים זה {pct(1 / OVEN_YEARS)} בשנה, ו-{pct(VAN_RATE)} בשנה זה {Math.round(1 / VAN_RATE)} שנים.
-          </p>
-        </div>
         <p>
-          <strong>חלק משנה.</strong> טנדר נקנה ב-1.{VAN.bought.month}.{VAN.bought.year} ב-<Money v={VAN.cost} />, ושיעור הפחת שלו {pct(VAN_RATE)}. בשנה מלאה הפחת הוא:
+          טנדר נקנה ב-1.{VAN.bought.month}.{VAN.bought.year} ב-<Money v={VAN.cost} />, ושיעור הפחת שלו {pct(VAN_RATE)}. בשנה מלאה הוא נשחק בחמישית מהעלות שלו:
         </p>
-        <Calc result={<Money v={VAN_YEAR} />}>
-          <bdi dir="ltr" className="num">{n(VAN.cost)} × {pct(VAN_RATE)}</bdi>
-        </Calc>
+        <Fx
+          title="פחת שנתי"
+          formula="פחת שנתי = עלות ÷ שנות השימוש = עלות × שיעור הפחת"
+          numbers={`${n(VAN.cost)} × ${pct(VAN_RATE)}`}
+          result={VAN_YEAR}
+          excel={`=SLN(${VAN.cost};0;${Math.round(1 / VAN_RATE)})`}
+          note={
+            <>
+              שנים ואחוז הם שתי צורות של אותו דבר: {pct(VAN_RATE)} בשנה זה {Math.round(1 / VAN_RATE)} שנים, ו-{OVEN_YEARS} שנים זה {pct(1 / OVEN_YEARS)} בשנה. באקסל הפונקציה SLN מקבלת עלות, ערך שייר (0 בקורס) ומספר שנים.
+            </>
+          }
+        />
         <p>
           אבל ב-{VAN.bought.year} הטנדר היה בעסק רק מאפריל עד דצמבר, {VAN_MONTHS_1} חודשים. לכן ב-{VAN.bought.year} נרשם רק החלק של החודשים האלה, ומ-{VAN.bought.year + 1} כל שנה מלאה:
         </p>
-        <Calc result={<Money v={VAN_DEP_1} />}>
-          <bdi dir="ltr" className="num">
-            {n(VAN_YEAR)} × {VAN_MONTHS_1}/12
-          </bdi>
-        </Calc>
+        <Fx
+          title="פחת בשנת הקנייה"
+          formula="פחת = פחת שנתי × חודשים בעסק ÷ 12"
+          numbers={`${n(VAN_YEAR)} × ${VAN_MONTHS_1}/12`}
+          result={VAN_DEP_1}
+          excel={`=SLN(${VAN.cost};0;${Math.round(1 / VAN_RATE)})*${VAN_MONTHS_1}/12`}
+        />
         <p>
           את החודשים סופרים כמו בחשבונות החתך: מהחודש שבו הנכס הגיע לעסק ועד סוף השנה. התקן אומר שהפחת מתחיל כשהנכס זמין לשימוש. בשאלות זה כמעט תמיד יום הקנייה.
         </p>
@@ -252,10 +281,19 @@ export const PPE_SCREENS: Record<string, ScreenContent> = {
         <p>
           <strong>פחת נצבר</strong> הוא חשבון מאזני עם יתרת זכות, והוא מקטין את הנכס שלידו. כל שנה מוסיפים לו את הפחת של השנה, והוא עובר לשנה הבאה כמו כל חשבון מאזני. אחרי {VAN.bought.year + 1} נצברו בו <Money v={VAN_DEP_1} /> ועוד <Money v={VAN_YEAR} />:
         </p>
+        <Fx
+          title="פחת נצבר ליום מסוים"
+          formula="פחת נצבר = פחת שנתי × החודשים מיום הקנייה ÷ 12"
+          numbers={`${n(VAN_YEAR)} × ${VAN_MONTHS_TO_2}/12`}
+          result={VAN_ACC_2}
+          excel={`=SLN(${VAN.cost};0;${Math.round(1 / VAN_RATE)})*${VAN_MONTHS_TO_2}/12`}
+          note={<>מאפריל {VAN.bought.year} עד דצמבר {VAN.bought.year + 1}: {VAN_MONTHS_TO_2} חודשים. אותה תוצאה כמו לחבר את הפחת של כל שנה.</>}
+        />
         <NetColumn name="טנדר" cost={VAN.cost} accumulated={VAN_ACC_2} />
         <p>
-          העלות פחות הפחת הנצבר נקראת <strong>עלות מופחתת</strong>, <Money v={VAN_BV_2} /> אחרי שנתיים. זה הסכום שהטנדר שווה בספרים, ולא מה שאפשר למכור אותו בשוק.
+          העלות פחות הפחת הנצבר נקראת <strong>עלות מופחתת</strong>. זה הסכום שהטנדר שווה בספרים, ולא מה שאפשר למכור אותו בשוק.
         </p>
+        <Fx title="עלות מופחתת" formula="עלות מופחתת = עלות − פחת נצבר" numbers={`${n(VAN.cost)} − ${n(VAN_ACC_2)}`} result={VAN_BV_2} excel={`=${VAN.cost}-${VAN_ACC_2}`} />
         <p className="font-semibold text-fg">בגיליון הרב-טורי כל רכוש קבוע נותן שלוש שורות:</p>
         <WorksheetRows
           rows={[
@@ -309,6 +347,14 @@ export const PPE_SCREENS: Record<string, ScreenContent> = {
               <strong>התמורה מול העלות המופחתת.</strong> <bdi dir="ltr" className="num my-0.5 block text-right">{n(PRESS.proceeds)} − {n(PRESS_GAIN.bookValue)} = {n(PRESS_GAIN.result)}</bdi>קיבלנו יותר משהמכונה שווה בספרים: רווח הון.
             </>,
           ]}
+        />
+        <Fx
+          title="רווח או הפסד הון"
+          formula="תוצאת המכירה = תמורה − עלות מופחתת"
+          numbers={`${n(PRESS.proceeds)} − (${n(PRESS.cost)} − ${n(PRESS_ACC)})`}
+          result={PRESS_GAIN.result}
+          excel={`=${PRESS.proceeds}-(${PRESS.cost}-${PRESS_ACC})`}
+          note="תוצאה חיובית: רווח הון, בזכות. תוצאה שלילית: הפסד הון, בחובה."
         />
         <JE entry={PRESS_SALE} />
         <p>
