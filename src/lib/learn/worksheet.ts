@@ -7,6 +7,7 @@
  */
 
 import { type Balances, balancesOf, type Entry, isBalanceSheet, ledger, round2, statements } from "./basics";
+import { accumulatedTo, depreciationOfYear, sale, saleEntry } from "./basics-ppe";
 
 /** One adjustment: the fact as the question tells it, the entry it calls for, and — for the game — the accounts offered to write it with. */
 export type WorksheetItem = { title: string; story: string; entry: Entry; accounts: string[] };
@@ -43,6 +44,11 @@ const e = (id: string, text: string, dr: string, cr: string, amount: number, why
 const RM = { rent: 54_000, rentMonthsNext: 10, salary: 17_000, loan: 240_000, loanRate: 0.05, loanMonths: 5, commissionsNext: 8_000, deposit: 90_000, depositRate: 0.04, depositMonths: 8, stockCost: 58_000, stockNrv: 63_000 };
 const f = (v: number) => v.toLocaleString("en-US");
 
+// The equipment: bought 1.1.2023 for ten years; the trial balance holds two years of depreciation.
+const RM_EQ = { cost: 260_000, wear: { years: 10 }, bought: { year: 2023, month: 1 } };
+const rmEqAcc = accumulatedTo(RM_EQ.cost, RM_EQ.wear, RM_EQ.bought, { year: 2024, month: 12 });
+const rmEqYear = depreciationOfYear(RM_EQ.cost, RM_EQ.wear, RM_EQ.bought, 2025);
+
 export const RIMON: WorksheetCase = {
   name: "רימון בע״מ",
   date: "31.12.2025",
@@ -50,7 +56,8 @@ export const RIMON: WorksheetCase = {
     מזומן: 283_000,
     לקוחות: 136_000,
     "פיקדונות בבנק": RM.deposit,
-    ציוד: 260_000,
+    ציוד: RM_EQ.cost,
+    "ציוד – פחת נצבר": -rmEqAcc,
     "מלאי פתיחה": 51_000,
     קניות: 344_000,
     "הוצאות שכר": 187_000,
@@ -60,7 +67,7 @@ export const RIMON: WorksheetCase = {
     ספקים: -104_000,
     "הלוואה שהתקבלה": -RM.loan,
     "הון מניות": -280_000,
-    עודפים: -82_000,
+    עודפים: -30_000,
     מכירות: -690_000,
     "הכנסות מעמלות": -45_000,
   },
@@ -100,6 +107,12 @@ export const RIMON: WorksheetCase = {
       story: `ב-31.12.2025 נספר מלאי בעלות ${f(RM.stockCost)} ₪. שווי המימוש נטו שלו — ${f(RM.stockNrv)} ₪.`,
       entry: e("ו", "רישום מלאי הסגירה", "מלאי סגירה מאזני", "מלאי סגירה רווח או הפסד", Math.min(RM.stockCost, RM.stockNrv), "הנמוך מבין העלות לשווי המימוש נטו. נכס במאזן, ומקטין את עלות המכר ברווח והפסד."),
       accounts: ["מלאי סגירה מאזני", "מלאי סגירה רווח או הפסד", "קניות", "מלאי פתיחה"],
+    },
+    {
+      title: "פחת הציוד",
+      story: `הציוד נקנה ב-1.1.2023 ב-${f(RM_EQ.cost)} ₪, ל-${RM_EQ.wear.years} שנים. הפחת של 2025 עוד לא נרשם.`,
+      entry: e("ז", "פחת הציוד לשנת 2025", "הוצאות פחת", "ציוד – פחת נצבר", rmEqYear, `${f(RM_EQ.cost)} ÷ ${RM_EQ.wear.years} = ${f(rmEqYear)}. במאזן הבוחן כבר יש פחת נצבר של 2023 ו-2024, ${f(rmEqAcc)}. עכשיו נוספת השנה השלישית.`),
+      accounts: ["הוצאות פחת", "ציוד – פחת נצבר", "ציוד", "מזומן"],
     },
   ],
 };
@@ -204,6 +217,15 @@ const zyInterest = round2((ZY.loan * ZY.loanRate * ZY.loanMonths) / 12 - ZY.inte
 const zyRequired = round2((ZY.customers - ZY.bankrupt) * ZY.rate);
 const zyTopUp = round2(zyRequired - (ZY.allowance - ZY.bankrupt));
 
+// The vans: three bought 1.1.2022 at a yearly rate; one sold 30.6.2025 for cash, and the sale not recorded.
+const ZY_VANS = { count: 3, each: 62_000, wear: { rate: 0.15 }, bought: { year: 2022, month: 1 }, soldAt: { year: 2025, month: 6 }, proceeds: 31_000 };
+const zyVansCost = ZY_VANS.count * ZY_VANS.each;
+const zyVansAcc = accumulatedTo(zyVansCost, ZY_VANS.wear, ZY_VANS.bought, { year: 2024, month: 12 });
+const zyKeptYear = depreciationOfYear((ZY_VANS.count - 1) * ZY_VANS.each, ZY_VANS.wear, ZY_VANS.bought, 2025);
+const zySoldPart = round2((ZY_VANS.each * ZY_VANS.wear.rate * ZY_VANS.soldAt.month) / 12);
+const zySoldAcc = accumulatedTo(ZY_VANS.each, ZY_VANS.wear, ZY_VANS.bought, ZY_VANS.soldAt);
+const zySale = sale(ZY_VANS.each, zySoldAcc, ZY_VANS.proceeds);
+
 export const ZAYIT: WorksheetCase = {
   name: "זית תעשיות בע״מ",
   date: "31.12.2025",
@@ -216,12 +238,13 @@ export const ZAYIT: WorksheetCase = {
     "פיקדונות בבנק": 140_000,
     "מלאי פתיחה": 92_000,
     מכונות: 450_000,
-    "כלי רכב": 175_000,
+    "כלי רכב": zyVansCost,
+    "כלי רכב – פחת נצבר": -zyVansAcc,
     ספקים: -162_000,
     "מקדמות מלקוחות": -36_000,
     "הלוואה שהתקבלה": -ZY.loan,
     "הון מניות": -450_000,
-    עודפים: -99_000,
+    עודפים: -26_300,
     מכירות: -1_480_000,
     "הכנסות מדמי ניהול": -54_000,
     קניות: 760_000,
@@ -290,6 +313,18 @@ export const ZAYIT: WorksheetCase = {
       story: `בהוצאות האחזקה כלולים ${f(ZY.machine)} ₪ ששולמו ב-31.12 על רכישת מכונה חדשה. רשמו את פקודת התיקון.`,
       entry: e("8", "תיקון: מכונה שנרשמה כהוצאה", "מכונות", "הוצאות אחזקה", ZY.machine, "מכונה שתשמש שנים היא נכס, לא הוצאה. מוציאים את הסכום מהוצאות האחזקה ומעבירים לנכס."),
       accounts: ["מכונות", "הוצאות אחזקה", "מזומן", "ספקים"],
+    },
+    {
+      title: "פחת הטנדרים",
+      story: `ב-1.1.2022 נקנו ${ZY_VANS.count} טנדרים ב-${f(ZY_VANS.each)} ₪ כל אחד, בפחת של ${ZY_VANS.wear.rate * 100}% בשנה. ב-30.6.2025 נמכר אחד מהם (ראו הנתון הבא). הפחת של 2025 עוד לא נרשם. רשמו את פקודת הפחת של כל הטנדרים.`,
+      entry: e("9", "פחת 2025: שני טנדרים לשנה, ואחד עד יום המכירה", "הוצאות פחת", "כלי רכב – פחת נצבר", round2(zyKeptYear + zySoldPart), `שני הטנדרים שנשארו, שנה מלאה: ${f((ZY_VANS.count - 1) * ZY_VANS.each)} × ${ZY_VANS.wear.rate * 100}% = ${f(zyKeptYear)}. הטנדר שנמכר, ינואר עד יוני: ${f(ZY_VANS.each)} × ${ZY_VANS.wear.rate * 100}% × 6/12 = ${f(zySoldPart)}. ביחד ${f(round2(zyKeptYear + zySoldPart))}.`),
+      accounts: ["הוצאות פחת", "כלי רכב – פחת נצבר", "כלי רכב", "מזומן"],
+    },
+    {
+      title: "מכירת טנדר שלא נרשמה",
+      story: `ב-30.6.2025 נמכר אחד הטנדרים ב-${f(ZY_VANS.proceeds)} ₪ במזומן. המכירה לא נרשמה. רשמו את פקודת המכירה, אחרי הפחת עד יום המכירה.`,
+      entry: { ...saleEntry("10", "מכירת הטנדר", { account: "כלי רכב", accumulatedAccount: "כלי רכב – פחת נצבר", cost: ZY_VANS.each, accumulated: zySoldAcc }, ZY_VANS.proceeds), date: "30.6", why: `פחת נצבר על הטנדר הזה: 3 שנים ועוד 6 חודשים, ${f(zySoldAcc)}. עלות מופחתת: ${f(ZY_VANS.each)} − ${f(zySoldAcc)} = ${f(zySale.bookValue)}. התמורה גבוהה ממנה ב-${f(zySale.result)}: רווח הון.` },
+      accounts: ["מזומן", "כלי רכב – פחת נצבר", "כלי רכב", "רווח הון", "הפסד הון", "הוצאות פחת"],
     },
   ],
 };

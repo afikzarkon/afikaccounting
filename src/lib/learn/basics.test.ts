@@ -337,21 +337,26 @@ describe("the odd month and the rate's period", async () => {
 
 describe("the closing exam question: Almog Ltd", async () => {
   const { ALMOG } = await import("./basics-exam");
-  it("the three unknowns: 54,000 insurance, 56,000 advertising, 120,000 retained earnings", () => {
-    assert.deepEqual(ALMOG.found, { insurance: 54_000, ads: 56_000, retained: 120_000 });
+  it("the four unknowns: 54,000 insurance, 56,000 advertising, 82,500 accumulated depreciation, 88,500 retained earnings", () => {
+    assert.deepEqual(ALMOG.found, { insurance: 54_000, ads: 56_000, equipment: 82_500, retained: 88_500 });
     assert.ok(tbBalanced(trialBalance(ALMOG.preliminary)));
     for (const u of ALMOG.unknowns) assert.ok(!(u in ALMOG.given), u);
   });
 
-  it("eleven entries, a final trial balance of 4,350,250, profit 545,750, retained 665,750, customers net 910,750", () => {
+  it("fourteen entries, a final trial balance of 4,435,750, profit 503,250, retained 591,750, customers net 910,750", () => {
+    assert.equal(ALMOG.entries.length, 14);
     for (const x of ALMOG.entries) assert.ok(isBalanced(x), x.id);
     const b = balancesOf(ledger(ALMOG.entries, ALMOG.preliminary));
     const tb = trialBalance(b);
-    assert.equal(tb.dr, 4_350_250);
-    assert.equal(tb.cr, 4_350_250);
+    assert.equal(tb.dr, 4_435_750);
+    assert.equal(tb.cr, 4_435_750);
     const s = statements(b);
-    assert.equal(s.profit, 545_750);
-    assert.equal(s.equity.find(([a]) => a === "עודפים")![1], 665_750);
+    assert.equal(s.profit, 503_250);
+    assert.equal(s.equity.find(([a]) => a === "עודפים")![1], 591_750);
+    // The car is sold: its cost and accumulated depreciation are both gone, with a 4,500 gain.
+    assert.equal(b["כלי רכב"], 0);
+    assert.equal(b["כלי רכב – פחת נצבר"], 0);
+    assert.equal(b["רווח הון"], -4_500);
     assert.equal(ALMOG.customersAfter, 1_005_000);
     assert.equal(ALMOG.required, 94_250);
     assert.equal(b["לקוחות"] + b["הפרשה להפסדי אשראי חזויים"], 910_750);

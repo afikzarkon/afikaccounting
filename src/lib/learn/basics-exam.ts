@@ -5,6 +5,7 @@
  * are computed from the story.
  */
 import { type Balances, type Entry, round2 } from "./basics";
+import { accumulatedTo, depreciationOfYear, sale, saleEntry } from "./basics-ppe";
 
 const two = (id: string, text: string, dr: string, cr: string, amount: number, why: string): Entry => ({ id, date: "31.12.2025", text, lines: [{ account: dr, dr: amount }, { account: cr, cr: amount }], why });
 
@@ -18,6 +19,15 @@ const ADVANCE = 60_000; // delivered 20.12.2025, not recorded
 const LOAN = { amount: 400_000, halfYearRate: 0.03 }; // from 1.7.2025
 const CREDIT = { writeOff: 25_000, specificDebt: 80_000, specificRate: 0.6, generalRate: 0.05 };
 const STOCK = { cost: 210_000, nrv: 225_000 };
+const EQUIP = { cost: 300_000, wear: { rate: 0.1 }, bought: { year: 2022, month: 4 } }; // its accumulated depreciation is an unknown
+const CAR = { cost: 85_000, wear: { rate: 0.2 }, bought: { year: 2023, month: 1 }, proceeds: 38_500 }; // sold 31.12.2025, not recorded
+
+const equipAcc = accumulatedTo(EQUIP.cost, EQUIP.wear, EQUIP.bought, { year: 2024, month: 12 });
+const equipYear = depreciationOfYear(EQUIP.cost, EQUIP.wear, EQUIP.bought, 2025);
+const carAccBefore = accumulatedTo(CAR.cost, CAR.wear, CAR.bought, { year: 2024, month: 12 });
+const carYear = depreciationOfYear(CAR.cost, CAR.wear, CAR.bought, 2025);
+const carAccAtSale = round2(carAccBefore + carYear);
+const carSale = sale(CAR.cost, carAccAtSale, CAR.proceeds);
 
 const insOpening = INS.monthly * 12; // the 2024–2025 cycle, its 2025 half left
 const adsMonth = ADS.paid / ADS.months;
@@ -29,7 +39,9 @@ const given: Balances = {
   "הפרשה להפסדי אשראי חזויים": -45_000,
   "מלאי פתיחה": 160_000,
   קניות: 1_450_000,
-  ציוד: 300_000,
+  ציוד: EQUIP.cost,
+  "כלי רכב": CAR.cost,
+  "כלי רכב – פחת נצבר": -carAccBefore,
   "הוצאות שכירות מראש": RENT.monthly * RENT.leftAfter2024,
   "הוצאות שכירות": 21_000,
   "הוצאות שכר": SALARY.recorded,
@@ -40,7 +52,7 @@ const given: Balances = {
   "הלוואה שהתקבלה": -LOAN.amount,
   "הון מניות": -500_000,
 };
-const withUnknowns: Balances = { ...given, "הוצאות ביטוח מראש": insOpening, "הוצאות פרסום מראש": adsOpening };
+const withUnknowns: Balances = { ...given, "הוצאות ביטוח מראש": insOpening, "הוצאות פרסום מראש": adsOpening, "ציוד – פחת נצבר": -equipAcc };
 const retainedOpening = -Object.values(withUnknowns).reduce((s, v) => s + v, 0);
 
 const customersAfter = given["לקוחות"] + SALE.cheque - CREDIT.writeOff;
@@ -50,12 +62,12 @@ const allowanceAfterWriteOff = -given["הפרשה להפסדי אשראי חזו
 export const ALMOG = {
   name: "אלמוג בע״מ",
   date: "31.12.2025",
-  /** The trial balance as the question gives it: three balances missing. */
+  /** The trial balance as the question gives it: four balances missing. */
   given,
-  unknowns: ["הוצאות ביטוח מראש", "הוצאות פרסום מראש", "עודפים"] as const,
+  unknowns: ["הוצאות ביטוח מראש", "הוצאות פרסום מראש", "ציוד – פחת נצבר", "עודפים"] as const,
   /** The preliminary trial balance with the three found. */
   preliminary: { ...withUnknowns, עודפים: retainedOpening } as Balances,
-  found: { insurance: insOpening, ads: adsOpening, retained: -retainedOpening },
+  found: { insurance: insOpening, ads: adsOpening, equipment: equipAcc, retained: -retainedOpening },
   story: [
     `ביטוח: מיום ההקמה, 1.1.2020, החברה משלמת מראש על ביטוח לשנתיים — ${INS.monthly.toLocaleString("en-US")} ₪ לחודש — ורושמת את התשלום כ״מראש״. החוזה מתחדש בכל פעם שהוא נגמר.`,
     `פרסום: חוזה מ-1.5.2024 עד 30.4.2026, ששולמו עליו ${ADS.paid.toLocaleString("en-US")} ₪ ונרשמו כ״מראש״.`,
@@ -68,6 +80,8 @@ export const ALMOG = {
     `ב-31.12.2025 התברר שחוב של ${CREDIT.writeOff.toLocaleString("en-US")} ₪ אבוד, וטרם נמחק.`,
     `ההפרשה: ${CREDIT.specificRate * 100}% על לקוח שחייב ${CREDIT.specificDebt.toLocaleString("en-US")} ₪, ו-${CREDIT.generalRate * 100}% על שאר הלקוחות.`,
     `מלאי הסגירה: עלות ${STOCK.cost.toLocaleString("en-US")} ₪, שווי מימוש נטו ${STOCK.nrv.toLocaleString("en-US")} ₪.`,
+    `ציוד: נקנה ב-1.4.2022, בפחת של ${EQUIP.wear.rate * 100}% בשנה. הפחת הנצבר שלו לא נתון במאזן הבוחן, והפחת של 2025 עוד לא נרשם.`,
+    `כלי רכב: נקנה ב-1.1.2023, בפחת של ${CAR.wear.rate * 100}% בשנה. ב-31.12.2025 הוא נמכר ב-${CAR.proceeds.toLocaleString("en-US")} ₪ במזומן. לא נרשמו לא הפחת של 2025 ולא המכירה.`,
   ],
   /** The adjustments and corrections, in the order the story tells them — the correction to customers comes before the allowance. */
   entries: [
@@ -82,6 +96,9 @@ export const ALMOG = {
     two("9", "מחיקת החוב האבוד", "הפרשה להפסדי אשראי חזויים", "לקוחות", CREDIT.writeOff, "המחיקה כנגד ההפרשה — בלי הוצאה."),
     two("10", "השלמת ההפרשה", "הוצאות הפסדי אשראי", "הפרשה להפסדי אשראי חזויים", round2(required - allowanceAfterWriteOff), `לקוחות אחרי התיקון והמחיקה: ${customersAfter.toLocaleString("en-US")}. נדרש: ${required.toLocaleString("en-US")}. בכרטיס: ${allowanceAfterWriteOff.toLocaleString("en-US")}.`),
     two("11", "מלאי הסגירה", "מלאי סגירה מאזני", "מלאי סגירה רווח או הפסד", Math.min(STOCK.cost, STOCK.nrv), "הנמוך מבין העלות לשווי המימוש נטו."),
+    two("12", "פחת הציוד לשנת 2025", "הוצאות פחת", "ציוד – פחת נצבר", equipYear, `${EQUIP.cost.toLocaleString("en-US")} × ${EQUIP.wear.rate * 100}% = ${equipYear.toLocaleString("en-US")}. במאזן הבוחן הפחת הנצבר עד סוף 2024: 33 חודשים, ${equipAcc.toLocaleString("en-US")}.`),
+    two("13", "פחת הרכב לשנת 2025, עד המכירה", "הוצאות פחת", "כלי רכב – פחת נצבר", carYear, `הרכב נמכר ב-31.12, ולכן עבד כל השנה: ${CAR.cost.toLocaleString("en-US")} × ${CAR.wear.rate * 100}% = ${carYear.toLocaleString("en-US")}.`),
+    { ...saleEntry("14", "מכירת הרכב", { account: "כלי רכב", accumulatedAccount: "כלי רכב – פחת נצבר", cost: CAR.cost, accumulated: carAccAtSale }, CAR.proceeds), date: "31.12.2025", why: `פחת נצבר ביום המכירה: ${carAccBefore.toLocaleString("en-US")} + ${carYear.toLocaleString("en-US")} = ${carAccAtSale.toLocaleString("en-US")}. עלות מופחתת ${carSale.bookValue.toLocaleString("en-US")}, והתמורה גבוהה ממנה ב-${carSale.result.toLocaleString("en-US")}: רווח הון.` },
   ] as Entry[],
   customersAfter,
   required,

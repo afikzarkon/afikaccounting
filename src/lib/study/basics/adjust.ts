@@ -1,4 +1,5 @@
 import type { Entry } from "@/lib/learn/basics";
+import { accumulatedTo, depreciationOfYear, forMonths, saleEntry } from "@/lib/learn/basics-ppe";
 import type { JournalExercise, StudyModule } from "../types";
 import { COURSE, COURSE_HREF, fmt, practice } from "./shared";
 
@@ -31,6 +32,23 @@ const depositInterest = (DEPOSIT.amount * DEPOSIT.rate * DEPOSIT.months) / 12;
 const depositYear = DEPOSIT.amount * DEPOSIT.rate;
 const STOCK = { cost: 64_000, nrv: 59_500 };
 const stock = Math.min(STOCK.cost, STOCK.nrv);
+// Fixed assets.
+const DEP_FULL = { cost: 48_000, years: 6 };
+const depFull = DEP_FULL.cost / DEP_FULL.years;
+const DEP_PART = { cost: 110_000, rate: 0.15, month: 5 };
+const depPart = forMonths(DEP_PART.cost, { rate: DEP_PART.rate }, 13 - DEP_PART.month);
+const DEP_SECOND = { cost: 84_000, years: 7, month: 10 };
+const depSecond = depreciationOfYear(DEP_SECOND.cost, { years: DEP_SECOND.years }, { year: 2024, month: DEP_SECOND.month }, 2025);
+const SALE_GAIN = { cost: 128_000, rate: 0.2, proceeds: 41_000 };
+const saleGainAcc = accumulatedTo(SALE_GAIN.cost, { rate: SALE_GAIN.rate }, { year: 2022, month: 1 }, { year: 2025, month: 6 });
+const SALE_LOSS = { cost: 54_000, years: 6, proceeds: 15_000 };
+const saleLossAcc = accumulatedTo(SALE_LOSS.cost, { years: SALE_LOSS.years }, { year: 2021, month: 7 }, { year: 2025, month: 3 });
+const SALE_EVEN = { cost: 33_000, years: 3 };
+const saleEvenAcc = accumulatedTo(SALE_EVEN.cost, { years: SALE_EVEN.years }, { year: 2023, month: 1 }, { year: 2024, month: 12 });
+const BOOK = { cost: 95_000, rate: 0.2 };
+const bookAcc = accumulatedTo(BOOK.cost, { rate: BOOK.rate }, { year: 2024, month: 4 }, { year: 2025, month: 12 });
+const TO_SALE = { cost: 76_800, years: 8 };
+const toSale = forMonths(TO_SALE.cost, { years: TO_SALE.years }, 5);
 
 /** Lesson 4: year-end adjustments — the accrual basis, the four cut-off accounts, a full example, and closing inventory. */
 export const ADJUST: StudyModule = {
@@ -38,13 +56,14 @@ export const ADJUST: StudyModule = {
   course: COURSE,
   n: 5,
   title: "התאמות סוף שנה",
-  description: "בסיס מצטבר ועקרון ההקבלה, ארבעת חשבונות החתך, חודש אחרון שונה וריבית לפי תקופה, מלאי סגירה — ודוגמה מלאה של פקודות התאמה.",
+  description: "בסיס מצטבר ועקרון ההקבלה, ארבעת חשבונות החתך, חודש אחרון שונה וריבית לפי תקופה, מלאי סגירה, פחת ומכירה של רכוש קבוע, ודוגמה מלאה של פקודות התאמה.",
   goal: "לרשום פקודות התאמה בסוף השנה, כך שכל הכנסה וכל הוצאה יגיעו לשנה שלהן.",
   outcomes: [
     "להסביר את הבסיס המצטבר ואת עקרון ההקבלה",
     "לחשב ולרשום את ארבעת חשבונות החתך",
     "לחשב חודש אחרון חריג וריבית לפי התקופה של השיעור",
     "לרשום מלאי סגירה ולחשב עלות מכר",
+    "לחשב פחת, גם לחלק משנה, ולרשום מכירה של רכוש קבוע ברווח או בהפסד",
     "לרשום את כל פקודות ההתאמה של חברה שלמה",
   ],
   backHref: COURSE_HREF,
@@ -57,6 +76,10 @@ export const ADJUST: StudyModule = {
     { id: "odd-month", title: "החודש שלא דומה לאחרים" },
     { id: "interest-period", title: "ריבית: לשנה או לחצי שנה?" },
     { id: "inventory", title: "מלאי סגירה" },
+    { id: "ppe-idea", title: "פחת: ההשקעה מתבלה" },
+    { id: "ppe-straight", title: "קו ישר: לפי שנים או לפי אחוז" },
+    { id: "ppe-accum", title: "פחת נצבר ועלות מופחתת" },
+    { id: "ppe-sell", title: "מכירת רכוש קבוע" },
     { id: "adj-example", title: "דוגמה מלאה: שחר ייעוץ בע״מ" },
   ],
   exercises: [
@@ -264,6 +287,84 @@ export const ADJUST: StudyModule = {
       answer: 9_000,
       steps: ["השיעור הוא לחצי שנה, ובשנה יש שתי תקופות כאלה.", "180,000 × 2.5% × 12/6 = 9,000."],
     },
+    // Fixed assets: depreciation and sales.
+    journal(
+      "dep-full-year",
+      "פחת שנה מלאה",
+      `ב-1.1 נקנה ציוד ב-${fmt(DEP_FULL.cost)} ₪, שישמש את העסק ${DEP_FULL.years} שנים. רשמו את פקודת הפחת ב-31.12 של אותה שנה.`,
+      [
+        { account: "הוצאות פחת", dr: depFull },
+        { account: "ציוד – פחת נצבר", cr: depFull },
+      ],
+      `${fmt(DEP_FULL.cost)} ÷ ${DEP_FULL.years} = ${fmt(depFull)}. ההוצאה בחובה, והפחת הנצבר בזכות. חשבון הציוד עצמו נשאר בעלות.`,
+      ["הוצאות פחת", "ציוד – פחת נצבר", "ציוד", "מזומן"],
+    ),
+    journal(
+      "dep-part-year",
+      "פחת בשנת הקנייה",
+      `ב-1.${DEP_PART.month} נקנה רכב ב-${fmt(DEP_PART.cost)} ₪. שיעור הפחת ${DEP_PART.rate * 100}% בשנה. רשמו את פקודת הפחת ב-31.12.`,
+      [
+        { account: "הוצאות פחת", dr: depPart },
+        { account: "כלי רכב – פחת נצבר", cr: depPart },
+      ],
+      `שנה מלאה: ${fmt(DEP_PART.cost)} × ${DEP_PART.rate * 100}% = ${fmt(DEP_PART.cost * DEP_PART.rate)}. הרכב היה בעסק ${13 - DEP_PART.month} חודשים: ${fmt(DEP_PART.cost * DEP_PART.rate)} × ${13 - DEP_PART.month}/12 = ${fmt(depPart)}.`,
+      ["הוצאות פחת", "כלי רכב – פחת נצבר", "כלי רכב", "מזומן"],
+    ),
+    journal(
+      "dep-second-year",
+      "פחת בשנה השנייה",
+      `ב-1.${DEP_SECOND.month}.2024 נקנתה מכונה ב-${fmt(DEP_SECOND.cost)} ₪, ל-${DEP_SECOND.years} שנים. רשמו את פקודת הפחת ב-31.12.2025.`,
+      [
+        { account: "הוצאות פחת", dr: depSecond },
+        { account: "מכונות – פחת נצבר", cr: depSecond },
+      ],
+      `ב-2025 המכונה הייתה בעסק כל השנה: ${fmt(DEP_SECOND.cost)} ÷ ${DEP_SECOND.years} = ${fmt(depSecond)}. רק בשנת הקנייה סופרים חודשים.`,
+      ["הוצאות פחת", "מכונות – פחת נצבר", "מכונות", "מזומן"],
+    ),
+    journal(
+      "sale-gain",
+      "מכירה ברווח",
+      `רכב נקנה ב-1.1.2022 ב-${fmt(SALE_GAIN.cost)} ₪, בפחת של ${SALE_GAIN.rate * 100}% בשנה. ב-30.6.2025 הוא נמכר ב-${fmt(SALE_GAIN.proceeds)} ₪ במזומן. הפחת עד יום המכירה כבר נרשם. רשמו את פקודת המכירה.`,
+      saleEntry("1", "", { account: "כלי רכב", accumulatedAccount: "כלי רכב – פחת נצבר", cost: SALE_GAIN.cost, accumulated: saleGainAcc }, SALE_GAIN.proceeds).lines,
+      `פחת נצבר: ${fmt(SALE_GAIN.cost)} × ${SALE_GAIN.rate * 100}% × 3.5 = ${fmt(saleGainAcc)}. עלות מופחתת: ${fmt(SALE_GAIN.cost - saleGainAcc)}. התמורה גבוהה ממנה ב-${fmt(SALE_GAIN.proceeds - (SALE_GAIN.cost - saleGainAcc))}: רווח הון.`,
+      ["מזומן", "כלי רכב – פחת נצבר", "כלי רכב", "רווח הון", "הפסד הון", "הוצאות פחת"],
+    ),
+    journal(
+      "sale-loss",
+      "מכירה בהפסד",
+      `ציוד נקנה ב-1.7.2021 ב-${fmt(SALE_LOSS.cost)} ₪, ל-${SALE_LOSS.years} שנים. ב-31.3.2025 הוא נמכר ב-${fmt(SALE_LOSS.proceeds)} ₪ במזומן. הפחת עד יום המכירה כבר נרשם. רשמו את פקודת המכירה.`,
+      saleEntry("1", "", { account: "ציוד", accumulatedAccount: "ציוד – פחת נצבר", cost: SALE_LOSS.cost, accumulated: saleLossAcc }, SALE_LOSS.proceeds).lines,
+      `פחת שנתי ${fmt(SALE_LOSS.cost / SALE_LOSS.years)}. מיולי 2021 עד מרץ 2025: 45 חודשים, ${fmt(saleLossAcc)}. עלות מופחתת ${fmt(SALE_LOSS.cost - saleLossAcc)}, והתמורה נמוכה ממנה ב-${fmt(SALE_LOSS.cost - saleLossAcc - SALE_LOSS.proceeds)}: הפסד הון, בחובה.`,
+      ["מזומן", "ציוד – פחת נצבר", "ציוד", "רווח הון", "הפסד הון", "הוצאות פחת"],
+    ),
+    journal(
+      "sale-even",
+      "מכירה בעלות המופחתת",
+      `מחשבים נקנו ב-1.1.2023 ב-${fmt(SALE_EVEN.cost)} ₪, ל-${SALE_EVEN.years} שנים. ב-31.12.2024, אחרי שנרשם הפחת של אותה שנה, הם נמכרו במזומן בעלותם המופחתת. רשמו את פקודת המכירה.`,
+      saleEntry("1", "", { account: "מחשבים", accumulatedAccount: "מחשבים – פחת נצבר", cost: SALE_EVEN.cost, accumulated: saleEvenAcc }, SALE_EVEN.cost - saleEvenAcc).lines,
+      `פחת נצבר לשנתיים: ${fmt(saleEvenAcc)}. עלות מופחתת: ${fmt(SALE_EVEN.cost - saleEvenAcc)}, וזו התמורה. אין רווח ואין הפסד.`,
+      ["מזומן", "מחשבים – פחת נצבר", "מחשבים", "רווח הון", "הפסד הון"],
+    ),
+    {
+      kind: "number",
+      id: "book-value",
+      skill: "עלות מופחתת",
+      prompt: `טנדר נקנה ב-1.4.2024 ב-${fmt(BOOK.cost)} ₪, בפחת של ${BOOK.rate * 100}% בשנה. מה העלות המופחתת שלו ב-31.12.2025, אחרי פקודת הפחת?`,
+      answer: BOOK.cost - bookAcc,
+      steps: [
+        `פחת שנתי: ${fmt(BOOK.cost)} × ${BOOK.rate * 100}% = ${fmt(BOOK.cost * BOOK.rate)}.`,
+        `מאפריל 2024 עד דצמבר 2025: 21 חודשים. פחת נצבר: ${fmt(BOOK.cost * BOOK.rate)} × 21/12 = ${fmt(bookAcc)}.`,
+        `עלות מופחתת: ${fmt(BOOK.cost)} − ${fmt(bookAcc)} = ${fmt(BOOK.cost - bookAcc)}.`,
+      ],
+    },
+    {
+      kind: "number",
+      id: "dep-to-sale",
+      skill: "פחת עד יום המכירה",
+      prompt: `מכונה שעלתה ${fmt(TO_SALE.cost)} ₪ מופחתת על ${TO_SALE.years} שנים. היא נמכרה ב-31.5.2025, ועוד לא נרשם עליה פחת ב-2025. כמה פחת רושמים עליה לפני פקודת המכירה?`,
+      answer: toSale,
+      steps: [`פחת שנתי: ${fmt(TO_SALE.cost)} ÷ ${TO_SALE.years} = ${fmt(TO_SALE.cost / TO_SALE.years)}.`, `ינואר עד מאי: 5 חודשים. ${fmt(TO_SALE.cost / TO_SALE.years)} × 5/12 = ${fmt(toSale)}.`],
+    },
     practice("q14"),
   ],
   traps: [
@@ -301,5 +402,6 @@ export const ADJUST: StudyModule = {
     "חודש רגיל = מה שנרשם ÷ החודשים שנרשמו. רק אחר כך מתקנים את החודש החריג.",
     "ריבית: קודם קוראים לאיזו תקופה השיעור — שנה או חצי שנה.",
     "עלות המכר = מלאי פתיחה + קניות − מלאי סגירה. המלאי — בנמוך מבין עלות לשווי מימוש נטו.",
+    "פחת: ח׳ הוצאות פחת / ז׳ פחת נצבר. בשנת הקנייה סופרים חודשים. במכירה מוציאים עלות ופחת נצבר, וההפרש מול התמורה הוא רווח או הפסד הון.",
   ],
 };

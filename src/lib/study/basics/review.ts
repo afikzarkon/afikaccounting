@@ -1,5 +1,6 @@
 import type { Entry } from "@/lib/learn/basics";
 import { MULTI, MULTI_RESULTS } from "@/lib/learn/basics-review";
+import { accumulatedTo, depreciationOfYear } from "@/lib/learn/basics-ppe";
 import type { JournalExercise, StudyModule } from "../types";
 import { COURSE, COURSE_HREF, fmt } from "./shared";
 
@@ -19,6 +20,11 @@ const ADS = { paid: 48_000, months: 24, usedIn2024: 9 };
 const adsOpening = ADS.paid - (ADS.paid / ADS.months) * ADS.usedIn2024;
 // Insurance renewed every two years from 1.1.2015, 6,000 a month: 2025 starts a new cycle, paid and recorded as prepaid.
 const RENEW = { monthly: 6_000 };
+// Trucks on a preliminary trial balance of 31.12.2025: one of five sold at its book value at the end of 2024.
+const TRUCKS = { count: 5, each: 88_000, years: 8, bought: { year: 2023, month: 7 }, sold: 1 };
+const trucksCost = (TRUCKS.count - TRUCKS.sold) * TRUCKS.each;
+const trucksAcc = accumulatedTo(trucksCost, { years: TRUCKS.years }, TRUCKS.bought, { year: 2024, month: 12 });
+const trucksYear = depreciationOfYear(trucksCost, { years: TRUCKS.years }, TRUCKS.bought, 2025);
 
 /** Lesson 6: reading a preliminary trial balance — the three questions, old and new contracts, contracts over years, corrections, and what each does to profit. */
 export const REVIEW: StudyModule = {
@@ -32,6 +38,7 @@ export const REVIEW: StudyModule = {
     "לשאול שלוש שאלות קבועות על כל סעיף",
     "להבחין בין חוזה ישן לחדש לפי מה שכבר רשום",
     "לחשב יתרה חסרה בחוזה שנמשך כמה שנים",
+    "לשחזר עלות ופחת נצבר של רכוש קבוע במאזן בוחן ראשוני",
     "לרשום פקודת תיקון כשהסכום נרשם בחשבון הלא נכון",
     "לקבוע איך כל טעות השפיעה על הרווח",
   ],
@@ -40,6 +47,7 @@ export const REVIEW: StudyModule = {
     { id: "rev-method", title: "שלוש שאלות לכל סעיף" },
     { id: "rev-contract", title: "חוזה ישן או חדש?" },
     { id: "rev-multiyear", title: "חוזים לאורך שנים, ויתרה ״?״" },
+    { id: "rev-ppe", title: "יתרות ״?״ ברכוש קבוע" },
     { id: "rev-fix", title: "פקודות תיקון: נרשם בחשבון הלא נכון" },
     { id: "rev-profit", title: "מה כל טעות עשתה לרווח" },
   ],
@@ -116,6 +124,37 @@ export const REVIEW: StudyModule = {
       { account: "מקדמות מלקוחות", dr: 45_000 },
       { account: "מכירות", cr: 45_000 },
     ], "לא נרשם כלום — התיקון הוא כל מה שצריך: המקדמה נסגרת, והמכירה נרשמת.", ["מקדמות מלקוחות", "מכירות", "מזומן", "לקוחות"]),
+    {
+      kind: "number",
+      id: "ppe-unknown-cost",
+      skill: "עלות ״?״",
+      prompt: `ב-1.7.2023 נקנו ${TRUCKS.count} משאיות ב-${fmt(TRUCKS.each)} ₪ כל אחת, ל-${TRUCKS.years} שנים. ב-31.12.2024 נמכרה אחת מהן בעלותה המופחתת, והמכירה נרשמה. מה העלות של ״משאיות״ במאזן הבוחן הראשוני של 31.12.2025?`,
+      answer: trucksCost,
+      steps: ["המשאית שנמכרה כבר יצאה מהספרים, עם העלות שלה.", `נשארו ${TRUCKS.count - TRUCKS.sold}: ${TRUCKS.count - TRUCKS.sold} × ${fmt(TRUCKS.each)} = ${fmt(trucksCost)}.`],
+    },
+    {
+      kind: "number",
+      id: "ppe-unknown-acc",
+      skill: "פחת נצבר ״?״",
+      prompt: `ב-1.7.2023 נקנו ${TRUCKS.count} משאיות ב-${fmt(TRUCKS.each)} ₪ כל אחת, ל-${TRUCKS.years} שנים. ב-31.12.2024 נמכרה אחת מהן בעלותה המופחתת, והמכירה נרשמה. מה הפחת הנצבר של המשאיות במאזן הבוחן הראשוני של 31.12.2025?`,
+      answer: trucksAcc,
+      steps: [
+        `בספרים נשארו ${TRUCKS.count - TRUCKS.sold} משאיות: ${fmt(trucksCost)}. פחת שנתי: ${fmt(trucksCost)} ÷ ${TRUCKS.years} = ${fmt(trucksCost / TRUCKS.years)}.`,
+        "הפחת של 2025 עוד לא נרשם. נצבר מיולי 2023 עד דצמבר 2024: 18 חודשים.",
+        `${fmt(trucksCost / TRUCKS.years)} × 18/12 = ${fmt(trucksAcc)}.`,
+      ],
+    },
+    journal(
+      "ppe-year-entry",
+      "פחת השנה במאזן בוחן ראשוני",
+      `ב-1.7.2023 נקנו ${TRUCKS.count} משאיות ב-${fmt(TRUCKS.each)} ₪ כל אחת, ל-${TRUCKS.years} שנים. ב-31.12.2024 נמכרה אחת מהן בעלותה המופחתת, והמכירה נרשמה. רשמו את פקודת הפחת ב-31.12.2025.`,
+      [
+        { account: "הוצאות פחת", dr: trucksYear },
+        { account: "כלי רכב – פחת נצבר", cr: trucksYear },
+      ],
+      `שנה מלאה על ${TRUCKS.count - TRUCKS.sold} המשאיות שנשארו: ${fmt(trucksCost)} ÷ ${TRUCKS.years} = ${fmt(trucksYear)}.`,
+      ["הוצאות פחת", "כלי רכב – פחת נצבר", "כלי רכב", "מזומן"],
+    ),
   ],
   traps: [
     {
@@ -157,12 +196,52 @@ export const REVIEW: StudyModule = {
         "יתרת הלקוחות במאזן הבוחן הראשוני עוד לא כוללת את התיקון.",
       ],
     },
+    {
+      id: "acc-this-year",
+      prompt: "ציוד נקנה ב-1.1.2022 ב-110,000 ₪, ל-10 שנים. מה הפחת הנצבר שלו במאזן הבוחן הראשוני של 31.12.2025?",
+      options: ["33,000", "44,000", "11,000", "110,000"],
+      answer: 0,
+      why: "במאזן בוחן ראשוני הפחת של 2025 עוד לא נרשם. נצברו 2022 עד 2024: 11,000 × 3 = 33,000.",
+      traps: [
+        "",
+        "המלכודת: ארבע שנים, כולל 2025. אבל הפחת של 2025 הוא פקודת התאמה שעוד לא נרשמה.",
+        "זה הפחת של שנה אחת, לא מה שנצבר.",
+        "זו העלות. היא לא משתנה, והפחת נצבר בחשבון נפרד.",
+      ],
+    },
+    {
+      id: "credit-asset",
+      prompt: "פחת השנה של מכונה הוא 9,000 ₪. איזו פקודה נכונה?",
+      options: ["ח׳ הוצאות פחת / ז׳ מכונות – פחת נצבר", "ח׳ הוצאות פחת / ז׳ מכונות", "ח׳ מכונות – פחת נצבר / ז׳ הוצאות פחת", "ח׳ הוצאות פחת / ז׳ מזומן"],
+      answer: 0,
+      why: "ההוצאה בחובה, והפחת הנצבר בזכות. חשבון המכונות נשאר בעלות המקורית.",
+      traps: [
+        "",
+        "המלכודת: להקטין את הנכס ישירות. ככה העלות המקורית נעלמת מהספרים, והשאלות מבקשות לראות את שתיהן.",
+        "הפוך: הפחת מגדיל הוצאה, ולכן היא בחובה.",
+        "פחת לא מוציא כסף. המזומן יצא ביום הקנייה.",
+      ],
+    },
+    {
+      id: "sale-book-value",
+      prompt: "רכב שעלה 108,000 ₪, עם פחת נצבר של 75,600 ₪, נמכר ב-31,000 ₪. איזה סכום יוצא מחשבון ״כלי רכב״?",
+      options: ["108,000", "32,400", "75,600", "0, כי אין רווח"],
+      answer: 0,
+      why: "החשבון מחזיק את העלות, והיא יוצאת במלואה. הפחת הנצבר יוצא בנפרד, 75,600 בחובה.",
+      traps: [
+        "",
+        "המלכודת: להוציא רק את העלות המופחתת. אז נשארים בספרים 75,600 של רכב שכבר לא קיים.",
+        "זה הפחת הנצבר, והוא יוצא מחשבון אחר.",
+        "גם בלי רווח הרכב יוצא מהספרים. הפקודה פשוט בלי שורת רווח או הפסד.",
+      ],
+    },
   ],
   tips: [
     "לכל נתון: מה נרשם, מה היה צריך — והתיקון הוא ההפרש.",
     "יש ״מראש״ ואין שורה תוצאתית? חוזה ישן: היתרה של סוף השנה הקודמת.",
     "יתרת ״מראש״ = תשלום לחודש × החודשים שנשארו. חוזה שנגמר — מתאפס.",
     "חשבון שנכון בשתי הפקודות לא משתתף בתיקון.",
+    "רכוש קבוע במאזן בוחן ראשוני: עלות של מה שעדיין בספרים, ופחת נצבר עד סוף השנה הקודמת.",
     "רק תיקון שנוגע בהכנסה או בהוצאה משנה את הרווח. ותמיד: קודם מתקנים, אחר כך מפרישים.",
   ],
 };

