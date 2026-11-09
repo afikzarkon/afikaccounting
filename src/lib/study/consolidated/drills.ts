@@ -45,6 +45,10 @@ export const DRILL_FAMILIES = {
   dtagroup: "נכס מס במאוחד",
   prefnci: "זשמ״ש ברווח עם בכורה",
   ordna: "זשמ״ש ברגילות",
+  icinv: "רט״מ במלאי",
+  icdep: "מימוש בקצב הפחת",
+  icnci: "זשמ״ש כשהבת מכרה",
+  icprior: "דחייה ביתרת פתיחה",
 } as const;
 
 export type DrillFamily = keyof typeof DRILL_FAMILIES;
@@ -516,6 +520,70 @@ export function drill(family: DrillFamily, seed: number): Drill {
       answer: share,
       steps: [{ title: `הנמ״נ של הרגילות, כפול ${out}%`, numbers: `(${fmt(na)} − ${fmt(pref)}) × ${out}% = ${fmt(share)}` }],
       trap: "לא להוריד את הבכורה מהנמ״נ.",
+    };
+  }
+  if (family === "icinv") {
+    const price = r.int(2, 15) * 40_000;
+    const margin = r.int(2, 8) * 5;
+    const left = r.int(1, 4) * 25;
+    const profit = whole((price * margin) / 100);
+    const gross = whole((profit * left) / 100);
+    const net = whole(gross * 0.77);
+    return {
+      prompt: `האם מכרה לבת סחורה ב־${fmt(price)} ש״ח, בשיעור רווח גולמי של ${margin}%. בסוף השנה ${left}% מהסחורה עדיין אצל הבת, והשאר נמכר החוצה. שיעור המס 23%. בכמה קטן הרווח הנקי המאוחד בגלל העסקה?`,
+      answer: net,
+      steps: [
+        { title: "הרווח בעסקה", numbers: `${fmt(price)} × ${margin}% = ${fmt(profit)}` },
+        { title: "החלק שעוד במלאי", numbers: `${fmt(profit)} × ${left}% = ${fmt(gross)}` },
+        { title: "אחרי נכס המס", numbers: `${fmt(gross)} × 77% = ${fmt(net)}` },
+      ],
+      trap: "לדחות גם את הרווח שבחלק שכבר נמכר החוצה.",
+    };
+  }
+  if (family === "icdep") {
+    const years = r.int(3, 8);
+    const gain = r.int(2, 12) * years * 1_000;
+    const k = r.int(1, years - 1);
+    const yearly = whole(gain / years);
+    const left = gain - k * yearly;
+    return {
+      prompt: `ב־1.1 הבת מכרה לאם מכונה ברווח של ${fmt(gain)} ש״ח. האם מפחיתה אותה בקו ישר על פני ${years} שנים. מה הרווח שעדיין לא מומש אחרי ${k} שנים, לפני מס?`,
+      answer: left,
+      steps: [
+        { title: "המימוש בכל שנה, דרך הפחת", numbers: `${fmt(gain)} ÷ ${years} = ${fmt(yearly)}` },
+        { title: "מה שנשאר", numbers: `${fmt(gain)} − ${k} × ${fmt(yearly)} = ${fmt(left)}` },
+      ],
+      trap: "לממש לפי אורך החיים שהיה למכונה אצל המוכרת.",
+    };
+  }
+  if (family === "icnci") {
+    const profit = r.int(3, 20) * 20_000;
+    const unrealized = r.int(1, 20) * 2_000;
+    const net = whole(unrealized * 0.77);
+    const nci = whole(((profit - net) * out) / 100);
+    return {
+      prompt: `האם מחזיקה ${pct}% מהבת. רווח הבת השנה ${fmt(profit)} ש״ח. הבת מכרה לאם סחורה, ובסוף השנה נשאר אצל האם רווח שלא מומש של ${fmt(unrealized)} ש״ח. שיעור המס 23%. מה חלק הזשמ״ש ברווח?`,
+      answer: nci,
+      steps: [
+        { title: "הדחייה נטו, על חשבון הבת", numbers: `${fmt(unrealized)} × 77% = ${fmt(net)}` },
+        { title: `הרווח המתוקן של הבת, כפול ${out}%`, numbers: `(${fmt(profit)} − ${fmt(net)}) × ${out}% = ${fmt(nci)}` },
+      ],
+      trap: "לחשב את הזשמ״ש מהרווח של הבת בלי הדחייה.",
+    };
+  }
+  if (family === "icprior") {
+    const price = r.int(2, 15) * 20_000;
+    const margin = r.int(2, 8) * 5;
+    const profit = whole((price * margin) / 100);
+    const net = whole(profit * 0.77);
+    return {
+      prompt: `בשנה שעברה האם מכרה לבת סחורה ב־${fmt(price)} ש״ח, בשיעור רווח גולמי של ${margin}%, וכל הסחורה עדיין אצל הבת בתחילת השנה. שיעור המס 23%. בכמה מקטינים במאוחד את יתרת הפתיחה של העודפים?`,
+      answer: net,
+      steps: [
+        { title: "הרווח שנדחה בשנה שעברה", numbers: `${fmt(price)} × ${margin}% = ${fmt(profit)}` },
+        { title: "אחרי מס", numbers: `${fmt(profit)} × 77% = ${fmt(net)}` },
+      ],
+      trap: "להקטין את העודפים בכל הרווח, בלי נכס המס.",
     };
   }
   if (family === "ncieq")

@@ -8,6 +8,7 @@ import { WORKSHEET } from "./lessons/worksheet";
 import { POLICY } from "./lessons/policy";
 import { FINANCE } from "./lessons/finance";
 import { IMPAIRMENT } from "./lessons/impairment";
+import { INTERCOMPANY } from "./lessons/intercompany";
 
 /** The consolidated statements course; every formula in its practice reads left to right. */
-export const CONSOLIDATED_LESSONS = [WHAT, CONTROL, RETURNS, ACQUISITION, GOODWILL, WORKSHEET, POLICY, FINANCE, IMPAIRMENT].map(withLtrFormulas);
+export const CONSOLIDATED_LESSONS = [WHAT, CONTROL, RETURNS, ACQUISITION, GOODWILL, WORKSHEET, POLICY, FINANCE, IMPAIRMENT, INTERCOMPANY].map(withLtrFormulas);

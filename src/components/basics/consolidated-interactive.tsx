@@ -2,7 +2,7 @@
 
 import { RotateCcw } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { impairmentViews, type Books, consolidate, excessTable, goodwillCalc, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, pvBond, revalue, whole, amortizedCost } from "@/lib/learn/consolidated";
+import { impairmentViews, inventoryDeferral, type Books, consolidate, excessTable, goodwillCalc, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, pvBond, revalue, whole, amortizedCost } from "@/lib/learn/consolidated";
 import { drill, DRILL_FAMILIES, type DrillFamily } from "@/lib/study/consolidated/drills";
 import { ARMON, NOFAR } from "@/lib/study/consolidated/lessons/worksheet";
 import { cn } from "@/lib/utils";
@@ -386,6 +386,40 @@ export function ImpairLab() {
         rows={v.rows.map((r, i) => [String(2025 + i), r.sub, r.group, r.excess])}
       />
       <p className="text-[14px] text-muted">העלות המופחתת בלי ירידות ערך: אצל הבת {v.rows.map((r) => r.subAc.toLocaleString("en-US")).join(", ")}. אצל הקבוצה {v.rows.map((r) => r.groupAc.toLocaleString("en-US")).join(", ")}.</p>
+    </section>
+  );
+}
+
+/** Tzeelon and Moran's goods: pick who sold, the price, the margin and how much reached outside buyers, and see what is deferred and who bears it. */
+export function IntercoLab() {
+  const [up, setUp] = useState(true);
+  const [price, setPrice] = useState(120_000);
+  const [margin, setMargin] = useState(20);
+  const [sold, setSold] = useState(0);
+  const v = inventoryDeferral({ price, margin: margin / 100, leftShare: 1 - sold / 100, taxRate: 0.23, up, nciShare: 0.3 });
+  return (
+    <section aria-label="מעבדה: כיוון, רווח, חלק שנמכר" className="card space-y-4 p-4 sm:p-5">
+      <div className="flex flex-wrap gap-2">
+        {([true, false] as const).map((x) => (
+          <button key={String(x)} type="button" aria-pressed={up === x} onClick={() => setUp(x)} className={cn("min-h-11 rounded-lg border px-3 py-1.5 text-[13.5px] font-semibold", up === x ? "border-accent bg-accent-soft text-fg" : "border-line text-muted hover:bg-surface-2")}>
+            {x ? "Up: מורן מכרה" : "Down: צאלון מכרה"}
+          </button>
+        ))}
+      </div>
+      <Amount label="מחיר המכירה בתוך הקבוצה" value={price} onChange={setPrice} />
+      <Percent label="שיעור רווח גולמי" value={margin} onChange={setMargin} min={5} max={50} />
+      <Percent label="החלק שנמכר החוצה עד סוף השנה" value={sold} onChange={setSold} />
+      <Tbl
+        head={["", "סכום"]}
+        rows={[
+          ["ביטול מכירות ועלות מכר", price],
+          ["רווח בעסקה", v.profit],
+          ["רט״מ ברוטו: מקטינים את המלאי", v.gross],
+          ["נכס מסים נדחים, 23%", v.tax],
+          ["דחייה נטו", v.net],
+        ]}
+      />
+      <Tbl head={["מי נושא בדחייה נטו", "סכום"]} rows={[["הבעלים של צאלון", v.owners], ["זשמ״ש, 30%", v.nci]]} />
     </section>
   );
 }

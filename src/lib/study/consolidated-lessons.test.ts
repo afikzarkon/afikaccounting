@@ -13,6 +13,7 @@ import { ATTEND_NO, ATTEND_YES, BOARD, CONTROL, CONTROL_TAUGHT, CONVERTED, MASTE
 import { ACQUISITION, ACQUISITION_TAUGHT, BOND, ITEMS, LESSEE, LESSOR, MASTER4_TABLE, STORY_TABLE } from "./consolidated/lessons/acquisition";
 import { G_FAIR, G_NET, G_PREMIUM, G_SHARE, GOODWILL, GOODWILL_TAUGHT, M5, PAYS, PERIOD, PERIOD_TEST, PERIOD_TEST_START } from "./consolidated/lessons/goodwill";
 import { AGENT_TEST, AGENT_TEST_START, AGENTS, FUND_LARGE, FUND_SMALL, MASTER3_POSITION, MASTER3_REWARD, MASTER3_SISTER, MASTER3_TOGETHER, RETURNS, RETURNS_TAUGHT } from "./consolidated/lessons/returns";
+import { BORROW10, DEFER10, INTERCOMPANY, INTERCOMPANY_TAUGHT, INV10, LAND10, LOSS10, M10, MACH10, MACH10_FIG, MISTAKE10, PRIOR10, SAME10, SPLIT10, WD10 } from "./consolidated/lessons/intercompany";
 import { DATES9, DTA9, IMP9, IMPAIRMENT, IMPAIRMENT_TAUGHT, M9, M9_NCI_END, PREF9, PREF_PROFIT } from "./consolidated/lessons/impairment";
 import { BOND8, BOND8_OCI, DEBT_TEST, DEBT_TEST_START, FINANCE, FINANCE_TAUGHT, IMPAIR8, M8, NEEDS, SHARES8_FIG } from "./consolidated/lessons/finance";
 import { BUILDING, LAND, M7, M7_2025, M7_NCI, POLICY, POLICY_TAUGHT, POLICY_TEST, POLICY_TEST_START, ADJUST, TABLE7_2025, TABLE7_2026 } from "./consolidated/lessons/policy";
@@ -22,7 +23,7 @@ import { type ConsolidatedQuestion, LESSON_N } from "./consolidated/shared";
 import { ltrFormulas } from "./ias19/ltr";
 
 /** What teaches each question, lesson by lesson. */
-const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT, "consolidated-acquisition": ACQUISITION_TAUGHT, "consolidated-goodwill": GOODWILL_TAUGHT, "consolidated-worksheet": WORKSHEET_TAUGHT, "consolidated-policy": POLICY_TAUGHT, "consolidated-finance": FINANCE_TAUGHT, "consolidated-impairment": IMPAIRMENT_TAUGHT };
+const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT, "consolidated-acquisition": ACQUISITION_TAUGHT, "consolidated-goodwill": GOODWILL_TAUGHT, "consolidated-worksheet": WORKSHEET_TAUGHT, "consolidated-policy": POLICY_TAUGHT, "consolidated-finance": FINANCE_TAUGHT, "consolidated-impairment": IMPAIRMENT_TAUGHT, "consolidated-intercompany": INTERCOMPANY_TAUGHT };
 
 describe("the consolidated statements course", () => {
   it("lessons numbered in order, on the course's page, the first free", () => {
@@ -581,6 +582,40 @@ describe("lesson 9: the sorting and the figures, against a separate calculation 
     const answer = (id: string) => (IMPAIRMENT.exercises.find((x) => x.id === id) as { answer: number }).answer;
     for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
     assert.deepEqual(IMPAIRMENT.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
+  });
+});
+
+describe("lesson 10: the sorting and the figures, against a separate calculation in Python", () => {
+  it("eight transactions to sort, both answers among them", () => {
+    assert.equal(DEFER10.length, 8);
+    assert.ok(DEFER10.some((x) => x.answer === "defer") && DEFER10.some((x) => x.answer === "cancel"));
+  });
+  it("the inventory: unsold, sold the same year, and the next year", () => {
+    assert.deepEqual(INV10, { profit: 24_000, cost: 96_000, gross: 24_000, tax: 5_520, net: 18_480, nci: 5_544, owners: 12_936 });
+    assert.deepEqual(SAME10, { sellerTax: 5_520, buyerTax: 1_840, groupProfit: 32_000, groupTax: 7_360 });
+    assert.deepEqual(PRIOR10, { opening: 18_480, left: 12_000, dta: 2_760, realized: 12_000, tax: 2_760, nciProfit: 2_772, nciEnd: -2_772 });
+    assert.deepEqual(SPLIT10, { adjusted: 131_520, nci: 39_456, owners: 92_064, downNci: 45_000 });
+  });
+  it("a loss, a write-down, land, a machine and borrowing costs", () => {
+    assert.equal(LOSS10.standardUp, 2_000);
+    assert.deepEqual([WD10.buyer, WD10.group, WD10.adjust, WD10.tax, WD10.net, WD10.cogs], [63_000, 52_000, -11_000, 2_530, 8_470, 59_000]);
+    assert.deepEqual([LAND10.gross, LAND10.tax, LAND10.net, LAND10.buyerGain, LAND10.groupGain, LAND10.loss.tax, LAND10.loss.net], [70_000, 16_100, 53_900, 30_000, 100_000, 8_050, 26_950]);
+    assert.deepEqual(MACH10.map((r) => [r.group, r.buyer, r.unrealized]), [[132_000, 172_000, 40_000], [99_000, 129_000, 30_000], [66_000, 86_000, 20_000]]);
+    assert.deepEqual([MACH10_FIG.y1.tax, MACH10_FIG.y1.net, MACH10_FIG.nci2025, MACH10_FIG.buyerGain, MACH10_FIG.groupGain], [6_900, 23_100, 6_930, 14_000, 34_000]);
+    assert.deepEqual([BORROW10.interest, BORROW10.tax, BORROW10.net, BORROW10.dep, BORROW10.opening2027, BORROW10.left2027, BORROW10.dta2027, BORROW10.tax2027], [26_000, 5_980, 20_020, 2_600, 40_040, 49_400, 11_362, 598]);
+    assert.equal(BORROW10.opening2027 + BORROW10.dta2027 + BORROW10.tax2027, BORROW10.left2027 + BORROW10.dep);
+  });
+  it("the closing question and the mistake", () => {
+    assert.deepEqual([M10.inv.gross, M10.inv.tax, M10.inv.net, M10.land.tax, M10.land.net, M10.mach.gross, M10.mach.tax, M10.mach.net], [31_500, 7_245, 24_255, 10_350, 34_650, 21_000, 4_830, 16_170]);
+    assert.deepEqual([M10.profit2025, M10.nci2025, M10.profit2025 - M10.nci2025], [411_095, 27_149, 383_946]);
+    assert.deepEqual([M10.profit2026, M10.nci2026, M10.profit2026 - M10.nci2026, M10.dtaEnd], [508_085, 30_851, 477_234, 15_180]);
+    assert.deepEqual(MISTAKE10, { student: 11_400, gross: 19_000, tax: 4_370, net: 14_630, nci: 5_852, owners: 8_778 });
+  });
+  it("calculations in the practice", () => {
+    const expected: Record<string, number> = { "bal-interest": 20_000, "inv-dta": 8_280, "inv-partial": 8_000, "same-sales": 745_000, "prior-opening": 30_800, "nci-up": 46_150, "land-net": 50_050, "dep-left": 18_000, "wd-adjust": 8_000, "dep-sale": 15_000, "borrow-dep": 2_000, "nci-mixed": 30_460, "cons-profit": 354_600, "prior-realize": 33_930 };
+    const answer = (id: string) => (INTERCOMPANY.exercises.find((x) => x.id === id) as { answer: number }).answer;
+    for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
+    assert.deepEqual(INTERCOMPANY.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
   });
 });
 

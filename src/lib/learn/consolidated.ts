@@ -315,3 +315,44 @@ export function preferenceSplit(p: { profit: number; toPreference: number; holdi
   const nci = whole(p.toPreference * (1 - p.holdingPreference) + ordinary * (1 - p.holdingOrdinary));
   return { preference: p.toPreference, ordinary, nci, owners: p.profit - nci };
 }
+
+/** Profit inside the group that has not reached an outside buyer yet: it comes off the asset in full, with a deferred tax asset on it, and the net is what the seller's profit loses. */
+export function deferral(gross: number, taxRate: number) {
+  const tax = whole(gross * taxRate);
+  return { gross, tax, net: gross - tax };
+}
+
+/**
+ * Inventory sold inside the group: the profit in it, the part still in the
+ * buyer's stock at the year's end, and the deferral on that part. The minority
+ * bears its share only when the subsidiary sold (Up); a parent's sale (Down) is
+ * borne by the parent alone.
+ */
+export function inventoryDeferral(a: { price: number; margin: number; leftShare: number; taxRate: number; up: boolean; nciShare: number }) {
+  const profit = whole(a.price * a.margin);
+  const d = deferral(whole(profit * a.leftShare), a.taxRate);
+  const nci = a.up ? whole(d.net * a.nciShare) : 0;
+  return { profit, cost: a.price - profit, ...d, nci, owners: d.net - nci };
+}
+
+/** Inventory the buyer wrote down to its net realisable value: each side holds the lower of its own cost and that value, and the adjustment is the gap. */
+export function writeDownView(a: { groupCost: number; price: number; nrv: number }) {
+  const buyer = Math.min(a.price, a.nrv);
+  const group = Math.min(a.groupCost, a.nrv);
+  return { buyer, group, adjust: group - buyer, buyerWriteDown: a.price - buyer };
+}
+
+/**
+ * A depreciable asset sold inside the group, depreciated by the buyer straight
+ * line over its own life; the group uses that same life and method on its own
+ * cost. Rows run from the sale to each year's end; the unrealized profit is the gap.
+ */
+export function assetTransfer(a: { groupCost: number; price: number; years: number; through: number }) {
+  const gDep = a.groupCost / a.years;
+  const bDep = a.price / a.years;
+  return Array.from({ length: a.through + 1 }, (_, k) => {
+    const group = whole(a.groupCost - gDep * k);
+    const buyer = whole(a.price - bDep * k);
+    return { group, buyer, unrealized: buyer - group, depDiff: k === 0 ? 0 : whole(bDep - gDep) };
+  });
+}
