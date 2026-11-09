@@ -43,46 +43,86 @@ export const CLASS_OPTIONS: [string, string][] = [
   ["op", "תפעולית"],
 ];
 
-/** Worked: a machine let for three years, with rising rent. */
-export const OP = { cost: 240_000, life: 12, age: 2, rents: [24_000, 27_000, 30_000], lawyer: 4_500, years: 3 };
+/** Worked: a new cold store let at once for four years, the first year free, a broker's fee paid on signing. */
+export const OP = { cost: 300_000, life: 20, rents: [0, 40_000, 40_000, 40_000], fee: 8_000, years: 4, fairValue: 300_000 };
 export const OP_TOTAL = OP.rents.reduce((a, b) => a + b, 0);
 export const OP_INCOME = OP_TOTAL / OP.years;
 export const OP_DEP = OP.cost / OP.life;
-export const OP_BV = OP.cost - OP_DEP * OP.age;
-export const OP_IDC_YEAR = OP.lawyer / OP.years;
+export const OP_IDC_YEAR = OP.fee / OP.years;
 export const OP_EXPENSE = OP_DEP + OP_IDC_YEAR;
-export const OP_ROWS = OP.rents.map((rent, i) => ({ year: i + 1, rent, income: OP_INCOME, expense: OP_EXPENSE, accrued: OP_INCOME * (i + 1) - OP.rents.slice(0, i + 1).reduce((a, b) => a + b, 0), asset: OP_BV + OP.lawyer - OP_EXPENSE * (i + 1) }));
+export const OP_OPENING = OP.cost + OP.fee;
+export const OP_ROWS = OP.rents.map((rent, i) => ({
+  year: i + 1,
+  rent,
+  income: OP_INCOME,
+  expense: OP_EXPENSE,
+  accruedOpen: OP_INCOME * i - OP.rents.slice(0, i).reduce((a, b) => a + b, 0),
+  accrued: OP_INCOME * (i + 1) - OP.rents.slice(0, i + 1).reduce((a, b) => a + b, 0),
+  assetOpen: OP_OPENING - OP_EXPENSE * i,
+  asset: OP_OPENING - OP_EXPENSE * (i + 1),
+}));
 
-/** Worked: one truck, four kinds of lessor. */
-export const TRUCK = { payment: 40_000, years: 3, fairValue: 100_000, costs: 3_000, bookValue: 85_000, dealerCost: 85_000, lowPayment: 36_000, lowRate: 0.04 };
-export const ND_START = TRUCK.fairValue + TRUCK.costs;
-export const ND_RATE = rateFor(ND_START, TRUCK.years, TRUCK.payment);
-export const ND_ROWS = investRows(ND_START, ND_RATE, TRUCK.payment, TRUCK.years);
-export const ND_GAIN = TRUCK.fairValue - TRUCK.bookValue;
-export const D_RATE = rateFor(TRUCK.fairValue, TRUCK.years, TRUCK.payment);
-export const D_ROWS = investRows(TRUCK.fairValue, D_RATE, TRUCK.payment, TRUCK.years);
-export const D_GROSS = TRUCK.fairValue - TRUCK.dealerCost;
-/** The lessor advertises a rate far below the market's. */
-export const LOW_NAIVE = r(pvEnd(TRUCK.lowRate, TRUCK.years, TRUCK.lowPayment));
-export const LOW_SALES = r(pvEnd(D_RATE, TRUCK.years, TRUCK.lowPayment));
-export const LOW_GROSS = LOW_SALES - TRUCK.dealerCost;
-export const LOW_ROWS = investRows(LOW_SALES, D_RATE, TRUCK.lowPayment, TRUCK.years);
+/** Worked: a printer lets an old press from its fixed assets, with a purchase option it is sure will be used. */
+export const PRESS = { fairValue: 180_000, bookValue: 150_000, costs: 6_000, payment: 55_000, years: 4, option: 12_000 };
+export const ND_START = PRESS.fairValue + PRESS.costs;
+export const ND_RATE = rateFor(ND_START, PRESS.years, PRESS.payment, PRESS.option);
+export const ND_RATE_NO_COSTS = rateFor(PRESS.fairValue, PRESS.years, PRESS.payment, PRESS.option);
+export const ND_GAIN = PRESS.fairValue - PRESS.bookValue;
+/** The option's price comes in with the last payment, so the last year's receipt is both, and the year before it is all current. */
+export const ND_ROWS: InvestRow[] = investRows(ND_START, ND_RATE, PRESS.payment, PRESS.years, PRESS.option).map((row, i, all) => {
+  if (i === all.length - 1) return { ...row, receipt: PRESS.payment + PRESS.option, closing: 0, nonCurrent: 0, current: 0 };
+  if (i === all.length - 2) return { ...row, nonCurrent: 0, current: row.closing };
+  return row;
+});
 
-/** Worked: a dealer who gets the car back, with part of its value guaranteed. */
-export const RES = { payment: 28_000, years: 4, life: 5, fairValue: 100_000, cost: 90_000, guaranteed: 4_000, estimate: 12_000, newEstimate: 9_000 };
+/** Worked: a maker of solar systems, where the cash price is below the present value at the market's rate. */
+export const SOLAR = { fairValue: 120_000, cost: 88_000, costs: 2_500, payment: 37_000, years: 4, marketRate: 0.08 };
+export const D_PV_MARKET = r(pvEnd(SOLAR.marketRate, SOLAR.years, SOLAR.payment));
+export const D_SALES = Math.min(SOLAR.fairValue, D_PV_MARKET);
+export const D_RATE = rateFor(SOLAR.fairValue, SOLAR.years, SOLAR.payment);
+export const D_ROWS = investRows(SOLAR.fairValue, D_RATE, SOLAR.payment, SOLAR.years);
+export const D_GROSS = D_SALES - SOLAR.cost;
+export const D_DAY_ONE = D_GROSS - SOLAR.costs;
+export const D_INTEREST = D_ROWS.reduce((a, y) => a + y.income, 0);
+
+/** Worked: dental equipment at an advertised 2%, against a market at 9%. */
+export const DENT = { fairValue: 100_000, cost: 70_000, payment: 26_000, years: 4, adRate: 0.02, marketRate: 0.09 };
+export const LOW_NAIVE = r(pvEnd(DENT.adRate, DENT.years, DENT.payment));
+export const LOW_SALES = r(pvEnd(DENT.marketRate, DENT.years, DENT.payment));
+export const LOW_GROSS = LOW_SALES - DENT.cost;
+export const LOW_NAIVE_GROSS = LOW_NAIVE - DENT.cost;
+export const LOW_CASH = DENT.payment * DENT.years;
+export const LOW_ROWS = investRows(LOW_SALES, DENT.marketRate, DENT.payment, DENT.years);
+export const LOW_NAIVE_INT = LOW_CASH - LOW_NAIVE;
+export const LOW_INT = LOW_CASH - LOW_SALES;
+
+/** Worked: a caravan dealer, most of the residual guaranteed by an outside firm, and the estimate falls at the end of year 2. */
+export const RES = { payment: 38_000, years: 6, life: 9, fairValue: 200_000, cost: 150_000, guaranteed: 30_000, estimate: 50_000, newEstimate: 38_000, belowEstimate: 25_000, dropLeft: 4 };
 export const RES_UN = RES.estimate - RES.guaranteed;
 export const RES_RATE = rateFor(RES.fairValue, RES.years, RES.payment, RES.estimate);
 export const RES_PV_UN = r(RES_UN / (1 + RES_RATE) ** RES.years);
 export const RES_SALES = RES.fairValue - RES_PV_UN;
+/** What the net investment is made of: the payments, the whole guarantee, and the unguaranteed part. */
+export const RES_PV_GUAR = r(RES.guaranteed / (1 + RES_RATE) ** RES.years);
+export const RES_PV_PAY = RES_SALES - RES_PV_GUAR;
+export const RES_PV_SHARE = RES_SALES / RES.fairValue;
+export const RES_GROSS_INV = RES.payment * RES.years + RES.estimate;
 export const RES_COGS = RES.cost - RES_PV_UN;
 export const RES_GROSS = RES_SALES - RES_COGS;
 export const RES_INT1 = r(RES.fairValue * RES_RATE);
-export const RES_BEFORE = RES.fairValue + RES_INT1 - RES.payment;
-export const RES_AFTER = r(pvEnd(RES_RATE, RES.years - 1, RES.payment, RES.newEstimate));
+export const RES_CLOSE1 = RES.fairValue + RES_INT1 - RES.payment;
+export const RES_INT2 = r(RES_CLOSE1 * RES_RATE);
+export const RES_BEFORE = RES_CLOSE1 + RES_INT2 - RES.payment;
+export const RES_DROP = RES.estimate - RES.newEstimate;
+export const RES_AFTER = r(pvEnd(RES_RATE, RES.dropLeft, RES.payment, RES.newEstimate));
 export const RES_LOSS = RES_BEFORE - RES_AFTER;
-export const RES_INT2 = r(RES_AFTER * RES_RATE);
-export const RES_CLOSE2 = RES_AFTER + RES_INT2 - RES.payment;
-export const RES_NC2 = r(pvEnd(RES_RATE, RES.years - 3, RES.payment, RES.newEstimate));
+export const RES_LESS_INTEREST = RES_DROP - RES_LOSS;
+export const RES_INT3 = r(RES_AFTER * RES_RATE);
+export const RES_INT3_NO_DROP = r(RES_BEFORE * RES_RATE);
+export const RES_CLOSE3 = RES_AFTER + RES_INT3 - RES.payment;
+export const RES_NC3 = r(pvEnd(RES_RATE, RES.dropLeft - 2, RES.payment, RES.newEstimate));
+/** If the estimate fell below the guarantee: only the unguaranteed part is lost. */
+export const RES_BELOW_LOSS = r(RES_UN / (1 + RES_RATE) ** RES.dropLeft);
 
 /** The closing question: a dealer's shop, an index, a share of takings and a purchase option. */
 export const STORE = { payment: 100_000, years: 8, optionYears: 2, life: 10, option: 8_000, fairValue: 700_000, cost: 600_000, costs: 6_000, base: 100, index: 103, sales: 400_000, share: 0.02 };
@@ -99,12 +139,13 @@ export const STORE_TOTAL = STORE_GROSS - STORE.costs + STORE_INT + STORE_INDEX +
 /** Finance or operating: the walk through paragraphs 63 to 65. */
 export const CLASS_WALK: Record<string, TestNode | TestEnd> = {
   owner: { q: "הבעלות עוברת לחוכר בסוף?", par: "סעיף 63(א)", help: "אם כן, בודקים עוד דבר אחד: איך החוכר משלם.", answers: [{ label: "כן", to: "price" }, { label: "לא", to: "option" }] },
-  price: { q: "התשלום על הבעלות שווה לשווי ההוגן של אותו יום, או שכל תשלומי החכירה נגזרים מתפוקת הנכס?", par: "סעיף 65", help: "בשני המקרים הסיכונים וההטבות לא עברו לחוכר, גם אם הבעלות עוברת.", answers: [{ label: "כן", to: "operating" }, { label: "לא", to: "finance" }] },
+  price: { q: "התשלום על הבעלות שווה לשווי ההוגן של אותו יום, או שכל תשלומי החכירה נגזרים מתפוקת הנכס?", par: "סעיף 65", help: "סעיף 65 נותן את שני אלה כדוגמאות לכך שהסיכונים וההטבות עשויים לא לעבור לחוכר, גם אם הבעלות עוברת. בודקים שזה באמת המצב בעסקה.", answers: [{ label: "כן", to: "operating" }, { label: "לא", to: "finance" }] },
   option: { q: "יש אופציית רכישה שוודאי באופן סביר שתמומש?", par: "סעיף 63(ב)", help: "מחיר נמוך מספיק מהשווי הצפוי, כבר במועד ההתקשרות.", answers: [{ label: "כן", to: "finance" }, { label: "לא", to: "term" }] },
   term: { q: "התקופה היא החלק העיקרי של החיים הכלכליים?", par: "סעיף 63(ג)", help: "בפרקטיקה נהוג לבדוק 75%. בתקן אין מספר, אלא ״החלק העיקרי״.", answers: [{ label: "כן", to: "finance" }, { label: "לא", to: "value" }] },
   value: { q: "הערך הנוכחי של התשלומים הוא למעשה כל השווי ההוגן?", par: "סעיף 63(ד)", help: "בפרקטיקה נהוג לבדוק 90%. בתקן: ״למעשה כל השווי ההוגן״.", answers: [{ label: "כן", to: "finance" }, { label: "לא", to: "special" }] },
   special: { q: "הנכס כל כך ייחודי, שרק החוכר יכול להשתמש בו בלי שינויים גדולים?", par: "סעיף 63(ה)", help: "למשל קו ייצור שנבנה לפי מידה.", answers: [{ label: "כן", to: "finance" }, { label: "לא", to: "more" }] },
-  more: { q: "יש סימן נוסף: ביטול שהחוכר נושא בהפסדיו, שייר שהוא נושא בתנודות שלו, או הארכה זולה בהרבה מהשוק?", par: "סעיף 64", help: "סימנים שיכולים להוביל לסיווג כמימונית, לבד או ביחד.", answers: [{ label: "כן", to: "finance" }, { label: "לא", to: "operating" }] },
+  more: { q: "יש סימן נוסף: ביטול שהחוכר נושא בהפסדיו, שייר שהוא נושא בתנודות שלו, או הארכה זולה בהרבה מהשוק?", par: "סעיף 64", help: "סימנים שיכולים להוביל לסיווג כמימונית, לבד או ביחד.", answers: [{ label: "כן", to: "financeSign" }, { label: "לא", to: "operating" }] },
+  financeSign: { lease: true, verdict: "כנראה חכירה מימונית", why: "סימן מסעיף 64 יכול להוביל למימונית, אבל הוא לא מכריע לבד. בודקים אם למעשה כל הסיכונים וההטבות עברו (סעיף 62)." },
   finance: { lease: true, verdict: "חכירה מימונית", why: "המחכיר העביר למעשה את כל הסיכונים וההטבות (סעיף 62). הנכס יוצא מהספרים, ובמקומו השקעה נטו." },
   operating: { lease: true, verdict: "חכירה תפעולית", why: "הסיכונים וההטבות נשארים אצל המחכיר. הנכס נשאר בספרים, וההכנסה בדרך כלל בקו ישר." },
 };
@@ -114,9 +155,9 @@ const P_NI = 150_000;
 const P_NI_Y1 = P_NI + r(P_NI * 0.08) - 40_000;
 const P_NI_Y2 = P_NI_Y1 + r(P_NI_Y1 * 0.08) - 40_000;
 const P_CAP = r(pvEnd(0.1, 4, 30_000));
-const P_RES_RATE = rateFor(100_000, 5, 25_000, 10_000);
-const P_RES_PVU = r(7_000 / (1 + P_RES_RATE) ** 5);
-const P_LOSS = r(4_000 / 1.07 ** 3);
+const P_RES_RATE = rateFor(150_000, 6, 30_000, 24_000);
+const P_RES_PVU = r(8_000 / (1 + P_RES_RATE) ** 6);
+const P_LOSS = r(6_000 / 1.08 ** 5);
 
 const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
   ask({ id: "class-own", skill: "סיווג", prompt: "מחכיר מחכיר מכונה ל-3 שנים מתוך 10 שנות חיים. בסוף התקופה הבעלות עוברת לחוכר בלי תשלום נוסף. איך מסווגים?", options: ["מימונית", "תפעולית, כי התקופה קצרה", "לפי בחירת המחכיר", "לא חכירה"], answer: 0, why: "סעיף 63(א): העברת בעלות היא סימן למימונית, גם כשהתקופה קצרה.", trap: "לבדוק רק את אורך התקופה. כל סימן לבדו יכול להספיק.", level: 1, source: "מקורית", ref: "סעיף 63(א)" }),
@@ -124,25 +165,25 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
   ask({ id: "class-rule", skill: "סיווג", prompt: "תקופת החכירה 72% מהחיים הכלכליים, ויש לכך משקל רב בעסקה. סטודנט אומר: ״פחות מ-75%, אז התקן אוסר על סיווג כמימונית״. מה נכון?", options: ["75% הוא כלל אצבע. התקן אומר ״החלק העיקרי״, ובודקים מהות", "הסטודנט צודק", "הסף בתקן הוא 70%", "מותר לסווג רק אם יש גם העברת בעלות"], answer: 0, why: "סעיף 63(ג) לא נוקב במספר. 75% הוא נוהג מקובל בפרקטיקה.", trap: "להתייחס לאחוז כאל כלל בתקן. גם 90% בערך הנוכחי הוא נוהג.", level: 3, source: "מקורית", ref: "סעיף 63" }),
   ask({ id: "class-when", skill: "סיווג", prompt: "חכירה סווגה כתפעולית. אחרי שנתיים המחכיר מעריך מחדש את החיים הכלכליים, וכעת התקופה היא החלק העיקרי שלהם. מה עושים?", options: ["כלום. הסיווג נקבע בהתקשרות, ומשתנה רק בתיקון", "מסווגים כמימונית מעכשיו", "מתקנים למפרע", "מודדים השקעה נטו בלי לגרוע את הנכס"], answer: 0, why: "סעיף 66: שינויי אומדן או נסיבות אינם גורמים לסיווג מחדש.", trap: "לעדכן סיווג כמו שמעדכנים תקופה אצל החוכר.", level: 2, source: "מקורית", ref: "סעיף 66" }),
   ask({ id: "class-fv", skill: "סיווג", prompt: "הבעלות עוברת לחוכר בסוף החכירה, תמורת תשלום השווה לשווי ההוגן של אותו יום. החכירה קצרה ביחס לחיי הנכס, והתשלומים נמוכים ביחס לשווי. איך מסווגים?", options: ["תפעולית", "מימונית, כי הבעלות עוברת", "מימונית, כי יש תשלום בסוף", "לא חכירה"], answer: 0, why: "סעיף 65: הסיכון לערך נשאר אצל המחכיר עד הסוף.", trap: "לעצור בסימן הראשון. הסימנים אינם תמיד חד משמעיים.", level: 3, source: "מקורית", ref: "סעיף 65" }),
-  askNumber({ id: "op-income", skill: "תפעולית", prompt: "חכירה תפעולית ל-3 שנים. התשלומים 30,000, 40,000 ו-50,000 ש״ח, בסוף כל שנה. מהי הכנסת החכירה בשנה הראשונה?", answer: 40_000, steps: ["30,000 + 40,000 + 50,000 = 120,000", "בקו ישר: 120,000 ÷ 3 = 40,000 (סעיף 81)"], trap: "לרשום את מה שהתקבל, 30,000. ההכנסה לא הולכת אחרי הכסף.", level: 1, source: "מקורית", ref: "סעיף 81" }),
-  askNumber({ id: "op-accrued", skill: "תפעולית", prompt: "חכירה תפעולית ל-3 שנים. התשלומים 30,000, 40,000 ו-50,000 ש״ח, בסוף כל שנה. מהי יתרת ההכנסות לקבל ב-31.12 של השנה הראשונה?", answer: 10_000, steps: ["הכנסה בקו ישר: 120,000 ÷ 3 = 40,000", "40,000 − 30,000 = 10,000"], trap: "לחשוב שאין יתרה כי החוכר שילם בזמן. ההפרש בין הכנסה לתקבול הוא נכס.", level: 2, source: "מקורית", ref: "סעיף 81" }),
-  askNumber({ id: "op-dep", skill: "תפעולית", prompt: "מחכיר בחכירה תפעולית ל-3 שנים. ערך המכונה בספרים 150,000 ש״ח, ונשארו לה 10 שנים, בקו ישר. שכר עורך הדין על חוזה החכירה 6,000 ש״ח. מהן הוצאות הפחת השנתיות?", answer: 17_000, steps: ["פחת המכונה: 150,000 ÷ 10 = 15,000", "העלות הישירה נוספת לנכס, על פני החכירה: 6,000 ÷ 3 = 2,000 (סעיף 83)", "15,000 + 2,000 = 17,000"], trap: "לרשום את 6,000 כהוצאה מיידית, או לפרוס אותם על חיי המכונה.", level: 2, source: "מקורית", ref: "סעיפים 83, 84" }),
+  askNumber({ id: "op-income", skill: "תפעולית", prompt: "חכירה תפעולית ל-3 שנים. בשנה הראשונה החוכר לא משלם כלום, בשנייה הוא משלם 45,000 ש״ח ובשלישית 60,000 ש״ח, בסוף השנה. מהי הכנסת החכירה בשנה הראשונה?", answer: 35_000, steps: ["0 + 45,000 + 60,000 = 105,000", "בקו ישר: 105,000 ÷ 3 = 35,000 (סעיף 81)"], trap: "לרשום אפס, כי לא התקבל כלום. ההכנסה לא הולכת אחרי הכסף.", level: 1, source: "מקורית", ref: "סעיף 81" }),
+  askNumber({ id: "op-accrued", skill: "תפעולית", prompt: "חכירה תפעולית ל-4 שנים. התשלומים 10,000, 10,000, 40,000 ו-60,000 ש״ח, בסוף כל שנה. מהי יתרת ההכנסות לקבל ב-31.12 של השנה השנייה?", answer: 40_000, steps: ["הכנסה בקו ישר: 120,000 ÷ 4 = 30,000 בשנה", "הוכרו בשנתיים: 30,000 × 2 = 60,000", "התקבלו בשנתיים: 10,000 + 10,000 = 20,000", "60,000 − 20,000 = 40,000"], trap: "לחשוב שאין יתרה כי החוכר שילם בזמן. ההפרש המצטבר בין הכנסה לתקבול הוא נכס.", level: 2, source: "מקורית", ref: "סעיף 81" }),
+  askNumber({ id: "op-dep", skill: "תפעולית", prompt: "מחכיר בנה מחסן בעלות 280,000 ש״ח, עם 14 שנות חיים, פחת בקו ישר, והחכיר אותו מיד ל-4 שנים בחכירה תפעולית. למתווך שמצא את השוכר הוא שילם 10,000 ש״ח. מהן הוצאות הפחת השנתיות?", answer: 22_500, steps: ["פחת המחסן: 280,000 ÷ 14 = 20,000", "העלות הישירה נוספת לנכס, על פני החכירה: 10,000 ÷ 4 = 2,500 (סעיף 83)", "20,000 + 2,500 = 22,500"], trap: "לרשום את 10,000 כהוצאה מיידית, או לפרוס אותם על חיי המחסן.", level: 2, source: "מקורית", ref: "סעיפים 83, 84" }),
   ask({ id: "op-dealer", skill: "תפעולית", prompt: "סוחר מכונות מחכיר מכונה בחכירה תפעולית. עלותה אצלו 60,000 ש״ח, ושוויה ההוגן 75,000 ש״ח. האם הוא מכיר ברווח מיום החכירה?", options: ["לא. חכירה תפעולית אינה שוות ערך למכירה", "כן, 15,000 ש״ח", "כן, חלק יחסי", "רק אם החוכר שילם מראש"], answer: 0, why: "סעיף 86.", trap: "להחיל את כללי הסוחר של מימונית גם כאן.", level: 2, source: "מקורית", ref: "סעיף 86" }),
   askNumber({ id: "ni-start", skill: "מימונית", prompt: "מחכיר שאינו יצרן או סוחר. השווי ההוגן של הנכס 120,000 ש״ח, והעלויות הישירות שלו 4,000 ש״ח. מהי ההשקעה נטו במועד התחילה?", answer: 124_000, steps: ["שווי הוגן + עלויות ישירות = השקעה נטו\n120,000 + 4,000 = 124,000 (סעיף 69)"], trap: "לרשום את העלויות כהוצאה. זה רק אצל יצרן או סוחר.", level: 1, source: "מקורית", ref: "סעיף 69" }),
-  askNumber({ id: "ni-gain", skill: "מימונית", prompt: "חברה מחכירה בחכירה מימונית מכונה שהייתה רכוש קבוע שלה, והיא אינה סוחרת. ערך המכונה בספרים 95,000 ש״ח, ושוויה ההוגן 120,000 ש״ח. כמה רווח הון נרשם?", answer: 25_000, steps: ["120,000 − 95,000 = 25,000"], trap: "לרשום הכנסות ממכירה ועלות מכר. אצל מי שאינו סוחר זה רווח הון אחד.", level: 2, source: "מקורית", ref: "סעיף 67" }),
+  askNumber({ id: "ni-gain", skill: "מימונית", prompt: "חברה מחכירה בחכירה מימונית מכונה שהייתה רכוש קבוע שלה, והיא אינה סוחרת. ערך המכונה בספרים 95,000 ש״ח, ושוויה ההוגן 120,000 ש״ח. כמה רווח הון נרשם?", answer: 25_000, steps: ["המכונה יוצאת לפי הערך בספרים, ובמקומה נכנס חייב לפי השווי ההוגן (סעיף 67, והגדרת הריבית הגלומה בנספח א׳)", "ההפרש הוא הרווח: 120,000 − 95,000 = 25,000"], trap: "לרשום הכנסות ממכירה ועלות מכר. אצל מי שאינו סוחר זה רווח הון אחד.", level: 2, source: "מקורית", ref: "סעיף 67, נספח א׳" }),
   askNumber({ id: "ni-y2", skill: "מימונית", prompt: "השקעה נטו של 150,000 ש״ח, בריבית גלומה של 8%. תקבול של 40,000 ש״ח בסוף כל שנה. מהי היתרה ב-31.12 של השנה השנייה?", answer: P_NI_Y2, steps: [`שנה 1: 150,000 × 1.08 − 40,000 = ${fmt(P_NI_Y1)}`, `שנה 2: ${fmt(P_NI_Y1)} × 1.08 − 40,000 = ${fmt(P_NI_Y2)}`], trap: "להוריד את כל התקבול בלי להוסיף הכנסת מימון.", level: 2, source: "מקורית", ref: "סעיף 75" }),
   askNumber({ id: "dealer-sales", skill: "סוחר", prompt: "סוחר מחכיר בחכירה מימונית נכס ששוויו ההוגן 200,000 ש״ח. הערך הנוכחי של תשלומי החכירה, בריבית שוק, 190,000 ש״ח. אין שייר. כמה הכנסות ממכירות נרשמות?", answer: 190_000, steps: ["הנמוך מבין השווי ההוגן והערך הנוכחי בריבית שוק (סעיף 71(א)): 190,000"], trap: "לרשום תמיד את השווי ההוגן.", level: 2, source: "מקורית", ref: "סעיף 71(א)" }),
   askNumber({ id: "dealer-profit", skill: "סוחר", prompt: "סוחר מחכיר בחכירה מימונית נכס ששוויו ההוגן 100,000 ש״ח, ועלותו 70,000 ש״ח. הערך הנוכחי בריבית שוק שווה לשווי ההוגן. עלויות השגת החכירה 5,000 ש״ח. מהי ההשפעה נטו על רווח או הפסד במועד התחילה?", answer: 25_000, steps: ["100,000 − 70,000 − 5,000 = 25,000 (סעיפים 71, 74)"], trap: "להוסיף את 5,000 להשקעה נטו. אצל סוחר הן הוצאה.", level: 2, source: "מקורית", ref: "סעיפים 71, 74" }),
   askNumber({ id: "dealer-cap", skill: "ריבית נמוכה", prompt: "סוחר מפרסם ריבית נמוכה במיוחד. הלקוח ישלם 30,000 ש״ח בסוף כל שנה, 4 שנים. שווי הנכס 110,000 ש״ח, עלותו 75,000 ש״ח, וריבית השוק 10%. מהן ההכנסות ממכירות?", answer: P_CAP, steps: [`בריבית השוק: 30,000 × (1 − 1.1^(−4)) ÷ 0.1 = ${fmt(P_CAP)}`, `נמוך מ-110,000, ולכן זו ההכנסה (סעיף 73). הרווח: ${fmt(P_CAP)} − 75,000 = ${fmt(P_CAP - 75_000)}`], trap: "להוון בריבית שפרסם. הרווח מוגבל למה שהיה בריבית שוק.", level: 3, source: "מקורית", ref: "סעיפים 71, 73" }),
-  askNumber({ id: "res-cogs", skill: "שייר", prompt: `סוחר מחכיר רכב ל-5 שנים, בתשלום של 25,000 ש״ח בסוף כל שנה. שווי הרכב 100,000 ש״ח, ועלותו 85,000 ש״ח. בסוף התקופה הרכב חוזר, ושוויו הצפוי 10,000 ש״ח, מזה 3,000 ש״ח בערבות החוכר. הריבית הגלומה ${(P_RES_RATE * 100).toFixed(4)}%. מהי עלות המכר?`, answer: 85_000 - P_RES_PVU, steps: ["שייר לא מובטח: 10,000 − 3,000 = 7,000", `בערך נוכחי: 7,000 ÷ (1 + i)^5 = ${fmt(P_RES_PVU)}`, `85,000 − ${fmt(P_RES_PVU)} = ${fmt(85_000 - P_RES_PVU)} (סעיף 71(ב))`], trap: "להוריד מהעלות את כל השייר. הערבות היא תשלום חכירה, ולכן נשארת במכירות.", level: 3, source: "מקורית", ref: "סעיף 71(ב)" }),
+  askNumber({ id: "res-cogs", skill: "שייר", prompt: `סוחר מחכיר מכונה ל-6 שנים, בתשלום של 30,000 ש״ח בסוף כל שנה. שווי המכונה 150,000 ש״ח, ועלותה 120,000 ש״ח. בסוף התקופה המכונה חוזרת, ושוויה הצפוי 24,000 ש״ח, מזה 16,000 ש״ח בערבות החוכר. הריבית הגלומה ${(P_RES_RATE * 100).toFixed(4)}%. מהי עלות המכר?`, answer: 120_000 - P_RES_PVU, steps: ["שייר לא מובטח: 24,000 − 16,000 = 8,000", `בערך נוכחי: 8,000 ÷ (1 + i)^6 = ${fmt(P_RES_PVU)}`, `120,000 − ${fmt(P_RES_PVU)} = ${fmt(120_000 - P_RES_PVU)} (סעיף 71(ב))`], trap: "להוריד מהעלות את כל השייר. הערבות היא תשלום חכירה, ולכן נשארת במכירות.", level: 3, source: "מקורית", ref: "סעיף 71(ב)" }),
   ask({ id: "res-both", skill: "שייר", prompt: "במחכיר סוחר, מה קורה לערך הנוכחי של השייר הלא מובטח?", options: ["יורד גם מהמכירות וגם מעלות המכר, ולכן הרווח לא משתנה", "יורד רק מהמכירות", "יורד רק מעלות המכר", "לא נכלל בשום מקום"], answer: 0, why: "החלק הזה לא נמכר. הוא נשאר בתוך ההשקעה נטו (סעיף 71).", trap: "לחשוב שהשייר מקטין את הרווח. הוא רק מקטין את שתי השורות.", level: 2, source: "מקורית", ref: "סעיף 71" }),
-  askNumber({ id: "res-loss", skill: "שייר", prompt: "אומדן השייר הלא מובטח ירד ב-4,000 ש״ח, 3 שנים לפני סוף החכירה. הריבית הגלומה 7%. כמה הפסד מיידי נרשם?", answer: P_LOSS, steps: [`4,000 ÷ 1.07^3 = ${fmt(P_LOSS)} (סעיף 77)`], trap: "לרשום 4,000. הירידה עצמה קורית רק בעוד 3 שנים, ולכן מהוונים.", level: 3, source: "מקורית", ref: "סעיף 77" }),
-  ask({ id: "res-up", skill: "שייר", prompt: "אומדן השייר הלא מובטח עלה. מה עושה המחכיר?", options: ["לא מעדכן: סעיף 77 מטפל רק בירידה", "מכיר ברווח מיידי", "מגדיל את ההשקעה נטו ואת ההכנסות ממכירות", "מסווג מחדש"], answer: 0, why: "סעיף 77 מדבר על ירידה באומדן.", trap: "להניח סימטריה לירידה.", level: 3, source: "מקורית", ref: "סעיף 77" }),
-  ask({ id: "third-party", skill: "ערבות", prompt: "צד שלישי בעל יכולת פיננסית ערב למחכיר לערך השייר. האם הערבות נכללת בתשלומי החכירה של המחכיר?", options: ["כן", "לא, רק ערבות של החוכר", "רק אם החוכר משלם עליה", "רק במחכיר סוחר"], answer: 0, why: "סעיף 70(ג): ערבות מהחוכר, מצד קשור אליו, או מצד שלישי בעל יכולת, שאינו קשור למחכיר.", trap: "לבדוק רק אם החוכר ערב.", level: 3, source: "מקורית", ref: "סעיף 70(ג)" }),
-  ask({ id: "index-ni", skill: "מדד", prompt: "חכירה מימונית, ותשלומים צמודים למדד. המדד עלה, והחוכר שילם יותר. מה עושה המחכיר?", options: ["לא מודד מחדש. התוספת היא הכנסה נפרדת", "מודד מחדש את ההשקעה נטו", "מוסיף את התוספת להכנסות ממכירות", "מקטין את עלות המכר"], answer: 0, why: "סעיף 70(ב) מודד לפי המדד של מועד התחילה, אין מקבילה לסעיף 42(ב), וסעיף 90(א)(iii) עוסק בהכנסה ממשתנים שלא נכללו.", trap: "להעתיק את הטיפול מהחוכר.", level: 2, source: "מקורית", ref: "סעיפים 70(ב), 90(א)" }),
+  askNumber({ id: "res-loss", skill: "שייר", prompt: "אומדן השייר הלא מובטח ירד ב-6,000 ש״ח, 5 שנים לפני סוף החכירה. הריבית הגלומה 8%. כמה הפסד מיידי נרשם?", answer: P_LOSS, steps: [`6,000 ÷ 1.08^5 = ${fmt(P_LOSS)} (סעיף 77)`], trap: "לרשום 6,000. הירידה עצמה קורית רק בעוד 5 שנים, ולכן מהוונים.", level: 3, source: "מקורית", ref: "סעיף 77" }),
+  ask({ id: "res-up", skill: "שייר", prompt: "אומדן השייר הלא מובטח עלה. מה עושה המחכיר?", options: ["לא מעדכן: סעיף 77 מטפל רק בירידה", "מכיר ברווח מיידי", "מגדיל את ההשקעה נטו ואת ההכנסות ממכירות", "מסווג מחדש"], answer: 0, why: "סעיף 77 מדבר על ירידה באומדן. על עלייה התקן לא אומר דבר, ולכן לא מעדכנים.", trap: "להניח סימטריה לירידה.", level: 3, source: "מקורית", ref: "סעיף 77" }),
+  ask({ id: "third-party", skill: "ערבות", prompt: "צד שלישי בעל יכולת פיננסית, שאינו קשור למחכיר, ערב למחכיר לערך השייר. האם הערבות נכללת בתשלומי החכירה של המחכיר?", options: ["כן", "לא, רק ערבות של החוכר", "רק אם החוכר משלם עליה", "רק במחכיר סוחר"], answer: 0, why: "סעיף 70(ג): ערבות מהחוכר, מצד קשור אליו, או מצד שלישי בעל יכולת, שאינו קשור למחכיר.", trap: "לבדוק רק אם החוכר ערב.", level: 3, source: "מקורית", ref: "סעיף 70(ג)" }),
+  ask({ id: "index-ni", skill: "מדד", prompt: "חכירה מימונית, ותשלומים צמודים למדד. המדד עלה, והחוכר שילם יותר. מה עושה המחכיר?", options: ["לא מודד מחדש. התוספת היא הכנסה נפרדת", "מודד מחדש את ההשקעה נטו", "מוסיף את התוספת להכנסות ממכירות", "מקטין את עלות המכר"], answer: 0, why: "התקן לא אומר זאת במפורש, וזו הקריאה של הקורס: סעיף 70(ב) מודד לפי המדד של מועד התחילה, אין מקבילה לסעיף 42(ב), וסעיף 90(א)(iii) עוסק בהכנסה ממשתנים שלא נכללו.", trap: "להעתיק את הטיפול מהחוכר.", level: 2, source: "מקורית", ref: "סעיפים 70(ב), 90(א)" }),
   askNumber({ id: "index-income", skill: "מדד", prompt: "חכירה מימונית. התשלום הבסיסי 50,000 ש״ח, צמוד למדד. מדד הבסיס 100, והיום 104. כמה מהתקבול השנה הוא הכנסה נפרדת מהצמדה?", answer: 2_000, steps: ["50,000 × 104 ÷ 100 = 52,000", "52,000 − 50,000 = 2,000"], trap: "להוריד את כל 52,000 מההשקעה נטו. רק הסכום שנמדד בה מקטין אותה.", level: 2, source: "מקורית", ref: "סעיפים 70(ב), 90(א)" }),
   Object.assign(
-    journal("op-entry", "פקודת יומן", "חכירה תפעולית. הכנסה בקו ישר 40,000 ש״ח, ובשנה הראשונה התקבלו 30,000 ש״ח. רשמו את הפקודה של 31.12.", [{ account: "מזומן", dr: 30_000 }, { account: "הכנסות לקבל", dr: 10_000 }, { account: "הכנסות מהשכרה", cr: 40_000 }], "ההכנסה בקו ישר, וההפרש הוא נכס. מלכודת נפוצה: לרשום הכנסה רק במה שהתקבל.", ["מזומן", "הכנסות לקבל", "הכנסות מהשכרה", "השקעה נטו בחכירה", "הכנסות מימון"]),
+    journal("op-entry", "פקודת יומן", "חכירה תפעולית עם תשלום נמוך בהתחלה. הכנסה בקו ישר 50,000 ש״ח, ובשנה הראשונה התקבלו 15,000 ש״ח. רשמו את הפקודה של 31.12.", [{ account: "מזומן", dr: 15_000 }, { account: "הכנסות לקבל", dr: 35_000 }, { account: "הכנסות מהשכרה", cr: 50_000 }], "ההכנסה בקו ישר, וההפרש הוא נכס. מלכודת נפוצה: לרשום הכנסה רק במה שהתקבל.", ["מזומן", "הכנסות לקבל", "הכנסות מהשכרה", "השקעה נטו בחכירה", "הכנסות מימון"]),
     { meta: { level: 2 as const, source: "מקורית" as const, ref: "סעיף 81" } },
   ),
   Object.assign(
@@ -243,7 +284,7 @@ export const LESSOR: StudyModule = {
     { id: "ls-lsr-nondealer", title: "מימונית: במקום נכס, השקעה נטו" },
     { id: "ls-lsr-dealer", title: "יצרן או סוחר: מכירה ואז ריבית" },
     { id: "ls-lsr-low", title: "ריבית נמוכה מלאכותית" },
-    { id: "ls-lsr-resid", title: "שייר שלא מובטח" },
+    { id: "ls-lsr-resid", title: "שייר: מובטח ולא מובטח" },
     { id: "ls-lsr-index", title: "מדד ומכירות אצל המחכיר" },
     { id: "ls-lsr-credit", title: "הפסדי אשראי" },
     { id: "ls-lsr-map", title: "מפה: מה נרשם בכל מודל" },
@@ -262,6 +303,6 @@ export const LESSOR: StudyModule = {
     "מימונית שאינו סוחר: השקעה נטו = שווי הוגן + עלויות ישירות.",
     "סוחר: מכירות לפי הנמוך מבין שווי הוגן וערך נוכחי בריבית שוק. העלויות הוצאה.",
     "שייר לא מובטח: יורד גם ממכירות וגם מעלות המכר.",
-    "מדד אצל המחכיר: בלי מדידה מחדש. התוספת היא הכנסה נפרדת.",
+    "מדד אצל המחכיר, בקריאה של הקורס: בלי מדידה מחדש. התוספת היא הכנסה נפרדת.",
   ],
 };

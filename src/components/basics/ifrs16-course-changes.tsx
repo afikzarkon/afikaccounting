@@ -1,4 +1,4 @@
-import { Building, Factory, ListChecks, RefreshCw, Scale, Search, Store, Truck, Wrench } from "lucide-react";
+import { ArrowRight, Bus, FlaskConical, ListChecks, Mic, Phone, Pill, RefreshCw, Scale, Scan, Search, Store, Wrench } from "lucide-react";
 import { Deeper, Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { JournalEntry } from "@/components/study/blocks";
@@ -6,7 +6,7 @@ import * as C from "@/lib/study/ifrs16/lessons/changes";
 import { Ltr } from "./ias19-formula";
 import { TaskFrame, TaskText } from "./ias19-question";
 import { Bridge, FullSteps } from "./ias19-ui";
-import { Fork, Timeline, TwoPanel, WrongRight } from "./ias19-visuals";
+import { DecisionTree, Fork, Timeline, TwoPanel, WrongRight } from "./ias19-visuals";
 import { ChangeLab, DecisionWalk, LeaseDrill } from "./ifrs16-interactive";
 import { FullSolution, P, quiz, T16, Tbl } from "./ifrs16-parts";
 import { SortQuiz } from "./inventory-interactive";
@@ -23,55 +23,127 @@ const M = ({ v, plain }: { v: number; plain?: boolean }) => <Money v={Math.round
 const pct = (r: number, d = 0) => `${(r * 100).toFixed(d)}%`;
 const n = (v: number) => Math.round(v).toLocaleString("en-US");
 
+/** The lesson's central picture: RATE_ROWS grouped by which rate applies and where the difference goes. */
+const RATE_GROUPS = [
+  { rate: "ישנה", to: "נכס" },
+  { rate: "חדשה", to: "נכס" },
+  { rate: "ישנה", to: "רווח או הפסד" },
+].map((g) => ({ ...g, rows: C.RATE_ROWS.filter((r) => r[1] === g.rate && r[2] === g.to) }));
+
+function RateMap() {
+  const label = RATE_GROUPS.map((g) => `ריבית ${g.rate}, וההפרש ל${g.to}: ${g.rows.map((r) => r[0]).join(", ")}`).join(". ");
+  return (
+    <figure role="img" aria-label={label} className="space-y-2 rounded-2xl border border-line bg-surface p-3.5">
+      {RATE_GROUPS.map((g) => (
+        <div key={g.rate + g.to} className="rounded-xl bg-surface-2/50 p-3 ring-1 ring-line">
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[14.5px] font-bold text-fg">
+            <span className="rounded-full bg-accent-soft px-2.5 py-0.5">ריבית {g.rate === "חדשה" ? "מעודכנת" : g.rate}</span>
+            <ArrowRight className="h-4 w-4 shrink-0 text-subtle rtl:rotate-180" aria-hidden />
+            <span>ההפרש ל{g.to}</span>
+          </p>
+          <ul className="mt-2 space-y-1">
+            {g.rows.map((r) => (
+              <li key={r[0]} className="flex items-baseline justify-between gap-3 text-[14.5px] text-fg">
+                <span>{r[0]}</span>
+                <span className="shrink-0 text-[12.5px] text-muted">{r[3]}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </figure>
+  );
+}
+
 export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
   "ls-chg-hook": {
-    lead: "כשמשהו משתנה, שואלים קודם: האם הצדדים שינו את החוזה, או שרק ההערכה או המדד השתנו?",
+    lead: "כשמשהו משתנה באמצע חכירה, שואלים קודם אם הצדדים ישבו ושינו את החוזה, או שהחוזה נשאר כמו שהוא.",
     body: (
       <>
-        <Story icon={<Truck />} title="שני טלפונים מהמחכיר">
+        <Story icon={<Phone />} title="שני טלפונים מהמחכיר">
           <p>בטלפון הראשון אומרים לכם: ״המדד עלה, והתשלום הבא גבוה יותר״. אף אחד לא שינה שום דבר בחוזה. זה פשוט מה שהחוזה קבע.</p>
           <p>בטלפון השני אתם סוגרים עסקה: ״נחזיר קומה, ונקבל מחיר אחר״. כאן שני הצדדים משנים את החוזה.</p>
         </Story>
+        <P>
+          המקרה הראשון נקרא <strong>הערכה מחדש</strong>. החוזה נשאר, ורק החישוב של מה שתשלמו צריך עדכון. גם החלטה שלכם יכולה לגרום לזה, למשל כשמתברר שתישארו בנכס יותר זמן, בזכות אופציה שכבר כתובה בחוזה.
+        </P>
+        <P>
+          המקרה השני נקרא <strong>תיקון חכירה</strong>. הצדדים משנים את מה שחוכרים או את המחיר, בדבר שלא היה כתוב בחוזה מההתחלה.
+        </P>
         <TwoPanel
           label="שני סוגי שינוי. הערכה מחדש: החוזה נשאר, והתשלומים הצפויים השתנו. תיקון חכירה: הצדדים משנים את ההיקף או את התמורה"
           panels={[
-            { title: "הערכה מחדש (סעיפים 39–43)", icon: <RefreshCw />, steps: ["החוזה לא השתנה", "מדד, ערבות, תקופה, אופציה"], verdict: "מודדים מחדש", tone: 3 },
-            { title: "תיקון חכירה (סעיפים 44–46)", icon: <Scale />, steps: ["הצדדים שינו את החוזה", "היקף או תמורה"], verdict: "שלוש דרכים", tone: 1 },
+            { title: "הערכה מחדש (סעיפים 39–43)", icon: <RefreshCw />, steps: ["החוזה נשאר כמו שהוא", "מדד, ערבות שייר, תקופה, אופציית רכישה"], verdict: "מחשבים את החוב מחדש", tone: 3 },
+            { title: "תיקון חכירה (סעיפים 44–46)", icon: <Scale />, steps: ["הצדדים משנים את החוזה", "שטח, זמן או מחיר"], verdict: "אחת משלוש דרכים", tone: 1 },
           ]}
         />
-        <Rule>בהערכה מחדש, ובתיקון שאינו חכירה נפרדת, ההתחייבות מחושבת מחדש והנכס מתעדכן. ההבדלים הם איזו ריבית, ואם יש רווח או הפסד.</Rule>
+        <P>
+          ההתחייבות היא הערך הנוכחי של מה שנשאר לשלם. ברגע שמה שנשאר לשלם השתנה, המספר בספרים כבר לא נכון, ולכן צריך לחשב אותו שוב. זה נכון בשני המקרים. ההבדל ביניהם הוא באיזו ריבית מחשבים ולאן הולך ההפרש.
+        </P>
+        <Rule>ברוב המקרים מחשבים את החוב מחדש, וההפרש נכנס לנכס. מה שנשאר לברר הוא באיזו ריבית מחשבים, ומתי יש רווח או הפסד. על זה השיעור הזה.</Rule>
       </>
     ),
   },
   "ls-chg-rate": {
-    lead: "בהערכה מחדש, הריבית מתעדכנת כשהשינוי נוגע לתקופה, לאופציית רכישה או לריבית עצמה. במדד ובערבות שייר היא נשארת.",
+    lead: "עדכון בסכום התשלום משאיר את הריבית הישנה. שינוי בזמן שתחזיקו בנכס, או בשאלה אם תקנו אותו, מביא ריבית של היום.",
     body: (
       <>
-        <Tbl head={["מה השתנה", "ריבית", "ההפרש הולך ל", "מקור"]} rows={C.RATE_ROWS} />
         <P>
-          בשינוי תקופה או אופציית רכישה, ״ריבית מעודכנת״ היא הגלומה ליתרת התקופה אם ניתנת לקביעה בנקל, ואחרת התוספתית של היום (<T16 he="סעיף 41" />). בריבית משתנה מעדכנים רק לפי השינוי בריבית (<T16 he="סעיף 43" />).
+          נניח שחתמתם על החוזה בריבית 6%, והיום הייתם לווים ב-8%. המדד עלה והתשלום עודכן? זו אותה חכירה בתשלום אחר, ולכן מהוונים ב-6%. הבנתם שתישארו עוד שנתיים? עכשיו החישוב כולל שנים שלא היו בו, ולכן מהוונים ב-8%.
         </P>
+        <RateMap />
+        <P>
+          <strong>למה במדד ובערבות הריבית נשארת.</strong> אפשר להבין את זה כך: רק הסכום זז. החוב מכסה את אותן שנים ואת אותם תשלומים, והחוכר לא החליט שום דבר חדש. אילו עדכנו את הריבית בכל תזוזה של המדד, כל החוב היה קופץ בגלל מה שקרה בשוק הכסף, אף שרק התשלום זז.
+        </P>
+        <P>
+          <strong>למה בתקופה ובאופציית רכישה הריבית מתעדכנת.</strong> כאן משתנה מה בכלל נמצא בחוב. נכנסות או יוצאות שנים, או מחיר קנייה שלא היה שם. הריבית הישנה נקבעה לחוב אחר, ולכן מחשבים הכול לפי מחיר הכסף של היום.
+        </P>
+        <P>
+          <strong>ריבית מעודכנת</strong> בשינוי תקופה או אופציית רכישה היא הריבית הגלומה ליתרת התקופה, אם אפשר לקבוע אותה בנקל. אחרת זו הריבית התוספתית של היום (<T16 he="סעיף 41" />).
+        </P>
+        <P>
+          יש שני מקרים מיוחדים. בתשלום שצמוד לריבית משתנה מעדכנים את שיעור ההיוון, רק לפי השינוי באותה ריבית (<T16 he="סעיף 43" />). במטבע חוץ התשלום נחשב קבוע, ולכן אין כאן מדידה מחדש. ההפרש הוא הפרש שער על חוב כספי, ולכן הוא הולך לרווח או הפסד, והנכס לא זז (<T16 he="IAS 21, סעיפים 23, 28" />). ב-IFRS 16 עצמו זה לא כתוב, וזו המסקנה מ-IAS 21.
+        </P>
+        <P>גם תיקון חכירה שאינו חכירה נפרדת מעדכן את הריבית, כי שני הצדדים סגרו עסקה חדשה ביום מסוים. נגיע לזה בהמשך השיעור.</P>
         <TaskFrame label="שאלת מיון" icon={<ListChecks className="h-[18px] w-[18px]" aria-hidden />}>
           <SortQuiz prefix="ifrs16" id="ls-chg-rate" items={C.RATE_ITEMS} options={C.RATE_OPTIONS} />
         </TaskFrame>
-        <Remember>שאלות נותנות לפעמים ריבית חדשה גם כשהשינוי הוא מדד או ערבות. זו מלכודת: לא משתמשים בה.</Remember>
+        <Remember>שאלות נותנות לפעמים ריבית חדשה גם כשהשינוי הוא מדד או ערבות. היא שם כדי לבלבל, ולא משתמשים בה.</Remember>
       </>
     ),
   },
   "ls-chg-asset": {
-    lead: "ההפרש בהתחייבות לא נכנס לרווח: הוא מתאים את הנכס. רק כשהנכס התאפס, השאר ברווח או הפסד.",
+    lead: "כשהחוב משתנה, הנכס משתנה באותו סכום. רווח נרשם רק כשהחוב יורד יותר ממה שיש בנכס.",
     body: (
       <>
-        <Part title="סעיף 39">
-          <p className="text-[15.5px] font-semibold">
-            יתרת הנכס + הפרש בהתחייבות = הנכס אחרי
-          </p>
-        </Part>
-        <Story icon={<Wrench />} title="ירידה גדולה מהנכס">
-          <p>
-            יתרת הנכס <M v={C.ZERO.asset} />, וההתחייבות קטנה ב-<M v={C.ZERO.decrease} />. הנכס יורד לאפס, והשאר, <M v={C.ZERO_GAIN} />, רווח.
-          </p>
-        </Story>
+        <P>
+          החוב עלה כי הזכות להשתמש בנכס עולה לכם יותר, והזכות הזו היא הנכס שבספרים. לכן ההפרש מתאים את הנכס, ולא עובר דרך רווח או הפסד (<T16 he="סעיף 39" />).
+        </P>
+        <P>
+          מה היה קורה בלי הכלל הזה? התשלומים הגבוהים משלמים על שנים שעוד לא השתמשתם בהן. אילו ההפרש נרשם היום כהוצאה, השנה הזו הייתה נושאת עלות של שנים עתידיות, והשנים הבאות היו נראות זולות מדי. כשההפרש נכנס לנכס, הוא יורד לאט דרך הפחת, בשנים שבהן באמת משתמשים בנכס.
+        </P>
+        <p className="text-[15.5px] font-semibold">יתרת הנכס + ההפרש בחוב = הנכס אחרי</p>
+        <Tbl
+          head={["", "התחייבות", "נכס"]}
+          rows={[
+            ["יתרה לפני השינוי", -C.ASSET_EX.liability, C.ASSET_EX.asset],
+            ["החוב גדל", -C.ASSET_EX.change, C.ASSET_EX.change],
+          ]}
+          foot={["יתרה אחרי השינוי", -(C.ASSET_EX.liability + C.ASSET_EX.change), C.ASSET_EX.asset + C.ASSET_EX.change]}
+        />
+        <P>בשורה של השינוי אותו סכום מופיע בשני הצדדים. זו הפקודה עצמה, חובה נכס וזכות התחייבות.</P>
+        <Fork
+          label="לאן הולך ההפרש. החוב גדל: הנכס גדל באותו סכום. החוב קטן בפחות מיתרת הנכס: הנכס קטן באותו סכום. החוב קטן ביותר מיתרת הנכס: הנכס נעצר באפס, והשאר רווח"
+          question="מה קרה לחוב?"
+          branches={[
+            { when: "גדל", then: "הנכס גדל באותו סכום" },
+            { when: "קטן, פחות מיתרת הנכס", then: "הנכס קטן באותו סכום" },
+            { when: "קטן, יותר מיתרת הנכס", then: "הנכס נעצר באפס, והשאר רווח" },
+          ]}
+        />
+        <P>
+          המקרה השלישי נראה כך. יתרת הנכס <M v={C.ZERO.asset} />, והחוב קטן ב-<M v={C.ZERO.decrease} />. אי אפשר להחזיק נכס שלילי, ולכן הוא יורד לאפס. מהירידה נשארו <M v={C.ZERO_GAIN} /> שכבר אין כנגד מה לרשום אותם, והם רווח.
+        </P>
         <JournalEntry
           title="כשהנכס עוצר באפס"
           lines={[
@@ -80,12 +152,15 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
             { account: "רווח מעדכון התחייבות", cr: C.ZERO_GAIN },
           ]}
         />
-        <Part title="פחת אחרי כל שינוי">
-          <p className="text-[15.5px] font-semibold">
-            יתרת הנכס אחרי השינוי ÷ השנים שנשארו = פחת
-          </p>
+        <Part title="מה קורה לפחת">
+          <P>הנכס השתנה, ולכן גם הפחת. מפזרים את מה שיש עכשיו בנכס על השנים שנשארו.</P>
+          <p className="text-[15.5px] font-semibold">יתרת הנכס אחרי השינוי ÷ השנים שנשארו = פחת</p>
+          <P>
+            בדוגמה נשארו {C.ASSET_EX.left} שנים: <Ltr>{`${n(C.ASSET_EX.asset + C.ASSET_EX.change)} ÷ ${C.ASSET_EX.left} = ${n((C.ASSET_EX.asset + C.ASSET_EX.change) / C.ASSET_EX.left)}`}</Ltr>, במקום <Ltr>{`${n(C.ASSET_EX.asset)} ÷ ${C.ASSET_EX.left} = ${n(C.ASSET_EX.asset / C.ASSET_EX.left)}`}</Ltr> שנרשמו עד עכשיו.
+          </P>
+          <P>את השנים שכבר עברו לא פותחים מחדש. כשנקבעו, הן נקבעו לפי מה שידעתם אז, ולכן התיקון נכנס רק מכאן והלאה.</P>
         </Part>
-        <Remember>המשמעות: הפחת משתנה מעכשיו והלאה. לא מתקנים שנים קודמות.</Remember>
+        <Remember>הפחת משתנה מעכשיו והלאה. שנים קודמות לא מתקנים.</Remember>
       </>
     ),
     check: quiz("ls-chg-asset", [
@@ -98,66 +173,108 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
     ]),
   },
   "ls-chg-index": {
-    lead: "מודדים מחדש רק כשהתשלום החוזי משתנה, לפי התשלום המעודכן ובלי תחזית. הריבית נשארת.",
+    lead: "המדד יכול לזוז כל חודש, אבל החוב זז רק ביום שבו התשלום לפי החוזה באמת משתנה. והריבית נשארת כמו שהייתה.",
     body: (
       <>
-        <Story icon={<Factory />} title="ציוד צמוד למדד">
+        <Story icon={<Scan />} title="מכשיר הדמיה שמתעדכן פעם בשנתיים">
           <p>
-            ציוד ל-{C.IDX.years} שנים, <M v={C.IDX.payment} /> בסוף כל שנה, צמוד למדד. מדד הבסיס {C.IDX.base}. בסוף שנה 1 הוא {C.IDX.indexes[0]}, ובסוף שנה 2 הוא {C.IDX.indexes[1]}. הריבית התוספתית בתחילה {pct(C.IDX.rate)}, ובסופי השנים {pct(C.IDX.rates[0])} ו-{pct(C.IDX.rates[1])}. אורך החיים {C.IDX.life} שנים, והציוד חוזר למחכיר.
+            מכון רנטגן חכר מכשיר הדמיה ל-{C.IDX.years} שנים, ומשלם <M v={C.IDX.payment} /> ב-1.1 של כל שנה, הראשון ביום החתימה. הריבית התוספתית {pct(C.IDX.rate)}. המכשיר חוזר למחכיר בסוף.
           </p>
+          <p>
+            התשלום צמוד למדד, אבל לפי החוזה הוא מתעדכן רק פעם בשנתיים: ב-1.1 של שנה {C.IDX.resetYear} וב-1.1 של שנה 5. מדד הבסיס {C.IDX.base}. בסוף שנה 1 הוא {C.IDX.indexes[0]}, ובסוף שנה 2 הוא {C.IDX.indexes[1]}.
+          </p>
+          <p>ב-1.1 של שנה {C.IDX.resetYear} הריבית התוספתית של המכון היא {pct(C.IDX.todayRate)}.</p>
         </Story>
-        <Timeline
-          label="כל שנה: מוסיפים ריבית, משלמים לפי המדד של אותו יום, ואז מודדים את כל מה שנשאר"
-          title="הסדר ב-31.12"
-          from={0}
-          to={3}
-          ticks={[
-            { at: 0, label: "ריבית" },
-            { at: 1, label: "תשלום לפי מדד חדש" },
-            { at: 2, label: "לפני מדידה" },
-            { at: 3, label: "אחרי מדידה" },
-          ]}
-        />
+        <P>
+          <strong>שנה 1: המדד עלה ל-{C.IDX.indexes[0]}, ולא קורה כלום.</strong> התשלום הבא נשאר <M v={C.IDX.payment} />, כי כך כתוב בחוזה. מודדים מחדש רק כשיש שינוי בתזרים, כלומר ביום שבו התיאום נכנס לתוקף (<T16 he="סעיף 42(ב)" />). אם היינו מעדכנים לפי המדד כל שנה, החוב היה כולל תשלומים שאף אחד לא דרש.
+        </P>
+        <P>
+          <strong>ב-1.1 של שנה {C.IDX.resetYear} התשלום משתנה.</strong> לוקחים את המדד של יום העדכון ביחס למדד הבסיס.
+        </P>
+        <p className="text-[15.5px] font-semibold">תשלום בסיסי × המדד ביום העדכון ÷ מדד הבסיס = התשלום החדש</p>
+        <P>
+          <Ltr>{`${n(C.IDX.payment)} × ${C.IDX.indexes[1]} ÷ ${C.IDX.base} = ${n(C.IDX_NEW_PAYMENT)}`}</Ltr>
+        </P>
+        <P>
+          עכשיו מחשבים את החוב פעמיים, לפני ואחרי. נשארו {C.IDX.years - C.IDX.resetYear + 1} תשלומים, והקרוב שבהם הוא היום, ולכן הוא נספר בלי היוון.
+        </P>
+        <p className="text-[15.5px] font-semibold">
+          ערך נוכחי = תשלום × <Ltr>{"(1 + (1 − (1 + i)^(−(n − 1))) ÷ i)"}</Ltr>
+        </p>
         <Tbl
-          dense
-          head={["התחייבות החכירה", "שנה 1", "שנה 2"]}
+          head={["החישוב", "באקסל", "החוב"]}
           rows={[
-            ["יתרה ב-1.1", C.IDX_ROWS[0].opening, C.IDX_ROWS[1].opening],
-            [`ריבית ${pct(C.IDX.rate)}`, C.IDX_ROWS[0].interest, C.IDX_ROWS[1].interest],
-            ["תשלום", -C.IDX_ROWS[0].paid, -C.IDX_ROWS[1].paid],
-            ["לפני מדידה מחדש", C.IDX_ROWS[0].before, C.IDX_ROWS[1].before],
-            ["מדידה מחדש", C.IDX_ROWS[0].change, C.IDX_ROWS[1].change],
+            ["לפני", <Ltr key="a">{`=PV(5%;4;-${C.IDX.payment};;1)`}</Ltr>, C.IDX_BEFORE],
+            ["אחרי", <Ltr key="b">{`=PV(5%;4;-${C.IDX_NEW_PAYMENT};;1)`}</Ltr>, C.IDX_AFTER],
           ]}
-          foot={["יתרה ב-31.12", C.IDX_ROWS[0].after, C.IDX_ROWS[1].after]}
+          foot={["ההפרש", "", C.IDX_CHANGE]}
         />
         <P>
-          היתרה אחרי המדידה היא הערך הנוכחי של מה שנשאר, לפי התשלום החדש. בשנה 1: <Ltr>{`=PV(6%;7;-${C.IDX_ROWS[0].paid}) → ${n(C.IDX_ROWS[0].after)}`}</Ltr>.
+          בשני החישובים הריבית היא {pct(C.IDX.rate)} (<T16 he="סעיף 43" />). {pct(C.IDX.todayRate)} לא נכנס לשום מקום. רק סכום התשלום זז, ומה שהחוב מכסה נשאר כמו שהיה. יש גם בדיקה מהירה. כשהריבית לא זזה וכל התשלומים עולים ב-6%, גם החוב עולה ב-6%: <Ltr>{`${n(C.IDX_BEFORE)} × 6% = ${n(C.IDX_CHANGE)}`}</Ltr>.
         </P>
+        <P>
+          כל 4 התשלומים נכנסים לפי <M v={C.IDX_NEW_PAYMENT} />, גם אם ברור שבשנה 5 יהיה עדכון נוסף. לא מנחשים אותו. כשיגיע היום, נמדוד שוב.
+        </P>
+        <P>ככה נראית התחייבות החכירה לאורך שלוש השנים. בכל שנה התשלום יוצא ב-1.1, ולכן הריבית מחושבת על מה שנשאר אחריו.</P>
         <Tbl
           dense
-          head={["נכס זכות שימוש", "שנה 1", "שנה 2"]}
+          head={["התחייבות החכירה", "שנה 1", "שנה 2", "שנה 3"]}
           rows={[
-            ["יתרה ב-1.1", C.IDX_ROWS[0].rouOpen, C.IDX_ROWS[1].rouOpen],
-            ["פחת", -C.IDX_ROWS[0].dep, -C.IDX_ROWS[1].dep],
-            ["מדידה מחדש", C.IDX_ROWS[0].change, C.IDX_ROWS[1].change],
+            ["יתרה ב-1.1, לפני התשלום", ...C.IDX_ROWS.map((y) => -y.opening)],
+            ["מדידה מחדש", ...C.IDX_ROWS.map((y) => -y.change)],
+            ["תשלום ב-1.1", ...C.IDX_ROWS.map((y) => y.paid)],
+            [`ריבית ${pct(C.IDX.rate)}`, ...C.IDX_ROWS.map((y) => -y.interest)],
           ]}
-          foot={["יתרה ב-31.12", C.IDX_ROWS[0].rou, C.IDX_ROWS[1].rou]}
+          foot={["יתרה ב-31.12", ...C.IDX_ROWS.map((y) => -y.closing)]}
+        />
+        <P>ההפרש הולך לנכס, כי התשלומים הגבוהים הם המחיר של השימוש בשנים שנשארו.</P>
+        <JournalEntry
+          title={`מדידה מחדש, 1.1 של שנה ${C.IDX.resetYear}`}
+          lines={[
+            { account: "נכס זכות שימוש", dr: C.IDX_CHANGE },
+            { account: "התחייבות חכירה", cr: C.IDX_CHANGE },
+          ]}
+        />
+        <Tbl
+          dense
+          head={["נכס זכות שימוש", "שנה 1", "שנה 2", "שנה 3"]}
+          rows={[
+            ["יתרה ב-1.1", ...C.IDX_ROWS.map((y) => y.rouOpen)],
+            ["מדידה מחדש", ...C.IDX_ROWS.map((y) => y.change)],
+            ["פחת", ...C.IDX_ROWS.map((y) => -y.dep)],
+          ]}
+          foot={["יתרה ב-31.12", ...C.IDX_ROWS.map((y) => y.rou)]}
         />
         <P>
-          הפחת של שנה 2 הוא היתרה חלקי 7 השנים שנשארו, ולכן גבוה יותר. הריביות {pct(C.IDX.rates[0])} ו-{pct(C.IDX.rates[1])} לא משמשות בכלל.
+          בשנים 1 ו-2 הפחת הוא העלות חלקי 6: <Ltr>{`${n(C.IDX_START)} ÷ 6 = ${n(C.IDX_ROWS[0].dep)}`}</Ltr>. בשנה 3 מפזרים את היתרה החדשה על 4 השנים שנשארו: <Ltr>{`(${n(C.IDX_ROU_BEFORE)} + ${n(C.IDX_CHANGE)}) ÷ 4 = ${n(C.IDX_ROWS[2].dep)}`}</Ltr>.
         </P>
+        <P>בדוח על המצב הכספי, התשלום של מחר בבוקר משולם כולו בתוך שנה, ולכן הוא כולו שוטף. השאר לא שוטף. בסוף שנה 2 התשלום הבא עוד רשום לפי הסכום הישן, כי העדכון נכנס לתוקף רק ב-1.1.</P>
         <Tbl
           dense
-          head={["מצב כספי, 31.12", "שנה 1", "שנה 2"]}
+          head={["מצב כספי, 31.12", "שנה 1", "שנה 2", "שנה 3"]}
           rows={[
-            ["התחייבות, לא שוטפת", C.IDX_ROWS[0].nonCurrent, C.IDX_ROWS[1].nonCurrent],
-            ["התחייבות, שוטפת", C.IDX_ROWS[0].current, C.IDX_ROWS[1].current],
+            ["נכס זכות שימוש, נטו", ...C.IDX_ROWS.map((y) => y.rou)],
+            ["התחייבות, שוטפת", ...C.IDX_ROWS.map((y) => -y.current)],
+            ["התחייבות, לא שוטפת", ...C.IDX_ROWS.map((y) => -y.nonCurrent)],
           ]}
         />
-        <Remember>הלא שוטף מחושב על התשלום של היום, בלי לנחש מדד עתידי.</Remember>
-        <Deeper title="ואם התשלום מתעדכן רק פעם בכמה שנים?">
-          <P>מודדים רק כשהעדכון נכנס לתוקף (סעיף 42(ב)). עד אז לא נוגעים בהתחייבות, גם אם המדד זז.</P>
-        </Deeper>
+        <Part title="ואם התשלום בסוף שנה, ומתעדכן בכל שנה?">
+          <P>העיקרון אותו עיקרון, ורק הסדר ב-31.12 צריך תשומת לב. התשלום של אותו יום כבר לפי המדד החדש, ולכן החוב זז באותו יום. נוסח התקן לא אומר לאן הולך ההפרש בתשלום של אותו יום. בקורס הזה הוא עובר דרך המדידה מחדש, ונכנס לנכס.</P>
+          <Timeline
+            label="תשלום בסוף שנה: מוסיפים ריבית, משלמים לפי המדד של אותו יום, ואז מודדים את כל מה שנשאר"
+            title="הסדר ב-31.12"
+            from={0}
+            to={3}
+            ticks={[
+              { at: 0, label: "מוסיפים ריבית" },
+              { at: 1, label: "משלמים לפי המדד החדש" },
+              { at: 2, label: "רואים מה נשאר" },
+              { at: 3, label: "מודדים מחדש" },
+            ]}
+          />
+          <P>החלק הלא שוטף בחוזה כזה הוא מה שיישאר אחרי התשלום של השנה הבאה, גם הוא לפי התשלום של היום. בשאלה השלמה בהמשך השיעור תפתרו מקרה כזה עד הסוף.</P>
+        </Part>
+        <Remember>מודדים רק ביום שהתשלום החוזי משתנה, ולפי התשלום של אותו יום. מדד עתידי לא מנחשים, והריבית נשארת.</Remember>
       </>
     ),
     check: quiz("ls-chg-index", [
@@ -170,14 +287,33 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
     ]),
   },
   "ls-chg-guar": {
-    lead: "האומדן לערך השייר השתנה. מחשבים מחדש את מה שצפוי לתשלום, ומהוונים בריבית הישנה.",
+    lead: "המכונה צפויה להיות שווה יותר ממה שחשבנו, אז החוכר צופה להשלים פחות. החוב קטן, והריבית נשארת.",
     body: (
       <>
+        <P>
+          <strong>ערבות שייר</strong> פירושה שהחוכר התחייב שהנכס יחזור בשווי מסוים, ואם יהיה שווה פחות הוא ישלים את ההפרש במזומן. בחוב נמצאת רק ההשלמה שהוא צופה לשלם. כשהתחזית משתנה, גם החוב משתנה (<T16 he="סעיפים 42(א), 43" />).
+        </P>
+        <P>הריבית נשארת (<T16 he="סעיף 43" />). אפשר להבין את זה כך: רק הסכום זז. החוב מכסה את אותן שנים ואת אותה השלמה, והחכירה עצמה לא השתנתה. ההפרש הולך לנכס, כי ההשלמה היא חלק ממה שהשימוש בנכס עולה לכם.</P>
         <Story icon={<Wrench />} title="מכונה עם ערבות">
           <p>
-            מכונה ל-{C.GUAR.years} שנים, <M v={C.GUAR.payment} /> בסוף כל שנה, וערבות שייר של <M v={C.GUAR.guarantee} />. אורך החיים {C.GUAR.life} שנים, והיא חוזרת למחכיר. הריבית הגלומה {pct(C.GUAR.rate)}, ניתנת לקביעה בנקל. הריבית התוספתית {pct(C.GUAR.ibr)}. בתחילה החוכר צפה ערך של <M v={C.GUAR.expected} />. בסוף שנה 1 הוא צופה <M v={C.GUAR.newExpected} />, והריבית הגלומה היום {pct(C.GUAR.newRate)}.
+            מכונה ל-{C.GUAR.years} שנים, <M v={C.GUAR.payment} /> בסוף כל שנה, וערבות שייר של <M v={C.GUAR.guarantee} />. אורך החיים {C.GUAR.life} שנים, והיא חוזרת למחכיר. הריבית הגלומה {pct(C.GUAR.rate)}, וניתן לקבוע אותה בנקל, ולכן לא נוגעים בריבית התוספתית, {pct(C.GUAR.ibr)}. בתחילה החוכר צפה ערך של <M v={C.GUAR.expected} />. בסוף שנה 1 הוא צופה <M v={C.GUAR.newExpected} />, והריבית הגלומה היום {pct(C.GUAR.newRate)}.
           </p>
         </Story>
+        <p className="text-[15.5px] font-semibold">הערבות − הערך הצפוי = הצפוי לתשלום</p>
+        <Tbl
+          head={["", "ביום הראשון", "בסוף שנה 1"]}
+          rows={[
+            ["הערבות", C.GUAR.guarantee, C.GUAR.guarantee],
+            ["הערך הצפוי", -C.GUAR.expected, -C.GUAR.newExpected],
+          ]}
+          foot={["צפוי לתשלום", C.GUAR_SHORT, C.GUAR_NEW_SHORT]}
+        />
+        <P>
+          ההשלמה הצפויה ירדה ב-<M v={C.GUAR_SHORT - C.GUAR_NEW_SHORT} />, אבל היא משולמת רק בסוף התקופה, ולכן מהוונים אותה. החוב יורד ב-<M v={-C.GUAR_CHANGE} />.
+        </P>
+        <p className="text-[15.5px] font-semibold">
+          ערך נוכחי = תשלום × <Ltr>{"(1 − (1 + i)^(−n)) ÷ i"}</Ltr> + צפוי לתשלום ÷ <Ltr>{"(1 + i)^n"}</Ltr>
+        </p>
         <FullSteps
           label="הפתרון לשנתיים"
           steps={[
@@ -185,7 +321,7 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
               title: "ביום הראשון",
               body: (
                 <p>
-                  צפוי לתשלום: <Ltr>{`${n(C.GUAR.guarantee)} − ${n(C.GUAR.expected)} = ${n(C.GUAR_SHORT)}`}</Ltr>. הגלומה קודמת לתוספתית, ולכן <Ltr>{`=PV(6%;5;-55000;-${C.GUAR_SHORT}) → ${n(C.GUAR_COST)}`}</Ltr>.
+                  הגלומה קודמת לתוספתית, ולכן <Ltr>{`55,000 × (1 − 1.06^(−5)) ÷ 0.06 + ${n(C.GUAR_SHORT)} ÷ 1.06^5 = ${n(C.GUAR_COST)}`}</Ltr>. באקסל: <Ltr>{`=PV(6%;5;-55000;-${C.GUAR_SHORT})`}</Ltr>.
                 </p>
               ),
             },
@@ -194,19 +330,19 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
               body: (
                 <>
                   <p>
-                    צפוי לתשלום עכשיו: <Ltr>{`${n(C.GUAR.guarantee)} − ${n(C.GUAR.newExpected)} = ${n(C.GUAR_NEW_SHORT)}`}</Ltr>. הריבית נשארת {pct(C.GUAR.rate)} (סעיף 43).
+                    הריבית נשארת {pct(C.GUAR.rate)} (סעיף 43), ונשארו 4 תשלומים: <Ltr>{`=PV(6%;4;-55000;-${C.GUAR_NEW_SHORT}) → ${n(C.GUAR_AFTER)}`}</Ltr>. לפני המדידה החוב היה <Ltr>{`${n(C.GUAR_COST)} + ${n(C.GUAR_INT1)} − ${n(C.GUAR.payment)} = ${n(C.GUAR_BEFORE)}`}</Ltr>.
                   </p>
                   <Tbl
                     dense
                     head={["", "התחייבות", "נכס"]}
                     rows={[
-                      ["1.1", C.GUAR_COST, C.GUAR_COST],
-                      ["ריבית", C.GUAR_INT1, 0],
-                      ["תשלום", -C.GUAR.payment, 0],
+                      ["1.1", -C.GUAR_COST, C.GUAR_COST],
+                      ["ריבית", -C.GUAR_INT1, 0],
+                      ["תשלום", C.GUAR.payment, 0],
                       ["פחת: 5 שנים", 0, -C.GUAR_DEP1],
-                      ["מדידה מחדש", C.GUAR_CHANGE, C.GUAR_CHANGE],
+                      ["מדידה מחדש", -C.GUAR_CHANGE, C.GUAR_CHANGE],
                     ]}
-                    foot={["31.12 של שנה 1", C.GUAR_AFTER, C.GUAR_ROU1]}
+                    foot={["31.12 של שנה 1", -C.GUAR_AFTER, C.GUAR_ROU1]}
                   />
                   <JournalEntry
                     title="מדידה מחדש"
@@ -221,17 +357,22 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
             {
               title: "שנה 2",
               body: (
-                <Tbl
-                  dense
-                  head={["", "התחייבות", "נכס"]}
-                  rows={[
-                    ["1.1", C.GUAR_AFTER, C.GUAR_ROU1],
-                    ["ריבית", C.GUAR_INT2, 0],
-                    ["תשלום", -C.GUAR.payment, 0],
-                    ["פחת: היתרה ÷ 4", 0, -C.GUAR_DEP2],
-                  ]}
-                  foot={["31.12 של שנה 2", C.GUAR_CLOSE2, C.GUAR_ROU2]}
-                />
+                <>
+                  <p>
+                    הפחת הוא היתרה החדשה על 4 השנים שנשארו: <Ltr>{`${n(C.GUAR_ROU1)} ÷ 4 = ${n(C.GUAR_DEP2)}`}</Ltr>. הריבית היא עדיין {pct(C.GUAR.rate)}.
+                  </p>
+                  <Tbl
+                    dense
+                    head={["", "התחייבות", "נכס"]}
+                    rows={[
+                      ["1.1", -C.GUAR_AFTER, C.GUAR_ROU1],
+                      ["ריבית", -C.GUAR_INT2, 0],
+                      ["תשלום", C.GUAR.payment, 0],
+                      ["פחת: היתרה ÷ 4", 0, -C.GUAR_DEP2],
+                    ]}
+                    foot={["31.12 של שנה 2", -C.GUAR_CLOSE2, C.GUAR_ROU2]}
+                  />
+                </>
               ),
             },
             {
@@ -244,137 +385,183 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
                     ["הוצאות פחת", C.GUAR_DEP1, C.GUAR_DEP2],
                     ["הוצאות מימון", C.GUAR_INT1, C.GUAR_INT2],
                     ["נכס זכות שימוש, נטו", C.GUAR_ROU1, C.GUAR_ROU2],
-                    ["התחייבות, שוטפת", C.GUAR_AFTER - C.GUAR_NC1, C.GUAR_CLOSE2 - C.GUAR_NC2],
-                    ["התחייבות, לא שוטפת", C.GUAR_NC1, C.GUAR_NC2],
+                    ["התחייבות, שוטפת", -(C.GUAR_AFTER - C.GUAR_NC1), -(C.GUAR_CLOSE2 - C.GUAR_NC2)],
+                    ["התחייבות, לא שוטפת", -C.GUAR_NC1, -C.GUAR_NC2],
                   ]}
                 />
               ),
             },
             {
               title: "מלכודת נפוצה",
-              body: <p>להשתמש ב-{pct(C.GUAR.newRate)} כי הוא נתון בשאלה, או להוריד את ההפרש ישר בלי להוון. הוא משולם רק בסוף התקופה.</p>,
+              body: <p>להשתמש ב-{pct(C.GUAR.newRate)} כי הוא נתון בשאלה, או להוריד את ההפרש ישר בלי להוון.</p>,
             },
           ]}
         />
-        <Remember>כשהאומדן משתפר, הנכס והחוב יורדים. בודקים שהנכס לא נהיה שלילי.</Remember>
+        <Remember>כשהתחזית משתפרת, החוב והנכס יורדים יחד. אם הירידה גדולה מהנכס, הוא עוצר באפס.</Remember>
       </>
     ),
   },
   "ls-chg-term": {
-    lead: "כשאירוע בשליטת החוכר הופך הארכה לוודאית, התקופה משתנה. לכן גם הריבית מתעדכנת.",
+    lead: "המעבדה התכוונה לצאת באמצע החוזה, ואז קיבלה החלטה שמשאירה אותה עד הסוף. החוב נבנה מחדש, והכול מהוון בריבית של היום.",
     body: (
       <>
-        <Story icon={<Building />} title="מפעל שמתרחב">
+        <P>
+          את התקופה בודקים מחדש אחרי <strong>אירוע משמעותי בשליטת החוכר</strong>, כלומר משהו שהחברה עצמה עשתה או החליטה. שינוי במחירי השוק לבדו לא מספיק. כשבעקבות האירוע משתנה מה ודאי באופן סביר, התקופה משתנה, ולכן גם הריבית מתעדכנת (<T16 he="סעיפים 40(א), 41" />).
+        </P>
+        <Story icon={<FlaskConical />} title="מעבדה עם זכות יציאה">
           <p>
-            מבנה ל-{C.TERM.years} שנים, <M v={C.TERM.payment} /> בתחילת כל שנה. אופציה ל-{C.TERM.optionYears} שנים נוספות ב-<M v={C.TERM.optionPayment} /> לשנה, שלא ודאי שתמומש. עלויות ישירות <M v={C.TERM.direct} />, וריבית תוספתית {pct(C.TERM.rate)}. בשנה {C.TERM.eventYear} החברה רכשה עסק, ובסופה ודאי באופן סביר שתאריך. הריבית התוספתית היום {pct(C.TERM.newRate)}.
+            מעבדת בדיקות חכרה קומה לחוזה של {C.TERM.years} שנים, <M v={C.TERM.payment} /> בסוף כל שנה. בסוף שנה {C.TERM.breakYear} מותר לה לצאת, בקנס של <M v={C.TERM.penalty} />. הריבית התוספתית {pct(C.TERM.rate)}, והקומה חוזרת למחכיר.
           </p>
-          <p className="font-semibold">נדרש: הסעיפים של שנה 1, פקודת המדידה מחדש ב-31.12 של שנה {C.TERM.eventYear}, והסעיפים של שנה 7.</p>
+          <p>
+            ביום החתימה היה למעבדה מגרש משלה, והיא תכננה לבנות עליו ולעבור, ולכן היה ודאי באופן סביר שתצא. תקופת החכירה הייתה {C.TERM.breakYear} שנים, והקנס היה בתוך החוב.
+          </p>
+          <p>
+            בשנה {C.TERM.eventYear} ההנהלה החליטה למכור את המגרש. בסוף אותה שנה, אחרי התשלום, ודאי באופן סביר שהמעבדה תישאר עד סוף החוזה. הריבית התוספתית היום {pct(C.TERM.newRate)}.
+          </p>
         </Story>
-        <FullSteps
-          label="הפתרון"
-          steps={[
-            {
-              title: "שנה 1",
-              body: (
-                <Tbl
-                  dense
-                  head={["", "סכום"]}
-                  rows={[
-                    ["ערך נוכחי של 8 התשלומים", C.TERM_GROSS],
-                    ["עלות הנכס, עם עלויות ישירות", C.TERM_COST],
-                    ["הוצאות פחת: 8 שנים", C.TERM_DEP],
-                    ["הוצאות מימון: על היתרה אחרי התשלום", C.TERM_INT1],
-                    ["נכס זכות שימוש, נטו", C.TERM_ROU1],
-                    ["התחייבות, שוטפת", C.TERM.payment],
-                    ["התחייבות, לא שוטפת", C.TERM_CLOSE1 - C.TERM.payment],
-                  ]}
-                />
-              ),
-            },
-            {
-              title: `לפני השינוי, 31.12 של שנה ${C.TERM.eventYear}`,
-              body: (
-                <P>
-                  נשארו {C.TERM_LEFT} תשלומים, והראשון מחר. התחייבות: <Ltr>{`=PV(6%;3;-60000;;1) → ${n(C.TERM_BEFORE_L)}`}</Ltr>. נכס: {C.TERM_LEFT}/{C.TERM.years} מהעלות, כלומר {n(C.TERM_BEFORE_A)}.
-                </P>
-              ),
-            },
-            {
-              title: "אחרי השינוי",
-              body: (
-                <>
-                  <Tbl
-                    dense
-                    head={["תשלום ב-1.1", "סכום"]}
-                    rows={[
-                      ["מחר ועוד שנתיים, 3 פעמים", C.TERM.payment],
-                      ["3 השנים של האופציה", C.TERM.optionPayment],
-                    ]}
-                  />
-                  <p>
-                    מהוונים הכול ב-{pct(C.TERM.newRate)}: {n(C.TERM_AFTER_L)}. המדידה מחדש: {n(C.TERM_CHANGE)}.
-                  </p>
-                  <JournalEntry
-                    title={`31.12 של שנה ${C.TERM.eventYear}`}
-                    lines={[
-                      { account: "נכס זכות שימוש", dr: C.TERM_CHANGE },
-                      { account: "התחייבות חכירה", cr: C.TERM_CHANGE },
-                    ]}
-                  />
-                  <p>
-                    נכס אחרי: {n(C.TERM_AFTER_A)}. התחייבות שוטפת {n(C.TERM.payment)}, לא שוטפת {n(C.TERM_AFTER_L - C.TERM.payment)}.
-                  </p>
-                </>
-              ),
-            },
-            {
-              title: "שנה 7",
-              body: (
-                <Tbl
-                  dense
-                  head={["", "סכום"]}
-                  rows={[
-                    [<>הוצאות פחת: <Ltr>{`${n(C.TERM_AFTER_A)} ÷ ${C.TERM_NEW_YEARS}`}</Ltr></>, C.TERM_DEP2],
-                    ["הוצאות מימון: 7%, אחרי התשלום", C.TERM_INT7],
-                    ["נכס זכות שימוש, נטו", C.TERM_ROU7],
-                    ["התחייבות, שוטפת", C.TERM.payment],
-                    ["התחייבות, לא שוטפת", C.TERM_CLOSE7 - C.TERM.payment],
-                  ]}
-                />
-              ),
-            },
-            {
-              title: "מלכודת נפוצה",
-              body: <p>להשאיר {pct(C.TERM.rate)}, או לשכוח שהתשלום של מחר עדיין בהתחייבות ולא נושא ריבית.</p>,
-            },
+        <P>
+          החלטה על נכס חלופי היא בדיוק החלטה עסקית מהסוג שהתקן מתאר (<T16 he="ב41(ד)" />). היא בשליטת המעבדה, והיא משנה את התשובה לשאלה אם תצא.
+        </P>
+        <Timeline
+          label="מתוך 10 שנות החוזה עברו 4. לפני השינוי החוב כלל שנתיים וקנס, ואחריו שש שנים בלי קנס"
+          title="מה נמצא בחוב אחרי השינוי"
+          from={0}
+          to={C.TERM.years}
+          ticks={[
+            { at: 0, label: "החתימה" },
+            { at: C.TERM.eventYear, label: "ההחלטה" },
+            { at: C.TERM.breakYear, label: "היציאה שתוכננה" },
+            { at: C.TERM.years, label: "סוף החוזה" },
+          ]}
+          spans={[
+            { from: 0, to: C.TERM.eventYear, label: "4 שנים עברו", tone: 1 },
+            { from: C.TERM.eventYear, to: C.TERM.breakYear, label: "היו בחוב", tone: 3 },
+            { from: C.TERM.breakYear, to: C.TERM.years, label: "נכנסות עכשיו", tone: 4 },
+          ]}
+          note="הקנס יוצא מהחוב, כי כבר לא מניחים שהמעבדה תצא."
+        />
+        <P>
+          <strong>היתרות לפני השינוי.</strong> ביום החתימה החוב כלל 6 תשלומים וקנס: <Ltr>{`=PV(5%;6;-70000;-30000) → ${n(C.TERM_COST)}`}</Ltr>. זו גם עלות הנכס, והפחת היה <Ltr>{`${n(C.TERM_COST)} ÷ 6 = ${n(C.TERM_DEP)}`}</Ltr>. עברו 4 שנים, ולכן בנכס נשארו 2/6 מהעלות. בחוב נשארו 2 תשלומים והקנס.
+        </P>
+        <P>
+          <strong>החוב אחרי השינוי.</strong> עכשיו בחוב 6 תשלומים בלי קנס, כולם ב-{pct(C.TERM.newRate)}, גם השניים שכבר היו בו.
+        </P>
+        <Tbl
+          head={["מה בחוב", "באקסל", "החוב"]}
+          rows={[
+            [`לפני: 2 תשלומים וקנס, ב-${pct(C.TERM.rate)}`, <Ltr key="a">{"=PV(5%;2;-70000;-30000)"}</Ltr>, C.TERM_BEFORE_L],
+            [`אחרי: 6 תשלומים, ב-${pct(C.TERM.newRate)}`, <Ltr key="b">{"=PV(7%;6;-70000)"}</Ltr>, C.TERM_AFTER_L],
           ]}
         />
-        <Remember>הוראות מתי בודקים מחדש את התקופה למדנו בשיעור 2: אירוע משמעותי בשליטת החוכר, או שינוי בפועל בתקופה שאינה ניתנת לביטול (סעיף 21). שינוי בשוק לבדו לא מספיק.</Remember>
+        <P>
+          למה לא להשאיר {pct(C.TERM.rate)}? כי היינו מהוונים ארבע שנים שלא היו בחישוב המקורי לפי מחיר כסף של לפני ארבע שנים. בריבית הישנה החוב היה <M v={C.TERM_OLD_RATE_L} />, כלומר <M v={C.TERM_OLD_RATE_L - C.TERM_AFTER_L} /> יותר ממה שהתשלומים האלה שווים לפי מחיר הכסף של היום.
+        </P>
+        <Tbl
+          dense
+          head={[`31.12 של שנה ${C.TERM.eventYear}`, "התחייבות", "נכס"]}
+          rows={[
+            ["לפני", -C.TERM_BEFORE_L, C.TERM_BEFORE_A],
+            ["מדידה מחדש", -C.TERM_CHANGE, C.TERM_CHANGE],
+          ]}
+          foot={["אחרי", -C.TERM_AFTER_L, C.TERM_AFTER_A]}
+        />
+        <P>ההפרש הולך לנכס, כי מה שקיבלתם תמורתו הוא עוד ארבע שנות שימוש. אין כאן רווח או הפסד.</P>
+        <JournalEntry
+          title={`31.12 של שנה ${C.TERM.eventYear}`}
+          lines={[
+            { account: "נכס זכות שימוש", dr: C.TERM_CHANGE },
+            { account: "התחייבות חכירה", cr: C.TERM_CHANGE },
+          ]}
+        />
+        <P>
+          מכאן הפחת הוא הנכס החדש חלקי {C.TERM_NEW_YEARS} השנים שנשארו: <Ltr>{`${n(C.TERM_AFTER_A)} ÷ ${C.TERM_NEW_YEARS} = ${n(C.TERM_DEP2)}`}</Ltr>. שימו לב שהפחת השנתי ירד מ-{n(C.TERM_DEP)}, אף שהנכס גדל, כי הוא מתפזר על יותר שנים.
+        </P>
+        <Part title="השנה שאחרי, בריבית החדשה">
+          <P>
+            הריבית של שנה {C.TERM.eventYear + 1} היא כבר {pct(C.TERM.newRate)}: <Ltr>{`${n(C.TERM_AFTER_L)} × 7% = ${n(C.TERM_INT5)}`}</Ltr>. החלק הלא שוטף הוא מה שיישאר אחרי התשלום הבא: <Ltr>{`=PV(7%;5;-70000) → ${n(C.TERM_NC)}`}</Ltr>.
+          </P>
+          <Tbl
+            dense
+            head={["", "התחייבות", "נכס"]}
+            rows={[
+              [`יתרה ב-1.1 של שנה ${C.TERM.eventYear + 1}`, -C.TERM_AFTER_L, C.TERM_AFTER_A],
+              ["ריבית", -C.TERM_INT5, 0],
+              ["תשלום", C.TERM.payment, 0],
+              ["פחת", 0, -C.TERM_DEP2],
+            ]}
+            foot={["31.12", -C.TERM_CLOSE5, C.TERM_ROU5]}
+          />
+          <Tbl
+            dense
+            head={["מצב כספי, 31.12", `שנה ${C.TERM.eventYear}`, `שנה ${C.TERM.eventYear + 1}`]}
+            rows={[
+              ["נכס זכות שימוש, נטו", C.TERM_AFTER_A, C.TERM_ROU5],
+              ["התחייבות, שוטפת", -C.TERM_CUR, -C.TERM_CUR5],
+              ["התחייבות, לא שוטפת", -C.TERM_NC, -C.TERM_NC5],
+            ]}
+          />
+        </Part>
+        <P>אותו דבר קורה עם אופציית הארכה שלא נספרה. היא הופכת לוודאית, שנות ההארכה נכנסות לחוב, וכל היתרה נמדדת בריבית של היום.</P>
+        <Remember>מתי בודקים מחדש את התקופה למדנו בשיעור 2: אירוע משמעותי בשליטת החוכר, או שינוי בפועל בתקופה שאינה ניתנת לביטול (סעיף 21). שינוי בשוק לבדו לא מספיק.</Remember>
       </>
     ),
   },
   "ls-chg-buy": {
-    lead: "כשאופציית רכישה הופכת לוודאית, קורים שלושה דברים: מחירה נכנס לחוב, הריבית מתעדכנת, והפחת עובר לאורך החיים.",
+    lead: "ברגע שברור שהנכס יישאר אצלכם, מחיר הקנייה נכנס לחוב, והפחת נפרס על כל חיי הנכס.",
     body: (
       <>
+        <Story icon={<Wrench />} title="מכונה שכדאי לקנות">
+          <p>
+            לחברה נשארו {C.BUY_EX.left} תשלומים של <M v={C.BUY_EX.payment} /> בסוף כל שנה, על מכונה שנשארו לה {C.BUY_EX.life} שנות חיים. הריבית בתחילת החכירה {pct(C.BUY_EX.rate)}, ויתרת הנכס <M v={C.BUY_EX.asset} />. בחוזה יש אופציה לקנות אותה בסוף ב-<M v={C.BUY_EX.option} />. עד עכשיו לא היה ודאי שהחברה תקנה. השנה היא התאימה את המכונה לקו הייצור שלה, בשינוי גדול שלא תוכנן בתחילת החכירה, ובעקבותיו ודאי באופן סביר שתקנה. הריבית התוספתית היום {pct(C.BUY_EX.newRate)}.
+          </p>
+        </Story>
+        <P>
+          גם אופציית רכישה בודקים מחדש רק אחרי אירוע משמעותי או שינוי משמעותי בנסיבות, בשליטת החוכר, כמו בתקופה (<T16 he="סעיפים 20, 40(ב), ב41" />). התאמה גדולה של הנכס היא דוגמה כזו. עלייה במחירי המכונות בשוק לבדה לא מספיקה.
+        </P>
+        <P>שלושה דברים משתנים ביחד, ולכל אחד מהם יש סיבה.</P>
         <Tbl
-          dense
-          head={["מה משתנה", "מקור"]}
+          head={["", "לפני", "אחרי", "סעיף"]}
           rows={[
-            ["מחיר האופציה מהוון ונכנס להתחייבות ולנכס", "סעיף 40(ב)"],
-            ["ריבית מעודכנת על כל מה שנשאר", "סעיף 41"],
-            ["הפחת: היתרה החדשה חלקי יתרת אורך החיים", "סעיף 32"],
+            ["מחיר האופציה בחוב", "לא נכלל", "מהוון ונכלל", "40(ב)"],
+            ["הריבית", "הישנה", "של היום, על כל מה שנשאר", "41"],
+            ["הפחת נפרס על", `${C.BUY_EX.left} שנות החכירה`, `${C.BUY_EX.life} שנות החיים`, "32"],
           ]}
         />
-        <Rule>אותו דבר בכיוון ההפוך: אופציה שהפסיקה להיות ודאית יוצאת מהחוב, והפחת חוזר לקצר מבין השניים.</Rule>
-        <Deeper title="ומה עם תשלום משתנה שהופך לקבוע?">
+        <P>
+          מחיר הקנייה נכנס כי מעכשיו מניחים שישולם. הריבית מתעדכנת כי החוב כולל סכום חדש. הפחת מתפרס על החיים כי בסוף התקופה המכונה נשארת אצל החברה, ותשמש אותה עוד שנים.
+        </P>
+        <p className="text-[15.5px] font-semibold">
+          ערך נוכחי = תשלום × <Ltr>{"(1 − (1 + i)^(−n)) ÷ i"}</Ltr> + מחיר האופציה ÷ <Ltr>{"(1 + i)^n"}</Ltr>
+        </p>
+        <Tbl
+          head={["", "באקסל", "החוב"]}
+          rows={[
+            [`לפני, ב-${pct(C.BUY_EX.rate)}`, <Ltr key="a">{"=PV(5%;2;-24000)"}</Ltr>, C.BUY_BEFORE],
+            [`אחרי, ב-${pct(C.BUY_EX.newRate)}`, <Ltr key="b">{"=PV(7%;2;-24000;-15000)"}</Ltr>, C.BUY_AFTER],
+          ]}
+        />
+        <Tbl
+          dense
+          head={["", "התחייבות", "נכס"]}
+          rows={[
+            ["לפני", -C.BUY_BEFORE, C.BUY_EX.asset],
+            ["מדידה מחדש", -C.BUY_CHANGE, C.BUY_CHANGE],
+          ]}
+          foot={["אחרי", -C.BUY_AFTER, C.BUY_ASSET]}
+        />
+        <P>
+          הפחת היה <Ltr>{`${n(C.BUY_EX.asset)} ÷ ${C.BUY_EX.left} = ${n(C.BUY_DEP_OLD)}`}</Ltr> לשנה. מעכשיו הוא <Ltr>{`${n(C.BUY_ASSET)} ÷ ${C.BUY_EX.life} = ${n(C.BUY_DEP)}`}</Ltr>. בלי הכלל הזה הנכס היה מתאפס בעוד שנתיים, בזמן שהמכונה עוד עובדת שמונה שנים.
+        </P>
+        <P>בכיוון ההפוך, אופציה שהפסיקה להיות ודאית יוצאת מהחוב, והפחת חוזר לקצר מבין התקופה ואורך החיים.</P>
+        <Deeper title="תשלום משתנה שהופך לקבוע">
           <P>תשלום שנקבע לפי השימוש עד תאריך מסוים, ומאז קבוע ליתרת התקופה, הוא קבוע במהותו מאותו רגע (ב42(א)(ii)). מאז הוא בהתחייבות, ומודדים מחדש (סעיף 36(ג)).</P>
         </Deeper>
+        <Remember>אופציית רכישה ודאית מעבירה את הפחת מתקופת החכירה לאורך החיים.</Remember>
       </>
     ),
     check: quiz("ls-chg-buy", [
       {
-        q: "חכירה ל-5 שנים נוספות, יתרת חיים 12 שנים. עכשיו ודאי שאופציית הרכישה תמומש. על פני כמה שנים מפחיתים מעכשיו?",
+        q: "חכירה ל-5 שנים נוספות, יתרת חיים 12 שנים. אירוע בשליטת החוכר, ועכשיו ודאי באופן סביר שאופציית הרכישה תמומש. על פני כמה שנים מפחיתים מעכשיו?",
         options: ["12", "5", "17", "7"],
         answer: 0,
         why: "סעיף 32: העלות משקפת עכשיו מימוש של אופציית רכישה.",
@@ -382,39 +569,106 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
     ]),
   },
   "ls-chg-mod": {
-    lead: "תיקון הוא שינוי בהיקף או בתמורה, שלא היה חלק מהתנאים המקוריים. ענו על השאלות, וראו מה עושים.",
+    lead: "תיקון חכירה הוא שינוי בהיקף או במחיר, שלא היה כתוב בחוזה מההתחלה. יש לו שלוש דרכים, ושתי שאלות מספיקות כדי לבחור.",
     body: (
       <>
+        <P>
+          <strong>היקף</strong> הוא כמה נכס וכמה זמן אתם חוכרים (<T16 he="נספח א׳" />). אופציה שכבר כתובה בחוזה אינה תיקון. מימוש שלה הוא ההערכה מחדש שראינו קודם.
+        </P>
+        <DecisionTree
+          label="שלוש דרכים. נוסף נכס במחיר הנפרד שלו? חכירה נפרדת. אחרת, ההיקף קטן? גריעה עם רווח או הפסד, ואז מדידה מחדש. אחרת, מדידה מחדש כנגד הנכס, בלי רווח או הפסד"
+          questions={[
+            { q: "נוסף נכס, והמחיר עלה בסכום שמתאים למחיר הנפרד שלו?", yes: "חכירה נפרדת", tone: 1 },
+            { q: "ההיקף קטן? פחות שטח, או פחות זמן", yes: "גריעה עם רווח או הפסד, ואז מדידה מחדש", tone: 4 },
+          ]}
+          fallback={{ label: "מדידה מחדש כנגד הנכס, בלי רווח או הפסד", tone: 3 }}
+        />
+        <P>
+          <strong>למה שלוש דרכים.</strong> כל דרך מתארת מה קרה בפועל. אם נוסף נכס במחיר שלו, זו עסקה חדשה שעומדת לבדה, והחוזה הישן נשאר בדיוק כפי שהיה. אם חלק מהחכירה נגמר, יצאתם ממנו, וסיום של עסקה נרשם ברווח או הפסד. בכל מקרה אחר החכירה ממשיכה בתנאים אחרים, ההפרש הוא מחיר של שימוש עתידי, ולכן הוא נכנס לנכס.
+        </P>
+        <P>
+          בשתי הדרכים האחרונות הריבית מתעדכנת, כי שני הצדדים סגרו היום תנאים חדשים לחכירה הזו. בהערכה מחדש זה קורה רק בחלק מהמקרים. בתיקון שאינו חכירה נפרדת זה קורה תמיד.
+        </P>
+        <P>במסכים הבאים ארבע חברות, ארבעה חוזים שונים, וכל אחד מלמד דרך אחרת:</P>
+        <Tbl
+          head={["מה קורה", "הדרך"]}
+          rows={[
+            [`חברת הסעות מוסיפה ${C.SEP.extra} מיניבוסים, במחיר הנפרד שלהם`, "חכירה נפרדת"],
+            [`רשת רהיטים מחזירה ${n(C.SHR.returned)} מ״ר מאולם תצוגה`, "גריעה, ואז מדידה מחדש"],
+            [`אולפן הקלטות מקצר ${C.CUT_WAS_LEFT} שנים ל-${C.CUT.left}`, "גריעה, ואז מדידה מחדש"],
+            [`בית מרקחת מאריך ב-${C.EXT.extra} שנים, בשכירות נמוכה יותר`, "מדידה מחדש"],
+          ]}
+        />
         <DecisionWalk nodes={C.CHANGE_WALK} start={C.CHANGE_WALK_START} label="מה השתנה, ומה עושים" again="בודקים שינוי אחר" />
-        <Part title="תיקון שאינו נפרד: מה עושים (סעיף 45)">
-          <ul className="list-disc space-y-1.5 ps-5 text-[15px]">
-            <li>מקצים מחדש את התמורה לרכיבים.</li>
-            <li>קובעים מחדש את תקופת החכירה.</li>
-            <li>מודדים מחדש בריבית מעודכנת, ביום שבו הצדדים הסכימו.</li>
-          </ul>
+        <Part title="באיזה יום מטפלים, ומה עושים באותו יום">
+          <P>
+            ביום שבו הצדדים הסכימו, גם אם ההשפעה מתחילה רק בעתיד (<T16 he="סעיף 45" />). סיכמו היום ששטח יוחזר בעוד שנה? מטפלים היום, כי מהיום המחויבות כבר אחרת.
+          </P>
+          <P>
+            בתיקון שאינו חכירה נפרדת עושים באותו יום שלושה דברים. מקצים מחדש את התמורה לרכיבים, אם יש בחוזה כמה רכיבים. קובעים מחדש את תקופת החכירה. ומודדים מחדש את ההתחייבות בריבית של אותו יום, הגלומה ליתרת התקופה אם אפשר לקבוע אותה בנקל, ואחרת התוספתית.
+          </P>
         </Part>
-        <Remember>גם אם ההשפעה מתחילה רק בעתיד, המועד הוא יום ההסכמה.</Remember>
+        <Remember>קודם בודקים אם זו חכירה נפרדת. אם לא, בודקים אם ההיקף קטן. אם גם לא, מודדים מחדש כנגד הנכס.</Remember>
       </>
     ),
   },
   "ls-chg-sep": {
-    lead: "תיקון הוא חכירה נפרדת רק כשמתקיימים שני תנאים יחד: נכס נוסף, ומחיר נפרד.",
+    lead: "אם מוסיפים עוד נכס ומשלמים עליו את המחיר הרגיל שלו, זה כמו חוזה חדש. בחוזה הישן לא נוגעים.",
     body: (
       <>
-        <Fork
-          label="חכירה נפרדת דורשת גם תוספת זכות שימוש וגם תמורה לפי המחיר הנפרד. אחרת מודדים מחדש את החכירה הקיימת"
-          question="מוסיפים 1,000 מ״ר למשרדים"
-          branches={[
-            { when: "במחיר השוק, פחות הנחה על חיסכון של המחכיר בשיווק", then: "שני התנאים מתקיימים: חכירה נפרדת" },
-            { when: "בהנחה שאינה משקפת את מחיר השוק", then: "המחיר אינו נפרד: מדידה מחדש כנגד הנכס" },
-          ]}
-        />
-        <Story icon={<Building />} title="חכירה נפרדת, במספרים">
+        <P>
+          כדי שזו תהיה <T16 he="חכירה נפרדת" par="סעיף 44" /> צריכים להתקיים שני דברים יחד. נוסף נכס, והמחיר עלה בסכום שמתאים למחיר הנפרד שלו, כלומר למה שהייתם משלמים עליו בחוזה משלו. מותר תיאום מתאים למחיר הזה, אם הוא משקף את הנסיבות של החוזה הזה, למשל חיסכון של המחכיר בשיווק.
+        </P>
+        <P>הסיבה פשוטה. אם המחיר הוא מחיר השוק של התוספת, שום דבר בעסקה הישנה לא השתנה. הצדדים היו יכולים לחתום על שני חוזים שונים, והתוצאה בספרים צריכה להיות אותה תוצאה.</P>
+        <Story icon={<Bus />} title="עוד שני מיניבוסים">
           <p>
-            {n(C.SEP.area)} מ״ר נוספים ל-{C.SEP.years} שנים, <M v={C.SEP.yearly} /> בסוף כל שנה, במחיר הנפרד. ריבית ל-{pct(C.SEP.rate)}. נרשם נכס והתחייבות חדשים של <M v={C.SEP_L} />, והחכירה הישנה לא משתנה: לא בריבית, לא ביתרות.
+            חברת הסעות חכרה {C.SEP.buses} מיניבוסים ל-{C.SEP.years} שנים, <M v={C.SEP.payment} /> בסוף כל שנה, בריבית תוספתית {pct(C.SEP.rate)}. עברו {C.SEP.passed} שנים, ונשארו {C.SEP_LEFT} תשלומים.
+          </p>
+          <p>
+            עכשיו החברה מוסיפה {C.SEP.extra} מיניבוסים ל-{C.SEP_LEFT} השנים שנשארו, ב-<M v={C.SEP.yearly} /> לשנה על שניהם. מחיר השוק שלהם <M v={C.SEP.market} />, והמחכיר ויתר על <M v={C.SEP.saving} /> כי נחסך לו השיווק. הריבית התוספתית היום {pct(C.SEP.newRate)}.
           </p>
         </Story>
-        <Rule>הארכה של אותו נכס אינה ״תוספת״, גם במחיר שוק. לכן היא אף פעם לא חכירה נפרדת.</Rule>
+        <P>
+          נוסף נכס, והמחיר הוא המחיר הנפרד אחרי תיאום מתאים, ולכן זו חכירה נפרדת. החוזה החדש נמדד לבד, בריבית של היום: <Ltr>{`52,000 × (1 − 1.07^(−4)) ÷ 0.07 = ${n(C.SEP_L)}`}</Ltr>. באקסל: <Ltr>{"=PV(7%;4;-52000)"}</Ltr>.
+        </P>
+        <P>
+          בחוזה הישן הכול נשאר. ההתחייבות: <Ltr>{`=PV(5%;4;-240000) → ${n(C.SEP_OLD_L)}`}</Ltr>. הנכס: 4/7 מהעלות <M v={C.SEP_COST} />, כלומר <M v={C.SEP_OLD_A} />.
+        </P>
+        <Tbl
+          head={["", "החוזה הישן", "החוזה החדש"]}
+          rows={[
+            ["ריבית", pct(C.SEP.rate), pct(C.SEP.newRate)],
+            ["התחייבות", -C.SEP_OLD_L, -C.SEP_L],
+            ["נכס", C.SEP_OLD_A, C.SEP_L],
+          ]}
+        />
+        <JournalEntry
+          title="החוזה החדש"
+          lines={[
+            { account: "נכס זכות שימוש", dr: C.SEP_L },
+            { account: "התחייבות חכירה", cr: C.SEP_L },
+          ]}
+        />
+        <Rule>בטור של החוזה הישן לא השתנה שום מספר, גם הריבית לא.</Rule>
+        <Part title="ואם המחיר נמוך בהרבה ממחיר השוק?">
+          <P>
+            נניח שעל שני המיניבוסים החברה משלמת רק <M v={C.SEP.cheap} /> לשנה, בלי שום חיסכון של המחכיר שמצדיק את זה. הנכס נוסף, אבל התנאי השני לא מתקיים. הנחה כזו היא חלק ממשא ומתן על החוזה כולו, ולכן אי אפשר לנתק את התוספת מהישן.
+          </P>
+          <P>
+            במקרה הזה מודדים מחדש את כל החוזה, 12 מיניבוסים, בריבית של היום, וההפרש הולך לנכס: <Ltr>{`=PV(7%;4;-${C.SEP.payment + C.SEP.cheap}) → ${n(C.SEP_NOT_AFTER)}`}</Ltr>.
+          </P>
+          <Tbl
+            dense
+            head={["", "התחייבות", "נכס"]}
+            rows={[
+              ["לפני", -C.SEP_OLD_L, C.SEP_OLD_A],
+              ["מדידה מחדש", -C.SEP_NOT_CHANGE, C.SEP_NOT_CHANGE],
+            ]}
+            foot={["אחרי", -C.SEP_NOT_AFTER, C.SEP_NOT_ASSET]}
+          />
+          <P>{pct(C.SEP.rate)} נעלם מהספרים, גם על עשרת המיניבוסים הישנים. זה ההבדל הגדול בין שתי הדרכים, ולכן בודקים את המחיר לפני כל חישוב.</P>
+        </Part>
+        <Remember>צריך את שני התנאים יחד, נכס נוסף ומחיר נפרד. חסר אחד מהם, אין חכירה נפרדת.</Remember>
       </>
     ),
     check: quiz("ls-chg-sep", [
@@ -426,81 +680,84 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
       },
     ]),
   },
-  "ls-chg-extend": {
-    lead: "הארכה בתיקון: מודדים את כל מה שנשאר בריבית של היום, וההפרש כנגד הנכס. אין רווח ואין הפסד.",
+  "ls-chg-shrink": {
+    lead: "כשמחזירים שטח עובדים בשני שלבים. קודם מוציאים מהספרים את מה שהוחזר, ורק אז מודדים את מה שנשאר.",
     body: (
       <>
-        <Story icon={<Building />} title="משרדים: לפני התיקון">
+        <Story icon={<Store />} title="אולם תצוגה עם דמי מפתח">
           <p>
-            {n(C.OFFICE.area)} מ״ר ל-{C.OFFICE.years} שנים, <M v={C.OFFICE.payment} /> בסוף כל שנה, ריבית תוספתית {pct(C.OFFICE.rate)}. אחרי {C.OFFICE.passed} שנים, ב-1.1 של שנה {C.OFFICE.passed + 1}, הריבית התוספתית {pct(C.OFFICE.newRate)}.
+            רשת רהיטים חכרה אולם תצוגה של {n(C.SHR.area)} מ״ר ל-{C.SHR.years} שנים, <M v={C.SHR.payment} /> בסוף כל שנה, בריבית תוספתית {pct(C.SHR.rate)}. ביום הראשון היא שילמה גם <M v={C.SHR.key} /> דמי מפתח לחוכר הקודם, עלות ישירה שנכנסה לנכס.
           </p>
           <p>
-            נכס: {C.OFFICE_LEFT}/{C.OFFICE.years} מהעלות <M v={C.OFFICE_COST} />, כלומר <M v={C.OFFICE_A} />. התחייבות: <Ltr>{`=PV(5%;4;-90000) → ${n(C.OFFICE_L)}`}</Ltr>.
+            עברו {C.SHR.passed} שנים, והתשלום של השנה שולם. הצדדים מסכימים שהרשת מחזירה היום {n(C.SHR.returned)} מ״ר, ועל {n(C.SHR.area - C.SHR.returned)} המ״ר שנשארים תשלם <M v={C.SHR.newPayment} /> לשנה. הריבית התוספתית היום {pct(C.SHR.newRate)}.
           </p>
         </Story>
-        <P>הצדדים מסכימים על עוד {C.EXT.extra} שנים, באותם תנאים:</P>
-        <Tbl
-          dense
-          head={["", "התחייבות", "נכס"]}
-          rows={[
-            ["לפני", C.OFFICE_L, C.OFFICE_A],
-            ["מדידה מחדש", C.EXT_CHANGE, C.EXT_CHANGE],
+        <P>
+          <strong>היתרות לפני התיקון.</strong> העלות היא ערך התשלומים ועוד דמי המפתח: <Ltr>{`=PV(6%;8;-100000) + 180000 → ${n(C.SHR_COST)}`}</Ltr>. נשארו 5 מתוך 8 שנים, ולכן הנכס <Ltr>{`${n(C.SHR_COST)} × 5 ÷ 8 = ${n(C.SHR_A)}`}</Ltr>. ההתחייבות: <Ltr>{`=PV(6%;5;-100000) → ${n(C.SHR_L)}`}</Ltr>.
+        </P>
+        <TwoPanel
+          label="שני שלבים. שלב 1, החלק שהוחזר: גורעים מהחוב ומהנכס, וההפרש לרווח או הפסד. שלב 2, החלק שנשאר: מודדים בריבית של היום ובתשלום החדש, וההפרש לנכס"
+          panels={[
+            { title: "שלב 1: מה שהוחזר", steps: ["30% מהחוב יוצאים", "30% מהנכס יוצאים"], verdict: "ההפרש ברווח או הפסד", tone: 4 },
+            { title: "שלב 2: מה שנשאר", steps: ["ריבית של היום", "התשלום החדש"], verdict: "ההפרש בנכס", tone: 3 },
           ]}
-          foot={["אחרי", C.EXT_AFTER, C.OFFICE_A + C.EXT_CHANGE]}
         />
         <P>
-          ההתחייבות אחרי: <Ltr>{`=PV(6%;7;-90000) → ${n(C.EXT_AFTER)}`}</Ltr>.
+          <strong>שלב 1.</strong> החלק שהוחזר נגמר. אין ממנו יותר חוב ואין ממנו יותר זכות שימוש, ולכן שניהם יוצאים לפי היתרות הישנות, בשיעור ההקטנה (<T16 he="סעיף 46(א)" />). ההפרש ביניהם לא שייך לשום שנה עתידית, ולכן הוא נרשם היום.
         </P>
-        <JournalEntry
-          title="יום התיקון"
-          lines={[
-            { account: "נכס זכות שימוש", dr: C.EXT_CHANGE },
-            { account: "התחייבות חכירה", cr: C.EXT_CHANGE },
-          ]}
-        />
-      </>
-    ),
-  },
-  "ls-chg-shrink": {
-    lead: "הקטנת שטח בשני שלבים: קודם מוציאים את מה שנעלם ורושמים רווח או הפסד, ורק אז מודדים את מה שנשאר.",
-    body: (
-      <>
+        <p className="text-[15.5px] font-semibold">יתרה × השטח שהוחזר ÷ כל השטח = הגריעה</p>
         <P>
-          אותם משרדים. התיקון: {n(C.HALF.area)} מ״ר במקום {n(C.OFFICE.area)}, ותשלום של <M v={C.HALF.payment} /> ליתרת התקופה.
+          מהחוב: <Ltr>{`${n(C.SHR_L)} × 300 ÷ 1,000 = ${n(C.SHR_L_OUT)}`}</Ltr>. מהנכס: <Ltr>{`${n(C.SHR_A)} × 300 ÷ 1,000 = ${n(C.SHR_A_OUT)}`}</Ltr>. מהנכס יוצא יותר, ולכן יש הפסד של <M v={C.SHR_LOSS} />.
         </P>
-        <Tbl
-          dense
-          head={["", "התחייבות", "נכס"]}
-          rows={[
-            ["לפני", C.OFFICE_L, C.OFFICE_A],
-            ["שלב 1: גריעת מחצית", -C.HALF_L_OUT, -C.HALF_A_OUT],
-            ["שלב 2: מדידה מחדש", C.HALF_REM, C.HALF_REM],
-          ]}
-          foot={["אחרי", C.HALF_AFTER, C.HALF_ASSET]}
-        />
+        <P>
+          בחוזה רגיל עם תשלום בסוף שנה יוצא בדרך כלל רווח, כי החוב יורד לאט יותר מהנכס. כאן דמי המפתח מנפחים את הנכס, ולכן הכיוון הפוך. אתם מוותרים על 30% מהזכות שעליה שילמתם מראש, והכסף הזה לא חוזר.
+        </P>
         <JournalEntry
           title="שלב 1: גריעה, סעיף 46(א)"
           lines={[
-            { account: "התחייבות חכירה", dr: C.HALF_L_OUT },
-            { account: "נכס זכות שימוש", cr: C.HALF_A_OUT },
-            { account: "רווח מתיקון חכירה", cr: C.HALF_GAIN },
-          ]}
-        />
-        <JournalEntry
-          title="שלב 2: מדידה מחדש, סעיף 45(ג)"
-          lines={[
-            { account: "נכס זכות שימוש", dr: C.HALF_REM },
-            { account: "התחייבות חכירה", cr: C.HALF_REM },
+            { account: "התחייבות חכירה", dr: C.SHR_L_OUT },
+            { account: "הפסד מתיקון חכירה", dr: C.SHR_LOSS },
+            { account: "נכס זכות שימוש", cr: C.SHR_A_OUT },
           ]}
         />
         <P>
-          ההתחייבות בסוף: <Ltr>{`=PV(6%;4;-55000) → ${n(C.HALF_AFTER)}`}</Ltr>. ההפרש בשלב 2 הוא גם הריבית החדשה וגם התשלום החדש.
+          <strong>שלב 2.</strong> נשארו בחוב <Ltr>{`${n(C.SHR_L)} − ${n(C.SHR_L_OUT)} = ${n(C.SHR_KEEP)}`}</Ltr>. עכשיו מודדים אותו לפי מה שסוכם, בריבית של היום: <Ltr>{`78,000 × (1 − 1.08^(−5)) ÷ 0.08 = ${n(C.SHR_AFTER)}`}</Ltr>. באקסל: <Ltr>{"=PV(8%;5;-78000)"}</Ltr>. ההפרש הוא <M v={C.SHR_REM} />, והוא הולך לנכס, כי על השטח הזה הרשת ממשיכה להשתמש.
         </P>
-        <WrongRight
-          label="טעות: לחשב הכול בבת אחת ברווח או הפסד. נכון: הגריעה לרווח או הפסד, והשאר לנכס"
-          wrong={<p>״הנכס וההתחייבות יורדים למספרים החדשים, וכל ההפרש ברווח.״</p>}
-          right={<p>רק החלק שבוטל הולך לרווח או הפסד. שינוי הריבית והתשלום של החלק שנשאר הולך לנכס.</p>}
+        <P>
+          יש בתוך ההפרש שני דברים. על 70% מהתשלום הישן, <M v={C.SHR_SAME_PAY} />, הריבית החדשה לבדה מורידה את החוב ב-<M v={-C.SHR_RATE_EFFECT} />. המחיר הגבוה יותר למ״ר מעלה אותו ב-<M v={C.SHR_PRICE_EFFECT} />. שניהם ביחד הם השורה האחת של המדידה מחדש.
+        </P>
+        <JournalEntry
+          title="שלב 2: מדידה מחדש, סעיף 45(ג)"
+          lines={[
+            { account: "נכס זכות שימוש", dr: C.SHR_REM },
+            { account: "התחייבות חכירה", cr: C.SHR_REM },
+          ]}
         />
+        <Tbl
+          dense
+          head={["", "התחייבות", "נכס", "רווח או הפסד"]}
+          rows={[
+            ["לפני", -C.SHR_L, C.SHR_A, 0],
+            ["שלב 1: גריעת 30%", C.SHR_L_OUT, -C.SHR_A_OUT, C.SHR_LOSS],
+            ["שלב 2: מדידה מחדש", -C.SHR_REM, C.SHR_REM, 0],
+          ]}
+          foot={["אחרי", -C.SHR_AFTER, C.SHR_ASSET, C.SHR_LOSS]}
+        />
+        <P>
+          בכל שורה של תנועה הסכומים מתאפסים, וככה בודקים שלא התבלבלתם. הפחת מעכשיו: <Ltr>{`${n(C.SHR_ASSET)} ÷ ${C.SHR_LEFT} = ${n(C.SHR_DEP)}`}</Ltr>.
+        </P>
+        <Part title="למה הסדר חשוב">
+          <P>
+            נניח שמודדים קודם את כל החוב בריבית החדשה, ורק אז מוציאים 30%: <Ltr>{`=PV(8%;5;-100000) → ${n(C.SHR_WRONG_L)}`}</Ltr>, ו-30% ממנו הם <M v={C.SHR_WRONG_OUT} />. ההפסד יוצא <M v={C.SHR_WRONG_LOSS} /> במקום <M v={C.SHR_LOSS} />.
+          </P>
+          <P>השינוי בריבית הוא מחיר של החלק שנשאר, והוא נכנס בטעות לרווח או הפסד של היום. לכן גורעים לפי היתרות הישנות, לפני שנוגעים בריבית.</P>
+          <WrongRight
+            label="טעות: לחשב הכול בבת אחת ברווח או הפסד. נכון: הגריעה לרווח או הפסד, והשאר לנכס"
+            wrong={<p>״הנכס וההתחייבות יורדים למספרים החדשים, וכל ההפרש ברווח או הפסד.״</p>}
+            right={<p>רק החלק שהוחזר הולך לרווח או הפסד. שינוי הריבית והתשלום של החלק שנשאר הולך לנכס.</p>}
+          />
+        </Part>
+        <Remember>קודם גריעה ורווח או הפסד, אחר כך מדידה מחדש כנגד הנכס.</Remember>
       </>
     ),
     check: quiz("ls-chg-shrink", [
@@ -513,48 +770,95 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
     ]),
   },
   "ls-chg-cut": {
-    lead: "גם קיצור תקופה הוא הקטנת היקף. מהנכס גורעים לפי השנים, ומההתחייבות לפי מה שנשאר בריבית הישנה.",
+    lead: "פחות שנים זה גם פחות חכירה, אז זו אותה הקטנה בשני שלבים. ההבדל הוא בחישוב של כמה יוצא מכל צד.",
     body: (
       <>
+        <Story icon={<Mic />} title="אולפן שמקצר את החוזה">
+          <p>
+            אולפן הקלטות חכר מבנה ל-{C.CUT.years} שנים, <M v={C.CUT.payment} /> בסוף כל שנה, בריבית תוספתית {pct(C.CUT.rate)}. עברו {C.CUT.passed} שנים, ונשארו {C.CUT_WAS_LEFT}.
+          </p>
+          <p>
+            הצדדים מסכימים שהחוזה ייגמר בעוד {C.CUT.left} שנים. המחכיר מתחייב לתקופה קצרה יותר, ולכן מבקש <M v={C.CUT.newPayment} /> לשנה. הריבית התוספתית היום {pct(C.CUT.newRate)}.
+          </p>
+        </Story>
         <P>
-          אותם משרדים. התיקון: מוסיפים {n(C.CUT.extraArea)} מ״ר, אבל נשארות רק {C.CUT.left} שנים, ב-<M v={C.CUT.payment} /> לשנה. המחיר אינו המחיר הנפרד של התוספת, ולכן זו אינה חכירה נפרדת.
+          היתרות לפני התיקון. הנכס: {C.CUT_WAS_LEFT}/{C.CUT.years} מהעלות <M v={C.CUT_COST} />, כלומר <M v={C.CUT_A} />. ההתחייבות: <Ltr>{`=PV(4%;6;-150000) → ${n(C.CUT_L)}`}</Ltr>.
+        </P>
+        <Timeline
+          label={`מתוך ${C.CUT_WAS_LEFT} השנים שנשארו, ${C.CUT.left} נשארות ו-${C.CUT_WAS_LEFT - C.CUT.left} מתבטלות`}
+          title="מה קורה לשנים"
+          from={0}
+          to={C.CUT_WAS_LEFT}
+          ticks={[
+            { at: 0, label: "יום התיקון" },
+            { at: C.CUT.left, label: "הסוף החדש" },
+            { at: C.CUT_WAS_LEFT, label: "הסוף הישן" },
+          ]}
+          spans={[
+            { from: 0, to: C.CUT.left, label: "נשארות", tone: 3 },
+            { from: C.CUT.left, to: C.CUT_WAS_LEFT, label: "מתבטלות", tone: "danger" },
+          ]}
+        />
+        <P>
+          <strong>מהנכס גורעים לפי השנים.</strong> הנכס מתכלה בקו ישר, כל שנה באותו סכום, ולכן {C.CUT_WAS_LEFT - C.CUT.left} שנים שבוטלו הן {C.CUT_WAS_LEFT - C.CUT.left}/{C.CUT_WAS_LEFT} מהיתרה: <Ltr>{`${n(C.CUT_A)} × 4 ÷ 6 = ${n(C.CUT_A_OUT)}`}</Ltr>.
+        </P>
+        <P>
+          <strong>מהחוב אי אפשר לגרוע באותו אחוז.</strong> החוב בנוי מתשלומים מהוונים, והשנים לא שוות בו אותו דבר. התשלום של בעוד שנה שווה היום יותר מהתשלום של בעוד שש שנים. תראו כמה שווה כל תשלום, בריבית הישנה:
         </P>
         <Tbl
-          dense
-          head={["", "התחייבות", "נכס"]}
-          rows={[
-            ["לפני", C.OFFICE_L, C.OFFICE_A],
-            [`גריעה: נשארו ${C.CUT.left} מ-${C.OFFICE_LEFT}`, -C.CUT_L_OUT, -C.CUT_A_OUT],
-            [`ריבית חדשה ${pct(C.OFFICE.newRate)}`, C.CUT_M1, C.CUT_M1],
-            ["תשלום חדש ושטח נוסף", C.CUT_M2, C.CUT_M2],
-          ]}
-          foot={["אחרי", C.CUT_R2, C.CUT_ASSET]}
+          head={["התשלום", "חישוב", "שווה היום"]}
+          rows={C.CUT_ROWS.map((y) => [`בעוד ${y.year === 1 ? "שנה" : y.year === 2 ? "שנתיים" : `${y.year} שנים`}: ${y.stays ? "נשאר" : "מתבטל"}`, <Ltr key={y.year}>{`150,000 ÷ 1.04^${y.year}`}</Ltr>, y.value])}
+          foot={["החוב", "", C.CUT_L]}
         />
-        <Tbl
-          dense
-          head={["השורה", "מאיפה"]}
-          rows={[
-            ["התחייבות אחרי גריעה", <Ltr key="a">{`=PV(5%;2;-90000) → ${n(C.CUT_KEEP)}`}</Ltr>],
-            ["אחרי ריבית חדשה", <Ltr key="b">{`=PV(6%;2;-90000) → ${n(C.CUT_R1)}`}</Ltr>],
-            ["אחרי תשלום חדש", <Ltr key="c">{`=PV(6%;2;-110000) → ${n(C.CUT_R2)}`}</Ltr>],
-          ]}
-        />
+        <P>
+          לכן מחשבים כמה שווים 2 התשלומים שנשארים, והשאר יוצא. נשאר בחוב: <Ltr>{`=PV(4%;2;-150000) → ${n(C.CUT_KEEP)}`}</Ltr>. יוצא מהחוב: <Ltr>{`${n(C.CUT_L)} − ${n(C.CUT_KEEP)} = ${n(C.CUT_L_OUT)}`}</Ltr>. הריבית כאן עדיין הישנה, כי אנחנו מסיימים את החלק שבוטל לפי הספרים.
+        </P>
+        <P>
+          יוצא מהחוב יותר ממה שיוצא מהנכס, ולכן יש רווח: <Ltr>{`${n(C.CUT_L_OUT)} − ${n(C.CUT_A_OUT)} = ${n(C.CUT_GAIN)}`}</Ltr>.
+        </P>
         <JournalEntry
-          title="גריעה"
+          title="שלב 1: גריעה"
           lines={[
             { account: "התחייבות חכירה", dr: C.CUT_L_OUT },
             { account: "נכס זכות שימוש", cr: C.CUT_A_OUT },
             { account: "רווח מתיקון חכירה", cr: C.CUT_GAIN },
           ]}
         />
+        <P>
+          <strong>שלב 2.</strong> מה שנשאר נמדד לפי התנאים החדשים והריבית של היום: <Ltr>{`165,000 × (1 − 1.06^(−2)) ÷ 0.06 = ${n(C.CUT_AFTER)}`}</Ltr>. באקסל: <Ltr>{"=PV(6%;2;-165000)"}</Ltr>. ההפרש מול <M v={C.CUT_KEEP} /> הוא <M v={C.CUT_REM} />, והוא הולך לנכס.
+        </P>
         <JournalEntry
-          title="מדידה מחדש"
+          title="שלב 2: מדידה מחדש"
           lines={[
-            { account: "נכס זכות שימוש", dr: C.CUT_M1 + C.CUT_M2 },
-            { account: "התחייבות חכירה", cr: C.CUT_M1 + C.CUT_M2 },
+            { account: "נכס זכות שימוש", dr: C.CUT_REM },
+            { account: "התחייבות חכירה", cr: C.CUT_REM },
           ]}
         />
-        <Remember>שתי מדידות מחדש הן שני שלבים של אותו דבר. אפשר להציג אותן בשורה אחת, כמו בפקודה.</Remember>
+        <Tbl
+          dense
+          head={["", "התחייבות", "נכס", "רווח או הפסד"]}
+          rows={[
+            ["לפני", -C.CUT_L, C.CUT_A, 0],
+            ["שלב 1: גריעה", C.CUT_L_OUT, -C.CUT_A_OUT, -C.CUT_GAIN],
+            ["שלב 2: מדידה מחדש", -C.CUT_REM, C.CUT_REM, 0],
+          ]}
+          foot={["אחרי", -C.CUT_AFTER, C.CUT_ASSET, -C.CUT_GAIN]}
+        />
+        <P>
+          הפחת מעכשיו: <Ltr>{`${n(C.CUT_ASSET)} ÷ ${C.CUT.left} = ${n(C.CUT_DEP)}`}</Ltr>.
+        </P>
+        <Part title="ואם באותו תיקון מוסיפים גם חדר?">
+          <P>
+            נניח שהאולפן מקבל גם חדר הקלטות נוסף, והתשלום הכולל לשנתיים יהיה <M v={C.CUT.plusPayment} />, מחיר שאינו המחיר הנפרד של החדר. בגלל המחיר התוספת אינה חכירה נפרדת, וגם הקיצור עדיין כאן.
+          </P>
+          <P>
+            שלב 1 לא משתנה בכלל, כי הוא מטפל רק בשנים שבוטלו. החדר נכנס לשלב 2, דרך התשלום החדש: <Ltr>{`=PV(6%;2;-190000) → ${n(C.CUT_PLUS_AFTER)}`}</Ltr>. ההפרש <M v={C.CUT_PLUS_REM} /> הולך לנכס, שמגיע ל-<M v={C.CUT_PLUS_ASSET} />.
+          </P>
+        </Part>
+        <P>
+          כל זה נכון לתיקון שהצדדים הסכימו עליו. אם התקופה מתקצרת בהערכה מחדש, למשל כשאופציית הארכה שנספרה כבר לא ודאית, אין שלב גריעה ואין רווח. כל ההפרש הולך לנכס, בריבית מעודכנת (<T16 he="סעיפים 20, 39, 40(א)" />).
+        </P>
+        <Remember>מהנכס גורעים לפי השנים. מהחוב גורעים לפי מה שנשאר בריבית הישנה.</Remember>
       </>
     ),
     check: quiz("ls-chg-cut", [
@@ -566,8 +870,102 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
       },
     ]),
   },
+  "ls-chg-extend": {
+    lead: "עוד שנים על אותו נכס לא מוסיפות נכס, ולכן אין כאן חכירה נפרדת, גם במחיר שוק. שום דבר גם לא יוצא, ולכן אין רווח או הפסד.",
+    body: (
+      <>
+        <Story icon={<Pill />} title="בית מרקחת שנשאר, ומשלם פחות">
+          <p>
+            בית מרקחת חכר חנות ל-{C.EXT.years} שנים, <M v={C.EXT.payment} /> בסוף כל שנה, בריבית תוספתית {pct(C.EXT.rate)}. עברו {C.EXT.passed} שנים, ונשארו {C.EXT_LEFT} תשלומים.
+          </p>
+          <p>
+            הצדדים מסכימים על {C.EXT.extra} שנים נוספות, ובתמורה להתחייבות הארוכה השכירות יורדת ל-<M v={C.EXT.newPayment} /> לשנה, מהיום ועד הסוף. הריבית התוספתית היום {pct(C.EXT.newRate)}.
+          </p>
+        </Story>
+        <P>
+          עוברים על שתי השאלות. נוסף נכס? לא, זו אותה חנות, ולכן אין חכירה נפרדת, גם אם המחיר הוא מחיר שוק. ההיקף קטן? לא, יש יותר זמן. נשארה הדרך השלישית, מדידה מחדש כנגד הנכס (<T16 he="סעיפים 45, 46(ב)" />).
+        </P>
+        <Timeline
+          label="שישה תשלומים אחרי התיקון, שלושה במקום אלה שהיו ושלושה חדשים, כולם מהוונים בריבית של היום"
+          title="מה מהוונים ביום התיקון"
+          from={0}
+          to={C.EXT_LEFT + C.EXT.extra}
+          ticks={[
+            { at: 0, label: "יום התיקון" },
+            { at: C.EXT_LEFT, label: "הסוף הישן" },
+            { at: C.EXT_LEFT + C.EXT.extra, label: "הסוף החדש" },
+          ]}
+          spans={[
+            { from: 0, to: C.EXT_LEFT, label: "3 שהיו, בסכום חדש", tone: 3 },
+            { from: C.EXT_LEFT, to: C.EXT_LEFT + C.EXT.extra, label: "3 חדשים", tone: 1 },
+          ]}
+          note={`כולם ב-${pct(C.EXT.newRate)}, גם אלה שכבר היו בחוב.`}
+        />
+        <P>
+          למה גם השלושה שכבר היו בחוב עוברים לריבית החדשה? כי בתיקון שאינו חכירה נפרדת מודדים מחדש את כל מה שנשאר לשלם בריבית מעודכנת, בין אם המחיר השתנה ובין אם לא (<T16 he="סעיף 45(ג)" />).
+        </P>
+        <Tbl
+          head={["מה בחוב", "באקסל", "החוב"]}
+          rows={[
+            ["לפני: 3 × 84,000, ב-4%", <Ltr key="a">{"=PV(4%;3;-84000)"}</Ltr>, C.EXT_L],
+            ["אחרי: 6 × 78,000, ב-6%", <Ltr key="b">{"=PV(6%;6;-78000)"}</Ltr>, C.EXT_AFTER],
+          ]}
+        />
+        <P>
+          יתרת הנכס לפני התיקון: 3/7 מהעלות <M v={C.EXT_COST} />, כלומר <M v={C.EXT_A} />. ההפרש בחוב הולך לנכס, כי תמורתו קיבלתם עוד שלוש שנות שימוש.
+        </P>
+        <Tbl
+          dense
+          head={["", "התחייבות", "נכס"]}
+          rows={[
+            ["לפני", -C.EXT_L, C.EXT_A],
+            ["מדידה מחדש", -C.EXT_CHANGE, C.EXT_CHANGE],
+          ]}
+          foot={["אחרי", -C.EXT_AFTER, C.EXT_ASSET]}
+        />
+        <JournalEntry
+          title="יום התיקון"
+          lines={[
+            { account: "נכס זכות שימוש", dr: C.EXT_CHANGE },
+            { account: "התחייבות חכירה", cr: C.EXT_CHANGE },
+          ]}
+        />
+        <P>
+          הפחת מעכשיו: <Ltr>{`${n(C.EXT_ASSET)} ÷ 6 = ${n(C.EXT_DEP)}`}</Ltr>, במקום <Ltr>{`${n(C.EXT_A)} ÷ 3 = ${n(C.EXT_DEP_OLD)}`}</Ltr>.
+        </P>
+        <Part title="ואם רק המחיר יורד?">
+          <P>
+            נניח שבית המרקחת לא מאריך. המחכיר פשוט מסכים לרדת ל-<M v={C.EXT.lowPayment} /> ב-3 השנים שנשארו. גם זה תיקון, כי התמורה השתנתה בדבר שלא היה כתוב בחוזה. ההיקף לא קטן, כי השטח והזמן נשארו.
+          </P>
+          <P>
+            ההתחייבות אחרי: <Ltr>{`=PV(6%;3;-72000) → ${n(C.LOW_AFTER)}`}</Ltr>. החוב יורד ב-<M v={-C.LOW_CHANGE} />, וזה מפתה לרשום רווח. הירידה הולכת לנכס, כי מה שקרה הוא שהשימוש בשלוש השנים הבאות נעשה זול יותר, והרווח ייכנס דרך פחת נמוך יותר בשנים האלה.
+          </P>
+          <Tbl
+            dense
+            head={["", "התחייבות", "נכס"]}
+            rows={[
+              ["לפני", -C.EXT_L, C.EXT_A],
+              ["מדידה מחדש", -C.LOW_CHANGE, C.LOW_CHANGE],
+            ]}
+            foot={["אחרי", -C.LOW_AFTER, C.LOW_ASSET]}
+          />
+          <JournalEntry
+            title="ירידה במחיר בלבד"
+            lines={[
+              { account: "התחייבות חכירה", dr: -C.LOW_CHANGE },
+              { account: "נכס זכות שימוש", cr: -C.LOW_CHANGE },
+            ]}
+          />
+          <P>
+            הפחת מעכשיו: <Ltr>{`${n(C.LOW_ASSET)} ÷ 3 = ${n(C.LOW_DEP)}`}</Ltr>.
+          </P>
+        </Part>
+        <Remember>כשהיקף החכירה לא קטן, אין רווח ואין הפסד, גם כשהחוב יורד. כל ההפרש נכנס לנכס.</Remember>
+      </>
+    ),
+  },
   "ls-chg-shop": {
-    lead: "דוגמה שלמה, בשתי הנחות נפרדות: אותה חנות קטנה, ואותה חנות גדלה.",
+    lead: "אותה חנות בשתי הנחות נפרדות. פעם היא קטנה ופעם היא גדלה, ובכל פעם שואלים את אותן שתי שאלות על תיקון.",
     body: (
       <>
         <Story icon={<Store />} title="חנות של 600 מ״ר">
@@ -575,7 +973,7 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
             ב-1.1 של שנה 1 חברה חכרה חנות של {n(C.SHOP.area)} מ״ר ל-{C.SHOP.years} שנים, כולל אופציה ודאית. התשלום <M v={C.SHOP.payment} /> בסוף כל שנה, כלומר {C.SHOP.perMeter} ש״ח למ״ר, ועוד 2% מהכנסות החנות. ריבית גלומה {pct(C.SHOP.rate)}, ידועה לחברה. הכנסות שנה 1: <M v={C.SHOP.sales} />. ב-31.12, אחרי התשלום, הריבית הגלומה {pct(C.SHOP.newRate)}.
           </p>
           <p className="font-semibold">
-            הנחה א׳: השטח יורד ל-{n(C.SHOP.half)} מ״ר. הנחה ב׳: השטח עולה ב-{n(C.SHOP.half)} מ״ר, ב-90% ממחיר השוק, שאינו המחיר הנפרד. נדרש: דוחות לשנה 1.
+            הנחה א׳: השטח יורד ל-{n(C.SHOP.half)} מ״ר. הנחה ב׳: השטח עולה ב-{n(C.SHOP.half)} מ״ר, ב-90% ממחיר השוק, שהוא {C.SHOP.perMeter} ש״ח למ״ר. מחיר כזה אינו המחיר הנפרד. נדרש: דוחות לשנה 1.
           </p>
         </Story>
         <FullSteps
@@ -584,33 +982,42 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
             {
               title: "משותף, עד 31.12 לפני התיקון",
               body: (
-                <Tbl
-                  dense
-                  head={["", "סכום"]}
-                  rows={[
-                    ["התחייבות ונכס ב-1.1", C.SHOP_COST],
-                    ["הוצאות פחת: 6 שנים", C.SHOP_DEP],
-                    ["הוצאות מימון", C.SHOP_INT],
-                    ["התחייבות לפני התיקון", C.SHOP_BEFORE],
-                    ["נכס לפני התיקון", C.SHOP_A],
-                    ["הוצאה לפי הכנסות: 2%", C.SHOP_VAR],
-                  ]}
-                />
+                <>
+                  <p>
+                    <Ltr>{`=PV(5%;6;-240000) → ${n(C.SHOP_COST)}`}</Ltr>. התשלום לפי הכנסות אינו בחוב, והוא הוצאה של השנה: <Ltr>{`${n(C.SHOP.sales)} × 2% = ${n(C.SHOP_VAR)}`}</Ltr>.
+                  </p>
+                  <Tbl
+                    dense
+                    head={["", "התחייבות", "נכס"]}
+                    rows={[
+                      ["1.1", -C.SHOP_COST, C.SHOP_COST],
+                      ["ריבית", -C.SHOP_INT, 0],
+                      ["תשלום", C.SHOP.payment, 0],
+                      ["פחת: 6 שנים", 0, -C.SHOP_DEP],
+                    ]}
+                    foot={["לפני התיקון", -C.SHOP_BEFORE, C.SHOP_A]}
+                  />
+                </>
               ),
             },
             {
               title: "הנחה א׳: הקטנה",
               body: (
-                <Tbl
-                  dense
-                  head={["", "התחייבות", "נכס"]}
-                  rows={[
-                    ["לפני", C.SHOP_BEFORE, C.SHOP_A],
-                    ["גריעת מחצית", -(C.SHOP_BEFORE - C.SHOP_KEEP), -(C.SHOP_A - C.SHOP_A_KEEP)],
-                    ["מדידה מחדש ב-6%", C.SHOP_REM, C.SHOP_REM],
-                  ]}
-                  foot={["אחרי", C.SHOP_AFTER, C.SHOP_ASSET]}
-                />
+                <>
+                  <p>
+                    קודם יוצאת מחצית משתי היתרות, וההפרש הוא הרווח: <Ltr>{`${n(C.SHOP_BEFORE - C.SHOP_KEEP)} − ${n(C.SHOP_A - C.SHOP_A_KEEP)} = ${n(C.SHOP_GAIN)}`}</Ltr>. אחר כך מודדים את מה שנשאר: <Ltr>{`=PV(6%;5;-120000) → ${n(C.SHOP_AFTER)}`}</Ltr>.
+                  </p>
+                  <Tbl
+                    dense
+                    head={["", "התחייבות", "נכס"]}
+                    rows={[
+                      ["לפני", -C.SHOP_BEFORE, C.SHOP_A],
+                      ["גריעת מחצית", C.SHOP_BEFORE - C.SHOP_KEEP, -(C.SHOP_A - C.SHOP_A_KEEP)],
+                      ["מדידה מחדש ב-6%", -C.SHOP_REM, C.SHOP_REM],
+                    ]}
+                    foot={["אחרי", -C.SHOP_AFTER, C.SHOP_ASSET]}
+                  />
+                </>
               ),
             },
             {
@@ -624,10 +1031,10 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
                     dense
                     head={["", "התחייבות", "נכס"]}
                     rows={[
-                      ["לפני", C.SHOP_BEFORE, C.SHOP_A],
-                      ["מדידה מחדש ב-6%", C.SHOP_B_CH, C.SHOP_B_CH],
+                      ["לפני", -C.SHOP_BEFORE, C.SHOP_A],
+                      ["מדידה מחדש ב-6%", -C.SHOP_B_CH, C.SHOP_B_CH],
                     ]}
-                    foot={["אחרי", C.SHOP_B_AFTER, C.SHOP_B_ASSET]}
+                    foot={["אחרי", -C.SHOP_B_AFTER, C.SHOP_B_ASSET]}
                   />
                 </>
               ),
@@ -645,8 +1052,8 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
                     ["רווח מהקטנה", -C.SHOP_GAIN, 0],
                     ["סך ההוצאות נטו", C.SHOP_TOTAL, C.SHOP_B_TOTAL],
                     ["נכס זכות שימוש, נטו", C.SHOP_ASSET, C.SHOP_B_ASSET],
-                    ["התחייבות, שוטפת", C.SHOP_AFTER - C.SHOP_NC, C.SHOP_B_AFTER - C.SHOP_B_NC],
-                    ["התחייבות, לא שוטפת", C.SHOP_NC, C.SHOP_B_NC],
+                    ["התחייבות, שוטפת", -(C.SHOP_AFTER - C.SHOP_NC), -(C.SHOP_B_AFTER - C.SHOP_B_NC)],
+                    ["התחייבות, לא שוטפת", -C.SHOP_NC, -C.SHOP_B_NC],
                   ]}
                 />
               ),
@@ -696,13 +1103,13 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
                     dense
                     head={["", "התחייבות", "נכס"]}
                     rows={[
-                      ["1.1", C.STORE_COST, C.STORE_COST],
-                      ["ריבית", C.STORE_INT, 0],
-                      ["תשלום: 100,000 × 103 ÷ 100", -C.STORE_PAID, 0],
+                      ["1.1", -C.STORE_COST, C.STORE_COST],
+                      ["ריבית", -C.STORE_INT, 0],
+                      ["תשלום: 100,000 × 103 ÷ 100", C.STORE_PAID, 0],
                       ["פחת: 10 שנים", 0, -C.STORE_DEP],
-                      ["מדידה מחדש", C.STORE_CH, C.STORE_CH],
+                      ["מדידה מחדש", -C.STORE_CH, C.STORE_CH],
                     ]}
-                    foot={["31.12", C.STORE_AFTER, C.STORE_ROU]}
+                    foot={["31.12", -C.STORE_AFTER, C.STORE_ROU]}
                   />
                 ),
               },
@@ -725,15 +1132,15 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
                       ["הוצאות מימון", C.STORE_INT],
                       ["הוצאות לפי הכנסות", C.STORE_VAR],
                       ["נכס זכות שימוש, נטו", C.STORE_ROU],
-                      ["התחייבות, שוטפת", C.STORE_AFTER - C.STORE_NC],
-                      ["התחייבות, לא שוטפת", C.STORE_NC],
+                      ["התחייבות, שוטפת", -(C.STORE_AFTER - C.STORE_NC)],
+                      ["התחייבות, לא שוטפת", -C.STORE_NC],
                     ]}
                   />
                 ),
               },
               {
                 title: "מלכודת נפוצה",
-                body: <p>לשלם 100,000 ב-31.12. התשלום של אותו יום כבר לפי המדד החדש, וההפרש עובר דרך המדידה מחדש, ולכן הוא לא הוצאה.</p>,
+                body: <p>לשלם 100,000 ב-31.12. התשלום של אותו יום כבר לפי המדד החדש. נוסח התקן לא אומר לאן הולך ההפרש, ובקורס הזה הוא עובר דרך המדידה מחדש, ולכן הוא לא הוצאה.</p>,
               },
             ]}
           />
@@ -753,7 +1160,7 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
     lead: "הפתרון הבא כולל שלוש טעויות נפוצות. מצאו אותן.",
     body: (
       <Story icon={<Search />} title="הפתרון של סטודנטית">
-        <p>הנתונים: חכירה צמודה למדד. בסוף שנה המדד עלה, והריבית התוספתית עלתה מ-5% ל-7%. באותו יום הצדדים גם הסכימו להקטין את השטח ב-20%.</p>
+        <p>הנתונים: חכירה צמודה למדד. בסוף שנה המדד עלה, והריבית התוספתית עלתה מ-5% ל-7%. חצי שנה אחר כך הצדדים הסכימו להקטין את השטח ב-20%.</p>
         <p>הפתרון: ״במדידה מחדש בגלל המדד השתמשתי ב-7%. את ההפרש הגדול רשמתי כהוצאת מימון. בהקטנה מדדתי קודם מחדש, ורק אחר כך גרעתי 20%.״</p>
       </Story>
     ),
@@ -762,19 +1169,19 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
         q: "מה הטעות בריבית של המדד?",
         options: ["מדד נמדד בריבית הישנה: 5%", "צריך להשתמש בממוצע", "צריך לעדכן ל-8%", "אין טעות"],
         answer: 0,
-        why: "סעיף 43.",
+        why: "בשינוי מדד הריבית לא משתנה, גם אם היום הייתם לווים ביוקר יותר (סעיף 43).",
       },
       {
         q: "מה הטעות ברישום ההפרש?",
         options: ["ההפרש מתאים את הנכס, ולא הוצאת מימון", "צריך לרשום אותו כהכנסה", "לא רושמים אותו", "אין טעות"],
         answer: 0,
-        why: "סעיף 39.",
+        why: "הפרש במדידה מחדש מתאים את הנכס. הוצאת מימון היא רק הריבית של התקופה (סעיף 39).",
       },
       {
         q: "מה הטעות בסדר של ההקטנה?",
         options: ["קודם גריעה ורווח או הפסד, ורק אז מדידה מחדש", "קודם מחשבים פחת שנתי מחדש", "מקטינים רק את הנכס", "אין טעות"],
         answer: 0,
-        why: "סעיף 46(א) מטפל בחלק שבוטל לפני השאר.",
+        why: "קודם מטפלים בחלק שבוטל, על היתרות הישנות (סעיף 46(א)), ורק אז בכל השאר.",
       },
     ]),
   },
@@ -803,7 +1210,7 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
               steps={[
                 {
                   title: "כמה חכירות",
-                  body: <p>כל קומה ניתנת להשכרה בנפרד, ולכן כל קומה היא רכיב חכירה נפרד (ב32). מטפלים בכל קומה לפי מה שקרה לה.</p>,
+                  body: <p>אפשר להפיק מכל קומה הטבה לבד, והקומות לא תלויות זו בזו, ולכן כל קומה היא רכיב חכירה נפרד (ב32). מטפלים בכל קומה לפי מה שקרה לה.</p>,
                 },
                 {
                   title: "היתרות לפני, לכל קומה",
@@ -822,11 +1229,11 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
                         dense
                         head={["", "התחייבות", "נכס"]}
                         rows={[
-                          ["לפני", C.M_L, C.M_A],
-                          ["שלב 1: גריעה", -C.M_TOP_L_OUT, -C.M_TOP_A_OUT],
-                          ["שלב 2: 8% ותשלום חדש", C.M_TOP_REM, C.M_TOP_REM],
+                          ["לפני", -C.M_L, C.M_A],
+                          ["שלב 1: גריעה", C.M_TOP_L_OUT, -C.M_TOP_A_OUT],
+                          ["שלב 2: 8% ותשלום חדש", -C.M_TOP_REM, C.M_TOP_REM],
                         ]}
-                        foot={["אחרי", C.M_TOP_AFTER, C.M_TOP_ASSET]}
+                        foot={["אחרי", -C.M_TOP_AFTER, C.M_TOP_ASSET]}
                       />
                       <JournalEntry
                         title="שלב 1"
@@ -855,10 +1262,10 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
                         dense
                         head={["", "התחייבות", "נכס"]}
                         rows={[
-                          ["לפני: 3 קומות", C.M_REST_L, C.M_REST_A],
-                          ["מדידה מחדש", C.M_REST_CH, C.M_REST_CH],
+                          ["לפני: 3 קומות", -C.M_REST_L, C.M_REST_A],
+                          ["מדידה מחדש", -C.M_REST_CH, C.M_REST_CH],
                         ]}
-                        foot={["אחרי", C.M_REST_AFTER, C.M_REST_ASSET]}
+                        foot={["אחרי", -C.M_REST_AFTER, C.M_REST_ASSET]}
                       />
                       <p>
                         <Ltr>{`=PV(8%;6;-210000) × 3 → ${n(C.M_REST_AFTER)}`}</Ltr>

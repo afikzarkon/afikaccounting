@@ -5,32 +5,69 @@ import { ask, askNumber, COURSE, COURSE_HREF, fmt, type LeaseQuestion } from "..
 
 const r = Math.round;
 
-/** The present value screen: four payments at each year's end. */
-export const PV_EX = { payment: 30_000, years: 4, rate: 0.07 };
+/** The opening case: a forklift, three payments at each year's end. It carries the first two screens; after that every rule gets a case of its own. */
+export const PV_EX = { payment: 30_000, years: 3, rate: 0.07, finalAmount: 5_000, otherRate: 0.05 };
 export const PV_EX_END = pvEnd(PV_EX.rate, PV_EX.years, PV_EX.payment);
-export const PV_EX_GROSS = pvStart(PV_EX.rate, PV_EX.years, PV_EX.payment);
-export const PV_EX_NET = PV_EX_GROSS - PV_EX.payment;
+export const PV_EX_ROWS = [1, 2, 3].map((y) => ({ year: y, value: PV_EX.payment / (1 + PV_EX.rate) ** y }));
+export const PV_EX_WITH_FINAL = pvEnd(PV_EX.rate, PV_EX.years, PV_EX.payment, PV_EX.finalAmount);
+export const PV_EX_OTHER_RATE = pvEnd(PV_EX.otherRate, PV_EX.years, PV_EX.payment);
 
-/** The guarantee screen. */
-export const GUAR = { payment: 26_000, years: 5, rate: 0.06, guarantee: 20_000, expected: 12_000 };
+/** A packing machine paid at the start of each year. */
+export const START_EX = { payment: 60_000, years: 3, rate: 0.06 };
+export const START_GROSS = pvStart(START_EX.rate, START_EX.years, START_EX.payment);
+export const START_NET = START_GROSS - START_EX.payment;
+
+/** A production line on its first day: index-linked, at today's index. */
+export const INDEX_EX = { payment: 40_000, years: 8, rate: 0.06, index: 104, laterIndex: 106 };
+export const INDEX_L = pvEnd(INDEX_EX.rate, INDEX_EX.years, INDEX_EX.payment);
+
+/** A shop's rent with a floor: the floor is what can't be avoided. */
+export const FLOOR = { floor: 60_000, share: 0.03, sales: 2_500_000 };
+export const FLOOR_SHARE = FLOOR.sales * FLOOR.share;
+
+/** The residual's case: a bus that goes back after five years, a guarantee below what it should fetch, and the same contract when the forecast falls below the guarantee. */
+export const GUAR = { payment: 60_000, years: 5, rate: 0.06, guarantee: 120_000, residual: 150_000, expected: 90_000 };
+export const GUAR_UNGUARANTEED = GUAR.residual - GUAR.guarantee;
 export const GUAR_SHORTFALL = GUAR.guarantee - GUAR.expected;
+export const GUAR_SHORTFALL_PV = GUAR_SHORTFALL / (1 + GUAR.rate) ** GUAR.years;
 export const GUAR_WITH = pvEnd(GUAR.rate, GUAR.years, GUAR.payment, GUAR_SHORTFALL);
 export const GUAR_WITHOUT = pvEnd(GUAR.rate, GUAR.years, GUAR.payment);
+/** What the bus may turn out to be worth on the day it returns, and who gets what. */
+export const GUAR_LAST_DAY = [170_000, GUAR.guarantee, GUAR.expected].map((worth) => {
+  const topUp = Math.max(GUAR.guarantee - worth, 0);
+  return { worth, topUp, lessorGets: worth + topUp };
+});
 
-/** The implicit rate screen: the same lease, from a lessor who is a dealer and from one who isn't. */
-export const IMPLICIT = { fairValue: 150_000, lessorCosts: 4_000, payment: 30_000, years: 5, guaranteed: 25_000, residual: 32_000 };
-export const IMPLICIT_RATE = rateFor(IMPLICIT.fairValue + IMPLICIT.lessorCosts, IMPLICIT.years, IMPLICIT.payment, IMPLICIT.residual);
+/** The implicit rate, built up one fact at a time on a cutting machine: each step adds a fact and the rate answers. */
+export const IMPLICIT = { fairValue: 235_000, lessorCosts: 5_508, payment: 50_000, years: 5, residual: 40_000, guaranteed: 25_000 };
+export const IMPLICIT_RATE_BARE = rateFor(IMPLICIT.fairValue, IMPLICIT.years, IMPLICIT.payment);
+/** With the machine coming back; also the rate of a lessor who is a dealer, whose costs don't count. */
 export const IMPLICIT_RATE_DEALER = rateFor(IMPLICIT.fairValue, IMPLICIT.years, IMPLICIT.payment, IMPLICIT.residual);
+export const IMPLICIT_RATE = rateFor(IMPLICIT.fairValue + IMPLICIT.lessorCosts, IMPLICIT.years, IMPLICIT.payment, IMPLICIT.residual);
 export const IMPLICIT_LIABILITY = pvEnd(IMPLICIT_RATE, IMPLICIT.years, IMPLICIT.payment);
-export const IMPLICIT_LIABILITY_DEALER = pvEnd(IMPLICIT_RATE_DEALER, IMPLICIT.years, IMPLICIT.payment);
 
-/** First worked example: a warehouse paid in advance, with costs the lessor partly covers and a renovation that is no incentive. */
-export const WORK1 = { payment: 42_000, years: 8, rate: 0.055, previousTenant: 12_000, lawyer: 6_000, reimbursed: 6_000, renovation: 9_000 };
-export const WORK1_L = lessee({ payment: WORK1.payment, years: WORK1.years, rate: WORK1.rate, timing: "start", directCosts: WORK1.previousTenant + WORK1.lawyer, incentives: WORK1.reimbursed });
+/** First worked example: a shop in a mall. A pile of items to sort first: an incentive received, an incentive still to come, a broker, a manager's salary and the mall's own air conditioning. */
+export const WORK1 = { payment: 48_000, years: 6, rate: 0.05, incentiveNow: 8_000, incentiveLater: 12_000, broker: 7_000, manager: 4_000, lessorWorks: 25_000 };
+export const WORK1_GROSS = pvEnd(WORK1.rate, WORK1.years, WORK1.payment);
+export const WORK1_LATER_PV = WORK1.incentiveLater / (1 + WORK1.rate);
+export const WORK1_L = { liability: WORK1_GROSS - WORK1_LATER_PV, cost: WORK1_GROSS - WORK1_LATER_PV - WORK1.incentiveNow + WORK1.broker };
 
-/** Second worked example: a purchase option that will be used, and an incentive that comes as a free year of insurance. */
-export const WORK2 = { payment: 64_000, years: 4, rate: 0.06, option: 12_000, insurance: 3_000, fees: 2_000 };
-export const WORK2_L = lessee({ payment: WORK2.payment, years: WORK2.years, rate: WORK2.rate, timing: "start", finalAmount: WORK2.option, incentives: WORK2.insurance, directCosts: WORK2.fees });
+/** Second worked example: a printing machine with rising payments and a purchase option that will be used, plus a fee per copy that stays out. Lesson 4 follows it to the statements. */
+export const WORK2 = { payments: [50_000, 50_000, 70_000, 70_000], rate: 0.06, option: 15_000, worthAtEnd: 60_000, life: 7, perThousand: 4, copies: [1_500_000, 2_000_000, 1_750_000, 1_000_000] };
+export const WORK2_YEARS = WORK2.payments.length;
+export const WORK2_ROWS = WORK2.payments.map((amount, i) => ({ year: i + 1, amount, value: amount / (1 + WORK2.rate) ** (i + 1) }));
+export const WORK2_OPTION_PV = WORK2.option / (1 + WORK2.rate) ** WORK2_YEARS;
+const work2Liability = WORK2_ROWS.reduce((sum, y) => sum + y.value, WORK2_OPTION_PV);
+export const WORK2_L = { liability: work2Liability, cost: work2Liability };
+
+/** An incentive in kind: the lessor pays a security firm for two years on the lessee's behalf. */
+export const INKIND = { liability: 200_000, service: 6_000, coverYears: 2 };
+export const INKIND_COST = INKIND.liability - INKIND.service;
+export const INKIND_YEARLY = INKIND.service / INKIND.coverYears;
+
+/** Restoring a site at the end: the estimate, and what it is worth today. */
+export const RESTORE_EX = { amount: 18_000, years: 5, rate: 0.04 };
+export const RESTORE_EX_PV = RESTORE_EX.amount / (1 + RESTORE_EX.rate) ** RESTORE_EX.years;
 
 /** The closing question. */
 export const MASTER = { payment: 90_000, years: 6, optionYears: 2, optionPayment: 95_000, rate: 0.05, prepaid: 15_000, incentive: 10_000, broker: 8_000, lawyer: 4_000, manager: 3_000, restore: 40_000, restoreRate: 0.04, sales: 1 };
@@ -353,7 +390,7 @@ export const MEASURE: StudyModule = {
     { id: "ls-meas-what", title: "מה נכנס לתשלומי החכירה" },
     { id: "ls-meas-index", title: "תשלום צמוד מדד: לפי היום" },
     { id: "ls-meas-fixed", title: "קבוע במהותו" },
-    { id: "ls-meas-guarantee", title: "ערבות שייר: רק מה שצפוי" },
+    { id: "ls-meas-guarantee", title: "שייר: מובטח ולא מובטח" },
     { id: "ls-meas-rate", title: "איזו ריבית" },
     { id: "ls-meas-implicit", title: "איך בנויה הריבית הגלומה" },
     { id: "ls-meas-start", title: "תשלום בתחילת שנה" },
@@ -371,9 +408,10 @@ export const MEASURE: StudyModule = {
     "נכנסים: קבועים, צמודי מדד לפי היום, אופציית רכישה ודאית, קנס אם התקופה מניחה ביטול, וערבות רק בסכום שצפוי.",
     "לא נכנסים: תשלומים לפי מכירות או שימוש. הם הוצאה כשהם קורים.",
     "ריבית: גלומה אם ניתן לקבוע אותה בנקל. אחרת תוספתית.",
-    "ערבות שייר: החוכר רואה רק את ההפרש הצפוי. המחכיר רואה את כולה.",
+    "מובטח הוא מה שערבו לו, ולא מובטח הוא מה שמעליו. החוכר מכניס רק את מה שהוא צופה להשלים. המחכיר מכניס את כל הערבות, ועוד הלא מובטח.",
     "תשלום בתחילת שנה: הראשון לא בהתחייבות, אבל כן בעלות הנכס.",
     "עלות = התחייבות + מקדמות − תמריצים שהתקבלו + עלויות ישירות + פירוק.",
+    "תמריץ שעוד לא התקבל מקטין את ההתחייבות, ותמריץ שכבר התקבל מקטין את עלות הנכס.",
     "פירוק הוא הפרשה לפי IAS 37. הוא נכנס לעלות הנכס, אבל לא להתחייבות החכירה.",
     "שיפוץ של המחכיר בנכס שלו אינו תמריץ.",
   ],

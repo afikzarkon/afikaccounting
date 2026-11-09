@@ -130,9 +130,10 @@ export function drill(family: DrillFamily, seed: number): Drill {
   }
   if (family === "dep") {
     const option = r.int(0, 1);
-    const life = option ? years + r.int(1, 6) : r.int(Math.max(2, years - 2), years + 6);
+    // Always longer than the term, so the no-option trap below holds in every seed.
+    const life = years + r.int(1, 6);
     const cost = r.int(60, 600, 10) * 1_000;
-    const over = option ? life : Math.min(life, years);
+    const over = option ? life : years;
     const optionText = option ? "ודאי באופן סביר שתממש בסוף התקופה אופציית רכישה" : "אין אופציית רכישה ולא עוברת בעלות";
     return {
       prompt: `עלות נכס זכות השימוש של חברה היא ${fmt(cost)} ש״ח. תקופת החכירה ${years} שנים, ואורך החיים השימושיים של הנכס ${life} שנים. ${optionText}. הפחת בקו ישר. מהי הוצאת הפחת השנתית?`,
@@ -166,7 +167,7 @@ export function drill(family: DrillFamily, seed: number): Drill {
         : [
             { title: `היתרה ב-31.12 של שנה ${k}`, numbers: fmt(y.closing) },
             { title: "מה יישאר בעוד שנה", note: `אחרי התשלום הבא נשארים ${years - k - 1} תשלומים. הערך הנוכחי שלהם הוא היתרה של סוף השנה הבאה, והוא הלא שוטף.` },
-            { title: "החלק הלא שוטף", numbers: `=PV(${pct(i)};${years - k - 1};-${payment}) → ${fmt(y.nonCurrent)}` },
+            { title: "החלק הלא שוטף", numbers: `=PV(${pct(i)};${years - k - 1};-${payment}) → ${fmt(whole(pvEnd(i, years - k - 1, payment)))}`, ...(whole(pvEnd(i, years - k - 1, payment)) === y.nonCurrent ? {} : { note: `בגלגול היתרה בשקלים שלמים יוצא ${fmt(y.nonCurrent)}. ההפרש הוא עיגול.` }) },
             { title: "החלק השוטף", formula: "יתרה − לא שוטף = שוטף", numbers: `${fmt(y.closing)} − ${fmt(y.nonCurrent)} = ${fmt(y.current)}` },
           ],
       trap: start ? "לחשוב שהחלק השוטף הוא הקרן, כמו בתשלום בסוף שנה. התשלום של מחר משולם כולו בתוך 12 חודשים." : "לקחת את כל התשלום הבא כשוטף. חלק ממנו ריבית שעוד לא נוצרה, ולכן השוטף הוא רק הקטנת הקרן.",
@@ -185,9 +186,11 @@ export function drill(family: DrillFamily, seed: number): Drill {
       unit: "ש״ח",
       inputs: { payment, left, i, index },
       steps: [
-        { title: "איזו ריבית", note: `מדד לא משנה ריבית (סעיף 43), ולכן ${pct(i)}, ולא ${pct(newRate)}.` },
+        { title: "איזו ריבית", note: `ההצמדה כתובה בחוזה מההתחלה, ורק סכום התשלום זז. לכן הריבית נשארת ${pct(i)} (סעיף 43), ו-${pct(newRate)} לא נכנס לחישוב.` },
         { title: "התשלום החדש", formula: "תשלום × מדד חדש ÷ מדד בסיס", numbers: `${fmt(payment)} × ${index} ÷ 100 = ${fmt(paid)}` },
-        { title: "לפני ואחרי", numbers: `${fmt(after)} − ${fmt(before)} = ${fmt(after - before)}` },
+        { title: "לפני", numbers: `=PV(${pct(i)};${left};-${payment}) → ${fmt(before)}` },
+        { title: "אחרי", numbers: `=PV(${pct(i)};${left};-${paid}) → ${fmt(after)}` },
+        { title: "ההפרש, כנגד הנכס", numbers: `${fmt(after)} − ${fmt(before)} = ${fmt(after - before)}` },
       ],
       trap: "להשתמש בריבית התוספתית של היום. היא נתון מיותר בשינוי מדד.",
     };
@@ -204,7 +207,7 @@ export function drill(family: DrillFamily, seed: number): Drill {
       unit: "ש״ח",
       inputs: { payment, left, i, extra, newRate },
       steps: [
-        { title: "מה זה", note: "אין נכס נוסף, ולכן לא חכירה נפרדת. אין הקטנה, ולכן אין רווח או הפסד. מודדים מחדש כנגד הנכס." },
+        { title: "מה זה", note: "אין נכס נוסף, ולכן לא חכירה נפרדת. אין הקטנה, ולכן אין רווח או הפסד. מודדים מחדש כנגד הנכס, וכל היתרה עוברת לריבית של היום כי התנאים נסגרו היום." },
         { title: "לפני, בריבית הישנה", numbers: `=PV(${pct(i)};${left};-${payment}) → ${fmt(before)}` },
         { title: "אחרי, בריבית של היום", numbers: `=PV(${pct(newRate)};${left + extra};-${payment}) → ${fmt(after)}` },
         { title: "ההפרש", numbers: `${fmt(after)} − ${fmt(before)} = ${fmt(after - before)}` },
@@ -225,6 +228,7 @@ export function drill(family: DrillFamily, seed: number): Drill {
       unit: "ש״ח",
       inputs: { L, asset, out },
       steps: [
+        { title: "מה עושים קודם", note: "החלק שהוחזר נגמר, ולכן מוציאים אותו לפי היתרות הישנות, והריבית והתשלום החדשים עוד לא נכנסים." },
         { title: "גריעה מההתחייבות", numbers: `${fmt(L)} × ${out} ÷ 100 = ${fmt(lOut)}` },
         { title: "גריעה מהנכס", numbers: `${fmt(asset)} × ${out} ÷ 100 = ${fmt(aOut)}` },
         { title: "רווח", formula: "גריעה מההתחייבות − גריעה מהנכס = רווח", numbers: `${fmt(lOut)} − ${fmt(aOut)} = ${fmt(lOut - aOut)}` },
@@ -296,14 +300,14 @@ export function drill(family: DrillFamily, seed: number): Drill {
     const guaranteed = r.int(1, 7) * 1_000;
     const pvUn = whole((estimate - guaranteed) / (1 + rate) ** n);
     return {
-      prompt: `סוחר מחכיר רכב ל-${n} שנים, בריבית גלומה של ${pct(rate)}. עלות הרכב ${fmt(cost)} ש״ח. בסוף הוא חוזר, ושוויו הצפוי ${fmt(estimate)} ש״ח, מזה ${fmt(guaranteed)} ש״ח בערבות החוכר. מהי עלות המכר?`,
+      prompt: `סוחר מחכיר מכונה ל-${n} שנים, בריבית גלומה של ${pct(rate)}. עלות המכונה ${fmt(cost)} ש״ח. בסוף היא חוזרת, ושוויה הצפוי ${fmt(estimate)} ש״ח, מזה ${fmt(guaranteed)} ש״ח בערבות החוכר. מהי עלות המכר?`,
       answer: cost - pvUn,
       unit: "ש״ח",
       inputs: { cost, n, rate, estimate, guaranteed },
       steps: [
-        { title: "שייר לא מובטח", numbers: `${fmt(estimate)} − ${fmt(guaranteed)} = ${fmt(estimate - guaranteed)}` },
+        { title: "שייר לא מובטח", formula: "סך השייר − החלק המובטח", note: "רק החלק הזה חוזר למחכיר בלי שמישהו התחייב עליו, ולכן רק הוא לא נמכר.", numbers: `${fmt(estimate)} − ${fmt(guaranteed)} = ${fmt(estimate - guaranteed)}` },
         { title: "בערך נוכחי", numbers: `${fmt(estimate - guaranteed)} ÷ ${(1 + rate).toFixed(3)}^${n} = ${fmt(pvUn)}` },
-        { title: "עלות המכר", numbers: `${fmt(cost)} − ${fmt(pvUn)} = ${fmt(cost - pvUn)}` },
+        { title: "עלות המכר", formula: "עלות − ערך נוכחי של השייר הלא מובטח", numbers: `${fmt(cost)} − ${fmt(pvUn)} = ${fmt(cost - pvUn)}` },
       ],
       trap: "להוריד גם את הערבות. היא תשלום חכירה, ולכן נשארת במכירות.",
     };
@@ -436,7 +440,7 @@ export function drill(family: DrillFamily, seed: number): Drill {
       trap: pre ? "לשכוח את המקדמה בחלק שנשאר. החברה שילמה עליה, והיא חלק מזכות השימוש." : "לרשום את כל ההפרש בין השווי לערך בספרים. חלק מהנכס נשאר אצל החברה.",
     };
   }
-  const prepaid = r.int(0, 9_000, 1_000);
+  const prepaid = r.int(1_000, 9_000, 1_000);
   const incentives = r.int(1_000, 8_000, 1_000);
   const directCosts = r.int(1_000, 9_000, 1_000);
   const restoration = r.int(2_000, 20_000, 1_000);
@@ -506,6 +510,7 @@ export function statementDrill(seed: number): StatementTask {
     notes: [
       hasOption ? `פחת על פני ${depYears} שנים: אורך החיים, כי החברה תקנה את המכונה (סעיף 32).` : `פחת על פני ${depYears} שנים: הקצר מבין החיים והתקופה (סעיף 32).`,
       start ? "הריבית על היתרה אחרי התשלום של 1.1. בלא שוטף: היתרה פחות התשלום של מחר." : "הריבית על היתרה בפתיחה. בלא שוטף: היתרה של סוף השנה הבאה.",
+      ...(start && hasOption && years === 3 ? ["ב-31.12 של שנה 2 גם התשלום של מחר וגם מחיר האופציה, שמשולם בסוף שנה 3, נופלים בתוך 12 חודשים. לכן כל היתרה שוטפת."] : []),
       ...(hasVariable ? [`התשלום לפי מכירות אינו בהתחייבות. הוא הוצאה של כל שנה: ${fmt(sales)} × 0.02 = ${fmt(variable)}.`] : []),
     ],
     trap: start ? "לחשב ריבית על היתרה לפני התשלום, או להשאיר את התשלום של מחר בלא שוטף." : "לקחת את כל התשלום הבא כשוטף. חלק ממנו ריבית שעוד לא נוצרה.",

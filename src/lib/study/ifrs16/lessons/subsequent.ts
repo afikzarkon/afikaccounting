@@ -1,9 +1,9 @@
-import { allocate, lessee, type LesseeTerms, pvEnd, shownYears, statementLines } from "../../../learn/ifrs16";
+import { allocate, lessee, type LesseeTerms, pvEnd, type ShownYear, shownYears, statementLines } from "../../../learn/ifrs16";
 import { journal } from "../../inventory/shared";
 import type { StudyModule, Trap } from "../../types";
 import { statementTask } from "../drills";
 import { ask, askNumber, COURSE, COURSE_HREF, fmt, type LeaseQuestion } from "../shared";
-import { WORK2 } from "./measure";
+import { WORK2, WORK2_L, WORK2_YEARS } from "./measure";
 
 const r = Math.round;
 const shown = (t: LesseeTerms) => shownYears(t);
@@ -26,11 +26,29 @@ export const DEP_CASES = [
   { text: "הבעלות עוברת בסוף. חיים 10, תקופה 4", term: 4, life: 10, over: 10, why: "אורך החיים" },
 ];
 
-/** The worked example: a car with a purchase option and a free year of insurance. */
-export const WORK = { ...WORK2, life: 6 };
-const WORK_TERMS: LesseeTerms = { payment: WORK.payment, years: WORK.years, rate: WORK.rate, timing: "start", finalAmount: WORK.option, incentives: WORK.insurance, directCosts: WORK.fees, depreciationYears: WORK.life };
-export const WORK_S = shown(WORK_TERMS);
-export const WORK_SECTIONS = statementLines(WORK_S.rows, WORK.years, [{ label: "הוצאות ביטוח", values: [WORK.insurance] }]);
+/**
+ * The worked example: lesson 3's printing machine, on to the statements. Its
+ * payments rise, so its table is worked here, by hand as every table is: each
+ * year's interest on the rounded balance, the last year taking up the rounding,
+ * and the option's price paid with the last payment.
+ */
+export const WORK = { ...WORK2, years: WORK2_YEARS };
+const workCost = r(WORK2_L.cost);
+const workDep = r(workCost / WORK.life);
+const workPaid = WORK.payments.map((p, i) => (i === WORK.years - 1 ? p + WORK.option : p));
+const workRows: ShownYear[] = [];
+workPaid.forEach((paidAtEnd, i) => {
+  const opening = i ? workRows[i - 1].closing : workCost;
+  const interest = i === WORK.years - 1 ? paidAtEnd - opening : r(opening * WORK.rate);
+  workRows.push({ year: i + 1, opening, paidAtStart: 0, interest, paidAtEnd, closing: opening + interest - paidAtEnd, nonCurrent: 0, current: 0, depreciation: workDep, rightOfUse: workCost - workDep * (i + 1) });
+});
+workRows.forEach((y, i) => {
+  y.nonCurrent = workRows[i + 1]?.closing ?? 0;
+  y.current = y.closing - y.nonCurrent;
+});
+export const WORK_S = { cost: workCost, rows: workRows };
+export const WORK_VARIABLE = WORK.copies.map((c) => (c / 1_000) * WORK.perThousand);
+export const WORK_SECTIONS = statementLines(WORK_S.rows, WORK.years, [{ label: "הוצאות חכירה משתנות", values: WORK_VARIABLE }]);
 
 /** The statements to fill in by hand, the first year given. */
 export const FILL = { payment: 40_000, years: 4, rate: 0.05, directCosts: 3_000, life: 8, shown: 3 };
@@ -126,7 +144,7 @@ const P_END2 = shown({ payment: 15_000, years: 6, rate: 0.05, timing: "end" }).r
 const P_NC_END = shown({ payment: 30_000, years: 5, rate: 0.06, timing: "end" }).rows;
 const P_NC_START = shown({ payment: 40_000, years: 5, rate: 0.05, timing: "start" }).rows;
 const P_TOTAL = exact({ payment: 50_000, years: 4, rate: 0.05, timing: "end" }).rows;
-const P_KIND = exact({ payment: 36_000, years: 3, rate: 0.05, timing: "start", incentives: 1_800 });
+const P_KIND = exact({ payment: 30_000, years: 4, rate: 0.05, timing: "end", incentives: 4_800 });
 const P_LINE = exact({ payment: 20_000, years: 3, rate: 0.06, timing: "end" }).rows;
 const P_CONTRACT_A = exact({ payment: 48_000, years: 5, rate: 0.05, timing: "end" });
 const P_CONTRACT_B = exact({ payment: 32_000, years: 5, rate: 0.05, timing: "end" });
@@ -232,7 +250,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     trap: "לומר שהשוטף הוא 30,000. חלק מהתשלום הבא הוא ריבית שעוד לא נוצרה, ולכן הוא לא חלק מהיתרה היום.",
     level: 2,
     source: "מקורית",
-    ref: "דוגמת הרצאה",
+    ref: "IAS 1, סעיף 69",
   }),
   askNumber({
     id: "nc-start",
@@ -243,7 +261,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     trap: "לחשב את השוטף כהקטנת קרן, כמו בתשלום בסוף שנה. כאן התשלום משולם מחר, ואין ריבית בדרך.",
     level: 2,
     source: "מקורית",
-    ref: "דוגמת הרצאה",
+    ref: "IAS 1, סעיף 69",
   }),
   ask({
     id: "all-current",
@@ -255,7 +273,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     trap: "להשאיר חלק לא שוטף מתוך הרגל. אם לא נשאר תשלום מעבר ל-12 חודשים, הכול שוטף.",
     level: 3,
     source: "מקורית",
-    ref: "דוגמת הרצאה",
+    ref: "IAS 1, סעיף 69",
   }),
   ask({
     id: "sales-exp",
@@ -263,7 +281,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     prompt: "חנות משלמת 2% מהמכירות למחכיר, מעבר לתשלום קבוע שכבר נמצא בהתחייבות. המכירות השנה 500,000 ש״ח. מה קורה ל-10,000 ש״ח?",
     options: ["הוצאה בדוח רווח או הפסד של השנה", "הגדלת התחייבות החכירה", "הגדלת נכס זכות השימוש", "הוצאה שנפרסת על פני תקופת החכירה"],
     answer: 0,
-    why: "סעיף 38(ב): תשלום משתנה שלא נכלל בהתחייבות מוכר ברווח או הפסד בתקופה שבה קרה האירוע שהפעיל אותו.",
+    why: "סעיף 38(ב): תשלום משתנה שלא נכלל בהתחייבות מוכר ברווח או הפסד בתקופה שבה קרה האירוע שהפעיל אותו, אלא אם תקן אחר מכניס אותו לערך של נכס אחר.",
     trap: "להוסיף אותו להתחייבות. הוא מעולם לא היה חלק ממנה.",
     level: 1,
     source: "מקורית",
@@ -283,13 +301,13 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
   askNumber({
     id: "in-kind",
     skill: "תמריץ בעין",
-    prompt: "חברה חכרה רכב ל-3 שנים, ב-36,000 ש״ח בתחילת כל שנה, בריבית 5%. התשלום הראשון שולם במועד התחילה. המחכיר נתן ביטוח חינם לשנה הראשונה, ששוויו 1,800 ש״ח. הפחת בקו ישר על פני התקופה. מהו סך ההוצאות בדוח רווח או הפסד של השנה הראשונה?",
-    answer: P_KIND.rows[0].depreciation + P_KIND.rows[0].interest + 1_800,
-    steps: [`עלות הנכס: ${fmt(P_KIND.rows[0].opening)} − 1,800 = ${fmt(P_KIND.cost)}`, `פחת: ${fmt(P_KIND.cost)} ÷ 3 = ${fmt(P_KIND.rows[0].depreciation)}`, `מימון: (${fmt(P_KIND.rows[0].opening)} − 36,000) × 0.05 = ${fmt(P_KIND.rows[0].interest)}`, "ביטוח: 1,800, בשנה שהוא מכסה.", `סך הכול: ${fmt(P_KIND.rows[0].depreciation)} + ${fmt(P_KIND.rows[0].interest)} + 1,800 = ${fmt(P_KIND.rows[0].depreciation + P_KIND.rows[0].interest + 1_800)}`],
-    trap: "לחשוב שביטוח חינם הוא בלי הוצאה. הוא מקטין את עלות הנכס, והחברה צורכת אותו בשנה הראשונה, ולכן הוא הוצאה.",
+    prompt: "חברה חכרה חדר קירור ל-4 שנים, ב-30,000 ש״ח בסוף כל שנה, בריבית 5%. לפי החוזה היא אחראית לאבטחה, והמחכיר שילם במקומה שירות אבטחה לשנתיים מראש, 4,800 ש״ח. הפחת בקו ישר על פני התקופה. מהו סך ההוצאות בדוח רווח או הפסד של השנה הראשונה?",
+    answer: P_KIND.rows[0].depreciation + P_KIND.rows[0].interest + 2_400,
+    steps: [`התחייבות: 30,000 × (1 − 1.05^(−4)) ÷ 0.05 = ${fmt(P_KIND.rows[0].opening)}`, `עלות הנכס: ${fmt(P_KIND.rows[0].opening)} − 4,800 = ${fmt(P_KIND.cost)}`, `פחת: ${fmt(P_KIND.cost)} ÷ 4 = ${fmt(P_KIND.rows[0].depreciation)}`, `מימון: ${fmt(P_KIND.rows[0].opening)} × 0.05 = ${fmt(P_KIND.rows[0].interest)}`, "אבטחה: 4,800 ÷ 2 = 2,400, בכל אחת מהשנתיים שהשירות מכסה.", `סך הכול: ${fmt(P_KIND.rows[0].depreciation)} + ${fmt(P_KIND.rows[0].interest)} + 2,400 = ${fmt(P_KIND.rows[0].depreciation + P_KIND.rows[0].interest + 2_400)}`],
+    trap: "לחשוב ששירות שניתן בחינם לא יוצר הוצאה, או לרשום את כולו בשנה הראשונה. הוא מקטין את עלות הנכס, וההוצאה נרשמת בשנים שהוא מכסה.",
     level: 2,
     source: "מקורית",
-    ref: "דוגמת הרצאה",
+    ref: "סעיף 24(ב), נספח א׳",
   }),
   ask({
     id: "short-option",
@@ -364,7 +382,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
   askNumber({
     id: "line-diff",
     skill: "קו ישר",
-    prompt: "חברה חכרה 10 מחשבים ל-3 שנים, ב-20,000 ש״ח בסוף כל שנה. הריבית התוספתית 6%. אילו בחרה בהקלה לערך נמוך, הוצאתה הייתה 20,000 ש״ח בשנה. כמה גבוהה יותר הוצאת השנה הראשונה במודל המלא, עם פחת וריבית, מאשר בהקלה?",
+    prompt: "חברה חכרה 10 מחשבים ל-3 שנים, ב-20,000 ש״ח בסוף כל שנה. הריבית התוספתית 6%, והפחת בקו ישר על פני התקופה. אילו בחרה בהקלה לערך נמוך, הוצאתה הייתה 20,000 ש״ח בשנה. כמה גבוהה יותר הוצאת השנה הראשונה במודל המלא, עם פחת וריבית, מאשר בהקלה?",
     answer: P_LINE[0].depreciation + P_LINE[0].interest - 20_000,
     steps: [`התחייבות ונכס: 20,000 × (1 − 1.06^(−3)) ÷ 0.06 = ${fmt(P_LINE[0].opening)}`, `פחת: ${fmt(P_LINE[0].opening)} ÷ 3 = ${fmt(P_LINE[0].depreciation)}`, `ריבית: ${fmt(P_LINE[0].opening)} × 0.06 = ${fmt(P_LINE[0].interest)}`, `${fmt(P_LINE[0].depreciation)} + ${fmt(P_LINE[0].interest)} − 20,000 = ${fmt(P_LINE[0].depreciation + P_LINE[0].interest - 20_000)}`],
     trap: "לחשוב שהסכום הכולל שונה. לאורך החכירה שני המודלים זהים. רק התזמון שונה, כי הריבית גבוהה בהתחלה.",
@@ -539,7 +557,7 @@ export const SUBSEQUENT: StudyModule = {
     "פחת: אם החוכר יקבל את הנכס, לאורך החיים. אחרת, הקצר מבין החיים והתקופה.",
     "לא שוטף, תשלום בסוף שנה: היתרה של סוף השנה הבאה.",
     "לא שוטף, תשלום בתחילת שנה: היתרה פחות התשלום הבא. לא נשאר תשלום מעבר ל-12 חודשים? הכול שוטף.",
-    "תשלום לפי מכירות, תחזוקה וביטוח: הוצאה בשנה שאליה הם שייכים.",
+    "תשלום לפי מכירות או שימוש, תחזוקה, ושירות שהמחכיר שילם: הוצאה בשנה שאליה הם שייכים.",
     "טווח קצר: עד 12 חודשים, בלי אופציית רכישה, לפי קבוצה.",
     "ערך נמוך: לכל חכירה, לפי נכס חדש, בלי קשר לגודל החוכר.",
     "תזרים: קרן במימון. ריבית לפי IAS 7. הקלות ומשתנים בשוטפת.",

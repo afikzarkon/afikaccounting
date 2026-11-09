@@ -1,4 +1,5 @@
-import { Building2, Factory, FileSignature, Forklift, HandCoins, ListChecks, Search } from "lucide-react";
+import { Cog, Factory, FileSignature, Forklift, HandCoins, Hotel, ListChecks, Search, Store, Truck } from "lucide-react";
+import type { ReactNode } from "react";
 import { Deeper, Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { JournalEntry } from "@/components/study/blocks";
@@ -6,7 +7,7 @@ import * as L from "@/lib/study/ifrs16/lessons/lessor-changes";
 import { Ltr } from "./ias19-formula";
 import { TaskFrame, TaskText } from "./ias19-question";
 import { Bridge, FullSteps } from "./ias19-ui";
-import { WrongRight } from "./ias19-visuals";
+import { DecisionTree, Timeline, TwoPanel, WrongRight } from "./ias19-visuals";
 import { DecisionWalk, LeaseDrill } from "./ifrs16-interactive";
 import { FullSolution, P, quiz, Tbl } from "./ifrs16-parts";
 import { SortQuiz } from "./inventory-interactive";
@@ -16,21 +17,25 @@ import { Money, Rule } from "./ui";
 /**
  * The leases course, lesson 7: a lessor's modifications. Every figure comes from
  * lib/study/ifrs16/lessons/lessor-changes.ts, in whole shekels, and every table adds up.
+ * Tables of balances and movements read debit plus, credit minus.
  */
 
 const M = ({ v }: { v: number }) => <Money v={Math.round(v)} />;
 const pct = (r: number, d = 0) => `${(r * 100).toFixed(d)}%`;
 const n = (v: number) => Math.round(v).toLocaleString("en-US");
 
-/** The same machine on three screens, each standing alone. */
-function MachineStory() {
+/** A formula in the course's words: the numbers follow it in Ltr. */
+const Formula = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] font-semibold">{children}</p>;
+
+/** The hotel carries both screens of the road that stays a finance lease; each shows it, so it can stand alone. */
+function HotelStory() {
   return (
-    <Story icon={<Factory />} title="מכונה בחכירה מימונית">
+    <Story icon={<Hotel />} title="מערכת קירור של מלון">
       <p>
-        ב-1.1 של שנה 1 מכונה הוחכרה ל-{L.MACH.years} שנים מתוך {L.MACH.life} שנות חיים, ולכן מימונית. <M v={L.MACH.payment} /> בסוף כל שנה, בריבית גלומה של {pct(L.MACH.rate)}. השווי ההוגן ביום ההתקשרות <M v={L.MACH_FV} />. בסוף התקופה המכונה חוזרת, והשייר, <M v={L.MACH.residual} />, לא מובטח.
+        ב-1.1 של שנה 1 הוחכרה למלון מערכת קירור ל-{L.REST.years} שנים מתוך {L.REST.life} שנות חיים. המלון משלם <M v={L.REST.payment} /> בסוף כל שנה, והריבית הגלומה {pct(L.REST.rate)}. בסוף המערכת חוזרת, עם שייר לא מובטח של <M v={L.REST.residual} />. הערך הנוכחי של התשלומים הוא {pct(L.REST_PV_SHARE)} מהשווי ההוגן, למעשה כל השווי (סעיף 63(ד)), ולכן החכירה מימונית.
       </p>
       <p>
-        התיקון נחתם ב-1.1 של שנה 4. נשארו {L.MACH.left} תשלומים, וההשקעה נטו מיד לפני התיקון: <Ltr>{`=PV(7%;8;-190000;-150000) → ${n(L.MACH_NI)}`}</Ltr>.
+        אחרי {L.REST.done} שנים המלון נקלע לתקופה קשה. ב-1.1 של שנה {L.REST.done + 1} הוסכם: במקום {L.REST.left} תשלומים של {n(L.REST.payment)}, יהיו {L.REST.newLeft} תשלומים של <M v={L.REST.newPayment} />. החכירה תסתיים שנתיים אחרי המועד המקורי, ואז המערכת צפויה להיות שווה <M v={L.REST.newResidual} />, בלי ערבות. בתקן אין כלל מיוחד לאומדן שייר חדש ביום תיקון, וכאן האומדן החדש הוא נתון. ריבית השוק היום {pct(L.REST.marketRate)}.
       </p>
     </Story>
   );
@@ -43,11 +48,9 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
       <>
         <Story icon={<FileSignature />} title="שני מחכירים, אותה שיחה">
           <p>שני מחכירים מסכימים עם החוכרים שלהם להוריד את התשלום. הראשון מחזיק את הנכס בספרים, והכנסה בקו ישר. השני כבר הוציא את הנכס מהספרים, ומחזיק השקעה נטו.</p>
-          <p>אותו שינוי בחוזה, אבל אצל כל אחד הוא פוגע בדבר אחר. לכן גם הטיפול שונה.</p>
+          <p>אותו שינוי בחוזה, אבל אצל כל אחד הוא פוגע בדבר אחר. אצל הראשון הוא משנה הכנסה עתידית, אצל השני הוא מקטין חוב שכבר רשום כנכס. לכן גם הטיפול שונה.</p>
         </Story>
-        <Part title="מה נחשב תיקון">
-          <p className="text-[15px]">שינוי בהיקף של החכירה או בתמורה, שלא היה חלק מהתנאים המקוריים (נספח א׳).</p>
-        </Part>
+        <P>תיקון הוא שינוי שהצדדים הסכימו עליו עכשיו, בהיקף של החכירה או בתמורה, ולא היה כתוב בחוזה המקורי (נספח א׳). אם החוזה עצמו כבר קבע שהסכום ישתנה, זה לא תיקון.</P>
         <Tbl
           head={["מה קרה", "תיקון?"]}
           rows={[
@@ -58,7 +61,7 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
             ["השתנה האומדן של החיים הכלכליים", "לא. אין סיווג מחדש (סעיף 66)"],
           ]}
         />
-        <Rule>מטפלים בתיקון מהיום שבו שני הצדדים הסכימו לו, ולא למפרע.</Rule>
+        <Rule>מטפלים בתיקון מהיום שבו שני הצדדים הסכימו לו, ולא למפרע. מה שנרשם עד אז היה נכון לפי החוזה שהיה.</Rule>
       </>
     ),
     check: quiz("ls-lmd-hook", [
@@ -71,20 +74,21 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
     ]),
   },
   "ls-lmd-walk": {
-    lead: "כל התיקונים של המחכיר נכנסים לתרשים אחד, עם ארבעה סופים. עברו בו כמה פעמים, ובחרו בכל פעם תשובה אחרת.",
+    lead: "כל התיקונים של המחכיר נכנסים לתרשים אחד. שואלים עד ארבע שאלות, בסדר קבוע, ומגיעים לאחד מארבעה סופים.",
     body: (
       <>
-        <DecisionWalk nodes={L.MOD_WALK} start={L.MOD_WALK_START} label="מסלול תיקון אצל המחכיר" again="בודקים תיקון אחר" />
-        <Tbl
-          dense
-          head={["במקור", "מה קרה", "הטיפול"]}
-          rows={[
-            ["תפעולית", "כל תיקון", "חכירה חדשה"],
-            ["מימונית", "נכס נוסף במחיר נפרד", "חכירה נפרדת"],
-            ["מימונית", "אחרת, והייתה תפעולית", "חכירה חדשה"],
-            ["מימונית", "אחרת, והייתה מימונית", "IFRS 9"],
+        <DecisionTree
+          label="מסלול תיקון. במקור תפעולית: חכירה חדשה. נוסף נכס במחיר הנפרד שלו: חכירה נפרדת. אילו התיקון היה בתוקף מההתחלה החכירה הייתה תפעולית: חכירה חדשה, והנכס חוזר לספרים. אחרת: מחשבים מחדש לפי IFRS 9"
+          questions={[
+            { q: "במקור החכירה הייתה תפעולית?", yes: "חכירה חדשה", tone: 1 },
+            { q: "נוסף נכס, במחיר הנפרד שלו?", yes: "חכירה נפרדת", tone: 3 },
+            { q: "אילו התיקון היה בתוקף מההתחלה, החכירה הייתה תפעולית?", yes: "חכירה חדשה, והנכס חוזר לספרים", tone: 1 },
           ]}
+          fallback={{ label: "הייתה נשארת מימונית: IFRS 9, בריבית המקורית", tone: 4 }}
         />
+        <P>הסדר לא מקרי. בתפעולית אין חוב רשום, יש רק הכנסה עתידית, ולכן פשוט פורסים מחדש. במימונית שואלים קודם אם זו בכלל עסקה נוספת, ואם לא, מה החוזה החדש היה אומר על הסיווג, ורק אז בוחרים איך למדוד.</P>
+        <P>עכשיו עברו בתרשים בעצמכם, כמה פעמים, ובחרו בכל פעם תשובה אחרת.</P>
+        <DecisionWalk nodes={L.MOD_WALK} start={L.MOD_WALK_START} label="מסלול תיקון אצל המחכיר" again="בודקים תיקון אחר" />
         <TaskFrame label="שאלת מיון" icon={<ListChecks className="h-[18px] w-[18px]" aria-hidden />}>
           <SortQuiz prefix="ifrs16" id="ls-lmd-walk" items={L.MOD_ITEMS} options={L.MOD_OPTIONS} />
         </TaskFrame>
@@ -92,54 +96,82 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
     ),
   },
   "ls-lmd-op": {
-    lead: "תיקון של חכירה תפעולית הוא תמיד חכירה חדשה. מה שכבר התקבל ועוד לא הוכר, יוכר בחכירה החדשה.",
+    lead: "בתפעולית את העבר לא מתקנים. מיום התיקון זו חכירה חדשה, וכל מה שעוד לא הוכר כהכנסה נפרס על השנים שנשארו.",
     body: (
       <>
-        <Story icon={<Building2 />} title="קומת משרדים">
+        <Story icon={<Store />} title="חנות עם דמי מפתח, שנסגרת שנה מוקדם">
           <p>
-            ב-1.1 של שנה 1 מחכיר החכיר קומה בחכירה תפעולית ל-{L.PRE.years} שנים, תמורת <M v={L.PRE.total} /> לכל התקופה. החוכר שילם <M v={L.PRE.paid[0]} /> בשנה 1 ו-<M v={L.PRE.paid[1]} /> בשנה 2.
+            ב-1.1 של שנה 1 מחכיר החכיר חנות בחכירה תפעולית ל-{L.PRE.years} שנים. ביום החתימה השוכר שילם דמי מפתח של <M v={L.PRE.keyMoney} />, ובנוסף הוא משלם <M v={L.PRE.rent} /> בסוף כל שנה.
           </p>
           <p>
-            ב-1.1 של שנה 3 הוסכם: החכירה תתארך בשנה, ונשארו {L.PRE.left} שנים. מעבר למה ששולם, החוכר ישלם <M v={L.PRE.newPay} /> בסוף כל שנה. גם החכירה החדשה תפעולית.
+            ב-1.1 של שנה {L.PRE.done + 1} השוכר החליט לעזוב מוקדם, והצדדים סיכמו: החכירה תסתיים שנה לפני הזמן, ונשארו {L.PRE.left} שנים. בשנים האלה השכירות תהיה <M v={L.PRE.newPay} /> בסוף כל שנה. דמי המפתח לא מוחזרים. גם החכירה החדשה תפעולית.
           </p>
         </Story>
+        <Timeline
+          label="שנתיים ראשונות בחוזה הישן, בלי שינוי. מ-1.1 של שנה 3 שנתיים של חכירה חדשה, שנה לפני הסוף המקורי"
+          from={0}
+          to={L.PRE.years}
+          ticks={[
+            { at: 0, label: "1.1 שנה 1" },
+            { at: L.PRE.done, label: "התיקון" },
+            { at: L.PRE.done + L.PRE.left, label: "הסוף החדש" },
+            { at: L.PRE.years, label: "הסוף המקורי" },
+          ]}
+          spans={[
+            { from: 0, to: L.PRE.done, label: "לא נוגעים", tone: 1 },
+            { from: L.PRE.done, to: L.PRE.done + L.PRE.left, label: `חכירה חדשה, ${L.PRE.left} שנים`, tone: 3 },
+          ]}
+        />
+        <P>
+          דמי המפתח שילמו מראש על כל {L.PRE.years} השנים, ולכן בשנתיים הראשונות התקבל יותר ממה שהוכר. ההפרש נקרא <strong>הכנסות מראש</strong>: כסף שכבר נכנס ועוד לא הפך להכנסה. זה חוב של המחכיר, כי עדיין מגיע עליו שימוש בחנות.
+        </P>
         <FullSteps
           label="הפתרון"
           steps={[
             {
               title: "היתרה ביום התיקון",
               body: (
-                <Tbl
-                  dense
-                  head={["עד 31.12 של שנה 2", "סכום"]}
-                  rows={[
-                    ["התקבל", L.PRE_GOT],
-                    [<>הוכר: <Ltr>{`${n(L.PRE_YEAR)} × 2`}</Ltr></>, -L.PRE_EARNED],
-                  ]}
-                  foot={["הכנסות מראש", L.PRE_BAL]}
-                />
+                <>
+                  <Formula>הכנסה בקו ישר = סך התשלומים ÷ שנות החכירה</Formula>
+                  <p>
+                    <Ltr>{`(${n(L.PRE.keyMoney)} + ${L.PRE.years} × ${n(L.PRE.rent)}) ÷ ${L.PRE.years} = ${n(L.PRE_YEAR)}`}</Ltr>
+                  </p>
+                  <Tbl
+                    dense
+                    head={["הכנסות מראש, עד 31.12 של שנה 2", "סכום"]}
+                    rows={[
+                      ["דמי מפתח שהתקבלו", -L.PRE.keyMoney],
+                      [<>שכירות שהתקבלה: <Ltr>{`2 × ${n(L.PRE.rent)}`}</Ltr></>, -L.PRE.rent * L.PRE.done],
+                      [<>הוכר כהכנסה: <Ltr>{`2 × ${n(L.PRE_YEAR)}`}</Ltr></>, L.PRE_EARNED],
+                    ]}
+                    foot={["יתרה: הכנסות מראש", -L.PRE_BAL]}
+                  />
+                </>
               ),
             },
             {
               title: "תשלומי החכירה החדשה",
               body: (
-                <Tbl
-                  dense
-                  head={["", "סכום"]}
-                  rows={[
-                    [<>תשלומים: <Ltr>{`${n(L.PRE.newPay)} × ${L.PRE.left}`}</Ltr></>, L.PRE_FUTURE],
-                    ["הכנסות מראש", L.PRE_BAL],
-                  ]}
-                  foot={["סך הכול", L.PRE_TOTAL]}
-                />
+                <>
+                  <p>
+                    החכירה החדשה מקבלת את כל מה שעוד יהפוך להכנסה: התשלומים שיגיעו, והכסף שכבר נכנס ועוד לא הוכר (סעיף 87). בלי {n(L.PRE_BAL)} האלה, כסף שהתקבל היה נשאר במאזן לנצח.
+                  </p>
+                  <Formula>תשלומי החכירה החדשה = תשלומים עתידיים + הכנסות מראש</Formula>
+                  <p>
+                    <Ltr>{`${L.PRE.left} × ${n(L.PRE.newPay)} + ${n(L.PRE_BAL)} = ${n(L.PRE_TOTAL)}`}</Ltr>
+                  </p>
+                </>
               ),
             },
             {
-              title: "הכנסה בקו ישר",
+              title: "הכנסה בקו ישר, על מה שנשאר",
               body: (
-                <p>
-                  <Ltr>{`${n(L.PRE_TOTAL)} ÷ ${L.PRE.left} = ${n(L.PRE_INCOME)}`}</Ltr> לשנה (סעיף 87).
-                </p>
+                <>
+                  <p>
+                    <Ltr>{`${n(L.PRE_TOTAL)} ÷ ${L.PRE.left} = ${n(L.PRE_INCOME)}`}</Ltr> לשנה (סעיף 87). באקסל: <Ltr>{`=(${L.PRE.left}*${L.PRE.newPay}+${L.PRE_BAL})/${L.PRE.left}`}</Ltr>.
+                  </p>
+                  <p>ההכנסה עלתה מ-{n(L.PRE_YEAR)} ל-{n(L.PRE_INCOME)} משתי סיבות: דמי המפתח שנועדו לשלוש שנים נפרסים עכשיו על שתיים, והשכירות עלתה מ-{n(L.PRE.rent)} ל-{n(L.PRE.newPay)}. אין כאן רווח ביום התיקון, גם אם התקופה התקצרה. הכול עובר דרך הקו הישר של החכירה החדשה.</p>
+                </>
               ),
             },
             {
@@ -147,16 +179,24 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
               body: (
                 <>
                   <JournalEntry
-                    title="31.12 של שנה 3"
+                    title={`31.12 של שנה ${L.PRE.done + 1}`}
                     lines={[
                       { account: "מזומן", dr: L.PRE.newPay },
                       { account: "הכנסות מראש", dr: L.PRE_FALL },
                       { account: "הכנסות מהשכרה", cr: L.PRE_INCOME },
                     ]}
                   />
-                  <p>
-                    ההכנסות מראש יורדות ב-{n(L.PRE_FALL)} בכל שנה, ואחרי {L.PRE.left} שנים מגיעות לאפס.
-                  </p>
+                  <Tbl
+                    dense
+                    head={["הכנסות מראש", ...L.PRE_ROWS.map((y) => `שנה ${y.year}`)]}
+                    rows={[
+                      ["יתרה ב-1.1", ...L.PRE_ROWS.map((y) => -y.opening)],
+                      ["תקבול", ...L.PRE_ROWS.map((y) => -y.cash)],
+                      ["הכנסה", ...L.PRE_ROWS.map((y) => y.income)],
+                    ]}
+                    foot={["יתרה ב-31.12", ...L.PRE_ROWS.map((y) => -y.closing)]}
+                  />
+                  <p>בסוף החכירה היתרה אפס. כל שקל שהתקבל הפך להכנסה.</p>
                 </>
               ),
             },
@@ -175,15 +215,15 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
     ]),
   },
   "ls-lmd-accrued": {
-    lead: "כשהתשלומים עולים עם השנים, יש הכנסות לקבל. הן כבר הוכרו, ולכן הן יורדות מתשלומי החכירה החדשה.",
+    lead: "כשהתשלומים עולים עם השנים, המחכיר מכיר בהכנסה לפני שהכסף מגיע. ההכנסה הזו כבר נרשמה, ולכן בחכירה החדשה מורידים אותה מהתשלומים.",
     body: (
       <>
-        <Story icon={<Forklift />} title="ציוד לוגיסטי">
+        <Story icon={<Forklift />} title="צי מלגזות, שכירות שמיישרים">
           <p>
-            ציוד בעלות <M v={L.ACC.cost} />, {L.ACC.life} שנות חיים, הוחכר בחכירה תפעולית ל-4 שנים. התשלומים בסוף כל שנה: <M v={L.ACC.rents[0]} />, <M v={L.ACC.rents[1]} />, <M v={L.ACC.rents[2]} /> ו-<M v={L.ACC.rents[3]} />.
+            ציוד בעלות <M v={L.ACC.cost} />, {L.ACC.life} שנות חיים, הוחכר למפעל בחכירה תפעולית ל-{L.ACC.rents.length} שנים. השכירות מדורגת, בסוף כל שנה: <M v={L.ACC.rents[0]} /> בשנה 1, ועוד <M v={L.ACC.rents[1] - L.ACC.rents[0]} /> בכל שנה עד <M v={L.ACC.rents[5]} /> בשנה {L.ACC.rents.length}.
           </p>
           <p>
-            ב-1.1 של שנה 4 הוסכם: החכירה תסתיים שנה מאוחר יותר. בשנה 4 התשלום לא משתנה, ובשנה 5 ישולמו <M v={L.ACC.newRents[1]} />.
+            ב-1.1 של שנה {L.ACC.done + 1} המפעל ביקש תשלום קבוע, והצדדים הסכימו: בלי לשנות את סוף החכירה, ב-{L.ACC.left} השנים שנשארו ישולמו <M v={L.ACC.newPay} /> בסוף כל שנה.
           </p>
         </Story>
         <FullSteps
@@ -191,51 +231,72 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
           steps={[
             {
               title: "סיווג החכירה החדשה",
-              body: <p>תיקון של חכירה תפעולית הוא חכירה חדשה, ולכן מסווגים אותה (סעיף 66). שנתיים מתוך 7 שנות החיים שנשארו, בלי העברת בעלות ובלי אופציית רכישה. תפעולית.</p>,
+              body: (
+                <p>
+                  תיקון של חכירה תפעולית הוא חכירה חדשה, ולכן מסווגים אותה (סעיף 66). {L.ACC.left} שנים מתוך {L.ACC_LIFE_LEFT} שנות החיים שנשארו, והתשלומים ביחד {n(L.ACC_FUTURE)}, מול ציוד ששווה היום {n(L.ACC.fairValue)}. בלי העברת בעלות ובלי אופציית רכישה. תפעולית.
+                </p>
+              ),
             },
             {
-              title: "היתרות ב-31.12 של שנה 3",
+              title: "היתרה ב-31.12 של שנה 2",
               body: (
-                <Tbl
-                  dense
-                  head={["", "סכום"]}
-                  rows={[
-                    [<>הוכר: <Ltr>{`${n(L.ACC_YEAR)} × 3`}</Ltr></>, L.ACC_EARNED],
-                    ["התקבל", -L.ACC_GOT],
-                  ]}
-                  foot={["הכנסות לקבל", L.ACC_BAL]}
-                />
+                <>
+                  <p>
+                    <Ltr>{`(${L.ACC.rents.map(n).join(" + ")}) ÷ ${L.ACC.rents.length} = ${n(L.ACC_YEAR)}`}</Ltr> הכנסה בקו ישר בכל שנה.
+                  </p>
+                  <Tbl
+                    dense
+                    head={["הכנסות לקבל", "סכום"]}
+                    rows={[
+                      [<>הוכר: <Ltr>{`${n(L.ACC_YEAR)} × ${L.ACC.done}`}</Ltr></>, L.ACC_EARNED],
+                      [<>התקבל: <Ltr>{`${n(L.ACC.rents[0])} + ${n(L.ACC.rents[1])}`}</Ltr></>, -L.ACC_GOT],
+                    ]}
+                    foot={["יתרה: הכנסות לקבל", L.ACC_BAL]}
+                  />
+                </>
               ),
             },
             {
               title: "תשלומי החכירה החדשה",
               body: (
-                <Tbl
-                  dense
-                  head={["", "סכום"]}
-                  rows={[
-                    ["תשלומים בשנים 4, 5", L.ACC_FUTURE],
-                    ["הכנסות לקבל", -L.ACC_BAL],
-                  ]}
-                  foot={["סך הכול", L.ACC_TOTAL]}
-                />
+                <>
+                  <p>
+                    מתוך {n(L.ACC_FUTURE)} שעוד יתקבלו, {n(L.ACC_BAL)} כבר נרשמו בעבר כהכנסה. אם נספור אותם שוב, אותו כסף ייחשב פעמיים כהכנסה. כשהם יתקבלו הם רק יסגרו את הנכס הכנסות לקבל.
+                  </p>
+                  <Formula>תשלומי החכירה החדשה = תשלומים עתידיים − הכנסות לקבל</Formula>
+                  <p>
+                    <Ltr>{`${L.ACC.left} × ${n(L.ACC.newPay)} − ${n(L.ACC_BAL)} = ${n(L.ACC_TOTAL)}`}</Ltr>
+                  </p>
+                  <p>
+                    <Ltr>{`${n(L.ACC_TOTAL)} ÷ ${L.ACC.left} = ${n(L.ACC_INCOME)}`}</Ltr> לשנה (סעיף 87). באקסל: <Ltr>{`=(${L.ACC.left}*${L.ACC.newPay}-${L.ACC_BAL})/${L.ACC.left}`}</Ltr>.
+                  </p>
+                </>
               ),
             },
             {
-              title: "שתי השנים",
+              title: "ארבע השנים",
               body: (
                 <>
                   <Tbl
                     dense
-                    head={["", "שנה 4", "שנה 5"]}
+                    head={["הכנסות לקבל", ...L.ACC_ROWS.map((y) => `שנה ${y.year}`)]}
                     rows={[
-                      ["תקבול", ...L.ACC_ROWS.map((y) => y.cash)],
-                      ["הכנסה: סך הכול ÷ 2", ...L.ACC_ROWS.map((y) => y.income)],
-                      ["הכנסות לקבל, 31.12", ...L.ACC_ROWS.map((y) => y.closing)],
+                      ["יתרה ב-1.1", ...L.ACC_ROWS.map((y) => y.opening)],
+                      ["הכנסה", ...L.ACC_ROWS.map((y) => y.income)],
+                      ["תקבול", ...L.ACC_ROWS.map((y) => -y.cash)],
+                    ]}
+                    foot={["יתרה ב-31.12", ...L.ACC_ROWS.map((y) => y.closing)]}
+                  />
+                  <JournalEntry
+                    title={`31.12 של שנה ${L.ACC.done + 1}`}
+                    lines={[
+                      { account: "מזומן", dr: L.ACC.newPay },
+                      { account: "הכנסות לקבל", cr: L.ACC.newPay - L.ACC_INCOME },
+                      { account: "הכנסות מהשכרה", cr: L.ACC_INCOME },
                     ]}
                   />
                   <p>
-                    הציוד לא מושפע: פחת של {n(L.ACC_DEP)} בשנה, מערך בספרים של {n(L.ACC_NET)}.
+                    הציוד לא מושפע, כי הוא נשאר אצל המחכיר בכל מקרה: פחת של {n(L.ACC_DEP)} בשנה, מערך בספרים של {n(L.ACC_NET)}.
                   </p>
                 </>
               ),
@@ -243,7 +304,14 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
             { title: "מלכודת נפוצה", body: <p>להוסיף את ההכנסות לקבל, כמו הכנסות מראש. הן הפוכות: כאן ההכנסה הוכרה לפני הכסף.</p> },
           ]}
         />
-        <Remember>הכנסות מראש: הכסף הקדים את ההכנסה, ולכן מוסיפים. הכנסות לקבל: ההכנסה הקדימה את הכסף, ולכן מורידים.</Remember>
+        <TwoPanel
+          label="הכנסות מראש: הכסף הגיע לפני ההכנסה, ולכן מוסיפים לתשלומים. הכנסות לקבל: ההכנסה נרשמה לפני הכסף, ולכן מורידים מהתשלומים"
+          panels={[
+            { title: "הכנסות מראש", steps: ["הכסף הגיע לפני ההכנסה", "ההכנסה עוד תירשם"], verdict: "מוסיפים לתשלומים", tone: 1 },
+            { title: "הכנסות לקבל", steps: ["ההכנסה נרשמה לפני הכסף", "היא לא תירשם פעם שנייה"], verdict: "מורידים מהתשלומים", tone: 3 },
+          ]}
+        />
+        <Remember>בסוף, כל שקל שהחוזה מביא נרשם כהכנסה פעם אחת בדיוק.</Remember>
       </>
     ),
     check: quiz("ls-lmd-accrued", [
@@ -256,31 +324,46 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
     ]),
   },
   "ls-lmd-tofin": {
-    lead: "החכירה החדשה מסווגת מחדש (סעיף 66). אם היא מימונית, הנכס והיתרות יוצאים, ובמקומם השקעה נטו.",
+    lead: "תיקון של תפעולית יוצר חכירה חדשה, ולכן מסווגים אותה (סעיף 66). אם יצאה מימונית, זו כמו מכירה: הנכס והיתרות יוצאים, ובמקומם השקעה נטו.",
     body: (
       <>
-        <Story icon={<Forklift />} title="ציוד לוגיסטי, הפעם עם בעלות">
+        <Story icon={<Cog />} title="מכונה שנשארת אצל הלקוח כמעט עד סוף חייה">
           <p>
-            חכירה תפעולית של ציוד. ב-31.12 של שנה 3 הערך בספרים <M v={L.ACC_NET} />, והכנסות לקבל <M v={L.ACC_BAL} />.
+            מחכיר, שאינו סוחר, מחזיק מכונה בחכירה תפעולית. ביום התיקון היא רשומה בספרים ב-<M v={L.TO_FIN.bookValue} />, ונשארו לה {L.TO_FIN.lifeLeft} שנות חיים. החוכר שילם בעבר מראש, ויש בספרים הכנסות מראש של <M v={L.TO_FIN.prepaid} />.
           </p>
           <p>
-            ב-1.1 של שנה 4 הוסכם: החכירה תסתיים בעוד {L.TO_FIN.years} שנים, <M v={L.TO_FIN.payment} /> בסוף כל שנה, ובסוף הציוד עובר לחוכר. הריבית הגלומה ביום התיקון {pct(L.TO_FIN.rate, 1)}. המחכיר אינו סוחר.
+            הוסכם: החכירה תימשך עוד {L.TO_FIN.years} שנים, <M v={L.TO_FIN.payment} /> בסוף כל שנה. בסוף התקופה המכונה כמעט לא שווה כלום, ולכן אין שייר. הריבית הגלומה ביום התיקון {pct(L.TO_FIN.rate)}.
           </p>
         </Story>
-        <P>סיווג: הבעלות עוברת, ולכן החכירה החדשה מימונית (סעיף 63(א)). ההשקעה נטו בריבית של יום התיקון, כי זו חכירה חדשה:</P>
         <P>
-          <Ltr>{`=PV(7.5%;3;-250000) → ${n(L.TO_FIN_NI)}`}</Ltr>
+          סיווג: {L.TO_FIN.years} מתוך {L.TO_FIN.lifeLeft} השנים שנשארו, החלק העיקרי (סעיף 63(ג)). החכירה החדשה מימונית. הסיכונים וההטבות עברו עכשיו לחוכר, ולכן המכונה יוצאת מהספרים, כמו במכירה.
         </P>
+        <P>זו חכירה חדשה, ולכן ההשקעה נטו נמדדת בריבית של יום התיקון, ולא בריבית ישנה כלשהי:</P>
+        <Formula>השקעה נטו = תשלום × <Ltr>{"(1 − (1 + i)^(−n)) ÷ i"}</Ltr></Formula>
+        <p>
+          <Ltr>{`${n(L.TO_FIN.payment)} × (1 − 1.08^(−${L.TO_FIN.years})) ÷ 0.08 = ${n(L.TO_FIN_NI)}`}</Ltr>
+        </p>
+        <p>
+          באקסל: <Ltr>{`=PV(8%;${L.TO_FIN.years};-${L.TO_FIN.payment}) → ${n(L.TO_FIN_NI)}`}</Ltr>
+        </p>
+        <P>
+          כל מה שקשור לחוזה הישן יוצא עכשיו מהספרים. המכונה יוצאת בזכות. ההכנסות מראש יוצאות בחובה: הן חוב שהוחזק כנגד שימוש עתידי, ועכשיו הן חלק מתשלומי החכירה החדשה. זה מה שסעיף 87 אומר. הפקודה והרווח לא כתובים בתקן במפורש, אלא נגזרים מזה. הרווח הוא מה שנשאר.
+        </P>
+        <Formula>רווח = השקעה נטו + הכנסות מראש − ערך הנכס בספרים</Formula>
+        <p>
+          <Ltr>{`${n(L.TO_FIN_NI)} + ${n(L.TO_FIN.prepaid)} − ${n(L.TO_FIN.bookValue)} = ${n(L.TO_FIN_GAIN)}`}</Ltr>
+        </p>
         <JournalEntry
-          title="1.1 של שנה 4"
+          title="יום התיקון"
           lines={[
             { account: "השקעה נטו בחכירה", dr: L.TO_FIN_NI },
-            { account: "ציוד", cr: L.ACC_NET },
-            { account: "הכנסות לקבל", cr: L.ACC_BAL },
+            { account: "הכנסות מראש", dr: L.TO_FIN.prepaid },
+            { account: "מכונה", cr: L.TO_FIN.bookValue },
             { account: "רווח הון", cr: L.TO_FIN_GAIN },
           ]}
         />
-        <Remember>גם כאן ההכנסות לקבל נכנסות לחשבון. הן יוצאות מהספרים, ומקטינות את הרווח.</Remember>
+        <P>אילו בספרים היו דווקא הכנסות לקבל, הן היו יוצאות בזכות, כמו המכונה, ומקטינות את הרווח. בלי זה היתרה הייתה נשארת בספרים אחרי שהחוזה הישן נגמר, והרווח היה מנופח.</P>
+        <Remember>הכנסות מראש מגדילות את הרווח, והכנסות לקבל מקטינות אותו. בשני המקרים הן לא נשארות בספרים.</Remember>
       </>
     ),
     check: quiz("ls-lmd-tofin", [
@@ -293,15 +376,18 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
     ]),
   },
   "ls-lmd-sep": {
-    lead: "במימונית, כשמוסיפים נכס במחיר הנפרד שלו, זו בעצם עסקה חדשה לצד הישנה. שום דבר בישנה לא נוגע.",
+    lead: "במימונית, כשמוסיפים נכס ומשלמים עליו את המחיר הרגיל שלו, זו בעצם עסקה חדשה לצד הישנה. בישנה לא נוגעים.",
     body: (
       <>
-        <MachineStory />
-        <Part title="התיקון">
-          <p className="text-[15px]">
-            החוכר לוקח גם מכונה שנייה ל-{L.ADD.years} שנים, תמורת עוד <M v={L.ADD.payment} /> לשנה, וזה מחיר השוק שלה. שוויה ההוגן <M v={L.ADD.fairValue} />, וערכה בספרים <M v={L.ADD.bookValue} />, עם {L.ADD.life} שנים שנשארו.
+        <Story icon={<Factory />} title="מחלבה שמוסיפה קו שני">
+          <p>
+            מחלבה חוכרת קו בקבוק ל-{L.LINE.years} שנים מתוך {L.LINE.life} שנות חיים, ולכן מימונית. היא משלמת <M v={L.LINE.payment} /> בסוף כל שנה, הריבית הגלומה {pct(L.LINE.rate)}, ובסוף הקו עובר אליה. ב-1.1 של שנה {L.LINE.done + 1} נשארו {L.LINE.left} תשלומים, וההשקעה נטו: <Ltr>{`=PV(6%;${L.LINE.left};-${L.LINE.payment}) → ${n(L.LINE_NI)}`}</Ltr>.
           </p>
-        </Part>
+          <p>
+            באותו יום המחלבה לוקחת גם קו שני מהמחכיר, ל-{L.ADD.years} שנים, תמורת עוד <M v={L.ADD.payment} /> לשנה, וזה בדיוק מה שהיו גובים מכל לקוח אחר. בסוף גם הקו השני עובר אליה, ולכן אין שייר. שווי הקו השני <M v={L.ADD.fairValue} />, והוא רשום אצל המחכיר, שאינו סוחר, ב-<M v={L.ADD.bookValue} />, עם {L.ADD.life} שנות חיים.
+          </p>
+        </Story>
+        <P>שני התנאים של סעיף 79 באים לענות על שאלה אחת: האם הייתה נחתמת העסקה הזו גם לבדה? אם כן, אין סיבה לגעת בחוזה הישן. לקוח אחר היה מקבל בדיוק את אותו חוזה חדש, בלי קשר לקו הראשון.</P>
         <Tbl
           head={["תנאי בסעיף 79", "מתקיים?"]}
           rows={[
@@ -310,25 +396,51 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
           ]}
         />
         <P>
-          לכן חכירה נפרדת. מסווגים אותה לבדה: {L.ADD.years} מתוך {L.ADD.life} שנים, בלי סימנים אחרים, ולכן תפעולית.
+          לכן חכירה נפרדת, ומסווגים אותה לבדה. כאן הבעלות עוברת, וגם {L.ADD.years} מתוך {L.ADD.life} שנים הם החלק העיקרי, ולכן גם היא מימונית. אילו יצאה תפעולית, הקו השני היה נשאר בספרים, עם הכנסה בקו ישר ופחת. המסלול נקבע לפי הסימנים של התוספת בלבד.
         </P>
-        <Tbl
-          dense
-          head={["רווח או הפסד, שנה 4", "סכום"]}
-          rows={[
-            ["הכנסות מימון, מהחכירה המקורית", L.MACH_INT],
-            ["הכנסות מהשכרה, מהחכירה הנפרדת", L.ADD.payment],
-            ["פחת, מכונה שנייה", -L.ADD_DEP],
+        <TwoPanel
+          label="שני חוזים זה לצד זה. הקו המקורי ממשיך כמימונית בלי שינוי. הקו השני הוא חכירה נפרדת, עם השקעה נטו משלו"
+          panels={[
+            { title: "הקו המקורי", steps: ["מימונית, בלי שינוי", `הכנסות מימון ${n(L.LINE_INT)}`], verdict: "ממשיך לפי התוכנית", tone: 3 },
+            { title: "הקו השני", steps: ["מסווגים אותו לבד: מימונית", `השקעה נטו ${n(L.ADD.fairValue)}`], verdict: "חוזה נפרד", tone: 1 },
           ]}
-          foot={["סך הכול", L.MACH_INT + L.ADD.payment - L.ADD_DEP]}
         />
-        <P>
-          ההשקעה נטו ממשיכה לפי התוכנית: <Ltr>{`${n(L.MACH_NI)} + ${n(L.MACH_INT)} − ${n(L.MACH.payment)} = ${n(L.MACH_CLOSE)}`}</Ltr>.
-        </P>
+        <Part title="הקו השני, כחכירה מימונית רגילה">
+          <P>כמו בשיעור הקודם: השקעה נטו לפי השווי ההוגן, ורווח הון על ההפרש מהערך בספרים.</P>
+          <p>
+            <Ltr>{`${n(L.ADD.fairValue)} − ${n(L.ADD.bookValue)} = ${n(L.ADD_GAIN)}`}</Ltr>
+          </p>
+          <p>
+            <Ltr>{`=RATE(${L.ADD.years};${L.ADD.payment};-${L.ADD.fairValue}) → ${pct(L.ADD_RATE, 2)}`}</Ltr>
+          </p>
+          <JournalEntry
+            title={`1.1 של שנה ${L.LINE.done + 1}`}
+            lines={[
+              { account: "השקעה נטו בחכירה, קו שני", dr: L.ADD.fairValue },
+              { account: "קו בקבוק, רכוש קבוע", cr: L.ADD.bookValue },
+              { account: "רווח הון", cr: L.ADD_GAIN },
+            ]}
+          />
+        </Part>
+        <Part title={`שנה ${L.LINE.done + 1} בדוחות`}>
+          <P>
+            הקו המקורי ממשיך לפי התוכנית: <Ltr>{`${n(L.LINE_NI)} + ${n(L.LINE_INT)} − ${n(L.LINE.payment)} = ${n(L.LINE_CLOSE)}`}</Ltr>. הקו השני: <Ltr>{`${n(L.ADD.fairValue)} + ${n(L.ADD_ROWS[0].income)} − ${n(L.ADD.payment)} = ${n(L.ADD_ROWS[0].closing)}`}</Ltr>.
+          </P>
+          <Tbl
+            dense
+            head={[`רווח או הפסד, שנה ${L.LINE.done + 1}`, "סכום"]}
+            rows={[
+              ["הכנסות מימון, מהחכירה המקורית", -L.LINE_INT],
+              ["רווח הון, מהחכירה הנפרדת", -L.ADD_GAIN],
+              ["הכנסות מימון, מהחכירה הנפרדת", -L.ADD_ROWS[0].income],
+            ]}
+            foot={["סך הכול", -L.ADD_YEAR_TOTAL]}
+          />
+        </Part>
         <WrongRight
           label="טעות: נוסף נכס, ולכן זו חכירה נפרדת. נכון: צריך גם מחיר נפרד"
-          wrong={<p>״המכונה השנייה תמורת {n(L.ADD.low)} לשנה, הרבה מתחת למחיר השוק. נוסף נכס, אז זו חכירה נפרדת.״</p>}
-          right={<p>בלי מחיר נפרד, ובלי נסיבות שמצדיקות את ההנחה, זו לא עסקה עצמאית. ממשיכים לסעיף 80.</p>}
+          wrong={<p>״הקו השני תמורת {n(L.ADD.low)} לשנה, הרבה מתחת למחיר השוק. נוסף נכס, אז זו חכירה נפרדת.״</p>}
+          right={<p>בלי מחיר נפרד, ובלי נסיבות שמצדיקות את ההנחה, לקוח אחר לא היה מקבל את החוזה הזה. לכן זו לא עסקה עצמאית, וממשיכים לסעיף 80.</p>}
         />
       </>
     ),
@@ -342,13 +454,22 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
     ]),
   },
   "ls-lmd-would": {
-    lead: "אם לא נוסף נכס במחיר נפרד, חוזרים בדמיון ליום ההתקשרות: אילו התיקון היה בתוקף אז, החכירה הייתה תפעולית?",
+    lead: "אם לא נוסף נכס במחיר נפרד, מדמיינים שהתיקון היה בחוזה מהיום הראשון. אם כך החכירה הייתה תפעולית, הנכס פשוט חוזר לספרים.",
     body: (
       <>
-        <MachineStory />
-        <Part title="התיקון">
-          <p className="text-[15px]">החכירה תסתיים ב-31.12 של שנה 4, כלומר {L.CUT.term} שנים בסך הכול. התשלום לא משתנה.</p>
-        </Part>
+        <Story icon={<Truck />} title="מערבל בטון, והאופציה שבוטלה">
+          <p>
+            ב-1.1 של שנה 1 מערבל בטון, עם {L.WOULD.life} שנות חיים, הוחכר ל-{L.WOULD.years} שנים תמורת <M v={L.WOULD.payment} /> בסוף כל שנה. בסוף שנה {L.WOULD.years} לחוכר הייתה אופציה לקנות אותו ב-<M v={L.WOULD.option} />, מחיר נמוך בהרבה מהשווי הצפוי. בגלל האופציה בלבד החכירה מימונית (סעיף 63(ב)). הריבית הגלומה {pct(L.WOULD.rate)}, והשווי ההוגן ביום ההתקשרות היה <M v={L.WOULD_FV} />.
+          </p>
+          <p>
+            ב-1.1 של שנה {L.WOULD.done + 1} החוכר החליט שהוא לא צריך את המערבל אחרי החכירה, והצדדים ביטלו את האופציה. התשלום לא משתנה, ונשארו {L.WOULD.left} תשלומים. בסוף המערבל חוזר למחכיר.
+          </p>
+        </Story>
+        <P>ההשקעה נטו מיד לפני התיקון היא מה שעוד אמור היה להגיע, התשלומים והאופציה:</P>
+        <p>
+          <Ltr>{`=PV(7%;${L.WOULD.left};-${L.WOULD.payment};-${L.WOULD.option}) → ${n(L.WOULD_NI)}`}</Ltr>
+        </p>
+        <P>למה בודקים לפי יום ההתקשרות, ולא לפי היום? כי השאלה היא איזו חכירה הצדדים היו יוצרים אילו אלה היו התנאים מההתחלה. אם החוזה בתנאים האלה מעולם לא היה מכירה, גם אין טעם להמשיך להציג אותו כמכירה. לכן מציבים את התנאים החדשים בנתונים של אז.</P>
         <FullSteps
           label="הפתרון"
           steps={[
@@ -361,13 +482,13 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
                     dense
                     head={["סימן", "עם התיקון", "נדרש"]}
                     rows={[
-                      ["תקופה מהחיים", <Ltr key="term">{`${L.CUT.term} ÷ ${L.MACH.life} = ${pct(L.CUT_TERM_SHARE)}`}</Ltr>, "החלק העיקרי"],
-                      ["ערך נוכחי מהשווי", pct(L.CUT_PV_SHARE), "למעשה הכול"],
-                      ["בעלות או אופציה", "אין", ""],
+                      ["תקופה מהחיים", <Ltr key="term">{`${L.WOULD.years} ÷ ${L.WOULD.life} = ${pct(L.WOULD_TERM_SHARE)}`}</Ltr>, "החלק העיקרי"],
+                      ["ערך נוכחי מהשווי", pct(L.WOULD_PV_SHARE), "למעשה הכול"],
+                      ["בעלות או אופציה", "אין, בוטלה", ""],
                     ]}
                   />
                   <p>
-                    הערך הנוכחי: <Ltr>{`${n(L.CUT_PV)} ÷ ${n(L.MACH_FV)}`}</Ltr>, בלי השייר, כי השייר לא מובטח ואינו תשלום חכירה. המסקנה: הייתה תפעולית.
+                    הערך הנוכחי: <Ltr>{`=PV(7%;${L.WOULD.years};-${L.WOULD.payment}) → ${n(L.WOULD_PV)}`}</Ltr>, מול שווי של {n(L.WOULD_FV)}. כבר אין בו אופציה. גם שייר לא מובטח, אילו היה, לא היה נספר כאן, כי הוא אינו תשלום חכירה. המסקנה: הייתה תפעולית.
                   </p>
                 </>
               ),
@@ -375,29 +496,52 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
             {
               title: "הפקודה ביום התיקון",
               body: (
-                <JournalEntry
-                  title="1.1 של שנה 4"
-                  lines={[
-                    { account: "מכונות", dr: L.MACH_NI },
-                    { account: "השקעה נטו בחכירה", cr: L.MACH_NI },
-                  ]}
-                />
+                <>
+                  <p>
+                    הנכס חוזר לספרים. הערך שלו בספרים הוא בדיוק ההשקעה נטו מיד לפני התיקון (סעיף 80(א)(ii)), ולכן אין רווח ואין הפסד. אין כאן מדידה לפי שווי הוגן, רק נכס שמחליף צורה: מה שהיה חוב חוזר להיות מערבל.
+                  </p>
+                  <JournalEntry
+                    title={`1.1 של שנה ${L.WOULD.done + 1}`}
+                    lines={[
+                      { account: "מערבל בטון", dr: L.WOULD_NI },
+                      { account: "השקעה נטו בחכירה", cr: L.WOULD_NI },
+                    ]}
+                  />
+                </>
               ),
             },
             {
               title: "מכאן זו חכירה תפעולית",
               body: (
                 <>
+                  <p>
+                    התשלומים שנשארו זהים, ולכן ההכנסה בקו ישר שווה לתשלום: <Ltr>{`${L.WOULD.left} × ${n(L.WOULD.payment)} ÷ ${L.WOULD.left} = ${n(L.WOULD.payment)}`}</Ltr>. הפחת הוא על החיים שנשארו למערבל, כי הוא שוב של המחכיר, ולא על תקופת החכירה.
+                  </p>
+                  <Formula>פחת = הערך בספרים ÷ שנות החיים שנשארו</Formula>
+                  <p>
+                    <Ltr>{`${n(L.WOULD_NI)} ÷ ${L.WOULD_LIFE_LEFT} = ${n(L.WOULD_DEP)}`}</Ltr>
+                  </p>
+                  <p>
+                    {L.WOULD_LIFE_LEFT} השנים הן מה שנשאר מ-{L.WOULD.life} שנות החיים. בסוף החיים אין למערבל ערך שייר.
+                  </p>
                   <Tbl
                     dense
-                    head={["שנה 4", "סכום"]}
+                    head={[`שנה ${L.WOULD.done + 1}`, "סכום"]}
                     rows={[
-                      ["הכנסות מהשכרה", L.MACH.payment],
-                      [<>פחת: <Ltr>{`${n(L.MACH_NI)} ÷ ${L.CUT.lifeLeft}`}</Ltr></>, -L.CUT_DEP],
-                      ["המכונה, נטו, 31.12", L.CUT_ASSET],
+                      ["הכנסות מהשכרה", -L.WOULD.payment],
+                      ["פחת", L.WOULD_DEP],
                     ]}
+                    foot={["סך הכול", L.WOULD_DEP - L.WOULD.payment]}
                   />
-                  <p>{L.CUT.lifeLeft} השנים הן מה שנשאר מ-{L.MACH.life} שנות החיים. בסוף החיים אין למכונה ערך שייר.</p>
+                  <Tbl
+                    dense
+                    head={["מערבל, נטו", "סכום"]}
+                    rows={[
+                      ["1.1", L.WOULD_NI],
+                      ["פחת", -L.WOULD_DEP],
+                    ]}
+                    foot={["31.12", L.WOULD_ASSET]}
+                  />
                 </>
               ),
             },
@@ -406,7 +550,7 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
         />
         <WrongRight
           label="טעות: הנכס חוזר בשווי הוגן. נכון: הנכס חוזר לפי ההשקעה נטו, בלי רווח או הפסד"
-          wrong={<p>״המכונה חוזרת לפי השווי ההוגן של היום, וההפרש ברווח או הפסד.״</p>}
+          wrong={<p>״המערבל חוזר לפי השווי ההוגן של היום, וההפרש ברווח או הפסד.״</p>}
           right={<p>הערך בספרים של הנכס הוא ההשקעה נטו מיד לפני התיקון (סעיף 80(א)(ii)). הפקודה בלי רווח ובלי הפסד.</p>}
         />
       </>
@@ -421,36 +565,48 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
     ]),
   },
   "ls-lmd-ifrs9": {
-    lead: "אם החכירה הייתה נשארת מימונית, ההשקעה נטו היא פשוט נכס פיננסי שתנאיו השתנו. מחשבים אותה מחדש בריבית המקורית.",
+    lead: "אם החכירה הייתה נשארת מימונית, זה כמו הלוואה שתנאיה השתנו. מחשבים את היתרה מחדש באותה ריבית, וההפרש ברווח או הפסד.",
     body: (
       <>
-        <MachineStory />
-        <Part title="התיקון">
-          <p className="text-[15px]">
-            התשלום יורד ל-<M v={L.LOW.payment} /> לשנה, ל-{L.MACH.left} השנים שנשארו. ריבית השוק היום {pct(L.LOW.marketRate)}.
-          </p>
-        </Part>
+        <P>
+          ההשקעה נטו היא נכס פיננסי, ולכן התיקון מטופל לפי <strong>IFRS 9</strong>, התקן של נכסים פיננסיים (סעיף 80(ב)). הוא מודד נכס שתנאיו שונו בריבית האפקטיבית המקורית (IFRS 9 סעיף 5.4.3), וכך ההפרש נובע רק מהתזרים שהשתנה. בריבית השוק של היום היינו מערבבים בהפרש גם את השינוי בשוק, שלא קשור לתיקון.
+        </P>
+        <HotelStory />
         <FullSteps
           label="הפתרון"
           steps={[
-            { title: "חכירה נפרדת?", body: <p>לא. לא נוסף נכס.</p> },
-            { title: "מבחן הסיווג", body: <p>התקופה לא השתנתה: {L.MACH.years} מתוך {L.MACH.life} שנים, החלק העיקרי. הייתה מימונית, ולכן IFRS 9 (סעיף 80(ב)).</p> },
+            { title: "חכירה נפרדת?", body: <p>לא. לא נוסף נכס. הארכה ושינוי בתשלום לא מוסיפים זכות שימוש בנכס נוסף.</p> },
+            {
+              title: "מבחן הסיווג",
+              body: (
+                <p>
+                  עם התיקון התקופה היא <Ltr>{`${L.REST.done} + ${L.REST.newLeft} = ${L.REST_TERM}`}</Ltr> שנים מתוך {L.REST.life}, כלומר {pct(L.REST_TERM / L.REST.life)}, החלק העיקרי של החיים הכלכליים (סעיף 63(ג)). הייתה מימונית, ולכן IFRS 9 (סעיף 80(ב)).
+                </p>
+              ),
+            },
             {
               title: "לפני ואחרי, באותה ריבית",
               body: (
                 <>
+                  <Formula>השקעה נטו = ערך נוכחי של התזרים, בריבית המקורית, כולל השייר</Formula>
                   <p>
-                    <Ltr>{`=PV(7%;8;-110000;-150000) → ${n(L.LOW_NI)}`}</Ltr>
+                    לפני: <Ltr>{`=PV(6%;${L.REST.left};-${L.REST.payment};-${L.REST.residual}) → ${n(L.REST_NI)}`}</Ltr>
+                  </p>
+                  <p>
+                    אחרי: <Ltr>{`=PV(6%;${L.REST.newLeft};-${L.REST.newPayment};-${L.REST.newResidual}) → ${n(L.LOW_NI)}`}</Ltr>
                   </p>
                   <Tbl
                     dense
                     head={["השקעה נטו", "סכום"]}
                     rows={[
-                      ["לפני התיקון", L.MACH_NI],
-                      ["אחרי התיקון", L.LOW_NI],
+                      ["לפני התיקון", L.REST_NI],
+                      ["הפסד מתיקון", -L.LOW_LOSS],
                     ]}
-                    foot={["הפסד", L.LOW_LOSS]}
+                    foot={["אחרי התיקון", L.LOW_NI]}
                   />
+                  <p>
+                    ההפרש נרשם מיד, כי ביום התיקון החוב שמגיע למחכיר קטן. אצל החוכר הוא היה הולך כנגד נכס זכות השימוש, ואצל המחכיר אין נכס כזה שיספוג אותו. אילו התשלום היה עולה, אותו חישוב היה נותן רווח.
+                  </p>
                 </>
               ),
             },
@@ -458,7 +614,7 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
               title: "הפקודה",
               body: (
                 <JournalEntry
-                  title="1.1 של שנה 4"
+                  title={`1.1 של שנה ${L.REST.done + 1}`}
                   lines={[
                     { account: "הפסד מתיקון חכירה", dr: L.LOW_LOSS },
                     { account: "השקעה נטו בחכירה", cr: L.LOW_LOSS },
@@ -467,18 +623,30 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
               ),
             },
             {
-              title: "שנה 4 בדוחות",
+              title: `שנה ${L.REST.done + 1} בדוחות`,
               body: (
-                <Tbl
-                  dense
-                  head={["", "סכום"]}
-                  rows={[
-                    ["הפסד מתיקון", -L.LOW_LOSS],
-                    ["הכנסות מימון: 7%", L.LOW_INT],
-                    ["השקעה נטו, שוטפת", L.LOW_CLOSE - L.LOW_NC],
-                    ["השקעה נטו, לא שוטפת", L.LOW_NC],
-                  ]}
-                />
+                <>
+                  <p>
+                    <Ltr>{`${n(L.LOW_NI)} × 6% = ${n(L.LOW_INT)}`}</Ltr>, ואחר כך <Ltr>{`${n(L.LOW_NI)} + ${n(L.LOW_INT)} − ${n(L.REST.newPayment)} = ${n(L.LOW_CLOSE)}`}</Ltr>.
+                  </p>
+                  <Tbl
+                    dense
+                    head={["רווח או הפסד", "סכום"]}
+                    rows={[
+                      ["הפסד מתיקון", L.LOW_LOSS],
+                      ["הכנסות מימון: 6%", -L.LOW_INT],
+                    ]}
+                    foot={["סך הכול", L.LOW_LOSS - L.LOW_INT]}
+                  />
+                  <Tbl
+                    dense
+                    head={["מצב כספי, 31.12", "סכום"]}
+                    rows={[
+                      ["השקעה נטו, שוטפת", L.LOW_CLOSE - L.LOW_NC],
+                      ["השקעה נטו, לא שוטפת", L.LOW_NC],
+                    ]}
+                  />
+                </>
               ),
             },
             { title: "מלכודת נפוצה", body: <p>להוציא את השייר מהחישוב. הוא בחוץ רק במבחן הסיווג. בהשקעה נטו הוא נשאר.</p> },
@@ -486,8 +654,8 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
         />
         <WrongRight
           label="טעות: בלי גריעה, מהוונים בריבית השוק של היום. נכון: בריבית המקורית"
-          wrong={<p>״בריבית של {pct(L.LOW.marketRate)} יוצא {n(L.LOW_WRONG)}.״</p>}
-          right={<p>בריבית המקורית, {pct(L.MACH.rate)}, יוצא {n(L.LOW_NI)}. אם התשלום היה עולה, אותו חישוב היה נותן רווח.</p>}
+          wrong={<p>״בריבית של {pct(L.REST.marketRate)} יוצא {n(L.LOW_WRONG)}.״</p>}
+          right={<p>בריבית המקורית, {pct(L.REST.rate)}, יוצא {n(L.LOW_NI)}. {n(L.LOW_RATE_EFFECT)} מההפרש היו באים רק מהשוק, ולא מהתיקון.</p>}
         />
         <Remember>כל זה בהנחה שהתיקון לא מביא לגריעה של ההשקעה נטו (IFRS 9 סעיף 5.4.3). אם הוא כן, הטיפול אחר, וזה המסך הבא.</Remember>
       </>
@@ -502,9 +670,43 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
     ]),
   },
   "ls-lmd-ifrs9-new": {
-    lead: "יש שינוי שאחריו זה כבר לא אותו נכס פיננסי. אז לא מחשבים מחדש: גורעים את הישן, ורושמים חדש בשווי הוגן.",
+    lead: "לפעמים השינוי כל כך גדול, שזה כבר נכס פיננסי אחר. אז מוציאים את הישן מהספרים, וזו גריעה, ורושמים חדש בשווי הוגן.",
     body: (
       <>
+        <HotelStory />
+        <Part title="הפעם">
+          <p className="text-[15px]">
+            החברה קבעה שהשינוי מהותי ומביא לגריעה של ההשקעה נטו. נכס חדש נרשם בשווי הוגן, ואותו מודדים בריבית השוק של היום, {pct(L.REST.marketRate)}, כולל השייר.
+          </p>
+        </Part>
+        <P>כל המסך הזה נשען על IFRS 9. תקן החכירות רק מפנה אליו, בסעיף 80(ב), ובסעיף 77 לעניין גריעה.</P>
+        <P>למה ריבית השוק? כי נכס חדש נמדד כמו כל נכס פיננסי שנרכש היום: במחיר שהשוק היה משלם עליו. הריבית המקורית שייכת לנכס שכבר לא קיים.</P>
+        <p>
+          <Ltr>{`=PV(9%;${L.REST.newLeft};-${L.REST.newPayment};-${L.REST.newResidual}) → ${n(L.SUB_NI)}`}</Ltr>
+        </p>
+        <Formula>הפסד = ההשקעה נטו הישנה − השווי ההוגן של החדשה</Formula>
+        <p>
+          <Ltr>{`${n(L.REST_NI)} − ${n(L.SUB_NI)} = ${n(L.SUB_LOSS)}`}</Ltr>
+        </p>
+        <JournalEntry
+          title={`1.1 של שנה ${L.REST.done + 1}`}
+          lines={[
+            { account: "השקעה נטו בחכירה, חדשה", dr: L.SUB_NI },
+            { account: "הפסד מתיקון חכירה", dr: L.SUB_LOSS },
+            { account: "השקעה נטו בחכירה", cr: L.REST_NI },
+          ]}
+        />
+        <P>אותו תיקון, בשתי הדרכים. ההפסד גדול יותר עם גריעה, אבל הריבית של הנכס החדש גבוהה יותר, ולכן ההפרש חוזר לאט דרך הכנסות מימון.</P>
+        <Tbl
+          dense
+          head={["אותו תיקון", "בלי גריעה", "עם גריעה"]}
+          rows={[
+            ["השקעה נטו, 1.1", L.LOW_NI, L.SUB_NI],
+            ["הפסד מתיקון", L.LOW_LOSS, L.SUB_LOSS],
+            ["הכנסות מימון, השנה", -L.LOW_INT, -L.SUB_INT],
+            ["השקעה נטו, 31.12", L.LOW_CLOSE, L.SUB_CLOSE],
+          ]}
+        />
         <Tbl
           dense
           head={["", "בלי גריעה", "עם גריעה"]}
@@ -515,38 +717,11 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
             ["סעיף ב-IFRS 9", "5.4.3", "3.2.12, 5.1.1"],
           ]}
         />
-        <MachineStory />
-        <Part title="התיקון">
-          <p className="text-[15px]">
-            התשלום יורד ל-<M v={L.LOW.payment} /> לשנה, ל-{L.MACH.left} השנים שנשארו, והחברה קבעה שזה שינוי מהותי שמביא לגריעה. ריבית השוק היום {pct(L.LOW.marketRate)}, ולפיה נמדד השווי ההוגן, כולל השייר.
-          </p>
-        </Part>
-        <P>
-          <Ltr>{`=PV(9%;8;-110000;-150000) → ${n(L.SUB_NI)}`}</Ltr>
-        </P>
-        <JournalEntry
-          title="1.1 של שנה 4"
-          lines={[
-            { account: "השקעה נטו בחכירה, חדשה", dr: L.SUB_NI },
-            { account: "הפסד מתיקון חכירה", dr: L.SUB_LOSS },
-            { account: "השקעה נטו בחכירה", cr: L.MACH_NI },
-          ]}
-        />
-        <Tbl
-          dense
-          head={["אותו תיקון", "בלי גריעה", "עם גריעה"]}
-          rows={[
-            ["השקעה נטו, 1.1", L.LOW_NI, L.SUB_NI],
-            ["הפסד", L.LOW_LOSS, L.SUB_LOSS],
-            ["הכנסות מימון, שנה 4", L.LOW_INT, L.SUB_INT],
-            ["השקעה נטו, 31.12", L.LOW_CLOSE, L.SUB_CLOSE],
-          ]}
-        />
-        <Rule>מהריבית של יום התיקון מתחילים מחדש: היא הריבית האפקטיבית של הנכס החדש.</Rule>
-        <Remember>מתי שינוי הוא מהותי? זה שיקול דעת. בשאלה הנתון צריך להיות כתוב. בקורס, כשלא נאמר אחרת, הולכים בדרך של המסך הקודם, כמו בדוגמאות של הסיכום.</Remember>
+        <Rule>מהריבית של יום התיקון מתחילים מחדש. היא הריבית האפקטיבית של הנכס החדש.</Rule>
         <Deeper title="ואיך נגרע נכס, ומה עם 10%?">
           <P>מבחן 10% מוכר מהתחייבויות פיננסיות (IFRS 9 סעיף ב3.3.6), ולא מנכסים. בסעיפי הגריעה של נכסים (3.2.3–3.2.9) אין אחוז.</P>
         </Deeper>
+        <Remember>מתי שינוי הוא מהותי? זה שיקול דעת, ובשאלה הנתון צריך להיות כתוב. בקורס, כשלא נאמר אחרת, הולכים בדרך של המסך הקודם.</Remember>
       </>
     ),
     check: quiz("ls-lmd-ifrs9-new", [
@@ -559,7 +734,7 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
     ]),
   },
   "ls-lmd-sides": {
-    lead: "אותה חתימה, שני ספרים. החוכר והמחכיר לא מראה זה של זה, והריבית היא המקום שבו זה הכי ברור.",
+    lead: "תיקון אחד נרשם אחרת אצל כל צד. ההבדל הכי בולט הוא הריבית: החוכר עובר לריבית מעודכנת, והמחכיר במימונית נשאר בריבית המקורית.",
     body: (
       <>
         <Tbl
@@ -572,7 +747,8 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
             ["הקטנת היקף", "גריעה, ואז מדידה (46)", "מבחן הסיווג תחילה"],
           ]}
         />
-        <Part title="הקטנה: אצל החוכר שני שלבים, ואצל המחכיר שאלה אחת">
+        <P>למה הם לא מראה זה של זה? אצל החוכר יש נכס זכות שימוש שסופג את ההפרש, ולכן אין רווח או הפסד ברוב התיקונים. אצל המחכיר במימונית היתרה היא נכס פיננסי בלבד, ואין מה שיספוג אותה, אז ההפרש נרשם ברווח או הפסד.</P>
+        <Part title="כשמקטינים את ההיקף">
           <ul className="list-disc space-y-1.5 ps-5 text-[15px]">
             <li>
               <strong>חוכר:</strong> קודם גריעה יחסית, עם רווח או הפסד. אחר כך מדידה מחדש כנגד הנכס.
@@ -609,6 +785,7 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
     lead: "מחכיר ויתר על כסף. השאלה היחידה: האם מועד התשלום כבר הגיע?",
     body: (
       <>
+        <P>תשלום שמועדו עבר כבר רשום כחוב של החוכר. זה נכס פיננסי, והוויתור עליו הוא הפסד של אותו רגע. תשלום עתידי עוד לא רשום כחוב: הוויתור עליו משנה את התמורה בחוזה, ולכן זה תיקון חכירה.</P>
         <Tbl
           dense
           head={["על מה ויתר", "מה זה", "הטיפול"]}
@@ -631,22 +808,23 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
           ]}
         />
         <P>
-          התשלום העתידי הוא תיקון של תפעולית, ולכן חכירה חדשה: נשארו <Ltr>{`${n(L.WAIVE.payment)} × 2 = ${n(L.WAIVE_TOTAL)}`}</Ltr>, על פני {L.WAIVE.left} שנים. הכנסה של {n(L.WAIVE_INCOME)} בשנה, גם בשנה בלי תקבול.
+          התשלום העתידי הוא תיקון של תפעולית, ולכן חכירה חדשה: נשארו <Ltr>{`${n(L.WAIVE.payment)} × 2 = ${n(L.WAIVE_TOTAL)}`}</Ltr>, על פני {L.WAIVE.left} שנים. הכנסה של <Ltr>{`${n(L.WAIVE_TOTAL)} ÷ ${L.WAIVE.left} = ${n(L.WAIVE_INCOME)}`}</Ltr> בשנה, גם בשנה בלי תקבול. החנות עדיין מוחכרת באותה שנה, ולכן יש בה הכנסה.
         </P>
         <Tbl
           dense
-          head={["", "שנה 1", "שנה 2", "שנה 3"]}
+          head={["הכנסות לקבל", "שנה 1", "שנה 2", "שנה 3"]}
           rows={[
-            ["תקבול", ...L.WAIVE_ROWS.map((y) => y.cash)],
+            ["יתרה ב-1.1", 0, L.WAIVE_ROWS[0].closing, L.WAIVE_ROWS[1].closing],
             ["הכנסה", ...L.WAIVE_ROWS.map((y) => y.income)],
-            ["הכנסות לקבל, 31.12", ...L.WAIVE_ROWS.map((y) => y.closing)],
+            ["תקבול", ...L.WAIVE_ROWS.map((y) => -y.cash)],
           ]}
+          foot={["יתרה ב-31.12", ...L.WAIVE_ROWS.map((y) => y.closing)]}
         />
-        <Remember>בחכירה מימונית ויתור על תשלום עתידי הולך באותו תרשים: בדרך כלל החכירה נשארת מימונית, ואז מחשבים מחדש בריבית המקורית.</Remember>
         <Deeper title="מה הבסיס לכלל">
           <P>בנוסח התקן אין כלל מפורש על ויתור. ועדת הפרשנויות של ה-IFRS הכריעה בכך באוקטובר 2022, בחכירה תפעולית: תשלום שכבר הוכר כחייבים נגרע לפי IFRS 9 (סעיפים 2.1(ב)(i), 3.2.3(א)), ולפני כן מעדכנים את ההפרשה להפסדי אשראי. תשלום שעוד לא הגיע מועדו הוא תיקון לפי סעיף 87.</P>
           <P>חייבים כאלה אינם ״תשלומים נצברים״ של סעיף 87, ולכן הם לא נכנסים לתשלומי החכירה החדשה. בחכירה מימונית ההחלטה לא עסקה, ושם הולכים לפי התרשים של סעיף 80.</P>
         </Deeper>
+        <Remember>בחכירה מימונית ויתור על תשלום עתידי הולך באותו תרשים: בדרך כלל החכירה נשארת מימונית, ואז מחשבים מחדש בריבית המקורית.</Remember>
       </>
     ),
     check: quiz("ls-lmd-waiver", [
@@ -675,7 +853,7 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
         q: "מה הטעות בריבית?",
         options: ["צריך את הריבית המקורית, 6%", "צריך ממוצע של 6% ו-9%", "צריך ריבית גבוהה מ-9%", "אין טעות"],
         answer: 0,
-        why: "סעיף 80(ב): המסלול של IFRS 9, בריבית המקורית.",
+        why: "סעיף 80(ב) מפנה ל-IFRS 9, וסעיף 5.4.3 שם קובע את הריבית המקורית.",
       },
       {
         q: "מה הטעות בשייר?",
@@ -692,46 +870,45 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
     ]),
   },
   "ls-lmd-master": {
-    lead: "כמו במבחן: חוזה אחד, ארבעה תיקונים אפשריים. כל הנחה עומדת לבדה. קודם פתרו לבד.",
+    lead: "כמו במבחן: לחברה צי של מנופים זהים, וכל לקוח מגיע עם בקשה אחרת. קודם פתרו לבד.",
     body: (
       <>
         <TaskFrame>
           <TaskText>
             <p>
-              ב-1.1 של שנה 1 חברת ״נתיב״, שאינה יצרנית או סוחרת, החכירה מנוף ל-{L.CRANE.years} שנים. התשלום <Money v={L.CRANE.payment} /> בסוף כל שנה, והריבית הגלומה {pct(L.CRANE.rate)}.
+              ב-1.1 של שנה 1 חברת ״נתיב״, שאינה יצרנית או סוחרת, החכירה ארבעה מנופים זהים לארבעה לקוחות, כל אחד בחוזה נפרד ובאותם תנאים: {L.CRANE.years} שנים, <Money v={L.CRANE.payment} /> בסוף כל שנה, וריבית גלומה {pct(L.CRANE.rate)}.
             </p>
             <ul className="mt-2 list-disc space-y-1.5 ps-5">
               <li>
-                אורך החיים של המנוף {L.CRANE.life} שנים, ובסוף החיים אין לו ערך. השווי ההוגן ביום ההתקשרות <Money v={L.CRANE_FV} />.
+                אורך החיים של מנוף {L.CRANE.life} שנים, ובסוף החיים אין לו ערך. השווי ההוגן של כל מנוף ביום ההתקשרות <Money v={L.CRANE_FV} />.
               </li>
               <li>
                 בסוף התקופה המנוף חוזר. שוויו הצפוי אז <Money v={L.CRANE.residual} />, והוא לא מובטח.
               </li>
-              <li>ב-1.1 של שנה 5 הצדדים חתמו על תיקון.</li>
+              <li>ב-1.1 של שנה 5 כל ארבעת הלקוחות חתמו על תיקון:</li>
             </ul>
-            <p className="mt-2">הנחות נפרדות:</p>
             <ul className="mt-1 list-disc space-y-1.5 ps-5">
               <li>
-                <strong>א.</strong> החכירה תסתיים ב-31.12 של שנה {L.CA.term}.
+                <strong>לקוח א׳</strong> מוסיף מנוף נוסף ל-{L.CC.years} שנים, ב-<Money v={L.CC.payment} /> לשנה, וזה מחיר השוק שלו. שוויו ההוגן <Money v={L.CC.fairValue} />, ערכו בספרים <Money v={L.CC.bookValue} />, ונשארו לו {L.CC.life} שנים.
               </li>
               <li>
-                <strong>ב.</strong> התשלום של {L.CRANE.left} השנים שנשארו יורד ל-<Money v={L.CB.payment} />, בלי גריעה של הנכס הפיננסי. ריבית השוק היום {pct(L.CB.marketRate)}.
+                <strong>לקוח ב׳</strong> מקבל ויתור על התשלום של שנה 5 בלבד. שאר התשלומים לא משתנים.
               </li>
               <li>
-                <strong>ג.</strong> נוסף מנוף שני ל-{L.CC.years} שנים, ב-<Money v={L.CC.payment} /> לשנה, וזה מחיר השוק שלו. שוויו ההוגן <Money v={L.CC.fairValue} />, ערכו בספרים <Money v={L.CC.bookValue} />, ונשארו לו {L.CC.life} שנים.
+                <strong>לקוח ג׳</strong> משלם מעכשיו <Money v={L.CB.payment} /> בכל אחת מ-{L.CRANE.left} השנים שנשארו, בלי גריעה של הנכס הפיננסי. ריבית השוק היום {pct(L.CB.marketRate)}.
               </li>
               <li>
-                <strong>ד.</strong> המחכיר ויתר על התשלום של שנה 5 בלבד. שאר התשלומים לא משתנים.
+                <strong>לקוח ד׳</strong> מסיים את החכירה ב-31.12 של שנה {L.CA.term}.
               </li>
             </ul>
-            <p className="mt-2 font-semibold">נדרש: הציגו את פקודת היומן ביום התיקון, ואת הסעיפים בדוחות של שנה 5.</p>
+            <p className="mt-2 font-semibold">נדרש: לכל לקוח, הציגו את פקודת היומן ביום התיקון ואת הסעיפים בדוחות של שנה 5. בסוף, מה סך ההשפעה של ארבעתם על רווח או הפסד?</p>
           </TaskText>
           <FullSolution>
             <FullSteps
               label="הפתרון המלא"
               steps={[
                 {
-                  title: "הבסיס: ב-31.12 של שנה 4",
+                  title: "הבסיס: ב-31.12 של שנה 4, לכל מנוף",
                   body: (
                     <p>
                       המקור: 12 מתוך 15 שנים, ולכן מימונית. נשארו {L.CRANE.left} תשלומים: <Ltr>{`=PV(6%;8;-230000;-200000) → ${n(L.CRANE_NI)}`}</Ltr>.
@@ -739,72 +916,26 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
                   ),
                 },
                 {
-                  title: "הנחה א: הייתה תפעולית",
+                  title: "לקוח א׳: חכירה נפרדת",
                   body: (
                     <>
                       <p>
-                        {L.CA.term} מתוך {L.CRANE.life} שנים, 40%. הערך הנוכחי של {L.CA.term} תשלומים, בלי השייר: <Ltr>{`${n(L.CA_PV)} ÷ ${n(L.CRANE_FV)} = ${pct(L.CA_PV / L.CRANE_FV)}`}</Ltr>. לכן הייתה תפעולית.
-                      </p>
-                      <JournalEntry
-                        title="1.1 של שנה 5"
-                        lines={[
-                          { account: "מכונות", dr: L.CRANE_NI },
-                          { account: "השקעה נטו בחכירה", cr: L.CRANE_NI },
-                        ]}
-                      />
-                      <Tbl
-                        dense
-                        head={["שנה 5", "סכום"]}
-                        rows={[
-                          ["הכנסות מהשכרה", L.CRANE.payment],
-                          [<>פחת: <Ltr>{`${n(L.CRANE_NI)} ÷ ${L.CA.lifeLeft}`}</Ltr></>, -L.CA_DEP],
-                          ["המנוף, נטו, 31.12", L.CA_ASSET],
-                        ]}
-                      />
-                    </>
-                  ),
-                },
-                {
-                  title: "הנחה ב: נשארת מימונית",
-                  body: (
-                    <>
-                      <p>
-                        התקופה לא השתנתה, ולכן IFRS 9, בריבית המקורית ולא ב-{pct(L.CB.marketRate)}: <Ltr>{`=PV(6%;8;-170000;-200000) → ${n(L.CB_NI)}`}</Ltr>.
-                      </p>
-                      <JournalEntry
-                        title="1.1 של שנה 5"
-                        lines={[
-                          { account: "הפסד מתיקון חכירה", dr: L.CB_LOSS },
-                          { account: "השקעה נטו בחכירה", cr: L.CB_LOSS },
-                        ]}
-                      />
-                      <Tbl
-                        dense
-                        head={["שנה 5", "סכום"]}
-                        rows={[
-                          ["הפסד מתיקון", -L.CB_LOSS],
-                          ["הכנסות מימון", L.CB_INT],
-                          ["השקעה נטו, שוטפת", L.CB_CLOSE - L.CB_NC],
-                          ["השקעה נטו, לא שוטפת", L.CB_NC],
-                        ]}
-                      />
-                    </>
-                  ),
-                },
-                {
-                  title: "הנחה ג: חכירה נפרדת",
-                  body: (
-                    <>
-                      <p>
-                        נכס נוסף, במחיר הנפרד שלו. המנוף השני: {L.CC.years} מתוך {L.CC.life} שנים, ולכן תפעולית. אין פקודה לחכירה המקורית, וזו ממשיכה.
+                        נכס נוסף, במחיר הנפרד שלו. המנוף הנוסף: {L.CC.years} מתוך {L.CC.life} שנים, ולכן תפעולית. אין פקודה לחכירה המקורית, וזו ממשיכה.
                       </p>
                       <Tbl
                         dense
                         head={["שנה 5", "סכום"]}
                         rows={[
-                          ["הכנסות מימון, מקורית", L.CC_INT],
-                          ["הכנסות מהשכרה, נפרדת", L.CC.payment],
-                          ["פחת, מנוף שני", -L.CC_DEP],
+                          ["הכנסות מימון, מקורית", -L.CC_INT],
+                          ["הכנסות מהשכרה, נפרדת", -L.CC.payment],
+                          ["פחת, המנוף הנוסף", L.CC_DEP],
+                        ]}
+                        foot={["רווח או הפסד", L.CRANE_PL.c]}
+                      />
+                      <Tbl
+                        dense
+                        head={["מצב כספי, 31.12", "סכום"]}
+                        rows={[
                           ["השקעה נטו, שוטפת", L.CC_CLOSE - L.CC_NC],
                           ["השקעה נטו, לא שוטפת", L.CC_NC],
                         ]}
@@ -813,7 +944,7 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
                   ),
                 },
                 {
-                  title: "הנחה ד: ויתור על תשלום עתידי",
+                  title: "לקוח ב׳: ויתור על תשלום עתידי",
                   body: (
                     <>
                       <p>
@@ -830,18 +961,109 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
                         dense
                         head={["שנה 5", "סכום"]}
                         rows={[
-                          ["הפסד מתיקון", -L.CD_LOSS],
-                          ["הכנסות מימון", L.CD_INT],
-                          ["תקבול", 0],
+                          ["הפסד מתיקון", L.CD_LOSS],
+                          ["הכנסות מימון", -L.CD_INT],
+                        ]}
+                        foot={["רווח או הפסד", L.CRANE_PL.d]}
+                      />
+                      <Tbl
+                        dense
+                        head={["מצב כספי, 31.12", "סכום"]}
+                        rows={[
                           ["השקעה נטו, שוטפת", L.CD_CLOSE - L.CD_NC],
                           ["השקעה נטו, לא שוטפת", L.CD_NC],
                         ]}
                       />
-                      <p>ב-31.12 של שנה 5 היתרה חוזרת ל-{n(L.CD_CLOSE)}, כמו בלי התיקון, כי מכאן והלאה התשלומים זהים.</p>
+                      <p>השנה אין תקבול. ב-31.12 של שנה 5 היתרה חוזרת ל-{n(L.CD_CLOSE)}, כמו בלי התיקון, כי מכאן והלאה התשלומים זהים.</p>
                     </>
                   ),
                 },
-                { title: "מלכודת נפוצה", body: <p>להשתמש באותה ריבית בכל ההנחות, או לזקוף הפרש כנגד נכס כמו אצל החוכר. קודם המסלול, ורק אחריו החישוב.</p> },
+                {
+                  title: "לקוח ג׳: נשארת מימונית",
+                  body: (
+                    <>
+                      <p>
+                        התקופה לא השתנתה, ולכן IFRS 9, בריבית המקורית ולא ב-{pct(L.CB.marketRate)}: <Ltr>{`=PV(6%;8;-170000;-200000) → ${n(L.CB_NI)}`}</Ltr>.
+                      </p>
+                      <JournalEntry
+                        title="1.1 של שנה 5"
+                        lines={[
+                          { account: "הפסד מתיקון חכירה", dr: L.CB_LOSS },
+                          { account: "השקעה נטו בחכירה", cr: L.CB_LOSS },
+                        ]}
+                      />
+                      <Tbl
+                        dense
+                        head={["שנה 5", "סכום"]}
+                        rows={[
+                          ["הפסד מתיקון", L.CB_LOSS],
+                          ["הכנסות מימון", -L.CB_INT],
+                        ]}
+                        foot={["רווח או הפסד", L.CRANE_PL.b]}
+                      />
+                      <Tbl
+                        dense
+                        head={["מצב כספי, 31.12", "סכום"]}
+                        rows={[
+                          ["השקעה נטו, שוטפת", L.CB_CLOSE - L.CB_NC],
+                          ["השקעה נטו, לא שוטפת", L.CB_NC],
+                        ]}
+                      />
+                    </>
+                  ),
+                },
+                {
+                  title: "לקוח ד׳: הייתה תפעולית",
+                  body: (
+                    <>
+                      <p>
+                        {L.CA.term} מתוך {L.CRANE.life} שנים, 40%. הערך הנוכחי של {L.CA.term} תשלומים, בלי השייר: <Ltr>{`${n(L.CA_PV)} ÷ ${n(L.CRANE_FV)} = ${pct(L.CA_PV / L.CRANE_FV)}`}</Ltr>. לכן הייתה תפעולית.
+                      </p>
+                      <JournalEntry
+                        title="1.1 של שנה 5"
+                        lines={[
+                          { account: "מנוף", dr: L.CRANE_NI },
+                          { account: "השקעה נטו בחכירה", cr: L.CRANE_NI },
+                        ]}
+                      />
+                      <Tbl
+                        dense
+                        head={["שנה 5", "סכום"]}
+                        rows={[
+                          ["הכנסות מהשכרה", -L.CRANE.payment],
+                          [<>פחת: <Ltr>{`${n(L.CRANE_NI)} ÷ ${L.CA.lifeLeft}`}</Ltr></>, L.CA_DEP],
+                        ]}
+                        foot={["רווח או הפסד", L.CRANE_PL.a]}
+                      />
+                      <Tbl
+                        dense
+                        head={["מנוף, נטו", "סכום"]}
+                        rows={[
+                          ["1.1", L.CRANE_NI],
+                          ["פחת", -L.CA_DEP],
+                        ]}
+                        foot={["31.12", L.CA_ASSET]}
+                      />
+                    </>
+                  ),
+                },
+                {
+                  title: "סך ההשפעה על רווח או הפסד",
+                  body: (
+                    <Tbl
+                      dense
+                      head={["שנה 5", "סכום"]}
+                      rows={[
+                        ["לקוח א׳: חכירה נפרדת", L.CRANE_PL.c],
+                        ["לקוח ב׳: ויתור", L.CRANE_PL.d],
+                        ["לקוח ג׳: תשלום נמוך", L.CRANE_PL.b],
+                        ["לקוח ד׳: הייתה תפעולית", L.CRANE_PL.a],
+                      ]}
+                      foot={["סך הכול", L.CRANE_PL_TOTAL]}
+                    />
+                  ),
+                },
+                { title: "מלכודת נפוצה", body: <p>להשתמש באותה ריבית בכל החוזים, או לזקוף הפרש כנגד נכס כמו אצל החוכר. קודם המסלול, ורק אחריו החישוב.</p> },
               ]}
             />
           </FullSolution>

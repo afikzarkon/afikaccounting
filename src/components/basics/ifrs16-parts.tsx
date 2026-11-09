@@ -27,7 +27,7 @@ export function T16({ he, par }: { he: string; par?: string }) {
 }
 
 type Cell = ReactNode | number;
-const cell = (c: Cell) => (typeof c === "number" ? <bdi dir="ltr" className="num whitespace-nowrap">{c < 0 ? `(${Math.round(-c).toLocaleString("en-US")})` : (Math.round(c) + 0).toLocaleString("en-US")}</bdi> : c);
+const cell = (c: Cell) => (typeof c === "number" ? <bdi dir="ltr" className="num whitespace-nowrap">{(Math.round(c) + 0).toLocaleString("en-US")}</bdi> : c);
 
 /** A table of figures that fits a phone: no minimum width, so the numbers stay in view without scrolling sideways. Amounts show in whole shekels. `dense` is for a table of several years. */
 export function Tbl({ head, rows, foot, dense }: { head: string[]; rows: Cell[][]; foot?: Cell[]; dense?: boolean }) {
@@ -75,7 +75,7 @@ export function Tbl({ head, rows, foot, dense }: { head: string[]; rows: Cell[][
 
 const yearHead = (rows: { year: number }[]) => rows.map((y) => `שנה ${y.year}`);
 
-/** The liability's roll-forward, a column a year. When the payment falls on 1.1 it comes before the year's interest, which is reckoned on what is left. */
+/** The liability's roll-forward, a column a year, as a worksheet writes it: credit is minus, debit is plus. When the payment falls on 1.1 it comes before the year's interest, which is reckoned on what is left. */
 export function LiabilityCycle({ rows }: { rows: ShownYear[] }) {
   const earlyPay = rows.some((y) => y.paidAtStart);
   const latePay = rows.some((y) => y.paidAtEnd);
@@ -84,12 +84,12 @@ export function LiabilityCycle({ rows }: { rows: ShownYear[] }) {
       dense
       head={["התחייבות החכירה", ...yearHead(rows)]}
       rows={[
-        ["יתרה ב-1.1", ...rows.map((y) => y.opening)],
-        ...(earlyPay ? [["תשלום 1.1", ...rows.map((y) => -y.paidAtStart)]] : []),
-        ["ריבית", ...rows.map((y) => y.interest)],
-        ...(latePay ? [["תשלום 31.12", ...rows.map((y) => -y.paidAtEnd)]] : []),
+        ["יתרה ב-1.1", ...rows.map((y) => -y.opening)],
+        ...(earlyPay ? [["תשלום 1.1", ...rows.map((y) => y.paidAtStart)]] : []),
+        ["ריבית", ...rows.map((y) => -y.interest)],
+        ...(latePay ? [["תשלום 31.12", ...rows.map((y) => y.paidAtEnd)]] : []),
       ]}
-      foot={["יתרה ב-31.12", ...rows.map((y) => y.closing)]}
+      foot={["יתרה ב-31.12", ...rows.map((y) => -y.closing)]}
     />
   );
 }

@@ -1,7 +1,8 @@
-import { pvEnd } from "../../../learn/ifrs16";
+import { pvEnd, rateFor } from "../../../learn/ifrs16";
 import { journal } from "../../inventory/shared";
 import type { StudyModule, Trap } from "../../types";
 import { ask, askNumber, COURSE, COURSE_HREF, fmt, type LeaseQuestion } from "../shared";
+import { investRows } from "./lessor";
 import type { TestEnd, TestNode } from "./what";
 
 const r = Math.round;
@@ -15,7 +16,7 @@ export const MOD_WALK: Record<string, TestNode | TestEnd> = {
   opNew: { lease: true, verdict: "חכירה חדשה", why: "מהיום של התיקון, כולל יתרות של תשלומים מראש או נצברים מהחכירה המקורית (סעיף 87)." },
   separate: { lease: true, verdict: "חכירה נפרדת", why: "התוספת מסווגת לבדה, והחכירה המקורית ממשיכה בלי שינוי (סעיף 79)." },
   finToOp: { lease: true, verdict: "חכירה חדשה", why: "ההשקעה נטו של ערב התיקון הופכת לערך בספרים של הנכס (סעיף 80(א))." },
-  ifrs9: { lease: true, verdict: "IFRS 9", why: "מחשבים מחדש את ההשקעה נטו בריבית המקורית, וההפרש ברווח או הפסד (סעיף 80(ב))." },
+  ifrs9: { lease: true, verdict: "IFRS 9", why: "מחשבים מחדש את ההשקעה נטו בריבית המקורית, וההפרש ברווח או הפסד (סעיף 80(ב), IFRS 9 סעיף 5.4.3)." },
 };
 export const MOD_WALK_START = "orig";
 
@@ -34,67 +35,78 @@ export const MOD_OPTIONS: [string, string][] = [
   ["nine", "IFRS 9"],
 ];
 
-/** Operating, paid ahead: the balance joins the new lease's payments. */
-export const PRE = { total: 600_000, years: 6, paid: [240_000, 150_000], left: 5, newPay: 90_000 };
-export const PRE_YEAR = PRE.total / PRE.years;
-export const PRE_EARNED = PRE_YEAR * 2;
-export const PRE_GOT = PRE.paid[0] + PRE.paid[1];
+/** Operating, paid ahead: key money and a low rent, then cut a year short. The balance joins the new lease's payments. */
+export const PRE = { keyMoney: 120_000, rent: 30_000, years: 5, done: 2, left: 2, newPay: 40_000 };
+export const PRE_ORIGINAL = PRE.keyMoney + PRE.rent * PRE.years;
+export const PRE_YEAR = PRE_ORIGINAL / PRE.years;
+export const PRE_EARNED = PRE_YEAR * PRE.done;
+export const PRE_GOT = PRE.keyMoney + PRE.rent * PRE.done;
 export const PRE_BAL = PRE_GOT - PRE_EARNED;
 export const PRE_FUTURE = PRE.left * PRE.newPay;
 export const PRE_TOTAL = PRE_FUTURE + PRE_BAL;
 export const PRE_INCOME = PRE_TOTAL / PRE.left;
 export const PRE_FALL = PRE_INCOME - PRE.newPay;
-export const PRE_ROWS = Array.from({ length: PRE.left }, (_, k) => ({ year: k + 3, cash: PRE.newPay, income: PRE_INCOME, closing: PRE_BAL - PRE_FALL * (k + 1) }));
+export const PRE_ROWS = Array.from({ length: PRE.left }, (_, k) => ({ year: k + PRE.done + 1, cash: PRE.newPay, income: PRE_INCOME, opening: PRE_BAL - PRE_FALL * k, closing: PRE_BAL - PRE_FALL * (k + 1) }));
 
-/** Operating, with income accrued: the balance comes off the new lease's payments. */
-export const ACC = { rents: [110_000, 150_000, 190_000, 230_000], cost: 600_000, life: 10, fairValue: 1_000_000, rate: 0.07, newRents: [230_000, 200_000] };
+/** Operating, with income accrued: steep rents flattened, the term unchanged. The balance comes off the new lease's payments. */
+export const ACC = { rents: [20_000, 30_000, 40_000, 50_000, 60_000, 70_000], cost: 240_000, life: 12, fairValue: 400_000, done: 2, left: 4, newPay: 50_000 };
 export const ACC_YEAR = ACC.rents.reduce((a, b) => a + b, 0) / ACC.rents.length;
-export const ACC_EARNED = ACC_YEAR * 3;
-export const ACC_GOT = ACC.rents[0] + ACC.rents[1] + ACC.rents[2];
+export const ACC_EARNED = ACC_YEAR * ACC.done;
+export const ACC_GOT = ACC.rents[0] + ACC.rents[1];
 export const ACC_BAL = ACC_EARNED - ACC_GOT;
 export const ACC_DEP = ACC.cost / ACC.life;
-export const ACC_NET = ACC.cost - ACC_DEP * 3;
-export const ACC_FUTURE = ACC.newRents[0] + ACC.newRents[1];
+export const ACC_NET = ACC.cost - ACC_DEP * ACC.done;
+export const ACC_LIFE_LEFT = ACC.life - ACC.done;
+export const ACC_FUTURE = ACC.newPay * ACC.left;
 export const ACC_TOTAL = ACC_FUTURE - ACC_BAL;
-export const ACC_INCOME = ACC_TOTAL / 2;
-export const ACC_ROWS = [
-  { year: 4, cash: ACC.newRents[0], income: ACC_INCOME, closing: ACC_BAL - (ACC.newRents[0] - ACC_INCOME) },
-  { year: 5, cash: ACC.newRents[1], income: ACC_INCOME, closing: ACC_BAL - (ACC.newRents[0] - ACC_INCOME) - (ACC.newRents[1] - ACC_INCOME) },
-];
-/** The accrued lease rewritten: the new lease is a finance one. */
-export const TO_FIN = { payment: 250_000, years: 3, rate: 0.075 };
-export const TO_FIN_NI = r(pvEnd(TO_FIN.rate, TO_FIN.years, TO_FIN.payment));
-export const TO_FIN_GAIN = TO_FIN_NI - ACC_NET - ACC_BAL;
+export const ACC_INCOME = ACC_TOTAL / ACC.left;
+export const ACC_ROWS = Array.from({ length: ACC.left }, (_, k) => ({ year: k + ACC.done + 1, cash: ACC.newPay, income: ACC_INCOME, opening: ACC_BAL - (ACC.newPay - ACC_INCOME) * k, closing: ACC_BAL - (ACC.newPay - ACC_INCOME) * (k + 1) }));
 
-/** Finance: a machine, on the day of the modification, 1.1 of year 4. */
-export const MACH = { payment: 190_000, years: 11, life: 12, rate: 0.07, residual: 150_000, done: 3, left: 8 };
-export const MACH_FV = r(pvEnd(MACH.rate, MACH.years, MACH.payment, MACH.residual));
-export const MACH_NI = r(pvEnd(MACH.rate, MACH.left, MACH.payment, MACH.residual));
-/** A second machine at its stand-alone price: a separate lease. */
-export const ADD = { payment: 60_000, years: 5, fairValue: 300_000, bookValue: 210_000, life: 15, low: 40_000 };
-export const ADD_DEP = ADD.bookValue / ADD.life;
-export const MACH_INT = r(MACH_NI * MACH.rate);
-export const MACH_CLOSE = MACH_NI + MACH_INT - MACH.payment;
-/** Cut to four years in all: it would have been an operating lease. */
-export const CUT = { term: 4, lifeLeft: 9 };
-export const CUT_PV = r(pvEnd(MACH.rate, CUT.term, MACH.payment));
-export const CUT_TERM_SHARE = CUT.term / MACH.life;
-export const CUT_PV_SHARE = CUT_PV / MACH_FV;
-export const CUT_DEP = r(MACH_NI / CUT.lifeLeft);
-export const CUT_ASSET = MACH_NI - CUT_DEP;
-/** A lower payment: it stays a finance lease. */
-export const LOW = { payment: 110_000, marketRate: 0.09 };
-export const LOW_NI = r(pvEnd(MACH.rate, MACH.left, LOW.payment, MACH.residual));
-export const LOW_LOSS = MACH_NI - LOW_NI;
-export const LOW_WRONG = r(pvEnd(LOW.marketRate, MACH.left, LOW.payment, MACH.residual));
-export const LOW_INT = r(LOW_NI * MACH.rate);
-export const LOW_CLOSE = LOW_NI + LOW_INT - LOW.payment;
-export const LOW_NC = r(pvEnd(MACH.rate, MACH.left - 2, LOW.payment, MACH.residual));
-/** The same cut, substantial: the old asset goes, and a new one comes in at fair value. */
+/** An operating lease rewritten for most of what is left of the asset's life: the new lease is a finance one, and income received ahead goes out with the asset. */
+export const TO_FIN = { bookValue: 300_000, prepaid: 30_000, payment: 70_000, years: 6, lifeLeft: 7, rate: 0.08 };
+export const TO_FIN_NI = r(pvEnd(TO_FIN.rate, TO_FIN.years, TO_FIN.payment));
+export const TO_FIN_GAIN = TO_FIN_NI + TO_FIN.prepaid - TO_FIN.bookValue;
+
+/** Finance: a bottling line, then a second one at its stand-alone price, itself a finance lease. */
+export const LINE = { payment: 120_000, years: 8, life: 10, rate: 0.06, done: 2, left: 6 };
+export const LINE_NI = r(pvEnd(LINE.rate, LINE.left, LINE.payment));
+export const LINE_INT = r(LINE_NI * LINE.rate);
+export const LINE_CLOSE = LINE_NI + LINE_INT - LINE.payment;
+export const ADD = { payment: 40_000, years: 6, life: 7, fairValue: 180_000, bookValue: 140_000, low: 28_000 };
+export const ADD_RATE = rateFor(ADD.fairValue, ADD.years, ADD.payment);
+export const ADD_ROWS = investRows(ADD.fairValue, ADD_RATE, ADD.payment, ADD.years);
+export const ADD_GAIN = ADD.fairValue - ADD.bookValue;
+export const ADD_YEAR_TOTAL = LINE_INT + ADD_GAIN + ADD_ROWS[0].income;
+
+/** Finance only because of a purchase option; the option is dropped, and without it the lease would have been an operating one. */
+export const WOULD = { payment: 70_000, years: 5, life: 12, rate: 0.07, option: 150_000, done: 2, left: 3 };
+export const WOULD_LIFE_LEFT = WOULD.life - WOULD.done;
+export const WOULD_FV = r(pvEnd(WOULD.rate, WOULD.years, WOULD.payment, WOULD.option));
+export const WOULD_NI = r(pvEnd(WOULD.rate, WOULD.left, WOULD.payment, WOULD.option));
+export const WOULD_PV = r(pvEnd(WOULD.rate, WOULD.years, WOULD.payment));
+export const WOULD_TERM_SHARE = WOULD.years / WOULD.life;
+export const WOULD_PV_SHARE = WOULD_PV / WOULD_FV;
+export const WOULD_DEP = r(WOULD_NI / WOULD_LIFE_LEFT);
+export const WOULD_ASSET = WOULD_NI - WOULD_DEP;
+
+/** A hotel's cooling plant, its lease stretched and its payment lowered: it stays a finance lease. */
+export const REST = { payment: 150_000, years: 10, life: 14, rate: 0.06, residual: 100_000, done: 4, left: 6, newPayment: 100_000, newLeft: 8, newResidual: 60_000, marketRate: 0.09 };
+export const REST_TERM = REST.done + REST.newLeft;
+/** Why it was a finance lease at inception: the term alone is 71%, and the payments' present value is nearly all the fair value. */
+export const REST_PV_SHARE = pvEnd(REST.rate, REST.years, REST.payment) / pvEnd(REST.rate, REST.years, REST.payment, REST.residual);
+export const REST_NI = r(pvEnd(REST.rate, REST.left, REST.payment, REST.residual));
+export const LOW_NI = r(pvEnd(REST.rate, REST.newLeft, REST.newPayment, REST.newResidual));
+export const LOW_LOSS = REST_NI - LOW_NI;
+export const LOW_WRONG = r(pvEnd(REST.marketRate, REST.newLeft, REST.newPayment, REST.newResidual));
+export const LOW_RATE_EFFECT = LOW_NI - LOW_WRONG;
+export const LOW_INT = r(LOW_NI * REST.rate);
+export const LOW_CLOSE = LOW_NI + LOW_INT - REST.newPayment;
+export const LOW_NC = r(pvEnd(REST.rate, REST.newLeft - 2, REST.newPayment, REST.newResidual));
+/** The same change, substantial: the old asset goes, and a new one comes in at fair value. */
 export const SUB_NI = LOW_WRONG;
-export const SUB_LOSS = MACH_NI - SUB_NI;
-export const SUB_INT = r(SUB_NI * LOW.marketRate);
-export const SUB_CLOSE = SUB_NI + SUB_INT - LOW.payment;
+export const SUB_LOSS = REST_NI - SUB_NI;
+export const SUB_INT = r(SUB_NI * REST.marketRate);
+export const SUB_CLOSE = SUB_NI + SUB_INT - REST.newPayment;
 
 /** Payments forgiven. */
 export const WAIVE = { overdue: 25_000, payment: 72_000, left: 3 };
@@ -106,7 +118,7 @@ export const WAIVE_ROWS = [
   { year: 3, cash: WAIVE.payment, income: WAIVE_INCOME, closing: WAIVE_INCOME * 3 - WAIVE.payment * 2 },
 ];
 
-/** The closing question: a crane on the day of the modification, 1.1 of year 5, under four separate assumptions. */
+/** The closing question: four identical cranes let to four customers, and on 1.1 of year 5 each customer signs a different change. */
 export const CRANE = { payment: 230_000, years: 12, life: 15, rate: 0.06, residual: 200_000, left: 8 };
 export const CRANE_FV = r(pvEnd(CRANE.rate, CRANE.years, CRANE.payment, CRANE.residual));
 export const CRANE_NI = r(pvEnd(CRANE.rate, CRANE.left, CRANE.payment, CRANE.residual));
@@ -130,13 +142,16 @@ export const CD_NI = CRANE_NI - CD_LOSS;
 export const CD_INT = r(CD_NI * CRANE.rate);
 export const CD_CLOSE = CD_NI + CD_INT;
 export const CD_NC = r(pvEnd(CRANE.rate, CRANE.left - 2, CRANE.payment, CRANE.residual));
+/** What each customer's change does to year 5's profit or loss, credit minus and debit plus. */
+export const CRANE_PL = { a: CA_DEP - CRANE.payment, b: CB_LOSS - CB_INT, c: CC_DEP - CC_INT - CC.payment, d: CD_LOSS - CD_INT };
+export const CRANE_PL_TOTAL = CRANE_PL.a + CRANE_PL.b + CRANE_PL.c + CRANE_PL.d;
 
 const P_BAL = r(pvEnd(0.08, 5, 60_000, 10_000));
 const P_OLD = r(pvEnd(0.07, 6, 90_000, 30_000));
 const P_NEW = r(pvEnd(0.07, 6, 70_000, 30_000));
 const P_G_OLD = r(pvEnd(0.06, 4, 50_000, 8_000));
 const P_G_NEW = r(pvEnd(0.06, 4, 58_000, 8_000));
-const P_NI = r(pvEnd(0.06, 3, 100_000));
+const P_NI = r(pvEnd(0.07, 5, 90_000));
 const P_SUB_FV = r(pvEnd(0.1, 4, 60_000, 10_000));
 
 const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
@@ -147,7 +162,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
   askNumber({ id: "op-income-prepaid", skill: "תפעולית", prompt: "חכירה תפעולית תוקנה ב-1.1. נשארו 4 שנים, בתשלום של 75,000 ש״ח בסוף כל שנה. יתרת ההכנסות מראש ביום התיקון 48,000 ש״ח. מהי ההכנסה השנתית מכאן והלאה?", answer: 87_000, steps: ["התשלומים העתידיים: 75,000 × 4 = 300,000", "הכסף שכבר התקבל ועוד לא הוכר נוסף: 300,000 + 48,000 = 348,000", "348,000 ÷ 4 = 87,000 (סעיף 87)"], trap: "להתעלם מהיתרה. כך היא נשארת במאזן לנצח, בלי שאי פעם תהפוך להכנסה.", level: 2, source: "מקורית", ref: "סעיף 87" }),
   askNumber({ id: "op-income-accrued", skill: "תפעולית", prompt: "חכירה תפעולית תוקנה ב-1.1. נשארו 3 שנים, בתשלומים של 90,000, 100,000 ו-110,000 ש״ח בסוף כל שנה. יתרת ההכנסות לקבל ביום התיקון 30,000 ש״ח. מהי ההכנסה השנתית מכאן והלאה?", answer: 90_000, steps: ["התשלומים העתידיים: 90,000 + 100,000 + 110,000 = 300,000", "30,000 מהם כבר הוכרו כהכנסה, ולכן יורדים: 300,000 − 30,000 = 270,000", "270,000 ÷ 3 = 90,000 (סעיף 87)"], trap: "להוסיף את ההכנסות לקבל. הן הוכרו בעבר, ולכן הכסף שיקבל כנגדן אינו הכנסה חדשה.", level: 2, source: "מקורית", ref: "סעיף 87" }),
   askNumber({ id: "op-accrued-after", skill: "תפעולית", prompt: "חכירה תפעולית תוקנה ב-1.1. נשארו 3 שנים, בתשלום של 100,000 ש״ח בסוף כל שנה. יתרת ההכנסות לקבל ביום התיקון 30,000 ש״ח. מהי יתרת ההכנסות לקבל ב-31.12 של השנה הראשונה אחרי התיקון?", answer: 20_000, steps: ["ההכנסה השנתית: (300,000 − 30,000) ÷ 3 = 90,000", "התקבלו 100,000, כלומר 10,000 יותר מההכנסה", "30,000 − 10,000 = 20,000"], trap: "לחשוב שהיתרה נמחקת ביום התיקון. היא נשארת, ויורדת בהדרגה.", level: 3, source: "מקורית", ref: "סעיף 87" }),
-  askNumber({ id: "op-to-fin", skill: "תפעולית", prompt: "חכירה תפעולית תוקנה ב-1.1: החכירה תסתיים בעוד 3 שנים, 100,000 ש״ח בסוף כל שנה, ובסוף הנכס עובר לחוכר, ולכן החכירה החדשה מימונית. הריבית הגלומה ביום התיקון 6%. ערך הנכס בספרים 170,000 ש״ח, ויתרת ההכנסות לקבל 20,000 ש״ח. המחכיר אינו סוחר. כמה רווח נרשם ביום התיקון?", answer: P_NI - 190_000, steps: [`השקעה נטו: 100,000 × (1 − 1.06^(−3)) ÷ 0.06 = ${fmt(P_NI)}`, "יוצאים: הנכס 170,000, והכנסות לקבל 20,000", `${fmt(P_NI)} − 170,000 − 20,000 = ${fmt(P_NI - 190_000)}`], trap: "לשכוח את ההכנסות לקבל. בלעדיהן היתרה נשארת בספרים, והרווח מנופח.", level: 3, source: "מקורית", ref: "סעיפים 67, 87" }),
+  askNumber({ id: "op-to-fin", skill: "תפעולית", prompt: "חכירה תפעולית תוקנה ב-1.1: החכירה תסתיים בעוד 5 שנים, 90,000 ש״ח בסוף כל שנה, ובסוף הנכס עובר לחוכר, ולכן החכירה החדשה מימונית. הריבית הגלומה ביום התיקון 7%. ערך הנכס בספרים 280,000 ש״ח, ויתרת ההכנסות לקבל 25,000 ש״ח. המחכיר אינו סוחר. כמה רווח נרשם ביום התיקון?", answer: P_NI - 305_000, steps: [`השקעה נטו: 90,000 × (1 − 1.07^(−5)) ÷ 0.07 = ${fmt(P_NI)}`, "יוצאים: הנכס 280,000, והכנסות לקבל 25,000", `${fmt(P_NI)} − 280,000 − 25,000 = ${fmt(P_NI - 305_000)}`], trap: "לשכוח את ההכנסות לקבל. בלעדיהן היתרה נשארת בספרים, והרווח מנופח.", level: 3, source: "מקורית", ref: "סעיפים 67, 87" }),
   Object.assign(
     journal("op-entry", "פקודת יומן", "חכירה תפעולית שתוקנה. התשלום השנתי מהתיקון והלאה 70,000 ש״ח, וההכנסה השנתית 82,000 ש״ח, כי ביום התיקון הייתה יתרת הכנסות מראש. רשמו את הפקודה של 31.12.", [{ account: "מזומן", dr: 70_000 }, { account: "הכנסות מראש", dr: 12_000 }, { account: "הכנסות מהשכרה", cr: 82_000 }], "ההכנסה גדולה מהתקבול, וההפרש מקטין את ההכנסות מראש. מלכודת נפוצה: לרשום הכנסה רק בגובה התקבול.", ["מזומן", "הכנסות מראש", "הכנסות לקבל", "הכנסות מהשכרה", "השקעה נטו בחכירה"]),
     { meta: { level: 2 as const, source: "מקורית" as const, ref: "סעיף 87" } },
@@ -162,15 +177,15 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     { meta: { level: 2 as const, source: "מקורית" as const, ref: "סעיף 80(א)" } },
   ),
   askNumber({ id: "fin-dep", skill: "הייתה תפעולית", prompt: "חכירה מימונית תוקנה, ואילו התיקון היה בתוקף מההתחלה, החכירה הייתה תפעולית. יתרת ההשקעה נטו מיד לפני התיקון 540,000 ש״ח. נשארו לנכס 9 שנות חיים, והפחת בקו ישר בלי ערך שייר. מהו הפחת השנתי מכאן והלאה?", answer: 60_000, steps: ["הנכס חוזר לספרים ב-540,000 (סעיף 80(א)(ii))", "540,000 ÷ 9 = 60,000"], trap: "להפחית על פני יתרת החכירה. הנכס נשאר של המחכיר, ולכן על פני החיים שנשארו לו.", level: 2, source: "מקורית", ref: "סעיפים 80(א), 84" }),
-  askNumber({ id: "ifrs9-bal", skill: "IFRS 9", prompt: "חכירה מימונית. הריבית הגלומה המקורית 8%, וריבית השוק היום 10%. בתיקון נקבע: 60,000 ש״ח בסוף כל שנה, עוד 5 שנים. השייר הלא מובטח 10,000 ש״ח, החכירה נשארת מימונית, והתיקון לא מביא לגריעה. מהי ההשקעה נטו אחרי התיקון?", answer: P_BAL, steps: [`=PV(8%;5;-60000;-10000) → ${fmt(P_BAL)}`, "ריבית מקורית, וכולל השייר (סעיף 80(ב))"], trap: "להוון בריבית השוק, או לשכוח את השייר. הוא חלק מההשקעה נטו גם אם אינו מובטח.", level: 2, source: "מקורית", ref: "סעיף 80(ב)" }),
-  askNumber({ id: "ifrs9-loss", skill: "IFRS 9", prompt: "חכירה מימונית. נשארו 6 שנים, 90,000 ש״ח בסוף כל שנה, בריבית גלומה של 7%, ושייר לא מובטח של 30,000 ש״ח. בתיקון התשלום ירד ל-70,000 ש״ח, החכירה נשארת מימונית, והתיקון לא מביא לגריעה. ריבית השוק היום 9%. כמה הפסד נרשם?", answer: P_OLD - P_NEW, steps: [`לפני: =PV(7%;6;-90000;-30000) → ${fmt(P_OLD)}`, `אחרי: =PV(7%;6;-70000;-30000) → ${fmt(P_NEW)}`, `${fmt(P_OLD)} − ${fmt(P_NEW)} = ${fmt(P_OLD - P_NEW)}`], trap: "להשתמש ב-9%. ריבית השוק היא נתון מיותר כאן.", level: 3, source: "מקורית", ref: "סעיף 80(ב)" }),
-  ask({ id: "ifrs9-rate", skill: "IFRS 9", prompt: "מחכיר בחכירה מימונית מחשב מחדש את ההשקעה נטו לפי סעיף 80(ב), בלי גריעה. למה דווקא בריבית המקורית?", options: ["כך IFRS 9 מודד נכס פיננסי שתנאיו שונו: בריבית האפקטיבית המקורית", "כי הריבית של היום לא ידועה לעולם", "כי החוכר משתמש בריבית המקורית", "כי השייר לא מובטח"], answer: 0, why: "ההפרש בין היתרה הישנה לחדשה נובע רק מהתזרים ששונה.", trap: "להעתיק מהחוכר, שעובר לריבית מעודכנת.", level: 2, source: "מקורית", ref: "סעיף 80(ב)" }),
-  askNumber({ id: "ifrs9-gain", skill: "IFRS 9", prompt: "חכירה מימונית. נשארו 4 שנים, 50,000 ש״ח בסוף כל שנה, בריבית גלומה של 6%, ושייר לא מובטח של 8,000 ש״ח. בתיקון התשלום עלה ל-58,000 ש״ח, החכירה נשארת מימונית, והתיקון לא מביא לגריעה. כמה רווח נרשם?", answer: P_G_NEW - P_G_OLD, steps: [`לפני: =PV(6%;4;-50000;-8000) → ${fmt(P_G_OLD)}`, `אחרי: =PV(6%;4;-58000;-8000) → ${fmt(P_G_NEW)}`, `${fmt(P_G_NEW)} − ${fmt(P_G_OLD)} = ${fmt(P_G_NEW - P_G_OLD)}`], trap: "לחשוב שהעלאה נפרסת על פני התקופה. ההפרש נרשם ביום התיקון, והריבית נשארת.", level: 3, source: "מקורית", ref: "סעיף 80(ב)" }),
+  askNumber({ id: "ifrs9-bal", skill: "IFRS 9", prompt: "חכירה מימונית. הריבית הגלומה המקורית 8%, וריבית השוק היום 10%. בתיקון נקבע: 60,000 ש״ח בסוף כל שנה, עוד 5 שנים. השייר הלא מובטח 10,000 ש״ח, החכירה נשארת מימונית, והתיקון לא מביא לגריעה. מהי ההשקעה נטו אחרי התיקון?", answer: P_BAL, steps: [`=PV(8%;5;-60000;-10000) → ${fmt(P_BAL)}`, "ריבית מקורית, וכולל השייר (סעיף 80(ב), IFRS 9 סעיף 5.4.3)"], trap: "להוון בריבית השוק, או לשכוח את השייר. הוא חלק מההשקעה נטו גם אם אינו מובטח.", level: 2, source: "מקורית", ref: "סעיף 80(ב), IFRS 9 סעיף 5.4.3" }),
+  askNumber({ id: "ifrs9-loss", skill: "IFRS 9", prompt: "חכירה מימונית. נשארו 6 שנים, 90,000 ש״ח בסוף כל שנה, בריבית גלומה של 7%, ושייר לא מובטח של 30,000 ש״ח. בתיקון התשלום ירד ל-70,000 ש״ח, החכירה נשארת מימונית, והתיקון לא מביא לגריעה. ריבית השוק היום 9%. כמה הפסד נרשם?", answer: P_OLD - P_NEW, steps: [`לפני: =PV(7%;6;-90000;-30000) → ${fmt(P_OLD)}`, `אחרי: =PV(7%;6;-70000;-30000) → ${fmt(P_NEW)}`, `${fmt(P_OLD)} − ${fmt(P_NEW)} = ${fmt(P_OLD - P_NEW)}`], trap: "להשתמש ב-9%. ריבית השוק היא נתון מיותר כאן.", level: 3, source: "מקורית", ref: "סעיף 80(ב), IFRS 9 סעיף 5.4.3" }),
+  ask({ id: "ifrs9-rate", skill: "IFRS 9", prompt: "מחכיר בחכירה מימונית מחשב מחדש את ההשקעה נטו לפי סעיף 80(ב), בלי גריעה. למה דווקא בריבית המקורית?", options: ["כך IFRS 9 מודד נכס פיננסי שתנאיו שונו: בריבית האפקטיבית המקורית", "כי הריבית של היום לא ידועה לעולם", "כי החוכר משתמש בריבית המקורית", "כי השייר לא מובטח"], answer: 0, why: "ההפרש בין היתרה הישנה לחדשה נובע רק מהתזרים ששונה.", trap: "להעתיק מהחוכר, שעובר לריבית מעודכנת.", level: 2, source: "מקורית", ref: "סעיף 80(ב), IFRS 9 סעיף 5.4.3" }),
+  askNumber({ id: "ifrs9-gain", skill: "IFRS 9", prompt: "חכירה מימונית. נשארו 4 שנים, 50,000 ש״ח בסוף כל שנה, בריבית גלומה של 6%, ושייר לא מובטח של 8,000 ש״ח. בתיקון התשלום עלה ל-58,000 ש״ח, החכירה נשארת מימונית, והתיקון לא מביא לגריעה. כמה רווח נרשם?", answer: P_G_NEW - P_G_OLD, steps: [`לפני: =PV(6%;4;-50000;-8000) → ${fmt(P_G_OLD)}`, `אחרי: =PV(6%;4;-58000;-8000) → ${fmt(P_G_NEW)}`, `${fmt(P_G_NEW)} − ${fmt(P_G_OLD)} = ${fmt(P_G_NEW - P_G_OLD)}`], trap: "לחשוב שהעלאה נפרסת על פני התקופה. ההפרש נרשם ביום התיקון, והריבית נשארת.", level: 3, source: "מקורית", ref: "סעיף 80(ב), IFRS 9 סעיף 5.4.3" }),
   ask({ id: "ifrs9-sub-what", skill: "IFRS 9", prompt: "תיקון של חכירה מימונית מביא לגריעה של ההשקעה נטו, כי זה שינוי מהותי. איך נמדד הנכס החדש?", options: ["בשווי הוגן, וההפרש ברווח או הפסד", "בערך נוכחי בריבית המקורית", "ביתרה הקודמת, בלי הפרש", "ברווח כולל אחר"], answer: 0, why: "IFRS 9 סעיפים 3.2.12, 5.1.1. מכאן הריבית האפקטיבית היא של הנכס החדש.", trap: "להשתמש בריבית המקורית גם כשהנכס נגרע. היא מיועדת למקרה שבו הנכס נשאר.", level: 2, source: "מקורית", ref: "IFRS 9 סעיפים 3.2.12, 5.1.1" }),
   askNumber({ id: "ifrs9-sub-loss", skill: "IFRS 9", prompt: "השקעה נטו בספרים 230,000 ש״ח. תיקון מהותי מביא לגריעה. בתנאים החדשים: 60,000 ש״ח בסוף כל שנה, 4 שנים, ושייר של 10,000 ש״ח. ריבית השוק היום 10%, והריבית המקורית 7%. כמה הפסד נרשם?", answer: 230_000 - P_SUB_FV, steps: [`שווי הוגן: =PV(10%;4;-60000;-10000) → ${fmt(P_SUB_FV)}`, `230,000 − ${fmt(P_SUB_FV)} = ${fmt(230_000 - P_SUB_FV)}`], trap: "להשתמש ב-7%. עם גריעה הנכס החדש נמדד בשווי הוגן.", level: 3, source: "מקורית", ref: "IFRS 9 סעיפים 3.2.12, 5.1.1" }),
   askNumber({ id: "waiver-due", skill: "ויתור", prompt: "מחכיר ויתר לחוכר על תשלום של 18,000 ש״ח שמועד פירעונו כבר עבר. מה ההפסד שנרשם מיד?", answer: 18_000, steps: ["תשלום שהגיע מועדו הוא נכס פיננסי. גורעים אותו כנגד רווח או הפסד: 18,000"], trap: "לפרוס את הוויתור על יתרת החכירה. פריסה היא רק לתשלומים שעוד לא הגיע מועדם.", level: 1, source: "מקורית", ref: "IFRS 9 סעיף 2.1(ב)(i)" }),
   askNumber({ id: "waiver-future", skill: "ויתור", prompt: "חכירה תפעולית. נשארו 3 שנים, 60,000 ש״ח בסוף כל שנה. המחכיר ויתר על התשלום של השנה הקרובה, ועל השנתיים האחרות לא. אין יתרות של הכנסות מראש או לקבל. מהי ההכנסה השנתית מכאן והלאה?", answer: 40_000, steps: ["ויתור על תשלום עתידי הוא תיקון, ולכן חכירה חדשה (סעיף 87)", "נשארו תשלומים של 60,000 × 2 = 120,000", "120,000 ÷ 3 = 40,000"], trap: "לרשום אפס הכנסה בשנה שבה לא משלמים. ההכנסה בקו ישר, גם בשנה בלי תקבול.", level: 2, source: "מקורית", ref: "סעיף 87" }),
-  ask({ id: "sides-rate", skill: "השוואה", prompt: "תיקון אחד בשני הצדדים: התשלום ירד, התקופה לא השתנתה, והחכירה מימונית אצל המחכיר. הריבית הגלומה ביום התיקון ניתנת לקביעה, ושונה מהמקורית. באיזו ריבית כל צד מודד?", options: ["חוכר: בריבית המעודכנת. מחכיר: בריבית המקורית", "שניהם: בריבית המעודכנת", "שניהם: בריבית המקורית", "חוכר: בריבית המקורית. מחכיר: בריבית המעודכנת"], answer: 0, why: "החוכר לפי סעיף 45(ג). המחכיר לפי סעיף 80(ב), שמפנה ל-IFRS 9.", trap: "להניח שהצדדים מראה זה של זה. במודל התיקונים הם שונים.", level: 3, source: "מקורית", ref: "סעיפים 45(ג), 80(ב)" }),
+  ask({ id: "sides-rate", skill: "השוואה", prompt: "תיקון אחד בשני הצדדים: התשלום ירד, התקופה לא השתנתה, והחכירה מימונית אצל המחכיר. הריבית הגלומה ביום התיקון ניתנת לקביעה, ושונה מהמקורית. באיזו ריבית כל צד מודד?", options: ["חוכר: בריבית המעודכנת. מחכיר: בריבית המקורית", "שניהם: בריבית המעודכנת", "שניהם: בריבית המקורית", "חוכר: בריבית המקורית. מחכיר: בריבית המעודכנת"], answer: 0, why: "החוכר לפי סעיף 45(ג). המחכיר לפי סעיף 80(ב), שמפנה ל-IFRS 9 (סעיף 5.4.3).", trap: "להניח שהצדדים מראה זה של זה. במודל התיקונים הם שונים.", level: 3, source: "מקורית", ref: "סעיפים 45(ג), 80(ב), IFRS 9 סעיף 5.4.3" }),
 ];
 
 const traps: Trap[] = [
@@ -272,7 +287,7 @@ export const LESSOR_CHANGES: StudyModule = {
     { id: "ls-lmd-waiver", title: "ויתור על תשלומים" },
     { id: "ls-lmd-drill", title: "מתרגלים: מספרים חדשים בכל פעם" },
     { id: "ls-lmd-mistake", title: "מצאו את הטעות" },
-    { id: "ls-lmd-master", title: "שאלה מסכמת: מנוף, ארבעה תיקונים" },
+    { id: "ls-lmd-master", title: "שאלה מסכמת: צי מנופים, ארבעה תיקונים" },
   ],
   exercises,
   traps,

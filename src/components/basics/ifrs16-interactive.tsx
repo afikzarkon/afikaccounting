@@ -77,6 +77,95 @@ export function RouBuilder() {
   );
 }
 
+const RESIDUAL_CASES: { label: string; guarantee: number; expected: number }[] = [
+  { label: "האוטובוס", guarantee: 120_000, expected: 150_000 },
+  { label: "החוכר משלים", guarantee: 120_000, expected: 90_000 },
+  { label: "ערבות קטנה", guarantee: 30_000, expected: 150_000 },
+  { label: "בלי ערבות", guarantee: 0, expected: 150_000 },
+];
+
+/**
+ * The residual as one bar: what the lessor expects at the end, split into what
+ * the guarantee covers and what it doesn't, with what each side counts below.
+ */
+export function ResidualBar() {
+  const [guarantee, setGuarantee] = useState(RESIDUAL_CASES[0].guarantee);
+  const [expected, setExpected] = useState(RESIDUAL_CASES[0].expected);
+  const f = (v: number) => Math.round(v).toLocaleString("en-US");
+  const total = Math.max(guarantee, expected);
+  const fromAsset = Math.min(guarantee, expected);
+  const topUp = Math.max(guarantee - expected, 0);
+  const unguaranteed = Math.max(expected - guarantee, 0);
+  const pieces = [
+    { value: fromAsset, label: topUp ? "מהנכס" : "מובטח", color: "var(--accent)" },
+    { value: topUp, label: "החוכר משלים", color: "var(--danger)" },
+    { value: unguaranteed, label: "לא מובטח", color: "var(--fg)" },
+  ].filter((p) => p.value > 0);
+  return (
+    <section aria-label="מה שהמחכיר צופה לקבל בסוף: מובטח ולא מובטח" className="card space-y-4 p-4 sm:p-5">
+      <div className="flex flex-wrap gap-2">
+        {RESIDUAL_CASES.map((c) => (
+          <button
+            key={c.label}
+            type="button"
+            onClick={() => {
+              setGuarantee(c.guarantee);
+              setExpected(c.expected);
+            }}
+            aria-pressed={guarantee === c.guarantee && expected === c.expected}
+            className="min-h-11 rounded-lg border border-line-strong px-3 text-[14px] text-fg aria-pressed:border-accent aria-pressed:bg-accent-soft aria-pressed:font-semibold"
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Amount label="החוכר ערב ל" value={guarantee} onChange={setGuarantee} />
+        <Amount label="הנכס צפוי להיות שווה" value={expected} onChange={setExpected} />
+      </div>
+      <div>
+        <p className="text-[15px] font-semibold text-fg">
+          מה שהמחכיר צופה לקבל בסוף: <bdi dir="ltr">{f(total)}</bdi> ש״ח
+        </p>
+        {total > 0 && (
+          <div className="mt-2 flex h-12 overflow-hidden rounded-lg border border-line-strong" aria-hidden>
+            {pieces.map((p) => (
+              <span key={p.label} className="flex items-center justify-center overflow-hidden whitespace-nowrap text-[13px] font-semibold text-fg" style={{ width: `${(p.value / total) * 100}%`, background: `color-mix(in oklab, ${p.color} 22%, transparent)` }}>
+                {p.value / total >= 0.2 ? f(p.value) : ""}
+              </span>
+            ))}
+          </div>
+        )}
+        <ul className="mt-2 space-y-1 text-[14px] text-fg">
+          {pieces.map((p) => (
+            <li key={p.label} className="flex items-center gap-2">
+              <span className="inline-block h-3 w-3 shrink-0 rounded-sm" style={{ background: `color-mix(in oklab, ${p.color} 45%, transparent)` }} aria-hidden />
+              {p.label}: <bdi dir="ltr">{f(p.value)}</bdi> ש״ח
+            </li>
+          ))}
+        </ul>
+      </div>
+      <Tbl
+        head={["מי", "מה נכנס לחישוב", "סכום"]}
+        rows={[
+          ["החוכר, בהתחייבות", topUp ? "רק מה שהוא צופה להשלים" : "כלום, הנכס שווה מספיק", topUp],
+          ["המחכיר, בהשקעה נטו", unguaranteed ? "כל הערבות, ועוד הלא מובטח" : "כל הערבות", total],
+        ]}
+      />
+      <p aria-live="polite" className="text-[14.5px] leading-relaxed text-fg">
+        {topUp
+          ? `הנכס צפוי להיות שווה פחות מהערבות. החוכר צופה להשלים ${f(topUp)} ש״ח. המחכיר צופה לקבל את כל ${f(guarantee)} ש״ח, ${f(fromAsset)} ש״ח מהנכס והשאר מהחוכר, ושייר לא מובטח אין.`
+          : !guarantee
+            ? `אין ערבות. החוכר לא משלם כלום בסוף, וכל ${f(expected)} ש״ח בסיכון של המחכיר.`
+            : unguaranteed
+              ? `הנכס צפוי להיות שווה יותר מהערבות, ולכן החוכר לא צופה לשלם. מתוך ${f(total)} ש״ח, ${f(guarantee)} ש״ח מובטחים למחכיר, ו-${f(unguaranteed)} ש״ח בסיכון שלו.`
+              : `הנכס צפוי להיות שווה בדיוק את הערבות. החוכר לא צופה לשלם, וכל ${f(total)} ש״ח מובטחים למחכיר.`}{" "}
+        הסכומים כאן לפני היוון.
+      </p>
+    </section>
+  );
+}
+
 /** Endless practice: pick a family, solve, check within two shekels, and see the whole solution. */
 /** `mixed` hides the topic: each new exercise comes from the next family, unnamed. */
 export function LeaseDrill({ families, mixed }: { families: DrillFamily[]; mixed?: boolean }) {
@@ -265,7 +354,8 @@ export function StatementFill({ task, onNext }: { task: StatementTask; onNext?: 
   const [shown, setShown] = useState(false);
   const yearsCols = Array.from({ length: task.years }, (_, i) => i);
   const asked = task.sections.flatMap((s) => s.rows.flatMap((r) => yearsCols.filter((i) => i >= task.given).map((i) => ({ key: `${r.id}-${i}`, want: r.values[i] }))));
-  const isRight = (key: string, want: number) => Math.abs(typed(cells[key] ?? "") - want) <= 2;
+  // The tables show a liability as a minus; a learner may type it with or without the sign.
+  const isRight = (key: string, want: number) => Math.abs(typed(cells[key] ?? "") - Math.abs(want)) <= 2;
   const rightCount = asked.filter((c) => isRight(c.key, c.want)).length;
   return (
     <div className="space-y-3">
@@ -336,7 +426,7 @@ export function StatementFill({ task, onNext }: { task: StatementTask; onNext?: 
           </tbody>
         </table>
       </div>
-      <p className="text-[12.5px] text-muted">סטייה של עד 2 ש״ח נחשבת נכונה. תא ריק נספר כאפס.</p>
+      <p className="text-[12.5px] text-muted">סטייה של עד 2 ש״ח נחשבת נכונה. תא ריק נספר כאפס. בהתחייבות אפשר להקליד עם מינוס או בלי.</p>
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={() => setChecked(true)} className="min-h-11 rounded-lg bg-accent px-4 text-[14.5px] font-semibold text-accent-fg">
           בדיקת כל התאים
@@ -561,7 +651,7 @@ export function ChangeLab() {
   const aOut = kind === "shrink" ? whole((asset * (100 - keep)) / 100) : 0;
   const after = kind === "index" ? whole(pvEnd(i, left, (payment * index) / 100)) : kind === "guarantee" ? whole(pvEnd(i, left, payment, shortNew)) : kind === "extend" ? whole(pvEnd(j, left + extra, payment)) : whole(pvEnd(j, left, newPay));
   const change = after - (before - lOut);
-  // The asset stops at zero, and whatever is left of a decrease is a gain (paragraph 39).
+  // The asset stops at zero, and whatever is left of a decrease is a gain. Paragraph 39 says so for reassessments; the note below says the lab extends it to modifications.
   const assetLeft = asset - aOut;
   const toAsset = Math.max(change, -assetLeft);
   const overflow = toAsset - change;
@@ -597,9 +687,15 @@ export function ChangeLab() {
       <Tbl
         dense
         head={["", "התחייבות", "נכס"]}
-        rows={[["לפני", before, asset], ...(kind === "shrink" ? ([["גריעה", -lOut, -aOut]] as [string, number, number][]) : []), ["מדידה מחדש", change, toAsset]]}
-        foot={["אחרי", after, assetAfter]}
+        rows={[["לפני", -before, asset], ...(kind === "shrink" ? ([["גריעה", lOut, -aOut]] as [string, number, number][]) : []), ["מדידה מחדש", -change, toAsset]]}
+        foot={["אחרי", -after, assetAfter]}
       />
+      {overflow > 0 && (
+        <p className="text-[14.5px] text-fg">
+          הנכס הגיע לאפס, ולכן <strong className="num">{overflow.toLocaleString("en-US")}</strong> מהירידה בחוב הם רווח, ולא מופיעים בטור של הנכס.
+          {!keepsRate && " זה מקרה נדיר: הכלל של סעיף 39 כתוב להערכה מחדש, נוסח התקן לא עוסק בו בתיקון חכירה, וכאן מיישמים אותו גם על תיקון."}
+        </p>
+      )}
       {kind === "shrink" && (
         <JournalEntry
           title="שלב 1: גריעה"

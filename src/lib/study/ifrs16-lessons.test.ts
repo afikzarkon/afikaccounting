@@ -14,7 +14,7 @@ import * as Lmd from "./ifrs16/lessons/lessor-changes";
 import * as Spc from "./ifrs16/lessons/special";
 import { FILL_TASK, KIOSK_ACCRUED, KIOSK_EXPENSE, LAPTOP_FULL, MASTER_EXP_FORKLIFT, MASTER_EXP_LINES, MASTER_EXP_VAN, MASTER_FORKLIFT, MASTER_LINES, MASTER_VAN, SUBSEQUENT, SUBSEQUENT_TAUGHT, TRUCK_END, TRUCK_START, WORK_S, WORK_SECTIONS } from "./ifrs16/lessons/subsequent";
 import { IFRS16_GLOSSARY } from "./ifrs16/glossary";
-import { GUAR_WITH, GUAR_WITHOUT, IMPLICIT_LIABILITY, IMPLICIT_LIABILITY_DEALER, MASTER_CASH, MASTER_COST_SHOWN, MASTER_L, MASTER_NET, MASTER_RESTORE, MEASURE, MEASURE_TAUGHT, PV_EX_END, PV_EX_GROSS, PV_EX_NET, WORK1_L, WORK2_L } from "./ifrs16/lessons/measure";
+import { GUAR_WITH, GUAR_WITHOUT, IMPLICIT_LIABILITY, MASTER_CASH, MASTER_COST_SHOWN, MASTER_L, MASTER_NET, MASTER_RESTORE, MEASURE, MEASURE_TAUGHT, INDEX_L, PV_EX_END, START_GROSS, START_NET, WORK1_L, WORK2_L } from "./ifrs16/lessons/measure";
 import { TERM_TAUGHT } from "./ifrs16/lessons/term";
 import { CASES, CONTRACT_TEST, CONTRACT_TEST_START, type TestEnd, type TestNode, WHAT_TAUGHT } from "./ifrs16/lessons/what";
 import { LESSON_N, type LeaseQuestion } from "./ifrs16/shared";
@@ -103,17 +103,18 @@ describe("lesson 3: figures, against a separate calculation over dated cash flow
   });
   it("the screens", () => {
     const near = (a: number, b: number) => assert.ok(Math.abs(a - b) < 0.01, `${a} ≠ ${b}`);
-    near(PV_EX_END, 101_616.34);
-    near(PV_EX_GROSS, 108_729.48);
-    near(PV_EX_NET, 78_729.48);
-    near(GUAR_WITH, 115_499.52);
-    near(GUAR_WITHOUT, 109_521.46);
-    near(IMPLICIT_LIABILITY, 129_165.78);
-    near(IMPLICIT_LIABILITY_DEALER, 126_157.67);
-    near(WORK1_L.liability, 280_684.62);
-    near(WORK1_L.cost, 292_684.62);
-    near(WORK2_L.liability, 244_577.89);
-    near(WORK2_L.cost, 243_577.89);
+    const shekel = (a: number, b: number) => assert.ok(Math.abs(a - b) < 1, `${a} ≠ ${b}`);
+    near(PV_EX_END, 78_729.48);
+    shekel(IMPLICIT_LIABILITY, 210_618);
+    near(START_GROSS, 170_003.56);
+    near(START_NET, 110_003.56);
+    near(INDEX_L, 248_391.75);
+    near(GUAR_WITH, 275_159.57);
+    near(GUAR_WITHOUT, 252_741.83);
+    near(WORK1_L.liability, 232_204.65);
+    near(WORK1_L.cost, 231_204.65);
+    near(WORK2_L.liability, 217_770.94);
+    near(WORK2_L.cost, 217_770.94);
     near(MASTER_L.liability, 479_652.9);
     near(MASTER_NET, 389_652.9);
     near(MASTER_RESTORE, 31_612.58);
@@ -143,7 +144,10 @@ describe("lesson 3: the drills, re-computed from each drill's inputs", () => {
         // The balance on 31.12 of year k is what is still to come, valued that day: in advance, the next payment falls tomorrow.
         // (A table is worked by hand, so its balance can be a shekel or two from the exact one, within what the check allows.)
         else if (family === "cycle") want = d.inputs.start ? p + npv(flows(1, n - d.inputs.k - 1), i) : npv(flows(1, n - d.inputs.k), i);
-        else if (family === "dep") want = d.inputs.cost / (d.inputs.option ? d.inputs.life : Math.min(d.inputs.life, n));
+        else if (family === "dep") {
+          assert.ok(d.inputs.life > n, "life stays longer than the term, or the no-option trap would name the right answer");
+          want = d.inputs.cost / (d.inputs.option ? d.inputs.life : Math.min(d.inputs.life, n));
+        }
         // Non-current: whatever is left once next year's payment has gone, whichever day it falls on.
         else if (family === "split") want = npv(flows(1, n - d.inputs.k - 1), i);
         else if (family === "indexChange") {
@@ -177,7 +181,7 @@ describe("lesson 4: figures, against a separate calculation over dated cash flow
   const answer = (id: string) => (SUBSEQUENT.exercises.find((x) => x.id === id) as { answer: number }).answer;
   const near = (a: number, b: number, label = "") => assert.ok(Math.abs(a - b) <= 2, `${label}: ${a} ≠ ${b}`);
   it("the practice", () => {
-    const expected: Record<string, number> = { "int-end": 6_000, "close-end": 162_000, "int-start": 4_990, "int-start-y2": 7_092, "close-y2-end": 53_189, "dep-no-option": 18_000, "dep-option": 12_000, "dep-life-short": 10_000, "nc-end": 80_190, "nc-start": 108_930, "pl-total": 59_189, "in-kind": 38_860, line: 6_000, cash: 24_000, "line-diff": 1_028, "contract-y1": 102_590, "what-if-option": 45_365 };
+    const expected: Record<string, number> = { "int-end": 6_000, "close-end": 162_000, "int-start": 4_990, "int-start-y2": 7_092, "close-y2-end": 53_189, "dep-no-option": 18_000, "dep-option": 12_000, "dep-life-short": 10_000, "nc-end": 80_190, "nc-start": 108_930, "pl-total": 59_189, "in-kind": 33_114, line: 6_000, cash: 24_000, "line-diff": 1_028, "contract-y1": 102_590, "what-if-option": 45_365 };
     for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
   });
   it("the screens: the truck, in arrears and in advance", () => {
@@ -199,8 +203,8 @@ describe("lesson 4: figures, against a separate calculation over dated cash flow
     });
   });
   it("the worked example", () => {
-    near(WORK_S.cost, 243_577.89);
-    const want = [[10_834.67, 191_412.56, 127_412.56, 64_000, 202_981.57], [7_644.75, 135_057.32, 71_057.32, 64_000, 162_385.26], [4_263.44, 75_320.75, 0, 75_320.75, 121_788.94], [679.25, 0, 0, 0, 81_192.63]];
+    near(WORK_S.cost, 217_770.94);
+    const want = [[13_066.26, 180_837.2, 141_687.43, 39_149.77, 186_660.81], [10_850.23, 141_687.43, 80_188.68, 61_498.75, 155_550.67], [8_501.25, 80_188.68, 0, 80_188.68, 124_440.54], [4_811.32, 0, 0, 0, 93_330.4]];
     want.forEach(([int, close, non, cur, rou], i) => {
       const y = WORK_S.rows[i];
       near(y.interest, int);
@@ -210,8 +214,8 @@ describe("lesson 4: figures, against a separate calculation over dated cash flow
       near(y.rightOfUse, rou);
     });
     const total = WORK_SECTIONS[0].rows.find((x) => x.id === "total")!.values;
-    assert.equal(total[0], WORK_S.rows[0].depreciation + WORK_S.rows[0].interest + 3_000);
-    assert.equal(total[1], WORK_S.rows[1].depreciation + WORK_S.rows[1].interest);
+    assert.equal(total[0], WORK_S.rows[0].depreciation + WORK_S.rows[0].interest + 6_000);
+    assert.equal(total[1], WORK_S.rows[1].depreciation + WORK_S.rows[1].interest + 8_000);
   });
   it("the table to fill, the straight line and the closing question", () => {
     near(FILL_TASK.cost, 151_929.92);
@@ -219,8 +223,8 @@ describe("lesson 4: figures, against a separate calculation over dated cash flow
     [37_982.48, 37_982.48, 37_982.48].forEach((v, i) => near(lines("dep")[i], v));
     [5_446.5, 3_718.82, 1_904.76].forEach((v, i) => near(lines("fin")[i], v));
     [113_947.44, 75_964.96, 37_982.48].forEach((v, i) => near(lines("rou")[i], v));
-    [40_000, 40_000, 40_000].forEach((v, i) => near(lines("cur")[i], v));
-    [74_376.42, 38_095.24, 0].forEach((v, i) => near(lines("non")[i], v));
+    [40_000, 40_000, 40_000].forEach((v, i) => near(-lines("cur")[i], v));
+    [74_376.42, 38_095.24, 0].forEach((v, i) => near(-lines("non")[i], v));
     assert.equal(KIOSK_EXPENSE, 10_000);
     assert.equal(KIOSK_ACCRUED, 2_000);
     assert.equal(LAPTOP_FULL.reduce((a, b) => a + b, 0), 30_000);
@@ -232,7 +236,7 @@ describe("lesson 4: figures, against a separate calculation over dated cash flow
     near(MASTER_VAN.rows[1].rightOfUse, 46_778.93);
     const line = (s: typeof MASTER_LINES, id: string) => s.flatMap((x) => x.rows).find((x) => x.id === id)!.values;
     near(line(MASTER_LINES, "total")[0], 38_982.44 + 9_355.79 + 23_389.46 + 5_613.47 + 18_000, "total");
-    near(line(MASTER_LINES, "non")[1], 42_452.83 + 25_471.7, "non");
+    near(-line(MASTER_LINES, "non")[1], 42_452.83 + 25_471.7, "non");
     near(line(MASTER_EXP_LINES, "total")[0], 54_575.41 + 13_098.1 + 23_389.46 + 5_613.47, "expedient total");
   });
   it("what a table shows adds up to the shekel", () => {
@@ -285,7 +289,7 @@ describe("lesson 4: the statements to fill, re-computed from each task's inputs"
       const want = expected(task.inputs);
       const line = (id: string) => task.sections.flatMap((s) => s.rows).find((x) => x.id === id)!.values;
       [0, 1].forEach((i) => {
-        for (const [id, v] of [["dep", want[i].dep], ["fin", want[i].fin], ["total", want[i].total], ["rou", want[i].rou], ["cur", want[i].cur], ["non", want[i].non]] as const) assert.ok(Math.abs(line(id)[i] - v) <= 2, `${seed}/${id}/${i}: ${line(id)[i]} ≠ ${v}`);
+        for (const [id, v] of [["dep", want[i].dep], ["fin", want[i].fin], ["total", want[i].total], ["rou", want[i].rou], ["cur", -want[i].cur], ["non", -want[i].non]] as const) assert.ok(Math.abs(line(id)[i] - v) <= 2, `${seed}/${id}/${i}: ${line(id)[i]} ≠ ${v}`);
       });
       assert.ok(!/NaN|undefined|Infinity/.test([task.prompt, ...task.notes, task.trap].join(" ")), `${seed}`);
     }
@@ -312,25 +316,33 @@ describe("lesson 5: figures, against a separate calculation over dated cash flow
     }
   });
   it("the index", () => {
-    const [a, b] = Chg.IDX_ROWS;
-    near(Chg.IDX_START, 248_391.75);
-    near(a.interest, 14_903.51); near(a.before, 221_295.26); near(a.after, 234_460.02); near(a.change, 13_164.76); near(a.rou, 230_507.55); near(a.nonCurrent, 206_527.62); near(a.current, 27_932.4); near(a.dep, 31_048.97);
-    near(b.interest, 14_067.6); near(b.before, 205_327.62); near(b.after, 212_428.41); near(b.change, 7_100.79); near(b.dep, 32_929.65); near(b.rou, 204_678.69); near(b.nonCurrent, 181_974.12); near(b.current, 30_454.3);
+    const [a, b, c] = Chg.IDX_ROWS;
+    near(Chg.IDX_START, 479_652.9); near(Chg.IDX_NEW_PAYMENT, 95_400);
+    near(a.interest, 19_482.65); near(a.closing, 409_135.55); near(a.dep, 79_942.15); assert.equal(a.change, 0);
+    near(b.interest, 15_956.78); near(b.closing, 335_092.32); near(b.rou, 319_768.6); assert.equal(b.change, 0);
+    near(c.opening, 335_092.32); near(c.change, 20_105.54); near(c.interest, 12_989.89); near(c.closing, 272_787.76); near(c.dep, 84_968.53); near(c.rou, 254_905.6); near(c.nonCurrent, 177_387.76); near(c.current, 95_400);
   });
   it("the guarantee", () => {
     near(Chg.GUAR_COST, 236_163.56); near(Chg.GUAR_DEP1, 47_232.71); near(Chg.GUAR_INT1, 14_169.81); near(Chg.GUAR_BEFORE, 195_333.37); near(Chg.GUAR_AFTER, 191_372.9); near(Chg.GUAR_CHANGE, -3_960.47); near(Chg.GUAR_ROU1, 184_970.38); near(Chg.GUAR_NC1, 147_855.28);
     near(Chg.GUAR_DEP2, 46_242.59); near(Chg.GUAR_INT2, 11_482.37); near(Chg.GUAR_CLOSE2, 147_855.28); near(Chg.GUAR_ROU2, 138_727.78); near(Chg.GUAR_NC2, 101_726.59);
   });
   it("the term", () => {
-    near(Chg.TERM_GROSS, 394_942.89); near(Chg.TERM_COST, 406_942.89); near(Chg.TERM_DEP, 50_867.86); near(Chg.TERM_INT1, 20_096.57); near(Chg.TERM_CLOSE1, 355_039.46); near(Chg.TERM_ROU1, 356_075.03);
-    near(Chg.TERM_BEFORE_L, 170_003.56); near(Chg.TERM_BEFORE_A, 152_603.58); near(Chg.TERM_AFTER_L, 319_764.92); near(Chg.TERM_CHANGE, 149_761.36); near(Chg.TERM_AFTER_A, 302_364.94); near(Chg.TERM_DEP2, 50_394.16);
-    near(Chg.TERM_OPEN7, 277_948.47); near(Chg.TERM_INT7, 15_256.39); near(Chg.TERM_CLOSE7, 233_204.86); near(Chg.TERM_ROU7, 201_576.63);
+    near(Chg.TERM_COST, 377_684.91); near(Chg.TERM_DEP, 62_947.48);
+    near(Chg.TERM_BEFORE_L, 157_369.61); near(Chg.TERM_BEFORE_A, 125_894.97); near(Chg.TERM_AFTER_L, 333_657.78); near(Chg.TERM_CHANGE, 176_288.16); near(Chg.TERM_AFTER_A, 302_183.13); near(Chg.TERM_DEP2, 50_363.86); near(Chg.TERM_OLD_RATE_L, 355_298.44);
+    near(Chg.TERM_NC, 287_013.82); near(Chg.TERM_INT5, 23_356.04); near(Chg.TERM_CLOSE5, 287_013.82); near(Chg.TERM_NC5, 237_104.79); near(Chg.TERM_ROU5, 251_819.28);
   });
-  it("the office, three ways", () => {
-    near(Chg.OFFICE_COST, 639_703.95); near(Chg.OFFICE_A, 284_312.87); near(Chg.OFFICE_L, 319_135.55);
-    near(Chg.EXT_AFTER, 502_414.33); near(Chg.EXT_CHANGE, 183_278.78);
-    near(Chg.HALF_GAIN, 17_411.34); near(Chg.HALF_AFTER, 190_580.81); near(Chg.HALF_REM, 31_013.04); near(Chg.HALF_ASSET, 173_169.47);
-    near(Chg.CUT_KEEP, 167_346.94); near(Chg.CUT_L_OUT, 151_788.61); near(Chg.CUT_A_OUT, 142_156.43); near(Chg.CUT_GAIN, 9_632.17); near(Chg.CUT_R1, 165_005.34); near(Chg.CUT_M1, -2_341.6); near(Chg.CUT_R2, 201_673.19); near(Chg.CUT_M2, 36_667.85); near(Chg.CUT_ASSET, 176_482.69);
+  it("the purchase option", () => {
+    near(Chg.BUY_BEFORE, 44_625.85); near(Chg.BUY_AFTER, 56_494.02); near(Chg.BUY_ASSET, 51_868.17); near(Chg.BUY_DEP, 5_186.82);
+  });
+  it("the modifications, each on a contract of its own", () => {
+    near(Chg.SEP_OLD_L, 851_028.12); near(Chg.SEP_OLD_A, 793_559.78); near(Chg.SEP_L, 176_134.99); near(Chg.SEP_NOT_AFTER, 948_419.15); near(Chg.SEP_NOT_CHANGE, 97_391.03); near(Chg.SEP_NOT_ASSET, 890_950.81);
+    near(Chg.SHR_COST, 800_979.38); near(Chg.SHR_A, 500_612.11); near(Chg.SHR_L, 421_236.38); near(Chg.SHR_L_OUT, 126_370.91); near(Chg.SHR_A_OUT, 150_183.63); near(Chg.SHR_LOSS, 23_812.72); near(Chg.SHR_AFTER, 311_431.38); near(Chg.SHR_REM, 16_565.92); near(Chg.SHR_ASSET, 366_994.4); near(Chg.SHR_DEP, 73_398.88);
+    near(Chg.SHR_RATE_ONLY, 279_489.7); near(Chg.SHR_RATE_EFFECT, -15_375.76); near(Chg.SHR_PRICE_EFFECT, 31_941.68); near(Chg.SHR_WRONG_L, 399_271); near(Chg.SHR_WRONG_LOSS, 30_402.33);
+    near(Chg.CUT_COST, 1_216_634.37); near(Chg.CUT_A, 729_980.62); near(Chg.CUT_L, 786_320.53); near(Chg.CUT_KEEP, 282_914.2); near(Chg.CUT_L_OUT, 503_406.33); near(Chg.CUT_A_OUT, 486_653.75); near(Chg.CUT_GAIN, 16_752.58); near(Chg.CUT_AFTER, 302_509.79); near(Chg.CUT_REM, 19_595.59); near(Chg.CUT_ASSET, 262_922.46); near(Chg.CUT_DEP, 131_461.23);
+    assert.equal(Chg.CUT_ROWS.reduce((t, y) => t + y.value, 0), Chg.CUT_L);
+    near(Chg.CUT_PLUS_AFTER, 348_344.61); near(Chg.CUT_PLUS_REM, 65_430.41); near(Chg.CUT_PLUS_ASSET, 308_757.28);
+    near(Chg.EXT_A, 216_073.97); near(Chg.EXT_L, 233_107.65); near(Chg.EXT_AFTER, 383_551.3); near(Chg.EXT_CHANGE, 150_443.65); near(Chg.EXT_ASSET, 366_517.62); near(Chg.EXT_DEP, 61_086.27);
+    near(Chg.LOW_AFTER, 192_456.86); near(Chg.LOW_CHANGE, -40_650.79); near(Chg.LOW_ASSET, 175_423.18); near(Chg.LOW_DEP, 58_474.39);
   });
   it("the shop", () => {
     near(Chg.SHOP_COST, 1_218_166.1); near(Chg.SHOP_DEP, 203_027.68); near(Chg.SHOP_INT, 60_908.3); near(Chg.SHOP_BEFORE, 1_039_074.4); near(Chg.SHOP_A, 1_015_138.41);
@@ -364,7 +376,7 @@ describe("lesson 6: figures, against a separate calculation over dated cash flow
   const near = (a: number, b: number, label = "") => assert.ok(Math.abs(a - b) <= 2, `${label}: ${a} ≠ ${b}`);
   it("the practice", () => {
     const answer = (id: string) => (Lsr.LESSOR.exercises.find((x) => x.id === id) as { answer: number }).answer;
-    const want: Record<string, number> = { "op-income": 40_000, "op-accrued": 10_000, "op-dep": 17_000, "ni-start": 124_000, "ni-gain": 25_000, "ni-y2": 91_760, "dealer-sales": 190_000, "dealer-profit": 25_000, "dealer-cap": 95_096, "res-cogs": 80_725, "res-loss": 3_265, "index-income": 2_000 };
+    const want: Record<string, number> = { "op-income": 35_000, "op-accrued": 40_000, "op-dep": 22_500, "ni-start": 124_000, "ni-gain": 25_000, "ni-y2": 91_760, "dealer-sales": 190_000, "dealer-profit": 25_000, "dealer-cap": 95_096, "res-cogs": 115_169, "res-loss": 4_083, "index-income": 2_000 };
     for (const [id, v] of Object.entries(want)) assert.equal(answer(id), v, id);
     for (const x of Lsr.LESSOR.exercises) {
       if (x.kind === "number") assert.ok(x.answer > 0, x.id);
@@ -373,31 +385,45 @@ describe("lesson 6: figures, against a separate calculation over dated cash flow
     }
   });
   it("the operating lease", () => {
-    assert.deepEqual(Lsr.OP_ROWS.map((y) => [y.income, y.accrued, y.asset, y.expense]), [[27_000, 3_000, 183_000, 21_500], [27_000, 3_000, 161_500, 21_500], [27_000, 0, 140_000, 21_500]]);
+    assert.deepEqual(Lsr.OP_ROWS.map((y) => [y.income, y.accrued, y.asset, y.expense]), [[30_000, 30_000, 291_000, 17_000], [30_000, 20_000, 274_000, 17_000], [30_000, 10_000, 257_000, 17_000], [30_000, 0, 240_000, 17_000]]);
   });
-  it("the truck: a finance company, a dealer, an artificial rate", () => {
-    near(Lsr.ND_RATE * 100, 8.05);
-    [[8_286.48, 71_286.48], [5_735.09, 37_021.57], [2_978.43, 0]].forEach(([i, c], k) => {
+  it("the press, the solar system, the dental equipment", () => {
+    near(Lsr.ND_RATE * 100, 9.16);
+    near(Lsr.ND_RATE_NO_COSTS * 100, 10.63);
+    [[17_043, 148_043], [13_565, 106_608], [9_768, 61_376], [5_624, 0]].forEach(([i, c], k) => {
       near(Lsr.ND_ROWS[k].income, i);
       near(Lsr.ND_ROWS[k].closing, c);
     });
-    near(Lsr.D_RATE * 100, 9.7);
-    [[9_701.03, 69_701.03], [6_761.71, 36_462.74], [3_537.26, 0]].forEach(([i, c], k) => {
+    assert.equal(Lsr.ND_GAIN, 30_000);
+    near(Lsr.D_PV_MARKET, 122_549);
+    assert.equal(Lsr.D_SALES, 120_000);
+    assert.equal(Lsr.D_DAY_ONE, 29_500);
+    near(Lsr.D_RATE * 100, 8.95);
+    [[10_741, 93_741], [8_390, 65_131], [5_830, 33_961], [3_040, 0]].forEach(([i, c], k) => {
       near(Lsr.D_ROWS[k].income, i);
       near(Lsr.D_ROWS[k].closing, c);
     });
-    assert.equal(Lsr.ND_GAIN, 15_000);
-    near(Lsr.LOW_SALES, 90_000);
-    assert.equal(Lsr.LOW_GROSS, Lsr.LOW_SALES - 85_000);
-    near(Lsr.LOW_NAIVE, 99_904);
+    assert.equal(Lsr.D_INTEREST, 28_000);
+    near(Lsr.LOW_NAIVE, 99_001); near(Lsr.LOW_SALES, 84_233);
+    assert.equal(Lsr.LOW_GROSS, Lsr.LOW_SALES - 70_000);
+    assert.equal(Lsr.LOW_NAIVE_GROSS + Lsr.LOW_NAIVE_INT, Lsr.LOW_GROSS + Lsr.LOW_INT);
+    [[7_581, 65_814], [5_923, 45_737], [4_116, 23_853], [2_147, 0]].forEach(([i, c], k) => {
+      near(Lsr.LOW_ROWS[k].income, i);
+      near(Lsr.LOW_ROWS[k].closing, c);
+    });
     for (const rows of [Lsr.ND_ROWS, Lsr.D_ROWS, Lsr.LOW_ROWS]) rows.forEach((y) => assert.equal(y.opening + y.income - y.receipt, y.closing));
   });
   it("the residual", () => {
-    near(Lsr.RES_RATE * 100, 8.66);
-    near(Lsr.RES_SALES, 94_261.45); near(Lsr.RES_PV_UN, 5_738.55); near(Lsr.RES_COGS, 84_261.45);
-    assert.equal(Lsr.RES_GROSS, 10_000);
-    near(Lsr.RES_INT1, 8_660.55); near(Lsr.RES_BEFORE, 80_660.55); near(Lsr.RES_AFTER, 78_322.22); near(Lsr.RES_LOSS, 2_338.33);
-    near(Lsr.RES_INT2, 6_783.14); near(Lsr.RES_CLOSE2, 57_105.36); near(Lsr.RES_NC2, 34_051);
+    near(Lsr.RES_RATE * 100, 9.04);
+    near(Lsr.RES_SALES, 188_101.82); near(Lsr.RES_PV_UN, 11_898.18); near(Lsr.RES_COGS, 138_101.82); near(Lsr.RES_PV_PAY, 170_254.54); near(Lsr.RES_PV_GUAR, 17_847.28);
+    assert.equal(Lsr.RES_GROSS, 50_000);
+    assert.equal(Lsr.RES_GROSS_INV, 278_000);
+    assert.equal(Lsr.RES_PV_PAY + Lsr.RES_PV_GUAR + Lsr.RES_PV_UN, 200_000);
+    assert.ok(Lsr.RES_PV_SHARE > 0.9);
+    near(Lsr.RES_INT1, 18_082.86); near(Lsr.RES_CLOSE1, 180_082.86); near(Lsr.RES_INT2, 16_282.07); near(Lsr.RES_BEFORE, 158_364.94);
+    near(Lsr.RES_AFTER, 149_876.75); near(Lsr.RES_LOSS, 8_488.19); near(Lsr.RES_INT3, 13_551); near(Lsr.RES_CLOSE3, 125_427.75); near(Lsr.RES_NC3, 98_768.22);
+    near(Lsr.RES_BELOW_LOSS, 14_146.98);
+    assert.equal(Lsr.RES_LOSS + Lsr.RES_LESS_INTEREST, 12_000);
   });
   it("the closing question, and the walk", () => {
     assert.ok(Math.abs(Lsr.STORE_RATE * 100 - 3.28) < 0.01, "rate");
@@ -422,7 +448,7 @@ describe("lesson 7: figures, against a separate calculation over dated cash flow
   const near = (a: number, b: number, label = "") => assert.ok(Math.abs(a - b) <= 1, `${label}: ${a} ≠ ${b}`);
   it("the practice", () => {
     const answer = (id: string) => (Lmd.LESSOR_CHANGES.exercises.find((x) => x.id === id) as { answer: number }).answer;
-    const want: Record<string, number> = { "op-prepaid": 140_000, "op-income-prepaid": 87_000, "op-income-accrued": 90_000, "op-accrued-after": 20_000, "op-to-fin": 77_301, "sep-income": 75_000, "fin-dep": 60_000, "ifrs9-bal": 246_368, "ifrs9-loss": 95_331, "ifrs9-gain": 27_721, "waiver-due": 18_000, "waiver-future": 40_000, "ifrs9-sub-loss": 32_978 };
+    const want: Record<string, number> = { "op-prepaid": 140_000, "op-income-prepaid": 87_000, "op-income-accrued": 90_000, "op-accrued-after": 20_000, "op-to-fin": 64_018,"sep-income": 75_000, "fin-dep": 60_000, "ifrs9-bal": 246_368, "ifrs9-loss": 95_331, "ifrs9-gain": 27_721, "waiver-due": 18_000, "waiver-future": 40_000, "ifrs9-sub-loss": 32_978 };
     for (const [id, v] of Object.entries(want)) assert.equal(answer(id), v, id);
     for (const x of Lmd.LESSOR_CHANGES.exercises) {
       if (x.kind === "number") assert.ok(x.answer > 0, x.id);
@@ -431,21 +457,22 @@ describe("lesson 7: figures, against a separate calculation over dated cash flow
     }
   });
   it("an operating lease, paid ahead and accrued, and rewritten as a finance lease", () => {
-    assert.deepEqual([Lmd.PRE_BAL, Lmd.PRE_TOTAL, Lmd.PRE_INCOME, Lmd.PRE_FALL, Lmd.PRE_ROWS.at(-1)!.closing], [190_000, 640_000, 128_000, 38_000, 0]);
-    assert.deepEqual([Lmd.ACC_YEAR, Lmd.ACC_BAL, Lmd.ACC_NET, Lmd.ACC_TOTAL, Lmd.ACC_INCOME, Lmd.ACC_ROWS[0].closing, Lmd.ACC_ROWS[1].closing], [170_000, 60_000, 420_000, 370_000, 185_000, 15_000, 0]);
-    near(Lmd.TO_FIN_NI, 650_131.43);
-    near(Lmd.TO_FIN_GAIN, 170_131.43);
-    assert.equal(Lmd.TO_FIN_NI, Lmd.ACC_NET + Lmd.ACC_BAL + Lmd.TO_FIN_GAIN);
+    assert.deepEqual([Lmd.PRE_YEAR, Lmd.PRE_BAL, Lmd.PRE_TOTAL, Lmd.PRE_INCOME, Lmd.PRE_FALL, Lmd.PRE_ROWS.at(-1)!.closing], [54_000, 72_000, 152_000, 76_000, 36_000, 0]);
+    assert.deepEqual([Lmd.ACC_YEAR, Lmd.ACC_BAL, Lmd.ACC_NET, Lmd.ACC_TOTAL, Lmd.ACC_INCOME, Lmd.ACC_ROWS[0].closing, Lmd.ACC_ROWS.at(-1)!.closing], [45_000, 40_000, 200_000, 160_000, 40_000, 30_000, 0]);
+    near(Lmd.TO_FIN_NI, 323_601.58);
+    near(Lmd.TO_FIN_GAIN, 53_601.58);
+    assert.equal(Lmd.TO_FIN_NI + Lmd.TO_FIN.prepaid, Lmd.TO_FIN.bookValue + Lmd.TO_FIN_GAIN);
   });
-  it("the machine: a separate lease, cut to four years, a lower payment", () => {
-    near(Lmd.MACH_FV, 1_496_012.04); near(Lmd.MACH_NI, 1_221_848.08);
-    near(Lmd.MACH_INT, 85_529.37); near(Lmd.MACH_CLOSE, 1_117_377.45);
-    near(Lmd.CUT_PV, 643_570.14); near(Lmd.CUT_DEP, 135_760.9); near(Lmd.CUT_ASSET, 1_086_087.18);
-    assert.ok(Lmd.CUT_PV_SHARE < 0.5 && Lmd.CUT_TERM_SHARE < 0.5);
-    near(Lmd.LOW_NI, 744_144.2); near(Lmd.LOW_LOSS, 477_703.88); near(Lmd.LOW_WRONG, 684_110.04);
-    near(Lmd.LOW_INT, 52_090.09); near(Lmd.LOW_CLOSE, 686_234.3); near(Lmd.LOW_NC, 624_270.7);
-    near(Lmd.SUB_NI, 684_110.04); near(Lmd.SUB_LOSS, 537_738.04); near(Lmd.SUB_INT, 61_569.9); near(Lmd.SUB_CLOSE, 635_679.94);
-    assert.equal(Lmd.SUB_NI + Lmd.SUB_LOSS, Lmd.MACH_NI);
+  it("a second line, a cancelled option, a stretched lease", () => {
+    near(Lmd.LINE_NI, 590_078.92); near(Lmd.LINE_INT, 35_404.74);
+    near(Lmd.ADD_RATE * 100, 8.89); assert.equal(Lmd.ADD_GAIN, 40_000); near(Lmd.ADD_ROWS[0].income, 16_011); near(Lmd.ADD_ROWS[0].closing, 156_011);
+    near(Lmd.WOULD_FV, 393_961.75); near(Lmd.WOULD_NI, 306_146.8); near(Lmd.WOULD_PV, 287_013.82); near(Lmd.WOULD_DEP, 30_614.68); near(Lmd.WOULD_ASSET, 275_532.12);
+    assert.ok(Lmd.WOULD_PV_SHARE < 0.75 && Lmd.WOULD_TERM_SHARE < 0.5);
+    assert.ok(Math.abs(Lmd.REST_PV_SHARE - 0.9519) < 0.001, "hotel: present value share");
+    near(Lmd.REST_NI, 808_094.7); near(Lmd.LOW_NI, 658_624.12); near(Lmd.LOW_LOSS, 149_470.58); near(Lmd.LOW_WRONG, 583_593.89);
+    near(Lmd.LOW_INT, 39_517.45); near(Lmd.LOW_CLOSE, 598_141.57); near(Lmd.LOW_NC, 534_030.07);
+    near(Lmd.SUB_NI, 583_593.89); near(Lmd.SUB_LOSS, 224_500.81); near(Lmd.SUB_INT, 52_523.45); near(Lmd.SUB_CLOSE, 536_117.34);
+    assert.equal(Lmd.SUB_NI + Lmd.SUB_LOSS, Lmd.REST_NI);
   });
   it("payments forgiven", () => {
     assert.deepEqual(Lmd.WAIVE_ROWS.map((y) => y.closing), [48_000, 24_000, 0]);
@@ -475,7 +502,7 @@ describe("lesson 8: figures, against a separate calculation over dated cash flow
   const near = (a: number, b: number, label = "") => assert.ok(Math.abs(a - b) <= 2, `${label}: ${a} ≠ ${b}`);
   it("the practice", () => {
     const answer = (id: string) => (Spc.SPECIAL.exercises.find((x) => x.id === id) as { answer: number }).answer;
-    const want: Record<string, number> = { "land-pay": 35_000, "land-gain": 35_000, "land-whole": 150_000, "sub-gain": 150_000, "sub-dep": 120_000, "ip-oci": 120_000, "ip-after": 30_000, "ip-floor": 125_000, "month-pv": 301_075, "month-int": 41_335, "half-pv": 725_979, "slb-loan": 500_000, "slb-gain": 39_599, "slb-rou": 420_000, "slb-low": 285_603, "slb-high": 48_599 };
+    const want: Record<string, number> = { "land-pay": 42_500, "land-gain": 35_000, "land-whole": 150_000, "sub-gain": 150_000, "sub-dep": 120_000, "ip-oci": 120_000, "ip-after": 30_000, "ip-floor": 125_000, "month-pv": 301_075, "month-int": 41_335, "half-pv": 725_979, "slb-loan": 500_000, "slb-gain": 39_599, "slb-rou": 420_000, "slb-low": 454_459, "slb-high": 58_109 };
     for (const [id, v] of Object.entries(want)) near(answer(id), v, id);
     for (const x of Spc.SPECIAL.exercises) {
       if (x.kind === "number") assert.ok(x.answer > 0, x.id);
@@ -483,30 +510,46 @@ describe("lesson 8: figures, against a separate calculation over dated cash flow
       if (x.kind !== "journal") assert.ok(!/באותו|באותה|אותם|אותן|כמו בשאלה|השאלה הקודמת/.test(x.prompt), x.id);
     }
   });
-  it("land and building", () => {
-    near(Spc.BLD_RATE * 100, 7.53); near(Spc.BLD_INT, 20_328.23); near(Spc.BLD_CLOSE, 245_328.23); assert.equal(Spc.BLD_GAIN, 20_000);
-    near(Spc.LAND_RATE * 100, 17.41); near(Spc.LAND_PV, 62_303.12); assert.ok(Spc.LAND_PV / Spc.LAND_FV < 0.9);
-    near(Spc.ALL_RATE * 100, 10.82); assert.equal(Spc.ALL_GAIN, 70_000); near(Spc.ALL_INT, 38_950.61); near(Spc.ALL_CLOSE, 338_950.61); near(Spc.ALL_PV, 310_763.75); assert.ok(Spc.ALL_PV / Spc.LAND.fairValue < 0.9);
+  it("the yard: land that can be split, and the present value decides the building", () => {
+    assert.equal(Spc.YARD_LAND_PAY, 28_000); assert.equal(Spc.YARD_BLD_PAY, 112_000); assert.equal(Spc.YARD_GAIN, 150_000); assert.equal(Spc.YARD_WHOLE_GAIN, 300_000);
+    assert.ok(Math.abs(Spc.YARD_BLD_RATE * 100 - 6.2282) < 0.001); assert.ok(Math.abs(Spc.YARD_LAND_RATE * 100 - 12.0274) < 0.001);
+    near(Spc.YARD_BLD_PV, 927_353.72); near(Spc.YARD_LAND_PV, 173_222.83); near(Spc.YARD_INT, 62_282); near(Spc.YARD_CLOSE, 950_282);
+    assert.ok(Spc.YARD_LAND_PV / Spc.YARD_LAND_FV < 0.9 && Spc.YARD_BLD_PV / Spc.YARD_BLD_FV > 0.9);
   });
-  it("the hall: an operating sublease, then fair value", () => {
-    near(Spc.HALL_L, 1_241_958.76); near(Spc.HALL_DEP, 155_244.85); near(Spc.HALL_ROU2, 931_469.07); near(Spc.HALL_ROU3, 776_224.23);
-    near(Spc.HALL_L2, 983_464.87); near(Spc.HALL_INT, 59_007.89); near(Spc.HALL_CLOSE, 842_472.76); near(Spc.HALL_NC, 693_021.12); near(Spc.HALL_SUB_PV, 551_106.37);
-    near(Spc.IP_AT, 853_846.65); near(Spc.IP_OCI, 196_153.35); assert.equal(Spc.IP_LOSS, 40_000);
-    assert.equal(Spc.IP_AT + Spc.IP_OCI, Spc.IP.fairValue);
+  it("the plant, the shop and the hangar: no split", () => {
+    assert.ok(Math.abs(Spc.PLANT_RATE * 100 - 7.1445) < 0.001); assert.equal(Spc.PLANT_GAIN, 320_000); near(Spc.PLANT_INT, 65_372.41); near(Spc.PLANT_CLOSE, 885_372.41);
+    assert.equal(Spc.PLANT_NI, Spc.PLANT.buildingBV + Spc.PLANT.landBV + Spc.PLANT.costs + Spc.PLANT_GAIN);
+    near(Spc.SHOP_PV, 141_838.02); assert.equal(Spc.HANGAR_GAIN, 160_000);
+  });
+  it("the branch: a finance sublease that ends in a loss", () => {
+    near(Spc.BRANCH_L0, 1_862_938.14); near(Spc.BRANCH_DEP, 232_867.27); near(Spc.BRANCH_ROU, 1_164_336.34); near(Spc.BRANCH_L, 1_263_709.14); near(Spc.BRANCH_NI, 1_179_461.86); near(Spc.BRANCH_LOSS, 34_874.48);
+    near(Spc.BRANCH_NI_INT, 70_767.71); near(Spc.BRANCH_NI_CLOSE, 970_229.57); near(Spc.BRANCH_L_INT, 75_822.55); near(Spc.BRANCH_L_CLOSE, 1_039_531.68);
+    assert.equal(Spc.BRANCH_NI + Spc.BRANCH_LOSS, Spc.BRANCH_ROU + Spc.BRANCH.improvements);
+  });
+  it("the centre: an operating sublease with a stepped rent", () => {
+    near(Spc.CENTRE_L0, 1_158_260.24); near(Spc.CENTRE_DEP, 115_826.02); near(Spc.CENTRE_ROU, 810_782.17); near(Spc.CENTRE_ROU1, 694_956.14);
+    near(Spc.CENTRE_L, 867_956.01); near(Spc.CENTRE_INT, 43_397.8); near(Spc.CENTRE_CLOSE, 761_353.81); near(Spc.CENTRE_NC, 649_421.5); near(Spc.CENTRE_SUB_PV, 179_579);
+    assert.equal(Spc.CENTRE_INCOME, 100_000); assert.equal(Spc.CENTRE_ACCRUED, 20_000);
+  });
+  it("the car park: to fair value on the day use ends", () => {
+    near(Spc.PARK_L0, 754_545.95); near(Spc.PARK_DEP, 62_878.83); near(Spc.PARK_ROU, 440_151.81); near(Spc.PARK_NINE, 47_159.12); near(Spc.PARK_AT, 392_992.68); near(Spc.PARK_OCI, 77_007.32); assert.equal(Spc.PARK_GAIN, 15_000);
+    assert.equal(Spc.PARK_AT + Spc.PARK_OCI, Spc.PARK.fairValue);
   });
   it("rates that are not annual", () => {
     near(Spc.MON_L, 1_336_600.36); near(Spc.MON_OPEN, 1_091_419.42); near(Spc.MON_CLOSE, 950_084.28); near(Spc.MON_INT, 98_664.86);
     assert.ok(Math.abs(Spc.HALF_RATE * 100 - 3.44) < 0.01); near(Spc.HALF_PV, 1_601_678.9); near(Spc.HALF_WRONG, 1_598_565.91);
     assert.ok(Math.abs(Spc.FVM_RATE * 100 - 0.62) < 0.01);
   });
-  it("sale and leaseback, every price, and every entry adds up", () => {
-    near(Spc.SLB_L, 1_620_087.34); near(Spc.SLB_ROU, 957_324.34); near(Spc.SLB_GAIN, 237_237); near(Spc.SLB_DEP, 47_866.22); near(Spc.SLB_INT, 81_004.37);
-    assert.ok(Math.abs(Spc.SLB_LOAN_RATE * 100 - 1.65) < 0.01); near(Spc.SLB_LOAN_INT, 36_225.1); near(Spc.SLB_LOAN_CLOSE, 2_106_225.1);
-    near(Spc.LOW_ROU, 1_016_415.25); near(Spc.LOW_GAIN, 196_327.9); assert.equal(Spc.LOW_RENT, 135_000); assert.equal(Spc.LOW_FALL, 5_000);
-    near(Spc.HIGH_L, 1_420_087.34); near(Spc.HIGH_ROU, 839_142.52); near(Spc.HIGH_GAIN, 319_055.18); near(Spc.HIGH_PMT, 16_048.52); near(Spc.HIGH_RENT, 113_951.48); assert.equal(Spc.HIGH_INT, 10_000);
-    assert.equal(Spc.SLB.fairValue + Spc.SLB_ROU, Spc.SLB.bookValue + Spc.SLB_L + Spc.SLB_GAIN);
-    assert.equal(Spc.SLB.low + Spc.LOW_ROU, Spc.SLB.bookValue + Spc.SLB_L + Spc.LOW_GAIN);
-    assert.equal(Spc.SLB.high + Spc.HIGH_ROU, Spc.SLB.bookValue + Spc.HIGH_L + Spc.HIGH_LOAN + Spc.HIGH_GAIN);
+  it("sale and leaseback, four separate deals, and every entry adds up", () => {
+    assert.ok(Math.abs(Spc.COLD_RATE * 100 - 7.0728) < 0.001); near(Spc.COLD_INT, 99_019.49); near(Spc.COLD_CLOSE, 1_299_019.49); assert.equal(Spc.COLD_GAP, 500_000);
+    near(Spc.BAKERY_L, 379_112.74); near(Spc.BAKERY_ROU, 227_467.64); near(Spc.BAKERY_GAIN, 448_354.9); near(Spc.BAKERY_DEP, 45_493.53); near(Spc.BAKERY_INT, 22_746.76); near(Spc.BAKERY_CLOSE, 311_859.51);
+    near(Spc.BAKERY_LONG_L, 1_406_169.18); near(Spc.BAKERY_LONG_ROU, 843_701.51); near(Spc.BAKERY_LONG_GAIN, 37_532.33);
+    near(Spc.GYM_PV, 1_766_420.89); near(Spc.GYM_L, 1_466_420.89); near(Spc.GYM_PMT, 40_760.39); near(Spc.GYM_RENT, 199_239.61); near(Spc.GYM_ROU, 948_860.58); near(Spc.GYM_GAIN, 82_439.69);
+    near(Spc.GYM_L_INT, 87_985.25); near(Spc.GYM_L_CLOSE, 1_355_166.53); assert.equal(Spc.GYM_LOAN_INT, 18_000); near(Spc.GYM_LOAN_CLOSE, 277_239.61); near(Spc.GYM_L_CLOSE + Spc.GYM_LOAN_CLOSE, 1_632_406.15); assert.ok(Math.abs(Spc.GYM_PV - Spc.GYM_RENT_PV - 300_000) <= 5, "two measures");
+    near(Spc.LOGI_L, 1_764_541.87); near(Spc.LOGI_PMT, 19_268.46); near(Spc.LOGI_MARKET, 189_268.46); near(Spc.LOGI_ROU, 1_309_694.58); near(Spc.LOGI_GAIN, 345_152.71); near(Spc.LOGI_RENT, 183_333.33); near(Spc.LOGI_FALL, 13_333.33); assert.ok(Math.abs(Spc.LOGI_MARKET_PV - Spc.LOGI_L - 200_000) <= 6, "two measures");
+    assert.equal(Spc.BAKERY.fairValue + Spc.BAKERY_ROU, Spc.BAKERY.bookValue + Spc.BAKERY_L + Spc.BAKERY_GAIN);
+    assert.equal(Spc.GYM.price + Spc.GYM_ROU, Spc.GYM.bookValue + Spc.GYM_L + Spc.GYM_LOAN + Spc.GYM_GAIN);
+    assert.equal(Spc.LOGI.price + Spc.LOGI_ROU, Spc.LOGI.bookValue + Spc.LOGI_L + Spc.LOGI_GAIN);
   });
   it("the closing question: three parties", () => {
     near(Spc.CH_HEAD_PV, 2_864_290.11); near(Spc.CH_HEAD_COSTS, 4_290.11); near(Spc.CH_HEAD_I1, 257_786.11); near(Spc.CH_HEAD_C1, 2_722_076.22); near(Spc.CH_HEAD_I2, 244_986.86); near(Spc.CH_HEAD_C2, 2_567_063.08); near(Spc.CH_HEAD_NC, 2_398_098.76);

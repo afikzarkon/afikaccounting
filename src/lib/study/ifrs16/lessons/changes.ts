@@ -14,14 +14,14 @@ export const RATE_ROWS: [string, string, string, string][] = [
   ["הערכת תקופה", "חדשה", "נכס", "סעיף 40(א)"],
   ["הערכת אופציית רכישה", "חדשה", "נכס", "סעיף 40(ב)"],
   ["ריבית משתנה", "חדשה", "נכס", "סעיף 43"],
-  ["מטבע חוץ", "ישנה", "רווח או הפסד", "IAS 21"],
+  ["מטבע חוץ", "ישנה", "רווח או הפסד", "IAS 21, סעיפים 23, 28"],
 ];
 
 export const RATE_ITEMS: { text: string; answer: "old" | "new"; why: string }[] = [
-  { text: "מדד המחירים עלה, והתשלום החוזי התעדכן.", answer: "old", why: "סעיף 43: החוזה לא השתנה בעיקרו, ורק התזרים עודכן." },
-  { text: "החוכר מעריך עכשיו שערך השייר יהיה נמוך מהערבות בסכום אחר.", answer: "old", why: "סעיפים 42(א), 43." },
-  { text: "אירוע בשליטת החוכר, ועכשיו ודאי באופן סביר שיאריך.", answer: "new", why: "סעיפים 40(א), 41: התקופה השתנתה, ולכן גם המחיר של הכסף." },
-  { text: "עכשיו ודאי באופן סביר שהחוכר יממש אופציית רכישה.", answer: "new", why: "סעיפים 40(ב), 41." },
+  { text: "מדד המחירים עלה, והתשלום החוזי התעדכן.", answer: "old", why: "הריבית נשארת (סעיף 43). רק סכום התשלום השתנה, ומה שהחוב מכסה נשאר כמו שהיה." },
+  { text: "החוכר מעריך עכשיו שערך השייר יהיה נמוך מהערבות בסכום אחר.", answer: "old", why: "הריבית נשארת (סעיפים 42(א), 43). רק הסכום הצפוי להשלמה השתנה, ומה שהחוב מכסה נשאר כמו שהיה." },
+  { text: "אירוע בשליטת החוכר, ועכשיו ודאי באופן סביר שיאריך.", answer: "new", why: "סעיפים 40(א), 41: החישוב כולל עכשיו שנים שלא היו בו, ולכן לוקחים ריבית של היום." },
+  { text: "אירוע בשליטת החוכר, ועכשיו ודאי באופן סביר שיממש אופציית רכישה.", answer: "new", why: "סעיפים 40(ב), 41: מחיר הקנייה נכנס עכשיו לחוב, ולכן לוקחים ריבית של היום." },
   { text: "התשלומים צמודים לריבית בנק ישראל, והיא עלתה.", answer: "new", why: "סעיף 43: השינוי נובע מהריבית עצמה, ולכן מעדכנים אותה." },
 ];
 export const RATE_OPTIONS: [string, string][] = [
@@ -32,31 +32,39 @@ export const RATE_OPTIONS: [string, string][] = [
 /** A change larger than the asset: it stops at zero, and the rest is a gain (paragraph 39). */
 export const ZERO = { asset: 20_000, decrease: 26_000 };
 export const ZERO_GAIN = ZERO.decrease - ZERO.asset;
+/** The plain case on the same screen: the debt grows, the asset grows with it, and depreciation follows. */
+export const ASSET_EX = { asset: 80_000, liability: 95_000, change: 10_000, left: 5 };
 
-/** Worked: an index-linked lease, over two years in which the index moves. */
-export const IDX = { payment: 40_000, years: 8, rate: 0.06, base: 100, indexes: [105, 108], rates: [0.07, 0.05], life: 10 };
-export type IndexRow = { year: number; opening: number; interest: number; paid: number; before: number; after: number; change: number; rouOpen: number; dep: number; rou: number; nonCurrent: number; current: number };
-const IDX_COST = r(pvEnd(IDX.rate, IDX.years, IDX.payment));
-export const IDX_START = IDX_COST;
+/** Worked: an imaging machine paid on each 1.1, whose payment follows the index only every second year. */
+export const IDX = { payment: 90_000, years: 6, rate: 0.05, base: 100, indexes: [103, 106], resetYear: 3, todayRate: 0.08 };
+export const IDX_NEW_PAYMENT = (IDX.payment * IDX.indexes[1]) / IDX.base;
+export type IndexRow = { year: number; opening: number; change: number; paid: number; interest: number; closing: number; rouOpen: number; dep: number; rou: number; current: number; nonCurrent: number };
+export const IDX_START = r(pvStart(IDX.rate, IDX.years, IDX.payment));
 export const IDX_ROWS: IndexRow[] = (() => {
-  let opening = IDX_COST;
-  let rouOpen = IDX_COST;
-  return IDX.indexes.map((index, k) => {
-    const interest = r(opening * IDX.rate);
-    const paid = r((IDX.payment * index) / IDX.base);
-    const before = opening + interest - paid;
-    const left = IDX.years - k - 1;
-    const after = r(pvEnd(IDX.rate, left, paid));
-    const dep = r(rouOpen / (IDX.years - k));
-    const change = after - before;
-    const rou = rouOpen - dep + change;
-    const nonCurrent = r(pvEnd(IDX.rate, left - 1, paid));
-    const row = { year: k + 1, opening, interest, paid, before, after, change, rouOpen, dep, rou, nonCurrent, current: after - nonCurrent };
-    opening = after;
+  let opening = IDX_START;
+  let rouOpen = IDX_START;
+  return [1, 2, 3].map((year) => {
+    const left = IDX.years - year + 1;
+    const reset = year === IDX.resetYear;
+    const paid = reset ? IDX_NEW_PAYMENT : IDX.payment;
+    const after = reset ? r(pvStart(IDX.rate, left, paid)) : opening;
+    const change = after - opening;
+    // Each year's end is what Excel gives for the payments left, so the interest carries the rounding.
+    const closing = r(pvStart(IDX.rate, left - 1, paid));
+    const interest = closing - (after - paid);
+    const dep = r((rouOpen + change) / left);
+    const rou = rouOpen + change - dep;
+    const row = { year, opening, change, paid, interest, closing, rouOpen, dep, rou, current: paid, nonCurrent: closing - paid };
+    opening = closing;
     rouOpen = rou;
     return row;
   });
 })();
+/** The remeasurement, in a line: the debt and the asset on the day the payment changes. */
+export const IDX_BEFORE = IDX_ROWS[2].opening;
+export const IDX_AFTER = IDX_ROWS[2].opening + IDX_ROWS[2].change;
+export const IDX_CHANGE = IDX_ROWS[2].change;
+export const IDX_ROU_BEFORE = IDX_ROWS[2].rouOpen;
 
 /** Worked: a guarantee whose expected shortfall falls after a year. */
 export const GUAR = { payment: 55_000, years: 5, rate: 0.06, newRate: 0.07, ibr: 0.05, guarantee: 9_000, expected: 3_000, newExpected: 8_000, life: 8 };
@@ -76,64 +84,114 @@ export const GUAR_CLOSE2 = GUAR_AFTER + GUAR_INT2 - GUAR.payment;
 export const GUAR_ROU2 = GUAR_ROU1 - GUAR_DEP2;
 export const GUAR_NC2 = r(pvEnd(GUAR.rate, GUAR.years - 3, GUAR.payment, GUAR_NEW_SHORT));
 
-/** Worked: an extension that becomes reasonably certain, paid in advance. */
-export const TERM = { payment: 60_000, years: 8, rate: 0.06, newRate: 0.07, direct: 12_000, optionYears: 3, optionPayment: 66_000, eventYear: 5 };
-export const TERM_GROSS = r(pvStart(TERM.rate, TERM.years, TERM.payment));
-export const TERM_COST = TERM_GROSS + TERM.direct;
-export const TERM_DEP = r(TERM_COST / TERM.years);
-export const TERM_INT1 = r((TERM_GROSS - TERM.payment) * TERM.rate);
-export const TERM_CLOSE1 = TERM_GROSS - TERM.payment + TERM_INT1;
-export const TERM_ROU1 = TERM_COST - TERM_DEP;
-export const TERM_LEFT = TERM.years - TERM.eventYear;
-export const TERM_BEFORE_L = r(pvStart(TERM.rate, TERM_LEFT, TERM.payment));
-export const TERM_BEFORE_A = r((TERM_COST * TERM_LEFT) / TERM.years);
-const afterFlows = (k: number) => {
-  const flows = [...Array(TERM_LEFT).fill(TERM.payment), ...Array(TERM.optionYears).fill(TERM.optionPayment)].slice(k);
-  return flows.reduce((s: number, a: number, t: number) => s + a / (1 + TERM.newRate) ** t, 0);
-};
-export const TERM_AFTER_L = r(afterFlows(0));
+/** Worked: a break clause the lessee meant to use, until a business decision of its own. */
+export const TERM = { payment: 70_000, years: 10, breakYear: 6, penalty: 30_000, rate: 0.05, newRate: 0.07, eventYear: 4 };
+export const TERM_COST = r(pvEnd(TERM.rate, TERM.breakYear, TERM.payment, TERM.penalty));
+export const TERM_DEP = r(TERM_COST / TERM.breakYear);
+export const TERM_LEFT = TERM.breakYear - TERM.eventYear;
+export const TERM_BEFORE_L = r(pvEnd(TERM.rate, TERM_LEFT, TERM.payment, TERM.penalty));
+export const TERM_BEFORE_A = r((TERM_COST * TERM_LEFT) / TERM.breakYear);
+export const TERM_NEW_YEARS = TERM.years - TERM.eventYear;
+export const TERM_AFTER_L = r(pvEnd(TERM.newRate, TERM_NEW_YEARS, TERM.payment));
 export const TERM_CHANGE = TERM_AFTER_L - TERM_BEFORE_L;
 export const TERM_AFTER_A = TERM_BEFORE_A + TERM_CHANGE;
-export const TERM_NEW_YEARS = TERM_LEFT + TERM.optionYears;
 export const TERM_DEP2 = r(TERM_AFTER_A / TERM_NEW_YEARS);
-/** The second year after the change. */
-export const TERM_OPEN7 = r(afterFlows(1));
-export const TERM_INT7 = r((TERM_OPEN7 - TERM.payment) * TERM.newRate);
-export const TERM_CLOSE7 = TERM_OPEN7 - TERM.payment + TERM_INT7;
-export const TERM_ROU7 = TERM_AFTER_A - 2 * TERM_DEP2;
+/** What the six payments would come to at the old rate: the mistake the rule prevents. */
+export const TERM_OLD_RATE_L = r(pvEnd(TERM.rate, TERM_NEW_YEARS, TERM.payment));
+/** The balances on the day, split, and the year after. */
+export const TERM_NC = r(pvEnd(TERM.newRate, TERM_NEW_YEARS - 1, TERM.payment));
+export const TERM_CUR = TERM_AFTER_L - TERM_NC;
+export const TERM_INT5 = r(TERM_AFTER_L * TERM.newRate);
+export const TERM_CLOSE5 = TERM_AFTER_L + TERM_INT5 - TERM.payment;
+export const TERM_ROU5 = TERM_AFTER_A - TERM_DEP2;
+export const TERM_NC5 = r(pvEnd(TERM.newRate, TERM_NEW_YEARS - 2, TERM.payment));
+export const TERM_CUR5 = TERM_CLOSE5 - TERM_NC5;
 
-/** Worked: one office lease, three independent modifications. */
-export const OFFICE = { area: 4_000, payment: 90_000, years: 9, passed: 5, rate: 0.05, newRate: 0.06 };
-export const OFFICE_COST = r(pvEnd(OFFICE.rate, OFFICE.years, OFFICE.payment));
-export const OFFICE_LEFT = OFFICE.years - OFFICE.passed;
-export const OFFICE_A = r((OFFICE_COST * OFFICE_LEFT) / OFFICE.years);
-export const OFFICE_L = r(pvEnd(OFFICE.rate, OFFICE_LEFT, OFFICE.payment));
-/** א: three more years on the same terms. */
-export const EXT = { extra: 3 };
-export const EXT_AFTER = r(pvEnd(OFFICE.newRate, OFFICE_LEFT + EXT.extra, OFFICE.payment));
-export const EXT_CHANGE = EXT_AFTER - OFFICE_L;
-/** ב: half the area, a new payment. */
-export const HALF = { area: 2_000, payment: 55_000 };
-export const HALF_L_OUT = r(OFFICE_L / 2);
-export const HALF_A_OUT = r(OFFICE_A / 2);
-export const HALF_GAIN = HALF_L_OUT - HALF_A_OUT;
-export const HALF_AFTER = r(pvEnd(OFFICE.newRate, OFFICE_LEFT, HALF.payment));
-export const HALF_REM = HALF_AFTER - (OFFICE_L - HALF_L_OUT);
-export const HALF_ASSET = OFFICE_A - HALF_A_OUT + HALF_REM;
-/** ג: more area, but a shorter lease, at a price that isn't the extra area's own. */
-export const CUT = { extraArea: 1_000, left: 2, payment: 110_000 };
-export const CUT_KEEP = r(pvEnd(OFFICE.rate, CUT.left, OFFICE.payment));
-export const CUT_L_OUT = OFFICE_L - CUT_KEEP;
-export const CUT_A_OUT = r((OFFICE_A * (OFFICE_LEFT - CUT.left)) / OFFICE_LEFT);
+/** Worked in figures: a purchase option that becomes reasonably certain, near the end of a lease. */
+export const BUY_EX = { option: 15_000, left: 2, life: 10, payment: 24_000, rate: 0.05, newRate: 0.07, asset: 40_000 };
+export const BUY_BEFORE = r(pvEnd(BUY_EX.rate, BUY_EX.left, BUY_EX.payment));
+export const BUY_AFTER = r(pvEnd(BUY_EX.newRate, BUY_EX.left, BUY_EX.payment, BUY_EX.option));
+export const BUY_CHANGE = BUY_AFTER - BUY_BEFORE;
+export const BUY_ASSET = BUY_EX.asset + BUY_CHANGE;
+export const BUY_DEP_OLD = r(BUY_EX.asset / BUY_EX.left);
+export const BUY_DEP = r(BUY_ASSET / BUY_EX.life);
+
+/** A modification that is a separate lease: two more minibuses in a fleet of ten, and what a price below the stand-alone one would do instead. */
+export const SEP = { buses: 10, payment: 240_000, years: 7, passed: 3, rate: 0.05, extra: 2, market: 54_000, saving: 2_000, yearly: 52_000, newRate: 0.07, cheap: 40_000 };
+export const SEP_LEFT = SEP.years - SEP.passed;
+export const SEP_COST = r(pvEnd(SEP.rate, SEP.years, SEP.payment));
+export const SEP_OLD_A = r((SEP_COST * SEP_LEFT) / SEP.years);
+export const SEP_OLD_L = r(pvEnd(SEP.rate, SEP_LEFT, SEP.payment));
+export const SEP_L = r(pvEnd(SEP.newRate, SEP_LEFT, SEP.yearly));
+export const SEP_NOT_AFTER = r(pvEnd(SEP.newRate, SEP_LEFT, SEP.payment + SEP.cheap));
+export const SEP_NOT_CHANGE = SEP_NOT_AFTER - SEP_OLD_L;
+export const SEP_NOT_ASSET = SEP_OLD_A + SEP_NOT_CHANGE;
+
+/** A smaller scope, in a lease carrying key money: more leaves the asset than the debt, so step 1 is a loss. */
+export const SHR = { area: 1_000, returned: 300, payment: 100_000, years: 8, passed: 3, rate: 0.06, newRate: 0.08, key: 180_000, newPayment: 78_000 };
+export const SHR_SHARE = SHR.returned / SHR.area;
+export const SHR_LEFT = SHR.years - SHR.passed;
+export const SHR_COST = r(pvEnd(SHR.rate, SHR.years, SHR.payment)) + SHR.key;
+export const SHR_A = r((SHR_COST * SHR_LEFT) / SHR.years);
+export const SHR_L = r(pvEnd(SHR.rate, SHR_LEFT, SHR.payment));
+export const SHR_L_OUT = r(SHR_L * SHR_SHARE);
+export const SHR_A_OUT = r(SHR_A * SHR_SHARE);
+export const SHR_LOSS = SHR_A_OUT - SHR_L_OUT;
+export const SHR_KEEP = SHR_L - SHR_L_OUT;
+export const SHR_AFTER = r(pvEnd(SHR.newRate, SHR_LEFT, SHR.newPayment));
+export const SHR_REM = SHR_AFTER - SHR_KEEP;
+export const SHR_ASSET = SHR_A - SHR_A_OUT + SHR_REM;
+export const SHR_DEP = r(SHR_ASSET / SHR_LEFT);
+/** What is inside step 2: 70% of the old payment at today's rate, then the rest of the new price. */
+export const SHR_SAME_PAY = r(SHR.payment * (1 - SHR_SHARE));
+export const SHR_RATE_ONLY = r(pvEnd(SHR.newRate, SHR_LEFT, SHR_SAME_PAY));
+export const SHR_RATE_EFFECT = SHR_RATE_ONLY - SHR_KEEP;
+export const SHR_PRICE_EFFECT = SHR_AFTER - SHR_RATE_ONLY;
+/** The wrong order: today's rate first, and only then taking out the share. */
+export const SHR_WRONG_L = r(pvEnd(SHR.newRate, SHR_LEFT, SHR.payment));
+export const SHR_WRONG_OUT = r(SHR_WRONG_L * SHR_SHARE);
+export const SHR_WRONG_LOSS = SHR_A_OUT - SHR_WRONG_OUT;
+
+/** A shorter term: years leave the asset by count, and the debt by what the far payments are worth. */
+export const CUT = { payment: 150_000, years: 10, passed: 4, left: 2, rate: 0.04, newRate: 0.06, newPayment: 165_000, plusPayment: 190_000 };
+export const CUT_WAS_LEFT = CUT.years - CUT.passed;
+export const CUT_COST = r(pvEnd(CUT.rate, CUT.years, CUT.payment));
+export const CUT_A = r((CUT_COST * CUT_WAS_LEFT) / CUT.years);
+export const CUT_L = r(pvEnd(CUT.rate, CUT_WAS_LEFT, CUT.payment));
+export const CUT_KEEP = r(pvEnd(CUT.rate, CUT.left, CUT.payment));
+export const CUT_L_OUT = CUT_L - CUT_KEEP;
+export const CUT_A_OUT = r((CUT_A * (CUT_WAS_LEFT - CUT.left)) / CUT_WAS_LEFT);
 export const CUT_GAIN = CUT_L_OUT - CUT_A_OUT;
-export const CUT_R1 = r(pvEnd(OFFICE.newRate, CUT.left, OFFICE.payment));
-export const CUT_M1 = CUT_R1 - CUT_KEEP;
-export const CUT_R2 = r(pvEnd(OFFICE.newRate, CUT.left, CUT.payment));
-export const CUT_M2 = CUT_R2 - CUT_R1;
-export const CUT_ASSET = OFFICE_A - CUT_A_OUT + CUT_M1 + CUT_M2;
-/** A modification that is a separate lease. */
-export const SEP = { area: 1_000, yearly: 25_000, years: 4, rate: 0.06 };
-export const SEP_L = r(pvEnd(SEP.rate, SEP.years, SEP.yearly));
+export const CUT_AFTER = r(pvEnd(CUT.newRate, CUT.left, CUT.newPayment));
+export const CUT_REM = CUT_AFTER - CUT_KEEP;
+export const CUT_ASSET = CUT_A - CUT_A_OUT + CUT_REM;
+export const CUT_DEP = r(CUT_ASSET / CUT.left);
+/** Each remaining payment at the old rate; the last row carries the rounding, so the column adds up to the debt. */
+export const CUT_ROWS: { year: number; value: number; stays: boolean }[] = (() => {
+  const rows = Array.from({ length: CUT_WAS_LEFT }, (_, k) => ({ year: k + 1, value: r(CUT.payment / (1 + CUT.rate) ** (k + 1)), stays: k < CUT.left }));
+  rows[rows.length - 1].value += CUT_L - rows.reduce((t, x) => t + x.value, 0);
+  return rows;
+})();
+/** The same amendment, with a second room added at a price that isn't its stand-alone price. */
+export const CUT_PLUS_AFTER = r(pvEnd(CUT.newRate, CUT.left, CUT.plusPayment));
+export const CUT_PLUS_REM = CUT_PLUS_AFTER - CUT_KEEP;
+export const CUT_PLUS_ASSET = CUT_A - CUT_A_OUT + CUT_PLUS_REM;
+
+/** A longer term at a lower rent, and beside it a lower rent alone. Nothing here leaves, so all of it goes to the asset. */
+export const EXT = { payment: 84_000, years: 7, passed: 4, rate: 0.04, newRate: 0.06, extra: 3, newPayment: 78_000, lowPayment: 72_000 };
+export const EXT_LEFT = EXT.years - EXT.passed;
+export const EXT_COST = r(pvEnd(EXT.rate, EXT.years, EXT.payment));
+export const EXT_A = r((EXT_COST * EXT_LEFT) / EXT.years);
+export const EXT_L = r(pvEnd(EXT.rate, EXT_LEFT, EXT.payment));
+export const EXT_AFTER = r(pvEnd(EXT.newRate, EXT_LEFT + EXT.extra, EXT.newPayment));
+export const EXT_CHANGE = EXT_AFTER - EXT_L;
+export const EXT_ASSET = EXT_A + EXT_CHANGE;
+export const EXT_DEP_OLD = r(EXT_A / EXT_LEFT);
+export const EXT_DEP = r(EXT_ASSET / (EXT_LEFT + EXT.extra));
+export const LOW_AFTER = r(pvEnd(EXT.newRate, EXT_LEFT, EXT.lowPayment));
+export const LOW_CHANGE = LOW_AFTER - EXT_L;
+export const LOW_ASSET = EXT_A + LOW_CHANGE;
+export const LOW_DEP = r(LOW_ASSET / EXT_LEFT);
 
 /** Worked: a shop, made smaller or larger at the year's end. */
 export const SHOP = { area: 600, payment: 240_000, years: 6, rate: 0.05, newRate: 0.06, sales: 300_000, share: 0.02, half: 300, discount: 0.9, perMeter: 400 };
@@ -198,13 +256,13 @@ export const CHANGE_WALK: Record<string, TestNode | TestEnd> = {
   changed: { q: "הצדדים שינו את תנאי החוזה?", par: "נספח א׳", help: "תיקון הוא שינוי בהיקף או בתמורה, שלא היה חלק מהתנאים המקוריים.", answers: [{ label: "כן, יש תיקון", to: "adds" }, { label: "לא, השתנו אומדן או מדד", to: "what" }] },
   what: { q: "מה השתנה?", par: "סעיפים 40–43", help: "החוזה נשאר, אבל התשלומים הצפויים השתנו. זו הערכה מחדש.", answers: [{ label: "הערכה של תקופה או אופציית רכישה", to: "newRate" }, { label: "מדד, או תשלום צפוי בערבות", to: "oldRate" }, { label: "ריבית משתנה", to: "floating" }, { label: "מטבע חוץ", to: "fx" }] },
   newRate: { lease: true, verdict: "ריבית מעודכנת, כנגד הנכס", why: "סעיפים 40, 41: מדדים מחדש בשיעור של היום. הפרש ההתחייבות מתאים את הנכס." },
-  oldRate: { lease: true, verdict: "ריבית ישנה, כנגד הנכס", why: "סעיפים 42, 43: רק התזרים עודכן, ולכן הריבית נשארת." },
+  oldRate: { lease: true, verdict: "ריבית ישנה, כנגד הנכס", why: "הריבית נשארת (סעיפים 42, 43). רק הסכום זז, ומה שהחוב מכסה נשאר כמו שהיה." },
   floating: { lease: true, verdict: "ריבית מעודכנת, כנגד הנכס", why: "סעיף 43: כשהשינוי נובע מהריבית עצמה, מעדכנים אותה." },
-  fx: { lease: true, verdict: "ריבית ישנה, לרווח או הפסד", why: "הפרש השער הוא הפרש תרגום של התחייבות כספית לפי IAS 21, והוא לא נוגע לנכס." },
+  fx: { lease: true, verdict: "ריבית ישנה, לרווח או הפסד", why: "הפרש השער הוא הפרש תרגום של התחייבות כספית לפי IAS 21 (סעיפים 23, 28), והוא לא נוגע לנכס. ב-IFRS 16 עצמו זה לא כתוב." },
   adds: { q: "התיקון מוסיף זכות להשתמש בנכס?", par: "סעיף 44(א)", help: "למשל עוד קומה או עוד מכונה. הארכה של אותו נכס אינה תוספת כזו.", answers: [{ label: "כן", to: "price" }, { label: "לא", to: "shrinks" }] },
-  price: { q: "התמורה עלתה במחיר הנפרד של התוספת?", par: "סעיף 44(ב)", help: "מותר תיאום מתאים, למשל הנחה על חיסכון של המחכיר בשיווק.", answers: [{ label: "כן", to: "separate" }, { label: "לא", to: "shrinks" }] },
-  separate: { lease: true, verdict: "חכירה נפרדת", why: "סעיף 44: התוספת נמדדת כחכירה חדשה, והחכירה המקורית לא נוגעים בה." },
-  shrinks: { q: "התיקון גם מקטין את ההיקף: שטח קטן, או תקופה קצרה?", par: "סעיף 46(א)", help: "גם קיצור תקופה הוא הקטנת היקף.", answers: [{ label: "כן", to: "decrease" }, { label: "לא", to: "other" }] },
+  price: { q: "המחיר עלה בסכום שמתאים למחיר הנפרד של התוספת?", par: "סעיף 44(ב)", help: "מחיר נפרד הוא מה שהיו משלמים עליה בחוזה משלה. מותר תיאום מתאים, למשל הנחה על חיסכון של המחכיר בשיווק.", answers: [{ label: "כן", to: "separate" }, { label: "לא", to: "shrinks" }] },
+  separate: { lease: true, verdict: "חכירה נפרדת", why: "סעיף 44: התוספת נמדדת כחכירה חדשה, ובחכירה המקורית לא נוגעים." },
+  shrinks: { q: "התיקון מקטין את ההיקף, למשל פחות שטח או פחות זמן?", par: "סעיף 46(א)", help: "גם קיצור תקופה הוא הקטנת היקף.", answers: [{ label: "כן", to: "decrease" }, { label: "לא", to: "other" }] },
   decrease: { lease: true, verdict: "קודם גריעה ורווח או הפסד, ואז מדידה מחדש", why: "סעיפים 45, 46(א): גורעים את החלק שנעלם, ואת השאר מודדים בריבית מעודכנת כנגד הנכס." },
   other: { lease: true, verdict: "מדידה מחדש כנגד הנכס, בריבית מעודכנת", why: "סעיפים 45, 46(ב): בלי רווח או הפסד." },
 };
@@ -273,7 +331,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     skill: "מדד",
     prompt: "אחרי התשלום של 31.12 נשארו 4 תשלומים של 20,000 ש״ח בסוף כל שנה. המדד עלה ב-5%, והתשלומים הבאים יהיו 21,000 ש״ח. הריבית בתחילת החכירה 5%, והריבית התוספתית היום 8%. בכמה גדלה ההתחייבות?",
     answer: P_INDEX,
-    steps: [`לא משנים ריבית (סעיף 43).\nלפני: 20,000 × (1 − 1.05^(−4)) ÷ 0.05 = ${fmt(r(pvEnd(0.05, 4, 20_000)))}`, `אחרי: 21,000 × (1 − 1.05^(−4)) ÷ 0.05 = ${fmt(r(pvEnd(0.05, 4, 21_000)))}`, `${fmt(r(pvEnd(0.05, 4, 21_000)))} − ${fmt(r(pvEnd(0.05, 4, 20_000)))} = ${fmt(P_INDEX)}`],
+    steps: ["מחשבים את החוב לפני ואחרי באותה ריבית, כי רק התשלום השתנה (סעיף 43). 8% הוא נתון מיותר.", `לפני: 20,000 × (1 − 1.05^(−4)) ÷ 0.05 = ${fmt(r(pvEnd(0.05, 4, 20_000)))}`, `אחרי: 21,000 × (1 − 1.05^(−4)) ÷ 0.05 = ${fmt(r(pvEnd(0.05, 4, 21_000)))}`, `${fmt(r(pvEnd(0.05, 4, 21_000)))} − ${fmt(r(pvEnd(0.05, 4, 20_000)))} = ${fmt(P_INDEX)}`, "באקסל: הפרש בין =PV(5%;4;-21000) לבין =PV(5%;4;-20000)"],
     trap: "להיוון ב-8%. הריבית התוספתית של היום לא רלוונטית לשינוי מדד.",
     level: 2,
     source: "מקורית",
@@ -295,7 +353,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     skill: "כנגד הנכס",
     prompt: "יתרת נכס זכות השימוש 15,000 ש״ח. מדידה מחדש מקטינה את התחייבות החכירה ב-22,000 ש״ח. כמה רווח נרשם?",
     answer: 7_000,
-    steps: ["הנכס יורד עד אפס: 15,000 (סעיף 39).", "השאר ברווח או הפסד: 22,000 − 15,000 = 7,000"],
+    steps: ["הנכס יורד רק עד אפס, ולכן הוא סופג 15,000 (סעיף 39). מה שנשאר מהירידה אין כנגד מה לרשום, ולכן הוא רווח.", "ירידה בהתחייבות − יתרת הנכס = רווח\n22,000 − 15,000 = 7,000"],
     trap: "להציג נכס שלילי. הנכס עוצר באפס.",
     level: 2,
     source: "מקורית",
@@ -306,18 +364,18 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     skill: "פחת אחרי שינוי",
     prompt: "אחרי מדידה מחדש יתרת נכס זכות השימוש 120,000 ש״ח, ונשארו 4 שנות חכירה. הנכס חוזר למחכיר, והפחת בקו ישר. מהו הפחת השנתי מעכשיו?",
     answer: 30_000,
-    steps: ["יתרה ÷ יתרת תקופה = פחת\n120,000 ÷ 4 = 30,000"],
+    steps: ["אחרי מדידה מחדש לא חוזרים לעלות המקורית. מפזרים את מה שיש היום על מה שנשאר.", "יתרה ÷ יתרת תקופה = פחת\n120,000 ÷ 4 = 30,000"],
     trap: "להמשיך בפחת הישן ולהוסיף לו. כל שינוי מתפזר על השנים שנשארו.",
     level: 1,
     source: "מקורית",
-    ref: "סעיף 30(ב)",
+    ref: "סעיפים 30(ב), 31",
   }),
   askNumber({
     id: "term-up",
     skill: "הערכת תקופה",
     prompt: "נשארו 3 תשלומים של 50,000 ש״ח בסוף כל שנה, בריבית 6%. אירוע בשליטת החוכר, ועכשיו ודאי באופן סביר שיממש הארכה בשנתיים, בלי שינוי בתשלום. הריבית התוספתית היום 8%. בכמה גדלה ההתחייבות?",
     answer: P_TERM_AFTER - P_TERM_BEFORE,
-    steps: [`לפני, בריבית הישנה: 50,000 × (1 − 1.06^(−3)) ÷ 0.06 = ${fmt(P_TERM_BEFORE)}`, `אחרי, 5 תשלומים בריבית המעודכנת: 50,000 × (1 − 1.08^(−5)) ÷ 0.08 = ${fmt(P_TERM_AFTER)}`, `${fmt(P_TERM_AFTER)} − ${fmt(P_TERM_BEFORE)} = ${fmt(P_TERM_AFTER - P_TERM_BEFORE)}`],
+    steps: ["השנים הנוספות משנות את החישוב כולו, ולכן כל 5 התשלומים מהוונים בריבית של היום, גם 3 שכבר היו בחוב.", `לפני, בריבית הישנה: 50,000 × (1 − 1.06^(−3)) ÷ 0.06 = ${fmt(P_TERM_BEFORE)}`, `אחרי, 5 תשלומים בריבית המעודכנת: 50,000 × (1 − 1.08^(−5)) ÷ 0.08 = ${fmt(P_TERM_AFTER)}`, `${fmt(P_TERM_AFTER)} − ${fmt(P_TERM_BEFORE)} = ${fmt(P_TERM_AFTER - P_TERM_BEFORE)}`, "באקסל: הפרש בין =PV(8%;5;-50000) לבין =PV(6%;3;-50000)"],
     trap: "להוון רק את שתי השנים הנוספות. כל היתרה נמדדת מחדש בריבית החדשה.",
     level: 2,
     source: "מקורית",
@@ -326,9 +384,9 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
   askNumber({
     id: "buy-dep",
     skill: "אופציית רכישה",
-    prompt: "נשארו 3 תשלומים של 40,000 ש״ח בסוף כל שנה, בריבית 5%. יתרת הנכס 150,000 ש״ח. עכשיו ודאי באופן סביר שהחוכר יממש בסוף התקופה אופציית רכישה ב-20,000 ש״ח. הריבית התוספתית היום 7%. לנכס נשארו 8 שנות חיים, והפחת בקו ישר. מהו הפחת השנתי מעכשיו?",
+    prompt: "נשארו 3 תשלומים של 40,000 ש״ח בסוף כל שנה, בריבית 5%. יתרת הנכס 150,000 ש״ח. אירוע בשליטת החוכר, ועכשיו ודאי באופן סביר שיממש בסוף התקופה אופציית רכישה ב-20,000 ש״ח. הריבית התוספתית היום 7%. לנכס נשארו 8 שנות חיים, והפחת בקו ישר. מהו הפחת השנתי מעכשיו?",
     answer: r(P_BUY_ROU / 8),
-    steps: [`לפני: ${fmt(P_BUY_B)}. אחרי: 40,000 × (1 − 1.07^(−3)) ÷ 0.07 + 20,000 ÷ 1.07^3 = ${fmt(P_BUY_A)}`, `נכס: 150,000 + ${fmt(P_BUY_A)} − ${fmt(P_BUY_B)} = ${fmt(P_BUY_ROU)}`, `עכשיו החוכר יקבל את הנכס, ולכן לאורך החיים (סעיף 32).\n${fmt(P_BUY_ROU)} ÷ 8 = ${fmt(r(P_BUY_ROU / 8))}`],
+    steps: ["מחיר האופציה נכנס לחוב, הכול מהוון בריבית של היום, וההפרש הולך לנכס. אחר כך מחלקים בשנות החיים, כי הנכס נשאר אצל החוכר.", `לפני: 40,000 × (1 − 1.05^(−3)) ÷ 0.05 = ${fmt(P_BUY_B)}. באקסל: =PV(5%;3;-40000)`, `אחרי: 40,000 × (1 − 1.07^(−3)) ÷ 0.07 + 20,000 ÷ 1.07^3 = ${fmt(P_BUY_A)}. באקסל: =PV(7%;3;-40000;-20000)`, `נכס: 150,000 + ${fmt(P_BUY_A)} − ${fmt(P_BUY_B)} = ${fmt(P_BUY_ROU)}`, `עכשיו החוכר יקבל את הנכס, ולכן לאורך החיים (סעיף 32).\n${fmt(P_BUY_ROU)} ÷ 8 = ${fmt(r(P_BUY_ROU / 8))}`],
     trap: "להמשיך להפחית על פני 3 השנים. אופציה ודאית מעבירה את הפחת לאורך החיים.",
     level: 3,
     source: "מקורית",
@@ -352,11 +410,11 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     prompt: "התשלומים נקובים באירו, והשער עלה. לפי טבלת הקורס, מה קורה להפרש בהתחייבות?",
     options: ["ריבית ישנה, והפרש לרווח או הפסד", "ריבית חדשה, והפרש לנכס", "ריבית ישנה, והפרש לנכס", "ריבית חדשה, והפרש לרווח או הפסד"],
     answer: 0,
-    why: "הפרשי שער על התחייבות כספית נרשמים לפי IAS 21 ברווח או הפסד. הנכס לא משתנה.",
+    why: "הפרשי שער על התחייבות כספית נרשמים לפי IAS 21 (סעיפים 23, 28) ברווח או הפסד. הנכס לא משתנה.",
     trap: "להתייחס למטבע כמו למדד. במדד ההפרש הולך לנכס, במטבע חוץ לרווח או הפסד.",
     level: 3,
     source: "מקורית",
-    ref: "IAS 21",
+    ref: "IAS 21, סעיפים 23, 28",
   }),
   ask({
     id: "separate",
@@ -399,7 +457,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     skill: "הארכה בתיקון",
     prompt: "נשארו 4 תשלומים של 36,000 ש״ח בסוף כל שנה, בריבית 5%. הצדדים תיקנו את החוזה, והוסיפו 3 שנים בלי שינוי בתשלום. הריבית התוספתית היום 7%. בכמה גדל נכס זכות השימוש?",
     answer: P_EXT_AFTER - P_EXT_BEFORE,
-    steps: [`לפני: 36,000 × (1 − 1.05^(−4)) ÷ 0.05 = ${fmt(P_EXT_BEFORE)}`, `אחרי: 36,000 × (1 − 1.07^(−7)) ÷ 0.07 = ${fmt(P_EXT_AFTER)}`, `${fmt(P_EXT_AFTER)} − ${fmt(P_EXT_BEFORE)} = ${fmt(P_EXT_AFTER - P_EXT_BEFORE)}`],
+    steps: ["אין נכס נוסף ואין הקטנה, ולכן מודדים מחדש, והנכס גדל בדיוק כמו ההתחייבות.", `לפני: 36,000 × (1 − 1.05^(−4)) ÷ 0.05 = ${fmt(P_EXT_BEFORE)}`, `אחרי: 36,000 × (1 − 1.07^(−7)) ÷ 0.07 = ${fmt(P_EXT_AFTER)}`, `${fmt(P_EXT_AFTER)} − ${fmt(P_EXT_BEFORE)} = ${fmt(P_EXT_AFTER - P_EXT_BEFORE)}`, "באקסל: הפרש בין =PV(7%;7;-36000) לבין =PV(5%;4;-36000)"],
     trap: "לחשוב שהארכה היא חכירה נפרדת. אין כאן זכות להשתמש בנכס נוסף.",
     level: 2,
     source: "מקורית",
@@ -410,7 +468,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     skill: "הקטנת היקף",
     prompt: "נשארו 4 תשלומים של 70,000 ש״ח בסוף כל שנה, בריבית 5%. יתרת הנכס 210,000 ש״ח. הצדדים הקטינו את השטח ב-40%, והתשלום יהיה 45,000 ש״ח. הריבית התוספתית היום 6%. כמה רווח נרשם?",
     answer: P_SHR_GAIN,
-    steps: [`ההתחייבות: 70,000 × (1 − 1.05^(−4)) ÷ 0.05 = ${fmt(P_SHR.L)}`, `גריעה: ${fmt(P_SHR.L)} × 0.4 = ${fmt(P_SHR_OUT_L)} מההתחייבות, 210,000 × 0.4 = 84,000 מהנכס.`, `${fmt(P_SHR_OUT_L)} − 84,000 = ${fmt(P_SHR_GAIN)}`],
+    steps: ["בשלב הראשון עובדים על היתרות הישנות בלבד, ולכן 6% והתשלום החדש לא נכנסים לחישוב.", `ההתחייבות: 70,000 × (1 − 1.05^(−4)) ÷ 0.05 = ${fmt(P_SHR.L)}`, `גריעה: ${fmt(P_SHR.L)} × 0.4 = ${fmt(P_SHR_OUT_L)} מההתחייבות, 210,000 × 0.4 = 84,000 מהנכס.`, `${fmt(P_SHR_OUT_L)} − 84,000 = ${fmt(P_SHR_GAIN)}`, "באקסל, ליתרת ההתחייבות: =PV(5%;4;-70000)"],
     trap: "להשוות ישירות להתחייבות החדשה. קודם גורעים, ורק אחר כך מודדים מחדש.",
     level: 2,
     source: "מקורית",
@@ -421,7 +479,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     skill: "הקטנת היקף",
     prompt: "נשארו 4 תשלומים של 70,000 ש״ח בסוף כל שנה, בריבית 5%. הצדדים הקטינו את השטח ב-40%, והתשלום יהיה 45,000 ש״ח. הריבית התוספתית היום 6%. אחרי הגריעה של 40%, בכמה משתנה ההתחייבות במדידה מחדש?",
     answer: Math.abs(P_SHR_REM),
-    steps: [`אחרי גריעה: ${fmt(P_SHR.L)} − ${fmt(P_SHR_OUT_L)} = ${fmt(P_SHR.L - P_SHR_OUT_L)}`, `אחרי מדידה מחדש: 45,000 × (1 − 1.06^(−4)) ÷ 0.06 = ${fmt(P_SHR_AFTER)}`, `${fmt(P_SHR_AFTER)} − ${fmt(P_SHR.L - P_SHR_OUT_L)} = ${fmt(P_SHR_REM)}`],
+    steps: [`אחרי גריעה: ${fmt(P_SHR.L)} − ${fmt(P_SHR_OUT_L)} = ${fmt(P_SHR.L - P_SHR_OUT_L)}`, `אחרי מדידה מחדש: 45,000 × (1 − 1.06^(−4)) ÷ 0.06 = ${fmt(P_SHR_AFTER)}`, `${fmt(P_SHR_AFTER)} − ${fmt(P_SHR.L - P_SHR_OUT_L)} = ${fmt(P_SHR_REM)}`, "באקסל, ההתחייבות אחרי: =PV(6%;4;-45000)"],
     trap: "לרשום גם את ההפרש הזה ברווח או הפסד. המדידה מחדש הולכת לנכס.",
     level: 2,
     source: "מקורית",
@@ -432,7 +490,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     skill: "קיצור תקופה",
     prompt: "נשארו 5 תשלומים של 75,000 ש״ח, בסוף כל שנה, בריבית 6%. יתרת הנכס 270,000 ש״ח. הצדדים קיצרו את החכירה, כך שנשארו 2 תשלומים בלבד, בלי שינוי בסכום. כמה רווח נרשם?",
     answer: P_CUT_GAIN,
-    steps: ["קיצור תקופה הוא הקטנת היקף. נשארו 2 מתוך 5 שנים.", `גריעה מהנכס: 270,000 × 3 ÷ 5 = 162,000`, `גריעה מההתחייבות: ${fmt(P_CUT_L)} − ${fmt(P_CUT_KEEP)} = ${fmt(P_CUT_L - P_CUT_KEEP)}`, `רווח: ${fmt(P_CUT_L - P_CUT_KEEP)} − 162,000 = ${fmt(P_CUT_GAIN)}`],
+    steps: ["קיצור תקופה הוא הקטנת היקף. נשארו 2 מתוך 5 שנים.", `גריעה מהנכס: 270,000 × 3 ÷ 5 = 162,000`, `גריעה מההתחייבות: ${fmt(P_CUT_L)} − ${fmt(P_CUT_KEEP)} = ${fmt(P_CUT_L - P_CUT_KEEP)}`, `רווח: ${fmt(P_CUT_L - P_CUT_KEEP)} − 162,000 = ${fmt(P_CUT_GAIN)}`, "באקסל: =PV(6%;5;-75000) ו-=PV(6%;2;-75000)"],
     trap: "לגרוע 60% מההתחייבות. ההתחייבות יורדת לפי מה שנשאר בערך נוכחי, לא באחוז השנים.",
     level: 3,
     source: "מקורית",
@@ -443,7 +501,7 @@ const exercises: (LeaseQuestion | ReturnType<typeof journal>)[] = [
     skill: "שוטף אחרי שינוי",
     prompt: "אחרי תשלום ב-31.12, ועדכון לפי מדד, נשארו 6 תשלומים של 63,000 ש״ח בסוף כל שנה. הריבית בתחילת החכירה 5%. מהו החלק הלא שוטף של ההתחייבות?",
     answer: P_NC,
-    steps: [`אחרי התשלום הבא נשארים 5 תשלומים, לפי התשלום המעודכן.\n63,000 × (1 − 1.05^(−5)) ÷ 0.05 = ${fmt(P_NC)}`],
+    steps: [`אחרי התשלום הבא נשארים 5 תשלומים, לפי התשלום המעודכן.\n63,000 × (1 − 1.05^(−5)) ÷ 0.05 = ${fmt(P_NC)}`, "באקסל: =PV(5%;5;-63000)"],
     trap: "לחשב לפי התשלום הישן, או לפי תחזית למדד. לוקחים את התשלום החוזי המעודכן.",
     level: 2,
     source: "מקורית",
@@ -589,15 +647,15 @@ export const CHANGES: StudyModule = {
     { id: "ls-chg-hook", title: "שני סוגי שינוי" },
     { id: "ls-chg-rate", title: "איזו ריבית: ישנה או מעודכנת" },
     { id: "ls-chg-asset", title: "לאן הולך ההפרש, ומה קורה לפחת" },
-    { id: "ls-chg-index", title: "מדד: דוגמה שלמה" },
+    { id: "ls-chg-index", title: "מדד: התשלום מתעדכן רק פעם בשנתיים" },
     { id: "ls-chg-guar", title: "ערבות שייר: האומדן השתנה" },
-    { id: "ls-chg-term", title: "תקופה: אירוע שמשנה את ההערכה" },
+    { id: "ls-chg-term", title: "תקופה: החלטה שמשנה את ההערכה" },
     { id: "ls-chg-buy", title: "אופציית רכישה הופכת לוודאית" },
     { id: "ls-chg-mod", title: "תיקון חכירה: שלוש דרכים" },
     { id: "ls-chg-sep", title: "מתי זו חכירה נפרדת" },
-    { id: "ls-chg-extend", title: "הארכה: מדידה מחדש" },
     { id: "ls-chg-shrink", title: "הקטנה: קודם גריעה" },
     { id: "ls-chg-cut", title: "קיצור תקופה הוא הקטנה" },
+    { id: "ls-chg-extend", title: "הארכה או שינוי מחיר: מדידה מחדש" },
     { id: "ls-chg-shop", title: "דוגמה פתורה: חנות קטנה וגדלה" },
     { id: "ls-chg-store", title: "שאלה שלמה: מדד, אופציה והכנסות" },
     { id: "ls-chg-lab", title: "מעבדה: לפני ואחרי" },
@@ -611,11 +669,12 @@ export const CHANGES: StudyModule = {
     "הערכה מחדש, ריבית ישנה: מדד וערבות שייר. ריבית מעודכנת: תקופה, אופציית רכישה וריבית משתנה.",
     "ההפרש הולך לנכס. אם הנכס התאפס, השאר ברווח או הפסד.",
     "מטבע חוץ: ריבית ישנה, והפרש לרווח או הפסד.",
-    "מדד: רק כשהתשלום החוזי משתנה, ובלי תחזית.",
+    "מדד: רק ביום שהתשלום החוזי משתנה, ובלי תחזית.",
     "פחת אחרי שינוי: היתרה החדשה חלקי השנים שנשארו.",
     "חכירה נפרדת: גם נכס נוסף, וגם מחיר נפרד.",
     "תיקון שאינו נפרד: ריבית מעודכנת במועד שבו הצדדים הסכימו.",
     "הקטנה: קודם גריעה ורווח או הפסד, ורק אז מדידה מחדש.",
-    "קיצור תקופה הוא הקטנה. מהנכס לפי השנים, ומההתחייבות לפי מה שנשאר בריבית הישנה.",
+    "קיצור תקופה בתיקון הוא הקטנה. מהנכס לפי השנים, ומההתחייבות לפי מה שנשאר בריבית הישנה.",
+    "בשלב הגריעה אפשר לקבל גם הפסד, כשהנכס גבוה מההתחייבות, למשל בגלל דמי מפתח.",
   ],
 };

@@ -152,7 +152,7 @@ export type StatementSection = { title: string; rows: StatementRow[] };
  * "The relevant lines in the financial statements" for the first `years` years:
  * profit or loss (depreciation, finance, any other expense, in total) and the
  * statement of financial position (the asset, net; the liability, current and
- * non-current), in whole shekels. Expenses are positive.
+ * non-current), in whole shekels. Debit is plus and credit is minus: expenses and the asset are positive, the liability negative.
  */
 export function statementLines(rows: ShownYear[], years: number, other: { label: string; values: number[] }[] = []): StatementSection[] {
   const shown = rows.slice(0, years);
@@ -173,8 +173,8 @@ export function statementLines(rows: ShownYear[], years: number, other: { label:
       title: "מצב כספי, 31.12",
       rows: [
         { id: "rou", label: "נכס זכות שימוש, נטו", values: shown.map((y) => y.rightOfUse) },
-        { id: "cur", label: "התחייבות חכירה, שוטפת", values: shown.map((y) => y.current) },
-        { id: "non", label: "התחייבות חכירה, לא שוטפת", values: shown.map((y) => y.nonCurrent) },
+        { id: "cur", label: "התחייבות חכירה, שוטפת", values: shown.map((y) => -y.current) },
+        { id: "non", label: "התחייבות חכירה, לא שוטפת", values: shown.map((y) => -y.nonCurrent) },
       ],
     },
   ];
