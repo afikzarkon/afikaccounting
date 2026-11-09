@@ -107,3 +107,16 @@ export function excessTable(rows: ExcessRow[], taxRate: number) {
   const tax = { name: "מס נדחה", at: taxAt, amortized: taxEnd - taxAt, end: taxEnd };
   return { items, tax, total: { at: sum("at") + taxAt, amortized: sum("amortized") + taxEnd - taxAt, end: sum("end") + taxEnd } };
 }
+
+/**
+ * Goodwill, or a gain on a bargain purchase when it comes out negative: the
+ * cost of the combination less the identifiable net assets. Each group's
+ * goodwill is what it put in less its share of those net assets. With no fair
+ * value given, the minority is measured at its share, and its goodwill is nil.
+ */
+export function goodwillCalc(g: { paid: number; prior: number; holding: number; net: number; nciFair?: number }) {
+  const nci = g.nciFair ?? whole(g.net * (1 - g.holding));
+  const cost = g.paid + g.prior + nci;
+  const ownersGoodwill = whole(g.paid + g.prior - g.net * g.holding);
+  return { nci, cost, goodwill: cost - g.net, ownersGoodwill, nciGoodwill: cost - g.net - ownersGoodwill };
+}

@@ -1,4 +1,4 @@
-import { afterConversion, excessTable, whole, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, separateInvestment } from "../../learn/consolidated";
+import { afterConversion, excessTable, goodwillCalc, whole, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, separateInvestment } from "../../learn/consolidated";
 import { fmt } from "./shared";
 
 /** Endless practice with new numbers: each family is one calculation, a seed always gives the same exercise, and every answer is whole, in shekels unless the family says otherwise. */
@@ -25,6 +25,10 @@ export const DRILL_FAMILIES = {
   eqamort: "הפחתת ציוד",
   dtax: "מס נדחה",
   tablenet: "טבלה נטו",
+  gwfair: "מוניטין, שווי הוגן",
+  gwshare: "מוניטין, חלק בנמ״נ",
+  gwowners: "מוניטין של האם",
+  premium: "פרמיית שליטה",
 } as const;
 
 export type DrillFamily = keyof typeof DRILL_FAMILIES;
@@ -224,6 +228,59 @@ export function drill(family: DrillFamily, seed: number): Drill {
         { title: "נטו ממס", numbers: `${fmt(Math.abs(before))} × 75% = ${fmt(Math.abs(table.total.at))}` },
       ],
       trap: "לשכוח להוריד את המס, או לחבר את התביעה כנכס.",
+    };
+  }
+  if (family === "gwfair" || family === "gwshare" || family === "gwowners") {
+    // Amounts in fours and a holding in fives, so every share of the net assets is a whole shekel.
+    const net = r.int(25, 75) * 4_000;
+    const hold = r.int(11, 18) * 5;
+    const paid = whole((net * hold) / 100) + r.int(2, 20) * 2_000;
+    const fairNci = whole((net * (100 - hold)) / 100) + r.int(1, 8) * 1_000;
+    const fair = goodwillCalc({ paid, prior: 0, holding: hold / 100, net, nciFair: fairNci });
+    const share = goodwillCalc({ paid, prior: 0, holding: hold / 100, net });
+    if (family === "gwfair")
+      return {
+        prompt: `האם קנתה ${hold}% מהבת ב־${fmt(paid)} ש״ח. הזשמ״ש נמדדים בשווי הוגן של ${fmt(fairNci)} ש״ח. הנמ״נ ${fmt(net)} ש״ח. מה המוניטין?`,
+        answer: fair.goodwill,
+        steps: [
+          { title: "עלות צירוף העסקים", numbers: `${fmt(paid)} + ${fmt(fairNci)} = ${fmt(fair.cost)}` },
+          { title: "המוניטין", numbers: `${fmt(fair.cost)} − ${fmt(net)} = ${fmt(fair.goodwill)}` },
+        ],
+        trap: "לשכוח את הזשמ״ש בעלות.",
+      };
+    if (family === "gwshare")
+      return {
+        prompt: `האם קנתה ${hold}% מהבת ב־${fmt(paid)} ש״ח. הזשמ״ש נמדדים לפי החלק בנמ״נ. הנמ״נ ${fmt(net)} ש״ח. מה המוניטין?`,
+        answer: share.goodwill,
+        steps: [
+          { title: "הזשמ״ש", numbers: `${fmt(net)} × ${100 - hold}% = ${fmt(share.nci)}` },
+          { title: "המוניטין", numbers: `${fmt(paid)} + ${fmt(share.nci)} − ${fmt(net)} = ${fmt(share.goodwill)}` },
+        ],
+        trap: "לחשב את הזשמ״ש לפי שיעור ההחזקה של האם.",
+      };
+    return {
+      prompt: `האם קנתה ${hold}% מהבת ב־${fmt(paid)} ש״ח. הזשמ״ש נמדדים בשווי הוגן של ${fmt(fairNci)} ש״ח. הנמ״נ ${fmt(net)} ש״ח. מה המוניטין המיוחס לבעלי מניות האם?`,
+      answer: fair.ownersGoodwill,
+      steps: [
+        { title: "חלק האם בנמ״נ", numbers: `${fmt(net)} × ${hold}% = ${fmt(whole((net * hold) / 100))}` },
+        { title: "מה שהשקיעה, פחות חלקה", numbers: `${fmt(paid)} − ${fmt(whole((net * hold) / 100))} = ${fmt(fair.ownersGoodwill)}` },
+      ],
+      trap: "לחלק את כל המוניטין לפי האחוזים. הזשמ״ש לא שילמו את הפרמיה.",
+    };
+  }
+  if (family === "premium") {
+    const shares = r.int(5, 18) * 1_000;
+    const price = r.int(8, 25);
+    const extra = r.int(2, 30) * 1_000;
+    const paid = shares * price + extra;
+    return {
+      prompt: `האם קנתה ${fmt(shares)} מניות תמורת ${fmt(paid)} ש״ח. מחיר המניה בשוק באותו יום ${price} ש״ח. מה פרמיית השליטה?`,
+      answer: extra,
+      steps: [
+        { title: "השווי של המניות שנרכשו", numbers: `${fmt(shares)} × ${price} = ${fmt(shares * price)}` },
+        { title: "הפרמיה", numbers: `${fmt(paid)} − ${fmt(shares * price)} = ${fmt(extra)}` },
+      ],
+      trap: "להשוות למחיר של כל המניות בחברה.",
     };
   }
   if (family === "ncieq")

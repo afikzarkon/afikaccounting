@@ -2,7 +2,7 @@
 
 import { RotateCcw } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { excessTable, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit } from "@/lib/learn/consolidated";
+import { excessTable, goodwillCalc, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit } from "@/lib/learn/consolidated";
 import { drill, DRILL_FAMILIES, type DrillFamily } from "@/lib/study/consolidated/drills";
 import { cn } from "@/lib/utils";
 import { ExcessTbl } from "./consolidated-parts";
@@ -186,6 +186,47 @@ export function ExcessLab() {
       </label>
       <Percent label="שיעור המס" value={tax} onChange={setTax} max={40} />
       <ExcessTbl table={table} />
+    </section>
+  );
+}
+
+/** Change the deal and switch between the two ways of measuring the minority: what moves, and whose goodwill it is. */
+export function GoodwillLab() {
+  const [paid, setPaid] = useState(183_000);
+  const [prior, setPrior] = useState(24_000);
+  const [net, setNet] = useState(202_000);
+  const [price, setPrice] = useState(12);
+  const [nciShares, setNciShares] = useState(4_000);
+  const [pct, setPct] = useState(80);
+  const [fairWay, setFairWay] = useState(true);
+  const g = goodwillCalc({ paid, prior, holding: pct / 100, net, nciFair: fairWay ? nciShares * price : undefined });
+  return (
+    <section aria-label="מעבדה: זשמ״ש ומוניטין" className="card space-y-4 p-4 sm:p-5">
+      <div className="grid grid-cols-2 gap-3">
+        <Amount label="תמורה שהועברה" value={paid} onChange={setPaid} />
+        <Amount label="זכויות קודמות, שווי הוגן" value={prior} onChange={setPrior} />
+        <Amount label="נמ״נ" value={net} onChange={setNet} />
+        <Amount label="מניות של המיעוט" value={nciShares} onChange={setNciShares} step={500} />
+        <Amount label="מחיר מניה" value={price} onChange={setPrice} step={1} />
+      </div>
+      <Percent label="האם מחזיקה אחרי העסקה" value={pct} onChange={setPct} min={51} />
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label="מדידת הזשמ״ש">
+        {[true, false].map((v) => (
+          <button key={String(v)} type="button" aria-pressed={fairWay === v} onClick={() => setFairWay(v)} className={cn("min-h-11 rounded-lg border px-3 py-1.5 text-[13.5px] font-semibold", fairWay === v ? "border-accent bg-accent-soft text-fg" : "border-line text-muted hover:bg-surface-2")}>
+            {v ? "שווי הוגן" : "חלק בנמ״נ"}
+          </button>
+        ))}
+      </div>
+      <Tbl
+        head={["", "סכום"]}
+        rows={[
+          ["זשמ״ש", g.nci],
+          ["עלות צירוף העסקים", g.cost],
+          ...(g.goodwill < 0
+            ? [["רווח מרכישה במחיר הזדמנותי, של הרוכש", -g.goodwill] as [string, number]]
+            : ([["מוניטין", g.goodwill], ["מתוכו של בעלי מניות האם", g.ownersGoodwill], ["מתוכו של הזשמ״ש", g.nciGoodwill]] as [string, number][])),
+        ]}
+      />
     </section>
   );
 }

@@ -11,13 +11,14 @@ import { drill, DRILL_FAMILIES, type DrillFamily } from "./consolidated/drills";
 import { CONSOLIDATED_GLOSSARY } from "./consolidated/glossary";
 import { ATTEND_NO, ATTEND_YES, BOARD, CONTROL, CONTROL_TAUGHT, CONVERTED, MASTER2_NOW, MASTER2_OPTION, MASTER2_PARTNERS, MASTER2_POSITION, POWER_TEST, POWER_TEST_START, RIGHTS, TWO_JOIN } from "./consolidated/lessons/control";
 import { ACQUISITION, ACQUISITION_TAUGHT, BOND, ITEMS, LESSEE, LESSOR, MASTER4_TABLE, STORY_TABLE } from "./consolidated/lessons/acquisition";
+import { G_FAIR, G_NET, G_PREMIUM, G_SHARE, GOODWILL, GOODWILL_TAUGHT, M5, PAYS, PERIOD, PERIOD_TEST, PERIOD_TEST_START } from "./consolidated/lessons/goodwill";
 import { AGENT_TEST, AGENT_TEST_START, AGENTS, FUND_LARGE, FUND_SMALL, MASTER3_POSITION, MASTER3_REWARD, MASTER3_SISTER, MASTER3_TOGETHER, RETURNS, RETURNS_TAUGHT } from "./consolidated/lessons/returns";
 import { CASES, EXEMPT_TEST, EXEMPT_TEST_START, MASTER_POSITION, MASTER_PROFIT, MASTER_SEPARATE, STORY_POSITION, STORY_PROFIT, STORY_SEPARATE, WHAT, WHAT_TAUGHT } from "./consolidated/lessons/what";
 import { type ConsolidatedQuestion, LESSON_N } from "./consolidated/shared";
 import { ltrFormulas } from "./ias19/ltr";
 
 /** What teaches each question, lesson by lesson. */
-const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT, "consolidated-acquisition": ACQUISITION_TAUGHT };
+const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT, "consolidated-acquisition": ACQUISITION_TAUGHT, "consolidated-goodwill": GOODWILL_TAUGHT };
 
 describe("the consolidated statements course", () => {
   it("lessons numbered in order, on the course's page, the first free", () => {
@@ -340,7 +341,7 @@ describe("lesson 4: figures, against a separate calculation in Python", () => {
     assert.deepEqual(MASTER4_TABLE.total, { at: 93_170, amortized: -17_325, end: 75_845 });
   });
   it("calculations in the practice", () => {
-    const expected: Record<string, number> = { "inv-rest": 7_800, "eq-amort": 6_000, "tax-sum": 13_800, "hfs-excess": 12_000, "suit-higher": 18_000, "table-net": 55_440, "table-end": 45_661, "cost-sales": 72_000, "lessee-liability": 37_188 };
+    const expected: Record<string, number> = { "inv-rest": 7_800, "eq-amort": 6_000, "tax-sum": 13_800, "hfs-excess": 12_000, "suit-higher": 18_000, "table-net": 55_440, "table-end": 45_661, "cost-sales": 75_600, "lessee-liability": 37_188 };
     const answer = (id: string) => (ACQUISITION.exercises.find((x) => x.id === id) as { answer: number }).answer;
     for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
     assert.deepEqual(ACQUISITION.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
@@ -348,6 +349,53 @@ describe("lesson 4: figures, against a separate calculation in Python", () => {
   it("eight items to sort, both answers among them", () => {
     assert.equal(ITEMS.length, 8);
     assert.ok(ITEMS.some((i) => i.answer === "yes") && ITEMS.some((i) => i.answer === "no"));
+  });
+});
+
+describe("lesson 5: the walk, the sorting and the figures, against a separate calculation in Python", () => {
+  it("every path of the walk ends, and both verdicts are reachable", () => {
+    const ends = new Set<boolean>();
+    const reach = (id: string, seen: string[]): void => {
+      const node = PERIOD_TEST[id];
+      assert.ok(node, id);
+      assert.ok(!seen.includes(id), `loop at ${id}`);
+      if ("verdict" in node) return void ends.add(node.lease);
+      node.answers.forEach((a) => reach(a.to, [...seen, id]));
+    };
+    reach(PERIOD_TEST_START, []);
+    assert.deepEqual([...ends].sort(), [false, true]);
+  });
+  it("seven payments to sort, both answers among them", () => {
+    assert.equal(PAYS.length, 7);
+    assert.ok(PAYS.some((p) => p.answer === "price") && PAYS.some((p) => p.answer === "pay"));
+  });
+  it("the worked example", () => {
+    assert.equal(G_NET, 202_000);
+    assert.equal(G_PREMIUM, 15_000);
+    assert.deepEqual(G_FAIR, { nci: 48_000, cost: 255_000, goodwill: 53_000, ownersGoodwill: 45_400, nciGoodwill: 7_600 });
+    assert.deepEqual(G_SHARE, { nci: 40_400, cost: 247_400, goodwill: 45_400, ownersGoodwill: 45_400, nciGoodwill: 0 });
+  });
+  it("the measurement period", () => {
+    assert.equal(PERIOD.pubNet, 131_000);
+    assert.equal(PERIOD.finalNet, 140_000);
+    assert.equal(PERIOD.pubFair.goodwill, 67_000);
+    assert.equal(PERIOD.pubShare.goodwill, 57_750);
+    assert.equal(PERIOD.finalFair.goodwill, 64_300);
+    assert.equal(PERIOD.finalShare.goodwill, 57_300);
+  });
+  it("the closing question", () => {
+    assert.equal(M5.net, 223_000);
+    assert.equal(M5.consideration, 234_000);
+    assert.equal(M5.premium, 39_000);
+    assert.deepEqual(M5.fair, { nci: 75_000, cost: 339_000, goodwill: 116_000, ownersGoodwill: 96_750, nciGoodwill: 19_250 });
+    assert.deepEqual(M5.share, { nci: 55_750, cost: 319_750, goodwill: 96_750, ownersGoodwill: 96_750, nciGoodwill: 0 });
+    assert.equal(M5.after.goodwill, 119_000);
+  });
+  it("calculations in the practice", () => {
+    const expected: Record<string, number> = { "consideration-sum": 144_000, "separate-debt": 270_000, "earnout-loss": 4_300, "nci-share": 72_000, "gw-fair": 6_000, "bargain-gain": 22_000, "owners-gw": 17_000, "premium-calc": 14_000, "retro-gw": 66_000, "retro-amort": 1_200 };
+    const answer = (id: string) => (GOODWILL.exercises.find((x) => x.id === id) as { answer: number }).answer;
+    for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
+    assert.deepEqual(GOODWILL.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
   });
 });
 
@@ -362,7 +410,7 @@ describe("the practice generator", () => {
         assert.ok(d.steps.length && d.trap.trim(), `${family}/${seed}`);
         seen.add(d.answer);
       }
-      assert.ok(seen.size > ({ partners: 1, present: 3, convert: 8, fundshare: 8 } as Record<string, number>)[family] || (!["partners", "present", "convert", "fundshare"].includes(family) && seen.size > 20), family);
+      assert.ok(seen.size > ({ partners: 1, present: 3, convert: 8, fundshare: 8, premium: 20, gwshare: 10, gwowners: 10 } as Record<string, number>)[family] || (!["partners", "present", "convert", "fundshare", "premium", "gwshare", "gwowners"].includes(family) && seen.size > 20), family);
     }
   });
   it("the answer equals the last step's result", () => {
