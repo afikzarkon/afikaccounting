@@ -2,6 +2,7 @@ import { ADJUST } from "./adjust";
 import { BOOKS } from "./books";
 import { CREDIT } from "./credit";
 import { DOUBLE_ENTRY } from "./double-entry";
+import { EXAMS } from "./exams";
 import { FINAL } from "./final";
 import { INTRO } from "./intro";
 import { REVIEW } from "./review";
@@ -9,7 +10,7 @@ import { YEAR } from "./year";
 import { findScreenIn, lessonHref, screenHrefIn } from "../paths";
 
 /** The basics course, in order. */
-export const BASICS_LESSONS = [INTRO, DOUBLE_ENTRY, BOOKS, YEAR, ADJUST, REVIEW, CREDIT, FINAL];
+export const BASICS_LESSONS = [INTRO, DOUBLE_ENTRY, BOOKS, YEAR, ADJUST, REVIEW, CREDIT, FINAL, EXAMS];
 
 export { lessonHref };
 

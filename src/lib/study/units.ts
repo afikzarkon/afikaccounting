@@ -14,7 +14,7 @@ export const UNITS: Record<string, UnitDef[]> = {
   "/basics": [
     { title: "היסודות: חובה, זכות ופקודות", lessons: ["basics-intro", "basics-double-entry", "basics-books"] },
     { title: "שנה שלמה בספרים", lessons: ["basics-year", "basics-adjust", "basics-review"] },
-    { title: "סוף השנה והדוחות", lessons: ["basics-credit", "basics-final"] },
+    { title: "סוף השנה והדוחות", lessons: ["basics-credit", "basics-final", "basics-exams"] },
   ],
   "/basics/inventory": [
     { title: "מהו מלאי ואיך רושמים אותו", lessons: ["inventory-what", "inventory-recording", "inventory-ias2"] },

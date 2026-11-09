@@ -38,6 +38,7 @@ import { METHOD_SCREENS } from "./inventory-methods";
 import { LAB_SCREENS } from "./lab-chapter";
 import { BOOKLET_SCREENS } from "./booklet-screens";
 import { DRILL_SCREENS } from "./drill-screens";
+import { EXAM_LESSON_SCREENS } from "./exam-screens";
 import { PPE_SCREENS } from "./ppe";
 import { REVIEW_SCREENS } from "./review";
 import { YEAR_SCREENS } from "./year";
@@ -54,6 +55,7 @@ const SCREENS: Record<string, ScreenContent> = {
   ...PPE_SCREENS,
   ...DRILL_SCREENS,
   ...BOOKLET_SCREENS,
+  ...EXAM_LESSON_SCREENS,
   ...REVIEW_SCREENS,
   ...CREDIT_SCREENS,
   ...FINAL_SCREENS,
