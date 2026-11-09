@@ -28,7 +28,7 @@ const all = (lessons: unknown[]) => `כל ${lessons.length} השיעורים`;
 
 /** What each plan opens, row by row: true, false, or a few words. */
 const COMPARE: { label: string; plans: Record<Tier, boolean | string> }[] = [
-  { label: "חשבונאות מאפס — 8 שיעורים", plans: { free: true, courses: true, exams: true } },
+  { label: "חשבונאות מאפס — 9 שיעורים", plans: { free: true, courses: true, exams: true } },
   { label: "תרגול עם משוב מיידי ומלכודות", plans: { free: true, courses: true, exams: true } },
   { label: "סרטונים, סיכומים וטיפים למבחן", plans: { free: true, courses: true, exams: true } },
   { label: "מלאי (IAS 2)", plans: { free: "שיעור 1", courses: all(INVENTORY_LESSONS), exams: all(INVENTORY_LESSONS) } },
