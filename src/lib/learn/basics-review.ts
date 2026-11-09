@@ -56,6 +56,17 @@ export const MULTI = {
   // Advertising from 1.6.2024 to 31.5.2026, paid in advance; its balance on the trial balance is the unknown.
   unknown: { paid: 72_000, months: 24, start: "1.6.2024", end: "31.5.2026", usedIn2024: 7 },
 };
+
+/** A guarding contract renewed at a higher price: the old monthly payment comes back from the prepaid balance, then the renewal is recorded. */
+export const RENEWED = { balance2024: 21_600, monthsLeft: 3, raise: 0.15, newMonths: 12, monthsIn2025: 9 };
+export const RENEWED_RESULTS = (() => {
+  const r = RENEWED;
+  const month = round2(r.balance2024 / r.monthsLeft);
+  const newMonth = round2(month * (1 + r.raise));
+  const paid = round2(newMonth * r.newMonths);
+  const expense = round2(newMonth * r.monthsIn2025);
+  return { month, newMonth, paid, expense, prepaid: round2(paid - expense) };
+})();
 const cycleStart = (r: typeof MULTI.renewal) => r.firstYear + Math.floor((r.year - r.firstYear) / (r.cycleMonths / 12)) * (r.cycleMonths / 12);
 export const MULTI_RESULTS = (() => {
   const r = MULTI.renewal;
@@ -128,5 +139,30 @@ export const FIXES: FixCase[] = [
     fix: two("תיקון", "פקודת התיקון", "מקדמות מלקוחות", "מכירות", 70_000),
     profit: "low",
     why: "לא נרשם כלום, ולכן התיקון הוא כל מה שהיה צריך: המקדמה נסגרת, והמכירה נרשמת — עכשיו, כשהסחורה סופקה.",
+  },
+  {
+    id: "reversed",
+    title: "פקודה שנרשמה הפוך",
+    story: "התקבלה במזומן מקדמה של 14,000 ₪ מלקוח. נרשם: ח׳ מקדמות מלקוחות / ז׳ מזומן.",
+    recorded: two("נרשם", "מה שנרשם", "מקדמות מלקוחות", "מזומן", 14_000),
+    should: two("צריך", "מה שהיה צריך", "מזומן", "מקדמות מלקוחות", 14_000),
+    fix: two("תיקון", "פקודת התיקון", "מזומן", "מקדמות מלקוחות", 28_000),
+    profit: "right",
+    why: "החשבונות נכונים, אבל הצדדים הפוכים. התיקון עושה שני דברים: מבטל את מה שנרשם (14,000) ורושם את מה שצריך (עוד 14,000). לכן הסכום כפול.",
+  },
+  {
+    id: "both-sides",
+    title: "מקדמה שנרשמה כמכירה באשראי",
+    story: "התקבלה במזומן מקדמה של 26,000 ₪ על הזמנה לשנה הבאה. נרשם: ח׳ לקוחות / ז׳ מכירות.",
+    recorded: two("נרשם", "מה שנרשם", "לקוחות", "מכירות", 26_000),
+    should: two("צריך", "מה שהיה צריך", "מזומן", "מקדמות מלקוחות", 26_000),
+    fix: e("תיקון", "פקודת התיקון", [
+      { account: "מזומן", dr: 26_000 },
+      { account: "מכירות", dr: 26_000 },
+      { account: "לקוחות", cr: 26_000 },
+      { account: "מקדמות מלקוחות", cr: 26_000 },
+    ]),
+    profit: "high",
+    why: "אף חשבון לא משותף לשתי הפקודות, ולכן כולם משתתפים בתיקון: מבטלים את הלקוחות ואת המכירה, ורושמים את המזומן ואת המקדמה. ארבע שורות.",
   },
 ];

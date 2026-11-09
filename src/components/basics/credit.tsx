@@ -1,6 +1,6 @@
 import { ClipboardList } from "lucide-react";
 import type { ReactNode } from "react";
-import { Part, Remember } from "@/components/study-mode/screen-parts";
+import { Deeper, Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
 import { type Balances, balancesOf, type Entry, ledger, round2, type TAccount } from "@/lib/learn/basics";
@@ -1151,6 +1151,14 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
             בצד — זו <strong>ההפרשה להפסדי אשראי</strong>. ההפסד שייך לשנה שבה נעשו המכירות, ולכן נרשם בה — גם אם הלקוח יפשוט רגל רק בשנה הבאה.
           </p>
         </Part>
+        <Part title="שני עקרונות שמחייבים את ההפרשה">
+          <p>
+            <strong>עקרון ההקבלה:</strong> ההפסד מלקוחות שלא ישלמו נובע מהמכירות של השנה, ולכן נרשם באותה שנה, לצד ההכנסה מהן.
+          </p>
+          <p>
+            <strong>עקרון הזהירות:</strong> מכירים בהפסד כשצפוי שהוא יקרה, ולא מחכים שיתממש. עינב לא מחכה שלקוח יפשוט רגל. ברגע שהיא צופה שחלק לא ייגבה, היא כבר רושמת את ההפסד.
+          </p>
+        </Part>
         <Remember>
           את הלקוחות לא מוחקים — הרי לא יודעים מי לא ישלם. רושמים לידם חשבון נפרד, כרית, שמקטין אותם. וכשמתברר שלקוח מסוים לא ישלם — מורידים אותו מהלקוחות ומהכרית
           יחד.
@@ -1159,6 +1167,7 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
           prefix="basics"
           chapter={"cl-idea"}
           items={[
+            { q: "מאילו שני עקרונות חשבונאיים נובעת ההפרשה להפסדי אשראי?", options: ["הקבלה וזהירות", "הקבלה ועלות היסטורית", "זהירות וישות נפרדת", "בסיס מזומן וזהירות"], answer: 0, why: "הקבלה: ההפסד נרשם בשנה של המכירות שיצרו אותו. זהירות: מכירים בהפסד צפוי, בלי לחכות שיתממש." },
             { q: "למה רושמים הוצאת הפסדי אשראי עוד לפני שיודעים מי לא ישלם?", options: ["כי ההפסד שייך לשנה שבה נעשו המכירות", "כי כך משלמים פחות מס", "כי הלקוחות כבר פשטו רגל", "לא רושמים — מחכים לדעת מי"], answer: 0, why: "עקרון ההקבלה: המכירות באשראי של השנה יצרו גם את הסיכון. לכן ההפסד הצפוי נרשם באותה שנה — כאומדן." },
           ]}
         />
@@ -1422,6 +1431,29 @@ export const CREDIT_SCREENS: Record<string, ScreenContent> = {
           </p>
         </Given>
         <Stepper label="מוריה · 2025" steps={moria} tool={<FormulaButton />} />
+        <Deeper title="להעמקה: גיול חובות">
+          <p>
+            <strong>דוח גיול חובות</strong> מחלק את יתרת הלקוחות לפי הזמן שעבר מאז שהחוב נוצר. ככל שהחוב ותיק יותר, הסיכוי לגבות אותו נמוך יותר, ולכן אפשר לקבוע לכל קבוצה אחוז הפרשה משלה. הדוח משמש גם את מחלקת הגבייה, כדי לדעת אחרי מי לרדוף קודם.
+          </p>
+          <ul className="space-y-1 text-[14.5px]">
+            {(
+              [
+                ["עד 30 יום", 200_000, 0.01],
+                ["30 עד 60 יום", 80_000, 0.03],
+                ["60 עד 90 יום", 30_000, 0.1],
+                ["מעל 90 יום", 12_000, 0.4],
+              ] as [string, number, number][]
+            ).map(([age, amount, rate]) => (
+              <li key={age} className="flex flex-wrap justify-between gap-x-3 rounded-lg bg-surface-2/60 px-3 py-1.5">
+                <span className="font-medium text-fg">{age}</span>
+                <bdi dir="ltr" className="num">
+                  {amount.toLocaleString("en-US")} × {Math.round(rate * 100)}% = {Math.round(amount * rate).toLocaleString("en-US")}
+                </bdi>
+              </li>
+            ))}
+          </ul>
+          <p className="text-[14px] text-muted">בדוגמה ההפרשה הכוללת היא 12,200. המספרים כאן להמחשה בלבד. בחומר הקורס הגיול מופיע כהסבר, בלי תרגילים.</p>
+        </Deeper>
       </>
     ),
   },

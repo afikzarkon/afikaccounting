@@ -422,12 +422,18 @@ export const ODD = {
   raise: { recorded: 330_000, months: 11, rate: 0.08 },
   tax: { recorded: 25_000, months: 10, decRate: 0.15 },
   phone: { recorded: 42_000, months: 10, missing: 2 },
+  // A one-off holiday gift inside the recorded salary: out before dividing.
+  bonus: { recorded: 509_000, months: 11, gift: 2_000, staff: 18 },
 };
 const oddMonth = (x: { recorded: number; months: number }) => round2(x.recorded / x.months);
 export const ODD_RESULTS = {
   raise: { month: oddMonth(ODD.raise), missing: round2(oddMonth(ODD.raise) * (1 + ODD.raise.rate)) },
   tax: { month: oddMonth(ODD.tax), missing: round2(oddMonth(ODD.tax) + oddMonth(ODD.tax) * (1 + ODD.tax.decRate)) },
   phone: { month: oddMonth(ODD.phone), missing: round2(oddMonth(ODD.phone) * ODD.phone.missing) },
+  bonus: {
+    month: round2((ODD.bonus.recorded - ODD.bonus.gift * ODD.bonus.staff) / ODD.bonus.months),
+    missing: round2((ODD.bonus.recorded - ODD.bonus.gift * ODD.bonus.staff) / ODD.bonus.months),
+  },
 };
 
 /** Lesson 5: interest for the part of a year — the rate's period decides the arithmetic. */

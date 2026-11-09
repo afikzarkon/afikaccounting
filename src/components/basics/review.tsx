@@ -1,7 +1,7 @@
 import { CircleSlash, Equal, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import type { ReactNode } from "react";
 import type { ScreenContent } from "@/components/study-mode/shell";
-import { CLEANING, type FixCase, FIXES, MULTI, MULTI_RESULTS, OLD_CONTRACT, OLD_RESULTS } from "@/lib/learn/basics-review";
+import { CLEANING, type FixCase, FIXES, MULTI, MULTI_RESULTS, OLD_CONTRACT, OLD_RESULTS, RENEWED, RENEWED_RESULTS } from "@/lib/learn/basics-review";
 import type { Entry } from "@/lib/learn/basics";
 import { Remember } from "@/components/study-mode/screen-parts";
 import { cn } from "@/lib/utils";
@@ -165,7 +165,7 @@ export const REVIEW_SCREENS: Record<string, ScreenContent> = {
           </li>
         </ul>
         <Stepper
-          label="שלושה חוזים לאורך שנים"
+          label="ארבעה חוזים לאורך שנים"
           steps={[
             {
               title: "1 · חוזה שמתחדש",
@@ -213,9 +213,38 @@ export const REVIEW_SCREENS: Record<string, ScreenContent> = {
                 </>
               ),
             },
+            {
+              title: "4 · חוזה שחודש במחיר אחר",
+              body: (
+                <>
+                  <p>
+                    ב-1.4.2023 שולם מראש חוזה שמירה ל-24 חודשים, ונרשם כ״מראש״. במאזן הבוחן הראשוני של 31.12.2025: ״הוצאות שמירה מראש <Money v={RENEWED.balance2024} />״, ואין הוצאות שמירה. ב-1.4.2025 החוזה חודש לשנה, במחיר גבוה ב-{Math.round(RENEWED.raise * 100)}%, ושולם מראש. התשלום לא נרשם.
+                  </p>
+                  <Calc result={<Money v={RENEWED_RESULTS.month} />}>
+                    החוזה הישן: היתרה היא של סוף 2024 ומכסה {RENEWED.monthsLeft} חודשים, ינואר עד מרץ. לחודש: <Money v={RENEWED.balance2024} /> ÷ {RENEWED.monthsLeft}
+                  </Calc>
+                  <Calc result={<Money v={RENEWED_RESULTS.paid} />}>
+                    החוזה החדש: <Money v={RENEWED_RESULTS.month} /> × {1 + RENEWED.raise} = <Money v={RENEWED_RESULTS.newMonth} /> לחודש, × {RENEWED.newMonths} חודשים
+                  </Calc>
+                  <JE entry={two("1", "החוזה הישן: ינואר עד מרץ 2025", "הוצאות שמירה", "הוצאות שמירה מראש", RENEWED.balance2024)} note="החוזה הישן נגמר ב-31.3.2025. כל היתרה עוברת להוצאה." />
+                  <JE
+                    entry={{
+                      id: "2",
+                      text: "החוזה החדש: התשלום, מחולק בין 2025 ל-2026",
+                      lines: [
+                        { account: "הוצאות שמירה", dr: RENEWED_RESULTS.expense },
+                        { account: "הוצאות שמירה מראש", dr: RENEWED_RESULTS.prepaid },
+                        { account: "מזומן", cr: RENEWED_RESULTS.paid },
+                      ],
+                    }}
+                    note={<>אפריל עד דצמבר, {RENEWED.monthsIn2025} חודשים, הם הוצאה של 2025. ינואר עד מרץ 2026 נשארים ״מראש״.</>}
+                  />
+                </>
+              ),
+            },
           ]}
         />
-        <Remember>יתרת ״מראש״ = תשלום לחודש × החודשים שנשארו. חוזה שנגמר — מתאפס.</Remember>
+        <Remember>יתרת ״מראש״ = תשלום לחודש × החודשים שנשארו. חוזה שנגמר מתאפס. חוזה שחודש במחיר אחר: קודם מוצאים את התשלום הישן לחודש, ורק אז מוסיפים את ההעלאה.</Remember>
       </>
     ),
     check: (
@@ -236,11 +265,11 @@ export const REVIEW_SCREENS: Record<string, ScreenContent> = {
   },
 
   "rev-fix": {
-    lead: "לפעמים הסכום נכון, אבל אחד החשבונות שגוי. התיקון לא מבטל את כל הפקודה — הוא רק מזיז את הסכום מהחשבון השגוי לנכון.",
+    lead: "לפעמים רק חשבון אחד שגוי, ואז התיקון מזיז את הסכום ממנו לחשבון הנכון. ולפעמים הפקודה שגויה כולה, נרשמה הפוך או בחשבונות אחרים, ואז התיקון מבטל אותה ורושם את הנכונה.",
     body: (
       <>
-        <Stepper label="חמש טעויות שחוזרות בשאלות" steps={FIXES.map((c, i) => ({ title: `${i + 1} · ${c.title}`, body: <ThreeWay c={c} /> }))} />
-        <Remember>חשבון שמופיע גם במה שנרשם וגם במה שצריך — באותו צד ובאותו סכום — לא משתתף בתיקון.</Remember>
+        <Stepper label="שבע טעויות שחוזרות בשאלות" steps={FIXES.map((c, i) => ({ title: `${i + 1} · ${c.title}`, body: <ThreeWay c={c} /> }))} />
+        <Remember>חשבון שמופיע גם במה שנרשם וגם במה שצריך, באותו צד ובאותו סכום, לא משתתף בתיקון. פקודה שנרשמה הפוך מתוקנת בסכום כפול.</Remember>
       </>
     ),
     check: (

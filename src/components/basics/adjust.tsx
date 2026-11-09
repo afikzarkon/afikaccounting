@@ -720,8 +720,26 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
             ]}
             entry={odd("טלפון נובמבר–דצמבר", "הוצאות טלפון", "הוצאות טלפון לשלם", ODD_RESULTS.phone.missing)}
           />
+          <OddCase
+            n={4}
+            title="בונוס חד-פעמי בתוך השכר"
+            story={
+              <>
+                שכר ינואר עד נובמבר, <Money v={ODD.bonus.recorded} />, נרשם. בסכום הזה כלול שי לחג שחולק באפריל: <Money v={ODD.bonus.gift} /> לכל אחד מ-{ODD.bonus.staff} עובדים. שכר דצמבר ישולם ב-10.1.
+              </>
+            }
+            steps={[
+              <>
+                השי לא חוזר כל חודש, ולכן מוציאים אותו לפני שמחלקים: <Money v={ODD.bonus.gift} /> × {ODD.bonus.staff} = <Money v={ODD.bonus.gift * ODD.bonus.staff} />
+              </>,
+              <>
+                חודש רגיל: (<Money v={ODD.bonus.recorded} /> − <Money v={ODD.bonus.gift * ODD.bonus.staff} />) ÷ {ODD.bonus.months} = <strong><Money v={ODD_RESULTS.bonus.month} /></strong>
+              </>,
+            ]}
+            entry={odd("שכר דצמבר, בלי השי", "הוצאות שכר", "הוצאות שכר לשלם", ODD_RESULTS.bonus.missing)}
+          />
         </ol>
-        <Remember>חודש רגיל = מה שנרשם ÷ מספר החודשים שנרשמו. לא ÷ 12.</Remember>
+        <Remember>חודש רגיל = מה שנרשם ÷ מספר החודשים שנרשמו. לא ÷ 12. ובונוס חד-פעמי מוציאים לפני שמחלקים.</Remember>
       </>
     ),
     check: (
@@ -730,6 +748,12 @@ export const ADJUST_SCREENS: Record<string, ScreenContent> = {
         prefix="basics"
         chapter="odd-month"
         items={[
+          {
+            q: "שכר ינואר עד נובמבר, 165,000 ₪, כולל בונוס חד-פעמי של 22,000 ₪ שחולק ביוני. כמה שכר חסר לדצמבר?",
+            options: ["13,000", "15,000", "13,750", "22,000"],
+            answer: 0,
+            why: "קודם מוציאים את הבונוס: 165,000 − 22,000 = 143,000. חודש רגיל: 143,000 ÷ 11 = 13,000. מי שמחלק את כל הסכום מקבל 15,000, כי הבונוס נמרח על כל החודשים.",
+          },
           {
             q: "נרשמו 99,000 ₪ שכר על ינואר עד נובמבר. בדצמבר אין שינוי. כמה חסר?",
             options: ["9,000", "8,250", "99,000", "0"],

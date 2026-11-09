@@ -324,12 +324,17 @@ describe("the review lesson: corrections and contracts over years", async () => 
     assert.deepEqual(MULTI_RESULTS.expired, { month: 2_000, opening: 16_000 });
     assert.deepEqual(MULTI_RESULTS.unknown, { month: 3_000, opening: 51_000, expense: 36_000, closing: 15_000 });
   });
+
+  it("a contract renewed 15% dearer: 7,200 a month back from the balance, 8,280 after, 74,520 of it in 2025", async () => {
+    const { RENEWED_RESULTS } = await import("./basics-review");
+    assert.deepEqual(RENEWED_RESULTS, { month: 7_200, newMonth: 8_280, paid: 99_360, expense: 74_520, prepaid: 24_840 });
+  });
 });
 
 describe("the odd month and the rate's period", async () => {
   const { ODD_RESULTS, PERIOD, interestFor } = await import("./basics");
   it("a raise, a dearer December, a bill every two months; a half-year rate is twice the annual one", () => {
-    assert.deepEqual(ODD_RESULTS, { raise: { month: 30_000, missing: 32_400 }, tax: { month: 2_500, missing: 5_375 }, phone: { month: 4_200, missing: 8_400 } });
+    assert.deepEqual(ODD_RESULTS, { raise: { month: 30_000, missing: 32_400 }, tax: { month: 2_500, missing: 5_375 }, phone: { month: 4_200, missing: 8_400 }, bonus: { month: 43_000, missing: 43_000 } });
     assert.equal(interestFor(PERIOD.halfYear), 7_500);
     assert.equal(interestFor(PERIOD.annual), 3_750);
   });
