@@ -28,8 +28,8 @@ describe("the basics course in the worked-solution layout", () => {
   it("shows a trial balance or a T-account question in debit and credit, never as a running sheet (the owner, 2026-11-10)", () => {
     for (const { m, e } of questions) {
       if (!e.worked) continue;
-      // A question built on a card or a trial balance board, and the ones solved by closing a card.
-      const aboutCards = e.table || ["suppliers-card", "collections", "opening-allowance"].includes(e.id);
+      // A question built on a card or a trial balance board, and the ones solved by closing a card (retained earnings too, by the owner).
+      const aboutCards = e.table || ["suppliers-card", "collections", "opening-allowance", "retained-close", "ofek-retained-2026", "exam-retained"].includes(e.id);
       if (!aboutCards) continue;
       for (const s of e.worked.steps) {
         const runsAnAccount = s.sheet?.some((l) => /יתרת פתיחה|יתרת סגירה|תנועה ב|סך החובה|סך הזכות/.test(l.l));
