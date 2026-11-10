@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, type ReactNode, useContext, useState } from "react";
-import { acc, isNumeric, tBalance, type Neg, type WCell, type WEntry, type WLine, type WOption, type WorkedBody, type Worked, type WPoint, type WCredit, type WLCard, type WLRow, type WStep, type WTable, type WTCard } from "@/lib/study/worked";
+import { acc, isNumeric, tBalance, worksheetRows, type Neg, type WCell, type WEntry, type WLine, type WOption, type WorkedBody, type Worked, type WPoint, type WCredit, type WLCard, type WLRow, type WStep, type WTable, type WTB, type WTCard, type WWorksheet } from "@/lib/study/worked";
 import { cn } from "@/lib/utils";
 import { ClosingArrow } from "@/components/basics/closing-arrow";
 
@@ -286,6 +286,152 @@ function CreditView({ v }: { v: WCredit }) {
   );
 }
 
+/** A trial balance in debit and credit columns, with its totals; a line the solution found is lit and lettered. */
+function TBView({ t }: { t: WTB }) {
+  const neg = useContext(NegContext);
+  const dr = t.rows.reduce((s, r) => s + (r.v > 0 ? r.v : 0), 0);
+  const cr = t.rows.reduce((s, r) => s + (r.v < 0 ? -r.v : 0), 0);
+  const cell = (r: WTB["rows"][number], side: "dr" | "cr") =>
+    (side === "dr" ? r.v > 0 : r.v < 0) ? (
+      <>
+        {r.letter && <span className="me-1 text-[11px] font-bold text-success">{r.letter} =</span>}
+        <Num>{acc(Math.abs(r.v), neg)}</Num>
+      </>
+    ) : null;
+  return (
+    <div className="scroll-x" tabIndex={0} role="region" aria-label={t.cap ?? "מאזן בוחן"}>
+      <table className="w-full border-collapse text-[13.5px]">
+        {t.cap && <caption className="py-1 text-start font-semibold text-fg">{t.cap}</caption>}
+        <thead>
+          <tr className="border-b border-line text-[12.5px]">
+            <th className="px-2 py-1 text-start font-semibold text-muted">חשבון</th>
+            <th className="w-28 px-2 py-1 text-left font-semibold text-debit">חובה</th>
+            <th className="w-28 px-2 py-1 text-left font-semibold text-credit">זכות</th>
+          </tr>
+        </thead>
+        <tbody>
+          {t.rows.map((r) => (
+            <tr key={r.a} className={cn("border-b border-line", r.letter && "bg-success/10")}>
+              <td className="px-2 py-1">{r.a}</td>
+              <td className="whitespace-nowrap px-2 py-1 text-left">{cell(r, "dr")}</td>
+              <td className="whitespace-nowrap px-2 py-1 text-left">{cell(r, "cr")}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="font-bold">
+            <td className="border-t-2 border-fg px-2 py-1">סך הכול</td>
+            {[dr, cr].map((v, i) => (
+              <td key={i} className="border-t-2 border-fg px-2 py-1 text-left">
+                <span className="border-b-[3px] border-fg [border-bottom-style:double]">
+                  <Num>{acc(v, neg)}</Num>
+                </span>
+              </td>
+            ))}
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+}
+
+type WsRow = ReturnType<typeof worksheetRows>[number];
+
+/** The course's worksheet: before the adjustments, the adjustments, the final trial balance, profit or loss, and the balance sheet. */
+function WorksheetView({ w }: { w: WWorksheet }) {
+  const neg = useContext(NegContext);
+  const rows = worksheetRows(w);
+  const side = (v: number) => ({ dr: v > 0 ? v : 0, cr: v < 0 ? -v : 0 });
+  const none = { dr: 0, cr: 0 };
+  const groups = [
+    { title: "לפני התאמות", pick: (r: WsRow) => (r.isNew ? none : side(r.before)) },
+    { title: "התאמות", pick: (r: WsRow) => ({ dr: r.dr, cr: r.cr }) },
+    { title: "מאזן בוחן סופי", pick: (r: WsRow) => side(r.final) },
+    { title: "תוצאתי", pick: (r: WsRow) => (r.pl ? side(r.final) : none) },
+    { title: "מאזני", pick: (r: WsRow) => (r.pl ? none : side(r.sheet)) },
+  ];
+  const amount = (v: number, lit?: boolean) =>
+    v ? (
+      <span className={cn(lit && "rounded bg-success/15 px-1 font-bold")}>
+        <Num>{acc(v, neg)}</Num>
+      </span>
+    ) : null;
+  const totals = groups.map((g) => rows.reduce((t, r) => ({ dr: t.dr + g.pick(r).dr, cr: t.cr + g.pick(r).cr }), { dr: 0, cr: 0 }));
+  const profit = totals[3].cr - totals[3].dr;
+  return (
+    <div className="scroll-x rounded-xl border border-line" tabIndex={0} role="region" aria-label="גיליון רב-טורי">
+      <table className="w-full min-w-[56rem] border-collapse text-[13px]">
+        <thead className="bg-surface-2/40">
+          <tr>
+            <th rowSpan={2} className="px-3 py-1.5 text-start text-xs font-semibold text-fg">
+              חשבון
+            </th>
+            {groups.map((g) => (
+              <th key={g.title} colSpan={2} className="border-s border-line/60 px-2 py-1.5 text-center text-xs font-semibold text-fg">
+                {g.title}
+              </th>
+            ))}
+          </tr>
+          <tr>
+            {groups.map((g) => [
+              <th key={`${g.title}d`} className="border-s border-line/60 px-2 py-1 text-left text-[11px] font-medium text-debit">
+                חובה
+              </th>,
+              <th key={`${g.title}c`} className="px-2 py-1 text-left text-[11px] font-medium text-credit">
+                זכות
+              </th>,
+            ])}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.a} className={cn("border-t border-line/60", (r.dr || r.cr) && "bg-accent-soft/40")}>
+              <td className="whitespace-nowrap px-3 py-1.5 text-fg">
+                {r.a}
+                {r.isNew && <span className="ms-1.5 rounded bg-accent px-1 text-[10px] font-bold text-accent-fg">חדש</span>}
+              </td>
+              {groups.map((g, i) => {
+                const p = g.pick(r);
+                const lit = i === 4 && r.a === "עודפים";
+                return [
+                  <td key={`${g.title}d`} className="whitespace-nowrap border-s border-line/60 px-2 py-1.5 text-left">
+                    {amount(p.dr, lit)}
+                  </td>,
+                  <td key={`${g.title}c`} className="whitespace-nowrap px-2 py-1.5 text-left">
+                    {amount(p.cr, lit)}
+                  </td>,
+                ];
+              })}
+            </tr>
+          ))}
+        </tbody>
+        <tfoot className="font-semibold">
+          <tr className="border-t-2 border-line-strong">
+            <td className="px-3 py-2 text-fg">סך הכול</td>
+            {totals.map((t, i) => [
+              <td key={`t${i}d`} className="whitespace-nowrap border-s border-line/60 px-2 py-2 text-left">
+                <Num>{acc(t.dr, neg)}</Num>
+              </td>,
+              <td key={`t${i}c`} className="whitespace-nowrap px-2 py-2 text-left">
+                <Num>{acc(t.cr, neg)}</Num>
+              </td>,
+            ])}
+          </tr>
+          <tr className="text-accent">
+            <td className="px-3 py-1.5">רווח השנה</td>
+            {totals.map((_, i) => [
+              <td key={`p${i}d`} className="whitespace-nowrap border-s border-line/60 px-2 py-1.5 text-left">
+                {i === 3 && <Num>{acc(profit, neg)}</Num>}
+              </td>,
+              <td key={`p${i}c`} />,
+            ])}
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+}
+
 function Timeline({ points }: { points: WPoint[] }) {
   const neg = useContext(NegContext);
   const step = 84 / Math.max(points.length - 1, 1);
@@ -369,6 +515,25 @@ function Step({ s, i, n, light }: { s: WStep; i: number; n: number; light?: bool
       </h5>
       {s.timeline && <Timeline points={s.timeline} />}
       {s.credit && <CreditView v={s.credit} />}
+      {s.tb && <TBView t={s.tb} />}
+      {s.worksheet && <WorksheetView w={s.worksheet} />}
+      {s.tcards && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {s.tcards.map((t) => (
+            <TCardView key={t.name} t={t} />
+          ))}
+        </div>
+      )}
+      {(s.entries ?? []).map((e, k) => (
+        <div key={k} className="flex flex-col gap-1.5">
+          <Entry e={e} />
+          {e.why && (
+            <p className="text-[13.5px] text-muted">
+              <Text s={e.why} />
+            </p>
+          )}
+        </div>
+      ))}
       {main ? (
         s.why ? (
           <div className="grid gap-4 sm:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
@@ -484,6 +649,33 @@ export function WorkedExample({ ex, neg }: { ex: Worked; neg?: Neg }) {
           {open && (
             <div className="mt-3">
               <Steps w={ex} />
+            </div>
+          )}
+        </section>
+      </article>
+    </NegContext.Provider>
+  );
+}
+
+/** A solution under a question the screen already shows: a "try it yourself" line and one button that opens all of it. */
+export function WorkedReveal({ w, tryFirst, label = "הצגת הפתרון המלא", neg }: { w: WorkedBody; tryFirst?: string; label?: string; neg?: Neg }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <NegContext.Provider value={neg ?? w.neg ?? "paren"}>
+      <article className="overflow-hidden rounded-xl border-2 border-accent bg-surface">
+        <section className="px-4 py-3">
+          <h4 className="mb-2 text-[14.5px] font-bold">{heading(w)}</h4>
+          {!open && tryFirst && (
+            <div className="rounded-lg border-2 border-dashed border-line px-3 py-2 text-[14px] text-muted">
+              נסו לבד לפני שפותחים: <Text s={tryFirst} />
+            </div>
+          )}
+          <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="mt-2.5 min-h-11 rounded-lg bg-accent px-4 py-2 text-[14.5px] font-semibold text-accent-fg">
+            {open ? "הסתרת הפתרון" : label}
+          </button>
+          {open && (
+            <div className="mt-3">
+              <Steps w={w} />
             </div>
           )}
         </section>

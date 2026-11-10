@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { A, acc, isNumeric, lcardCloses, npv, pv, tBalance, workedText, type WorkedBody } from "./worked";
+import { A, acc, isNumeric, lcardCloses, npv, pv, tBalance, worksheetRows, workedText, type WorkedBody } from "./worked";
 
 describe("the worked-solution layout", () => {
   it("writes an amount the accounting way, with each course's sign", () => {
@@ -31,6 +31,17 @@ describe("the worked-solution layout", () => {
     const allowance = { name: "הפרשה", dr: [{ l: "מחיקה", a: 6_000 }], cr: [{ l: "י.פ.", a: 20_000 }, { l: "הוצאה", a: 11_000 }], close: { side: "cr" as const, a: 25_000 } };
     assert.ok(lcardCloses(allowance));
     assert.ok(!lcardCloses({ ...allowance, close: { side: "cr", a: 24_000 } }));
+  });
+
+  it("builds a worksheet: adjustments, final balances, and the new accounts after the old", () => {
+    const rows = worksheetRows({
+      before: { מזומן: 100, "הוצאות שכר": 50, עודפים: -150 },
+      entries: [{ lines: [{ a: "הוצאות שכר", dr: 10 }, { a: "הוצאות שכר לשלם", cr: 10 }] }],
+      pl: ["הוצאות שכר"],
+      retained: 90,
+    });
+    assert.deepEqual(rows.map((r) => [r.a, r.final, r.isNew]), [["מזומן", 100, false], ["הוצאות שכר", 60, false], ["עודפים", -150, false], ["הוצאות שכר לשלם", -10, true]]);
+    assert.equal(rows.find((r) => r.a === "עודפים")!.sheet, -90);
   });
 
   it("puts the common trap last", () => {

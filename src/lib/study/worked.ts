@@ -28,7 +28,18 @@ export type WTable = { cap?: string; head: string[]; rows: WRow[]; dec?: boolean
 export type WLine = { l: string; a: WCell; k?: "sub" | "tot" | "op" | "focal"; how?: string; tag?: string };
 export type WPoint = { d: string; n?: string; cf?: number; key?: boolean };
 export type WEntryLine = { a: string; dr?: number; cr?: number };
-export type WEntry = { cap?: string; lines: WEntryLine[] };
+/** A journal entry; in a list of entries, `why` is the note under it. */
+export type WEntry = { cap?: string; lines: WEntryLine[]; why?: string };
+/** A trial balance: each account's balance, debit positive and credit negative, in debit and credit columns with their totals. A line found in the solution carries its letter. */
+export type WTB = { cap?: string; rows: { a: string; v: number; letter?: string }[] };
+/**
+ * The course's multi-column worksheet: the trial balance before the
+ * adjustments, the adjustments, the final trial balance, then the
+ * profit-or-loss and the balance-sheet columns, each in debit and credit.
+ * `pl` lists the profit-or-loss accounts; `retained` is the closing retained
+ * earnings, shown in the balance-sheet columns so they balance.
+ */
+export type WWorksheet = { before: Record<string, number>; entries: { lines: WEntryLine[] }[]; pl: string[]; retained: number };
 /** One option of a multiple-choice question, in the order the learner saw it: its letter, its text, whether it is the answer or the one chosen, and why it is right or tempting. */
 export type WOption = { mark: string; t: string; ok?: boolean; chosen?: boolean; r?: string };
 /**
@@ -59,6 +70,12 @@ export type WStep = {
   sheet?: WLine[];
   entry?: WEntry;
   tcard?: WTCard;
+  /** Several T-accounts side by side. */
+  tcards?: WTCard[];
+  /** Several journal entries, each with its own note. */
+  entries?: WEntry[];
+  tb?: WTB;
+  worksheet?: WWorksheet;
   credit?: WCredit;
   timeline?: WPoint[];
   tables?: WTable[];
@@ -88,6 +105,24 @@ export type WorkedBody = {
 
 /** A worked example on a lesson screen: a title, the givens, what is required, a "try it yourself" box, and the solution behind one button. */
 export type Worked = WorkedBody & { title: string; givens: string[]; required: string[]; tryFirst: string };
+
+/** A worksheet's rows: every account of the trial balance, then the accounts the entries opened, each with its adjustments and final balance. */
+export function worksheetRows(w: WWorksheet) {
+  const adj: Record<string, { dr: number; cr: number }> = {};
+  for (const e of w.entries) for (const l of e.lines) {
+    adj[l.a] ??= { dr: 0, cr: 0 };
+    adj[l.a].dr += l.dr ?? 0;
+    adj[l.a].cr += l.cr ?? 0;
+  }
+  const accounts = [...Object.keys(w.before), ...Object.keys(adj).filter((a) => !(a in w.before))];
+  return accounts.map((a) => {
+    const before = w.before[a] ?? 0;
+    const d = adj[a] ?? { dr: 0, cr: 0 };
+    const final = agora(before + d.dr - d.cr);
+    const pl = w.pl.includes(a);
+    return { a, isNew: !(a in w.before), before, dr: d.dr, cr: d.cr, final, pl, sheet: a === "עודפים" ? -w.retained : final };
+  });
+}
 
 /** A T-card's balancing line: its amount, and the side it is written on to close the card. */
 export function tBalance(t: WTCard): { amount: number; side: "dr" | "cr" } {
