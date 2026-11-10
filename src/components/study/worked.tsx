@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, type ReactNode, useContext, useState } from "react";
-import { acc, isNumeric, type Neg, type WCell, type WEntry, type WLine, type WOption, type WorkedBody, type Worked, type WPoint, type WStep, type WTable } from "@/lib/study/worked";
+import { acc, isNumeric, tBalance, type Neg, type WCell, type WEntry, type WLine, type WOption, type WorkedBody, type Worked, type WPoint, type WStep, type WTable, type WTCard } from "@/lib/study/worked";
 import { cn } from "@/lib/utils";
 
 /**
@@ -171,6 +171,45 @@ function Entry({ e }: { e: WEntry }) {
   );
 }
 
+/** A T-account as written in a notebook: the balancing line on the smaller side, both sides closing on one total. */
+function TCardView({ t }: { t: WTCard }) {
+  const neg = useContext(NegContext);
+  const b = tBalance(t);
+  const total = Math.max(t.dr.reduce((s, [, v]) => s + v, 0), t.cr.reduce((s, [, v]) => s + v, 0));
+  const side = (items: [string, number][], name: "dr" | "cr") => (
+    <div className={cn("flex flex-col px-2 py-1", name === "dr" && "border-e-2 border-fg")}>
+      <div className={cn("mb-0.5 text-[12px] font-semibold", name === "dr" ? "text-debit" : "text-credit")}>{name === "dr" ? "חובה" : "זכות"}</div>
+      {items.map(([l, v], i) => (
+        <div key={i} className="flex items-baseline justify-between gap-2 py-px text-[14px]">
+          <span className="min-w-0 text-[13px] text-muted">{l}</span>
+          <Num>{acc(v, neg)}</Num>
+        </div>
+      ))}
+      {b.side === name && b.amount !== 0 && (
+        <div className="flex items-baseline justify-between gap-2 py-px text-[14px] font-semibold italic text-accent">
+          <span className="min-w-0 text-[13px]">{t.bal ?? "יתרת סגירה"}</span>
+          <Num>{acc(b.amount, neg)}</Num>
+        </div>
+      )}
+      <div className="mt-auto flex items-baseline justify-between gap-2 border-t border-fg pt-0.5 text-[14px] font-bold">
+        <span className="text-[13px]">סך הכול</span>
+        <span className="border-b-[3px] border-fg [border-bottom-style:double]">
+          <Num>{acc(total, neg)}</Num>
+        </span>
+      </div>
+    </div>
+  );
+  return (
+    <figure className="w-full max-w-md">
+      <figcaption className="border-b-2 border-fg pb-0.5 text-center text-[14.5px] font-bold">{t.name}</figcaption>
+      <div className="grid grid-cols-2">
+        {side(t.dr, "dr")}
+        {side(t.cr, "cr")}
+      </div>
+    </figure>
+  );
+}
+
 function Timeline({ points }: { points: WPoint[] }) {
   const neg = useContext(NegContext);
   const step = 84 / Math.max(points.length - 1, 1);
@@ -241,7 +280,7 @@ function Options({ opts }: { opts: WOption[] }) {
 }
 
 function Step({ s, i, n, light }: { s: WStep; i: number; n: number; light?: boolean }) {
-  const main = s.sheet ? <Sheet lines={s.sheet} /> : s.entry ? <Entry e={s.entry} /> : null;
+  const main = s.sheet ? <Sheet lines={s.sheet} /> : s.entry ? <Entry e={s.entry} /> : s.tcard ? <TCardView t={s.tcard} /> : null;
   return (
     <div className={cn("flex min-w-0 flex-col", light ? "gap-1 border-b border-line pb-2.5 last:border-b-0 last:pb-0" : "gap-3 rounded-xl border border-line p-3.5")}>
       {n > 1 && !light && (

@@ -31,11 +31,20 @@ export type WEntryLine = { a: string; dr?: number; cr?: number };
 export type WEntry = { cap?: string; lines: WEntryLine[] };
 /** One option of a multiple-choice question, in the order the learner saw it: its letter, its text, whether it is the answer or the one chosen, and why it is right or tempting. */
 export type WOption = { mark: string; t: string; ok?: boolean; chosen?: boolean; r?: string };
+/**
+ * A T-account: the account's name over a thick rule, debit on the right and
+ * credit on the left. The balancing line is computed and written on the
+ * smaller side, so both sides close on the same total under a double rule.
+ * `bal` names it: "יתרת סגירה" unless the card is solved for something else,
+ * such as the collections or an opening balance.
+ */
+export type WTCard = { name: string; dr: [string, number][]; cr: [string, number][]; bal?: string };
 export type WStep = {
   h: string;
   why?: [string, string];
   sheet?: WLine[];
   entry?: WEntry;
+  tcard?: WTCard;
   timeline?: WPoint[];
   tables?: WTable[];
   p?: string[];
@@ -64,6 +73,13 @@ export type WorkedBody = {
 
 /** A worked example on a lesson screen: a title, the givens, what is required, a "try it yourself" box, and the solution behind one button. */
 export type Worked = WorkedBody & { title: string; givens: string[]; required: string[]; tryFirst: string };
+
+/** A T-card's balancing line: its amount, and the side it is written on to close the card. */
+export function tBalance(t: WTCard): { amount: number; side: "dr" | "cr" } {
+  const d = t.dr.reduce((s, [, v]) => s + v, 0);
+  const c = t.cr.reduce((s, [, v]) => s + v, 0);
+  return d >= c ? { amount: d - c, side: "cr" } : { amount: c - d, side: "dr" };
+}
 
 /** Rounded to the agora. */
 export const agora = (v: number) => Math.round(v * 100) / 100 + 0;
