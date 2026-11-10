@@ -24,6 +24,8 @@ const SPORT: Record<string, number> = {
   "הוצאות שכירות": 24_000,
 };
 const sportCash = -Object.values(SPORT).reduce((s, v) => s + v, 0);
+const sportDr = Object.values(SPORT).filter((v) => v > 0).reduce((s, v) => s + v, 0);
+const sportCr = -Object.values(SPORT).filter((v) => v < 0).reduce((s, v) => s + v, 0);
 const YEAR = { income: 415_000, expenses: 362_000 };
 const yearProfit = round2(YEAR.income - YEAR.expenses);
 
@@ -80,6 +82,23 @@ export const BOOKS: StudyModule = {
         `סך החובה (החוב קטן): תשלומים ${fmt(SUPPLIERS.paid)}.`,
         `הזכות גדולה יותר, ולכן היתרה בזכות: ${fmt(SUPPLIERS.opening + SUPPLIERS.purchases)} − ${fmt(SUPPLIERS.paid)} = ${fmt(suppliersClose)}.`,
       ],
+      worked: {
+        givens: [`יתרת פתיחה \`${fmt(SUPPLIERS.opening)}\` בזכות.`, `קניות באשראי \`${fmt(SUPPLIERS.purchases)}\`.`, `תשלומים לספקים \`${fmt(SUPPLIERS.paid)}\`.`],
+        required: ["מהי יתרת הסגירה של הספקים?"],
+        steps: [
+          {
+            h: "מה הגדיל את החוב, ומה הקטין אותו",
+            sheet: [
+              { l: "יתרת פתיחה, בזכות", a: SUPPLIERS.opening },
+              { l: "קניות באשראי", a: SUPPLIERS.purchases },
+              { l: "סך הזכות", a: SUPPLIERS.opening + SUPPLIERS.purchases, k: "sub" },
+              { l: "פחות: תשלומים לספקים", a: -SUPPLIERS.paid, k: "op" },
+              { l: "יתרת סגירה, בזכות", a: suppliersClose, k: "tot" },
+            ],
+            why: ["למה בזכות?", "קנייה באשראי מגדילה את החוב, ותשלום מקטין אותו. צד הזכות גדול יותר, ולכן היתרה בזכות: החנות עדיין חייבת לספקים."],
+          },
+        ],
+      },
     },
     {
       ...practice("q8"),
@@ -97,6 +116,32 @@ export const BOOKS: StudyModule = {
         "התחייבויות, הון והכנסות — בזכות: ספקים, מקדמות מלקוחות (אנחנו חייבים סחורה), הלוואה שהתקבלה, הון מניות, מכירות והכנסות ריבית.",
         `סך החובה בלי המזומן: 389,000. סך הזכות: 418,800. המזומן משלים את החובה: 418,800 − 389,000 = ${fmt(sportCash)}.`,
       ],
+      worked: {
+        steps: [
+          {
+            h: "כל חשבון לצד שלו",
+            tables: [
+              {
+                head: ["חשבון", "חובה", "זכות"],
+                rows: [
+                  ...Object.entries(SPORT).map(([a, v]) => ({ c: [a, v > 0 ? v : "", v < 0 ? -v : ""] })),
+                  { c: ["מזומן: החסר", sportCash, ""] },
+                  { c: ["סך הכול", sportDr + sportCash, sportCr], res: true },
+                ],
+              },
+            ],
+            why: ["איך יודעים את הצד?", "נכסים והוצאות בחובה: מקדמות לספקים (הספק חייב לנו סחורה) והלוואה שניתנה (מישהו חייב לנו) הם נכסים. התחייבויות, הון והכנסות בזכות: מקדמות מלקוחות הן סחורה שאנחנו חייבים."],
+          },
+          {
+            h: "המזומן משלים את החובה",
+            sheet: [
+              { l: "סך הזכות", a: sportCr },
+              { l: "פחות: סך החובה בלי המזומן", a: -sportDr, k: "op" },
+              { l: "יתרת המזומן, בחובה", a: sportCash, k: "tot" },
+            ],
+          },
+        ],
+      },
       table: { kind: "trial", balances: SPORT, missing: "מזומן" },
     },
     {
@@ -106,6 +151,22 @@ export const BOOKS: StudyModule = {
       prompt: `עודפי הפתיחה של חברה הם ${fmt(RET.opening)} ₪. השנה הרוויחה ${fmt(RET.profit)} ₪ וחילקה לבעלים ${fmt(RET.dividend)} ₪. מהם עודפי הסגירה?`,
       answer: RET.opening + RET.profit - RET.dividend,
       steps: ["עודפי סגירה = עודפי פתיחה + רווח השנה − מה שחולק.", `${fmt(RET.opening)} + ${fmt(RET.profit)} − ${fmt(RET.dividend)} = ${fmt(RET.opening + RET.profit - RET.dividend)}.`],
+      worked: {
+        givens: [`עודפי פתיחה \`${fmt(RET.opening)}\`.`, `רווח השנה \`${fmt(RET.profit)}\`.`, `חולק לבעלים \`${fmt(RET.dividend)}\`.`],
+        required: ["מהם עודפי הסגירה?"],
+        steps: [
+          {
+            h: "מגלגלים את העודפים",
+            sheet: [
+              { l: "עודפי פתיחה", a: RET.opening },
+              { l: "רווח השנה", a: RET.profit },
+              { l: "פחות: מה שחולק לבעלים", a: -RET.dividend, k: "op" },
+              { l: "עודפי סגירה", a: RET.opening + RET.profit - RET.dividend, k: "tot" },
+            ],
+            why: ["למה?", "עודפים הם הרווחים שהחברה צברה ולא חילקה. רווח מגדיל אותם, וחלוקה לבעלים מקטינה."],
+          },
+        ],
+      },
     },
     {
       kind: "number",
@@ -118,6 +179,21 @@ export const BOOKS: StudyModule = {
         "בסוף השנה הרווח עובר לעודפים — הרווחים שהחברה צברה ולא חילקה — והכנסות והוצאות מתחילות את השנה הבאה מאפס.",
         `לכן העודפים גדלים ב-${fmt(yearProfit)}. בהפסד הם היו קטנים.`,
       ],
+      worked: {
+        givens: [`סך ההכנסות \`${fmt(YEAR.income)}\`.`, `סך ההוצאות \`${fmt(YEAR.expenses)}\`.`],
+        required: ["בכמה גדלים העודפים?"],
+        steps: [
+          {
+            h: "רווח השנה",
+            sheet: [
+              { l: "הכנסות", a: YEAR.income },
+              { l: "פחות: הוצאות", a: -YEAR.expenses, k: "op" },
+              { l: "רווח השנה, והגידול בעודפים", a: yearProfit, k: "tot" },
+            ],
+            why: ["למה זה הגידול בעודפים?", "בסוף השנה הרווח עובר לעודפים, והכנסות והוצאות מתחילות את השנה הבאה מאפס. בהפסד העודפים היו קטנים."],
+          },
+        ],
+      },
     },
   ],
   traps: [

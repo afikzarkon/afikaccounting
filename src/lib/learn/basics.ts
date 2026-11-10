@@ -7,7 +7,7 @@
  * positive, credit negative.
  */
 
-import type { WorkedBody } from "@/lib/study/worked";
+import { words, type WorkedBody } from "@/lib/study/worked";
 
 export type AccountType = "asset" | "contraAsset" | "liability" | "equity" | "income" | "expense";
 
@@ -594,6 +594,14 @@ export const PRACTICE: Question[] = [
     options: TYPES,
     answer: 1,
     steps: ["ספקים = מי שמכר לעסק סחורה, ועוד לא קיבל את הכסף.", "כסף שהעסק ישלם בעתיד הוא התחייבות.", "לכן: התחייבות, ויתרתה בזכות."],
+    worked: words(
+      [
+        ["מי הם הספקים", "מי שמכר לעסק סחורה ועוד לא קיבל את הכסף."],
+        ["מה זה בשביל העסק", "כסף שהעסק ישלם בעתיד הוא התחייבות."],
+        ["המסקנה", "ספקים הוא חשבון התחייבות, ויתרתו בזכות."],
+      ],
+      ["החנות חייבת **4,700** ₪ ליבואן של כלי עבודה."],
+    ),
   },
   {
     id: "q2",
@@ -604,6 +612,10 @@ export const PRACTICE: Question[] = [
     options: ["חובה", "זכות"],
     answer: 0,
     steps: ["הוצאות אחזקה הן הוצאה.", "הוצאה גדלה בחובה, ולכן גם היתרה שלה בחובה."],
+    worked: words([
+      ["איזה חשבון זה", "הוצאות אחזקה הן הוצאה."],
+      ["איפה הוא גדל", "הוצאה גדלה בחובה, ולכן גם היתרה שלה בחובה."],
+    ]),
   },
   {
     id: "q3",
@@ -674,6 +686,22 @@ export const PRACTICE: Question[] = [
       `סך החובה בלי מזומן: ${q8Dr.map(fmt).join(" + ")} = ${fmt(total(q8Dr))}.`,
       `מאזן בוחן תמיד מאוזן, ולכן המזומן הוא ההפרש: ${fmt(total(q8Cr))} − ${fmt(total(q8Dr))} = ${fmt(q8Cash)}.`,
     ],
+    worked: {
+      givens: [`בחובה: ${Object.entries(Q.q8.others).filter(([, v]) => v > 0).map(([a, v]) => `${a} \`${fmt(v)}\``).join(", ")}.`, `בזכות: ${Object.entries(Q.q8.others).filter(([, v]) => v < 0).map(([a, v]) => `${a} \`${fmt(-v)}\``).join(", ")}.`],
+      required: ["מהי יתרת המזומן?"],
+      steps: [
+        {
+          h: "המזומן הוא מה שמאזן את הטבלה",
+          sheet: [
+            ...Object.entries(Q.q8.others).filter(([, v]) => v < 0).map(([a, v]) => ({ l: a, a: -v })),
+            { l: "סך הזכות", a: total(q8Cr), k: "sub" as const },
+            ...Object.entries(Q.q8.others).filter(([, v]) => v > 0).map(([a, v]) => ({ l: `פחות: ${a}`, a: -v, k: "op" as const })),
+            { l: "יתרת המזומן, בחובה", a: q8Cash, k: "tot" as const },
+          ],
+          why: ["למה ההפרש?", "מאזן בוחן תמיד מאוזן. מה שחסר בצד החובה כדי להגיע לסך הזכות הוא המזומן."],
+        },
+      ],
+    },
   },
   {
     id: "q9",
@@ -697,6 +725,23 @@ export const PRACTICE: Question[] = [
       `סך הזכות: ${Q.q10.cr.map(fmt).join(" + ")} = ${fmt(Q.q10.cr.reduce((s, v) => s + v, 0))}.`,
       `החובה גדולה יותר, ולכן היתרה בחובה: ${fmt(q10Balance)}.`,
     ],
+    worked: {
+      givens: [`יתרת פתיחה \`${fmt(Q.q10.opening)}\` בחובה.`, `תנועות בחובה: ${Q.q10.dr.map((v) => `\`${fmt(v)}\``).join(" ו־")}.`, `תנועות בזכות: ${Q.q10.cr.map((v) => `\`${fmt(v)}\``).join(" ו־")}.`],
+      required: ["מהי יתרת הסגירה של המזומן?"],
+      steps: [
+        {
+          h: "מסכמים כל צד ומחסירים",
+          sheet: [
+            { l: "יתרת פתיחה", a: Q.q10.opening },
+            ...Q.q10.dr.map((v) => ({ l: "תנועה בחובה", a: v })),
+            { l: "סך החובה", a: Q.q10.opening + total(Q.q10.dr), k: "sub" as const },
+            ...Q.q10.cr.map((v) => ({ l: "פחות: תנועה בזכות", a: -v, k: "op" as const })),
+            { l: "יתרת סגירה, בחובה", a: q10Balance, k: "tot" as const },
+          ],
+          why: ["למה בחובה?", "צד החובה גדול יותר, ולכן היתרה שנשארת היא יתרת חובה."],
+        },
+      ],
+    },
   },
   {
     id: "q11",
@@ -745,6 +790,23 @@ export const PRACTICE: Question[] = [
     kind: "number",
     answer: q14Cos,
     steps: ["עלות המכר = מלאי פתיחה + קניות − מלאי סגירה.", `${fmt(Q.q14.opening)} + ${fmt(Q.q14.purchases)} − ${fmt(Q.q14.closing)} = ${fmt(q14Cos)}.`],
+    worked: {
+      givens: [`מלאי פתיחה \`${fmt(Q.q14.opening)}\`.`, `קניות \`${fmt(Q.q14.purchases)}\`.`, `מלאי סגירה \`${fmt(Q.q14.closing)}\`.`],
+      required: ["מהי עלות המכר?"],
+      steps: [
+        {
+          h: "עלות המכר",
+          sheet: [
+            { l: "מלאי פתיחה", a: Q.q14.opening },
+            { l: "קניות", a: Q.q14.purchases },
+            { l: "סחורה שעמדה למכירה", a: Q.q14.opening + Q.q14.purchases, k: "sub" },
+            { l: "פחות: מלאי סגירה", a: -Q.q14.closing, k: "op" },
+            { l: "עלות המכר", a: q14Cos, k: "tot" },
+          ],
+          why: ["למה מורידים את מלאי הסגירה?", "מה שנשאר במחסן בסוף השנה לא נמכר, ולכן הוא לא חלק מעלות המכר."],
+        },
+      ],
+    },
   },
   {
     id: "q15",

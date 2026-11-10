@@ -172,6 +172,21 @@ export const CREDIT: StudyModule = {
         "לקוחות הם נכס: היתרה והמכירות בחובה; הגבייה והמחיקות מקטינות אותם — בזכות.",
         `${fmt(CARD.opening)} + ${fmt(CARD.sales)} − ${fmt(CARD.collections)} − ${fmt(CARD.writeOffs)} = ${fmt(CARD.opening + CARD.sales - CARD.collections - CARD.writeOffs)}.`,
       ],
+      worked: {
+        steps: [
+          {
+            h: "כרטיס הלקוחות",
+            sheet: [
+              { l: "יתרת פתיחה", a: CARD.opening },
+              { l: "מכירות באשראי", a: CARD.sales },
+              { l: "פחות: גבייה מלקוחות", a: -CARD.collections, k: "op" },
+              { l: "פחות: מחיקת חובות אבודים", a: -CARD.writeOffs, k: "op" },
+              { l: "לקוחות ברוטו, 31.12", a: CARD.opening + CARD.sales - CARD.collections - CARD.writeOffs, k: "tot" },
+            ],
+            why: ["מה בחובה ומה בזכות?", "לקוחות הם נכס: היתרה והמכירות בחובה. הגבייה והמחיקות מקטינות אותם, ולכן הן בזכות."],
+          },
+        ],
+      },
     },
     {
       kind: "number",
@@ -183,6 +198,21 @@ export const CREDIT: StudyModule = {
         `ההפרשה: ${fmt(NET.gross)} × ${pct(NET.rate)} = ${fmt(round2(NET.gross * NET.rate))}.`,
         `לקוחות נטו = ברוטו − הפרשה = ${fmt(NET.gross)} − ${fmt(round2(NET.gross * NET.rate))} = ${fmt(round2(NET.gross * (1 - NET.rate)))}.`,
       ],
+      worked: {
+        givens: [`לקוחות ברוטו \`${fmt(NET.gross)}\`.`, `הפרשה של \`${pct(NET.rate)}\` מהם.`],
+        required: ["באיזה סכום יוצגו הלקוחות במאזן?"],
+        steps: [
+          {
+            h: "ברוטו פחות ההפרשה",
+            sheet: [
+              { l: "לקוחות ברוטו", a: NET.gross },
+              { l: `פחות: הפרשה, \`${pct(NET.rate)}\``, a: -round2(NET.gross * NET.rate), k: "op" },
+              { l: "לקוחות נטו", a: round2(NET.gross * (1 - NET.rate)), k: "tot" },
+            ],
+            why: ["למה נטו?", "במאזן מציגים את מה שהחברה צופה לגבות באמת: הלקוחות פחות ההפרשה להפסדי אשראי."],
+          },
+        ],
+      },
     },
     {
       kind: "number",
@@ -194,6 +224,21 @@ export const CREDIT: StudyModule = {
         `הנטו הוא ${pct(1 - FROM_NET.rate)} מהברוטו — לכן מחלקים, לא מכפילים ב-${pct(FROM_NET.rate)}.`,
         `${fmt(FROM_NET.net)} ÷ ${pct(1 - FROM_NET.rate)} = ${fmt(round2(FROM_NET.net / (1 - FROM_NET.rate)))}.`,
       ],
+      worked: {
+        givens: [`לקוחות נטו \`${fmt(FROM_NET.net)}\`.`, `ההפרשה \`${pct(FROM_NET.rate)}\` מהברוטו.`],
+        required: ["מה הלקוחות ברוטו?"],
+        steps: [
+          {
+            h: "מחלקים בחלק שנשאר",
+            sheet: [
+              { l: "לקוחות נטו", a: FROM_NET.net },
+              { l: `÷ \`${pct(1 - FROM_NET.rate)}\``, a: "", k: "op" },
+              { l: "לקוחות ברוטו", a: round2(FROM_NET.net / (1 - FROM_NET.rate)), k: "tot" },
+            ],
+            why: ["למה מחלקים?", `הנטו הוא ${pct(1 - FROM_NET.rate)} מהברוטו. כדי לחזור לברוטו מחלקים בו, לא מוסיפים ${pct(FROM_NET.rate)} לנטו.`],
+          },
+        ],
+      },
     },
     {
       kind: "number",
@@ -205,6 +250,23 @@ export const CREDIT: StudyModule = {
         "בכרטיס הלקוחות: סגירה = פתיחה + מכירות − גבייה − מחיקות. הגבייה היא הנעלם.",
         `${fmt(GAP.closing)} = ${fmt(GAP.opening)} + ${fmt(GAP.sales)} − X − ${fmt(GAP.writeOffs)}, ולכן X = ${fmt(GAP.opening + GAP.sales - GAP.writeOffs - GAP.closing)}.`,
       ],
+      worked: {
+        givens: [`לקוחות ב־1.1 \`${fmt(GAP.opening)}\`, וב־31.12 \`${fmt(GAP.closing)}\`.`, `מכירות באשראי \`${fmt(GAP.sales)}\`.`, `מחיקת חובות \`${fmt(GAP.writeOffs)}\`.`],
+        required: ["כמה נגבה מהלקוחות?"],
+        steps: [
+          {
+            h: "הגבייה משלימה את הכרטיס",
+            sheet: [
+              { l: "יתרת פתיחה", a: GAP.opening },
+              { l: "מכירות באשראי", a: GAP.sales },
+              { l: "פחות: מחיקת חובות", a: -GAP.writeOffs, k: "op" },
+              { l: "פחות: יתרת סגירה", a: -GAP.closing, k: "op" },
+              { l: "גבייה מלקוחות", a: GAP.opening + GAP.sales - GAP.writeOffs - GAP.closing, k: "tot" },
+            ],
+            why: ["למה זה עובד?", "בכרטיס הלקוחות: פתיחה + מכירות − גבייה − מחיקות = סגירה. כל השאר ידוע, והגבייה היא מה שחסר כדי שהכרטיס ייסגר."],
+          },
+        ],
+      },
     },
     {
       kind: "number",
@@ -217,6 +279,36 @@ export const CREDIT: StudyModule = {
         `בכרטיס ההפרשה: סגירה = X − מחיקה + חוב שחזר + הוצאה, כלומר ${fmt(OPENING.required)} = X − ${fmt(OPENING.writeOffs!)} + ${fmt(OPENING.recovered!)} + ${fmt(OPENING.result.expense)}.`,
         `X = ${fmt(OPENING.openingAllowance)}.`,
       ],
+      worked: {
+        givens: [`לקוחות ב־1.1 \`${fmt(OPENING.openingAR)}\`.`, `מכירות באשראי \`${fmt(OPENING.creditSales!)}\`, גבייה \`${fmt(OPENING.collections!)}\`, מחיקות \`${fmt(OPENING.writeOffs!)}\`.`, `נגבה חוב שנמחק בעבר \`${fmt(OPENING.recovered!)}\`.`, `ההפרשה בסוף השנה 6% מהלקוחות, והוצאות הפסדי האשראי \`${fmt(OPENING.result.expense)}\`.`],
+        required: ["מה הייתה יתרת הפתיחה של ההפרשה?"],
+        steps: [
+          {
+            h: "ההפרשה בסוף השנה",
+            sheet: [
+              { l: "לקוחות ב־1.1", a: OPENING.openingAR },
+              { l: "מכירות באשראי", a: OPENING.creditSales! },
+              { l: "פחות: גבייה", a: -OPENING.collections!, k: "op" },
+              { l: "פחות: מחיקות", a: -OPENING.writeOffs!, k: "op" },
+              { l: "לקוחות ב־31.12", a: OPENING.result.gross, k: "sub" },
+              { l: "× `6%`", a: "", k: "op" },
+              { l: "ההפרשה הנדרשת", a: OPENING.required, k: "tot" },
+            ],
+            why: ["ומה עם החוב שחזר?", "חוב שנמחק ונגבה נכנס לכרטיס הלקוחות ויוצא ממנו מיד. הוא לא משנה את יתרת הלקוחות."],
+          },
+          {
+            h: "חוזרים אחורה בכרטיס ההפרשה",
+            sheet: [
+              { l: "ההפרשה בסגירה", a: OPENING.required },
+              { l: "ועוד: מה שנמחק כנגדה", a: OPENING.writeOffs!, k: "op" },
+              { l: "פחות: החוב שחזר", a: -OPENING.recovered!, k: "op" },
+              { l: "פחות: הוצאות השנה", a: -OPENING.result.expense, k: "op" },
+              { l: "ההפרשה בפתיחה", a: OPENING.openingAllowance, k: "tot" },
+            ],
+            why: ["למה בכיוון הזה?", "בכרטיס ההפרשה: פתיחה − מחיקות + חוב שחזר + הוצאה = סגירה. הולכים מהסגירה אחורה, וכל תנועה מתהפכת."],
+          },
+        ],
+      },
     },
   ],
   traps: [

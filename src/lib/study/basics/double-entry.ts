@@ -45,6 +45,21 @@ export const DOUBLE_ENTRY: StudyModule = {
       prompt: `לחנות פרחים נכסים בסך ${fmt(BIZ.assets)} ₪, וההון שלה ${fmt(BIZ.equity)} ₪. כמה החנות חייבת לאחרים?`,
       answer: BIZ.assets - BIZ.equity,
       steps: ["נכסים = התחייבויות + הון. מה שהחנות חייבת לאחרים — אלה ההתחייבויות.", `התחייבויות = נכסים − הון: ${fmt(BIZ.assets)} − ${fmt(BIZ.equity)} = ${fmt(BIZ.assets - BIZ.equity)}.`],
+      worked: {
+        givens: [`נכסים \`${fmt(BIZ.assets)}\`.`, `הון \`${fmt(BIZ.equity)}\`.`],
+        required: ["כמה החנות חייבת לאחרים?"],
+        steps: [
+          {
+            h: "ההתחייבויות מהזהות החשבונאית",
+            sheet: [
+              { l: "נכסים", a: BIZ.assets },
+              { l: "פחות: הון", a: -BIZ.equity, k: "op" },
+              { l: "התחייבויות", a: BIZ.assets - BIZ.equity, k: "tot" },
+            ],
+            why: ["למה מחסירים?", "נכסים = התחייבויות + הון. מה שהחנות חייבת לאחרים הוא ההתחייבויות, וזה מה שנשאר מהנכסים אחרי ההון."],
+          },
+        ],
+      },
     },
     {
       kind: "journal",

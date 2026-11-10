@@ -8,6 +8,8 @@ const S = statements(B);
 const NEXT = statements(balancesOf(ledger(OFEK.next, carryForward(B))));
 const { מזומן: cash, ...withoutCash } = B;
 const retainedNext = NEXT.equity.find(([a]) => a === "עודפים")![1];
+const ofekDr = Object.values(withoutCash).filter((v) => v > 0).reduce((s, v) => s + v, 0);
+const ofekCr = -Object.values(withoutCash).filter((v) => v < 0).reduce((s, v) => s + v, 0);
 
 /** One of Ofek's entries as a journal exercise: the event, its answer, and the accounts offered. */
 function ofek(id: string, n: string, skill: string, accounts: string[]): JournalExercise {
@@ -56,6 +58,32 @@ export const YEAR: StudyModule = {
         "בזכות: הון מניות, ספקים, הלוואה ומכירות.",
         `המזומן הוא ההפרש שמאזן את הטבלה: ${fmt(cash)}.`,
       ],
+      worked: {
+        steps: [
+          {
+            h: "כל חשבון לצד שלו",
+            tables: [
+              {
+                head: ["חשבון", "חובה", "זכות"],
+                rows: [
+                  ...Object.entries(withoutCash).map(([a, v]) => ({ c: [a, v > 0 ? v : "", v < 0 ? -v : ""] })),
+                  { c: ["מזומן: החסר", cash, ""] },
+                  { c: ["סך הכול", ofekDr + cash, ofekCr], res: true },
+                ],
+              },
+            ],
+            why: ["איך יודעים את הצד?", "בחובה: ציוד, לקוחות, קניות, והוצאות השכר, השכירות, הריבית והעמלות. בזכות: הון מניות, ספקים, הלוואה ומכירות."],
+          },
+          {
+            h: "המזומן מאזן את הטבלה",
+            sheet: [
+              { l: "סך הזכות", a: ofekCr },
+              { l: "פחות: סך החובה בלי המזומן", a: -ofekDr, k: "op" },
+              { l: "יתרת המזומן, בחובה", a: cash, k: "tot" },
+            ],
+          },
+        ],
+      },
       table: { kind: "trial", balances: withoutCash, missing: "מזומן" },
     },
     {
@@ -65,6 +93,19 @@ export const YEAR: StudyModule = {
       prompt: `מהו הרווח של ${OFEK.name} בשנת ${OFEK.year}? (אין עדיין מלאי סגירה — כל הקניות הן הוצאה.)`,
       answer: S.profit,
       steps: [`הכנסות: מכירות ${fmt(S.totalIncome)}.`, `הוצאות: קניות 140,000 + שכר 48,000 + שכירות 36,000 + ריבית 5,500 + עמלות 80 = ${fmt(S.totalExpenses)}.`, `רווח: ${fmt(S.totalIncome)} − ${fmt(S.totalExpenses)} = ${fmt(S.profit)}.`],
+      worked: {
+        steps: [
+          {
+            h: "הכנסות פחות הוצאות",
+            sheet: [
+              ...S.income.map(([a, v]) => ({ l: a, a: v })),
+              ...S.expenses.map(([a, v]) => ({ l: `פחות: ${a}`, a: -v, k: "op" as const })),
+              { l: `רווח ${OFEK.year}`, a: S.profit, k: "tot" as const },
+            ],
+            why: ["למה כל הקניות הן הוצאה?", "עוד אין מלאי סגירה. כל מה שנקנה נחשב כאילו נמכר, ולכן הקניות כולן נכנסות לרווח והפסד."],
+          },
+        ],
+      },
     },
     {
       kind: "number",
@@ -73,6 +114,21 @@ export const YEAR: StudyModule = {
       prompt: `ב-2026 הרוויחה ${OFEK.name} ${fmt(NEXT.profit)} ₪. מהם עודפי הסגירה שלה ב-31.12.2026?`,
       answer: retainedNext,
       steps: [`עודפי הפתיחה ב-1.1.2026 הם רווח 2025: ${fmt(S.profit)} (החברה חדשה).`, `${fmt(S.profit)} + ${fmt(NEXT.profit)} = ${fmt(retainedNext)}.`],
+      worked: {
+        givens: [`רווח ${OFEK.year}: \`${fmt(S.profit)}\`.`, `רווח 2026: \`${fmt(NEXT.profit)}\`.`],
+        required: ["מהם עודפי הסגירה ב־31.12.2026?"],
+        steps: [
+          {
+            h: "מגלגלים את העודפים",
+            sheet: [
+              { l: "עודפי פתיחה, 1.1.2026", a: S.profit },
+              { l: "רווח 2026", a: NEXT.profit },
+              { l: "עודפי סגירה, 31.12.2026", a: retainedNext, k: "tot" },
+            ],
+            why: ["מאיפה עודפי הפתיחה?", `החברה חדשה, ולכן עודפי הפתיחה של 2026 הם הרווח של ${OFEK.year} בלבד.`],
+          },
+        ],
+      },
     },
   ],
   traps: [
