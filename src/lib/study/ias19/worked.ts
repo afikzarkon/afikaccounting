@@ -1,4 +1,5 @@
 import type { StudyModule } from "../types";
+import { FORMULA } from "./formulas";
 import { ltrFormulas } from "./ltr";
 import type { WLine, WorkedBody, WPoint, WStep, WTable } from "../worked";
 
@@ -72,6 +73,38 @@ function presentValue(fx: [string, string]): { timeline?: WPoint[]; table?: WTab
   };
 }
 
+/**
+ * The five ingredients of a measurement (the course's ①–⑤), read from the
+ * numbers of its formula, each with where it came from: the earlier step that
+ * worked it out, or the question's givens.
+ */
+function fiveIngredients(fx: [string, string], earlier: WStep[], prose: string): WStep | undefined {
+  if (fx[0] !== FORMULA.measure) return undefined;
+  const m = fx[1].match(/^([\d,.]+) × ([\d,.]+) × ([\d,.]+) ÷ ([\d.]+)\^([\d.]+) = /);
+  if (!m) return undefined;
+  const value = (s: string) => Number(s.replace(/,/g, ""));
+  const from = (v: string) => {
+    const hit = earlier.find((st) => st.fx && value(st.fx[1].split("=").at(-1)!.replace(/[₪\s]/g, "")) === value(v));
+    return hit ? "`" + hit.fx![1].slice(0, hit.fx![1].lastIndexOf(" =")) + "`" : "נתון";
+  };
+  const rate = Math.round((Number(m[4]) - 1) * 10000) / 100;
+  return {
+    h: "חמשת המרכיבים",
+    tables: [
+      {
+        head: ["", "המרכיב", "הערך", "מאיפה"],
+        rows: [
+          { c: ["①", "הטבה לשנת שירות", m[1], from(m[1])] },
+          { c: ["②", "שנות שירות שנצברו", m[2], from(m[2])] },
+          { c: ["③", "עובדים צפויים", m[3], from(m[3])] },
+          { c: ["④", "n, שנים עד התשלום", m[5], from(m[5])] },
+          { c: ["⑤", "i, שיעור ההיוון", `${rate}%`, /קונצרנית/.test(prose) ? "הקונצרנית האיכותית בתאריך המדידה, לא הממשלתית" : "בתאריך המדידה"] },
+        ],
+      },
+    ],
+  };
+}
+
 /** What a step finds: the right-hand side of its formula ("ערך נוכחי", "עלות ריבית"). */
 const finds = (fx: [string, string]) => fx[0].split("=").at(-1)!.trim();
 
@@ -120,6 +153,8 @@ export function ias19Worked(prompt: string, steps: string[], kind: "choice" | "n
     }
     const text = [...pending, ...p.text];
     pending = [];
+    const five = p.fx ? fiveIngredients(p.fx, out, [...steps, prompt].join(" ")) : undefined;
+    if (five) out.push(five);
     const pv = p.fx ? presentValue(p.fx) : {};
     out.push({
       h: p.roll ? p.roll.title : p.fx ? finds(p.fx) : "באקסל",

@@ -60,4 +60,22 @@ describe("IAS 19 practice solutions in the worked-solution layout", () => {
     assert.equal(q4.steps[0].sheet!.find((l) => l.k === "focal")!.a, v.opening + v.expense - v.closing);
     for (const q of TOOL_QUESTIONS) assert.ok(q.steps.some((s) => s.fx && s.excel), `${q.title}: formula and Excel side by side`);
   });
+
+  it("puts the five ingredients before every measurement, and they give the measurement's result (the owner, 2026-11-10)", () => {
+    let seen = 0;
+    for (const { m, e } of questions) {
+      const steps = e.worked!.steps;
+      steps.forEach((st, k) => {
+        if (st.h !== "חמשת המרכיבים") return;
+        seen++;
+        const rows = st.tables![0].rows.map((r) => r.c[2] as string);
+        const [per, years, heads, n] = rows.slice(0, 4).map((v) => Number(v.replace(/,/g, "")));
+        const i = Number(rows[4].replace("%", "")) / 100;
+        const next = steps[k + 1].fx!;
+        const result = Number(clean(next[1]).split("=").at(-1)!.replace(/[₪,\s]/g, ""));
+        assert.equal(Math.round((per * years * heads) / (1 + i) ** n), result, `${m.slug}/${e.id}`);
+      });
+    }
+    assert.equal(seen, 9);
+  });
 });
