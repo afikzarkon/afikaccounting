@@ -29,7 +29,7 @@ export function CourseHeader({
         <Fact icon={<GraduationCap className="h-3.5 w-3.5 text-accent" aria-hidden />}>{lessons.length} שיעורים</Fact>
         <Fact icon={<BookOpenText className="h-3.5 w-3.5 text-accent" aria-hidden />}>{concepts} מושגים</Fact>
         <Fact icon={<ClipboardPen className="h-3.5 w-3.5 text-accent" aria-hidden />}>{questions} שאלות תרגול</Fact>
-        {minutes > 0 && <Fact icon={<Play className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden />}>{minutes} דק׳ וידאו</Fact>}
+        {minutes > 0 && <Fact icon={<Play className="h-3.5 w-3.5 fill-gold-strong text-gold-strong" aria-hidden />}>{minutes} דק׳ וידאו</Fact>}
       </div>
     </header>
   );

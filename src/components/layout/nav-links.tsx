@@ -103,7 +103,7 @@ export function NavLinksView({ pathname = "" }: { pathname?: string }) {
             aria-current={active ? "page" : undefined}
             className={cn(
               "relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors",
-              item.tier === "exams" ? "font-semibold text-amber-800 hover:text-amber-600 dark:text-amber-300 dark:hover:text-amber-200" : active ? "text-fg" : "text-muted hover:text-fg",
+              item.tier === "exams" ? "font-semibold text-gold hover:opacity-80" : active ? "text-fg" : "text-muted hover:text-fg",
             )}
           >
             {active && <ActivePill />}
@@ -277,7 +277,7 @@ export function MobileNavView({ pathname = "" }: { pathname?: string }) {
         href={l.href}
         className={cn(
           "flex min-h-12 items-center justify-between gap-2 rounded-xl px-4 text-base font-medium",
-          l.tier === "exams" ? "font-semibold text-amber-700 dark:text-amber-300" : on ? "bg-surface-2 text-fg" : "text-fg hover:bg-surface-2",
+          l.tier === "exams" ? "font-semibold text-gold" : on ? "bg-surface-2 text-fg" : "text-fg hover:bg-surface-2",
         )}
       >
         <span className="flex items-center gap-2">

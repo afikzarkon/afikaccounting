@@ -11,7 +11,7 @@ export function LessonStats({ streak }: { streak: number }) {
   const sound = useSound();
   return (
     <div className="flex shrink-0 items-center gap-1.5">
-      <Stat icon={<Flame className={cn("h-4 w-4", streak > 0 ? "text-[#f97316]" : "text-subtle")} aria-hidden />} value={streak} label="תשובות נכונות ברצף" />
+      <Stat icon={<Flame className={cn("h-4 w-4", streak > 0 ? "text-gold-strong" : "text-subtle")} aria-hidden />} value={streak} label="תשובות נכונות ברצף" />
       <button
         type="button"
         onClick={toggleSound}

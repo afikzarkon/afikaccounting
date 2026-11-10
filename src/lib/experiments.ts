@@ -25,7 +25,7 @@ export const EXPERIMENTS: Experiment[] = [
     title: "כותרת דף הבית",
     path: "/",
     variants: [
-      { id: "control", label: "״הסיכום אומר מה כתוב בתקן. כאן רואים איפה מפסידים נקודות.״", weight: 1 },
+      { id: "control", label: "״הבנתם בהרצאה, ונתקעתם בשיעורי הבית? כאן בודקים כל תשובה מיד.״", weight: 1 },
       { id: "doors", label: "״מתחילים חשבונאות — או שהמבחן כבר קרוב?״ (שתי דלתות)", weight: 1 },
     ],
     active: false,

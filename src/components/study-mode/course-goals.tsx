@@ -76,7 +76,7 @@ export function CourseGoals({ course, name, lessons, topics }: { course: string;
           )}
         </Item>
 
-        <Item icon={<Flame className={cn("h-4 w-4", streak.days ? "text-[#f97316]" : "text-subtle")} aria-hidden />} label="ימי למידה ברצף" title="יום מנוחה אחד בשבוע לא שובר את הרצף.">
+        <Item icon={<Flame className={cn("h-4 w-4", streak.days ? "text-gold-strong" : "text-subtle")} aria-hidden />} label="ימי למידה ברצף" title="יום מנוחה אחד בשבוע לא שובר את הרצף.">
           <span className="num font-bold text-fg">{streak.days}</span>
           <span className="block truncate text-[12.5px] text-muted">{streak.studiedToday ? "היום כבר נספר" : streak.days ? "תשובה אחת היום ממשיכה אותו" : "תשובה אחת היום פותחת רצף"}</span>
         </Item>

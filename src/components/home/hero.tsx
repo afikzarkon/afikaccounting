@@ -12,8 +12,8 @@ import { HeroExercise } from "./hero-exercise";
 export type HeroDoor = { title: string; standard?: string; href: string };
 
 /**
- * The home page's opening. It answers the free summary first — a summary says
- * what the standard says; here you see where you'd lose points. The headline
+ * The home page's opening. It speaks to the gap the site exists for: the lecture made
+ * sense, the homework doesn't, and there's no one to check an answer with. The headline
  * speaks to a student with an exam coming, so the main button is theirs: pick
  * a topic, each one straight to its free first lesson. The free course from
  * zero is the second door. On a phone the buttons come right after the
@@ -51,7 +51,7 @@ export async function Hero({
       {/* A phone reads top to bottom: headline and buttons, the question, the ledger. A wide screen: the text beside the question. */}
       <div className="mx-auto grid max-w-7xl items-start gap-x-16 gap-y-7 px-4 pt-8 pb-16 sm:px-6 sm:pt-16 lg:grid-cols-[1.05fr_1fr] lg:px-8 lg:pb-24">
         <div className="lg:col-start-1 lg:row-start-1">
-          <p className="text-[15px] font-semibold text-accent">שאלות ברמת מבחן · בלי הרשמה</p>
+          <p className="text-[15px] font-semibold text-accent">בין ההרצאה לשיעורי הבית · בלי הרשמה</p>
           {variant === "doors" ? (
             <>
               <h1 className="mt-3 text-[2.15rem] leading-[1.08] font-black text-balance text-fg sm:text-[3.6rem]">
@@ -64,11 +64,11 @@ export async function Hero({
           ) : (
             <>
               <h1 className="mt-3 text-[2.15rem] leading-[1.08] font-black text-balance text-fg sm:text-[3.6rem]">
-                הסיכום אומר מה כתוב בתקן.{" "}
-                <span className="text-accent">כאן רואים איפה מפסידים נקודות.</span>
+                הבנתם בהרצאה, ונתקעתם בשיעורי הבית?{" "}
+                <span className="text-accent sm:block">כאן בודקים כל תשובה מיד.</span>
               </h1>
               <p className="mt-4 max-w-xl text-[17px] leading-relaxed text-muted sm:mt-5">
-                פותרים שאלות במלאי, ברכוש קבוע, בהטבות עובד ובחכירות, נופלים במלכודות עכשיו ולא במבחן, ורואים בדיוק למה. מתחילים מאפס? הקורס הבסיסי חינם כולו.
+                בכיתה הכול נראה הגיוני, ובבית מול התרגיל לא ברור מאיפה מתחילים. כאן כל נושא בנוי שלב אחרי שלב, ובכל שאלה רואים מיד אם צדקתם, עם הסבר ברמה של הקורס. לא מחכים לתרגול הבא, ולא מנחשים אם מה שמצאתם ברשת מתאים לחומר שלכם.
               </p>
             </>
           )}
@@ -133,7 +133,7 @@ export async function Hero({
             </tbody>
           </table>
           <p className="mt-4 max-w-sm text-sm text-muted">
-            הסיכום שלכם טוב לקריאה — כאן בודקים אם יודעים לפתור. עם חשבון, ההתקדמות נשמרת בכל מכשיר.
+            עם חשבון, ההתקדמות והשאלות שמחכות לחזרה נשמרות בכל מכשיר.
           </p>
         </div>
       </div>

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const TONES = {
   free: { tone: "success", icon: Sparkles, className: "" },
   courses: { tone: "accent", icon: Lock, className: "" },
-  exams: { tone: "neutral", icon: Crown, className: "border-transparent bg-amber-400/15 text-amber-800 dark:text-amber-300" },
+  exams: { tone: "neutral", icon: Crown, className: "border-transparent bg-gold-soft text-gold" },
 } as const;
 
 /**

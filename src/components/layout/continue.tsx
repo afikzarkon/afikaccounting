@@ -87,7 +87,7 @@ export function MobileTabBarView({ pathname = "" }: { pathname?: string }) {
           </Link>
         )}
         {linkShown(EXAMS_HUB.href) && (
-          <Link href={EXAMS_HUB.href} aria-current={on(EXAMS_HUB.href) ? "page" : undefined} className={cn(tab, "h-16", on(EXAMS_HUB.href) ? "text-amber-800 dark:text-amber-300" : "text-muted")}>
+          <Link href={EXAMS_HUB.href} aria-current={on(EXAMS_HUB.href) ? "page" : undefined} className={cn(tab, "h-16", on(EXAMS_HUB.href) ? "text-gold" : "text-muted")}>
             <Crown className="h-5 w-5" aria-hidden /> מבחנים
           </Link>
         )}

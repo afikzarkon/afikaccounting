@@ -82,7 +82,7 @@ export function SummaryCard({
             <BookOpenText className="h-4 w-4" aria-hidden /> מושגים: <strong className="text-fg">{score.learn.ok}</strong>/{score.learn.total}
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <Flame className="h-4 w-4 text-[#f97316]" aria-hidden /> הרצף הטוב: <strong className="text-fg">{p.best}</strong>
+            <Flame className="h-4 w-4 text-gold-strong" aria-hidden /> הרצף הטוב: <strong className="text-fg">{p.best}</strong>
           </span>
         </p>
 
@@ -133,13 +133,13 @@ export function SummaryCard({
       {m.tips.length > 0 && (
         <details className="group rounded-2xl bg-surface ring-1 ring-line">
           <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-4 text-[15px] font-semibold text-fg">
-            <Sparkles className="h-4 w-4 text-[#eda100]" aria-hidden /> {m.tips.length} טיפים זהב למבחן
+            <Sparkles className="h-4 w-4 text-gold-strong" aria-hidden /> {m.tips.length} טיפים זהב למבחן
             <span className="ms-auto text-[13px] font-normal text-muted group-open:hidden">לפתיחה</span>
           </summary>
           <ol className="grid gap-3 px-5 pb-5 lg:grid-cols-2">
             {m.tips.map((t, i) => (
               <li key={t} className="flex gap-3 rounded-xl bg-surface-2/60 p-4 text-[15px] leading-relaxed text-fg/90">
-                <span className="num grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#eda100]/15 text-[13px] font-bold text-amber-800 dark:text-[#f5c04a]">{i + 1}</span>
+                <span className="num grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-gold-soft text-[13px] font-bold text-gold">{i + 1}</span>
                 <span className="min-w-0">{t}</span>
               </li>
             ))}

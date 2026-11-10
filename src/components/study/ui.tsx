@@ -67,7 +67,7 @@ export function Stat({ label, value, hint, tone = "neutral" }: { label: string; 
         "rounded-xl border px-3.5 py-3",
         tone === "accent" && "border-accent/30 bg-accent-soft",
         tone === "success" && "border-success/30 bg-success/[0.07]",
-        tone === "warn" && "border-amber-500/30 bg-amber-500/[0.08]",
+        tone === "warn" && "border-trap/30 bg-trap-soft",
         tone === "neutral" && "border-line bg-surface",
       )}
     >

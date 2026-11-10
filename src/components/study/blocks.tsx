@@ -57,7 +57,7 @@ export function Topic({
 const CALLOUTS = {
   tip: { icon: "💡", label: "טיפ / טריק", className: "border-accent/30 bg-accent-soft" },
   check: { icon: "✅", label: "בדיקת נאותות", className: "border-success/30 bg-success/[0.07]" },
-  warn: { icon: "⚠️", label: "מלכודת נפוצה", className: "border-amber-500/30 bg-amber-500/[0.07]" },
+  warn: { icon: "⚠️", label: "מלכודת נפוצה", className: "border-trap/30 bg-trap-soft" },
 } as const;
 
 /** Pro-tip / sanity-check box set inside the topic it belongs to. */
