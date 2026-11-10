@@ -464,11 +464,38 @@ function Why({ why }: { why: [string, string] }) {
 }
 
 /** The course's formula, then the numbers in it. Left to right. */
+/**
+ * Every operator and bracket held in place with a left-to-right mark, so a
+ * formula whose terms are Hebrew words still reads left to right, as in a
+ * notebook (the same marks the IAS 19 course puts in its own formulas).
+ */
+const LRM = String.fromCharCode(0x200e);
+const held = (s: string) => s.replace(/[=+−±×÷^()]/g, (op) => `${LRM}${op}${LRM}`);
+
 function Fx({ fx }: { fx: [string, string] }) {
   return (
     <div className="flex flex-col gap-0.5 text-left text-[14.5px] [direction:ltr]">
-      <span className="text-muted [unicode-bidi:isolate]">{fx[0]}</span>
-      <span className="num font-semibold [unicode-bidi:isolate]">{fx[1]}</span>
+      <span className="text-muted [unicode-bidi:isolate]">{held(fx[0])}</span>
+      <span className="num font-semibold [unicode-bidi:isolate]">{held(fx[1])}</span>
+    </div>
+  );
+}
+
+/** The formula and the Excel way side by side, each a small card: its general form, then the numbers in. */
+function FxWithExcel({ fx, excel }: { fx?: [string, string]; excel: { formula?: string; numbers: string } }) {
+  const card = (label: string, a: string | undefined, b: string, mono?: boolean) => (
+    <div className="rounded-lg bg-surface-2/60 px-2.5 py-1.5 ring-1 ring-line">
+      <div className="text-[11.5px] font-bold text-muted">{label}</div>
+      <div className={cn("flex flex-col gap-0.5 text-left [direction:ltr]", mono ? "font-mono text-[12.5px]" : "text-[14px]")}>
+        {a && <span className="text-muted [unicode-bidi:isolate]">{mono ? a : held(a)}</span>}
+        <span className="num font-semibold [unicode-bidi:isolate]">{mono ? b : held(b)}</span>
+      </div>
+    </div>
+  );
+  return (
+    <div className={cn("grid gap-2", fx && "sm:grid-cols-2")}>
+      {fx && card("בנוסחה", fx[0], fx[1])}
+      {card("באקסל", excel.formula, excel.numbers, true)}
     </div>
   );
 }
@@ -555,7 +582,7 @@ function Step({ s, i, n, light }: { s: WStep; i: number; n: number; light?: bool
       {(s.tables ?? []).map((t, k) => (
         <WTableView key={k} t={t} />
       ))}
-      {s.fx && <Fx fx={s.fx} />}
+      {s.excel ? <FxWithExcel fx={s.fx} excel={s.excel} /> : s.fx && <Fx fx={s.fx} />}
       {s.result && (
         <div className="text-[14.5px] font-bold">
           תוצאה: <Text s={s.result} />
