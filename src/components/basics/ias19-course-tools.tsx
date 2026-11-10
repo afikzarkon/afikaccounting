@@ -1,10 +1,12 @@
+import { WorkedExample } from "@/components/study/worked";
+import { TOOL_QUESTIONS } from "@/lib/study/ias19/tools-worked";
 import { ArrowRight, ChevronDown, Search } from "lucide-react";
 import type { ReactNode } from "react";
 import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { partRate } from "@/lib/learn/ias19";
 import { said, tool, TOOL } from "@/lib/study/ias19/formulas";
-import { CASE, CASE_INTEREST, CASE_TODAY, DANA_NEXT, DANA_NOW, DEPOSIT, DEPOSIT_FV, HOOK, PART_BALANCE, PERIODS, VACATION, VACATION_EXPENSE } from "@/lib/study/ias19/lessons/toolkit";
+import { CASE, DANA_NEXT, DANA_NOW, DEPOSIT, DEPOSIT_FV, HOOK, PART_BALANCE, PERIODS, VACATION, VACATION_EXPENSE } from "@/lib/study/ias19/lessons/toolkit";
 import { fmt } from "@/lib/study/ias19/shared";
 import { ltrQuiz } from "@/lib/study/ias19/ltr";
 import { Ltr, Work } from "./ias19-formula";
@@ -365,69 +367,9 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
             היא הייתה <Money v={CASE.vacation.opening} />, ההוצאה של השנה <Money v={CASE.vacation.expense} />, ובסוף השנה <Money v={CASE.vacation.closing} />.
           </P>
         </div>
-        <Part title="1. כמה רושמים היום על המענק ליוסי?">
-          <Solve seek={<>ערך נוכחי של <Money v={CASE.grant} /> שישולמו בעוד {CASE.years} שנים.</>} task="מה החוב ליוסי בדוח של היום?">
-            <P>
-              <strong>איזה כלי?</strong> הסכום ישולם בעתיד, ואנחנו רוצים לדעת כמה הוא שווה היום, ולכן ערך נוכחי. FV הוא המענק, <Money v={CASE.grant} />. RATE הוא שיעור ההיוון, {pct(CASE.rate)}. YEAR הוא מספר השנים מהיום ועד
-              התשלום, {CASE.years}. מחלקים ב-{1 + CASE.rate} פעם לכל שנה:
-            </P>
-            <Work w={tool.pv(CASE.grant, CASE.rate, CASE.years)} />
-            <P>
-              בדיקה בכיוון ההפוך, בערך עתידי: <L>{`${fmt(CASE_TODAY)} × (${1 + CASE.rate})^${CASE.years} ≈ ${fmt(CASE.grant)}`}</L> ₪. חזרנו בדיוק למענק.
-            </P>
-          </Solve>
-        </Part>
-        <Part title="2. בכמה גדל החוב ליוסי ברבעון הראשון?">
-          <Solve seek={<>הריבית לשלושה חודשים, כי החברה מפרסמת דוח רבעוני ב-31.3. <L>YEAR = 3/12</L>, ריבית דריבית.</>} task={<>החוב היום <Money v={CASE_TODAY} />. בכמה הוא יגדל עד 31.3?</>}>
-            <P>
-              <strong>איזה כלי?</strong> צריך ריבית רק עד 31.3, ולכן ריבית לתקופה שאינה שנה. היתרה היא החוב שמצאנו בשאלה 1, <Money v={CASE_TODAY} />. התקופה היא שלושה חודשים מתוך 12, ולכן <L>YEAR = 3/12</L>. השאלה לא
-              אמרה באיזו ריבית, ולכן ריבית דריבית. קודם השיעור לרבעון:
-            </P>
-            <Work w={tool.partRate(CASE.rate, 3)} />
-            <P>ואז מכפילים בו את היתרה. אפשר גם בצעד אחד:</P>
-            <Work w={tool.part(CASE_TODAY, CASE.rate, 3)} />
-            <P>אם השאלה הייתה מבקשת ריבית פשוטה, מכפילים את השיעור השנתי ברבע שנה:</P>
-            <Work w={tool.simpleOn(CASE_TODAY, CASE.rate, 3)} />
-          </Solve>
-        </Part>
-        <Part title="3. מה החוב ליוסי בסוף השנה?">
-          <Solve seek="יתרת הסגירה במעגל. נוספה ריבית של שנה, ולא שולם כלום." task="מה יתרת הסגירה של החוב ליוסי?">
-            <P>
-              <strong>איזה כלי?</strong> רוצים לדעת מה קרה לחוב במשך שנה, ולכן מעגל. הפתיחה היא החוב מתחילת השנה, <Money v={CASE_TODAY} />. במשך השנה נוספה ריבית של שנה שלמה:{" "}
-              <L>{`${fmt(CASE_TODAY)} × ${pct(CASE.rate)} = ${fmt(CASE_INTEREST)}`}</L> ₪. ליוסי לא שולם כלום, ולכן אין שורת תשלומים. הסגירה היא הפתיחה ועוד הריבית:
-            </P>
-            <RollForward
-              title="התחייבות למענק ליוסי"
-              rows={[
-                { label: "יתרת פתיחה", value: CASE_TODAY, kind: "balance" },
-                { label: `ריבית ${pct(CASE.rate)}`, value: CASE_INTEREST, how: <L>{`${fmt(CASE_TODAY)} × ${pct(CASE.rate)}`}</L> },
-                { label: "יתרת סגירה", value: CASE_TODAY + CASE_INTEREST, kind: "balance" },
-              ]}
-            />
-            <P>ואותו מספר יוצא בערך נוכחי, כשנשארה שנה אחת. המעגל והערך הנוכחי מסכימים:</P>
-            <Work w={tool.pv(CASE.grant, CASE.rate, CASE.years - 1)} />
-          </Solve>
-        </Part>
-        <Part title="4. כמה שילמה החברה לעובדים על חופשה?">
-          <Solve seek="התשלומים, השורה היחידה שחסרה במעגל של ההפרשה לחופשה." task="כמה שולם לעובדים השנה?">
-            <P>
-              <strong>איזה כלי?</strong> ידועות שלוש שורות במעגל, הפתיחה, ההוצאה והסגירה, וחסרה רק אחת. לכן מחלצים אותה מהמעגל. מתחילים מ-<Money v={CASE.vacation.opening} /> ומוסיפים את ההוצאה,{" "}
-              <Money v={CASE.vacation.expense} />. יוצא <Money v={CASE.vacation.opening + CASE.vacation.expense} />. בסוף השנה נשארו רק <Money v={CASE.vacation.closing} />, אז כל השאר יצא בתשלומים:
-            </P>
-            <RollForward
-              title="הפרשה לחופשה"
-              pnTo="השורה החסרה"
-              rows={[
-                { label: "יתרת פתיחה", value: CASE.vacation.opening, kind: "balance" },
-                { label: "הוצאה", value: CASE.vacation.expense },
-                { label: "תשלומים", value: -(CASE.vacation.opening + CASE.vacation.expense - CASE.vacation.closing), kind: "pn" },
-                { label: "יתרת סגירה", value: CASE.vacation.closing, kind: "balance" },
-              ]}
-            />
-            <P>ואותו חישוב בנוסחה ובאקסל:</P>
-            <Work w={tool.paymentsST(CASE.vacation.opening, CASE.vacation.expense, CASE.vacation.closing)} />
-          </Solve>
-        </Part>
+        {TOOL_QUESTIONS.map((q) => (
+          <WorkedExample key={q.title} ex={q} />
+        ))}
         <Remember>ערך נוכחי למה שישולם בעתיד, שיעור לתקופה כשקורה משהו באמצע השנה, ומעגל כדי לעקוב אחרי היתרה ולמצוא את מה שחסר.</Remember>
       </>
     ),

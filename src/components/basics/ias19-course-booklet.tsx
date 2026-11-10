@@ -11,6 +11,8 @@ import { cell, Note, Step } from "./ias19-step";
 import { rich } from "./ias19-rich";
 import { FullSteps, RollForward } from "./ias19-ui";
 import { TaskFrame, TaskText } from "./ias19-question";
+import { WorkedReveal } from "@/components/study/worked";
+import { bookletWorked } from "@/lib/study/ias19/booklet-worked";
 
 /**
  * The booklet-level questions that close the lessons: the story and its data,
@@ -34,7 +36,44 @@ function SolutionBox({ children }: { children: ReactNode }) {
   );
 }
 
-/** A booklet question as a screen. */
+/**
+ * A booklet question in the site's worked layout (owner's approval,
+ * 2026-11-10): the same story, data, required list and check; the solution
+ * opens with one button, each movement table a worksheet column.
+ */
+function bookletQuestion(q: BkQuestion): ScreenContent {
+  return {
+    lead: "שאלה ברמת חוברת התרגילים. קראו את הנתונים, פתרו על דף או בגיליון, הזינו את הסכומים, ורק אז פתחו את הפתרון.",
+    body: (
+      <>
+        <div className="rounded-xl border border-line bg-surface px-4 py-3">
+          <ul className="list-disc space-y-1.5 ps-5 text-[15px] leading-relaxed">
+            {q.facts.map((f) => (
+              <li key={f}>{rich(f)}</li>
+            ))}
+          </ul>
+        </div>
+        {q.tables.map((t, i) => (
+          <DataTable key={i} caption={t.title} head={t.head} rows={t.rows.map((row) => row.map(cell))} foot={t.foot?.map(cell)} />
+        ))}
+        <TaskFrame label="נדרש">
+          <TaskText>
+            <ol className="list-[hebrew] space-y-1.5 ps-6">
+              {q.required.map((r) => (
+                <li key={r}>{rich(r)}</li>
+              ))}
+            </ol>
+          </TaskText>
+        </TaskFrame>
+        <BookletCheck id={q.id} checks={q.checks} />
+        <WorkedReveal w={bookletWorked(q)} />
+        <Remember>{rich(q.point)}</Remember>
+      </>
+    ),
+  };
+}
+
+/** A final-exam question in the booklet's own layout (not part of the worked-layout change). */
 function booklet(q: BkQuestion): ScreenContent {
   return {
     lead: "שאלה ברמת חוברת התרגילים. קראו את הנתונים, פתרו על דף או בגיליון, הזינו את הסכומים, ורק אז פתחו את הפתרון.",
@@ -151,16 +190,16 @@ const MFR: ScreenContent = {
 export const IAS19_BOOKLET_SCREENS: Record<string, ScreenContent> = {
   "emp-assets-mfr": { ...MFR },
   "emp-bk-format": { ...FORMAT },
-  "emp-bk-short": { ...booklet(BK_SHORT) },
-  "emp-bk-dc": { ...booklet(BK_DC) },
-  "emp-bk-tier": { ...booklet(BK_TIER) },
-  "emp-bk-amend": { ...booklet(BK_AMEND) },
-  "emp-bk-tiered": { ...booklet(BK_TIERED) },
-  "emp-bk-gift": { ...booklet(BK_GIFT) },
-  "emp-bk-cases": { ...booklet(BK_CASES) },
-  "emp-bk-three": { ...booklet(BK_THREE) },
-  "emp-bk-olt": { ...booklet(BK_OLT) },
-  "emp-bk-note": { ...booklet(BK_NOTE) },
+  "emp-bk-short": { ...bookletQuestion(BK_SHORT) },
+  "emp-bk-dc": { ...bookletQuestion(BK_DC) },
+  "emp-bk-tier": { ...bookletQuestion(BK_TIER) },
+  "emp-bk-amend": { ...bookletQuestion(BK_AMEND) },
+  "emp-bk-tiered": { ...bookletQuestion(BK_TIERED) },
+  "emp-bk-gift": { ...bookletQuestion(BK_GIFT) },
+  "emp-bk-cases": { ...bookletQuestion(BK_CASES) },
+  "emp-bk-three": { ...bookletQuestion(BK_THREE) },
+  "emp-bk-olt": { ...bookletQuestion(BK_OLT) },
+  "emp-bk-note": { ...bookletQuestion(BK_NOTE) },
   "emp-mx-cancel": { ...booklet(FINAL_EXAMS[0]) },
   "emp-mx-mgmt": { ...booklet(FINAL_EXAMS[1]) },
   "emp-mx-short": { ...booklet(FINAL_EXAMS[2]) },

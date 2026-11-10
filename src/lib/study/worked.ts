@@ -84,6 +84,8 @@ export type WStep = {
   opts?: WOption[];
   /** The course's formula, then the same formula with the numbers in. Both read left to right. */
   fx?: [string, string];
+  /** The Excel way, as a card beside the formula: the function as written (optional), then with the numbers in and what Excel returns. */
+  excel?: { formula?: string; numbers: string };
   result?: string;
   xl?: string;
 };
