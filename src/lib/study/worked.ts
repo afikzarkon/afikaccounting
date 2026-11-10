@@ -99,3 +99,6 @@ export function workedText(w: WorkedBody): string[] {
   if (w.trap) out.push(`מלכודת נפוצה: ${w.trap}`);
   return out;
 }
+
+/** A solution in words only: each step a short heading and the sentence under it. */
+export const words = (steps: [string, string][], givens?: string[]): WorkedBody => ({ light: true, givens, steps: steps.map(([h, p]) => ({ h, p: [p] })) });
