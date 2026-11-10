@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, type ReactNode, useContext, useState } from "react";
-import { acc, isNumeric, type Neg, type WCell, type WEntry, type WLine, type WorkedBody, type Worked, type WPoint, type WStep, type WTable } from "@/lib/study/worked";
+import { acc, isNumeric, type Neg, type WCell, type WEntry, type WLine, type WOption, type WorkedBody, type Worked, type WPoint, type WStep, type WTable } from "@/lib/study/worked";
 import { cn } from "@/lib/utils";
 
 /**
@@ -212,10 +212,38 @@ function Fx({ fx }: { fx: [string, string] }) {
   );
 }
 
+/** Every option of a multiple-choice question: the answer in green, a wrong choice in red, and a line under each on where it comes from. */
+function Options({ opts }: { opts: WOption[] }) {
+  return (
+    <ul className="flex flex-col gap-2">
+      {opts.map((o) => (
+        <li
+          key={o.mark}
+          className={cn(
+            "grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-x-2.5 gap-y-0.5 rounded-lg border px-3 py-2 text-[14.5px]",
+            o.ok ? "border-success bg-success/10" : o.chosen ? "border-danger bg-danger/10" : "border-line",
+          )}
+        >
+          <span className="font-bold text-muted">{o.mark}</span>
+          <span>
+            <Text s={o.t} />
+          </span>
+          <span className={cn("text-[13px] font-bold", o.ok ? "text-success" : "text-danger")}>{o.ok ? "✓ נכון" : o.chosen ? "✗ בחרתם" : "✗"}</span>
+          {o.r && (
+            <span className="col-start-2 col-end-4 whitespace-pre-line text-[13.5px] text-muted">
+              <Text s={o.r} />
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function Step({ s, i, n, light }: { s: WStep; i: number; n: number; light?: boolean }) {
   const main = s.sheet ? <Sheet lines={s.sheet} /> : s.entry ? <Entry e={s.entry} /> : null;
   return (
-    <div className={cn("flex min-w-0 flex-col", light ? "gap-1 border-b border-line pb-2.5" : "gap-3 rounded-xl border border-line p-3.5")}>
+    <div className={cn("flex min-w-0 flex-col", light ? "gap-1 border-b border-line pb-2.5 last:border-b-0 last:pb-0" : "gap-3 rounded-xl border border-line p-3.5")}>
       {n > 1 && !light && (
         <div className="text-[12px] text-muted">
           שלב {i + 1} מתוך {n}
@@ -238,10 +266,11 @@ function Step({ s, i, n, light }: { s: WStep; i: number; n: number; light?: bool
         s.why && <Why why={s.why} />
       )}
       {(s.p ?? []).map((p, k) => (
-        <p key={k} className="text-[14.5px]">
+        <p key={k} className="whitespace-pre-line text-[14.5px]">
           <Text s={p} />
         </p>
       ))}
+      {s.opts && <Options opts={s.opts} />}
       {(s.tables ?? []).map((t, k) => (
         <WTableView key={k} t={t} />
       ))}

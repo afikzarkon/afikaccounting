@@ -29,6 +29,8 @@ export type WLine = { l: string; a: WCell; k?: "sub" | "tot" | "op" | "focal"; h
 export type WPoint = { d: string; n?: string; cf?: number; key?: boolean };
 export type WEntryLine = { a: string; dr?: number; cr?: number };
 export type WEntry = { cap?: string; lines: WEntryLine[] };
+/** One option of a multiple-choice question, in the order the learner saw it: its letter, its text, whether it is the answer or the one chosen, and why it is right or tempting. */
+export type WOption = { mark: string; t: string; ok?: boolean; chosen?: boolean; r?: string };
 export type WStep = {
   h: string;
   why?: [string, string];
@@ -37,6 +39,7 @@ export type WStep = {
   timeline?: WPoint[];
   tables?: WTable[];
   p?: string[];
+  opts?: WOption[];
   /** The course's formula, then the same formula with the numbers in. Both read left to right. */
   fx?: [string, string];
   result?: string;
