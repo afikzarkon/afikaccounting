@@ -691,14 +691,18 @@ export const PRACTICE: Question[] = [
       required: ["מהי יתרת המזומן?"],
       steps: [
         {
-          h: "המזומן הוא מה שמאזן את הטבלה",
-          sheet: [
-            ...Object.entries(Q.q8.others).filter(([, v]) => v < 0).map(([a, v]) => ({ l: a, a: -v })),
-            { l: "סך הזכות", a: total(q8Cr), k: "sub" as const },
-            ...Object.entries(Q.q8.others).filter(([, v]) => v > 0).map(([a, v]) => ({ l: `פחות: ${a}`, a: -v, k: "op" as const })),
-            { l: "יתרת המזומן, בחובה", a: q8Cash, k: "tot" as const },
+          h: "כל חשבון לצד שלו, והמזומן משלים",
+          tables: [
+            {
+              head: ["חשבון", "חובה", "זכות"],
+              rows: [
+                ...Object.entries(Q.q8.others).map(([a, v]) => ({ c: [a, v > 0 ? v : "", v < 0 ? -v : ""] })),
+                { c: ["מזומן: החסר", q8Cash, ""] },
+                { c: ["סך הכול", total(q8Dr) + q8Cash, total(q8Cr)], res: true },
+              ],
+            },
           ],
-          why: ["למה ההפרש?", "מאזן בוחן תמיד מאוזן. מה שחסר בצד החובה כדי להגיע לסך הזכות הוא המזומן."],
+          why: ["למה המזומן הוא ההפרש?", "מאזן בוחן תמיד מאוזן. סך הזכות ידוע, ומה שחסר בצד החובה כדי להגיע אליו הוא יתרת המזומן."],
         },
       ],
     },
@@ -730,15 +734,9 @@ export const PRACTICE: Question[] = [
       required: ["מהי יתרת הסגירה של המזומן?"],
       steps: [
         {
-          h: "מסכמים כל צד ומחסירים",
-          sheet: [
-            { l: "יתרת פתיחה", a: Q.q10.opening },
-            ...Q.q10.dr.map((v) => ({ l: "תנועה בחובה", a: v })),
-            { l: "סך החובה", a: Q.q10.opening + total(Q.q10.dr), k: "sub" as const },
-            ...Q.q10.cr.map((v) => ({ l: "פחות: תנועה בזכות", a: -v, k: "op" as const })),
-            { l: "יתרת סגירה, בחובה", a: q10Balance, k: "tot" as const },
-          ],
-          why: ["למה בחובה?", "צד החובה גדול יותר, ולכן היתרה שנשארת היא יתרת חובה."],
+          h: "כרטיס המזומן",
+          tcard: { name: "מזומן", dr: [["י.פ.", Q.q10.opening], ...Q.q10.dr.map((v): [string, number] => ["תקבול", v])], cr: Q.q10.cr.map((v): [string, number] => ["תשלום", v]) },
+          why: ["באיזה צד היתרה?", "צד החובה גדול יותר. את ההפרש כותבים בצד הקטן כדי לאזן, אבל היתרה שייכת לצד הגדול: יתרת חובה."],
         },
       ],
     },
