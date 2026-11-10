@@ -58,7 +58,7 @@ export type BalanceGap =
   | { kind: "trial"; balances: Record<string, number>; missing: string }
   | { kind: "card"; account: string; items: { label: string; amount: number; side: "dr" | "cr" }[] };
 
-export type QuestionExercise = Pick<Question, "id" | "skill" | "prompt" | "steps"> &
+export type QuestionExercise = Pick<Question, "id" | "skill" | "prompt" | "steps" | "worked"> &
   (Choice | NumberQ | EntryQ) & {
     /** A number question answered by completing this trial balance, rather than in a bare field. */
     table?: BalanceGap;

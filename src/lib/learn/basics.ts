@@ -7,6 +7,8 @@
  * positive, credit negative.
  */
 
+import type { WorkedBody } from "@/lib/study/worked";
+
 export type AccountType = "asset" | "contraAsset" | "liability" | "equity" | "income" | "expense";
 
 export const TYPE_LABEL: Record<AccountType, string> = {
@@ -549,7 +551,12 @@ export function creditLossEntries(k: typeof TZAAD): Entry[] {
 export type Choice = { kind: "choice"; options: string[]; answer: number };
 export type NumberQ = { kind: "number"; answer: number };
 export type EntryQ = { kind: "entry"; accounts: string[]; dr: string; cr: string };
-export type Question = { id: string; level: 1 | 2 | 3; skill: string; prompt: string; steps: string[] } & (Choice | NumberQ | EntryQ);
+/**
+ * `steps` is the solution as lines of text. A question converted to the site's
+ * worked-solution layout also has `worked`, which is shown instead; until then
+ * it looks as it always did. `steps` stays, for the hint after a wrong try.
+ */
+export type Question = { id: string; level: 1 | 2 | 3; skill: string; prompt: string; steps: string[]; worked?: WorkedBody } & (Choice | NumberQ | EntryQ);
 
 const fmt = (v: number) => v.toLocaleString("en-US");
 const TYPES = ["נכס", "התחייבות", "הון", "הכנסה", "הוצאה"];

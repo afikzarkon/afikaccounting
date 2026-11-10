@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { BalanceGapBoard } from "./balance-gap";
 import { OptionMark, optionClass, promptClass } from "./choice";
 import { Feedback, Gain } from "./journal-simulator";
+import { WorkedSolution } from "@/components/study/worked";
 import { typedAmount } from "@/lib/amount";
 import { stableOrder, stableShuffle } from "@/lib/shuffle";
 
@@ -54,6 +55,7 @@ export function QuestionExercise({ q, result, onCheck }: { q: Question; result?:
       : q.steps.length > 1
         ? `רמז: ${q.steps[0]}`
         : undefined;
+  const answer = q.kind === "choice" ? q.options[q.answer] : q.kind === "number" ? <Money v={q.answer} /> : `ח׳ ${q.dr} / ז׳ ${q.cr}`;
   const canCheck = q.kind === "number" ? value.trim() !== "" : dr !== "" && cr !== "";
 
   return (
@@ -140,21 +142,24 @@ export function QuestionExercise({ q, result, onCheck }: { q: Question; result?:
       {done && (
         <>
           <Feedback ok={result!.ok} title={result!.ok ? <Gain xp={result!.tries === 1 ? XP.first : XP.second} /> : "הנה הפתרון"} />
-          <div className="rounded-2xl bg-surface-2/70 p-4 text-[15px] leading-relaxed text-fg ring-1 ring-line sm:p-5">
-            <p className="mb-2.5 text-[12.5px] font-bold text-muted">הפתרון, שלב אחר שלב</p>
-            <ol className="space-y-2">
-              {q.steps.map((s, i) => (
-                <li key={s} className="flex gap-2.5">
-                  <span className="num mt-0.5 grid h-5.5 w-5.5 shrink-0 place-items-center rounded-full bg-accent-soft text-[11.5px] font-bold text-accent">{i + 1}</span>
-                  <span className="min-w-0 whitespace-pre-line">{s}</span>
-                </li>
-              ))}
-            </ol>
-            <p className="mt-3 border-t border-line pt-3 font-semibold">
-              התשובה:{" "}
-              {q.kind === "choice" ? q.options[q.answer] : q.kind === "number" ? <Money v={q.answer} /> : `ח׳ ${q.dr} / ז׳ ${q.cr}`}
-            </p>
-          </div>
+          {q.worked ? (
+            <WorkedSolution w={q.worked} answer={answer} />
+          ) : (
+            <div className="rounded-2xl bg-surface-2/70 p-4 text-[15px] leading-relaxed text-fg ring-1 ring-line sm:p-5">
+              <p className="mb-2.5 text-[12.5px] font-bold text-muted">הפתרון, שלב אחר שלב</p>
+              <ol className="space-y-2">
+                {q.steps.map((s, i) => (
+                  <li key={s} className="flex gap-2.5">
+                    <span className="num mt-0.5 grid h-5.5 w-5.5 shrink-0 place-items-center rounded-full bg-accent-soft text-[11.5px] font-bold text-accent">{i + 1}</span>
+                    <span className="min-w-0 whitespace-pre-line">{s}</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="mt-3 border-t border-line pt-3 font-semibold">
+                התשובה: {answer}
+              </p>
+            </div>
+          )}
         </>
       )}
     </div>
