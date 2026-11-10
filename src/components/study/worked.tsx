@@ -1,8 +1,9 @@
 "use client";
 
 import { createContext, type ReactNode, useContext, useState } from "react";
-import { acc, isNumeric, tBalance, type Neg, type WCell, type WEntry, type WLine, type WOption, type WorkedBody, type Worked, type WPoint, type WStep, type WTable, type WTCard } from "@/lib/study/worked";
+import { acc, isNumeric, tBalance, type Neg, type WCell, type WEntry, type WLine, type WOption, type WorkedBody, type Worked, type WPoint, type WCredit, type WLCard, type WLRow, type WStep, type WTable, type WTCard } from "@/lib/study/worked";
 import { cn } from "@/lib/utils";
+import { ClosingArrow } from "@/components/basics/closing-arrow";
 
 /**
  * The site's worked solution: a lecturer's calculation sheet for every
@@ -210,6 +211,81 @@ function TCardView({ t }: { t: WTCard }) {
   );
 }
 
+/** One card as the credit-losses lesson draws it: rows on both sides, padded to the same height, and the closing balance under the rule on its own side. */
+function LessonCard({ c }: { c: WLCard }) {
+  const neg = useContext(NegContext);
+  const n = Math.max(c.dr.length, c.cr.length);
+  const row = (r: WLRow | null, k: string, close?: { to?: boolean }) =>
+    r ? (
+      <li
+        key={k}
+        data-link-to={close?.to ? "closing" : undefined}
+        className={cn("flex items-center justify-between gap-2 rounded px-1.5 py-1 text-[12.5px]", close && "font-bold", r.letter && "bg-success/10 ring-1 ring-success/40")}
+      >
+        <span className="min-w-0 text-fg">
+          {r.l}
+          {r.entry && <span className="ms-1.5 inline-block rounded bg-amber-400 px-1.5 py-px text-[10.5px] font-bold text-amber-950">עליו פקודת היומן</span>}
+        </span>
+        <span className="flex shrink-0 items-center gap-1">
+          {r.letter && <span className="text-[11px] font-bold text-success">{r.letter} =</span>}
+          <Num>{acc(r.a, neg)}</Num>
+        </span>
+      </li>
+    ) : (
+      <li key={k} className="py-1 text-[12.5px]">
+        &nbsp;
+      </li>
+    );
+  const side = (rows: WLRow[], s: "dr" | "cr") => (
+    <div className={cn("flex min-w-0 flex-col", s === "dr" && "border-e-2 border-fg/70")}>
+      <p className={cn("px-2 pt-1 text-[11px] font-bold", s === "dr" ? "text-debit" : "text-credit")}>{s === "dr" ? "חובה" : "זכות"}</p>
+      <ul className="space-y-0.5 px-1 pb-1">
+        {rows.map((r, i) => row(r, `r${i}`))}
+        {Array.from({ length: n - rows.length }, (_, i) => row(null, `e${i}`))}
+      </ul>
+      <ul className="mt-auto border-t-2 border-fg/70 px-1 py-1">{c.close.side === s ? row({ l: "יתרת סגירה", a: c.close.a, letter: c.close.letter }, "close", { to: c.close.to }) : row(null, "none")}</ul>
+    </div>
+  );
+  return (
+    <figure className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface">
+      <figcaption className="border-b-2 border-fg/70 px-3 py-1.5 text-center text-[14px] font-bold text-fg">{c.name}</figcaption>
+      <div className="grid grid-cols-2">
+        {side(c.dr, "dr")}
+        {side(c.cr, "cr")}
+      </div>
+    </figure>
+  );
+}
+
+/** The credit-losses picture: the cards, and the formula's answer with its arrow into the closing balance. */
+function CreditView({ v }: { v: WCredit }) {
+  const cards = (
+    <div className={cn("grid gap-3", v.cards.length > 1 && "md:grid-cols-2")}>
+      {v.cards.map((c) => (
+        <LessonCard key={c.name} c={c} />
+      ))}
+    </div>
+  );
+  if (!v.formula) return cards;
+  return (
+    <ClosingArrow>
+      {cards}
+      <div className="mt-9 grid gap-3 md:grid-cols-2">
+        {v.beside ? (
+          <div className="order-2 rounded-xl border border-dashed border-line px-3.5 py-2.5 text-[13.5px] text-muted md:order-none">
+            <Text s={v.beside} />
+          </div>
+        ) : (
+          <div className="max-md:hidden" />
+        )}
+        <div data-link-from="closing" className="rounded-xl border-2 border-accent/50 bg-accent-soft/50 px-3.5 py-2.5 text-[14.5px] text-fg">
+          <Fx fx={v.formula} />
+        </div>
+      </div>
+    </ClosingArrow>
+  );
+}
+
 function Timeline({ points }: { points: WPoint[] }) {
   const neg = useContext(NegContext);
   const step = 84 / Math.max(points.length - 1, 1);
@@ -292,6 +368,7 @@ function Step({ s, i, n, light }: { s: WStep; i: number; n: number; light?: bool
         <span className="text-accent">{i + 1}.</span> <Text s={s.h} />
       </h5>
       {s.timeline && <Timeline points={s.timeline} />}
+      {s.credit && <CreditView v={s.credit} />}
       {main ? (
         s.why ? (
           <div className="grid gap-4 sm:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">

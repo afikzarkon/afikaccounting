@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { A, acc, isNumeric, npv, pv, tBalance, workedText, type WorkedBody } from "./worked";
+import { A, acc, isNumeric, lcardCloses, npv, pv, tBalance, workedText, type WorkedBody } from "./worked";
 
 describe("the worked-solution layout", () => {
   it("writes an amount the accounting way, with each course's sign", () => {
@@ -25,6 +25,12 @@ describe("the worked-solution layout", () => {
   it("balances a T-card on its smaller side", () => {
     assert.deepEqual(tBalance({ name: "מזומן", dr: [["י.פ.", 5_000], ["מכירות", 12_000]], cr: [["ספקים", 8_000]] }), { amount: 9_000, side: "cr" });
     assert.deepEqual(tBalance({ name: "ספקים", dr: [["תשלומים", 47_500]], cr: [["י.פ.", 14_000], ["קניות", 52_000]] }), { amount: 18_500, side: "dr" });
+  });
+
+  it("checks that a lesson-style card closes", () => {
+    const allowance = { name: "הפרשה", dr: [{ l: "מחיקה", a: 6_000 }], cr: [{ l: "י.פ.", a: 20_000 }, { l: "הוצאה", a: 11_000 }], close: { side: "cr" as const, a: 25_000 } };
+    assert.ok(lcardCloses(allowance));
+    assert.ok(!lcardCloses({ ...allowance, close: { side: "cr", a: 24_000 } }));
   });
 
   it("puts the common trap last", () => {

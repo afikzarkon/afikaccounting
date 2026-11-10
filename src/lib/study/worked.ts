@@ -39,12 +39,27 @@ export type WOption = { mark: string; t: string; ok?: boolean; chosen?: boolean;
  * such as the collections or an opening balance.
  */
 export type WTCard = { name: string; dr: [string, number][]; cr: [string, number][]; bal?: string };
+/**
+ * A card drawn the way the credit-losses lesson draws it: the movements on
+ * each side, the closing balance under the rule on its own side. An unknown
+ * carries a letter (א, ב); `entry` marks the line the journal entry is on;
+ * `to` marks the closing balance the formula's arrow lands on.
+ */
+export type WLRow = { l: string; a: number; letter?: string; entry?: boolean };
+export type WLCard = { name: string; dr: WLRow[]; cr: WLRow[]; close: { side: "dr" | "cr"; a: number; letter?: string; to?: boolean } };
+/**
+ * The credit-losses picture: one card, or the customers' and the allowance's
+ * side by side; with a formula, its answer sits under them with a dashed arrow
+ * into the closing balance it fills. `beside` sits next to the formula.
+ */
+export type WCredit = { cards: WLCard[]; formula?: [string, string]; beside?: string };
 export type WStep = {
   h: string;
   why?: [string, string];
   sheet?: WLine[];
   entry?: WEntry;
   tcard?: WTCard;
+  credit?: WCredit;
   timeline?: WPoint[];
   tables?: WTable[];
   p?: string[];
@@ -80,6 +95,10 @@ export function tBalance(t: WTCard): { amount: number; side: "dr" | "cr" } {
   const c = t.cr.reduce((s, [, v]) => s + v, 0);
   return d >= c ? { amount: d - c, side: "cr" } : { amount: c - d, side: "dr" };
 }
+
+/** Does a lesson-style card close? Debits less credits equal the closing balance, signed by its side. */
+export const lcardCloses = (c: WLCard) =>
+  Math.abs(c.dr.reduce((s, r) => s + r.a, 0) - c.cr.reduce((s, r) => s + r.a, 0) - (c.close.side === "dr" ? c.close.a : -c.close.a)) < 0.005;
 
 /** Rounded to the agora. */
 export const agora = (v: number) => Math.round(v * 100) / 100 + 0;
