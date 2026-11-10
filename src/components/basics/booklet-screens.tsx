@@ -47,7 +47,7 @@ export const BOOKLET_SCREENS: Record<string, ScreenContent> = {
             ))}
           </ol>
         </Given>
-        <WorkedReveal w={W_GILAD} tryFirst="השלימו את שתי היתרות, רשמו את כל הפקודות, ובנו את הגיליון הרב־טורי עד הרווח והעודפים." />
+        <WorkedReveal w={W_GILAD} tryFirst="השלימו את שתי היתרות, רשמו את כל הפקודות, ובנו את מאזן הבוחן המתוקן עד הרווח והעודפים." />
         <Remember>סדר העבודה: יתרות ״?״ מהסיפור, אחר כך העודפים כהפרש, פקודות, מאזן בוחן מתוקן, ורק בסוף הרווח והעודפים.</Remember>
       </>
     ),

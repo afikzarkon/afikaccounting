@@ -26,6 +26,11 @@ export type WorksheetQuestion = {
   trap: string;
   /** The allowance the year end needs, as the course's formula and the numbers. */
   allowance?: [string, string];
+  /**
+   * Before lesson 8 the multi-column worksheet is not taught yet: the question
+   * then ends on the adjusted trial balance in debit and credit instead.
+   */
+  noWorksheet?: boolean;
 };
 
 const toLines = (e: Entry) => e.lines.map((l) => ({ a: l.account, dr: l.dr, cr: l.cr }));
@@ -87,7 +92,13 @@ export function worksheetWorked(q: WorksheetQuestion): WorkedBody {
     });
   }
 
-  steps.push({
+  if (q.noWorksheet)
+    steps.push({
+      h: "מאזן הבוחן המתוקן",
+      tb: { rows: Object.entries(final).map(([a, v]) => ({ a, v })) },
+      why: ["איך מגיעים אליו?", "לכל חשבון: היתרה במאזן הבוחן הראשוני, ועוד הפקודות שנגעו בו. חשבון שפקודה פתחה מקבל שורה חדשה. מאזן הבוחן המתוקן תמיד מאוזן."],
+    });
+  else steps.push({
     h: "הגיליון הרב־טורי",
     worksheet: { before: q.preliminary, entries: q.entries.map((e) => ({ lines: toLines(e) })), pl: [...s.income, ...s.expenses].map(([a]) => a), retained: retainedClosing },
     why: ["איך קוראים?", "לכל חשבון שורה. היתרה לפני ההתאמות, ועוד ההתאמות בצד שלהן, נותנות את מאזן הבוחן הסופי. חשבון שפקודה פתחה מקבל שורה חדשה מתחת לקיימים. מהמאזן הסופי מפצלים: הכנסות והוצאות לתוצאתי, כל השאר למאזני. ההפרש בתוצאתי הוא הרווח, ובמאזני העודפים כבר כוללים אותו, ולכן הם מתאזנים."],
@@ -124,7 +135,8 @@ export const W_EXAM5 = worksheetWorked(fromExam(EXAM5));
 export const W_EXAM6 = worksheetWorked(fromExam(EXAM6));
 export const W_EXAM7 = worksheetWorked(fromExam(EXAM7));
 export const W_EXAM8 = worksheetWorked(fromExam(EXAM8));
-export const W_GILAD = worksheetWorked({ preliminary: GILAD.preliminary, computed: GILAD.computed, entries: GILAD.entries, trap: GILAD.trap });
+/** Lesson 6: the worksheet comes in lesson 8, so this one ends on the adjusted trial balance. */
+export const W_GILAD = worksheetWorked({ preliminary: GILAD.preliminary, computed: GILAD.computed, entries: GILAD.entries, trap: GILAD.trap, noWorksheet: true });
 export const W_ALMOG = worksheetWorked({ preliminary: ALMOG.preliminary, computed: ALMOG.computed, entries: ALMOG.entries, trap: ALMOG_TRAP, allowance: ALMOG.allowance });
 
 /** Every worksheet question, with what the exam itself says it ends on: for the tests. */

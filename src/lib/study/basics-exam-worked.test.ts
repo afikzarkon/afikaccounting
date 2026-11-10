@@ -27,6 +27,16 @@ describe("the basics worksheet questions in the worked-solution layout", () => {
         for (const c of s.credit!.cards) assert.ok(lcardCloses(c), `${q.name}: ${c.name}`);
         if (s.credit!.formula) assert.equal(num(s.credit!.formula[1]), agora(s.credit!.cards[1].close.a), `${q.name}: the allowance`);
       }
+      // Before lesson 8 there is no worksheet: the adjusted trial balance, balanced, instead.
+      if (q.name === "gilad") {
+        assert.ok(!steps.some((s) => s.worksheet), "gilad: no worksheet before lesson 8");
+        const adjusted = steps.filter((s) => s.tb).at(-1)!.tb!;
+        assert.equal(agora(adjusted.rows.reduce((t, r) => t + r.v, 0)), 0);
+        const profit = steps.find((s) => s.sheet?.some((l) => l.l === "רווח השנה"))!;
+        assert.equal(agora(Number(profit.sheet!.at(-1)!.a)), agora(q.profit));
+        assert.equal(agora(tBalance(steps.find((s) => s.tcard?.name === "עודפים")!.tcard!).amount), agora(q.retained!));
+        return;
+      }
       // The worksheet: every group balances but profit or loss, which differs by the profit.
       const ws = steps.find((s) => s.worksheet)!.worksheet!;
       const rows = worksheetRows(ws);
