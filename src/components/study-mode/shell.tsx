@@ -23,7 +23,6 @@ import {
   statusOf,
   STEPS,
   subCount,
-  xpOf,
 } from "@/lib/study/score";
 import { neighbours, percentOf } from "@/lib/study/outline";
 import { afterAnswer, today } from "@/lib/study/review";
@@ -478,7 +477,7 @@ export function StudyShell({ module: m, screens, next, course, share }: { module
                   <Breadcrumbs trail={[{ label: course.title, href: course.href }, { label: `שיעור ${m.n}: ${m.title}` }]} />
                 </div>
                 <div className="ms-auto">
-                  <LessonStats streak={p.streak} xp={xpOf(m, p)} />
+                  <LessonStats streak={p.streak} />
                 </div>
               </div>
               <LessonRail module={m} progress={p} place={place} opening={opening} onGo={goTo} className="no-print mt-3 hidden lg:flex" />

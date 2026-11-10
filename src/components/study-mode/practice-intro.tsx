@@ -26,7 +26,7 @@ export function PracticeIntro({ module: m, onStart }: { module: StudyModule; onS
       >
         <p className="text-[19px] font-bold text-fg">החלק הלימודי הסתיים!</p>
         <p className="mt-1 text-[16px] leading-relaxed text-fg/80">
-          עכשיו מתרגלים — <span className="num">{items.length}</span> שאלות, ומשוב מיידי על כל אחת. טעיתם? מוצגים הפתרון וההסבר, וכל תשובה נכונה מזכה ב-XP.
+          עכשיו מתרגלים — <span className="num">{items.length}</span> שאלות, ומשוב מיידי על כל אחת. טעיתם? מוצגים הפתרון וההסבר, והשאלה תחזור אליכם בחזרה.
         </p>
         <ol className="num mt-4 flex flex-wrap gap-2">
           {groups.map((g, i) => (

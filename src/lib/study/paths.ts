@@ -30,7 +30,7 @@ export function videoAt(videos: LessonVideo[] | undefined, screen: string) {
 
 /**
  * A lesson as the course path needs it, without its content: titles and
- * screens' names, and its questions' ids only (for counts, XP and status).
+ * screens' names, and its questions' ids only (for counts, progress and status).
  * What a page sends to the browser for a lesson the reader can't open.
  */
 export function outlineOf(m: StudyModule): StudyModule {

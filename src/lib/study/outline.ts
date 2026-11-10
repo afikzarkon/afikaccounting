@@ -1,4 +1,4 @@
-import { maxXp, move, type Place, PRACTICE_GROUPS, practiceAt, practiceId, practiceOf, STEPS, type TopicProgress, xpOf } from "./score";
+import { progressMax, move, type Place, PRACTICE_GROUPS, practiceAt, practiceId, practiceOf, STEPS, type TopicProgress, progressOf } from "./score";
 import type { StudyModule } from "./types";
 
 /**
@@ -43,5 +43,5 @@ export function practiceGroups(m: StudyModule, p: TopicProgress): PracticeGroupO
   }).filter((g) => g.n > 0);
 }
 
-/** How far through the lesson, by XP, in whole percent. */
-export const percentOf = (m: StudyModule, p: TopicProgress) => Math.round((xpOf(m, p) / maxXp(m)) * 100);
+/** How far through the lesson, by the progress weights, in whole percent. */
+export const percentOf = (m: StudyModule, p: TopicProgress) => Math.round((progressOf(m, p) / progressMax(m)) * 100);

@@ -4,12 +4,12 @@ import { useId, useState } from "react";
 import { Money } from "@/components/basics/ui";
 import { Button } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/form";
-import { type ExResult, numberRight, triesFor, XP } from "@/lib/study/score";
+import { type ExResult, numberRight, triesFor } from "@/lib/study/score";
 import type { QuestionExercise } from "@/lib/study/types";
 import { cn } from "@/lib/utils";
 import { BalanceGapBoard } from "./balance-gap";
 import { OptionMark, optionClass, promptClass } from "./choice";
-import { Feedback, Gain } from "./journal-simulator";
+import { Feedback } from "./journal-simulator";
 import { WorkedSolution } from "@/components/study/worked";
 import { typedAmount } from "@/lib/amount";
 import { stableOrder, stableShuffle } from "@/lib/shuffle";
@@ -141,7 +141,7 @@ export function QuestionExercise({ q, result, onCheck }: { q: Question; result?:
 
       {done && (
         <>
-          <Feedback ok={result!.ok} title={result!.ok ? <Gain xp={result!.tries === 1 ? XP.first : XP.second} /> : "הנה הפתרון"} />
+          <Feedback ok={result!.ok} title={result!.ok ? "נכון!" : "הנה הפתרון"} />
           {q.worked ? (
             <WorkedSolution w={q.worked} answer={answer} />
           ) : (

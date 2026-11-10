@@ -1,13 +1,13 @@
 "use client";
 
-import { ArrowLeft, Calculator, Check, ChevronsLeft, ChevronsRight, CircleCheck, Lock, PlayCircle, RotateCcw, Star } from "lucide-react";
+import { ArrowLeft, Calculator, Check, ChevronsLeft, ChevronsRight, CircleCheck, Lock, PlayCircle, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type ComponentProps, Fragment, useEffect, useState } from "react";
 import { Modal } from "@/components/admin/modal";
 import { Paywall } from "@/components/pricing/paywall";
 import { TierBadge } from "@/components/pricing/tier-badge";
-import { maxXp, pathStatus, type TopicProgress, xpOf } from "@/lib/study/score";
+import { progressMax, pathStatus, type TopicProgress, progressOf } from "@/lib/study/score";
 import type { StudyModule } from "@/lib/study/types";
 import { studyHref } from "@/lib/study/href";
 import { lessonHref } from "@/lib/study/paths";
@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { clock } from "./lesson-opening";
 import { topicByHref } from "@/lib/catalog";
 import { CourseGoals } from "./course-goals";
-import { XpRing } from "./ring";
+import { ProgressRing } from "./ring";
 import { updateTopic, useTopics } from "./progress-store";
 
 /**
@@ -40,8 +40,8 @@ export function CoursePath({ lessons, locked = [], previews = [] }: { lessons: S
   const taste = lessons.find((m) => previews.includes(m.slug));
   const rows = lessons.map((m) => ({ m, p: topics[m.slug], status: pathStatus(m, topics[m.slug]) }));
   const done = rows.filter((r) => r.status === "done").length;
-  const xp = rows.reduce((s, r) => s + xpOf(r.m, r.p), 0);
-  const max = rows.reduce((s, r) => s + maxXp(r.m), 0);
+  const got = rows.reduce((s, r) => s + progressOf(r.m, r.p), 0);
+  const max = rows.reduce((s, r) => s + progressMax(r.m), 0);
   const next = rows.find((r) => r.status === "new" || r.status === "started");
   const topic = lessons[0] ? topicByHref(lessons[0].backHref) : undefined;
   // The first lesson of each unit carries the unit's heading and progress (no units: a plain list).
@@ -53,23 +53,20 @@ export function CoursePath({ lessons, locked = [], previews = [] }: { lessons: S
       {/* One card: the progress, the single next step, and one thin row of goals (readiness, the exam, the streak). */}
       <div className="card bg-grid p-5 sm:px-6">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
-        <XpRing xp={xp} max={max} className="h-24 w-24" />
+        <ProgressRing done={got} total={max} className="h-24 w-24" />
         <div className="min-w-0 flex-[1_1_12rem]">
           <p className="text-[18px] font-bold text-fg">המסלול שלך</p>
           <p className="num mt-1 flex flex-wrap items-center gap-x-3 text-[14.5px] text-muted">
             <span>
               <strong className="text-fg">{done}</strong> מתוך {rows.length} שיעורים הושלמו
             </span>
-            <span className="flex items-center gap-1">
-              <Star className="h-3.5 w-3.5 fill-[#eda100] text-[#eda100]" aria-hidden /> {xp} מתוך {max} XP
-            </span>
           </p>
         </div>
         {next ? (
-          <div className="flex min-w-[12rem] flex-[1_1_20rem] gap-1.5" role="progressbar" aria-label="התקדמות בקורס" aria-valuemin={0} aria-valuemax={max} aria-valuenow={xp}>
+          <div className="flex min-w-[12rem] flex-[1_1_20rem] gap-1.5" role="progressbar" aria-label="התקדמות בקורס" aria-valuemin={0} aria-valuemax={max} aria-valuenow={got}>
             {rows.map(({ m, p, status }) => (
               <span key={m.slug} className="h-2 flex-1 overflow-hidden rounded-full bg-surface-2">
-                <span className={cn("block h-full rounded-full transition-[width] duration-500", status === "done" ? "bg-success" : "bg-accent")} style={{ width: `${(xpOf(m, p) / maxXp(m)) * 100}%` }} />
+                <span className={cn("block h-full rounded-full transition-[width] duration-500", status === "done" ? "bg-success" : "bg-accent")} style={{ width: `${(progressOf(m, p) / progressMax(m)) * 100}%` }} />
               </span>
             ))}
           </div>
@@ -264,9 +261,6 @@ function Spotlight({
               דלג על השיעור <ChevronsLeft className="h-4 w-4" aria-hidden />
             </button>
           )}
-          <span className="num text-sm text-[#a3bdaf]">
-            {xpOf(m, p)}/{maxXp(m)} XP
-          </span>
         </div>
         <Tools module={m} spotlight gate={gate} />
       </div>
@@ -375,7 +369,7 @@ function LessonRow({ module: m, progress: p, status, gate }: { module: StudyModu
             <RotateCcw className="h-3.5 w-3.5" aria-hidden /> הושלם · חזרה
           </>
         ) : status === "started" ? (
-          `בתהליך · ${Math.round((xpOf(m, p) / maxXp(m)) * 100)}%`
+          `בתהליך · ${Math.round((progressOf(m, p) / progressMax(m)) * 100)}%`
         ) : (
           <>
             להתחיל <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" aria-hidden />

@@ -7,9 +7,9 @@ import { useSession } from "@/components/layout/session-store";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { planOf, type Tier, tierAllows } from "@/lib/pricing";
 import { MASTERED } from "@/lib/study/review";
-import { maxXp, missedOf, scoreOf, type TopicProgress, xpOf } from "@/lib/study/score";
+import { progressMax, missedOf, scoreOf, type TopicProgress, progressOf } from "@/lib/study/score";
 import type { StudyModule } from "@/lib/study/types";
-import { XpRing } from "./ring";
+import { ProgressRing } from "./ring";
 import { StageHero } from "./stage";
 
 /** Where the summary leads; `tier` is the plan the next lesson needs, when it isn't open to everyone. */
@@ -17,7 +17,7 @@ export type NextLesson = { href: string; label: string; tier?: Tier };
 
 const DISMISS = "afik.save-prompt.dismissed";
 
-/** The last step: the XP as a ring, the score by step and the best streak, a way back to the questions not solved yet, the golden tips, and where to go next. */
+/** The last step: the progress as a ring, the score by step and the best streak, a way back to the questions not solved yet, the golden tips, and where to go next. */
 export function SummaryCard({
   module: m,
   progress: p,
@@ -33,8 +33,8 @@ export function SummaryCard({
 }) {
   const score = scoreOf(m, p);
   const missed = missedOf(m, p).length;
-  const xp = xpOf(m, p);
-  const max = maxXp(m);
+  const got = progressOf(m, p);
+  const max = progressMax(m);
   const session = useSession();
   // The questions on this lesson's review schedule and not yet mastered: what a guest would lose with this browser's storage.
   const scheduled = Object.values(p.review ?? {}).filter((e) => e.box < MASTERED).length;
@@ -61,7 +61,7 @@ export function SummaryCard({
   const retryFirst = missed > 0;
   return (
     <div className="space-y-6">
-      <StageHero badge={<XpRing xp={xp} max={max} />}>
+      <StageHero badge={<ProgressRing done={got} total={max} />}>
         {learned.length > 0 && (
           <>
             <p className="text-[13px] font-bold text-muted">מה למדתם</p>

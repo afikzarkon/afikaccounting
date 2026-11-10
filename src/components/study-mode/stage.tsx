@@ -18,7 +18,7 @@ export function StageHero({ badge, children, className }: { badge?: ReactNode; c
   );
 }
 
-/** A small fact about the lesson, as a chip: "8 מושגים", "עד 200 XP". */
+/** A small fact about the lesson, as a chip: "8 מושגים", "12 שאלות תרגול". */
 export function Fact({ icon, children }: { icon?: ReactNode; children: ReactNode }) {
   return (
     <span className="num inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1 text-[13px] font-medium text-fg/85 ring-1 ring-line">

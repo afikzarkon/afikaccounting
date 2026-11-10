@@ -4,7 +4,7 @@ import type { Exercise, StudyModule, Trap } from "./types";
 
 /**
  * The lesson's rules, kept apart from the screen: how answers are checked, how
- * XP and the streak are earned, and how "next" and "previous" move through the
+ * progress and the streak are counted, and how "next" and "previous" move through the
  * steps and the screens inside them.
  */
 
@@ -41,7 +41,8 @@ export function practiceOf(m: StudyModule): PracticeItem[] {
   return PRACTICE_GROUPS.flatMap((g) => items.filter((it) => it.group === g));
 }
 
-export const XP = { screen: 5, first: 10, second: 5, trap: 10 };
+/** How much each part of a lesson counts toward its progress (a screen read, a question right on the first or second try, a trap). Never shown as points. */
+export const WEIGHT = { screen: 5, first: 10, second: 5, trap: 10 };
 
 /** Tries before the solution is shown: one for a two-way choice (a second try can't miss), two for anything else. */
 export const triesFor = (ex: Exercise) => (ex.kind === "choice" && ex.options.length <= 2 ? 1 : 2);
@@ -111,16 +112,16 @@ export function recordTrap(p: TopicProgress, id: string, choice: number, correct
 /** A concept screen read. */
 export const markSeen = (p: TopicProgress, i: number): TopicProgress => (p.seen.includes(i) ? p : { ...p, seen: [...p.seen, i] });
 
-export const exerciseXp = (r?: ExResult) => (!r?.ok ? 0 : r.tries === 1 ? XP.first : XP.second);
+export const exerciseWeight = (r?: ExResult) => (!r?.ok ? 0 : r.tries === 1 ? WEIGHT.first : WEIGHT.second);
 
-export function xpOf(m: StudyModule, p: TopicProgress) {
-  const seen = p.seen.filter((i) => i >= 0 && i < m.screens.length).length * XP.screen;
-  const exercises = m.exercises.reduce((s, ex) => s + exerciseXp(p.exercises[ex.id]), 0);
-  const traps = m.traps.filter((t) => p.traps[t.id]?.correct).length * XP.trap;
+export function progressOf(m: StudyModule, p: TopicProgress) {
+  const seen = p.seen.filter((i) => i >= 0 && i < m.screens.length).length * WEIGHT.screen;
+  const exercises = m.exercises.reduce((s, ex) => s + exerciseWeight(p.exercises[ex.id]), 0);
+  const traps = m.traps.filter((t) => p.traps[t.id]?.correct).length * WEIGHT.trap;
   return seen + exercises + traps;
 }
 
-export const maxXp = (m: StudyModule) => m.screens.length * XP.screen + m.exercises.length * XP.first + m.traps.length * XP.trap;
+export const progressMax = (m: StudyModule) => m.screens.length * WEIGHT.screen + m.exercises.length * WEIGHT.first + m.traps.length * WEIGHT.trap;
 
 export function scoreOf(m: StudyModule, p: TopicProgress) {
   return {
@@ -162,7 +163,7 @@ export function missedOf(m: StudyModule, p: TopicProgress) {
     .map(({ id, sub }) => ({ id, sub }));
 }
 
-/** Try the missed questions again: their answers cleared (the solved ones, and their XP, untouched), and the list of them kept for "next". */
+/** Try the missed questions again: their answers cleared (the solved ones, and their progress, untouched), and the list of them kept for "next". */
 export function retryMissed(m: StudyModule, p: TopicProgress): TopicProgress {
   const ids = missedOf(m, p).map((x) => x.id);
   const drop = <T,>(r: Record<string, T>) => Object.fromEntries(Object.entries(r).filter(([k]) => !ids.includes(k)));

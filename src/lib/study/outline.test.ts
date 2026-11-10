@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { STUDY_MODULES } from "./index";
 import { neighbours, percentOf, placeLabel, practiceGroups } from "./outline";
-import { EMPTY_TOPIC, maxXp, practiceOf, subCount } from "./score";
+import { EMPTY_TOPIC, progressMax, practiceOf, subCount } from "./score";
 
 const m = STUDY_MODULES["basics-intro"];
 const last = { step: 0, sub: m.screens.length - 1 };
@@ -47,6 +47,6 @@ describe("the lesson's outline in the course bar", () => {
   });
   it("puts a lesson's progress in whole percent", () => {
     assert.equal(percentOf(m, EMPTY_TOPIC), 0);
-    assert.equal(percentOf(m, { ...EMPTY_TOPIC, seen: m.screens.map((_, i) => i) }), Math.round(((m.screens.length * 5) / maxXp(m)) * 100));
+    assert.equal(percentOf(m, { ...EMPTY_TOPIC, seen: m.screens.map((_, i) => i) }), Math.round(((m.screens.length * 5) / progressMax(m)) * 100));
   });
 });

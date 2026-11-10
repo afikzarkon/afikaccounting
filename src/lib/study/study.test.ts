@@ -15,7 +15,7 @@ import {
   EMPTY_TOPIC,
   markSeen,
   missedOf,
-  maxXp,
+  progressMax,
   move,
   numberRight,
   PRACTICE_GROUPS,
@@ -32,8 +32,8 @@ import {
   subCount,
   triesFor,
   type TopicProgress,
-  XP,
-  xpOf,
+  WEIGHT,
+  progressOf,
 } from "./score";
 import type { Exercise } from "./types";
 
@@ -249,14 +249,14 @@ describe("interactive lessons: the rules", () => {
     assert.equal(recordTrap(p, "b", 0, true), p, "only the first answer counts");
   });
 
-  it("XP: screens read, first or second try, and traps; the maximum adds up", () => {
+  it("progress: screens read, first or second try, and traps; the maximum adds up", () => {
     let p = markSeen(markSeen(EMPTY_TOPIC, 0), 0);
     p = markSeen(p, 99);
     p = recordExercise(p, journal, true);
     p = recordExercise(recordExercise(p, m.exercises[0], false), m.exercises[0], true);
     p = recordTrap(p, m.traps[0].id, m.traps[0].answer, true);
-    assert.equal(xpOf(m, p), XP.screen + XP.first + XP.second + XP.trap, "a screen counts once, and only screens of the lesson");
-    assert.equal(maxXp(m), m.screens.length * XP.screen + m.exercises.length * XP.first + m.traps.length * XP.trap);
+    assert.equal(progressOf(m, p), WEIGHT.screen + WEIGHT.first + WEIGHT.second + WEIGHT.trap, "a screen counts once, and only screens of the lesson");
+    assert.equal(progressMax(m), m.screens.length * WEIGHT.screen + m.exercises.length * WEIGHT.first + m.traps.length * WEIGHT.trap);
   });
 
   it("a lesson is new, started, then done when every exercise and trap is answered", () => {
@@ -338,9 +338,9 @@ describe("interactive lessons: skipping a lesson on the course path", () => {
     assert.equal(pathStatus(m, p), "done");
   });
 
-  it("skipping touches nothing else: no XP and no progress are lost or gained", () => {
+  it("skipping touches nothing else: no progress are lost or gained", () => {
     assert.equal(statusOf(m, { ...EMPTY_TOPIC, skipped: true }), "new");
-    assert.equal(xpOf(m, { ...EMPTY_TOPIC, skipped: true }), 0);
+    assert.equal(progressOf(m, { ...EMPTY_TOPIC, skipped: true }), 0);
   });
 });
 
@@ -381,16 +381,16 @@ describe("interactive lessons: trying the missed questions again", () => {
     assert.deepEqual(missedOf(m, p)[0], { id: second.ex.id, sub: 2 });
   });
 
-  it("trying again clears only the missed answers: the solved ones and their XP stay", () => {
+  it("trying again clears only the missed answers: the solved ones and their WEIGHT stay", () => {
     if (first.kind !== "exercise" || second.kind !== "exercise") return;
     let p: TopicProgress = recordExercise(EMPTY_TOPIC, first.ex, true);
     p = recordExercise(recordExercise(p, second.ex, false), second.ex, false);
-    const xp = xpOf(m, p);
+    const xp = progressOf(m, p);
     const again = retryMissed(m, p);
     assert.deepEqual(again.retry, missedOf(m, p).map((x) => x.id));
     assert.equal(again.exercises[second.ex.id], undefined);
     assert.deepEqual(again.exercises[first.ex.id], p.exercises[first.ex.id]);
-    assert.equal(xpOf(m, again), xp);
+    assert.equal(progressOf(m, again), xp);
   });
 });
 

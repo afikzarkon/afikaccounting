@@ -3,11 +3,10 @@
 import { motion } from "motion/react";
 import { useId } from "react";
 import { stableOrder } from "@/lib/shuffle";
-import { XP } from "@/lib/study/score";
 import type { Trap } from "@/lib/study/types";
 import { cn } from "@/lib/utils";
 import { OptionMark, optionClass, promptClass } from "./choice";
-import { Feedback, Gain } from "./journal-simulator";
+import { Feedback } from "./journal-simulator";
 import { WorkedSolution } from "@/components/study/worked";
 
 const LETTERS = "אבגדהו";
@@ -42,7 +41,7 @@ export function TrapQuiz({ trap, answered, onAnswer }: { trap: Trap; answered?: 
       </fieldset>
       {answered && (
         <div className="space-y-3">
-          <Feedback ok={answered.correct} title={answered.correct ? <Gain xp={XP.trap} /> : "נפלתם במלכודת."} />
+          <Feedback ok={answered.correct} title={answered.correct ? "נכון, ולא נפלתם." : "נפלתם במלכודת."} />
           <WorkedSolution
             w={{
               light: true,

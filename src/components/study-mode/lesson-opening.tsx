@@ -1,10 +1,10 @@
 "use client";
 
-import { ArrowLeft, BookOpenText, Calculator, CircleCheck, ClipboardPen, Play, RotateCcw, Star, Target } from "lucide-react";
+import { ArrowLeft, BookOpenText, Calculator, CircleCheck, ClipboardPen, Play, RotateCcw, Target } from "lucide-react";
 import { motion } from "motion/react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { maxXp, PRACTICE_GROUPS, practiceOf, statusOf, type TopicProgress, xpOf } from "@/lib/study/score";
+import { progressMax, PRACTICE_GROUPS, practiceOf, statusOf, type TopicProgress, progressOf } from "@/lib/study/score";
 import { videoAt } from "@/lib/study/paths";
 import type { StudyModule } from "@/lib/study/types";
 import { cn } from "@/lib/utils";
@@ -42,8 +42,8 @@ export function LessonOpening({
   const items = practiceOf(m);
   const groups = PRACTICE_GROUPS.map((g) => ({ ...g, n: items.filter((it) => it.group === g).length })).filter((g) => g.n > 0);
   const started = statusOf(m, p) !== "new";
-  const xp = xpOf(m, p);
-  const max = maxXp(m);
+  const got = progressOf(m, p);
+  const max = progressMax(m);
   const minutes = Math.round((videos ?? []).reduce((t, v) => t + v.duration, 0) / 60);
   return (
     <div className="space-y-6">
@@ -64,16 +64,15 @@ export function LessonOpening({
           <Fact icon={<BookOpenText className="h-3.5 w-3.5 text-accent" aria-hidden />}>{m.screens.length} מושגים</Fact>
           <Fact icon={<ClipboardPen className="h-3.5 w-3.5 text-accent" aria-hidden />}>{items.length} שאלות תרגול</Fact>
           {minutes > 0 && <Fact icon={<Play className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden />}>{minutes} דק׳ וידאו</Fact>}
-          <Fact icon={<Star className="h-3.5 w-3.5 fill-[#eda100] text-[#eda100]" aria-hidden />}>עד {max} XP</Fact>
         </div>
 
         {started && (
           <div className="mt-5 max-w-md space-y-1.5">
             <p className="num text-[13px] text-muted">
-              כבר התחלתם: {xp} מתוך {max} XP
+              כבר התחלתם: {Math.round((got / max) * 100)}% מהשיעור
             </p>
-            <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-label="ההתקדמות בשיעור" aria-valuemin={0} aria-valuemax={max} aria-valuenow={xp}>
-              <div className="h-full rounded-full bg-accent" style={{ width: `${(xp / max) * 100}%` }} />
+            <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-label="ההתקדמות בשיעור" aria-valuemin={0} aria-valuemax={max} aria-valuenow={got}>
+              <div className="h-full rounded-full bg-accent" style={{ width: `${(got / max) * 100}%` }} />
             </div>
           </div>
         )}

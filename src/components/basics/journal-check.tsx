@@ -32,7 +32,6 @@ export function JournalCheck({ chapter, items, prefix = "basics" }: { chapter: s
             <JournalSimulator
               ex={ex}
               result={result}
-              noXp
               onCheck={(ok) =>
                 updateProgress((p) => {
                   const prev = p.answers[key];

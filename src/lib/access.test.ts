@@ -95,10 +95,10 @@ describe("a locked lesson's outline", () => {
   it("keeps what the course path counts, and none of the content", async () => {
     const { outlineOf } = await import("./study/paths");
     const { INVENTORY_LESSONS } = await import("./study/inventory");
-    const { maxXp } = await import("./study/score");
+    const { progressMax } = await import("./study/score");
     const m = INVENTORY_LESSONS[1];
     const o = outlineOf(m);
-    assert.equal(maxXp(o), maxXp(m));
+    assert.equal(progressMax(o), progressMax(m));
     assert.deepEqual(o.exercises.map((x) => x.id), m.exercises.map((x) => x.id));
     const text = JSON.stringify({ exercises: o.exercises, traps: o.traps, tips: o.tips });
     for (const t of m.traps) assert.ok(!text.includes(t.prompt), t.id);
