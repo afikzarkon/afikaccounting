@@ -268,7 +268,7 @@ function CreditView({ v }: { v: WCredit }) {
   );
   if (!v.formula) return cards;
   return (
-    <ClosingArrow>
+    <ClosingArrow reverse={v.reverse}>
       {cards}
       <div className="mt-9 grid gap-3 md:grid-cols-2">
         {v.beside ? (

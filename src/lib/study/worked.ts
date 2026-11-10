@@ -63,7 +63,8 @@ export type WLCard = { name: string; dr: WLRow[]; cr: WLRow[]; close: { side: "d
  * side by side; with a formula, its answer sits under them with a dashed arrow
  * into the closing balance it fills. `beside` sits next to the formula.
  */
-export type WCredit = { cards: WLCard[]; formula?: [string, string]; beside?: string };
+/** `reverse`: the arrow runs from the card down to the formula, when the closing balance comes from the card. */
+export type WCredit = { cards: WLCard[]; formula?: [string, string]; beside?: string; reverse?: boolean };
 export type WStep = {
   h: string;
   why?: [string, string];

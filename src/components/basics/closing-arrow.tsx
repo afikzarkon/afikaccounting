@@ -6,9 +6,11 @@ import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
  * The formula's answer and the card it goes into: a dashed arrow from the
  * element marked `data-link-from="closing"` (the answer, under the cards) up
  * to the one marked `data-link-to="closing"` (the allowance's closing balance,
- * under the card's line) — drawn like the course's other arrows.
+ * under the card's line) — drawn like the course's other arrows. `reverse`
+ * points it the other way, from the card down to the formula, for a question
+ * where the closing balance comes from the card and feeds the formula.
  */
-export function ClosingArrow({ children }: { children: ReactNode }) {
+export function ClosingArrow({ children, reverse }: { children: ReactNode; reverse?: boolean }) {
   const wrap = useRef<HTMLDivElement>(null);
   const [d, setD] = useState<string>();
 
@@ -45,7 +47,7 @@ export function ClosingArrow({ children }: { children: ReactNode }) {
               <path d="M 0 0 L 10 5 L 0 10 z" className="fill-accent" />
             </marker>
           </defs>
-          <path d={d} fill="none" strokeWidth={2.25} strokeLinecap="round" strokeDasharray="6 5" markerEnd="url(#closing-arrow-head)" className="stroke-accent" />
+          <path d={d} fill="none" strokeWidth={2.25} strokeLinecap="round" strokeDasharray="6 5" markerEnd={reverse ? undefined : "url(#closing-arrow-head)"} markerStart={reverse ? "url(#closing-arrow-head)" : undefined} className="stroke-accent" />
         </svg>
       )}
     </div>
