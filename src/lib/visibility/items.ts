@@ -8,7 +8,6 @@
 export const HOME_SECTIONS = [
   { key: "home:how", label: "״איך לומדים כאן״ — שלושת הצעדים וצילומי המסך" },
   { key: "home:courses", label: "הקורסים (החינמי והמתקדמים)" },
-  { key: "home:check", label: "״יש לכם סיכום? תבדקו אותו״" },
   { key: "home:faq", label: "שאלות נפוצות" },
   { key: "home:final", label: "הקריאה לפעולה בתחתית הדף" },
 ] as const;

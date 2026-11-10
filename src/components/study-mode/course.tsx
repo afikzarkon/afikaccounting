@@ -175,10 +175,11 @@ type Gate = { locked: true; open: () => void } | { locked: false };
 function GateMark({ gate, dark }: { gate?: Gate; dark?: boolean }) {
   if (!gate) return null;
   if (!gate.locked) return <TierBadge tier="free" label="חינם" className="align-middle" />;
+  // A quiet tag, not the plan's name: "קורסים" read as a category, the same word as the menu it sits in.
   return (
-    <span className="inline-flex items-center gap-1.5 align-middle">
-      <Lock className={cn("h-4 w-4", dark ? "text-[#a9dcc0]" : "text-muted")} aria-label="נעול" />
-      <TierBadge tier="courses" icon={false} />
+    <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 align-middle text-xs font-semibold", dark ? "bg-white/10 text-[#c9ddd1]" : "bg-surface-2 text-muted")}>
+      <Lock className="h-3.5 w-3.5" aria-hidden />
+      בתוכנית
     </span>
   );
 }
@@ -232,14 +233,21 @@ function Spotlight({
         </h2>
         <p className="text-[15px] leading-relaxed text-[#c9ddd1]">{m.description}</p>
         {m.videos?.length ? (
-          <p className="num flex items-center gap-1.5 text-[14px] font-semibold text-[#ffc93c]">
+          <p className="num flex items-center gap-1.5 text-[14px] font-semibold text-[#a9dcc0]">
             <PlayCircle className="h-4 w-4" aria-hidden /> {videoLine(m)} — בפתיחת השיעור
           </p>
         ) : null}
         <div className="mt-2 flex flex-wrap items-center gap-3">
-          <LessonLink gate={gate} href={studyHref(m.slug)} prefetch className="inline-flex h-12 items-center gap-2.5 rounded-xl bg-[#7fd3a6] px-6 text-[15px] font-bold text-[#062016] transition hover:brightness-110">
-            {started ? "להמשיך מאיפה שעצרתי" : "להתחיל את השיעור"} <ArrowLeft className="h-4 w-4" aria-hidden />
-          </LessonLink>
+          {gate?.locked ? (
+            // A locked lesson never says "start": the button says what it does, and opens what's inside.
+            <LessonLink gate={gate} href={studyHref(m.slug)} className={back}>
+              <Lock className="h-4 w-4" aria-hidden /> מה יש בשיעור
+            </LessonLink>
+          ) : (
+            <LessonLink gate={gate} href={studyHref(m.slug)} prefetch className="inline-flex h-12 items-center gap-2.5 rounded-xl bg-[#7fd3a6] px-6 text-[15px] font-bold text-[#062016] transition hover:brightness-110">
+              {started ? "להמשיך מאיפה שעצרתי" : "להתחיל את השיעור"} <ArrowLeft className="h-4 w-4" aria-hidden />
+            </LessonLink>
+          )}
           {prev &&
             (prev.status === "skipped" ? (
               <button type="button" onClick={() => updateTopic(prev.m.slug, (q) => ({ ...q, skipped: false }))} className={back}>
@@ -250,13 +258,12 @@ function Spotlight({
                 <ChevronsRight className="h-4 w-4" aria-hidden /> חזור לשיעור הקודם
               </Link>
             ))}
-          <button
-            type="button"
-            onClick={() => updateTopic(m.slug, (q) => ({ ...q, skipped: true }))}
-            className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[#a9dcc0]/60 bg-white/[0.06] px-5 text-[15px] font-bold text-[#eaf3ee] transition hover:border-[#a9dcc0] hover:bg-white/[0.12]"
-          >
-            דלג על השיעור <ChevronsLeft className="h-4 w-4" aria-hidden />
-          </button>
+          {/* Lesson 1 is the way in, so there's nothing to skip to; nor past a locked lesson. */}
+          {m.n > 1 && !gate?.locked && (
+            <button type="button" onClick={() => updateTopic(m.slug, (q) => ({ ...q, skipped: true }))} className={back}>
+              דלג על השיעור <ChevronsLeft className="h-4 w-4" aria-hidden />
+            </button>
+          )}
           <span className="num text-sm text-[#a3bdaf]">
             {xpOf(m, p)}/{maxXp(m)} XP
           </span>
@@ -305,9 +312,12 @@ function Tools({ module: m, spotlight, className, gate }: { module: StudyModule;
           gate={gate}
           href={lessonHref(m.slug, t.screen)}
           prefetch
+          // Neutral outline: amber is kept for traps, so a calculator link doesn't outshout the lesson's own button.
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-lg px-3 font-semibold transition",
-            spotlight ? "h-10 bg-[#fbbf24] text-[14px] text-[#3b2600] hover:brightness-105" : "h-8 bg-amber-400 text-[13px] text-amber-950 hover:bg-amber-300",
+            "inline-flex items-center gap-1.5 rounded-lg border px-3 font-semibold transition",
+            spotlight
+              ? "h-10 border-[#a9dcc0]/50 bg-white/[0.06] text-[14px] text-[#eaf3ee] hover:border-[#a9dcc0] hover:bg-white/[0.12]"
+              : "h-8 border-line-strong bg-surface text-[13px] text-fg hover:border-accent/50",
           )}
         >
           <Calculator className="h-4 w-4" aria-hidden /> ישר ל{t.label}
@@ -339,7 +349,7 @@ function LessonRow({ module: m, progress: p, status, gate }: { module: StudyModu
         <p className="num mt-0.5 text-sm text-muted">
           {m.screens.length} מושגים · {m.exercises.length + m.traps.length} שאלות תרגול
           {m.videos?.length ? (
-            <span className="ms-2 inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[12px] font-semibold text-amber-800 dark:text-amber-300">
+            <span className="ms-2 inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-[12px] font-semibold text-fg">
               <PlayCircle className="h-3.5 w-3.5" aria-hidden /> {m.videos.length > 1 ? `${m.videos.length} סרטונים` : "סרטון"} {clock(m.videos.reduce((a, v) => a + v.duration, 0))}
             </span>
           ) : null}
@@ -348,10 +358,15 @@ function LessonRow({ module: m, progress: p, status, gate }: { module: StudyModu
       <span
         className={cn(
           "num flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold",
-          done ? "bg-success/10 text-success" : status === "skipped" ? "bg-surface-2 text-muted" : "bg-accent-soft text-accent",
+          gate?.locked ? "border border-line-strong text-fg" : done ? "bg-success/10 text-success" : status === "skipped" ? "bg-surface-2 text-muted" : "bg-accent-soft text-accent",
         )}
       >
-        {status === "skipped" ? (
+        {gate?.locked ? (
+          // Never a green "start" on a lesson the reader can't open.
+          <>
+            <Lock className="h-3.5 w-3.5" aria-hidden /> מה יש בשיעור
+          </>
+        ) : status === "skipped" ? (
           <>
             דילגתם · לחזור לשיעור <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
           </>
@@ -393,7 +408,7 @@ function ContinueButton({ lesson, started, locked, onLocked }: { lesson: StudyMo
     <>
       {locked ? <Lock className="h-4 w-4" aria-hidden /> : <PlayCircle className="h-4 w-4" aria-hidden />}
       <span className="min-w-0 truncate">
-        {started ? "להמשיך" : "להתחיל"}: שיעור {lesson.n} · {lesson.title}
+        {locked ? "מה יש בשיעור" : started ? "להמשיך: שיעור" : "להתחיל: שיעור"} {lesson.n} · {lesson.title}
       </span>
       <span className="num shrink-0 text-[13px] font-medium opacity-80">~{minutesOf(lesson)} דק׳</span>
       <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />

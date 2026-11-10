@@ -7,8 +7,9 @@ import { TierBadge } from "@/components/pricing/tier-badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge, Container, SectionHeading } from "@/components/ui/primitives";
 import { FIRST_LESSON, tasteLabel, TOPICS } from "@/lib/catalog";
-import { featuredCheck, featuredQuestion } from "@/lib/check";
+import { featuredQuestion } from "@/lib/check";
 import { BASICS_LESSONS } from "@/lib/study/basics";
+import { firstLessonHref } from "@/lib/study/first-lesson";
 import type { StudyModule } from "@/lib/study/types";
 import { BUTTONS } from "@/lib/visibility/items";
 import { isHidden, isLinkHidden, labelOf } from "@/lib/visibility/rules";
@@ -28,9 +29,9 @@ const HOW = [
 ];
 
 const FAQ = [
-  { q: "זה באמת חינם?", a: "כן. כל 8 השיעורים של ״חשבונאות מאפס״, עם התרגול, השאלות המלאות והסיכומים, פתוחים בחינם ולתמיד. וגם השיעור הראשון בכל קורס מתקדם." },
+  { q: "זה באמת חינם?", a: `כן. כל ${BASICS_LESSONS.length} השיעורים של ״חשבונאות מאפס״, עם התרגול, השאלות המלאות והסיכומים, פתוחים בחינם ולתמיד. וגם השיעור הראשון בכל קורס מתקדם.` },
   { q: "צריך כרטיס אשראי?", a: "לא. אפשר להתחיל את שיעור 1 עכשיו, בלי הרשמה ובלי כרטיס אשראי." },
-  { q: "מה מקבלים במנוי?", a: "את הקורסים המתקדמים במלואם: מלאי, רכוש קבוע והטבות עובד, עד רמת מבחן. במסלול ״קורסים + מבחנים״ נוסף מתחם המבחנים, עם תרגילים ברמת מבחן ופתרון מלא מאפס." },
+  { q: "מה מקבלים במנוי?", a: "את הקורסים המתקדמים במלואם: מלאי, רכוש קבוע, הטבות עובד וחכירות, עד רמת מבחן. במסלול ״קורסים + מבחנים״ נוסף מתחם המבחנים, עם תרגילים ברמת מבחן ופתרון מלא מאפס." },
   { q: "אפשר לבטל?", a: "כן, בכל רגע. המנוי נשאר פעיל עד סוף התקופה ששילמתם עליה, והקורס החינמי נשאר פתוח לכם תמיד." },
   { q: "צריך רקע קודם?", a: "לא. הקורס מתחיל ממש מההתחלה: מה זה עסק, מה זה נכס ולמה יש חובה וזכות." },
 ];
@@ -42,9 +43,8 @@ const count = (m: StudyModule) => m.exercises.length + m.traps.length;
  * the same page, with the hero's variant passed through.
  */
 export async function HomeContent({ heroVariant }: { heroVariant?: string }) {
-  // The hero's question and the summary check it points to: chosen from the catalog (course contents still move), never pinned to a lesson.
+  // The hero's question: chosen from the catalog (course contents still move), never pinned to a lesson.
   const hero = featuredQuestion();
-  const check = featuredCheck();
   const total = BASICS_LESSONS.reduce((a, m) => a + count(m), 0);
   // What the admin hid: a section, a button (or its text), a course or a lesson.
   const v = await getVisibility();
@@ -56,7 +56,7 @@ export async function HomeContent({ heroVariant }: { heroVariant?: string }) {
   const paid = TOPICS.filter((t) => t.tier !== "free" && linked(t.href));
   return (
     <>
-      <Hero variant={heroVariant} question={hero} check={check} lessons={BASICS_LESSONS.length} exercises={total} videos={BASICS_LESSONS.reduce((a, m) => a + (m.videos?.length ?? 0), 0)} />
+      <Hero variant={heroVariant} question={hero} doors={paid.map((t) => ({ title: t.title, standard: t.standard, href: firstLessonHref(t) }))} lessons={BASICS_LESSONS.length} exercises={total} videos={BASICS_LESSONS.reduce((a, m) => a + (m.videos?.length ?? 0), 0)} />
 
       {show("home:how") && (
         <section className="mt-16 border-y border-line bg-surface/50 sm:mt-20">
@@ -101,7 +101,6 @@ export async function HomeContent({ heroVariant }: { heroVariant?: string }) {
                   <span className="mt-2 flex flex-wrap gap-1.5">
                     {t.tier === "free" ? <TierBadge tier="free" label="חינם, כל השיעורים" /> : (
                       <>
-                        <TierBadge tier={t.tier} />
                         <TierBadge tier="free" label={tasteLabel(t)} />
                       </>
                     )}
@@ -121,22 +120,6 @@ export async function HomeContent({ heroVariant }: { heroVariant?: string }) {
               </li>
             ))}
           </ul>
-        </Container>
-      )}
-
-      {show("home:check") && check && linked(check.href) && (
-        <Container className="pt-16 sm:pt-20">
-          <div className="card bg-grid flex flex-col items-start gap-5 p-6 sm:flex-row sm:items-center sm:p-8">
-            <div className="min-w-0 flex-1">
-              <h2 className="text-2xl font-semibold tracking-tight text-fg sm:text-3xl">יש לכם סיכום? תבדקו אותו.</h2>
-              <p className="mt-2 max-w-2xl text-[15.5px] leading-relaxed text-muted">
-                5 שאלות ברמת מבחן, בכל אחת מלכודת שסטודנטים נופלים בה. פותחים את הסיכום, עונים, ורואים איפה הייתם מפסידים נקודות — בלי הרשמה.
-              </p>
-            </div>
-            <ButtonLink href={check.href} size="lg">
-              לבדיקה <ArrowLeft className="h-4 w-4" aria-hidden />
-            </ButtonLink>
-          </div>
         </Container>
       )}
 

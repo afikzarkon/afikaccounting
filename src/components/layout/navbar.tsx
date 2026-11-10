@@ -24,7 +24,10 @@ export function Navbar() {
             <ContinueButton />
           </Suspense>
           <SearchTrigger />
-          <ThemeToggle />
+          {/* On a phone the theme switch lives in the menu, so the narrow header keeps room for the main button. */}
+          <span className="hidden md:contents">
+            <ThemeToggle />
+          </span>
           <Suspense fallback={<Skeleton className="h-9 w-24" />}>
             <AuthArea />
           </Suspense>

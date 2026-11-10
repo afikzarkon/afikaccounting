@@ -31,7 +31,7 @@ const SOURCE = allSource(SRC);
 const links = [
   ...LEARNING_PATH.flatMap((s) => s.topics.flatMap((t) => [{ href: t.href }, ...(t.pages ?? []), ...t.tools])),
   ...ENGINE_TOOLS,
-  ...site.nav.flatMap((i) => ("items" in i ? [i.hub, ...i.items] : [i])),
+  ...site.nav.flatMap((i) => ("items" in i ? [i.hub, ...i.items, ...(i.featured ? [i.featured, i.featured.cta] : []), ...(i.extra ?? [])] : [i])),
 ];
 
 describe("the site map", () => {
@@ -56,7 +56,7 @@ describe("the site map", () => {
   it("every topic and every learning page is in the menu", () => {
     const learn = site.nav.find((i) => "items" in i && i.label === "קורסים");
     assert.ok(learn && "items" in learn);
-    const hrefs = new Set(learn.items.map((i) => i.href));
+    const hrefs = new Set([...learn.items, ...(learn.featured ? [learn.featured] : [])].map((i) => i.href));
     for (const s of LEARNING_PATH) for (const t of s.topics) for (const p of t.pages ?? [{ href: t.href }]) assert.ok(hrefs.has(p.href), p.href);
   });
   it("every lesson link opens a real screen or step", () => {
@@ -101,11 +101,15 @@ describe("the site map", () => {
     assert.ok(learn && "items" in learn);
     for (const i of learn.items) assert.ok(i.tier, i.href);
   });
-  it("every learning calculator is in the courses menu, and the solution engine has its own link", () => {
-    const learn = site.nav.find((i) => "items" in i && i.label === "קורסים");
-    assert.ok(learn && "items" in learn);
-    const hrefs = new Set(learn.items.map((i) => i.href));
+  it("every course's lesson count matches its lessons", () => {
+    for (const t of LEARNING_PATH.flatMap((s) => s.topics).filter((x) => x.format === "lessons"))
+      assert.equal(t.lessons, Object.values(STUDY_MODULES).filter((m) => m.backHref === t.href).length, t.id);
+  });
+  it("every learning calculator is in the calculators menu, whose own page is the solution engine", () => {
+    const calcs = site.nav.find((i) => "items" in i && i.label === "מחשבונים");
+    assert.ok(calcs && "items" in calcs);
+    const hrefs = new Set(calcs.items.map((i) => i.href));
     for (const t of LEARNING_TOOLS) assert.ok(hrefs.has(t.href), t.href);
-    assert.ok(site.nav.some((i) => !("items" in i) && i.href === "/engine"));
+    assert.equal(calcs.hub.href, "/engine");
   });
 });

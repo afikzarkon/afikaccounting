@@ -13,7 +13,7 @@ import { visibleLessons } from "@/lib/visibility/server";
 const REDIRECTS = Object.fromEntries(LEGACY_CHAPTERS.map((id) => [id, legacyHref(id) ?? ""]));
 
 export const metadata: Metadata = {
-  title: "חשבונאות בסיסית מאפס",
+  title: "חשבונאות מאפס",
   description:
     "קורס אינטראקטיבי בעברית, שיעור אחר שיעור: חובה וזכות, פקודות יומן, צ׳קים ומקדמות, כרטיסי T ומאזן בוחן, שנה שלמה מקצה לקצה, התאמות סוף שנה, מאזן בוחן ראשוני ותיקונים, הפסדי אשראי — ושאלת בחינה מלאה. עם סימולטור פקודות יומן ובדיקה עצמית בכל שיעור.",
 };
@@ -59,7 +59,7 @@ async function CoursePageHead() {
       trail={[{ label: "שלב 1 · חינם" }, { label: "חשבונאות מאפס" }]}
       title={
         <>
-          חשבונאות בסיסית מאפס
+          חשבונאות מאפס
         </>
       }
       lessons={await visibleLessons(BASICS_LESSONS)}

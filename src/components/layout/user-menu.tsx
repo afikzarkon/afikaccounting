@@ -4,15 +4,21 @@ import { ArrowLeft, ChevronDown, LayoutDashboard, LogOut, ShieldCheck, Sparkles,
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useLast } from "@/components/study-mode/progress-store";
 import { ButtonLink } from "@/components/ui/button";
 import { signOut } from "@/lib/actions/auth";
 import { FIRST_LESSON } from "@/lib/catalog";
 import { BUTTONS } from "@/lib/visibility/items";
 import { useVisibility } from "./visibility";
 
-/** A guest's way in: straight into lesson 1, no account needed. */
+/**
+ * A guest's way in: straight into lesson 1, no account needed. A guest who has
+ * already started has their own "continue" beside it, so the main button turns
+ * into the reason to sign up: keeping what they've done.
+ */
 export function GuestActions() {
   const { shown, label } = useVisibility();
+  const last = useLast();
   const { headerLogin: login, headerStart: start } = BUTTONS;
   return (
     <div className="flex items-center gap-1.5">
@@ -21,7 +27,11 @@ export function GuestActions() {
           {label(login.key, login.label)}
         </ButtonLink>
       )}
-      {shown(start.key) && (
+      {last ? (
+        <ButtonLink href="/register" variant="secondary" size="sm" className="max-sm:px-2.5">
+          לשמור את ההתקדמות
+        </ButtonLink>
+      ) : shown(start.key) && (
         <ButtonLink href={FIRST_LESSON} size="sm" className="max-sm:px-2.5">
           {label(start.key, start.label)} <ArrowLeft className="h-3.5 w-3.5 max-sm:hidden" aria-hidden />
         </ButtonLink>

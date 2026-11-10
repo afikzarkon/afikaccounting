@@ -12,7 +12,6 @@ import { Container, Skeleton } from "@/components/ui/primitives";
 import { canAccessWith } from "@/lib/access";
 import { getAccess } from "@/lib/auth/access";
 import { TOPICS, topicByHref } from "@/lib/catalog";
-import { CHECK_SIZE, CHECK_TOPICS } from "@/lib/check";
 import { STUDY_MODULES, studyHref } from "@/lib/study";
 import { outlineOf } from "@/lib/study/paths";
 import { isLinkHidden } from "@/lib/visibility/rules";
@@ -93,7 +92,6 @@ async function Lesson({ params }: Pick<PageProps<"/study/[topic]">, "params">) {
         screens={screensFor(m)}
         next={nextOf(m.slug, links)}
         course={courseOf(m.slug, links)}
-        share={CHECK_TOPICS.includes(topic.id) && !isLinkHidden(links, `/check/${topic.id}`) ? { path: `/check/${topic.id}`, course: topic.id, name: topic.standard ?? topic.title, size: CHECK_SIZE } : undefined}
       />
     </>
   );

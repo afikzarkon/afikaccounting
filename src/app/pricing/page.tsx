@@ -20,7 +20,7 @@ import { getVisibility } from "@/lib/visibility/server";
 
 export const metadata: Metadata = {
   title: "מחירים",
-  description: "חשבונאות מאפס בחינם, לתמיד. הקורסים המתקדמים — מלאי, רכוש קבוע והטבות עובד — ומתחם המבחנים במנוי. בלי כרטיס אשראי כדי להתחיל.",
+  description: "חשבונאות מאפס בחינם, לתמיד. הקורסים המתקדמים — מלאי, רכוש קבוע, הטבות עובד וחכירות — ומתחם המבחנים במנוי. בלי כרטיס אשראי כדי להתחיל.",
 };
 
 /** "כל N השיעורים", counted from the course itself. */

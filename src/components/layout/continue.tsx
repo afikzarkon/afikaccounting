@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, BookOpen, Crown, Play, Repeat, UserRound } from "lucide-react";
+import { ArrowLeft, BookOpen, Crown, LogIn, Play, Repeat, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
@@ -9,6 +9,7 @@ import { EXAMS_HUB, FIRST_LESSON, LEARN_HUB } from "@/lib/catalog";
 import { studyHref } from "@/lib/study/href";
 import { today } from "@/lib/study/review";
 import { cn } from "@/lib/utils";
+import { useSession } from "./session-store";
 import { useVisibility } from "./visibility";
 
 /** A ring that fills with the lesson's progress, its number inside. */
@@ -66,6 +67,9 @@ export function MobileTabBarView({ pathname = "" }: { pathname?: string }) {
   const day = useSyncExternalStore(noSubscribe, today, () => -1);
   const due = useReviewDue(day);
   const { linkShown } = useVisibility();
+  const session = useSession();
+  const guest = session.known && !session.signedIn;
+  const showReview = !guest || !!last || due > 0;
   if (pathname.startsWith("/study/") || pathname.startsWith("/admin")) return null;
   const on = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const tab = "flex flex-col items-center justify-center gap-0.5 text-[11px] font-semibold";
@@ -93,6 +97,7 @@ export function MobileTabBarView({ pathname = "" }: { pathname?: string }) {
           </span>
           {last ? "להמשיך" : "להתחיל"}
         </Link>
+        {showReview && (
         <Link href="/review" aria-current={on("/review") ? "page" : undefined} className={cn(tab, "relative h-16", on("/review") ? "text-accent" : "text-muted")}>
           <span className="relative">
             <Repeat className="h-5 w-5" aria-hidden />
@@ -105,9 +110,17 @@ export function MobileTabBarView({ pathname = "" }: { pathname?: string }) {
           חזרה
           {due > 0 && <span className="sr-only">: {due} שאלות מחכות היום</span>}
         </Link>
-        <Link href="/profile" aria-current={on("/profile") || on("/dashboard") ? "page" : undefined} className={cn(tab, "h-16", on("/profile") || on("/dashboard") ? "text-accent" : "text-muted")}>
-          <UserRound className="h-5 w-5" aria-hidden /> אני
-        </Link>
+        )}
+        {/* A guest has no account yet: "sign in" stands where "me" would. */}
+        {guest ? (
+          <Link href="/login" aria-current={on("/login") ? "page" : undefined} className={cn(tab, "h-16", on("/login") ? "text-accent" : "text-muted")}>
+            <LogIn className="h-5 w-5" aria-hidden /> התחברות
+          </Link>
+        ) : (
+          <Link href="/profile" aria-current={on("/profile") || on("/dashboard") ? "page" : undefined} className={cn(tab, "h-16", on("/profile") || on("/dashboard") ? "text-accent" : "text-muted")}>
+            <UserRound className="h-5 w-5" aria-hidden /> אני
+          </Link>
+        )}
       </nav>
     </>
   );

@@ -28,6 +28,8 @@ export type Topic = {
   description: string;
   /** What is inside, in a few words each. */
   covers: string[];
+  /** How many lessons the course has (a test checks it against the lessons), so the menu can say it without shipping them. */
+  lessons: number;
   /** Sub-pages, when the topic spans several. */
   pages?: CatalogLink[];
   tools: ToolLink[];
@@ -60,6 +62,7 @@ export const LEARNING_PATH: Stage[] = [
     topics: [
       {
         id: "basics",
+        lessons: 9,
         format: "lessons",
         title: "חשבונאות מאפס",
         href: "/basics",
@@ -83,6 +86,7 @@ export const LEARNING_PATH: Stage[] = [
     topics: [
       {
         id: "inventory",
+        lessons: 12,
         format: "lessons",
         title: "מלאי",
         standard: "IAS 2",
@@ -95,6 +99,7 @@ export const LEARNING_PATH: Stage[] = [
       },
       {
         id: "ias16",
+        lessons: 14,
         format: "lessons",
         title: "רכוש קבוע",
         standard: "IAS 16",
@@ -112,6 +117,7 @@ export const LEARNING_PATH: Stage[] = [
       },
       {
         id: "ias19",
+        lessons: IAS19_LESSON_COUNT,
         format: "lessons",
         title: "הטבות עובד",
         standard: "IAS 19",
@@ -136,6 +142,7 @@ export const LEARNING_PATH: Stage[] = [
       },
       {
         id: "ifrs16",
+        lessons: IFRS16_LESSON_COUNT,
         format: "lessons",
         title: "חכירות",
         standard: "IFRS 16",
