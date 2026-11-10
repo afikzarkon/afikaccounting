@@ -176,8 +176,17 @@ export const CREDIT: StudyModule = {
         steps: [
           {
             h: "כרטיס הלקוחות",
-            tcard: { name: AR, dr: [["י.פ.", CARD.opening], ["מכירות באשראי", CARD.sales]], cr: [["גבייה", CARD.collections], ["מחיקות", CARD.writeOffs]] },
-            why: ["מה בחובה ומה בזכות?", "לקוחות הם נכס: היתרה והמכירות בחובה. הגבייה והמחיקות מקטינות אותם, ולכן הן בזכות. היתרה שנשארת היא יתרת חובה: הלקוחות ברוטו."],
+            credit: {
+              cards: [
+                {
+                  name: AR,
+                  dr: [{ l: "י.פ.", a: CARD.opening }, { l: "מכירות באשראי", a: CARD.sales }],
+                  cr: [{ l: "גבייה", a: CARD.collections }, { l: "מחיקות", a: CARD.writeOffs }],
+                  close: { side: "dr", a: CARD.opening + CARD.sales - CARD.collections - CARD.writeOffs, letter: "א" },
+                },
+              ],
+            },
+            why: ["מה בחובה ומה בזכות?", "לקוחות הם נכס: היתרה והמכירות בחובה. הגבייה והמחיקות מקטינות אותם, ולכן הן בזכות. יתרת הסגירה (א) היא מה שנשאר בחובה: הלקוחות ברוטו."],
           },
         ],
       },
@@ -249,9 +258,18 @@ export const CREDIT: StudyModule = {
         required: ["כמה נגבה מהלקוחות?"],
         steps: [
           {
-            h: "הגבייה סוגרת את הכרטיס",
-            tcard: { name: AR, dr: [["י.פ.", GAP.opening], ["מכירות באשראי", GAP.sales]], cr: [["מחיקות", GAP.writeOffs], ["יתרת סגירה", GAP.closing]], bal: "גבייה: החסר" },
-            why: ["למה זה עובד?", "כל התנועות בכרטיס ידועות חוץ מהגבייה, וגם יתרת הסגירה ידועה. הגבייה היא מה שחסר בצד הזכות כדי ששני הצדדים יהיו שווים."],
+            h: "הגבייה היא מה שסוגר את הכרטיס",
+            credit: {
+              cards: [
+                {
+                  name: AR,
+                  dr: [{ l: "י.פ.", a: GAP.opening }, { l: "מכירות באשראי", a: GAP.sales }],
+                  cr: [{ l: "גבייה", a: GAP.opening + GAP.sales - GAP.writeOffs - GAP.closing, letter: "א" }, { l: "מחיקות", a: GAP.writeOffs }],
+                  close: { side: "dr", a: GAP.closing },
+                },
+              ],
+            },
+            why: ["למה זה עובד?", "בכל כרטיס: פתיחה + מה שמגדיל − מה שמקטין = סגירה. כל השאר בכרטיס ידוע, גם יתרת הסגירה, ולכן הגבייה (א) היא ההפרש."],
           },
         ],
       },
@@ -272,22 +290,30 @@ export const CREDIT: StudyModule = {
         required: ["מה הייתה יתרת הפתיחה של ההפרשה?"],
         steps: [
           {
-            h: "הלקוחות בסוף השנה",
-            tcard: { name: AR, dr: [["י.פ.", OPENING.openingAR], ["מכירות באשראי", OPENING.creditSales!]], cr: [["גבייה", OPENING.collections!], ["מחיקות", OPENING.writeOffs!]] },
-            why: ["ומה עם החוב שחזר?", "חוב שנמחק ונגבה נכנס לכרטיס הלקוחות ויוצא ממנו מיד. הוא לא משנה את יתרת הלקוחות."],
+            h: "שני הכרטיסים, וההפרשה הנדרשת",
+            credit: {
+              cards: [
+                {
+                  name: AR,
+                  dr: [{ l: "י.פ.", a: OPENING.openingAR }, { l: "מכירות באשראי", a: OPENING.creditSales! }, { l: "חידוש החוב שנמחק", a: OPENING.recovered! }],
+                  cr: [{ l: "גבייה", a: OPENING.collections! }, { l: "מחיקות", a: OPENING.writeOffs! }, { l: "גביית החוב שחודש", a: OPENING.recovered! }],
+                  close: { side: "dr", a: OPENING.result.gross },
+                },
+                {
+                  name: ALLOW,
+                  dr: [{ l: "מחיקות", a: OPENING.writeOffs! }],
+                  cr: [{ l: "י.פ.", a: OPENING.openingAllowance, letter: "א" }, { l: "חידוש החוב שנמחק", a: OPENING.recovered! }, { l: "הוצאות הפסדי אשראי", a: OPENING.result.expense, entry: true }],
+                  close: { side: "cr", a: OPENING.required, to: true },
+                },
+              ],
+              formula: ["לקוחות בסוף השנה × שיעור ההפרשה = הפרשה נדרשת", `${fmt(OPENING.result.gross)} × 6% = ${fmt(OPENING.required)}`],
+            },
+            why: ["איך קוראים את זה?", "החוב שחזר נכנס לכרטיס הלקוחות ויוצא ממנו מיד, אז הוא לא משנה את יתרת הלקוחות. בכרטיס ההפרשה הוא מחזיר לכרית את מה שנמחק. יתרת הסגירה באה מהנוסחה, ההוצאה נתונה, ולכן יתרת הפתיחה (א) היא מה שחסר כדי לסגור את הכרטיס."],
           },
           {
-            h: "ההפרשה הנדרשת",
-            sheet: [
-              { l: "לקוחות ב־31.12", a: OPENING.result.gross },
-              { l: "× `6%`", a: "", k: "op" },
-              { l: "ההפרשה בסגירה", a: OPENING.required, k: "tot" },
-            ],
-          },
-          {
-            h: "כרטיס ההפרשה, והפתיחה שחסרה",
-            tcard: { name: ALLOW, dr: [["מחיקות", OPENING.writeOffs!], ["יתרת סגירה", OPENING.required]], cr: [["חוב שחזר", OPENING.recovered!], ["הוצאות הפסדי אשראי", OPENING.result.expense]], bal: "יתרת פתיחה: החסר" },
-            why: ["למה בזכות?", "הפרשה מקטינה נכס, ולכן היא גדלה בזכות: הפתיחה, החוב שחזר וההוצאה. מחיקה מקטינה אותה, בחובה. יתרת הפתיחה היא מה שחסר בזכות כדי שהכרטיס ייסגר."],
+            h: "הפקודה של סוף השנה, על השורה המסומנת",
+            entry: { lines: [{ a: EXPENSE, dr: OPENING.result.expense }, { a: ALLOW, cr: OPENING.result.expense }] },
+            why: ["למה היא כאן, אם שואלים על הפתיחה?", "כדי לראות מאיפה בא הסכום שבכרטיס: זו פקודת ההשלמה של סוף השנה, והתג בכרטיס מסמן את השורה שלה."],
           },
         ],
       },
