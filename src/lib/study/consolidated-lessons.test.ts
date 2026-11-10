@@ -14,6 +14,8 @@ import { ACQUISITION, ACQUISITION_TAUGHT, BOND, ITEMS, LESSEE, LESSOR, MASTER4_T
 import { G_FAIR, G_NET, G_PREMIUM, G_SHARE, GOODWILL, GOODWILL_TAUGHT, M5, PAYS, PERIOD, PERIOD_TEST, PERIOD_TEST_START } from "./consolidated/lessons/goodwill";
 import { AGENT_TEST, AGENT_TEST_START, AGENTS, FUND_LARGE, FUND_SMALL, MASTER3_POSITION, MASTER3_REWARD, MASTER3_SISTER, MASTER3_TOGETHER, RETURNS, RETURNS_TAUGHT } from "./consolidated/lessons/returns";
 import { BEFORE11, BOND11, BOND11_FIG, BOND11_PRICE, FIN11, FV11, LEASEBONDS, LEASEBONDS_TAUGHT, M11, M11_FIG, M11_PRICE, RESALE11, ROU11, ROU11_NCI, WHO11 } from "./consolidated/lessons/leasebonds";
+import { W64, W65, W66, W67, W68, W69 } from "./consolidated/worked/leasebonds";
+import type { Worked } from "./consolidated/worked/types";
 import { BORROW10, DEFER10, INTERCOMPANY, INTERCOMPANY_TAUGHT, INV10, LAND10, LOSS10, M10, MACH10, MACH10_FIG, MISTAKE10, PRIOR10, SAME10, SPLIT10, WD10 } from "./consolidated/lessons/intercompany";
 import { DATES9, DTA9, IMP9, IMPAIRMENT, IMPAIRMENT_TAUGHT, M9, M9_NCI_END, PREF9, PREF_PROFIT } from "./consolidated/lessons/impairment";
 import { BOND8, BOND8_OCI, DEBT_TEST, DEBT_TEST_START, FINANCE, FINANCE_TAUGHT, IMPAIR8, M8, NEEDS, SHARES8_FIG } from "./consolidated/lessons/finance";
@@ -649,6 +651,37 @@ describe("lesson 11: the sorting and the figures, against a separate calculation
     const answer = (id: string) => (LEASEBONDS.exercises.find((x) => x.id === id) as { answer: number }).answer;
     for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
     assert.deepEqual(LEASEBONDS.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
+  });
+});
+
+describe("worked examples: the lecturer's own examples, matching the workbook to the agora", () => {
+  const amounts = (w: Worked) => {
+    const out = new Set<string>();
+    const add = (c: unknown) => typeof c === "number" && out.add(Math.abs(c).toFixed(2));
+    for (const st of w.steps) {
+      for (const l of st.sheet ?? []) add(l.a);
+      for (const t of st.tables ?? []) for (const r of t.rows) r.c.forEach(add);
+    }
+    for (const r of w.summary?.rows ?? []) r.c.forEach(add);
+    return out;
+  };
+  const workbook: [string, Worked, number[]][] = [
+    ["6.4", W64, [575_902.38, 63_989.15, 57_590.24, 511_913.23, 533_492.62, 21_579.39]],
+    ["6.5", W65, [614_456.71, 51_204.73, 563_251.98, 61_445.67, 575_902.38, 99_999.71, 42_871.42, 471_585.58, 91_666.4, 23_549.12, 68_117.28, 8_333.31, 88_556.94, 3_109.46]],
+    ["6.6", W66, [64_400.14, 62_139.92, 2_260.22, 565.06, 1_695.17, 3_864.01, 4_971.19, 62_264.15, 61_111.11, 3_735.85, 4_888.89, 1_153.04, 288.26]],
+    ["6.7", W67, [112_493.78, 135_539.11, 8_999.5, 6_776.96, 124_839.18, 7_476.89, 111_493.28, 7_490.35, 122_329.53, 9_699.44, 1_429.11, 23_045.33, 20_822.79, 18_519.13, 13_345.9, 11_916.79, 6_602.34]],
+    ["6.8", W68, [89_080.99, 83_439.37, 5_641.62, 65_535.04, 62_114.52, 3_420.52, 2_221.1, 64_359.84, 1_175.2, 2_245.33]],
+    ["6.9", W69, [16_274.54, 93_725.46, 32_541.39, 37_026.18, 4_484.79, 2_603.31, 531.19, 5_209.22, 29_935.48, 32_348.16, 2_412.67, 3_732.79, 1_320.11]],
+  ];
+  for (const [sheet, w, want] of workbook)
+    it(`sheet ${sheet}`, () => {
+      const have = amounts(w);
+      for (const v of want) assert.ok(have.has(v.toFixed(2)), `${sheet}: ${v}`);
+      assert.ok(w.title.includes(`גיליון ${sheet}`), w.title);
+    });
+  it("no long dash in the worked examples", () => {
+    const dir = join(process.cwd(), "src/lib/study/consolidated/worked");
+    for (const f of readdirSync(dir)) assert.ok(!/[—–]/.test(readFileSync(join(dir, f), "utf8")), f);
   });
 });
 
