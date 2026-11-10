@@ -2,11 +2,11 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button";
 import { FIRST_LESSON, LEARN_HUB } from "@/lib/catalog";
-import type { FeaturedQuestion } from "@/lib/check";
+
 import { BUTTONS } from "@/lib/visibility/items";
 import { isHidden, isLinkHidden, labelOf } from "@/lib/visibility/rules";
 import { getVisibility } from "@/lib/visibility/server";
-import { HeroExercise } from "./hero-exercise";
+import { MinuteLesson } from "./minute-lesson";
 
 /** An advanced course's way in from the hero: straight to its free first lesson. */
 export type HeroDoor = { title: string; standard?: string; href: string };
@@ -17,12 +17,11 @@ export type HeroDoor = { title: string; standard?: string; href: string };
  * speaks to a student with an exam coming, so the main button is theirs: pick
  * a topic, each one straight to its free first lesson. The free course from
  * zero is the second door. On a phone the buttons come right after the
- * headline, before the live question, so the first screen always has a way in.
+ * headline, before the one-minute lesson, so the first screen always has a way in.
  * What the free course holds is set out like a ledger, down to its total.
  */
 export async function Hero({
   variant,
-  question,
   doors,
   lessons,
   exercises,
@@ -30,7 +29,6 @@ export async function Hero({
 }: {
   /** The headline's A/B variant (lib/experiments.ts, "hero"); none is the control. */
   variant?: string;
-  question?: FeaturedQuestion;
   doors: HeroDoor[];
   lessons: number;
   exercises: number;
@@ -48,7 +46,7 @@ export async function Hero({
   ];
   return (
     <section>
-      {/* A phone reads top to bottom: headline and buttons, the question, the ledger. A wide screen: the text beside the question. */}
+      {/* A phone reads top to bottom: headline and buttons, the one-minute lesson, the ledger. A wide screen: the text beside the lesson. */}
       <div className="mx-auto grid max-w-7xl items-start gap-x-16 gap-y-7 px-4 pt-8 pb-16 sm:px-6 sm:pt-16 lg:grid-cols-[1.05fr_1fr] lg:px-8 lg:pb-24">
         <div className="lg:col-start-1 lg:row-start-1">
           <p className="text-[15px] font-semibold text-accent">בין ההרצאה לשיעורי הבית · בלי הרשמה</p>
@@ -111,7 +109,7 @@ export async function Hero({
         </div>
 
         <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:pt-8">
-          {question && <HeroExercise trap={question.trap} source={question.source} href={question.href} more={question.more} />}
+          <MinuteLesson firstLesson={FIRST_LESSON} signUp="/register" />
         </div>
 
         <div className="lg:col-start-1 lg:row-start-2">
