@@ -55,6 +55,8 @@ export type WorkedBody = {
   trap?: string;
   /** How this course writes a negative amount; parentheses unless the course says otherwise. */
   neg?: Neg;
+  /** Reasoning in words only: short steps under a thin rule, without a box or a step count. */
+  light?: boolean;
 };
 
 /** A worked example on a lesson screen: a title, the givens, what is required, a "try it yourself" box, and the solution behind one button. */

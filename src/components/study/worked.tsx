@@ -212,16 +212,16 @@ function Fx({ fx }: { fx: [string, string] }) {
   );
 }
 
-function Step({ s, i, n }: { s: WStep; i: number; n: number }) {
+function Step({ s, i, n, light }: { s: WStep; i: number; n: number; light?: boolean }) {
   const main = s.sheet ? <Sheet lines={s.sheet} /> : s.entry ? <Entry e={s.entry} /> : null;
   return (
-    <div className="flex min-w-0 flex-col gap-3 rounded-xl border border-line p-3.5">
-      {n > 1 && (
+    <div className={cn("flex min-w-0 flex-col", light ? "gap-1 border-b border-line pb-2.5" : "gap-3 rounded-xl border border-line p-3.5")}>
+      {n > 1 && !light && (
         <div className="text-[12px] text-muted">
           שלב {i + 1} מתוך {n}
         </div>
       )}
-      <h5 className="text-[15.5px] font-bold">
+      <h5 className={cn("font-bold", light ? "text-[15px]" : "text-[15.5px]")}>
         <span className="text-accent">{i + 1}.</span> <Text s={s.h} />
       </h5>
       {s.timeline && <Timeline points={s.timeline} />}
@@ -262,9 +262,9 @@ function Step({ s, i, n }: { s: WStep; i: number; n: number }) {
 
 function Steps({ w, answer }: { w: WorkedBody; answer?: ReactNode }) {
   return (
-    <div className="flex flex-col gap-3.5">
+    <div className={cn("flex flex-col", w.light ? "gap-2.5" : "gap-3.5")}>
       {w.steps.map((s, i) => (
-        <Step key={i} s={s} i={i} n={w.steps.length} />
+        <Step key={i} s={s} i={i} n={w.steps.length} light={w.light} />
       ))}
       {w.summary && <WTableView t={w.summary} />}
       {(w.notes ?? []).map((t, i) => (
@@ -281,6 +281,8 @@ function Steps({ w, answer }: { w: WorkedBody; answer?: ReactNode }) {
     </div>
   );
 }
+
+const heading = (w: WorkedBody) => (w.light ? "הנימוק" : w.steps.length > 1 ? "הפתרון, שלב אחר שלב" : "הפתרון");
 
 function Givens({ w }: { w: WorkedBody }) {
   return (
@@ -325,7 +327,7 @@ export function WorkedExample({ ex, neg }: { ex: Worked; neg?: Neg }) {
         <header className="bg-accent-soft px-4 py-3 text-[16px] font-bold text-fg">{ex.title}</header>
         <Givens w={ex} />
         <section className="border-t border-line px-4 py-3">
-          <h4 className="mb-2 text-[14.5px] font-bold">{ex.steps.length > 1 ? "הפתרון, שלב אחר שלב" : "הפתרון"}</h4>
+          <h4 className="mb-2 text-[14.5px] font-bold">{heading(ex)}</h4>
           {!open && (
             <div className="rounded-lg border-2 border-dashed border-line px-3 py-2 text-[14px] text-muted">
               נסו לבד לפני שפותחים: <Text s={ex.tryFirst} />
@@ -352,7 +354,7 @@ export function WorkedSolution({ w, neg, answer }: { w: WorkedBody; neg?: Neg; a
       <article className="overflow-hidden rounded-xl border-2 border-accent bg-surface">
         <Givens w={w} />
         <section className="border-t border-line px-4 py-3 first:border-t-0">
-          <h4 className="mb-2 text-[14.5px] font-bold">{w.steps.length > 1 ? "הפתרון, שלב אחר שלב" : "הפתרון"}</h4>
+          <h4 className="mb-2 text-[14.5px] font-bold">{heading(w)}</h4>
           <Steps w={w} answer={answer} />
         </section>
       </article>
