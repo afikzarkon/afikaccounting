@@ -1,5 +1,6 @@
+import { W_ALMOG } from "@/lib/study/basics/exam-worked";
+import { WorkedReveal } from "@/components/study/worked";
 import { Printer } from "lucide-react";
-import { balancesOf, ledger, statements, trialBalance } from "@/lib/learn/basics";
 import { ALMOG } from "@/lib/learn/basics-exam";
 import { ZAYIT, RIMON, SIGAL } from "@/lib/learn/worksheet";
 import { Given } from "./credit";
@@ -8,8 +9,8 @@ import { Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { PrintButton } from "./print-button";
 import { Tabs } from "./tabs";
-import { Calc, Money, Rule, Stepper, TBTable } from "./ui";
-import { Reveal, TryFirst } from "./year";
+import { Money, TBTable } from "./ui";
+import { trialBalance } from "@/lib/learn/basics";
 import { WorksheetWalk } from "./worksheet";
 import { WorksheetGame } from "./lazy-widgets";
 
@@ -123,49 +124,13 @@ export const FINAL_SCREENS: Record<string, ScreenContent> = {
             <li key={x}>{x}</li>
           ))}
         </ol>
-        <Stepper
-          label={`${ALMOG.name} · הפתרון, שלב אחר שלב`}
-          steps={[
-            {
-              title: "שלב 1 · ארבע היתרות החסרות",
-              body: (
-                <Reveal prompt="חשבו את ארבע היתרות החסרות: ביטוח מראש, פרסום מראש, פחת נצבר של הציוד, ועודפים. רמז: העודפים אחרונים." label="הצגת הפתרון">
-                  <Calc result={<Money v={ALMOG.found.insurance} />}>
-                    ביטוח: מחזורים 2020–21, 2022–23, 2024–25. ב-1.1.2024 שולמו 108,000; אחרי 2024 נשארו 12 חודשים × 4,500
-                  </Calc>
-                  <Calc result={<Money v={ALMOG.found.ads} />}>
-                    פרסום: 84,000 ÷ 24 = 3,500 לחודש. ב-2024 נוצלו 8 חודשים; נשארו 16 × 3,500
-                  </Calc>
-                  <Calc result={<Money v={ALMOG.found.equipment} />}>
-                    פחת נצבר של הציוד: הפחת של 2025 עוד לא נרשם, ולכן עד 31.12.2024. מאפריל 2022: 33 חודשים.{" "}
-                    <bdi dir="ltr" className="num">
-                      300,000 × 10% × 33/12
-                    </bdi>
-                  </Calc>
-                  <Calc result={<Money v={ALMOG.found.retained} />}>עודפים: ההפרש שמאזן את מאזן הבוחן, בזכות</Calc>
-                  <Rule>את העודפים אפשר למצוא רק אחרי שלוש היתרות האחרות: הם ההפרש של כל הטבלה.</Rule>
-                </Reveal>
-              ),
-            },
-            ...ALMOG.entries.map((x, i) => ({ title: `שלב 2 · פקודה ${x.id}: ${x.text}`, body: <TryFirst entries={ALMOG.entries} at={i} opening={ALMOG.preliminary} /> })),
-            {
-              title: "שלב 3 · מאזן בוחן סופי, רווח ועודפים",
-              body: (
-                <Reveal prompt="בנו את מאזן הבוחן הסופי, וחשבו את רווח 2025 ואת עודפי הסגירה." label="הצגת מאזן הבוחן והתוצאה">
-                  <ExamResult />
-                </Reveal>
-              ),
-            },
-          ]}
-        />
+        <WorkedReveal w={W_ALMOG} tryFirst="היתרות החסרות קודם, והעודפים אחרונים. אחר כך הפקודות לפי הסדר, הגיליון הרב־טורי, הרווח ועודפי הסגירה." />
         <Remember>חמש מלכודות בשאלה: ההפרשה אחרי התיקון והמחיקה · ריבית חצי שנתית · השכירות שנגמרה מתאפסת · פחת עד סוף השנה הקודמת במאזן הבוחן, ובמכירה גם הפחת של השנה · העודפים רק אחרי שאר היתרות.</Remember>
       </>
     ),
   },
 };
 
-const EXAM_FINAL = balancesOf(ledger(ALMOG.entries, ALMOG.preliminary));
-const EXAM_S = statements(EXAM_FINAL);
 
 /** Almog's trial balance as the question gives it, with its three missing balances. */
 function ExamGiven() {
@@ -182,19 +147,6 @@ function ExamGiven() {
   );
 }
 
-function ExamResult() {
-  return (
-    <div className="space-y-3">
-      <TBTable tb={trialBalance(EXAM_FINAL)} caption={`מאזן בוחן סופי · ${ALMOG.name} · ${ALMOG.date}`} kind />
-      <Calc result={<Money v={EXAM_S.profit} />}>
-        רווח 2025: הכנסות <Money v={EXAM_S.totalIncome} /> − הוצאות <Money v={EXAM_S.totalExpenses} />
-      </Calc>
-      <Calc result={<Money v={EXAM_S.equity.find(([a]) => a === "עודפים")![1]} />}>
-        עודפי סגירה: <Money v={ALMOG.found.retained} /> + <Money v={EXAM_S.profit} />
-      </Calc>
-    </div>
-  );
-}
 
 
 /** The course's reference: a one-page cheat sheet (printable), the glossary, common mistakes and questions. */

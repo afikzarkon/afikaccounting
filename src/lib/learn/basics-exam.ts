@@ -4,6 +4,7 @@
  * adjust or correct — every topic of the course in one question. The answers
  * are computed from the story.
  */
+import type { WLine } from "@/lib/study/worked";
 import { type Balances, type Entry, round2 } from "./basics";
 import { accumulatedTo, depreciationOfYear, sale, saleEntry } from "./basics-ppe";
 
@@ -68,6 +69,44 @@ export const ALMOG = {
   /** The preliminary trial balance with the three found. */
   preliminary: { ...withUnknowns, עודפים: retainedOpening } as Balances,
   found: { insurance: insOpening, ads: adsOpening, equipment: equipAcc, retained: -retainedOpening },
+  /** For the worked solution: each "?" balance found from the story, as a lecturer's sheet. */
+  computed: [
+    {
+      account: "הוצאות ביטוח מראש",
+      why: "הביטוח מתחדש כל שנתיים: 2020 עד 2021, 2022 עד 2023, 2024 עד 2025. ב־1.1.2024 שולם מחזור חדש, ואחרי 2024 נשארה ממנו שנה.",
+      sheet: [
+        { l: "ביטוח לחודש", a: INS.monthly },
+        { l: "× `12` חודשים שנשארו מהמחזור", a: "", k: "op" },
+        { l: "יתרת ״מראש״, 31.12.2024", a: insOpening, k: "tot" },
+      ] as WLine[],
+    },
+    {
+      account: "הוצאות פרסום מראש",
+      why: `ב־2024 נוצלו ${ADS.usedIn2024} חודשים, ובמאזן הבוחן הראשוני עוד לא נרשם דבר על 2025.`,
+      sheet: [
+        { l: "התשלום", a: ADS.paid },
+        { l: `÷ \`${ADS.months}\` חודשים`, a: "", k: "op" },
+        { l: "לחודש", a: adsMonth, k: "sub" },
+        { l: `× \`${ADS.months - ADS.usedIn2024}\` חודשים שנשארו`, a: "", k: "op" },
+        { l: "יתרת ״מראש״, 31.12.2024", a: adsOpening, k: "tot" },
+      ] as WLine[],
+    },
+    {
+      account: "ציוד – פחת נצבר",
+      why: "הפחת של 2025 עוד לא נרשם, ולכן היתרה היא עד סוף 2024: מאפריל 2022, 33 חודשים.",
+      sheet: [
+        { l: "עלות הציוד", a: EQUIP.cost },
+        { l: `× \`${EQUIP.wear.rate * 100}%\``, a: "", k: "op" },
+        { l: "פחת לשנה", a: EQUIP.cost * EQUIP.wear.rate, k: "sub" },
+        { l: "× `33/12`, אפריל 2022 עד דצמבר 2024", a: "", k: "op" },
+        { l: "פחת נצבר, 31.12.2024", a: equipAcc, k: "tot" },
+      ] as WLine[],
+    },
+  ],
+  allowance: [
+    `חוב בקשיים × ${CREDIT.specificRate * 100}% + שאר הלקוחות × ${CREDIT.generalRate * 100}% = הפרשה נדרשת`,
+    `${CREDIT.specificDebt.toLocaleString("en-US")} × ${CREDIT.specificRate * 100}% + ${(customersAfter - CREDIT.specificDebt).toLocaleString("en-US")} × ${CREDIT.generalRate * 100}% = ${required.toLocaleString("en-US")}`,
+  ] as [string, string],
   story: [
     `ביטוח: מיום ההקמה, 1.1.2020, החברה משלמת מראש על ביטוח לשנתיים — ${INS.monthly.toLocaleString("en-US")} ₪ לחודש — ורושמת את התשלום כ״מראש״. החוזה מתחדש בכל פעם שהוא נגמר.`,
     `פרסום: חוזה מ-1.5.2024 עד 30.4.2026, ששולמו עליו ${ADS.paid.toLocaleString("en-US")} ₪ ונרשמו כ״מראש״.`,

@@ -5,6 +5,7 @@
  * here from the question's own data.
  */
 
+import type { WLine } from "@/lib/study/worked";
 import { type Balances, balancesOf, type Entry, ledger, round2, statements } from "./basics";
 import { depreciationOfYear } from "./basics-ppe";
 
@@ -121,6 +122,20 @@ export const GILAD = {
   ],
   preliminary: gPreliminary,
   found: { insurance: insOpening, retained: -retainedG },
+  /** For the worked solution: the "?" balance found from the story, as a lecturer's sheet. */
+  computed: [
+    {
+      account: "הוצאות ביטוח מראש",
+      why: `ב־2024 נוצלו ${13 - G.insurance.start} חודשים, וב־2025 עוד לא נרשם דבר.`,
+      sheet: [
+        { l: "התשלום", a: G.insurance.paid },
+        { l: `÷ \`${G.insurance.months}\` חודשים`, a: "", k: "op" },
+        { l: "לחודש", a: insMonthG, k: "sub" },
+        { l: `× \`${G.insurance.months - (13 - G.insurance.start)}\` חודשים שנשארו`, a: "", k: "op" },
+        { l: "יתרת ״מראש״, 31.12.2024", a: insOpening, k: "tot" },
+      ] as WLine[],
+    },
+  ],
   entries: gEntries,
   final: gFinal,
   profit: gProfit,

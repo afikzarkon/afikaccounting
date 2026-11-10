@@ -1,5 +1,6 @@
 import { type Entry, isBalanced } from "../../learn/basics";
 import { accumulatedTo, depreciationOfYear, monthsBetween, sale, saleEntry } from "../../learn/basics-ppe";
+import type { WorkedBody, WStep } from "../worked";
 
 /**
  * Practice without end for the basics course: a fresh story and fresh numbers
@@ -797,4 +798,28 @@ export function drill(family: DrillFamily, seed: number): BasicsDrill {
 export function checkDrill(d: BasicsDrill) {
   for (const e of d.entries) if (!isBalanced(e)) throw new Error(`${d.family}: unbalanced entry ${e.text}`);
   return d;
+}
+
+/**
+ * A drill's solution in the site's worked layout: the tool first, each step
+ * as the course's formula and then the numbers, the Excel way, the entry,
+ * and the common trap last. `topic` names the family in the mixed practice.
+ */
+export function drillWorked(d: BasicsDrill, topic?: string): WorkedBody {
+  const calc = d.steps.map(
+    (s): WStep => ({
+      h: s.title,
+      fx: s.formula && s.numbers ? [s.formula, s.numbers] : undefined,
+      p: [...(s.note ? [s.note] : []), ...(!s.formula && s.numbers ? ["`" + s.numbers + "`"] : [])],
+    }),
+  );
+  if (calc.length) calc[calc.length - 1].xl = "`" + d.excel + "`";
+  return {
+    steps: [
+      { h: "איזה כלי?", p: [...(topic ? [`הנושא: **${topic}**`] : []), d.tool] },
+      ...calc,
+      ...(d.entries.length ? [{ h: d.entries.length > 1 ? "הפקודות" : "הפקודה", entries: d.entries.map((e) => ({ lines: e.lines.map((l) => ({ a: l.account, dr: l.dr, cr: l.cr })) })) }] : []),
+    ],
+    trap: d.trap,
+  };
 }

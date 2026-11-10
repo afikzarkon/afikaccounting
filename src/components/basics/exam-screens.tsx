@@ -1,13 +1,13 @@
 import { Clock } from "lucide-react";
-import type { ReactNode } from "react";
 import type { ScreenContent } from "@/components/study-mode/shell";
-import { ledger, trialBalance } from "@/lib/learn/basics";
-import { EXAM1, EXAM2, EXAM3, EXAM4, EXAM5, EXAM6, EXAM7, EXAM8, solveWorksheet, type WorksheetExam } from "@/lib/learn/basics-exams";
+import { EXAM1, EXAM2, EXAM3, EXAM4, EXAM5, EXAM6, EXAM7, EXAM8, type WorksheetExam } from "@/lib/learn/basics-exams";
+import { W_EXAM1, W_EXAM2, W_EXAM3, W_EXAM4, W_EXAM5, W_EXAM6, W_EXAM7, W_EXAM8 } from "@/lib/study/basics/exam-worked";
+import type { WorkedBody } from "@/lib/study/worked";
+import { WorkedReveal } from "@/components/study/worked";
 import { BasicsDrill } from "./basics-drill";
 import { Remember } from "@/components/study-mode/screen-parts";
 import { Given } from "./credit";
-import { Calc, JE, Money, TBTable, TCard } from "./ui";
-import { Reveal } from "./year";
+import { Money } from "./ui";
 
 /** How long the exam is meant to take: a suggestion, not a clock. */
 function Time({ minutes }: { minutes: number }) {
@@ -28,27 +28,8 @@ function Facts({ items }: { items: string[] }) {
   );
 }
 
-function Entries({ entries }: { entries: Parameters<typeof JE>[0]["entry"][] }) {
-  return (
-    <div className="grid gap-3 lg:grid-cols-2">
-      {entries.map((e) => (
-        <JE key={e.id} entry={e} />
-      ))}
-    </div>
-  );
-}
-
-function Trap({ children }: { children: ReactNode }) {
-  return (
-    <p className="rounded-xl bg-surface-2/70 px-3.5 py-2.5 text-[14.5px]">
-      <strong>מלכודת נפוצה:</strong> {children}
-    </p>
-  );
-}
-
 /** A whole worksheet question: the trial balance with its "?" balances, the facts, and the whole solution behind one button. */
-function WorksheetExamScreen({ x }: { x: WorksheetExam }) {
-  const s = solveWorksheet(x);
+function WorksheetExamScreen({ x, w }: { x: WorksheetExam; w: WorkedBody }) {
   const unknowns = [...x.computed.map((c) => c.account), "עודפים"];
   return (
     <>
@@ -65,21 +46,7 @@ function WorksheetExamScreen({ x }: { x: WorksheetExam }) {
         <p className="pt-1 font-semibold">נתונים נוספים:</p>
         <Facts items={x.facts} />
       </Given>
-      <Reveal prompt="פתרו את כל הגיליון: היתרות החסרות, הפקודות, מאזן הבוחן המתוקן, הרווח והעודפים." label="הצגת הפתרון המלא">
-        {x.computed.map((c) => (
-          <Calc key={c.account} result={<Money v={Math.abs(c.value)} />}>
-            {c.account}: {c.why}
-          </Calc>
-        ))}
-        <Calc result={<Money v={Math.abs(s.retainedOpening)} />}>עודפים: ההפרש שמאזן את מאזן הבוחן, {s.retainedOpening >= 0 ? "בזכות" : "בחובה"}</Calc>
-        <Entries entries={x.entries} />
-        <TBTable tb={trialBalance(s.final)} caption={`מאזן בוחן מתוקן · ${x.name} · 31.12.2025`} kind />
-        <Calc result={<Money v={s.profit} />}>רווח 2025: הכנסות פחות הוצאות במאזן הבוחן המתוקן</Calc>
-        <Calc result={<Money v={s.retainedClosing} />}>
-          עודפי סגירה: <Money v={s.retainedOpening} /> + <Money v={s.profit} />
-        </Calc>
-        <Trap>{x.trap}</Trap>
-      </Reveal>
+      <WorkedReveal w={w} tryFirst="פתרו את כל הגיליון: היתרות החסרות, הפקודות, הגיליון הרב־טורי, הרווח והעודפים." />
     </>
   );
 }
@@ -134,17 +101,7 @@ export const EXAM_LESSON_SCREENS: Record<string, ScreenContent> = {
         <Given title={`נתון: ${EXAM1.name}`} asks={EXAM1.asks}>
           <Facts items={EXAM1.facts} />
         </Given>
-        <Reveal prompt="רשמו את כל הפקודות, העבירו לכרטיסי T, ובנו את מאזן הבוחן." label="הצגת הפתרון המלא">
-          <Entries entries={EXAM1.entries} />
-          <p className="font-semibold text-fg">כרטיסי T:</p>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {ledger(EXAM1.entries).map((t) => (
-              <TCard key={t.account} t={t} />
-            ))}
-          </div>
-          <TBTable tb={trialBalance(EXAM1.final)} caption={`מאזן בוחן · ${EXAM1.name} · 31.12.2025`} />
-          <Trap>{EXAM1.trap}</Trap>
-        </Reveal>
+        <WorkedReveal w={W_EXAM1} tryFirst="רשמו את כל הפקודות, העבירו לכרטיסי T, ובנו את מאזן הבוחן." />
       </>
     ),
   },
@@ -167,17 +124,7 @@ export const EXAM_LESSON_SCREENS: Record<string, ScreenContent> = {
           <p className="pt-1 font-semibold">אירועי 2025:</p>
           <Facts items={EXAM2.facts2025} />
         </Given>
-        <Reveal prompt="מיינו את 2024, חשבו רווח ועודפים, ואז רשמו את 2025 עד מאזן הבוחן והעודפים." label="הצגת הפתרון המלא">
-          <TBTable tb={trialBalance(EXAM2.tb2024)} caption="מאזן בוחן · 31.12.2024" kind />
-          <Calc result={<Money v={EXAM2.profit2024} />}>רווח 2024: הכנסות פחות הוצאות. בשנה הראשונה אין עודפי פתיחה, ולכן זה גם העודפים בסוף 2024</Calc>
-          <Entries entries={EXAM2.entries} />
-          <TBTable tb={trialBalance(EXAM2.final2025)} caption="מאזן בוחן · 31.12.2025" kind />
-          <Calc result={<Money v={EXAM2.profit2025} />}>רווח 2025: רק ההכנסות וההוצאות של 2025</Calc>
-          <Calc result={<Money v={EXAM2.closingRetained} />}>
-            עודפי סגירה: <Money v={EXAM2.profit2024} /> + <Money v={EXAM2.profit2025} />
-          </Calc>
-          <Trap>{EXAM2.trap}</Trap>
-        </Reveal>
+        <WorkedReveal w={W_EXAM2} tryFirst="מיינו את 2024, חשבו רווח ועודפים, ואז רשמו את 2025 עד מאזן הבוחן והעודפים." />
       </>
     ),
   },
@@ -190,32 +137,29 @@ export const EXAM_LESSON_SCREENS: Record<string, ScreenContent> = {
         <Given title={`נתון: ${EXAM3.name}, 31.12.2025`} asks={EXAM3.asks}>
           <Facts items={EXAM3.facts} />
         </Given>
-        <Reveal prompt="רשמו את כל הפקודות. שימו לב לשני הנתונים שדורשים שתי פקודות." label="הצגת הפתרון המלא">
-          <Entries entries={EXAM3.entries} />
-          <Trap>{EXAM3.trap}</Trap>
-        </Reveal>
+        <WorkedReveal w={W_EXAM3} tryFirst="רשמו את כל הפקודות. שימו לב לשני הנתונים שדורשים שתי פקודות." />
       </>
     ),
   },
 
   "ex-5": {
     lead: "גיליון רב-טורי מלא, ברמת הבוחן. שתי יתרות חסרות, אחת מהן מהסיפור.",
-    body: <WorksheetExamScreen x={EXAM5} />,
+    body: <WorksheetExamScreen x={EXAM5} w={W_EXAM5} />,
   },
 
   "ex-6": {
     lead: "גיליון רב-טורי מלא. יתרה אחת חסרה מסתתרת במשוואה.",
-    body: <WorksheetExamScreen x={EXAM6} />,
+    body: <WorksheetExamScreen x={EXAM6} w={W_EXAM6} />,
   },
 
   "ex-7": {
     lead: "גיליון רב-טורי מלא. היתרה החסרה הפעם היא של ההפרשה, ומוצאים אותה מהלקוחות נטו.",
-    body: <WorksheetExamScreen x={EXAM7} />,
+    body: <WorksheetExamScreen x={EXAM7} w={W_EXAM7} />,
   },
 
   "ex-8": {
     lead: "הגיליון הקשה בקורס: שלוש יתרות חסרות, שתי מכונות מאותה קנייה שנמכרו בשנים שונות, ותיקונים שמשנים את ההפרשה.",
-    body: <WorksheetExamScreen x={EXAM8} />,
+    body: <WorksheetExamScreen x={EXAM8} w={W_EXAM8} />,
   },
 
   "ex-mixed": {
@@ -231,15 +175,7 @@ export const EXAM_LESSON_SCREENS: Record<string, ScreenContent> = {
         <Given title={`נתון: ${EXAM4.name}`} asks={EXAM4.asks}>
           <Facts items={EXAM4.facts} />
         </Given>
-        <Reveal prompt="פתרו לפי הסדר: כל סעיף משתמש בתשובה של הקודם." label="הצגת הפתרון המלא">
-          <Calc result={<Money v={EXAM4.grossOpening} />}>א. לקוחות ברוטו: <bdi dir="ltr" className="num">488,800 ÷ 0.94</bdi></Calc>
-          <Calc result={<Money v={EXAM4.allowOpening} />}>א. ההפרשה: <bdi dir="ltr" className="num">520,000 − 488,800</bdi></Calc>
-          <Calc result={<Money v={EXAM4.collected} />}>ב. גבייה: 520,000 + 2,300,000 + 4,000 (החוב שחזר) − 18,000 (מחיקה) − 620,000 (סגירה)</Calc>
-          <Calc result={<Money v={EXAM4.allowClosing} />}>ג. הפרשה בסוף השנה: <bdi dir="ltr" className="num">31,200 − 18,000 + 4,000 + 27,800</bdi></Calc>
-          <Calc result={<Money v={EXAM4.specificDebt} />}>ד. <bdi dir="ltr" className="num">X × 40% + (620,000 − X) × 5% = 45,000</bdi>, ולכן <bdi dir="ltr" className="num">0.35X = 45,000 − 31,000</bdi></Calc>
-          <Calc result={<Money v={EXAM4.netClosing} />}>ה. לקוחות נטו: <bdi dir="ltr" className="num">620,000 − 45,000</bdi></Calc>
-          <Trap>{EXAM4.trap}</Trap>
-        </Reveal>
+        <WorkedReveal w={W_EXAM4} tryFirst="פתרו לפי הסדר: כל סעיף משתמש בתשובה של הקודם." />
       </>
     ),
   },

@@ -2,9 +2,9 @@
 
 import { RotateCcw, Shuffle } from "lucide-react";
 import { useState } from "react";
-import { drill, DRILL_FAMILIES, type DrillFamily, familiesOf } from "@/lib/study/basics/drills";
+import { drill, DRILL_FAMILIES, type DrillFamily, drillWorked, familiesOf } from "@/lib/study/basics/drills";
+import { WorkedSolution } from "@/components/study/worked";
 import { cn } from "@/lib/utils";
-import { JE } from "./ui";
 
 const LEVELS = [
   { level: 1, label: "רמה 1", hint: "התאמה אחת ופשוטה" },
@@ -132,43 +132,7 @@ export function BasicsDrill({ lesson }: { lesson: 5 | 6 | 7 | "all" }) {
           {right ? "נכון." : "לא בדיוק. נסו שוב, או פתחו את הפתרון המלא."}
         </p>
       )}
-      {shown && (
-        <div className="space-y-3 rounded-xl border border-line bg-surface-2/40 p-3.5 text-[14.5px]">
-          {level === "mixed" && (
-            <p className="text-[13px] font-bold text-accent">הנושא: {DRILL_FAMILIES[family].title}</p>
-          )}
-          <p>
-            <strong>איזה כלי?</strong> {d.tool}
-          </p>
-          {d.steps.map((s) => (
-            <div key={s.title}>
-              <p className="font-bold text-fg">{s.title}</p>
-              {s.note && <p>{s.note}</p>}
-              {s.formula && <p>{s.formula}</p>}
-              {s.numbers && (
-                <p dir="ltr" className="num text-right break-words">
-                  {s.numbers}
-                </p>
-              )}
-            </div>
-          ))}
-          <p className="flex flex-wrap items-baseline gap-x-2">
-            <span className="rounded bg-surface px-1.5 py-0.5 text-[11px] font-bold text-fg ring-1 ring-line">באקסל</span>
-            <bdi dir="ltr" className="font-mono">
-              {d.excel}
-            </bdi>
-          </p>
-          {d.entries.map((e, i) => (
-            <JE key={i} entry={{ ...e, id: String(i + 1) }} note={null} />
-          ))}
-          <p>
-            <strong>התשובה:</strong> <span className="num">{d.answer.toLocaleString("en-US")}</span> ₪
-          </p>
-          <p>
-            <strong>מלכודת נפוצה:</strong> {d.trap}
-          </p>
-        </div>
-      )}
+      {shown && <WorkedSolution w={drillWorked(d, level === "mixed" ? DRILL_FAMILIES[family].title : undefined)} answer={<><span className="num">{d.answer.toLocaleString("en-US")}</span> ₪</>} />}
     </section>
   );
 }

@@ -4,6 +4,7 @@
  * here from the question's own data; the stories and numbers are the course's own.
  */
 
+import type { WLine } from "@/lib/study/worked";
 import { type Balances, balancesOf, type Entry, isBalanceSheet, type Line, ledger, round2, statements } from "./basics";
 import { accumulatedTo, depreciationOfYear, sale, saleEntry } from "./basics-ppe";
 
@@ -183,6 +184,8 @@ const specificDebt = round2((allowClosing - E4.closing * E4.general) / (E4.speci
 export const EXAM4 = {
   name: "רקפת בע״מ",
   time: 25,
+  /** The givens as numbers, for the worked solution. */
+  data: E4,
   facts: [
     `ב-31.12.2024 הלקוחות נטו של החברה היו ${f(E4.netOpening)} ₪. ההפרשה הייתה ${E4.rate * 100}% מהלקוחות ברוטו.`,
     `ב-2025: מכירות באשראי ${f(E4.sales)} ₪, ונמחק חוב אבוד של ${f(E4.written)} ₪.`,
@@ -214,6 +217,10 @@ export type WorksheetExam = {
   facts: string[];
   entries: Entry[];
   trap: string;
+  /** For the worked solution: each "?" balance as a lecturer's sheet. */
+  sheets?: Record<string, WLine[]>;
+  /** For the worked solution: the allowance the year end needs, the course's formula and then the numbers. */
+  allowance?: [string, string];
 };
 
 /** Everything after the question: the preliminary trial balance with every "?" found, the final one, profit and closing retained earnings. */
@@ -262,6 +269,16 @@ export const EXAM5: WorksheetExam = {
     "הוצאות חשמל": 56_100,
   },
   computed: [{ account: "כלי רכב – פחת נצבר", value: -v5Acc, why: `${f(v5Cost)} × ${V5.rate * 100}% × 45/12: מאפריל 2021 עד סוף 2024, כי הפחת של 2025 עוד לא נרשם.` }],
+  sheets: {
+    "כלי רכב – פחת נצבר": [
+      { l: `עלות ${V5.count} הטנדרים`, a: v5Cost },
+      { l: `× \`${V5.rate * 100}%\``, a: "", k: "op" },
+      { l: "פחת לשנה", a: v5Cost * V5.rate, k: "sub" },
+      { l: "× `45/12`, אפריל 2021 עד דצמבר 2024", a: "", k: "op" },
+      { l: "פחת נצבר, 31.12.2024", a: v5Acc, k: "tot" },
+    ],
+  },
+  allowance: [`חוב בקשיים × ${C5.p * 100}% + שאר הלקוחות × ${C5.g * 100}% = הפרשה נדרשת`, `${f(C5.specific)} × ${C5.p * 100}% + ${f(c5After - C5.specific)} × ${C5.g * 100}% = ${f(c5Required)}`],
   facts: [
     `כלי רכב: ב-1.4.2021 נקנו ${V5.count} טנדרים זהים ב-${f(V5.each)} ₪ כל אחד, בפחת של ${V5.rate * 100}% בשנה. הפחת הנצבר לא נתון במאזן הבוחן. בסוף ספטמבר 2025 נמכר טנדר אחד ב-${f(V5.proceeds)} ₪ במזומן. לא נרשמו לא המכירה ולא הפחת של 2025.`,
     "החשמל של ינואר עד נובמבר נרשם, בשווה בכל חודש. בדצמבר החשבון גבוה ב-20% מחודש רגיל, והוא ישולם בינואר.",
@@ -315,6 +332,14 @@ export const EXAM6: WorksheetExam = {
     "הוצאות שכירות": 96_000,
   },
   computed: [{ account: "מחשבים", value: d6Cost, why: `עלות = ${D6.regular}X + ${D6.laptops} × ${D6.times}X = ${D6.regular + D6.laptops * D6.times}X. מאפריל 2023 עד סוף 2024: 21 חודשים מתוך 48. ${D6.regular + D6.laptops * D6.times}X × 21/48 = ${f(d6Acc)}, ולכן X = ${f(D6.x)}.` }],
+  sheets: {
+    מחשבים: [
+      { l: "פחת נצבר במאזן הבוחן", a: d6Acc },
+      { l: `× \`${D6.years * 12}/21\`, כי עברו 21 חודשים מתוך ${D6.years * 12}`, a: "", k: "op" },
+      { l: "עלות המחשבים", a: d6Cost, k: "tot" },
+    ],
+  },
+  allowance: [`לקוחות, כולל הצ׳ק שחזר × ${R6.rate * 100}% = הפרשה נדרשת`, `${f(R6.customers + R6.cheque)} × ${R6.rate * 100}% = ${f(r6Required)}`],
   facts: [
     `מחשבים: ב-1.4.2023 נקנו ${D6.regular} מחשבים רגילים ו-${D6.laptops} מחשבים ניידים, ל-${D6.years} שנים. נייד עולה פי ${D6.times} ממחשב רגיל. העלות לא נתונה במאזן הבוחן, והפחת של 2025 לא נרשם.`,
     `ב-1.${K6.month}.2025 נקנה רכב ב-${f(K6.cost)} ₪ במזומן, והקנייה נרשמה. שיעור הפחת ${K6.rate * 100}% בשנה, והפחת לא נרשם.`,
@@ -369,6 +394,14 @@ export const EXAM7: WorksheetExam = {
     "הוצאות ארנונה": 64_000,
   },
   computed: [{ account: "הפרשה להפסדי אשראי חזויים", value: -a7Allow, why: `ההפרשה במאזן הבוחן היא של סוף 2024 (ב-2025 עוד לא נרשם עליה דבר). לקוחות ברוטו: ${f(A7.net)} ÷ ${1 - A7.rate} = ${f(a7Gross)}. ההפרשה: ${f(a7Gross)} − ${f(A7.net)}.` }],
+  sheets: {
+    "הפרשה להפסדי אשראי חזויים": [
+      { l: "לקוחות ברוטו, 31.12.2024", how: `\`${f(A7.net)} ÷ ${1 - A7.rate}\``, a: a7Gross },
+      { l: "פחות: לקוחות נטו", a: -A7.net, k: "op" },
+      { l: "ההפרשה, 31.12.2024", a: a7Allow, k: "tot" },
+    ],
+  },
+  allowance: [`חוב בקשיים × ${A7.p * 100}% + שאר הלקוחות × ${A7.g * 100}% = הפרשה נדרשת`, `${f(A7.specific)} × ${A7.p * 100}% + ${f(a7After + 36_000 - A7.specific)} × ${A7.g * 100}% = ${f(round2(A7.specific * A7.p + (a7After + 36_000 - A7.specific) * A7.g))}`],
   facts: [
     `לקוחות: ב-31.12.2024 הלקוחות נטו היו ${f(A7.net)} ₪, וההפרשה הייתה ${A7.rate * 100}% מהלקוחות ברוטו. המכירות באשראי והגבייה של 2025 נרשמו. ב-31.12.2025 התברר שחוב של ${f(A7.written)} ₪ אבוד, וטרם נמחק.`,
     `ב-31.12.2025 החברה מפרישה ${A7.p * 100}% מחוב של לקוח בקשיים שחייב ${f(A7.specific)} ₪, ו-${A7.g * 100}% משאר הלקוחות.`,
@@ -429,6 +462,21 @@ export const EXAM8: WorksheetExam = {
     { account: "מכונות", value: m8Cost, why: `בספרים נשארו ${M8.count - M8.soldBefore} מכונות: ${M8.count - M8.soldBefore} × ${f(M8.each)}. המכונה שנמכרה ב-2023 כבר יצאה.` },
     { account: "מכונות – פחת נצבר", value: -m8Acc, why: `${f(m8Cost)} ÷ ${M8.years} × 42/12: מיולי 2021 עד סוף 2024, כי הפחת של 2025 עוד לא נרשם.` },
   ],
+  sheets: {
+    מכונות: [
+      { l: "מכונות שנשארו בספרים", a: `${M8.count - M8.soldBefore}` },
+      { l: `× \`${f(M8.each)}\``, a: "", k: "op" },
+      { l: "עלות המכונות", a: m8Cost, k: "tot" },
+    ],
+    "מכונות – פחת נצבר": [
+      { l: "עלות המכונות", a: m8Cost },
+      { l: `÷ \`${M8.years}\` שנים`, a: "", k: "op" },
+      { l: "פחת לשנה", a: m8Cost / M8.years, k: "sub" },
+      { l: "× `42/12`, יולי 2021 עד דצמבר 2024", a: "", k: "op" },
+      { l: "פחת נצבר, 31.12.2024", a: m8Acc, k: "tot" },
+    ],
+  },
+  allowance: [`לקוחות, כולל החוב שחזר × ${R8.rate * 100}% = הפרשה נדרשת`, `${f(R8.customers + R8.recovered)} × ${R8.rate * 100}% = ${f(r8Required)}`],
   facts: [
     `מכונות: ב-1.7.2021 נקנו ${M8.count} מכונות זהות ב-${f(M8.each)} ₪ כל אחת, ל-${M8.years} שנים. ב-31.12.2023 נמכרה אחת מהן בעלותה המופחתת, והמכירה נרשמה. העלות והפחת הנצבר לא נתונים במאזן הבוחן.`,
     `בסוף אוקטובר 2025 נמכרה עוד מכונה ב-${f(M8.proceeds)} ₪ במזומן. לא נרשמו לא המכירה ולא הפחת של 2025.`,

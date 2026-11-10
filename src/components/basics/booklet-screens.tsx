@@ -1,13 +1,12 @@
 import type { ScreenContent } from "@/components/study-mode/shell";
-import { trialBalance } from "@/lib/learn/basics";
 import { AGAM, GILAD, NEVEH } from "@/lib/learn/basics-booklet";
 import { Remember } from "@/components/study-mode/screen-parts";
 import { Given } from "./credit";
-import { Calc, JE, Money, TBTable } from "./ui";
-import { Reveal } from "./year";
+import { Money } from "./ui";
+import { W_AGAM, W_GILAD, W_NEVEH } from "@/lib/study/basics/exam-worked";
+import { WorkedReveal } from "@/components/study/worked";
 
 const n = (v: number) => Math.round(v).toLocaleString("en-US");
-const tb = trialBalance;
 
 /** Booklet-level questions: one at the end of each of lessons 5, 6 and 7, the whole solution behind one button. */
 export const BOOKLET_SCREENS: Record<string, ScreenContent> = {
@@ -22,16 +21,7 @@ export const BOOKLET_SCREENS: Record<string, ScreenContent> = {
             ))}
           </ol>
         </Given>
-        <Reveal prompt="כתבו את שמונה הפקודות. לכל נתון: מה נרשם, מה צריך, ומה חסר." label="הצגת הפתרון המלא">
-          <div className="grid gap-3 lg:grid-cols-2">
-            {AGAM.entries.map((e) => (
-              <JE key={e.id} entry={e} />
-            ))}
-          </div>
-          <p className="rounded-xl bg-surface-2/70 px-3.5 py-2.5 text-[14.5px]">
-            <strong>מלכודת נפוצה:</strong> {AGAM.trap}
-          </p>
-        </Reveal>
+        <WorkedReveal w={W_AGAM} tryFirst="כתבו את שמונה הפקודות. לכל נתון: מה נרשם, מה צריך, ומה חסר." />
         <Remember>לפני כל פקודה שואלים: נרשם כהוצאה או כנכס? כמה חודשים נרשמו? והשיעור לשנה או לחצי שנה?</Remember>
       </>
     ),
@@ -57,23 +47,7 @@ export const BOOKLET_SCREENS: Record<string, ScreenContent> = {
             ))}
           </ol>
         </Given>
-        <Reveal prompt="השלימו את שתי היתרות, רשמו את כל הפקודות, ובנו את מאזן הבוחן המתוקן עד הרווח והעודפים." label="הצגת הפתרון המלא">
-          <Calc result={<Money v={GILAD.found.insurance} />}>ביטוח מראש: 48,000 ÷ 24 = 2,000 לחודש. ב-2024 נוצלו 3 חודשים, ונשארו 21 × 2,000</Calc>
-          <Calc result={<Money v={GILAD.found.retained} />}>עודפים: ההפרש שמאזן את מאזן הבוחן, בזכות</Calc>
-          <div className="grid gap-3 lg:grid-cols-2">
-            {GILAD.entries.map((e) => (
-              <JE key={e.id} entry={e} />
-            ))}
-          </div>
-          <TBTable tb={tb(GILAD.final)} caption={`מאזן בוחן מתוקן · ${GILAD.name} · 31.12.2025`} kind />
-          <Calc result={<Money v={GILAD.profit} />}>רווח 2025: הכנסות פחות הוצאות במאזן הבוחן המתוקן</Calc>
-          <Calc result={<Money v={GILAD.closingRetained} />}>
-            עודפי סגירה: <Money v={GILAD.found.retained} /> + <Money v={GILAD.profit} />
-          </Calc>
-          <p className="rounded-xl bg-surface-2/70 px-3.5 py-2.5 text-[14.5px]">
-            <strong>מלכודת נפוצה:</strong> {GILAD.trap}
-          </p>
-        </Reveal>
+        <WorkedReveal w={W_GILAD} tryFirst="השלימו את שתי היתרות, רשמו את כל הפקודות, ובנו את הגיליון הרב־טורי עד הרווח והעודפים." />
         <Remember>סדר העבודה: יתרות ״?״ מהסיפור, אחר כך העודפים כהפרש, פקודות, מאזן בוחן מתוקן, ורק בסוף הרווח והעודפים.</Remember>
       </>
     ),
@@ -97,48 +71,7 @@ export const BOOKLET_SCREENS: Record<string, ScreenContent> = {
             ))}
           </ul>
         </Given>
-        <Reveal prompt="לכל שנה: לקוחות בסוף השנה, ההפרשה לפני ההתאמה, ההפרשה הנדרשת, וההוצאה כהפרש ביניהן." label="הצגת הפתרון המלא">
-          {NEVEH.years.map((y, i) => (
-            <div key={y.year} className="space-y-1.5 rounded-xl border border-line bg-surface p-3 text-[14.5px]">
-              <p className="text-[15px] font-bold text-fg">{y.year}</p>
-              <p>
-                לקוחות: <Money v={y.opening} /> + <Money v={NEVEH.data[i].sales} /> − <Money v={NEVEH.data[i].collected} />
-                {NEVEH.data[i].written ? (
-                  <>
-                    {" "}
-                    − <Money v={NEVEH.data[i].written} />
-                  </>
-                ) : null}{" "}
-                = <strong><Money v={y.customers} /></strong>
-              </p>
-              <p>
-                ההפרשה לפני ההתאמה: <Money v={Math.abs(y.allowanceBefore)} />
-                {y.allowanceBefore < 0 ? " בחובה (המחיקה גדולה מההפרשה שהייתה)" : y.allowanceBefore > 0 ? " בזכות" : ""}
-              </p>
-              <p>
-                ההפרשה הנדרשת:{" "}
-                {NEVEH.data[i].specific ? (
-                  <>
-                    <Money v={60_000} /> × 50% + (<Money v={y.customers} /> − <Money v={60_000} />) × 5% = <strong><Money v={y.required} /></strong>
-                  </>
-                ) : (
-                  <>
-                    <Money v={y.customers} /> × 2% = <strong><Money v={y.required} /></strong>
-                  </>
-                )}
-              </p>
-              <p>
-                הוצאות הפסדי אשראי: <Money v={y.required} /> {y.allowanceBefore < 0 ? "+" : "−"} <Money v={Math.abs(y.allowanceBefore)} /> = <strong><Money v={y.expense} /></strong>
-              </p>
-              <p>
-                לקוחות נטו: <Money v={y.customers} /> − <Money v={y.required} /> = <strong><Money v={y.net} /></strong>
-              </p>
-            </div>
-          ))}
-          <p className="rounded-xl bg-surface-2/70 px-3.5 py-2.5 text-[14.5px]">
-            <strong>מלכודת נפוצה:</strong> {NEVEH.trap}
-          </p>
-        </Reveal>
+        <WorkedReveal w={W_NEVEH} tryFirst="לכל שנה: לקוחות בסוף השנה, ההפרשה לפני ההתאמה, ההפרשה הנדרשת, וההוצאה כהפרש ביניהן." />
         <Remember>בכל שנה: לקוחות סוף ← הפרשה נדרשת ← מה שיש אחרי המחיקות ← ההוצאה היא ההפרש. יתרת הסגירה של שנה היא הפתיחה של הבאה.</Remember>
       </>
     ),
