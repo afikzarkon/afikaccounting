@@ -5,7 +5,7 @@ import { TOPICS } from "@/lib/catalog";
 import { ACCESS_PREVIEW_TIER, isSupabaseConfigured } from "@/lib/env";
 import { isTier } from "@/lib/pricing";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentUser, isAdmin } from "./dal";
+import { getCurrentUser, getGateState, isAdmin } from "./dal";
 
 /**
  * The reader's effective plan, decided on the server: a guest or an account
@@ -19,9 +19,15 @@ export const getAccess = cache(async (): Promise<Access> => {
   const user = await getCurrentUser();
   if (!user) return resolveAccess({ configured: true });
   const supabase = await createClient();
-  const [admin, { data }] = await Promise.all([isAdmin(), supabase.from("subscriptions").select("tier, status, current_period_end").eq("user_id", user.id)]);
+  const [admin, { data }, gate] = await Promise.all([
+    isAdmin(),
+    supabase.from("subscriptions").select("tier, status, current_period_end").eq("user_id", user.id),
+    getGateState(),
+  ]);
   // Before the subscriptions migration runs, `data` is null: the account is on "free".
-  return resolveAccess({ configured: true, userId: user.id, admin, rows: data ?? [] });
+  // The closed site: an account opens only the courses granted to it, and none until it is approved.
+  const courses = gate.signedIn && gate.status === "approved" ? gate.courses : [];
+  return resolveAccess({ configured: true, userId: user.id, admin, rows: data ?? [], courses });
 });
 
 /** Whether the reader may open a topic (by id), or one of its lessons or chapters. An unknown topic is closed. */

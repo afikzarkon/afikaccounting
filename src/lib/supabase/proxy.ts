@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { DEVICE_COOKIE, DEVICE_COOKIE_OPTIONS, claimArgs, signInContext } from "@/lib/auth/session";
 import { AUTH_COOKIE_OPTIONS, SUPABASE_KEY, SUPABASE_URL, isSupabaseConfigured } from "@/lib/env";
+import { type ApprovalStatus, type GateState, MY_COURSES_PATH, PENDING_PATH, decide } from "@/lib/gate";
 import { securityLog } from "@/lib/security-log";
 import { isLinkHidden } from "@/lib/visibility/rules";
 
@@ -27,15 +28,12 @@ async function hiddenLinks(origin: string) {
 /** Paths never blocked: the API (and the list itself), sign-in, the admin. */
 const NEVER_HIDDEN = ["/api/", "/auth/", "/admin", "/login", "/register", "/_next/"];
 
-// Signed-in only. /admin additionally checks the admin role in its pages and actions.
-const PROTECTED = ["/dashboard", "/profile", "/admin"];
-const GUEST_ONLY = ["/login", "/register", "/forgot-password"];
-
 /**
  * Refresh the auth session on every request, turn away a session that was
- * replaced by a sign-in elsewhere, and gate protected routes. Pages and
- * actions still verify the user themselves — this is the first line, not the
- * only one.
+ * replaced by a sign-in elsewhere, and close the site (lib/gate.ts): a guest
+ * goes to sign-in, an account the admin hasn't approved to the waiting page,
+ * and an approved one opens only its own courses. Pages and actions still
+ * verify the user themselves — this is the first line, not the only one.
  */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -94,12 +92,29 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  // The closed site: every address is decided from the session and the account's approval and courses.
+  const state = await gateState(supabase, signedIn);
+  const decision = decide(pathname, state);
+  if (decision.kind !== "allow") {
+    if (decision.kind !== "home") securityLog("gate_refused", { user: signedIn ? data?.claims.sub : null, path: pathname, reason: decision.kind });
+    // A page is sent where it belongs; an API call, an action or a form post is refused outright.
+    const page = (request.method === "GET" || request.method === "HEAD") && !pathname.startsWith("/api/") && !request.headers.has("next-action");
+    if (!page) {
+      const refused = NextResponse.json({ error: decision.kind === "login" ? "unauthenticated" : "forbidden" }, { status: decision.kind === "login" ? 401 : 403 });
+      response.cookies.getAll().forEach((c) => refused.cookies.set(c));
+      return finish(refused);
+    }
+    if (decision.kind === "login") return redirectTo("/login", { next: pathname + search });
+    if (decision.kind === "pending") return redirectTo(PENDING_PATH);
+    if (decision.kind === "denied") return redirectTo(MY_COURSES_PATH, { denied: "1" });
+    return redirectTo(decision.to);
+  }
+
   // A page the admin hid is not found — except for an admin, who can still open it.
   if (request.method === "GET" && !NEVER_HIDDEN.some((p) => pathname.startsWith(p))) {
     const links = await hiddenLinks(request.nextUrl.origin);
     if (links.length && isLinkHidden(links, pathname + search)) {
-      const { data: admin } = signedIn ? await supabase.rpc("is_admin") : { data: false };
-      if (!admin) {
+      if (!(state.signedIn && state.admin)) {
         const hidden = NextResponse.rewrite(new URL("/_hidden", request.url), { status: 404 });
         response.cookies.getAll().forEach((c) => hidden.cookies.set(c));
         return finish(hidden);
@@ -107,11 +122,25 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  if (!signedIn && PROTECTED.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
-    return redirectTo("/login", { next: pathname + search });
-  }
-  if (signedIn && GUEST_ONLY.includes(pathname)) {
-    return redirectTo("/dashboard");
-  }
   return finish(response);
+}
+
+type Supabase = ReturnType<typeof createServerClient>;
+
+/**
+ * The account's approval and courses, in one call (public.access_state). If the
+ * call fails — the migration hasn't run, or the database is down — the site
+ * stays closed: only an admin gets in.
+ */
+async function gateState(supabase: Supabase, signedIn: boolean): Promise<GateState> {
+  if (!signedIn) return { signedIn: false };
+  const { data, error } = await supabase.rpc("access_state");
+  if (error || !data || typeof data !== "object") {
+    const { data: admin } = await supabase.rpc("is_admin");
+    return { signedIn: true, admin: admin === true, status: "pending", courses: [] };
+  }
+  const d = data as { admin?: unknown; status?: unknown; courses?: unknown };
+  const status: ApprovalStatus = d.status === "approved" || d.status === "rejected" ? d.status : "pending";
+  const courses = Array.isArray(d.courses) ? d.courses.filter((c): c is string => typeof c === "string") : [];
+  return { signedIn: true, admin: d.admin === true, status, courses };
 }

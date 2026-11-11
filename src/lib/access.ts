@@ -13,6 +13,12 @@ export type Access = {
   /** Demo mode (no Supabase): everything is open, as it always was. */
   demo: boolean;
   signedIn: boolean;
+  /**
+   * The closed site (lib/gate.ts): the courses (topic ids) the admin granted this
+   * account — only these open, whatever the plan; an account not approved has none.
+   * Absent for an admin, a guest and demo mode: the plan alone decides.
+   */
+  courses?: readonly string[];
 };
 
 export type SubscriptionRow = { tier: string; status: string; current_period_end: string | null };
@@ -39,6 +45,7 @@ export function resolveAccess({
   rows = [],
   now,
   previewTier,
+  courses,
 }: {
   configured: boolean;
   userId?: string | null;
@@ -48,23 +55,30 @@ export function resolveAccess({
   now?: Date;
   /** Demo mode only: act as a reader on this plan, to see the locks without Supabase. */
   previewTier?: Tier;
+  /** The courses the admin granted a signed-in account (none when it isn't approved). Ignored for an admin. */
+  courses?: readonly string[];
 }): Access {
   if (!configured) return { tier: previewTier ?? "exams", demo: !previewTier, signedIn: false };
   if (!userId) return { tier: "free", demo: false, signedIn: false };
-  return { tier: admin ? "exams" : effectiveTier(rows, now ?? new Date()), demo: false, signedIn: true };
+  if (admin) return { tier: "exams", demo: false, signedIn: true };
+  const tier = effectiveTier(rows, now ?? new Date());
+  if (!courses) return { tier, demo: false, signedIn: true };
+  // A granted course opens whole, so an account with any grant reads as on the courses plan at least.
+  return { tier: courses.length && tier === "free" ? "courses" : tier, demo: false, signedIn: true, courses };
 }
 
 /**
  * Whether the reader may open a topic, or one lesson or chapter of it: the
  * whole of a topic their plan includes, and the preview of every other.
  */
-export function canAccessWith(access: Access, topic: Pick<Topic, "tier" | "preview">, item?: string) {
+export function canAccessWith(access: Access, topic: Pick<Topic, "id" | "tier" | "preview">, item?: string) {
+  if (access.courses) return access.courses.includes(topic.id);
   if (tierAllows(access.tier, topic.tier)) return true;
   return item !== undefined && topic.preview.includes(item);
 }
 
 /** The lessons or chapters of a topic the reader can't open, out of `items`. */
-export const lockedOf = (access: Access, topic: Pick<Topic, "tier" | "preview">, items: string[]) => items.filter((i) => !canAccessWith(access, topic, i));
+export const lockedOf = (access: Access, topic: Pick<Topic, "id" | "tier" | "preview">, items: string[]) => items.filter((i) => !canAccessWith(access, topic, i));
 
 /**
  * Whether the reader may open an exam's paper and solution: a sample is open

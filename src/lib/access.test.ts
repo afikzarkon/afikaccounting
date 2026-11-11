@@ -70,6 +70,18 @@ describe("canAccess", () => {
     assert.deepEqual(lockedOf(courses, topic("ias19"), ["ias19-map", "ias19-short", "ias19-exams"]), []);
     assert.deepEqual(lockedOf(free, topic("ias19"), ["ias19-map", "ias19-short", "ias19-exams"]), ["ias19-short", "ias19-exams"]);
   });
+  it("on the closed site, opens only the granted courses, whatever the plan", () => {
+    const granted = resolveAccess({ configured: true, userId: "u", rows: [sub("exams")], now: NOW, courses: ["ias16"] });
+    assert.ok(canAccessWith(granted, topic("ias16"), "ias16-revaluation"));
+    assert.ok(!canAccessWith(granted, topic("basics"), "basics-final"), "even the free course");
+    assert.ok(!canAccessWith(granted, topic("inventory"), "inventory-what"), "even a free taste");
+    const noPlan = resolveAccess({ configured: true, userId: "u", rows: [], courses: ["ias19"] });
+    assert.equal(noPlan.tier, "courses");
+    assert.ok(canAccessWith(noPlan, topic("ias19"), "ias19-short"));
+    const pending = resolveAccess({ configured: true, userId: "u", rows: [sub("courses")], now: NOW, courses: [] });
+    assert.ok(!canAccessWith(pending, topic("basics")));
+    assert.equal(resolveAccess({ configured: true, userId: "u", admin: true, courses: [] }).courses, undefined);
+  });
   it("the plans name every course with its true number of lessons", async () => {
     const { PLANS } = await import("./pricing");
     const { INVENTORY_LESSONS } = await import("./study/inventory");

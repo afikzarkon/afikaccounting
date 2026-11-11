@@ -2,6 +2,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { isSupabaseConfigured } from "@/lib/env";
+import type { ApprovalStatus, GateState } from "@/lib/gate";
 import { securityLog } from "@/lib/security-log";
 import { createClient } from "@/lib/supabase/server";
 
@@ -58,6 +59,22 @@ export async function assertAdmin(): Promise<SessionUser | null> {
   securityLog("admin_denied", { user: user?.id ?? null });
   return null;
 }
+
+/**
+ * The closed site's view of the reader (lib/gate.ts): signed in or not, admin,
+ * approval, and the courses granted. The proxy decides with the same call; if it
+ * fails (the migration hasn't run), the account counts as not approved.
+ */
+export const getGateState = cache(async (): Promise<GateState> => {
+  const user = await getCurrentUser();
+  if (!user) return { signedIn: false };
+  const supabase = await createClient();
+  const [{ data }, admin] = await Promise.all([supabase.rpc("access_state"), isAdmin()]);
+  const d = (data ?? {}) as { status?: unknown; courses?: unknown };
+  const status: ApprovalStatus = d.status === "approved" || d.status === "rejected" ? d.status : "pending";
+  const courses = Array.isArray(d.courses) ? d.courses.filter((c): c is string => typeof c === "string") : [];
+  return { signedIn: true, admin, status, courses };
+});
 
 export const getProfile = cache(async (): Promise<Profile | null> => {
   const user = await getCurrentUser();

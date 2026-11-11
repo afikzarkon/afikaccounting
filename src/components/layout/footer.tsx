@@ -106,6 +106,30 @@ export async function Footer() {
   );
 }
 
+/**
+ * The closed site's footer, for everyone but an admin: no site map (those pages
+ * are closed to them), only the copyright and the legal pages the law needs
+ * reachable from every page.
+ */
+export function MinimalFooter() {
+  return (
+    <footer className="no-print mt-24 border-t border-line bg-surface/40">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-8 text-xs text-subtle sm:px-6 lg:px-8">
+        <p>
+          © <CurrentYear /> {site.name}. כל הזכויות שמורות. אין להעתיק, להפיץ או לשתף את התכנים ללא אישור בכתב.
+        </p>
+        <nav aria-label="מסמכים משפטיים" className="flex flex-wrap gap-x-4 gap-y-2">
+          {LEGAL_LINKS.map((l) => (
+            <Link key={l.href} href={l.href} className="font-medium text-muted transition-colors hover:text-fg">
+              {l.label}
+            </Link>
+          ))}
+        </nav>
+      </div>
+    </footer>
+  );
+}
+
 /** Cached so reading the clock doesn't make the footer request-time. */
 async function CurrentYear() {
   "use cache";

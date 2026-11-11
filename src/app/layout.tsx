@@ -4,12 +4,13 @@ import { Suspense } from "react";
 import { Frank_Ruhl_Libre, Geist_Mono, IBM_Plex_Sans_Hebrew } from "next/font/google";
 import { ContentGuard } from "@/components/layout/content-guard";
 import { MobileTabBar, MobileTabBarView } from "@/components/layout/continue";
-import { Footer } from "@/components/layout/footer";
+import { Footer, MinimalFooter } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
 import { PageViewTracker } from "@/components/layout/page-view-tracker";
 import { SearchPalette } from "@/components/layout/search";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { SheetDock } from "@/components/sheet/sheet-dock";
+import { FullSiteOnly } from "@/components/layout/session-store";
 import { VisibilityProvider } from "@/components/layout/visibility";
 import { SITE_URL } from "@/lib/env";
 import { site } from "@/lib/site";
@@ -56,11 +57,14 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <main id="main" className="flex-1">
               {children}
             </main>
-            <Footer />
-            <Suspense fallback={<MobileTabBarView />}>
-              <MobileTabBar />
-            </Suspense>
-            <SearchPalette />
+            {/* The closed site: the site map, the tab bar and search only for an admin (lib/gate.ts). */}
+            <FullSiteOnly fallback={<MinimalFooter />}>
+              <Footer />
+              <Suspense fallback={<MobileTabBarView />}>
+                <MobileTabBar />
+              </Suspense>
+              <SearchPalette />
+            </FullSiteOnly>
             <Suspense fallback={null}>
               <SheetDock />
             </Suspense>

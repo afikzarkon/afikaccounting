@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ChevronDown, LayoutDashboard, LogOut, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronDown, LayoutDashboard, LogOut, ShieldCheck, Sparkles, UserRound, Users } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -8,6 +8,7 @@ import { useLast } from "@/components/study-mode/progress-store";
 import { ButtonLink } from "@/components/ui/button";
 import { signOut } from "@/lib/actions/auth";
 import { FIRST_LESSON } from "@/lib/catalog";
+import { MY_COURSES_PATH } from "@/lib/gate";
 import { BUTTONS } from "@/lib/visibility/items";
 import { useVisibility } from "./visibility";
 
@@ -52,7 +53,12 @@ export function UpgradeButton() {
   );
 }
 
-export function UserMenu({ name, email, admin = false }: { name: string; email: string; admin?: boolean }) {
+/**
+ * The account menu. On the closed site its links follow what the account may
+ * open: everything for an admin ("full"), its courses and profile once approved
+ * ("courses"), and only signing out while it waits for approval ("pending").
+ */
+export function UserMenu({ name, email, admin = false, mode = "full" }: { name: string; email: string; admin?: boolean; mode?: "full" | "courses" | "pending" }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const initials = name
@@ -105,15 +111,26 @@ export function UserMenu({ name, email, admin = false }: { name: string; email: 
               <p className="truncate text-xs text-muted">{email}</p>
             </div>
             <div className="my-1 h-px bg-line" />
-            <MenuLink href="/dashboard" icon={<LayoutDashboard className="h-4 w-4" />} onClick={() => setOpen(false)}>
-              לוח אישי
-            </MenuLink>
-            <MenuLink href="/groups" icon={<Users className="h-4 w-4" />} onClick={() => setOpen(false)}>
-              קבוצות לימוד
-            </MenuLink>
-            <MenuLink href="/profile" icon={<UserRound className="h-4 w-4" />} onClick={() => setOpen(false)}>
-              פרופיל
-            </MenuLink>
+            {mode === "full" && (
+              <>
+                <MenuLink href="/dashboard" icon={<LayoutDashboard className="h-4 w-4" />} onClick={() => setOpen(false)}>
+                  לוח אישי
+                </MenuLink>
+                <MenuLink href="/groups" icon={<Users className="h-4 w-4" />} onClick={() => setOpen(false)}>
+                  קבוצות לימוד
+                </MenuLink>
+              </>
+            )}
+            {mode === "courses" && (
+              <MenuLink href={MY_COURSES_PATH} icon={<BookOpen className="h-4 w-4" />} onClick={() => setOpen(false)}>
+                הקורסים שלי
+              </MenuLink>
+            )}
+            {mode !== "pending" && (
+              <MenuLink href="/profile" icon={<UserRound className="h-4 w-4" />} onClick={() => setOpen(false)}>
+                פרופיל
+              </MenuLink>
+            )}
             {admin && (
               <MenuLink href="/admin" icon={<ShieldCheck className="h-4 w-4" />} onClick={() => setOpen(false)}>
                 מערכת ניהול

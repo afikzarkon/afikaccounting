@@ -2,6 +2,7 @@
 
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { PENDING_PATH } from "@/lib/gate";
 import { getCurrentUser, safeNext } from "@/lib/auth/dal";
 import { DEVICE_COOKIE, claimNewSession, signInContext } from "@/lib/auth/session";
 import { SITE_URL, isSupabaseConfigured } from "@/lib/env";
@@ -54,7 +55,8 @@ export async function signUp(_prev: FormState, fd: FormData): Promise<FormState>
 
   // With email confirmation off, Supabase returns a session immediately.
   if (data.session) await claimNewSession(data.session.access_token, await context());
-  if (data.session) redirect(next ? `${next}${next.includes("?") ? "&" : "?"}welcome=1` : "/dashboard?welcome=1");
+  // The closed site: a new account waits for the admin's approval before it opens anything.
+  if (data.session) redirect(PENDING_PATH);
   return { ok: true, message: `שלחנו קישור אימות לכתובת ${email}. יש לפתוח אותו כדי להפעיל את החשבון.` };
 }
 
@@ -87,7 +89,7 @@ export async function signOut() {
     const supabase = await createClient();
     await supabase.auth.signOut();
   }
-  redirect("/");
+  redirect("/login");
 }
 
 export async function requestPasswordReset(_prev: FormState, fd: FormData): Promise<FormState> {

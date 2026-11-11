@@ -369,3 +369,23 @@ export async function getExperiments(days: number, ids: string[]): Promise<Recor
   const rows = await Promise.all(ids.map(async (id) => [id, (await supabase.rpc("admin_experiment", { p_exp: id, since })).data ?? []] as const));
   return Object.fromEntries(rows) as Record<string, VariantResult[]>;
 }
+
+// ---- accounts: approval and course access ---------------------------------------
+
+export type AdminUser = {
+  userId: string;
+  email: string;
+  fullName: string;
+  role: "user" | "admin";
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
+  reviewedAt: string | null;
+  /** Topic ids from the catalog. */
+  courses: string[];
+};
+
+/** Every account with its approval and the courses granted to it; pending ones first. */
+export async function listUsers(): Promise<AdminUser[]> {
+  const supabase = await createClient();
+  return check<AdminUser[]>(await supabase.rpc("admin_users"));
+}

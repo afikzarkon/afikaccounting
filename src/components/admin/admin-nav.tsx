@@ -1,12 +1,13 @@
 "use client";
 
-import { BadgeCheck, Eye, FileCheck2, FileStack, Gauge, Layers, type LucideIcon, Megaphone, ScanSearch, Settings, TrendingUp } from "lucide-react";
+import { BadgeCheck, Eye, UserCheck, FileCheck2, FileStack, Gauge, Layers, type LucideIcon, Megaphone, ScanSearch, Settings, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const ITEMS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin", label: "דאשבורד ואנליטיקה", icon: Gauge },
+  { href: "/admin/users", label: "משתמשים והרשאות", icon: UserCheck },
   { href: "/admin/funnel", label: "משפך וצמיחה", icon: TrendingUp },
   { href: "/admin/ambassadors", label: "שגרירים", icon: Megaphone },
   { href: "/admin/site", label: "מה מוצג באתר", icon: Eye },

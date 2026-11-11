@@ -11,6 +11,7 @@ import { progressMax, missedOf, scoreOf, type TopicProgress, progressOf } from "
 import type { StudyModule } from "@/lib/study/types";
 import { ProgressRing } from "./ring";
 import { StageHero } from "./stage";
+import { courseOfPath } from "@/lib/gate";
 
 /** Where the summary leads; `tier` is the plan the next lesson needs, when it isn't open to everyone. */
 export type NextLesson = { href: string; label: string; tier?: Tier };
@@ -47,7 +48,9 @@ export function SummaryCard({
   });
   const offerSave = session.known && !session.signedIn && scheduled > 0 && !dismissed;
   // Said before the click, not after it: the next lesson is in a plan this reader doesn't have.
-  const nextLocked = !!next?.tier && session.known && !tierAllows(session.tier, next.tier);
+  // The closed site: a next lesson in a course this account wasn't granted isn't offered at all.
+  const nextOut = !!next && session.known && session.scope !== "all" && !session.scope.includes(courseOfPath(next.href.split("?")[0]) ?? "");
+  const nextLocked = !nextOut && !!next?.tier && session.known && !tierAllows(session.tier, next.tier);
   const dismiss = () => {
     setDismissed(true);
     try {
@@ -92,7 +95,7 @@ export function SummaryCard({
               <Repeat className="h-4 w-4" aria-hidden /> לתרגל את {missed === 1 ? "השאלה שנשארה" : `${missed} השאלות שנשארו`}
             </Button>
           )}
-          {next && (
+          {next && !nextOut && (
             <ButtonLink href={next.href} size="lg" variant={retryFirst || nextLocked ? "secondary" : undefined} className="h-auto min-h-12 py-2 whitespace-normal">
               {nextLocked && <Lock className="h-4 w-4" aria-hidden />} {next.label} <ArrowLeft className="h-4 w-4" aria-hidden />
             </ButtonLink>
