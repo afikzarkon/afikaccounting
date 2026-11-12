@@ -625,7 +625,7 @@ function Givens({ w }: { w: WorkedBody }) {
   return (
     <>
       {w.givens && w.givens.length > 0 && (
-        <section className="border-t border-line px-4 py-3 first:border-t-0">
+        <section data-givens className="border-t border-line px-4 py-3 first:border-t-0">
           <h4 className="mb-1.5 text-[14.5px] font-bold">הנתונים</h4>
           <ol className="flex list-decimal flex-col gap-1 ps-5 text-[14.5px]">
             {w.givens.map((g, i) => (

@@ -1,8 +1,40 @@
 diff --git a/node_modules/@fortune-sheet/core/dist/index.esm.js b/node_modules/@fortune-sheet/core/dist/index.esm.js
-index 5c9820b..9cf550e 100644
+index 5c9820b..0ba5f40 100644
 --- a/node_modules/@fortune-sheet/core/dist/index.esm.js
 +++ b/node_modules/@fortune-sheet/core/dist/index.esm.js
-@@ -57132,7 +57132,16 @@ function setCaretPosition(ctx, textDom, children, pos) {
+@@ -55576,6 +55576,20 @@ function parseDate(str, fixdate) {
+   if (str.indexOf("Z") > -1) out = new Date(out.getTime() - out.getTimezoneOffset() * 60 * 1000);
+   return out;
+ }
++// Plain numbers read like an accountant's worksheet: thousands separated, a negative in parentheses.
++// A whole number that looks like a year (1900 to 2100) is left as typed, so a column headed 2024 reads 2024.
++function accountingText(v) {
++  var abs = Math.abs(v);
++  if (!isFinite(v) || abs >= 1e15 || abs !== 0 && abs < 1e-6) return null;
++  if (Number.isInteger(v) && v >= 1900 && v <= 2100) return null;
++  var s = abs.toFixed(abs >= 1000 ? 2 : 6);
++  s = s.replace(/0+$/, "").replace(/\.$/, "");
++  var parts = s.split(".");
++  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
++  s = parts.join(".");
++  if (s === "0") return "0";
++  return v < 0 ? "(" + s + ")" : s;
++}
+ function genarate(value) {
+   var m = null;
+   var ct = {};
+@@ -55834,6 +55848,10 @@ function genarate(value) {
+     ct.fa = "General";
+     ct.t = "g";
+   }
++  if (ct.t === "n" && typeof v === "number" && (ct.fa === "General" || /^0\.0+$/.test(ct.fa))) {
++    var accounting = accountingText(v);
++    if (accounting != null) m = accounting;
++  }
+   return [m, ct, v];
+ }
+ function update(fmt, v) {
+@@ -57132,7 +57150,16 @@ function setCaretPosition(ctx, textDom, children, pos) {
      var el = textDom;
      var range = document.createRange();
      var sel = window.getSelection();
@@ -20,7 +52,7 @@ index 5c9820b..9cf550e 100644
      range.collapse(true);
      sel === null || sel === void 0 ? void 0 : sel.removeAllRanges();
      sel === null || sel === void 0 ? void 0 : sel.addRange(range);
-@@ -57436,6 +57445,39 @@ function getRangeIndexes($editor) {
+@@ -57436,6 +57463,39 @@ function getRangeIndexes($editor) {
    });
    return res;
  }
@@ -60,7 +92,7 @@ index 5c9820b..9cf550e 100644
  function handleFormulaInput(ctx, $copyTo, $editor, kcode, preText) {
    var refreshRangeSelect = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : true;
    var value1;
-@@ -57464,9 +57506,10 @@ function handleFormulaInput(ctx, $copyTo, $editor, kcode, preText) {
+@@ -57464,9 +57524,10 @@ function handleFormulaInput(ctx, $copyTo, $editor, kcode, preText) {
        var textRange = document.selection.createRange();
        ctx.formulaCache.functionRangeIndex = textRange;
      }
@@ -72,7 +104,7 @@ index 5c9820b..9cf550e 100644
      if (refreshRangeSelect) {
        cancelFunctionrangeSelected(ctx);
        if (kcode !== 46) {
-@@ -57690,10 +57733,10 @@ function israngeseleciton(ctx, istooltip) {
+@@ -57690,10 +57751,10 @@ function israngeseleciton(ctx, istooltip) {
      if (txt.length === 0 && anchor.parentNode.previousSibling) {
        var ahr = anchor.parentNode.previousSibling;
        txt = _.trim(ahr.textContent || "");
@@ -85,7 +117,7 @@ index 5c9820b..9cf550e 100644
        ctx.formulaCache.rangeSetValueTo = anchor.parentNode;
      }
      if (istooltip && (lasttxt === "(" || lasttxt === ",") || !istooltip && (lasttxt === "(" || lasttxt === "," || lasttxt === "=" || lasttxt in operatorjson || lasttxt === "&")) {
-@@ -57709,12 +57752,17 @@ function israngeseleciton(ctx, istooltip) {
+@@ -57709,12 +57770,17 @@ function israngeseleciton(ctx, istooltip) {
        _txt2 = _.trim(_ahr2[_ahr2.length - 2].innerText);
        ctx.formulaCache.rangeSetValueTo = _ahr2;
      }
@@ -104,7 +136,7 @@ index 5c9820b..9cf550e 100644
      if (anchorOffset === 0) {
        anchor = anchor.parentNode;
      }
-@@ -57722,7 +57770,7 @@ function israngeseleciton(ctx, istooltip) {
+@@ -57722,7 +57788,7 @@ function israngeseleciton(ctx, istooltip) {
      if (((_anchor$previousSibli = anchor.previousSibling) === null || _anchor$previousSibli === void 0 ? void 0 : _anchor$previousSibli.textContent) == null) return false;
      if (anchor.previousSibling) {
        var _txt3 = _.trim(anchor.previousSibling.textContent);
@@ -113,7 +145,29 @@ index 5c9820b..9cf550e 100644
        ctx.formulaCache.rangeSetValueTo = anchor.previousSibling;
        if (istooltip && (_lasttxt2 === "(" || _lasttxt2 === ",") || !istooltip && (_lasttxt2 === "(" || _lasttxt2 === "," || _lasttxt2 === "=" || _lasttxt2 in operatorjson || _lasttxt2 === "&")) {
          return true;
-@@ -68885,7 +68933,7 @@ function handleCurrencyFormat(ctx, cellInput) {
+@@ -60461,6 +60527,10 @@ function setCellValue(ctx, r, c, d, v) {
+   } else {
+     vupdate = v;
+   }
++  // A formula that gives a whole range (=A2:A3) shows the range's first cell, instead of crashing below.
++  if (_.isArray(vupdate)) {
++    vupdate = _.flattenDeep(vupdate)[0];
++  }
+   if (isRealNull(vupdate)) {
+     if (_.isPlainObject(cell)) {
+       delete cell.m;
+@@ -60554,7 +60624,9 @@ function setCellValue(ctx, r, c, d, v) {
+               cell.m = mask[0].toString();
+             }
+           } else {
+-            var _mask = update(cell.ct.fa, v_p);
++            // A formula's result with no format of its own reads like a typed number: separated, negative in parentheses.
++            var plain = cell.ct.fa === "General" ? accountingText(v_p) : null;
++            var _mask = plain != null ? plain : update(cell.ct.fa, v_p);
+             cell.m = _mask.toString();
+           }
+         }
+@@ -68885,7 +68957,7 @@ function handleCurrencyFormat(ctx, cellInput) {
    var flowdata = getFlowdata(ctx);
    if (!flowdata) return;
    var currency = ctx.currency || "¥";
@@ -123,10 +177,42 @@ index 5c9820b..9cf550e 100644
  function handlePercentageFormat(ctx, cellInput) {
    var flowdata = getFlowdata(ctx);
 diff --git a/node_modules/@fortune-sheet/core/dist/index.js b/node_modules/@fortune-sheet/core/dist/index.js
-index 04113a1..abbe0e6 100644
+index 04113a1..1bb1229 100644
 --- a/node_modules/@fortune-sheet/core/dist/index.js
 +++ b/node_modules/@fortune-sheet/core/dist/index.js
-@@ -57142,7 +57142,16 @@ function setCaretPosition(ctx, textDom, children, pos) {
+@@ -55586,6 +55586,20 @@ function parseDate(str, fixdate) {
+   if (str.indexOf("Z") > -1) out = new Date(out.getTime() - out.getTimezoneOffset() * 60 * 1000);
+   return out;
+ }
++// Plain numbers read like an accountant's worksheet: thousands separated, a negative in parentheses.
++// A whole number that looks like a year (1900 to 2100) is left as typed, so a column headed 2024 reads 2024.
++function accountingText(v) {
++  var abs = Math.abs(v);
++  if (!isFinite(v) || abs >= 1e15 || abs !== 0 && abs < 1e-6) return null;
++  if (Number.isInteger(v) && v >= 1900 && v <= 2100) return null;
++  var s = abs.toFixed(abs >= 1000 ? 2 : 6);
++  s = s.replace(/0+$/, "").replace(/\.$/, "");
++  var parts = s.split(".");
++  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
++  s = parts.join(".");
++  if (s === "0") return "0";
++  return v < 0 ? "(" + s + ")" : s;
++}
+ function genarate(value) {
+   var m = null;
+   var ct = {};
+@@ -55844,6 +55858,10 @@ function genarate(value) {
+     ct.fa = "General";
+     ct.t = "g";
+   }
++  if (ct.t === "n" && typeof v === "number" && (ct.fa === "General" || /^0\.0+$/.test(ct.fa))) {
++    var accounting = accountingText(v);
++    if (accounting != null) m = accounting;
++  }
+   return [m, ct, v];
+ }
+ function update(fmt, v) {
+@@ -57142,7 +57160,16 @@ function setCaretPosition(ctx, textDom, children, pos) {
      var el = textDom;
      var range = document.createRange();
      var sel = window.getSelection();
@@ -144,7 +230,7 @@ index 04113a1..abbe0e6 100644
      range.collapse(true);
      sel === null || sel === void 0 ? void 0 : sel.removeAllRanges();
      sel === null || sel === void 0 ? void 0 : sel.addRange(range);
-@@ -57446,6 +57455,39 @@ function getRangeIndexes($editor) {
+@@ -57446,6 +57473,39 @@ function getRangeIndexes($editor) {
    });
    return res;
  }
@@ -184,7 +270,7 @@ index 04113a1..abbe0e6 100644
  function handleFormulaInput(ctx, $copyTo, $editor, kcode, preText) {
    var refreshRangeSelect = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : true;
    var value1;
-@@ -57474,9 +57516,10 @@ function handleFormulaInput(ctx, $copyTo, $editor, kcode, preText) {
+@@ -57474,9 +57534,10 @@ function handleFormulaInput(ctx, $copyTo, $editor, kcode, preText) {
        var textRange = document.selection.createRange();
        ctx.formulaCache.functionRangeIndex = textRange;
      }
@@ -196,7 +282,7 @@ index 04113a1..abbe0e6 100644
      if (refreshRangeSelect) {
        cancelFunctionrangeSelected(ctx);
        if (kcode !== 46) {
-@@ -57700,10 +57743,10 @@ function israngeseleciton(ctx, istooltip) {
+@@ -57700,10 +57761,10 @@ function israngeseleciton(ctx, istooltip) {
      if (txt.length === 0 && anchor.parentNode.previousSibling) {
        var ahr = anchor.parentNode.previousSibling;
        txt = ___default['default'].trim(ahr.textContent || "");
@@ -209,7 +295,7 @@ index 04113a1..abbe0e6 100644
        ctx.formulaCache.rangeSetValueTo = anchor.parentNode;
      }
      if (istooltip && (lasttxt === "(" || lasttxt === ",") || !istooltip && (lasttxt === "(" || lasttxt === "," || lasttxt === "=" || lasttxt in operatorjson || lasttxt === "&")) {
-@@ -57719,12 +57762,17 @@ function israngeseleciton(ctx, istooltip) {
+@@ -57719,12 +57780,17 @@ function israngeseleciton(ctx, istooltip) {
        _txt2 = ___default['default'].trim(_ahr2[_ahr2.length - 2].innerText);
        ctx.formulaCache.rangeSetValueTo = _ahr2;
      }
@@ -228,7 +314,7 @@ index 04113a1..abbe0e6 100644
      if (anchorOffset === 0) {
        anchor = anchor.parentNode;
      }
-@@ -57732,7 +57780,7 @@ function israngeseleciton(ctx, istooltip) {
+@@ -57732,7 +57798,7 @@ function israngeseleciton(ctx, istooltip) {
      if (((_anchor$previousSibli = anchor.previousSibling) === null || _anchor$previousSibli === void 0 ? void 0 : _anchor$previousSibli.textContent) == null) return false;
      if (anchor.previousSibling) {
        var _txt3 = ___default['default'].trim(anchor.previousSibling.textContent);
@@ -237,7 +323,29 @@ index 04113a1..abbe0e6 100644
        ctx.formulaCache.rangeSetValueTo = anchor.previousSibling;
        if (istooltip && (_lasttxt2 === "(" || _lasttxt2 === ",") || !istooltip && (_lasttxt2 === "(" || _lasttxt2 === "," || _lasttxt2 === "=" || _lasttxt2 in operatorjson || _lasttxt2 === "&")) {
          return true;
-@@ -68895,7 +68943,7 @@ function handleCurrencyFormat(ctx, cellInput) {
+@@ -60471,6 +60537,10 @@ function setCellValue(ctx, r, c, d, v) {
+   } else {
+     vupdate = v;
+   }
++  // A formula that gives a whole range (=A2:A3) shows the range's first cell, instead of crashing below.
++  if (___default['default'].isArray(vupdate)) {
++    vupdate = ___default['default'].flattenDeep(vupdate)[0];
++  }
+   if (isRealNull(vupdate)) {
+     if (___default['default'].isPlainObject(cell)) {
+       delete cell.m;
+@@ -60564,7 +60634,9 @@ function setCellValue(ctx, r, c, d, v) {
+               cell.m = mask[0].toString();
+             }
+           } else {
+-            var _mask = update(cell.ct.fa, v_p);
++            // A formula's result with no format of its own reads like a typed number: separated, negative in parentheses.
++            var plain = cell.ct.fa === "General" ? accountingText(v_p) : null;
++            var _mask = plain != null ? plain : update(cell.ct.fa, v_p);
+             cell.m = _mask.toString();
+           }
+         }
+@@ -68895,7 +68967,7 @@ function handleCurrencyFormat(ctx, cellInput) {
    var flowdata = getFlowdata(ctx);
    if (!flowdata) return;
    var currency = ctx.currency || "¥";

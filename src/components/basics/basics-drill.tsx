@@ -92,7 +92,7 @@ export function BasicsDrill({ lesson }: { lesson: 5 | 6 | 7 | "all" }) {
       ) : (
         <p className="text-[13px] text-muted">כל תרגיל מנושא אחר, בלי שם. כמו בבחינה: קודם מזהים מה זה.</p>
       )}
-      <p className="text-[16px] leading-relaxed font-semibold text-fg">{d.prompt}</p>
+      <p data-givens className="text-[16px] leading-relaxed font-semibold text-fg">{d.prompt}</p>
       <div className="flex flex-wrap items-center gap-2">
         <label className="flex flex-col gap-1">
           <span className="text-[12.5px] text-muted">{d.asks}, ב-₪</span>

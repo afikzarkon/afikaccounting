@@ -46,16 +46,19 @@ function bookletQuestion(q: BkQuestion): ScreenContent {
     lead: "שאלה ברמת חוברת התרגילים. קראו את הנתונים, פתרו על דף או בגיליון, הזינו את הסכומים, ורק אז פתחו את הפתרון.",
     body: (
       <>
-        <div className="rounded-xl border border-line bg-surface px-4 py-3">
-          <ul className="list-disc space-y-1.5 ps-5 text-[15px] leading-relaxed">
-            {q.facts.map((f) => (
-              <li key={f}>{rich(f)}</li>
-            ))}
-          </ul>
+        {/* Marked as the question's data for the sheet's "question data" button; `contents` keeps the layout as it was. */}
+        <div data-givens className="contents">
+          <div className="rounded-xl border border-line bg-surface px-4 py-3">
+            <ul className="list-disc space-y-1.5 ps-5 text-[15px] leading-relaxed">
+              {q.facts.map((f) => (
+                <li key={f}>{rich(f)}</li>
+              ))}
+            </ul>
+          </div>
+          {q.tables.map((t, i) => (
+            <DataTable key={i} caption={t.title} head={t.head} rows={t.rows.map((row) => row.map(cell))} foot={t.foot?.map(cell)} />
+          ))}
         </div>
-        {q.tables.map((t, i) => (
-          <DataTable key={i} caption={t.title} head={t.head} rows={t.rows.map((row) => row.map(cell))} foot={t.foot?.map(cell)} />
-        ))}
         <TaskFrame label="נדרש">
           <TaskText>
             <ol className="list-[hebrew] space-y-1.5 ps-6">
@@ -79,16 +82,19 @@ function booklet(q: BkQuestion): ScreenContent {
     lead: "שאלה ברמת חוברת התרגילים. קראו את הנתונים, פתרו על דף או בגיליון, הזינו את הסכומים, ורק אז פתחו את הפתרון.",
     body: (
       <>
-        <div className="rounded-xl border border-line bg-surface px-4 py-3">
-          <ul className="list-disc space-y-1.5 ps-5 text-[15px] leading-relaxed">
-            {q.facts.map((f) => (
-              <li key={f}>{rich(f)}</li>
-            ))}
-          </ul>
+        {/* Marked as the question's data for the sheet's "question data" button; `contents` keeps the layout as it was. */}
+        <div data-givens className="contents">
+          <div className="rounded-xl border border-line bg-surface px-4 py-3">
+            <ul className="list-disc space-y-1.5 ps-5 text-[15px] leading-relaxed">
+              {q.facts.map((f) => (
+                <li key={f}>{rich(f)}</li>
+              ))}
+            </ul>
+          </div>
+          {q.tables.map((t, i) => (
+            <DataTable key={i} caption={t.title} head={t.head} rows={t.rows.map((row) => row.map(cell))} foot={t.foot?.map(cell)} />
+          ))}
         </div>
-        {q.tables.map((t, i) => (
-          <DataTable key={i} caption={t.title} head={t.head} rows={t.rows.map((row) => row.map(cell))} foot={t.foot?.map(cell)} />
-        ))}
         <TaskFrame label="נדרש">
           <TaskText>
             <ol className="list-[hebrew] space-y-1.5 ps-6">

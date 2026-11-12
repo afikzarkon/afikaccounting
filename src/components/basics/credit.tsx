@@ -253,7 +253,7 @@ function FormulaButton() {
 /** What an example gives and what it asks — the amber box the course opens a full example with. */
 export function Given({ title, children, asks }: { title: ReactNode; children: ReactNode; asks?: ReactNode }) {
   return (
-    <div className="space-y-2 rounded-2xl border-2 border-amber-500/50 bg-amber-500/[0.08] px-4 py-3.5">
+    <div data-givens className="space-y-2 rounded-2xl border-2 border-amber-500/50 bg-amber-500/[0.08] px-4 py-3.5">
       <p className="flex items-center gap-2 text-[16px] font-bold text-fg">
         <ClipboardList className="h-5 w-5 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden /> {title}
       </p>

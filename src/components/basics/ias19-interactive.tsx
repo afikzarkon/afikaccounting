@@ -341,7 +341,7 @@ function DrillView({ drill }: { drill: Drill }) {
   const score = right.filter(Boolean).length;
   return (
     <div className="space-y-3">
-      <div className="space-y-1.5 rounded-xl bg-surface-2/50 px-3.5 py-3 text-[15px] leading-relaxed text-fg">
+      <div data-givens className="space-y-1.5 rounded-xl bg-surface-2/50 px-3.5 py-3 text-[15px] leading-relaxed text-fg">
         {drill.story.map((s, i) => (
           <p key={i}>{s}</p>
         ))}

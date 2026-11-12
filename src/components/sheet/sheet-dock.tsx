@@ -1,13 +1,16 @@
 "use client";
 
-import { Sheet as SheetIcon, Trash2, X } from "lucide-react";
+import { ClipboardPaste, Download, SquareFunction, LayoutTemplate, Sheet as SheetIcon, Trash2, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isGuarded } from "@/components/layout/content-guard-view";
 import { cn } from "@/lib/utils";
 import { SheetBoundary } from "./sheet-boundary";
-import type { SheetData } from "./sheet-workbook";
+import type { BuiltSheet } from "./sheet-build";
+import type { PanelKind } from "./sheet-panels";
+import type { Template } from "./sheet-templates";
+import type { SheetData, SheetHandle } from "./sheet-workbook";
 
 // The workbook is a large script (about 570 KB over the wire). It starts loading as soon as
 // the reader points at the button, or once the page is idle on a wide screen, so the
@@ -24,6 +27,9 @@ const SheetWorkbook = dynamic(loadWorkbook, {
   ssr: false,
   loading: () => <p className="p-6 text-sm text-muted">טוען את הגיליון…</p>,
 });
+
+// The help page and the templates load when first opened, not with every page.
+const SheetPanel = dynamic(() => import("./sheet-panels"), { ssr: false });
 
 /** Where a reader solves questions: the courses, review, an exam, and the engine. */
 const showsOn = (pathname: string) => isGuarded(pathname) || pathname.startsWith("/engine");
@@ -89,6 +95,23 @@ function clamp(w: number) {
   return Math.round(Math.min(Math.max(w, 360), window.innerWidth * 0.75));
 }
 
+/** An icon button in the sheet's title bar. */
+function Tool({ label, icon: Icon, onClick }: { label: string; icon: typeof SheetIcon; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      // The cell being edited keeps the caret while a button is pressed.
+      onMouseDown={(e) => e.preventDefault()}
+      aria-label={label}
+      title={label}
+      className="rounded-lg p-1.5 text-muted transition hover:bg-surface-2 hover:text-fg"
+    >
+      <Icon className="size-4" aria-hidden />
+    </button>
+  );
+}
+
 /**
  * A scratch spreadsheet beside the question: the reader opens it, works the whole
  * exercise in it, and checks themselves. Each page keeps its own sheet in this browser.
@@ -100,8 +123,11 @@ export function SheetDock() {
   const [sheet, setSheet] = useState<{ path: string; data: SheetData } | null>(null);
   const [version, setVersion] = useState(0);
   const [width, setWidth] = useState(560);
+  const [panel, setPanel] = useState<PanelKind | null>(null);
+  const [notice, setNotice] = useState("");
   const timer = useRef<number | undefined>(undefined);
   const pending = useRef<{ path: string; data: SheetData } | null>(null);
+  const workbook = useRef<SheetHandle>(null);
 
   const flush = useCallback(() => {
     window.clearTimeout(timer.current);
@@ -168,6 +194,60 @@ export function SheetDock() {
     } catch {}
     setSheet({ path: pathname, data: EMPTY });
     setVersion((v) => v + 1);
+  };
+
+  /** A short line under the title that goes away by itself. */
+  const say = (text: string) => {
+    setNotice(text);
+    window.setTimeout(() => setNotice((now) => (now === text ? "" : now)), 4000);
+  };
+
+  /** Adds a built sheet as a new tab in front; the reader's own sheets stay as they are. */
+  const addSheet = async (build: () => Promise<BuiltSheet | null>) => {
+    const added = await build();
+    if (!added) return false;
+    const { withSheet } = await import("./sheet-build");
+    window.clearTimeout(timer.current);
+    pending.current = null;
+    const current = workbook.current?.sheets();
+    const next = withSheet(toStored(current?.length ? current : load(pathname)), added) as SheetData;
+    save(pathname, next);
+    setSheet({ path: pathname, data: next });
+    setVersion((v) => v + 1);
+    setPanel(null);
+    return true;
+  };
+
+  const addTemplate = (t: Template) =>
+    addSheet(async () => {
+      const { buildSheet } = await import("./sheet-build");
+      return buildSheet(t.name, t.rows, t.widths);
+    });
+
+  /** Copies the question's data on the page into a new tab, so nothing has to be retyped. */
+  const addPageData = async () => {
+    const ok = await addSheet(async () => {
+      const [{ collectPageData, pageSheet }, { buildSheet }] = await Promise.all([import("./sheet-page-data"), import("./sheet-build")]);
+      const blocks = collectPageData(document.querySelector("main") ?? document.body, pathname.startsWith("/engine"));
+      if (!blocks.length) return null;
+      const { rows, widths } = pageSheet(blocks);
+      return buildSheet("נתוני השאלה", rows, widths);
+    });
+    say(ok ? "נתוני השאלה נוספו בלשונית חדשה." : "לא נמצאו בעמוד הזה נתונים להעברה.");
+  };
+
+  const download = async () => {
+    const sheets = workbook.current?.sheets();
+    if (!sheets?.length) return;
+    const { toXlsx } = await import("./sheet-xlsx");
+    const ordered = [...sheets].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const bytes = toXlsx(ordered as Parameters<typeof toXlsx>[0]);
+    const url = URL.createObjectURL(new Blob([bytes.buffer as ArrayBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "AfikAccounting.xlsx";
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
   };
 
   // While dragging, the width goes straight to the page's style, once a frame;
@@ -241,16 +321,15 @@ export function SheetDock() {
         <SheetIcon className="size-4 text-accent" aria-hidden />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-fg">גיליון עבודה</p>
-          <p className="truncate text-xs text-muted">נוסחאות כמו באקסל (‎=SUM(A1:A5)‎). נשמר אוטומטית בדפדפן הזה, לכל עמוד בנפרד.</p>
+          <p role="status" className="truncate text-xs text-muted">
+            {notice || "נשמר אוטומטית בדפדפן הזה, לכל עמוד בנפרד."}
+          </p>
         </div>
-        <button
-          type="button"
-          onClick={clear}
-          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-muted transition hover:bg-surface-2 hover:text-fg"
-        >
-          <Trash2 className="size-3.5" aria-hidden />
-          ניקוי
-        </button>
+        <Tool label="נתוני השאלה לגיליון" icon={ClipboardPaste} onClick={addPageData} />
+        <Tool label="תבניות מוכנות" icon={LayoutTemplate} onClick={() => setPanel(panel === "templates" ? null : "templates")} />
+        <Tool label="פונקציות וקיצורי מקלדת" icon={SquareFunction} onClick={() => setPanel(panel === "help" ? null : "help")} />
+        <Tool label="הורדה כקובץ אקסל" icon={Download} onClick={download} />
+        <Tool label="ניקוי הגיליון" icon={Trash2} onClick={clear} />
         <button
           type="button"
           onClick={() => {
@@ -272,8 +351,19 @@ export function SheetDock() {
               setVersion((v) => v + 1);
             }}
           >
-            <SheetWorkbook key={`${pathname}:${version}`} data={sheet.data} onChange={onChange} />
+            <SheetWorkbook key={`${pathname}:${version}`} data={sheet.data} onChange={onChange} handle={workbook} />
           </SheetBoundary>
+        )}
+        {panel && (
+          <SheetPanel
+            kind={panel}
+            onClose={() => setPanel(null)}
+            onPick={addTemplate}
+            onInsert={(text) => {
+              setPanel(null);
+              workbook.current?.type(text);
+            }}
+          />
         )}
       </div>
     </aside>

@@ -60,7 +60,7 @@ export function QuestionExercise({ q, result, onCheck }: { q: Question; result?:
 
   return (
     <div className="space-y-5">
-      <p id={`${id}-q`} className={promptClass}>
+      <p id={`${id}-q`} data-givens className={promptClass}>
         {q.prompt}
       </p>
 
