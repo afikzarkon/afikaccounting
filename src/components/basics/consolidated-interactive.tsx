@@ -496,7 +496,7 @@ export function ConsolidatedDrill({ families }: { families: DrillFamily[] }) {
           </button>
         ))}
       </div>
-      <p className="text-[16px] leading-relaxed font-semibold text-fg">{d.prompt}</p>
+      <p data-givens className="text-[16px] leading-relaxed font-semibold text-fg">{d.prompt}</p>
       <div className="flex flex-wrap items-center gap-2">
         <input
           value={typed}

@@ -1,0 +1,80 @@
+diff --git a/node_modules/@fortune-sheet/react/dist/index.esm.js b/node_modules/@fortune-sheet/react/dist/index.esm.js
+index c4486a2..8176cfd 100644
+--- a/node_modules/@fortune-sheet/react/dist/index.esm.js
++++ b/node_modules/@fortune-sheet/react/dist/index.esm.js
+@@ -6908,7 +6908,16 @@ var SheetItem = function SheetItem(_ref) {
+         draftCtx.scrollLeft = 0;
+         draftCtx.scrollTop = 0;
+         draftCtx.luckysheet_select_status = false;
+-        draftCtx.luckysheet_select_save = undefined;
++        // No remembered place for this sheet: keep the selection saved with it, or A1, so there is always a cell to type into.
++        var keptSheet = (draftCtx.luckysheetfile || []).filter(function (f) {
++          return f.id === draftCtx.currentSheetId;
++        })[0];
++        draftCtx.luckysheet_select_save = keptSheet && keptSheet.luckysheet_select_save && keptSheet.luckysheet_select_save.length ? keptSheet.luckysheet_select_save : [{
++          row: [0, 0],
++          column: [0, 0],
++          row_focus: 0,
++          column_focus: 0
++        }];
+       }
+       draftCtx.luckysheet_selection_range = [];
+     });
+@@ -10693,7 +10702,16 @@ var SheetListItem = function SheetListItem(_ref) {
+         draftCtx.scrollLeft = 0;
+         draftCtx.scrollTop = 0;
+         draftCtx.luckysheet_select_status = false;
+-        draftCtx.luckysheet_select_save = undefined;
++        // No remembered place for this sheet: keep the selection saved with it, or A1, so there is always a cell to type into.
++        var keptSheet = (draftCtx.luckysheetfile || []).filter(function (f) {
++          return f.id === draftCtx.currentSheetId;
++        })[0];
++        draftCtx.luckysheet_select_save = keptSheet && keptSheet.luckysheet_select_save && keptSheet.luckysheet_select_save.length ? keptSheet.luckysheet_select_save : [{
++          row: [0, 0],
++          column: [0, 0],
++          row_focus: 0,
++          column_focus: 0
++        }];
+       }
+       draftCtx.luckysheet_selection_range = [];
+     });
+diff --git a/node_modules/@fortune-sheet/react/dist/index.js b/node_modules/@fortune-sheet/react/dist/index.js
+index e404551..ef2455c 100644
+--- a/node_modules/@fortune-sheet/react/dist/index.js
++++ b/node_modules/@fortune-sheet/react/dist/index.js
+@@ -6919,7 +6919,16 @@ var SheetItem = function SheetItem(_ref) {
+         draftCtx.scrollLeft = 0;
+         draftCtx.scrollTop = 0;
+         draftCtx.luckysheet_select_status = false;
+-        draftCtx.luckysheet_select_save = undefined;
++        // No remembered place for this sheet: keep the selection saved with it, or A1, so there is always a cell to type into.
++        var keptSheet = (draftCtx.luckysheetfile || []).filter(function (f) {
++          return f.id === draftCtx.currentSheetId;
++        })[0];
++        draftCtx.luckysheet_select_save = keptSheet && keptSheet.luckysheet_select_save && keptSheet.luckysheet_select_save.length ? keptSheet.luckysheet_select_save : [{
++          row: [0, 0],
++          column: [0, 0],
++          row_focus: 0,
++          column_focus: 0
++        }];
+       }
+       draftCtx.luckysheet_selection_range = [];
+     });
+@@ -10704,7 +10713,16 @@ var SheetListItem = function SheetListItem(_ref) {
+         draftCtx.scrollLeft = 0;
+         draftCtx.scrollTop = 0;
+         draftCtx.luckysheet_select_status = false;
+-        draftCtx.luckysheet_select_save = undefined;
++        // No remembered place for this sheet: keep the selection saved with it, or A1, so there is always a cell to type into.
++        var keptSheet = (draftCtx.luckysheetfile || []).filter(function (f) {
++          return f.id === draftCtx.currentSheetId;
++        })[0];
++        draftCtx.luckysheet_select_save = keptSheet && keptSheet.luckysheet_select_save && keptSheet.luckysheet_select_save.length ? keptSheet.luckysheet_select_save : [{
++          row: [0, 0],
++          column: [0, 0],
++          row_focus: 0,
++          column_focus: 0
++        }];
+       }
+       draftCtx.luckysheet_selection_range = [];
+     });

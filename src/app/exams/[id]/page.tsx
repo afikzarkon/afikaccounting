@@ -102,7 +102,7 @@ function Solved({ exam, content: c }: { exam: ExamMeta; content: ExamContent }) 
           </h2>
         </div>
         {c.question.length > 0 && (
-          <div className="card mt-4 p-4 sm:p-6">
+          <div data-givens className="card mt-4 p-4 sm:p-6">
             <ExamBlocks blocks={c.question} />
           </div>
         )}
