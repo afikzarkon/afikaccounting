@@ -1,15 +1,16 @@
-import { Building2, CalendarClock, FileSignature, ListChecks } from "lucide-react";
+import { FileSignature, ListChecks } from "lucide-react";
 import { JournalEntry } from "@/components/study/blocks";
 import { Deeper, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
-import type { Books, consolidate } from "@/lib/learn/consolidated";
-import { ARMON, GEFANIT, HARMON, M6, NOFAR, STORY6, WHOSE, WHOSE_OPTIONS, YEAR2, YEAR2_NCI_END } from "@/lib/study/consolidated/lessons/worksheet";
+import { STORY6, WHOSE, WHOSE_OPTIONS } from "@/lib/study/consolidated/lessons/worksheet";
+import { W6_BS, W6_DATA, W6_ELIM, W6_EQUITY, W6_EXCESS, W6_MASTER, W6_PL, W6_SOCE, W6_SPLIT, W6_YEAR2 } from "@/lib/study/consolidated/worked/worksheet";
 import { ConsolidatedDrill, WorksheetLab } from "./consolidated-interactive";
-import { Calc, ExcessTbl, Expansion, LecturerNote, quiz, type SheetRow, Worksheet } from "./consolidated-parts";
-import { TaskFrame, TaskText } from "./ias19-question";
-import { Bridge, FullSteps } from "./ias19-ui";
+import { Expansion, LecturerNote, quiz } from "./consolidated-parts";
+import { WorkedExample } from "./consolidated-worked";
+import { TaskFrame } from "./ias19-question";
+import { Bridge } from "./ias19-ui";
 import { WrongRight } from "./ias19-visuals";
-import { FullSolution, P, Tbl } from "./ifrs16-parts";
+import { P, Tbl } from "./ifrs16-parts";
 import { SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 
@@ -20,63 +21,7 @@ import { Story } from "./inventory-teach";
  * note says so, and what only the standard teaches sits in an expansion.
  */
 
-type Cons = ReturnType<typeof consolidate>;
-const z = (v: number) => (v === 0 ? null : v);
 const n = (v: number) => v.toLocaleString("en-US");
-
-/** A trial balance as the lecturer gives it: debits positive, credits negative. */
-function trialRows(x: Books, y: Books): SheetRow[] {
-  const line = (label: string, f: (k: Books) => number, sign: 1 | -1) => ({ label, cells: [z(sign * f(x)), z(sign * f(y))] });
-  return [
-    line("מזומנים", (k) => k.cash, 1),
-    line("מלאי", (k) => k.inventory, 1),
-    line("רכוש קבוע", (k) => k.ppe, 1),
-    line("השקעה בחברה בת", (k) => k.investment, 1),
-    line("ספקים", (k) => k.suppliers, -1),
-    line("מסים נדחים", (k) => k.deferredTax, -1),
-    line("הון מניות", (k) => k.capital, -1),
-    line("פרמיה", (k) => k.premium, -1),
-    ...(x.reserve || y.reserve ? [line("קרן הערכה מחדש", (k) => k.reserve, -1)] : []),
-    line("עודפים 1.1", (k) => k.retainedOpen, -1),
-    line("מכירות", (k) => k.sales, -1),
-    line("עלות המכירות", (k) => k.cogs, 1),
-    line("הוצאות הנהלה וכלליות", (k) => k.admin, 1),
-    line("הכנסות מדיבידנד", (k) => k.dividendIncome, -1),
-    line("הוצאות מסים", (k) => k.tax, 1),
-    line("דיבידנד שהוכרז", (k) => k.dividend, 1),
-  ];
-}
-
-/** The statement of comprehensive income on the worksheet. */
-function incomeRows(s: Cons): SheetRow[] {
-  const cells = (r: { a: number; b: number; adjA: number; adjB: number; total: number }) => [z(r.a), z(r.b), z(r.adjA), z(r.adjB), r.total];
-  const hasOci = s.oci.a !== 0 || s.oci.b !== 0;
-  return [
-    ...s.income.map((r) => ({ label: r.name, cells: cells(r) })),
-    { label: "רווח נקי", cells: cells(s.profit), total: true },
-    ...(hasOci ? [{ label: s.oci.name, cells: cells(s.oci) }, { label: "סך הרווח הכולל", cells: cells(s.comprehensive), total: true }] : []),
-  ];
-}
-
-/** The statement of financial position on the worksheet: equity comes from the split, in the consolidated column only. */
-function positionRows(s: Cons): SheetRow[] {
-  const eq = (label: string, v: number, total?: boolean) => ({ label, cells: [null, null, null, -v], total });
-  return [
-    ...s.position.map((r) => ({ label: r.name, cells: [z(r.a), z(r.b), z(r.adj), r.total] })),
-    eq("הון מניות", s.equity.capital),
-    eq("פרמיה", s.equity.premium),
-    ...(s.equity.reserve ? [eq("קרן הערכה מחדש", s.equity.reserve)] : []),
-    eq("עודפים", s.equity.retained),
-    eq("סך ההון של בעלי מניות האם", s.equity.owners, true),
-    eq("זשמ״ש", s.equity.nci),
-    eq("סך ההון", s.equity.total, true),
-  ];
-}
-
-const WS_PL = ["נופר", "ערמון", "התאמות נופר", "התאמות ערמון", "מאוחד"];
-const WS_BS = ["נופר", "ערמון", "התאמות", "מאוחד"];
-const C = STORY6.changes;
-const X = STORY6.table;
 
 export const CONSOLIDATED_WORKSHEET_SCREENS: Record<string, ScreenContent> = {
   "ls-con-process": {
@@ -123,16 +68,8 @@ export const CONSOLIDATED_WORKSHEET_SCREENS: Record<string, ScreenContent> = {
     lead: "דוגמה אחת תלווה אותנו לאורך כל השיעור. ממנה נבנה את כל הדוחות.",
     body: (
       <>
-        <Story icon={<Building2 />} title="נופר וערמון">
-          <p>ב־1.1.2025 חברת ״נופר״ קנתה 75% ממניות חברת ״ערמון״ ב־140,000 ש״ח במזומן, ומודדת את ההשקעה לפי עלות. הזשמ״ש נמדדים בשווי הוגן: 40,000 ש״ח.</p>
-          <p>באותו יום למלאי של ערמון עודף עלות של 12,000 ש״ח, והמלאי נמכר במהלך 2025. לציוד, שמשמש את ההנהלה, עודף עלות של 20,000 ש״ח, ונותרו לו 5 שנים. שיעור המס 25%.</p>
-        </Story>
-        <P>מאזני הבוחן של שתי החברות לשנת 2025:</P>
-        <Worksheet label="מאזני הבוחן של נופר וערמון לשנת 2025" head={["נופר", "ערמון"]} rows={trialRows(NOFAR, ARMON)} />
-        <P>
-          שימו לב לשלושה דברים. אצל נופר רשומה השקעה בערמון של 140,000 ש״ח. אצל נופר רשומות גם הכנסות מדיבידנד של 9,000 ש״ח: 75% מהדיבידנד של 12,000 ש״ח שערמון הכריזה. וקרן ההערכה מחדש, בשתי החברות, נוצרה במהלך השנה מהערכה מחדש של רכוש קבוע. לכן היא גם הרווח הכולל האחר של השנה, וביום הרכישה היא הייתה אפס.
-        </P>
-        <P>הרווח בדוח של כל חברה: נופר {n(STORY6.profit.a)} ש״ח, וערמון {n(STORY6.profit.b)} ש״ח.</P>
+        <P>דוגמה אחת תלווה אותנו לאורך כל השיעור: נופר קנתה 75% מערמון ב־1.1.2025. הנה הנתונים ומאזני הבוחן, ומה כבר אפשר לקרוא מהם:</P>
+        <WorkedExample ex={W6_DATA} />
         <Remember>לפני שמתחילים: מה רשום אצל כל חברה, ומה מזה קשור לקבוצה.</Remember>
       </>
     ),
@@ -150,35 +87,7 @@ export const CONSOLIDATED_WORKSHEET_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>נדרש דוח רווח כולל, ולכן צריך את ההפחתות של 2025. נדרש גם דוח על המצב הכספי, ולכן צריך את היתרות ב־31.12.2025.</P>
-        <ExcessTbl table={X} />
-        <P>
-          המלאי נמכר, ולכן כל העודף שלו הופחת. הציוד מופחת על פני 5 שנים: <bdi dir="ltr" className="num whitespace-nowrap">20,000 / 5 = 4,000</bdi>.
-        </P>
-        <P>
-          ההון של ערמון ביום הרכישה, בלי הקרן שעוד לא הייתה: <bdi dir="ltr" className="num whitespace-nowrap">16,000 + 34,000 + 74,000 = 124,000</bdi>.
-        </P>
-        <Tbl
-          head={["", "סכום"]}
-          rows={[
-            ["תמורה שהועברה", 140_000],
-            ["זשמ״ש בשווי הוגן", STORY6.goodwill.nci],
-            ["עלות צירוף העסקים", STORY6.goodwill.cost],
-            [<Calc key="נ" label="נמ״נ" formula="124,000 + 24,000" />, -STORY6.netAt],
-          ]}
-          foot={["מוניטין", STORY6.goodwill.goodwill]}
-        />
-        <P>
-          ולמי שייך המוניטין? השווי ההוגן של 25% הוא 40,000 ש״ח, ולכן 75% שווים פי שלושה. נופר שילמה יותר מזה, וההפרש הוא פרמיית השליטה:
-        </P>
-        <Tbl
-          dense
-          head={["", "סכום", "בעלים של נופר", "זשמ״ש"]}
-          rows={[
-            [<Calc key="פ" label="פרמיית שליטה" formula="140,000 − 40,000 × 3" />, STORY6.premium, STORY6.premium, 0],
-            [<Calc key="מ" label="מוניטין בלי פרמיה" formula="32,000 − 20,000" />, STORY6.goodwill.goodwill - STORY6.premium, STORY6.goodwill.ownersGoodwill - STORY6.premium, STORY6.goodwill.nciGoodwill],
-          ]}
-          foot={["סך המוניטין", STORY6.goodwill.goodwill, STORY6.goodwill.ownersGoodwill, STORY6.goodwill.nciGoodwill]}
-        />
+        <WorkedExample ex={W6_EXCESS} />
         <Remember>לכל דוח מה שהוא צריך: הפחתות לרווח, יתרות למאזן. ואת המוניטין מחלקים כבר עכשיו.</Remember>
       </>
     ),
@@ -198,26 +107,11 @@ export const CONSOLIDATED_WORKSHEET_SCREENS: Record<string, ScreenContent> = {
         <P>
           <strong>ביטול ההשקעה.</strong> במאוחד מציגים 100% מהנכסים וההתחייבויות של הבת, כל אחד בסעיף שלו. לכן ההשקעה בבת יורדת, בסכום שרשום אצל האם. הביטול על חשבון האם: הוא מקטין את הנכסים נטו שלה.
         </P>
-        <P>כך נראית פקודת העזר במועד הרכישה בדוגמה שלנו. היא מבטלת את ההון של ערמון מול ההשקעה, ומכניסה את עודפי העלות, את המוניטין ואת הזשמ״ש:</P>
-        <JournalEntry
-          title="פקודת עזר: ביטול ההשקעה במועד הרכישה"
-          lines={[
-            { account: "הון מניות", dr: 16_000 },
-            { account: "פרמיה", dr: 34_000 },
-            { account: "עודפים", dr: 74_000 },
-            { account: "מלאי", dr: 12_000 },
-            { account: "ציוד", dr: 20_000 },
-            { account: "מוניטין", dr: 32_000 },
-            { account: "התחייבות מסים נדחים", cr: 8_000 },
-            { account: "השקעה בחברה בת", cr: 140_000 },
-            { account: "זשמ״ש", cr: 40_000 },
-          ]}
-        />
         <P>
           <strong>ביטול רווחים מההשקעה.</strong> גם מה שהאם הרוויחה מההשקעה יורד: הכנסות מדיבידנד, או רווח משינוי בשווי ההוגן שלה. נופר מודדת לפי עלות, ולכן רשמה הכנסות מדיבידנד של 9,000 ש״ח. במאוחד מבטלים אותן, על חשבון האם. החלק של המיעוט בדיבידנד, 3,000 ש״ח, מקטין את הזשמ״ש בדוח על השינויים בהון.
         </P>
-        <JournalEntry title="פקודת עזר: ביטול הדיבידנד של ערמון" lines={[{ account: "הכנסות מדיבידנד", dr: 9_000 }, { account: "זשמ״ש", dr: 3_000 }, { account: "עודפים", cr: 12_000 }]} />
         <P>למה מבטלים? הרווח של ערמון כבר נכנס למאוחד, שורה אחרי שורה. אם משאירים גם את הדיבידנד, אותו רווח נספר פעמיים.</P>
+        <WorkedExample ex={W6_ELIM} />
         <P>
           <strong>מה שנוצר במועד הרכישה.</strong> כמה רווחים והוצאות שייכים לצירוף עצמו. כשהאם מודדת לפי עלות, הם לא הוכרו בדוח הנפרד שלה, ולכן יוצרים אותם במאוחד, על חשבון הרוכש:
         </P>
@@ -256,9 +150,7 @@ export const CONSOLIDATED_WORKSHEET_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>כל שורה במאוחד היא חיבור של שתי החברות, ועוד ההתאמות. ההתאמות בשתי עמודות נפרדות, לפי החברה שעל חשבונה הן נעשות. כך קל לחלק אחר כך את הרווח.</P>
-        <Worksheet label="דף העבודה של הדוח על הרווח הכולל לשנת 2025" head={WS_PL} rows={incomeRows(STORY6)} />
-        <P>בעמודה של ערמון: עודף העלות על המלאי מתקן את עלות המכירות, 12,000 ש״ח. הפחת על עודף הציוד, 4,000 ש״ח, נכנס להוצאות הנהלה וכלליות, כי הציוד משמש את ההנהלה. והמס הנדחה על שתיהן מקטין את הוצאות המסים ב־4,000 ש״ח.</P>
-        <P>בעמודה של נופר: ביטול ההכנסות מדיבידנד, 9,000 ש״ח. הרווח הכולל האחר הוא ההערכה מחדש בשתי החברות, בלי התאמות.</P>
+        <WorkedExample ex={W6_PL} />
         <Deeper title="סוגי ההכנסות וההוצאות לפי IFRS 18">
           <p>המרצה מסווג בגיליון נפרד את סוגי ההכנסות וההוצאות לקטגוריות של IFRS 18. הסיווג הוא לישות שעיסוקה העיקרי אינו השקעות או מתן מימון ללקוחות, ותמיד נדרש שיקול דעת לפי העובדות.</p>
           <Tbl
@@ -298,41 +190,8 @@ export const CONSOLIDATED_WORKSHEET_SCREENS: Record<string, ScreenContent> = {
         <P>
           קודם מקצים את הרווח המאוחד לחברות. לכל חברה <strong>רווח מתוקן</strong>: הרווח בדוח שלה, ועוד ההתאמות שעל חשבונה. זה הרווח שלה מנקודת המבט של הקבוצה.
         </P>
-        <Tbl
-          head={["", "נופר", "ערמון"]}
-          rows={[
-            ["רווח בדוח הנפרד או העצמאי", STORY6.adjusted.a.separate, STORY6.adjusted.b.separate],
-            ["עודפי עלות, נטו ממס", "", STORY6.adjusted.b.excess],
-            ["ביטול הכנסות מדיבידנד", STORY6.adjusted.a.dividend, ""],
-          ]}
-          foot={["רווח מתוקן", STORY6.adjusted.a.total, STORY6.adjusted.b.total]}
-        />
         <P>בדוגמה שלנו אין עלויות רכישה. אילו האם הייתה מוסיפה לעלות ההשקעה שכר טרחה, ההוצאה עליו הייתה יורדת מהרווח המתוקן של האם, כי היא על חשבונה. לזשמ״ש אין בה חלק.</P>
-        <P>עכשיו מחלקים. הזשמ״ש מקבלים 25% מהרווח המתוקן של ערמון. הבעלים של נופר מקבלים 100% מהרווח המתוקן של נופר, ועוד 75% מזה של ערמון:</P>
-        <Tbl
-          dense
-          head={["רווח נקי", "סכום"]}
-          rows={[
-            [<Calc key="ז" label="זשמ״ש" formula="16,000 × 25%" />, STORY6.split.profit.nci],
-            [<Calc key="ב" label="בעלים של נופר" formula="1,000 + 16,000 × 75%" />, STORY6.split.profit.owners],
-          ]}
-          foot={["רווח נקי מאוחד", STORY6.split.profit.total]}
-        />
-        <P>
-          <strong>הרווח הכולל.</strong> את הרווח הכולל האחר לבדו לא צריך לחלק, אבל את סך הרווח הכולל כן. מחלקים אותו באותה דרך, אחרי שמוסיפים לכל חברה את הרווח הכולל האחר שלה:
-        </P>
-        <Tbl
-          dense
-          head={["סך הרווח הכולל", "סכום"]}
-          rows={[
-            [<Calc key="ז" label="זשמ״ש" formula="(16,000 + 8,000) × 25%" />, STORY6.split.comprehensive.nci],
-            [<Calc key="ב" label="בעלים של נופר" formula="1,000 + 15,000 + (16,000 + 8,000) × 75%" />, STORY6.split.comprehensive.owners],
-          ]}
-          foot={["סך הרווח הכולל המאוחד", STORY6.split.comprehensive.total]}
-        />
-        <P>
-          אפשר גם בדרך ההפוכה: הבעלים מקבלים את מה שנשאר אחרי הזשמ״ש. ברווח הנקי: <bdi dir="ltr" className="num whitespace-nowrap">17,000 − 4,000 = 13,000</bdi>.
-        </P>
+        <WorkedExample ex={W6_SPLIT} />
         <WrongRight label="טעות: זשמ״ש לפי הרווח בדוח העצמאי. נכון: לפי הרווח המתוקן" wrong={<p>״<bdi dir="ltr" className="num whitespace-nowrap">28,000 × 25% = 7,000</bdi>.״</p>} right={<p>המיעוט נושא בחלקו בהפחתת עודפי העלות: <bdi dir="ltr" className="num whitespace-nowrap">16,000 × 25% = 4,000</bdi>.</p>} />
         <Expansion title="זשמ״ש שלילי, וכל רכיב לחוד">
           <p>לפי IFRS 10 ב94, הרווח או ההפסד וכל רכיב של רווח כולל אחר מיוחסים לבעלים של האם ולזשמ״ש. סך הרווח הכולל מיוחס לזשמ״ש גם אם בעקבות זאת היתרה שלהם תהיה שלילית. בדוגמאות של החומר היתרה לא מגיעה למינוס.</p>
@@ -354,8 +213,7 @@ export const CONSOLIDATED_WORKSHEET_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>נכסים והתחייבויות: חיבור של שתי החברות, ועוד ההתאמות משלב א ומשלב ב. בדוח הזה צריך את יתרות עודף העלות בסוף השנה, ולא את ההפחתות.</P>
-        <Worksheet label="דף העבודה של הדוח על המצב הכספי ליום 31.12.2025" head={WS_BS} rows={positionRows(STORY6)} />
-        <P>ההתאמות: יתרת עודף העלות על הציוד, 16,000 ש״ח, נכנסת לרכוש הקבוע. עודף המלאי כבר אפס, כי המלאי נמכר. המס הנדחה על היתרה, 4,000 ש״ח, מצטרף למסים הנדחים. ההשקעה מתבטלת, והמוניטין נכנס.</P>
+        <WorkedExample ex={W6_BS} />
         <P>שורות ההון ממולאות רק בעמודת המאוחד. הן לא באות מחיבור, אלא מחלוקת ההון, במסך הבא.</P>
         <Expansion title="מסים נדחים: מתי מקזזים">
           <p>לפי IAS 12 סעיפים 74 ו־75, מקזזים נכס מסים נדחים מול התחייבות רק כשיש זכות חוקית לקזז, והם מוטלים על ידי אותה רשות מס, על אותה ישות או על ישויות שמתכוונות לסלק נטו. בין חברות שונות בקבוצה בדרך כלל לא מקזזים. בדוגמה שלנו יש רק התחייבויות, ולכן השאלה לא עולה.</p>
@@ -379,43 +237,7 @@ export const CONSOLIDATED_WORKSHEET_SCREENS: Record<string, ScreenContent> = {
         <P>
           מחשבים לכל חברה את <strong>הנמ״נ המתוקנים</strong>: ההון שלה בדוח הנפרד או העצמאי, ועוד ההתאמות שעל חשבונה.
         </P>
-        <Tbl
-          head={["", "נופר", "ערמון"]}
-          rows={[
-            ["הון בדוח הנפרד או העצמאי", STORY6.equity.netA + NOFAR.investment, STORY6.equity.netB - X.total.end],
-            ["יתרות עודפי עלות, נטו ממס", "", X.total.end],
-            ["ביטול ההשקעה", -NOFAR.investment, ""],
-          ]}
-          foot={["נמ״נ מתוקנים", STORY6.equity.netA, STORY6.equity.netB]}
-        />
-        <P>מחלקים את הנמ״נ לפי שיעורי ההחזקה, ומוסיפים לכל קבוצה את המוניטין שלה מהמסך של עודפי העלות:</P>
-        <Tbl
-          dense
-          head={["", "בעלים של נופר", "זשמ״ש"]}
-          rows={[
-            [<Calc key="נ" label="חלק בנמ״נ" formula="202,000 + 160,000 × 75%; 160,000 × 25%" />, STORY6.equity.owners - STORY6.goodwill.ownersGoodwill, STORY6.equity.nci - STORY6.goodwill.nciGoodwill],
-            ["חלק במוניטין", STORY6.goodwill.ownersGoodwill, STORY6.goodwill.nciGoodwill],
-          ]}
-          foot={["סך הכול", STORY6.equity.owners, STORY6.equity.nci]}
-        />
-        <P>ואז מפרטים את ההון של הבעלים:</P>
-        <Tbl
-          head={["ההון של בעלי מניות נופר", "סכום"]}
-          rows={[
-            [<Calc key="ה" label="הון מניות" words="כמו בדוח הנפרד של נופר" />, STORY6.equity.capital],
-            [<Calc key="פ" label="פרמיה" words="כמו בדוח הנפרד של נופר" />, STORY6.equity.premium],
-            [<Calc key="ק" label="קרן הערכה מחדש" formula="15,000 + 8,000 × 75%" />, STORY6.equity.reserve],
-            [<Calc key="ע" label="עודפים" words="ההפרש" />, STORY6.equity.retained],
-          ]}
-          foot={["סך הכול", STORY6.equity.owners]}
-        />
-        <P>
-          העודפים מתקבלים כהפרש: <bdi dir="ltr" className="num whitespace-nowrap">351,000 − 40,000 − 60,000 − 21,000 = 230,000</bdi>. המרצה מסמן אותם PN.
-        </P>
-        <P>
-          בשנת הרכישה אפשר לבדוק אותם בדרך אחרת: העודפים של נופר ב־1.1, פחות הדיבידנד שנופר הכריזה, ועוד חלק הבעלים ברווח הנקי: <bdi dir="ltr" className="num whitespace-nowrap">233,000 − 16,000 + 13,000 = 230,000</bdi>.
-        </P>
-        <P>למה לא מחברים את העודפים של שתי החברות? העודפים של ערמון מלפני הרכישה נקנו. הם חלק ממה שנופר שילמה עליו, ולא רווח של הקבוצה.</P>
+        <WorkedExample ex={W6_EQUITY} />
         <Remember>נמ״נ מתוקנים לכל חברה, לפי האחוזים, ועוד המוניטין של כל קבוצה. העודפים הם מה שנשאר.</Remember>
       </>
     ),
@@ -433,36 +255,7 @@ export const CONSOLIDATED_WORKSHEET_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>בשנת הרכישה יתרת הפתיחה היא ההון של נופר כפי שבדוח הנפרד שלה, ואין עדיין זשמ״ש. אחריה שלוש שורות:</P>
-        <Tbl
-          head={["השורה", "מה נכנס"]}
-          rows={[
-            ["רכישת חברה בת", "הזשמ״ש במועד הרכישה. נופר שילמה במזומן, ולכן ההון של הבעלים לא משתנה"],
-            ["דיבידנד שהוכרז", "הדיבידנד של נופר מקטין את העודפים כולו. הדיבידנד של ערמון מקטין רק את הזשמ״ש, בחלק של המיעוט"],
-            ["רווח כולל", "החלק של הזשמ״ש בסכום אחד. החלק של הבעלים מפורט: ברווח הנקי בעודפים, וברווח הכולל האחר בקרן"],
-          ]}
-        />
-        <Worksheet
-          label="הדוח המאוחד על השינויים בהון לשנת 2025, החלק של הבעלים"
-          head={["הון מניות", "פרמיה", "קרן", "עודפים", "סך הבעלים"]}
-          rows={[
-            { label: "יתרה ל־1.1.2025", cells: [C.open.capital, C.open.premium, z(C.open.reserve), C.open.retained, C.open.owners] },
-            { label: "דיבידנד שהוכרז", cells: [null, null, null, C.dividends.retained, C.dividends.owners] },
-            { label: "רווח כולל", cells: [null, null, C.comprehensive.reserve, C.comprehensive.retained, C.comprehensive.owners] },
-            { label: "יתרה ל־31.12.2025", cells: [C.close.capital, C.close.premium, C.close.reserve, C.close.retained, C.close.owners], total: true },
-          ]}
-        />
-        <Worksheet
-          label="הדוח המאוחד על השינויים בהון לשנת 2025, הסיכום"
-          head={["סך הבעלים", "זשמ״ש", "סך ההון"]}
-          rows={[
-            { label: "יתרה ל־1.1.2025", cells: [C.open.owners, z(C.open.nci), C.open.total] },
-            { label: "רכישת חברה בת", cells: [null, C.acquisition.nci, C.acquisition.total] },
-            { label: "דיבידנד שהוכרז", cells: [C.dividends.owners, C.dividends.nci, C.dividends.total] },
-            { label: "רווח כולל", cells: [C.comprehensive.owners, C.comprehensive.nci, C.comprehensive.total] },
-            { label: "יתרה ל־31.12.2025", cells: [C.close.owners, C.close.nci, C.close.total], total: true },
-          ]}
-        />
-        <P>היתרות בסוף השנה זהות לדוח על המצב הכספי: {n(C.close.owners)} ש״ח לבעלים ו־{n(C.close.nci)} ש״ח לזשמ״ש. זו הבדיקה שהכול נסגר.</P>
+        <WorkedExample ex={W6_SOCE} />
         <Remember>בשנת הרכישה: פתיחה של האם, הזשמ״ש נכנסים בשורת הרכישה, וכל דיבידנד במקום שלו.</Remember>
       </>
     ),
@@ -490,41 +283,7 @@ export const CONSOLIDATED_WORKSHEET_SCREENS: Record<string, ScreenContent> = {
       <>
         <P>אין ספרים מאוחדים, ולכן אין יתרות שעוברות. מתחילים שוב ממאזני הבוחן של 2026, ועושים את כל ההתאמות מחדש: את ביטול ההשקעה, ואת עודפי העלות של מועד הרכישה.</P>
         <P>ההבדל הוא שההון של ערמון השתנה מאז הרכישה. מה שקרה בשנים הקודמות נכנס ליתרות הפתיחה של ההון. מה שקורה השנה נכנס לסעיפים של השנה.</P>
-        <Story icon={<CalendarClock />} title="נופר וערמון ב־2026">
-          <p>ב־2026 ערמון הרוויחה 40,000 ש״ח, והכריזה על דיבידנד של 16,000 ש״ח. לא היה לה רווח כולל אחר.</p>
-        </Story>
-        <P>המלאי נמכר כבר ב־2025, ולכן ב־2026 אין לו הפחתה. נשאר הפחת על הציוד:</P>
-        <Tbl
-          dense
-          head={["", "1.1.2026", "הפחתה", "31.12.2026"]}
-          rows={[
-            ["ציוד", 16_000, -4_000, 12_000],
-            ["מס נדחה", -4_000, 1_000, -3_000],
-          ]}
-          foot={["סך הכול", YEAR2.excessOpen, YEAR2.adjusted - 40_000, YEAR2.excessEnd]}
-        />
-        <P>
-          הרווח המתוקן של ערמון: <bdi dir="ltr" className="num whitespace-nowrap">40,000 − 3,000 = 37,000</bdi>. חלק הזשמ״ש בו: <bdi dir="ltr" className="num whitespace-nowrap">37,000 × 25% = 9,250</bdi>.
-        </P>
-        <P>
-          <strong>הזשמ״ש לתחילת 2026.</strong> מחשבים לפי מה שהיה ב־1.1.2026. ההון של ערמון אז היה {n(YEAR2.armonOpen)} ש״ח, ועודפי העלות נטו {n(YEAR2.excessOpen)} ש״ח:
-        </P>
-        <Tbl
-          dense
-          head={["הזשמ״ש", "סכום"]}
-          rows={[
-            [<Calc key="פ" label="חלק בנמ״נ ב־1.1.2026" formula="(148,000 + 12,000) × 25%" />, YEAR2.nciOpen - STORY6.goodwill.nciGoodwill],
-            ["מוניטין של הזשמ״ש", STORY6.goodwill.nciGoodwill],
-            ["חלק ברווח הכולל של 2026", YEAR2.nciProfit],
-            [<Calc key="ד" label="דיבידנד למיעוט" formula="16,000 × 25%" />, -YEAR2.nciDividend],
-          ]}
-          foot={["זשמ״ש ב־31.12.2026", YEAR2_NCI_END]}
-        />
-        <P>היתרה לתחילת 2026, {n(YEAR2.nciOpen)} ש״ח, שווה בדיוק ליתרה בסוף 2025. כך זה תמיד: יתרת הפתיחה מחושבת מחדש, ויוצאת שווה ליתרת הסגירה של השנה הקודמת.</P>
-        <P>
-          בדיקה מהצד של סוף השנה. ההון של ערמון ב־31.12.2026: <bdi dir="ltr" className="num whitespace-nowrap">148,000 + 40,000 − 16,000 = 172,000</bdi>. ועם עודפי העלות שנשארו: <bdi dir="ltr" className="num whitespace-nowrap">(172,000 + 9,000) × 25% + 3,000 = 48,250</bdi>.
-        </P>
-        <P>אותו דבר לעודפים. העודפים של נופר בדוח הנפרד ב־1.1.2026 הם {n(YEAR2.nofarRetainedOpen)} ש״ח. אבל במאוחד העודפים בפתיחה הם ההפרש מחלוקת ההון באותו יום: {n(STORY6.equity.retained)} ש״ח.</P>
+        <WorkedExample ex={W6_YEAR2} />
         <WrongRight
           label="טעות: העודפים בפתיחה הם העודפים של האם. נכון: מחלקים את ההון המאוחד לתחילת השנה"
           wrong={<p>״העודפים ב־1.1.2026: 227,000, כמו אצל נופר.״</p>}
@@ -583,128 +342,7 @@ export const CONSOLIDATED_WORKSHEET_SCREENS: Record<string, ScreenContent> = {
     lead: "שאלה אחת, כמו במבחן, מהמאזנים ועד הדוחות. קודם פתרו לבד, ואז פתחו את הפתרון.",
     body: (
       <>
-        <TaskFrame>
-          <TaskText>
-            <p>ב־1.1.2026 חברת ״הרמון״ רכשה 80% ממניות חברת ״גפנית״ ב־230,000 ש״ח במזומן. בנוסף שילמה 5,000 ש״ח לעורכי דין על העסקה, והוסיפה אותם לעלות ההשקעה. הרמון מודדת את ההשקעה לפי עלות. הזשמ״ש נמדדים לפי החלק בנמ״נ.</p>
-            <p className="mt-2">באותו יום: למלאי של גפנית עודף עלות של 18,000 ש״ח, והוא נמכר במהלך 2026. לגפנית פטנט שלא רשום בספרים שלה, בשווי הוגן של 50,000 ש״ח, ונותרו לו 5 שנים. ההפחתה שלו נרשמת בהוצאות הנהלה וכלליות. שיעור המס 25%. לשתי החברות אין רווח כולל אחר.</p>
-            <p className="mt-2">מאזני הבוחן לשנת 2026:</p>
-            <Worksheet label="מאזני הבוחן של הרמון וגפנית לשנת 2026" head={["הרמון", "גפנית"]} rows={trialRows(HARMON, GEFANIT)} />
-            <p className="mt-2 font-semibold">נדרש:</p>
-            <ol className="mt-1 list-decimal space-y-1 ps-5">
-              <li>חשבו את טבלת עודף העלות ואת המוניטין.</li>
-              <li>חשבו את הרווח המתוקן של כל חברה.</li>
-              <li>ערכו את הדוח המאוחד על הרווח הכולל לשנת 2026, עם חלוקת הרווח.</li>
-              <li>ערכו את הדוח המאוחד על המצב הכספי ליום 31.12.2026, עם פירוט ההון.</li>
-              <li>הציגו את התנועה בזשמ״ש בדוח המאוחד על השינויים בהון.</li>
-            </ol>
-          </TaskText>
-          <FullSolution>
-            <FullSteps
-              label="הפתרון המלא"
-              steps={[
-                {
-                  title: "סעיף 1: עודף עלות ומוניטין",
-                  body: (
-                    <>
-                      <ExcessTbl table={M6.table} />
-                      <p>
-                        ההון של גפנית ביום הרכישה: <bdi dir="ltr" className="num whitespace-nowrap">26,000 + 24,000 + 160,000 = 210,000</bdi>.
-                      </p>
-                      <Tbl
-                        head={["", "סכום"]}
-                        rows={[
-                          ["תמורה שהועברה", 230_000],
-                          [<Calc key="ז" label="זשמ״ש" formula="261,000 × 20%" />, M6.goodwill.nci],
-                          [<Calc key="נ" label="נמ״נ" formula="210,000 + 51,000" />, -M6.netAt],
-                        ]}
-                        foot={["מוניטין", M6.goodwill.goodwill]}
-                      />
-                      <p>שכר הטרחה לא נכנס לתמורה. במאוחד הוא הוצאה, על חשבון הרמון.</p>
-                    </>
-                  ),
-                },
-                {
-                  title: "סעיף 2: הרווחים המתוקנים",
-                  body: (
-                    <Tbl
-                      head={["", "הרמון", "גפנית"]}
-                      rows={[
-                        ["רווח בדוח הנפרד או העצמאי", M6.adjusted.a.separate, M6.adjusted.b.separate],
-                        ["עודפי עלות, נטו ממס", "", M6.adjusted.b.excess],
-                        ["ביטול הכנסות מדיבידנד", M6.adjusted.a.dividend, ""],
-                        ["עלויות רכישה", M6.adjusted.a.costs, ""],
-                      ]}
-                      foot={["רווח מתוקן", M6.adjusted.a.total, M6.adjusted.b.total]}
-                    />
-                  ),
-                },
-                {
-                  title: "סעיף 3: הדוח על הרווח הכולל",
-                  body: (
-                    <>
-                      <Worksheet label="דף העבודה של הדוח על הרווח הכולל לשנת 2026" head={["הרמון", "גפנית", "התאמות הרמון", "התאמות גפנית", "מאוחד"]} rows={incomeRows(M6)} />
-                      <p>עלויות הרכישה נרשמו בהוצאות הנהלה וכלליות, בהתאמות של הרמון. אין רווח כולל אחר, ולכן הרווח הנקי הוא גם סך הרווח הכולל.</p>
-                      <Tbl
-                        dense
-                        head={["חלוקת הרווח", "סכום"]}
-                        rows={[
-                          [<Calc key="ז" label="זשמ״ש" formula="29,000 × 20%" />, M6.split.profit.nci],
-                          [<Calc key="ב" label="בעלים של הרמון" formula="35,000 + 29,000 × 80%" />, M6.split.profit.owners],
-                        ]}
-                        foot={["רווח נקי מאוחד", M6.split.profit.total]}
-                      />
-                    </>
-                  ),
-                },
-                {
-                  title: "סעיף 4: הדוח על המצב הכספי",
-                  body: (
-                    <>
-                      <Worksheet label="דף העבודה של הדוח על המצב הכספי ליום 31.12.2026" head={["הרמון", "גפנית", "התאמות", "מאוחד"]} rows={positionRows(M6)} />
-                      <Tbl
-                        head={["", "הרמון", "גפנית"]}
-                        rows={[
-                          ["הון בדוח הנפרד או העצמאי", M6.equity.netA + HARMON.investment, M6.equity.netB - M6.table.total.end],
-                          ["יתרות עודפי עלות, נטו ממס", "", M6.table.total.end],
-                          ["ביטול ההשקעה", -HARMON.investment, ""],
-                        ]}
-                        foot={["נמ״נ מתוקנים", M6.equity.netA, M6.equity.netB]}
-                      />
-                      <Tbl
-                        dense
-                        head={["", "בעלים של הרמון", "זשמ״ש"]}
-                        rows={[
-                          [<Calc key="נ" label="חלק בנמ״נ" formula="375,000 + 270,000 × 80%; 270,000 × 20%" />, M6.equity.owners - M6.goodwill.ownersGoodwill, M6.equity.nci],
-                          ["חלק במוניטין", M6.goodwill.ownersGoodwill, M6.goodwill.nciGoodwill],
-                        ]}
-                        foot={["סך הכול", M6.equity.owners, M6.equity.nci]}
-                      />
-                      <p>
-                        העודפים כהפרש: <bdi dir="ltr" className="num whitespace-nowrap">612,200 − 100,000 − 50,000 = 462,200</bdi>. בדיקה: <bdi dir="ltr" className="num whitespace-nowrap">434,000 − 30,000 + 58,200 = 462,200</bdi>.
-                      </p>
-                    </>
-                  ),
-                },
-                {
-                  title: "סעיף 5: הזשמ״ש בדוח על השינויים בהון",
-                  body: (
-                    <Tbl
-                      head={["זשמ״ש", "סכום"]}
-                      rows={[
-                        ["יתרה ל־1.1.2026", 0],
-                        ["רכישת חברה בת", M6.changes.acquisition.nci],
-                        [<Calc key="ד" label="דיבידנד שהוכרז" formula="20,000 × 20%" />, M6.changes.dividends.nci],
-                        ["רווח כולל", M6.changes.comprehensive.nci],
-                      ]}
-                      foot={["יתרה ל־31.12.2026", M6.changes.close.nci]}
-                    />
-                  ),
-                },
-                { title: "מלכודת נפוצה", body: <p>להשאיר את שכר הטרחה בתוך ההשקעה ובמוניטין, לחשב את הזשמ״ש מהרווח של גפנית בדוח שלה, או לחבר את העודפים של שתי החברות.</p> },
-              ]}
-            />
-          </FullSolution>
-        </TaskFrame>
+        <WorkedExample ex={W6_MASTER} />
         <Bridge summary="עכשיו אתם יודעים לבנות דוחות מאוחדים מלאים, מהמאזנים ועד הדוח על השינויים בהון.">בשיעור הבא: מה עושים כשהמדיניות החשבונאית של הבת שונה מזו של האם, וכשנכס שלה הוערך מחדש.</Bridge>
       </>
     ),

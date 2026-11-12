@@ -18,6 +18,7 @@ import { CONTROL_W, W_ATTEND, W_CONVERT } from "./consolidated/worked/control";
 import { ACQUISITION_W, W_CLAIM, W_EXCESS, W_HFS, W_LESSEE, W_LESSOR, W_TABLE, W_TAX } from "./consolidated/worked/acquisition";
 import { GOODWILL_W, PERIOD_W, W_BARGAIN, W_BUYBACK, W_COSTS, W_EARNOUT, W_ENTRY, W_GW, W_NCI, W_PERIOD, W_PRIOR } from "./consolidated/worked/goodwill";
 import { RETURNS_W, W_FUND } from "./consolidated/worked/returns";
+import { W6_BS, W6_DATA, W6_ELIM, W6_EQUITY, W6_EXCESS, W6_MASTER, W6_PL, W6_SOCE, W6_SPLIT, W6_YEAR2, WORKSHEET_W } from "./consolidated/worked/worksheet";
 import { W_STORY_POSITION, W_STORY_SEPARATE, WHAT_W } from "./consolidated/worked/what";
 import { W64, W65, W66, W67, W68, W69 } from "./consolidated/worked/leasebonds";
 import type { Worked } from "./consolidated/worked/types";
@@ -489,6 +490,22 @@ describe("lesson 5: the walk, the sorting and the figures, against a separate ca
 });
 
 describe("lesson 6: the worksheet, against a separate calculation in Python", () => {
+  it("the worked solutions: every figure they add, checked by hand, and the step counts", () => {
+    assert.deepEqual(WORKSHEET_W, {
+      // 190,000 − 118,000 − 46,000 + 9,000 − 25,000, and 120,000 − 52,000 − 26,000 − 14,000
+      nofarProfit: 10_000, armonProfit: 28_000,
+      // 40,000 + 60,000 + 15,000 + 233,000 − 16,000 + 10,000, and 16,000 + 34,000 + 8,000 + 74,000 − 12,000 + 28,000
+      nofarEquity: 342_000, armonEquity: 148_000,
+      y2Amort: 4_000, y2Net: 3_000, y2NciOpenShare: 40_000, armonClose: 172_000, nciCheck: 48_250,
+      harmonProfit: 56_000, gefanitProfit: 50_000,
+    });
+    assert.equal(WORKSHEET_W.nofarEquity - 140_000, STORY6.equity.netA);
+    assert.equal(WORKSHEET_W.armonEquity + STORY6.table.total.end, STORY6.equity.netB);
+    assert.equal(WORKSHEET_W.nciCheck, YEAR2_NCI_END);
+    // the elimination entry balances
+    assert.equal(16_000 + 34_000 + 74_000 + 12_000 + 20_000 + STORY6.goodwill.goodwill, -STORY6.table.tax.at + 140_000 + STORY6.goodwill.nci);
+    assert.deepEqual([W6_DATA, W6_EXCESS, W6_ELIM, W6_PL, W6_SPLIT, W6_BS, W6_EQUITY, W6_SOCE, W6_YEAR2, W6_MASTER].map((w) => w.steps.length), [2, 4, 2, 3, 3, 2, 3, 3, 4, 15]);
+  });
   it("eight adjustments to sort, both answers among them", () => {
     assert.equal(WHOSE.length, 8);
     assert.ok(WHOSE.some((w) => w.answer === "parent") && WHOSE.some((w) => w.answer === "sub"));
