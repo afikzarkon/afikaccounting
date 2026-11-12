@@ -45,8 +45,11 @@ const PUBLIC_PREFIX = ["/auth", "/api/billing/webhook", "/api/reminders", "/api/
 const GUEST_ONLY = new Set(["/login", "/register", "/forgot-password"]);
 /** General pages that lead an account to where it belongs instead of refusing it. */
 const HOME_LIKE = new Set(["/", "/dashboard", "/learn"]);
-/** What every approved account may open besides its courses. */
-const APPROVED_EXTRA = new Set([MY_COURSES_PATH, "/profile"]);
+/**
+ * What every approved account may open besides its courses. /tester is the feedback form for
+ * course testers: the page itself shows it only to an account an admin marked as one.
+ */
+const APPROVED_EXTRA = new Set([MY_COURSES_PATH, "/profile", "/tester"]);
 
 /** The catalog's courses: their id, their page, and the slug prefix of their lessons (/study/<prefix>-…). */
 export const COURSE_ROUTES: readonly { id: string; href: string; lessonPrefix: string }[] = [

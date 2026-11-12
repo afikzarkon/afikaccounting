@@ -52,7 +52,7 @@ describe("the gate", () => {
   });
 
   it("opens an approved account's own course and nothing else", () => {
-    for (const p of ["/basics/ias16", "/study/ias16-intro", "/study/ias16-methods", "/exam-mode/ias16", "/my-courses", "/profile"]) assert.equal(kind(p, IAS16), "allow", p);
+    for (const p of ["/basics/ias16", "/study/ias16-intro", "/study/ias16-methods", "/exam-mode/ias16", "/my-courses", "/profile", "/tester"]) assert.equal(kind(p, IAS16), "allow", p);
     for (const p of ["/basics", "/basics/inventory", "/study/basics-intro", "/study/ias19-map", "/exam-mode/inventory", "/engine", "/engine/ias19", "/exams", "/exams/1", "/review", "/groups", "/pricing", "/checkout", "/about", "/admin", "/admin/users", "/api/search", "/api/calculators", "/x/home/b"])
       assert.equal(kind(p, IAS16), "denied", p);
   });

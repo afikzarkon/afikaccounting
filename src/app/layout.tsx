@@ -9,6 +9,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { PageViewTracker } from "@/components/layout/page-view-tracker";
 import { SearchPalette } from "@/components/layout/search";
 import { ThemeProvider } from "@/components/layout/theme-provider";
+import { TesterFeedbackGate } from "@/components/tester/feedback-gate";
 import { SheetDock } from "@/components/sheet/sheet-dock";
 import { FullSiteOnly } from "@/components/layout/session-store";
 import { VisibilityProvider } from "@/components/layout/visibility";
@@ -73,6 +74,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             </Suspense>
             <Suspense fallback={null}>
               <ContentGuard />
+            </Suspense>
+            <Suspense fallback={null}>
+              <TesterFeedbackGate />
             </Suspense>
             <Analytics />
           </VisibilityProvider>

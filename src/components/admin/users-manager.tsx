@@ -1,9 +1,10 @@
 "use client";
 
-import { Check, Clock, Loader2, RotateCcw, Save, ShieldCheck, X } from "lucide-react";
+import { Check, Clock, Loader2, MessageSquareWarning, RotateCcw, Save, ShieldCheck, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/form";
+import { setTester } from "@/lib/actions/admin-testers";
 import { setUserAccess } from "@/lib/actions/admin-users";
 import type { AdminUser } from "@/lib/data/admin";
 import { cn, shortDate } from "@/lib/utils";
@@ -25,8 +26,8 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "all", label: "כולם" },
 ];
 
-/** Every account: approve or reject it, and choose the courses it may open. */
-export function UsersManager({ users, courses, me }: { users: AdminUser[]; courses: Course[]; me: string }) {
+/** Every account: approve or reject it, choose the courses it may open, and mark course testers. */
+export function UsersManager({ users, courses, me, testers = [] }: { users: AdminUser[]; courses: Course[]; me: string; testers?: string[] }) {
   const pending = users.filter((u) => u.status === "pending" && u.role !== "admin").length;
   const [filter, setFilter] = useState<Filter>(pending ? "pending" : "all");
   const [query, setQuery] = useState("");
@@ -66,7 +67,7 @@ export function UsersManager({ users, courses, me }: { users: AdminUser[]; cours
       {shown.length ? (
         <ul className="divide-y divide-line">
           {shown.map((u) => (
-            <UserRow key={u.userId} user={u} courses={courses} self={u.userId === me} />
+            <UserRow key={u.userId} user={u} courses={courses} self={u.userId === me} tester={testers.includes(u.userId)} />
           ))}
         </ul>
       ) : (
@@ -76,7 +77,7 @@ export function UsersManager({ users, courses, me }: { users: AdminUser[]; cours
   );
 }
 
-function UserRow({ user, courses, self }: { user: AdminUser; courses: Course[]; self: boolean }) {
+function UserRow({ user, courses, self, tester }: { user: AdminUser; courses: Course[]; self: boolean; tester: boolean }) {
   const [selected, setSelected] = useState<string[]>(user.courses);
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string }>();
@@ -114,6 +115,11 @@ function UserRow({ user, courses, self }: { user: AdminUser; courses: Course[]; 
           <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold", STATUS[user.status].className)}>
             {user.status === "pending" && <Clock className="h-3.5 w-3.5" aria-hidden />}
             {STATUS[user.status].label}
+          </span>
+        )}
+        {tester && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:text-amber-300">
+            <MessageSquareWarning className="h-3.5 w-3.5" aria-hidden /> ניסיין
           </span>
         )}
       </div>
@@ -162,10 +168,38 @@ function UserRow({ user, courses, self }: { user: AdminUser; courses: Course[]; 
               </Button>
             )}
             {user.status !== "approved" && !selected.length && <span className="text-xs text-muted">כדי לאשר, סמנו לפחות קורס אחד.</span>}
+            <TesterToggle userId={user.userId} on={tester} approved={user.status === "approved"} />
             {message && <span className={message.ok ? "text-xs text-success" : "text-xs text-danger"}>{message.text}</span>}
           </div>
         </>
       )}
     </li>
+  );
+}
+
+/**
+ * Mark the account as a course tester: it gets the floating feedback button and the
+ * feedback form (/tester), and what it writes shows in /admin/feedback. A tester still
+ * needs to be approved, with the course to test, to open it.
+ */
+function TesterToggle({ userId, on, approved }: { userId: string; on: boolean; approved: boolean }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string>();
+  const run = async () => {
+    setBusy(true);
+    setError(undefined);
+    const res = await setTester({ userId, on: !on });
+    setBusy(false);
+    if (!res.ok) setError(res.error);
+  };
+  return (
+    <span className="inline-flex flex-wrap items-center gap-2 border-s border-line ps-3">
+      <Button variant={on ? "secondary" : "ghost"} size="sm" onClick={run} disabled={busy} aria-pressed={on} title="ניסיין רואה כפתור משוב בכל דף, ואת טופס המשוב">
+        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageSquareWarning className="h-3.5 w-3.5" />}
+        {on ? "הסרה מהניסיינים" : "הגדרה כניסיין"}
+      </Button>
+      {on && !approved && <span className="text-xs text-muted">ניסיין צריך גם אישור וקורס כדי להתחיל.</span>}
+      {error && <span className="text-xs text-danger">{error}</span>}
+    </span>
   );
 }

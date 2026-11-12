@@ -389,3 +389,27 @@ export async function listUsers(): Promise<AdminUser[]> {
   const supabase = await createClient();
   return check<AdminUser[]>(await supabase.rpc("admin_users"));
 }
+
+// ---- tester feedback -----------------------------------------------------------
+
+export type TesterFeedbackRow = { userId: string; name: string; answers: unknown; createdAt: string; updatedAt: string };
+
+/** Every tester's feedback form (public.tester_feedback), newest change first, with the tester's name. */
+export async function getTesterFeedback(): Promise<TesterFeedbackRow[]> {
+  const supabase = await createClient();
+  const rows = check(
+    await supabase.from("tester_feedback").select("user_id, answers, created_at, updated_at").order("updated_at", { ascending: false }).limit(500),
+  ) as { user_id: string; answers: unknown; created_at: string; updated_at: string }[];
+  const ids = rows.map((r) => r.user_id);
+  const { data: people } = ids.length ? await supabase.from("profiles").select("id, full_name").in("id", ids) : { data: [] };
+  const names = new Map((people ?? []).map((p: { id: string; full_name: string | null }) => [p.id, p.full_name ?? ""]));
+  return rows.map((r) => ({ userId: r.user_id, name: names.get(r.user_id) ?? "", answers: r.answers, createdAt: r.created_at, updatedAt: r.updated_at }));
+}
+
+export type TesterRow = { userId: string; email: string; fullName: string; addedAt: string; lastFeedbackAt: string | null };
+
+/** The accounts marked as testers, with their emails and when they last wrote feedback. */
+export async function listTesters(): Promise<TesterRow[]> {
+  const supabase = await createClient();
+  return check(await supabase.rpc("admin_testers")) as TesterRow[];
+}

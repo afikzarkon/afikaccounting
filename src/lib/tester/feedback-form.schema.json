@@ -1,0 +1,166 @@
+{
+  "id": "tester-feedback",
+  "version": 1,
+  "title": "דף משוב לניסיין",
+  "dir": "rtl",
+  "notes": "Same structure as feedback-form.md. repeat: once = filled one time; perModule = a new copy per module; rows = a growing list of rows.",
+  "enums": {
+    "severity": [
+      { "value": "blocker", "label": "חוסם", "icon": "🔴", "hint": "לא יכולתי להמשיך בלי עזרה מבחוץ" },
+      { "value": "slows", "label": "מאט", "icon": "🟠", "hint": "הסתדרתי, אבל זה לקח זמן או ניסיונות" },
+      { "value": "cosmetic", "label": "קוסמטי", "icon": "🟡", "hint": "לא הפריע ללמוד, אבל בולט" }
+    ],
+    "stuckType": [
+      { "value": "understanding", "label": "הבנה", "hint": "לא הבנתי את החומר עצמו" },
+      { "value": "exam-gap", "label": "פער בחינה", "hint": "הבנתי את השיעור, אבל שאלת הבחינה דרשה יותר" },
+      { "value": "interface", "label": "ממשק", "hint": "לא הבנתי איך להשתמש באתר או בכלי" },
+      { "value": "bug", "label": "תקלה", "hint": "משהו לא עבד" }
+    ],
+    "device": ["מחשב", "טלפון", "טאבלט", "שילוב"],
+    "tools": [
+      { "value": "lesson", "label": "מסכי השיעור" },
+      { "value": "practice", "label": "תרגול" },
+      { "value": "traps-tips", "label": "מלכודות וטיפים" },
+      { "value": "calculator", "label": "מחשבון", "withText": true },
+      { "value": "sheet", "label": "גיליון אלקטרוני מובנה" },
+      { "value": "worked-solution", "label": "פתרון מלא" },
+      { "value": "review", "label": "חזרה מרווחת" },
+      { "value": "exam-mode", "label": "מצב בחינה / בחינת עבר" },
+      { "value": "other", "label": "אחר", "withText": true }
+    ]
+  },
+  "sections": [
+    {
+      "id": "intake",
+      "title": "פתיחה",
+      "repeat": "once",
+      "fields": [
+        { "id": "testerCode", "type": "text", "label": "קוד ניסיין", "required": true },
+        { "id": "course", "type": "text", "label": "הקורס שנבדק", "required": true },
+        { "id": "priorKnowledge", "type": "choice", "label": "מה כבר למדתם בחשבונאות?", "options": ["שום דבר", "קורס מבוא", "יותר"] },
+        { "id": "topicFamiliarity", "type": "scale", "min": 1, "max": 5, "label": "כמה אתם מכירים את הנושא של הקורס הזה?", "minLabel": "בכלל לא", "maxLabel": "מכיר היטב" },
+        { "id": "mainDevice", "type": "choice", "label": "על איזה מכשיר תלמדו בעיקר?", "options": "@device" },
+        { "id": "expectedHardest", "type": "textarea", "label": "מה אתם מצפים שיהיה הכי קשה?" }
+      ]
+    },
+    {
+      "id": "module",
+      "title": "פרטי המודול",
+      "repeat": "perModule",
+      "fields": [
+        { "id": "moduleName", "type": "text", "label": "מודול / שיעור", "required": true },
+        { "id": "date", "type": "date", "label": "תאריך" },
+        { "id": "startTime", "type": "time", "label": "שעת התחלה" },
+        { "id": "endTime", "type": "time", "label": "שעת סיום" },
+        { "id": "netMinutes", "type": "number", "label": "זמן לימוד נטו (דקות)" },
+        { "id": "device", "type": "choice", "label": "מכשיר", "options": "@device" },
+        { "id": "skipped", "type": "textarea", "label": "דילגתם על משהו? על מה ולמה?" }
+      ]
+    },
+    {
+      "id": "quickRubric",
+      "title": "מחוון מהיר",
+      "repeat": "perModule",
+      "fields": [
+        { "id": "excellent", "type": "textarea", "label": "מה היה מצוין", "icon": "✅", "required": true },
+        { "id": "improve", "type": "textarea", "label": "מה טעון שיפור", "icon": "🔧", "required": true },
+        { "id": "tooMuch", "type": "textarea", "label": "מה היה עמוס מדי / מוגזם", "icon": "📚", "required": true },
+        { "id": "missing", "type": "textarea", "label": "מה היה חסר / מעט מדי", "icon": "🕳️", "required": true },
+        {
+          "id": "ratings",
+          "type": "scaleGrid",
+          "min": 1,
+          "max": 5,
+          "items": [
+            { "id": "clarity", "label": "ההסברים היו ברורים" },
+            { "id": "pace", "label": "הקצב היה נכון" },
+            { "id": "examples", "label": "הדוגמאות עזרו להבין" },
+            { "id": "nextStep", "label": "היה ברור מה לעשות בכל שלב" },
+            { "id": "examConfidence", "label": "אני מרגיש שאוכל לפתור שאלת בחינה בנושא הזה" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "title": "מחשבונים וכלים",
+      "repeat": "perModule",
+      "fields": [
+        { "id": "toolsUsed", "type": "multiChoice", "label": "באילו כלים השתמשתם במודול הזה?", "options": "@tools" },
+        { "id": "mainTool", "type": "text", "label": "הכלי העיקרי" },
+        { "id": "foundEasily", "type": "choice", "label": "מצאתם אותו בקלות כשהייתם צריכים אותו?", "options": ["כן", "בקושי", "לא"] },
+        { "id": "inputsClear", "type": "textarea", "label": "היה ברור מה להזין בכל שדה? אם לא, באיזה שדה?" },
+        { "id": "helpedUnderstand", "type": "choice", "label": "הכלי עזר לכם להבין, או רק נתן תשובה?", "options": ["עזר להבין", "גם וגם", "רק נתן תשובה"] },
+        { "id": "solveWithout", "type": "choice", "label": "הייתם מצליחים לפתור את אותה שאלה בלי הכלי, בבחינה?", "options": ["כן", "לא בטוח", "לא"] },
+        { "id": "resultExplained", "type": "choice", "label": "התוצאה הסבירה את עצמה (נוסחה, מספרים, דרך ב-Excel)?", "options": ["כן", "חלקית", "לא"] },
+        { "id": "integration", "type": "textarea", "label": "הכלי השתלב בפתרון השאלה, או שהיה צריך לעבור בין מסכים?" },
+        { "id": "unexpected", "type": "textarea", "label": "משהו לא עבד כמו שציפיתם? (מקש, חישוב, תצוגה)" },
+        { "id": "sheetMissing", "type": "textarea", "label": "בגיליון המובנה: חסרה לכם פונקציה או קיצור מקלדת?" }
+      ]
+    },
+    {
+      "id": "stuckPoints",
+      "title": "נקודות היתקעות",
+      "repeat": "perModule",
+      "fields": [
+        {
+          "id": "points",
+          "type": "rows",
+          "label": "כל מקום שבו נעצרתם יותר מדקה או שתיים",
+          "columns": [
+            { "id": "where", "type": "text", "label": "איפה (מסך / שאלה / קישור)" },
+            { "id": "kind", "type": "choice", "label": "סוג", "options": "@stuckType" },
+            { "id": "severity", "type": "choice", "label": "חומרה", "options": "@severity" },
+            { "id": "tried", "type": "text", "label": "מה ניסיתי" },
+            { "id": "resolved", "type": "text", "label": "נפתר? איך?" },
+            { "id": "minutesLost", "type": "number", "label": "דקות שאבדו" },
+            { "id": "screenshot", "type": "file", "label": "צילום מסך", "accept": "image/*" }
+          ]
+        },
+        { "id": "leftSite", "type": "textarea", "label": "יצאתם מהאתר כדי להבין משהו? לאן, ובשביל מה?" }
+      ]
+    },
+    {
+      "id": "examGap",
+      "title": "השיעור מול רמת הבחינה",
+      "repeat": "perModule",
+      "fields": [
+        { "id": "question", "type": "text", "label": "איזו שאלה פתרתם? (בחינה, שנה, מספר שאלה)" },
+        { "id": "independence", "type": "choice", "label": "עד כמה הצלחתם לבד?", "options": ["פתרתי לבד", "עם רמז אחד", "רק אחרי שראיתי פתרון", "לא הצלחתי"] },
+        { "id": "notTaught", "type": "textarea", "label": "מה השאלה דרשה שהשיעור לא לימד?" },
+        { "id": "taughtSimpler", "type": "textarea", "label": "מה השאלה דרשה שהשיעור לימד, אבל ברמה פשוטה יותר?" },
+        { "id": "courseHelped", "type": "textarea", "label": "איפה בשאלה ידעתם בדיוק מה לעשות בזכות הקורס?" },
+        { "id": "timeVsExam", "type": "text", "label": "כמה זמן לקח לכם לעומת הזמן שמוקצב בבחינה?" }
+      ]
+    },
+    {
+      "id": "freeText",
+      "title": "מילים חופשיות והצעות",
+      "repeat": "perModule",
+      "fields": [
+        { "id": "oneChange", "type": "textarea", "label": "הדבר האחד שהייתם משנים במודול הזה" },
+        { "id": "uxIdeas", "type": "textarea", "label": "הצעות לשיפור החוויה (ממשק, סדר, עיצוב, ניווט, מובייל)" },
+        { "id": "other", "type": "textarea", "label": "כל דבר אחר שעלה לכם" }
+      ]
+    },
+    {
+      "id": "summary",
+      "title": "סיכום הסבב",
+      "repeat": "once",
+      "fields": [
+        { "id": "exam", "type": "text", "label": "איזו בחינה פתרתם?" },
+        { "id": "score", "type": "text", "label": "הציון שקיבלתם (או ניקוד לפי מחוון)" },
+        { "id": "onTime", "type": "choice", "label": "עמדתם בזמן?", "options": ["כן", "בקושי", "לא"] },
+        { "id": "totalHours", "type": "number", "label": "זמן לימוד כולל בקורס (שעות)" },
+        { "id": "verdict", "type": "choice", "label": "האם אפשר להגיע לרמת בחינה רק מהקורס הדיגיטלי?", "options": ["כן", "כמעט", "לא"], "required": true },
+        { "id": "verdictGap", "type": "textarea", "label": "אם \"כמעט\" או \"לא\": מה חסר כדי שהתשובה תהיה \"כן\"?", "showIf": { "field": "verdict", "in": ["כמעט", "לא"] } },
+        { "id": "mostReady", "type": "text", "label": "הנושא שהכי הרגשתם מוכנים אליו בבחינה" },
+        { "id": "leastReady", "type": "text", "label": "הנושא שהכי הרגשתם לא מוכנים אליו" },
+        { "id": "bestTool", "type": "text", "label": "הכלי שהכי עזר לכם" },
+        { "id": "worstTool", "type": "textarea", "label": "הכלי שהכי פחות עזר, או שלא השתמשתם בו בכלל, ולמה" },
+        { "id": "recommend", "type": "scale", "min": 0, "max": 10, "label": "הייתם ממליצים לחבר ללמוד מהקורס הזה לבחינה?" },
+        { "id": "recommendWhy", "type": "textarea", "label": "למה?" }
+      ]
+    }
+  ]
+}

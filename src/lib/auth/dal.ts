@@ -45,6 +45,19 @@ export const isAdmin = cache(async (): Promise<boolean> => {
   return data?.role === "admin";
 });
 
+/**
+ * Whether an admin marked the signed-in user as a course tester (public.testers):
+ * it shows them the floating feedback button and the feedback form. Before the
+ * migration runs, nobody is.
+ */
+export const isTester = cache(async (): Promise<boolean> => {
+  const user = await getCurrentUser();
+  if (!user) return false;
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("is_tester");
+  return !error && data === true;
+});
+
 /** For admin pages: guests go to sign-in, signed-in non-admins to the home page. */
 export async function requireAdmin(next = "/admin"): Promise<SessionUser> {
   const user = await requireUser(next);
