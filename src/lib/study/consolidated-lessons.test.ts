@@ -19,6 +19,7 @@ import { ACQUISITION_W, W_CLAIM, W_EXCESS, W_HFS, W_LESSEE, W_LESSOR, W_TABLE, W
 import { POLICY_W, W7_BUILDING, W7_IP, W7_LAND, W7_MASTER, W7_QUALIFY, W7_REVAFTER, W7_TABLE } from "./consolidated/worked/policy";
 import { FINANCE_W, W8_AC, W8_CONTROLLER, W8_FVOCI, W8_IMPAIR, W8_MASTER, W8_SHARES } from "./consolidated/worked/finance";
 import { IMPAIRMENT_W, W9_DATES, W9_DTA, W9_IMP, W9_MASTER, W9_PREFAT, W9_PREFISSUE, W9_PREFNA, W9_PREFPROFIT } from "./consolidated/worked/impairment";
+import { INTERCOMPANY_W, W10_BAL, W10_BORROW, W10_LAND, W10_LOSS, W10_MACHINE, W10_MASTER, W10_PRIOR, W10_SOLD, W10_UNSOLD, W10_UPDOWN } from "./consolidated/worked/intercompany";
 import { GOODWILL_W, PERIOD_W, W_BARGAIN, W_BUYBACK, W_COSTS, W_EARNOUT, W_ENTRY, W_GW, W_NCI, W_PERIOD, W_PRIOR } from "./consolidated/worked/goodwill";
 import { RETURNS_W, W_FUND } from "./consolidated/worked/returns";
 import { W6_BS, W6_DATA, W6_ELIM, W6_EQUITY, W6_EXCESS, W6_MASTER, W6_PL, W6_SOCE, W6_SPLIT, W6_YEAR2, WORKSHEET_W } from "./consolidated/worked/worksheet";
@@ -729,6 +730,22 @@ describe("lesson 9: the sorting and the figures, against a separate calculation 
 });
 
 describe("lesson 10: the sorting and the figures, against a separate calculation in Python", () => {
+  it("the worked solutions: every figure they add, checked by hand, the entries balance, and the step counts", () => {
+    assert.deepEqual(INTERCOMPANY_W, {
+      loanInterest: 14_000, sameGroupProfit: 32_000, lossLeft: 6_000, nciDeferral: 5_544,
+      machGroupDep: 33_000, machBuyerDep: 43_000, b26Dta: 11_960,
+      mInvProfit: 42_000, mMachDep: 7_000, mOwners2025: 383_946, mOwners2026: 477_234,
+    });
+    // the screens' entries balance
+    assert.equal(120_000 + INV10.tax, INV10.cost + INV10.gross + INV10.tax);
+    assert.equal(PRIOR10.opening + PRIOR10.dta + PRIOR10.tax, PRIOR10.left + PRIOR10.realized);
+    assert.equal(70_000 + WD10.tax, WD10.cogs - WD10.adjust + WD10.tax);
+    assert.equal(MACH10[0].unrealized + MACH10_FIG.y1.tax, MACH10[1].depDiff + MACH10[1].unrealized + MACH10_FIG.y1.tax);
+    assert.equal(MACH10_FIG.y1.net + MACH10_FIG.y1.tax, MACH10[2].depDiff + MACH10_FIG.groupGain - MACH10_FIG.buyerGain);
+    assert.equal(BORROW10.net + BORROW10.interest + INTERCOMPANY_W.b26Dta, 2 * BORROW10.interest + BORROW10.tax);
+    assert.equal(BORROW10.opening2027 + BORROW10.dta2027 + BORROW10.tax2027, BORROW10.left2027 + BORROW10.dep);
+    assert.deepEqual([W10_BAL, W10_UNSOLD, W10_SOLD, W10_PRIOR, W10_LOSS, W10_UPDOWN, W10_LAND, W10_MACHINE, W10_BORROW, W10_MASTER].map((w) => w.steps.length), [3, 3, 2, 3, 3, 2, 4, 4, 3, 6]);
+  });
   it("eight transactions to sort, both answers among them", () => {
     assert.equal(DEFER10.length, 8);
     assert.ok(DEFER10.some((x) => x.answer === "defer") && DEFER10.some((x) => x.answer === "cancel"));
