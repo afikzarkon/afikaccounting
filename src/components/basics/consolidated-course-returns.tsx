@@ -1,16 +1,17 @@
 import { Building2, FileSignature, ListChecks, Milk, Wallet } from "lucide-react";
 import { Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
-import { AGENT_OPTIONS, AGENT_TEST, AGENT_TEST_START, AGENTS, MASTER3, MASTER3_POSITION, MASTER3_REWARD, MASTER3_SISTER, MASTER3_TOGETHER } from "@/lib/study/consolidated/lessons/returns";
+import { AGENT_OPTIONS, AGENT_TEST, AGENT_TEST_START, AGENTS } from "@/lib/study/consolidated/lessons/returns";
 import { W_FUND } from "@/lib/study/consolidated/worked/returns";
+import { W3_MASTER } from "@/lib/study/consolidated/worked/masters";
 import { ConsolidatedDrill, ManagerLab } from "./consolidated-interactive";
-import { Calc, CaseList, Expansion, LecturerNote, quiz } from "./consolidated-parts";
+import { CaseList, Expansion, LecturerNote, quiz } from "./consolidated-parts";
 import { WorkedExample } from "./consolidated-worked";
-import { TaskFrame, TaskText } from "./ias19-question";
-import { Bridge, FullSteps } from "./ias19-ui";
+import { TaskFrame } from "./ias19-question";
+import { Bridge } from "./ias19-ui";
 import { Tree, TwoPanel, WrongRight } from "./ias19-visuals";
 import { DecisionWalk } from "./ifrs16-interactive";
-import { FullSolution, P, T16, Tbl } from "./ifrs16-parts";
+import { P, T16, Tbl } from "./ifrs16-parts";
 import { SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 
@@ -331,88 +332,7 @@ export const CONSOLIDATED_RETURNS_SCREENS: Record<string, ScreenContent> = {
     lead: "שאלה אחת, כמו במבחן. קודם פתרו לבד, ואז פתחו את הפתרון.",
     body: (
       <>
-        <TaskFrame>
-          <TaskText>
-            <p>חברת ״אפיק ניהול״ הקימה את קרן ״נגב נדל״ן״ ומנהלת אותה, עם שיקול דעת רחב. העמלות שלה בתנאי שוק: 1.5% מהנכסים נטו, ו־15% מהרווח מעל 2,000,000 ש״ח, כשהרווח נמדד לפני שתי העמלות.</p>
-            <p className="mt-2">אפיק מחזיקה 25% מהקרן, והחזקה זו נושאת בהפסדים כמו שאר המשקיעים. ״אפיק נכסים״, חברת אחות בבעלות זהה, שאינה חלק מהקבוצה של אפיק ניהול, מחזיקה עוד 15%, והסכימה לא למכור בלי אישור אפיק ניהול. 60% הנותרים מפוזרים בין מאות משקיעים. המשקיעים יכולים להדיח את אפיק רק בהפרת חוזה.</p>
-            <p className="mt-2">נתוני השנה (בש״ח):</p>
-            <Tbl
-              head={["", "אפיק ניהול, בלי ההשקעה", "הקרן"]}
-              rows={[
-                ["נכסים", MASTER3.parentAssets, MASTER3.subAssets],
-                ["התחייבויות", MASTER3.parentLiabilities, MASTER3.subLiabilities],
-                ["רווח לפני עמלות", "", MASTER3.profit],
-              ]}
-            />
-            <p className="mt-2 font-semibold">נדרש:</p>
-            <ol className="mt-1 list-decimal space-y-1 ps-5">
-              <li>אילו תשואות משתנות יש לאפיק מהקרן?</li>
-              <li>מה המשקל של זכות ההדחה?</li>
-              <li>האם האחות נכנסת לבחינה?</li>
-              <li>כמה מקבלת אפיק מהקרן, ויחד עם האחות, ואיזה חלק מהרווח זה?</li>
-              <li>האם אפיק שולטת בקרן?</li>
-              <li>מה סך הנכסים, ההתחייבויות וחלוקת ההון בדוח המאוחד? הניחו שלא שולם מוניטין.</li>
-              <li>בשנה הבאה המשקיעים ממנים דירקטוריון בלתי תלוי, שמחליט מדי שנה אם להמשיך עם אפיק, ויש מנהלים אחרים בשוק. מה משתנה?</li>
-            </ol>
-          </TaskText>
-          <FullSolution>
-            <FullSteps
-              label="הפתרון המלא"
-              steps={[
-                { title: "סעיף 1: תשואות", body: <p>העמלות, שתלויות בנכסים ובביצועים, והחלק ברווח ובשווי של הקרן. כולן יכולות להשתנות לפי התוצאות של הקרן.</p> },
-                { title: "סעיף 2: זכות ההדחה", body: <p>אין לה משקל בבחינה: הדחה רק בהפרת חוזה היא זכות מגינה. לכן אי אפשר להסיק ממנה שאפיק היא סוכן.</p> },
-                { title: "סעיף 3: האחות", body: <p>כן. היא צד קשור, והסכימה לא למכור בלי אישור. לכן היא עשויה לפעול כסוכן בפועל, וצריך להביא בחשבון גם את החשיפה דרכה. בבחינת השליטה: 25% ועוד 15%, כלומר 40%.</p> },
-                {
-                  title: "סעיף 4: החשיפה",
-                  body: (
-                    <Tbl
-                      head={["", "סכום"]}
-                      rows={[
-                        [<Calc key="קבועה" label="עמלה קבועה" formula="60,000,000 × 1.5%" />, MASTER3_REWARD.fee],
-                        [<Calc key="ביצועים" label="עמלה על ביצועים" formula="(5,000,000 − 2,000,000) × 15%" />, MASTER3_REWARD.performance],
-                        [<Calc key="נשאר" label="מה שנשאר בקרן" formula="5,000,000 − 900,000 − 450,000" />, MASTER3_REWARD.left],
-                        [<Calc key="חלק" label="חלק אפיק" formula="3,650,000 × 25%" />, MASTER3_REWARD.fromHolding],
-                        [<Calc key="סך" label="סך הכול לאפיק" formula="900,000 + 450,000 + 912,500" />, MASTER3_REWARD.total],
-                        [<Calc key="אחות" label="חלק האחות" formula="3,650,000 × 15%" />, MASTER3_SISTER],
-                      ]}
-                      foot={["יחד", MASTER3_TOGETHER]}
-                    />
-                  ),
-                },
-                {
-                  title: "סעיף 4: החלק ברווח",
-                  body: (
-                    <p>
-                      <bdi dir="ltr" className="num whitespace-nowrap">2,810,000 / 5,000,000 = 56.2%</bdi>
-                    </p>
-                  ),
-                },
-                { title: "סעיף 5: מסקנה", body: <p>יש לה סמכות רחבה, מעורבות בהקמה, ואין זכויות ממשיות של אחרים. התגמול בתנאי שוק מאפשר שתהיה סוכן, אבל זה לא מספיק. החשיפה משמעותית: יותר ממחצית מהתוצאות מגיעה אליה ולאחות. לכן אפיק היא בעלת מניות עיקרית, והיא שולטת בקרן.</p> },
-                {
-                  title: "סעיף 6: הדוח המאוחד",
-                  body: (
-                    <>
-                      <p>מחברים 100%. ההון מתחלק לפי מה שאפיק ניהול מחזיקה, 25%. האחות אינה בקבוצה, ולכן החלק שלה הוא זשמ״ש, ובסך הכול 75%.</p>
-                      <Tbl
-                        head={["", "סכום"]}
-                        rows={[
-                          [<Calc key="נכסים" label="נכסים" formula="3,000,000 + 70,000,000" />, MASTER3_POSITION.assets],
-                          [<Calc key="התחייבויות" label="התחייבויות" formula="1,000,000 + 10,000,000" />, MASTER3_POSITION.liabilities],
-                          [<Calc key="בעלים" label="הון, בעלים של אפיק" formula="2,000,000 + 60,000,000 × 25%" />, MASTER3_POSITION.owners],
-                          [<Calc key="זשמ״ש" label="הון, זשמ״ש" formula="60,000,000 × 75%" />, MASTER3_POSITION.nci],
-                        ]}
-                        foot={["סך ההון", MASTER3_POSITION.net]}
-                      />
-                      <p>ב־Excel: <bdi dir="ltr" className="num whitespace-nowrap">=60000000*75%</bdi></p>
-                    </>
-                  ),
-                },
-                { title: "סעיף 7: בשנה הבאה", body: <p>שינוי בזכויות של אחרים מחייב הערכה מחדש. לדירקטוריון בלתי תלוי יש זכות ממשית להחליף אותה, והוא המנגנון של המשקיעים. לזה נותנים משקל רב, ולכן אפיק עוברת להיות סוכן, ומפסיקה לאחד. לא נדרש שום שינוי בעמלות או בהחזקה.</p> },
-                { title: "מלכודת נפוצה", body: <p>להסיק סוכן מזכות הדחה בלי לבדוק מתי אפשר להשתמש בה. או לחשב את הזשמ״ש לפי 60%, כאילו האחות בקבוצה. היא נספרת בבחינת השליטה, ולא בחלוקת ההון.</p> },
-              ]}
-            />
-          </FullSolution>
-        </TaskFrame>
+        <WorkedExample ex={W3_MASTER} />
         <Bridge summary="עכשיו אתם יודעים לקבוע אם יש שליטה, על כל שלושת המרכיבים שלה.">בשיעור הבא נתחיל מה שקורה אחריה: שיטת הרכישה. מי הרוכש, מתי הוא רוכש, ואיך מודדים את מה שקיבל.</Bridge>
       </>
     ),

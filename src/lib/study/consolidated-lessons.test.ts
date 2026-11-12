@@ -21,6 +21,7 @@ import { FINANCE_W, W8_AC, W8_CONTROLLER, W8_FVOCI, W8_IMPAIR, W8_MASTER, W8_SHA
 import { IMPAIRMENT_W, W9_DATES, W9_DTA, W9_IMP, W9_MASTER, W9_PREFAT, W9_PREFISSUE, W9_PREFNA, W9_PREFPROFIT } from "./consolidated/worked/impairment";
 import { INTERCOMPANY_W, W10_BAL, W10_BORROW, W10_LAND, W10_LOSS, W10_MACHINE, W10_MASTER, W10_PRIOR, W10_SOLD, W10_UNSOLD, W10_UPDOWN } from "./consolidated/worked/intercompany";
 import { L11_AFTER, L11_BEFORE, L11_FAIR, L11_FIN, L11_REDEEM, L11_RESALE, L11_ROU, LEASEBONDS_OWN_W } from "./consolidated/worked/leasebonds-own";
+import { MASTERS_W, W1_MASTER, W2_MASTER, W3_MASTER, W4_MASTER, W5_MASTER } from "./consolidated/worked/masters";
 import { GOODWILL_W, PERIOD_W, W_BARGAIN, W_BUYBACK, W_COSTS, W_EARNOUT, W_ENTRY, W_GW, W_NCI, W_PERIOD, W_PRIOR } from "./consolidated/worked/goodwill";
 import { RETURNS_W, W_FUND } from "./consolidated/worked/returns";
 import { W6_BS, W6_DATA, W6_ELIM, W6_EQUITY, W6_EXCESS, W6_MASTER, W6_PL, W6_SOCE, W6_SPLIT, W6_YEAR2, WORKSHEET_W } from "./consolidated/worked/worksheet";
@@ -183,6 +184,22 @@ describe("the consolidated statements course", () => {
   it("the glossary: no term twice, none empty", () => {
     assert.equal(new Set(CONSOLIDATED_GLOSSARY.map(([t]) => t)).size, CONSOLIDATED_GLOSSARY.length);
     for (const [t, d] of CONSOLIDATED_GLOSSARY) assert.ok(t.trim() && d.trim(), t);
+  });
+});
+
+describe("the closing questions of lessons 1 to 5 in the worked layout", () => {
+  it("every figure they add, checked by hand, and the step counts", () => {
+    assert.deepEqual(MASTERS_W, {
+      m2Big: 25, m3Share: 56.2,
+      // 12,000 + 60,000 + 30,000 + 32,000 + 5,000 − 18,000, and 3,000 + 60,000 + 25,500 + 26,000 + 2,000 − 18,000
+      m4TaxBaseAt: 121_000, m4TaxBaseEnd: 98_500,
+      m4CogsGroup: 76_500, m4CogsSub: 67_500,
+      m5Excess: 44_000, m5PlEffect: 7_000, m5NoPremium: 77_000, m5NetAfter: 220_000,
+    });
+    assert.equal(Math.round(-MASTERS_W.m4TaxBaseAt * 0.23), MASTER4_TABLE.tax.at);
+    assert.equal(Math.round(-MASTERS_W.m4TaxBaseEnd * 0.23), MASTER4_TABLE.tax.end);
+    assert.equal(M5.premium + MASTERS_W.m5NoPremium * 0.75, M5.fair.ownersGoodwill);
+    assert.deepEqual([W1_MASTER, W2_MASTER, W3_MASTER, W4_MASTER, W5_MASTER].map((w) => w.steps.length), [5, 6, 7, 5, 6]);
   });
 });
 

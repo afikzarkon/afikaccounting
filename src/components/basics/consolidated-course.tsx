@@ -2,16 +2,17 @@ import { Building2, FileSignature, Handshake, ListChecks, Wheat } from "lucide-r
 import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { ltrFormulas } from "@/lib/study/ias19/ltr";
-import { CASE_OPTIONS, CASES, EXEMPT_TEST, EXEMPT_TEST_START, MASTER, MASTER_POSITION, MASTER_PROFIT, MASTER_SEPARATE } from "@/lib/study/consolidated/lessons/what";
+import { CASE_OPTIONS, CASES, EXEMPT_TEST, EXEMPT_TEST_START } from "@/lib/study/consolidated/lessons/what";
 import { W_STORY_POSITION, W_STORY_SEPARATE } from "@/lib/study/consolidated/worked/what";
+import { W1_MASTER } from "@/lib/study/consolidated/worked/masters";
 import { ConsolidatedDrill, GroupLab } from "./consolidated-interactive";
-import { Calc, Expansion, HoldingChart, LecturerNote, quiz } from "./consolidated-parts";
-import { TaskFrame, TaskText } from "./ias19-question";
-import { Bridge, FullSteps } from "./ias19-ui";
+import { Expansion, HoldingChart, LecturerNote, quiz } from "./consolidated-parts";
+import { TaskFrame } from "./ias19-question";
+import { Bridge } from "./ias19-ui";
 import { WorkedExample } from "./consolidated-worked";
 import { DecisionTree, Tree, TwoPanel, WrongRight } from "./ias19-visuals";
 import { DecisionWalk } from "./ifrs16-interactive";
-import { FullSolution, P, T16, Tbl } from "./ifrs16-parts";
+import { P, T16, Tbl } from "./ifrs16-parts";
 import { SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { Rule } from "./ui";
@@ -389,104 +390,7 @@ export const CONSOLIDATED_BASICS_SCREENS: Record<string, ScreenContent> = {
     lead: "שאלה אחת, כמו במבחן. קודם פתרו לבד, ואז פתחו את הפתרון.",
     body: (
       <>
-        <TaskFrame>
-          <TaskText>
-            <p>חברת ״ארבל״ קנתה ב־1.1 את 70% ממניות חברת ״דולב״ תמורת 420,000 ש״ח, בדיוק לפי חלקה בנכסים נטו של דולב באותו יום. אגרות החוב של ארבל נסחרות בבורסה.</p>
-            <p className="mt-2">הנתונים ב־31.12 (בש״ח):</p>
-            <Tbl
-              head={["", "ארבל", "דולב"]}
-              rows={[
-                ["נכסים, בארבל בלי ההשקעה", MASTER.parentAssets, MASTER.subAssets],
-                ["התחייבויות", MASTER.parentLiabilities, MASTER.subLiabilities],
-                ["רווח השנה, בארבל בלי מה שמדולב", MASTER.parentProfit, MASTER.subProfit],
-              ]}
-            />
-            <p>בנכסים של ארבל כלולה הלוואה של 100,000 ש״ח שנתנה לדולב, והיא כלולה גם בהתחייבויות של דולב. במהלך השנה דולב הכריזה ושילמה דיבידנד של 60,000 ש״ח.</p>
-            <p className="mt-2 font-semibold">נדרש:</p>
-            <ol className="mt-1 list-decimal space-y-1 ps-5">
-              <li>האם ארבל פטורה מדוחות מאוחדים?</li>
-              <li>חשבו את סך הנכסים ואת סך ההתחייבויות בדוח המאוחד.</li>
-              <li>חלקו את ההון המאוחד בין הבעלים של ארבל לזשמ״ש.</li>
-              <li>חלקו את הרווח המאוחד באותה דרך.</li>
-              <li>מה יתרת ההשקעה ומה ההכנסה מדולב בדוחות הנפרדים של ארבל, לפי עלות ובשווי מאזני?</li>
-            </ol>
-          </TaskText>
-          <FullSolution>
-            <FullSteps
-              label="הפתרון המלא"
-              steps={[
-                { title: "סעיף 1: פטור", body: <p>לא. אגרות החוב נסחרות בשוק ציבורי, ולכן תנאי אחד נופל, וזה מספיק. ארבל חייבת לאחד.</p> },
-                {
-                  title: "סעיף 2: נכסים והתחייבויות",
-                  body: (
-                    <>
-                      <p>מחברים 100% משתי החברות, ומוציאים את ההלוואה משני הצדדים.</p>
-                      <Tbl
-                        dense
-                        head={["ארבל + דולב − הלוואה", "מאוחד"]}
-                        rows={[
-                          [<Calc key="נכסים" label="נכסים" formula="2,400,000 + 1,300,000 − 100,000" />, MASTER_POSITION.assets],
-                          [<Calc key="התחייבויות" label="התחייבויות" formula="1,050,000 + 600,000 − 100,000" />, MASTER_POSITION.liabilities],
-                        ]}
-                        foot={["נכסים נטו", MASTER_POSITION.net]}
-                      />
-                    </>
-                  ),
-                },
-                {
-                  title: "סעיף 3: ההון",
-                  body: (
-                    <Tbl
-                      head={["", "סכום"]}
-                      rows={[
-                        [<Calc key="בעלים של ארבל" label="בעלים של ארבל" formula="1,350,000 + 700,000 × 70%" />, MASTER_POSITION.owners],
-                        [<Calc key="זשמ״ש" label="זשמ״ש" formula="700,000 × 30%" />, MASTER_POSITION.nci],
-                      ]}
-                      foot={["סך ההון", MASTER_POSITION.net]}
-                    />
-                  ),
-                },
-                {
-                  title: "סעיף 4: הרווח",
-                  body: (
-                    <Tbl
-                      head={["", "סכום"]}
-                      rows={[
-                        [<Calc key="בעלים של ארבל" label="בעלים של ארבל" formula="350,000 + 160,000 × 70%" />, MASTER_PROFIT.owners],
-                        [<Calc key="זשמ״ש" label="זשמ״ש" formula="160,000 × 30%" />, MASTER_PROFIT.nci],
-                      ]}
-                      foot={["סך הרווח", MASTER_PROFIT.total]}
-                    />
-                  ),
-                },
-                {
-                  title: "סעיף 5: הדוחות הנפרדים",
-                  body: (
-                    <>
-                      <p>
-                        החלק בדיבידנד: <bdi dir="ltr" className="num whitespace-nowrap">60,000 × 70% = 42,000</bdi>
-                      </p>
-                      <p>
-                        החלק ברווח: <bdi dir="ltr" className="num whitespace-nowrap">160,000 × 70% = 112,000</bdi>
-                      </p>
-                      <Tbl
-                        head={["", "לפי עלות", "שווי מאזני"]}
-                        rows={[
-                          ["הכנסה מדולב", MASTER_SEPARATE.atCost.income, MASTER_SEPARATE.atEquity.income],
-                          ["השקעה ב־1.1", MASTER.cost, MASTER.cost],
-                          ["חלק ברווח", 0, MASTER_SEPARATE.profitShare],
-                          ["חלק בדיבידנד", 0, -MASTER_SEPARATE.dividendShare],
-                        ]}
-                        foot={["השקעה ב־31.12", MASTER_SEPARATE.atCost.balance, MASTER_SEPARATE.atEquity.balance]}
-                      />
-                    </>
-                  ),
-                },
-                { title: "מלכודת נפוצה", body: <p>לקחת רק 70% מהנכסים של דולב, או להשאיר את ההלוואה בדוח המאוחד. שיעור ההחזקה נכנס רק לחלוקת ההון והרווח, והלוואה בתוך הקבוצה לא קיימת מבחינת ישות אחת.</p> },
-              ]}
-            />
-          </FullSolution>
-        </TaskFrame>
+        <WorkedExample ex={W1_MASTER} />
         <Bridge summary="עכשיו אתם יודעים מה זה צירוף עסקים, ומה קורה בדוחות אחריו. אבל הנחנו כל הזמן שברור מי שולט.">על זה בשיעור הבא: מה בדיוק נותן שליטה, ומתי יש שליטה גם בלי רוב המניות.</Bridge>
       </>
     ),
