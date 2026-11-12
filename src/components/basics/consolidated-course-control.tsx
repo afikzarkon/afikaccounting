@@ -2,8 +2,10 @@ import { FileSignature, Landmark, ListChecks, Milk, Sun } from "lucide-react";
 import { Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { MASTER2, MASTER2_NOW, MASTER2_OPTION, MASTER2_POSITION, POWER_TEST, POWER_TEST_START, RIGHT_OPTIONS, RIGHTS } from "@/lib/study/consolidated/lessons/control";
+import { W_ATTEND, W_CONVERT } from "@/lib/study/consolidated/worked/control";
 import { AttendanceLab, ConsolidatedDrill } from "./consolidated-interactive";
 import { Calc, CaseList, Expansion, LecturerNote, PowerFlow, quiz } from "./consolidated-parts";
+import { WorkedExample } from "./consolidated-worked";
 import { TaskFrame, TaskText } from "./ias19-question";
 import { Bridge, FullSteps } from "./ias19-ui";
 import { Tree, TwoPanel, WrongRight } from "./ias19-visuals";
@@ -368,9 +370,8 @@ export const CONSOLIDATED_CONTROL_SCREENS: Record<string, ScreenContent> = {
           ]}
         />
         <P>שתי שאלות חוזרות בכל מקרה: כמה אנשים צריכים לפעול יחד נגדו, וכמה קולות יש לו בחדר.</P>
-        <P>
-          מה לגבי המקרה ההפוך? אם חברת הביטוח הייתה מחזיקה 42%, ו־75% נוכחים: <bdi dir="ltr" className="num whitespace-nowrap">42 / 75 = 56%</bdi>. כאן יש לו רוב בחדר, ובהיעדר עובדות אחרות הוא מכריע לבד.
-        </P>
+        <P>הנה המקרה של חברת התעופה, מחושב עד הסוף, ואיתו המקרה ההפוך:</P>
+        <WorkedExample ex={W_ATTEND} />
         <LecturerNote title="שיעור הנוכחות בדוגמה בעמ׳ 17">
           <p>שיעור הנוכחות שכתוב בדוגמה ד בעמ׳ 17 בסיכום שונה מזה שבדוגמה 8 של IFRS 10. לפי המספר שבסיכום, המשקיע מחזיק ביותר ממחצית הקולות של הנוכחים, ואז המסקנה שכתובה שם, שאין לו יכולת מעשית, לא מסתדרת. לפי המספר שבתקן היא מסתדרת. ייתכן שהספרות התחלפו, אבל הסיבה לא כתובה בחומר.</p>
           <p>במקרה שלנו בחרנו מספרים שבהם המסקנה מחזיקה.</p>
@@ -421,6 +422,7 @@ export const CONSOLIDATED_CONTROL_SCREENS: Record<string, ScreenContent> = {
           ]}
         />
         <P>״בתוך הכסף״ פירושו שמשתלם לממש, ו״מחוץ לכסף״ שלא משתלם, אם מסתכלים רק על המחיר. ״עמוק״ פירושו שרחוק מאוד. אבל המחיר לא תמיד סוף הסיפור: בדוגמה השנייה הסינרגיה הופכת את ההמרה לכדאית.</P>
+        <WorkedExample ex={W_CONVERT} />
         <WrongRight
           label="טעות: בהמרה מוסיפים מניות רק למשקיע. נכון: מוסיפים גם לו וגם לסך. בקניית מניות קיימות, הסך לא משתנה"
           wrong={<p>״מוסיפים לו את המניות החדשות ומשאירים את הסך, וכך יוצא שהוא מחזיק יותר מ־100%.״</p>}

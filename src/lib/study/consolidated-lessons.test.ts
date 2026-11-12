@@ -14,6 +14,7 @@ import { ACQUISITION, ACQUISITION_TAUGHT, BOND, ITEMS, LESSEE, LESSOR, MASTER4_T
 import { G_FAIR, G_NET, G_PREMIUM, G_SHARE, GOODWILL, GOODWILL_TAUGHT, M5, PAYS, PERIOD, PERIOD_TEST, PERIOD_TEST_START } from "./consolidated/lessons/goodwill";
 import { AGENT_TEST, AGENT_TEST_START, AGENTS, FUND_LARGE, FUND_SMALL, MASTER3_POSITION, MASTER3_REWARD, MASTER3_SISTER, MASTER3_TOGETHER, RETURNS, RETURNS_TAUGHT } from "./consolidated/lessons/returns";
 import { BEFORE11, BOND11, BOND11_FIG, BOND11_PRICE, FIN11, FV11, LEASEBONDS, LEASEBONDS_TAUGHT, M11, M11_FIG, M11_PRICE, RESALE11, ROU11, ROU11_NCI, WHO11 } from "./consolidated/lessons/leasebonds";
+import { CONTROL_W, W_ATTEND, W_CONVERT } from "./consolidated/worked/control";
 import { PERIOD_W, W_PERIOD } from "./consolidated/worked/goodwill";
 import { W_STORY_POSITION, W_STORY_SEPARATE, WHAT_W } from "./consolidated/worked/what";
 import { W64, W65, W66, W67, W68, W69 } from "./consolidated/worked/leasebonds";
@@ -261,6 +262,12 @@ describe("lesson 2: the walk and the sorting", () => {
 });
 
 describe("lesson 2: figures, against a separate calculation in Python", () => {
+  it("the worked solutions: every figure they add, and the step count", () => {
+    assert.deepEqual(CONTROL_W, { bigTogether: 18, othersInRoom: 44, altOthersInRoom: 33, nowShare: 30, otherShare: 35, afterShares: 26_000, afterTotal: 40_000, optionReach: 64 });
+    assert.equal(CONTROL_W.afterShares / CONTROL_W.afterTotal, 0.65);
+    assert.equal(W_ATTEND.steps.length, 5);
+    assert.equal(W_CONVERT.steps.length, 4);
+  });
   const q = (id: string) => CONTROL.exercises.find((x) => x.id === id) as { answer: number; options: string[] };
   it("the screens", () => {
     assert.deepEqual(ATTEND_NO, { share: 45, decides: false, lostAbove: 72 });
