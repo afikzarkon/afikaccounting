@@ -103,3 +103,6 @@ next-env.d.ts
 
 # IFRS 16 lecture materials (never committed)
 /ifrs16-source/
+
+# the consolidated course's source material (never committed)
+/consolidated-source/

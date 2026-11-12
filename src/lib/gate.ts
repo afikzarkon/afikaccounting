@@ -55,6 +55,7 @@ export const COURSE_ROUTES: readonly { id: string; href: string; lessonPrefix: s
   { id: "ias16", href: "/basics/ias16", lessonPrefix: "ias16" },
   { id: "ias19", href: "/basics/ias19", lessonPrefix: "ias19" },
   { id: "ifrs16", href: "/basics/ifrs16", lessonPrefix: "ifrs16" },
+  { id: "consolidated", href: "/basics/consolidated", lessonPrefix: "consolidated" },
 ];
 
 const normalize = (pathname: string) => (pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname) || "/";
