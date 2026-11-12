@@ -24,8 +24,10 @@ export const TYPE_LABEL: Record<AccountType, string> = {
 const EXPLICIT: Record<string, AccountType> = {
   מזומן: "asset",
   "השקעה בחברה בת": "asset",
+  "השקעה בחברה כלולה": "asset",
   מוניטין: "asset",
   "זשמ״ש": "equity",
+  "קרן עסקאות עם זשמ״ש": "equity",
   פרמיה: "equity",
   "קרן הון": "equity",
   "התחייבות בגין תמורה מותנית": "liability",
