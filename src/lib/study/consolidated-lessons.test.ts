@@ -16,6 +16,7 @@ import { AGENT_TEST, AGENT_TEST_START, AGENTS, FUND_LARGE, FUND_SMALL, MASTER3_P
 import { BEFORE11, BOND11, BOND11_FIG, BOND11_PRICE, FIN11, FV11, LEASEBONDS, LEASEBONDS_TAUGHT, M11, M11_FIG, M11_PRICE, RESALE11, ROU11, ROU11_NCI, WHO11 } from "./consolidated/lessons/leasebonds";
 import { CONTROL_W, W_ATTEND, W_CONVERT } from "./consolidated/worked/control";
 import { ACQUISITION_W, W_CLAIM, W_EXCESS, W_HFS, W_LESSEE, W_LESSOR, W_TABLE, W_TAX } from "./consolidated/worked/acquisition";
+import { POLICY_W, W7_BUILDING, W7_IP, W7_LAND, W7_MASTER, W7_QUALIFY, W7_REVAFTER, W7_TABLE } from "./consolidated/worked/policy";
 import { GOODWILL_W, PERIOD_W, W_BARGAIN, W_BUYBACK, W_COSTS, W_EARNOUT, W_ENTRY, W_GW, W_NCI, W_PERIOD, W_PRIOR } from "./consolidated/worked/goodwill";
 import { RETURNS_W, W_FUND } from "./consolidated/worked/returns";
 import { W6_BS, W6_DATA, W6_ELIM, W6_EQUITY, W6_EXCESS, W6_MASTER, W6_PL, W6_SOCE, W6_SPLIT, W6_YEAR2, WORKSHEET_W } from "./consolidated/worked/worksheet";
@@ -551,6 +552,22 @@ describe("lesson 6: the worksheet, against a separate calculation in Python", ()
 });
 
 describe("lesson 7: the walk, the sorting and the figures, against a separate calculation in Python", () => {
+  it("the worked solutions: every figure they add, checked by hand, and the step counts", () => {
+    assert.deepEqual(POLICY_W, {
+      vacTax25: 3_220, vacNet25: 10_780, vacChange26: 7_000, vacNet26: 5_390,
+      ipBookEnd: 171_000, ipGain: 12_000, ipNet: 16_170,
+      bDolevCarrying24: 180_000, bLoss24: 18_000, bGain25: 24_000, bTax25: 3_680, bNet25: 12_320,
+      bDrop26: 21_000, bTax26: 3_220, bNet26: 10_780,
+      landExcess: 36_000, landTax: 8_280, landTaxOci: 5_520, landTaxPl: 2_760, landReserveNet: 18_480,
+      mIpBookEnd: 147_000, mBuildingCarrying: 84_000, mReserve: 14_000, mNetLoss: 5_390, mIpBookEnd26: 141_000,
+    });
+    // the land entry balances, and its tax splits the way the excess does
+    assert.equal(POLICY_W.landTax + POLICY_W.landReserveNet + 12_000, POLICY_W.landExcess + POLICY_W.landTaxPl);
+    assert.equal(POLICY_W.landTaxOci + POLICY_W.landTaxPl, POLICY_W.landTax);
+    // the closing question's adjusted profit, by hand
+    assert.equal(90_000 + 6_160 - POLICY_W.mNetLoss, 90_770);
+    assert.deepEqual([W7_QUALIFY, W7_IP, W7_TABLE, W7_REVAFTER, W7_BUILDING, W7_LAND, W7_MASTER].map((w) => w.steps.length), [4, 3, 3, 2, 9, 3, 7]);
+  });
   it("every path of the walk ends, and both verdicts are reachable", () => {
     const ends = new Set<boolean>();
     const reach = (id: string, seen: string[]): void => {
