@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { Money } from "@/components/basics/ui";
 import { Button } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/form";
+import { hintOf } from "@/lib/study/hint";
 import { type ExResult, numberRight, triesFor } from "@/lib/study/score";
 import type { QuestionExercise } from "@/lib/study/types";
 import { cn } from "@/lib/utils";
@@ -45,16 +46,15 @@ export function QuestionExercise({ q, result, onCheck }: { q: Question; result?:
       onCheck(dr === q.dr && cr === q.cr);
     }
   };
-  // After a wrong try, one step of help, not the solution: what was already right, or the solution's first step as a hint
-  // (only when the solution has more steps, so the hint never is the answer).
+  // After a wrong try, one step of help, not the solution: what was already right, or the solution's first step
+  // with every line that shows the answer taken out (hintOf).
+  const firstStep = hintOf(q);
   const hint =
     q.kind === "entry" && sides && sides.dr !== sides.cr
       ? sides.dr
         ? "צד החובה נכון. בדקו את הזכות: מי נותן בעסקה הזאת?"
         : "צד הזכות נכון. בדקו את החובה: מי מקבל בעסקה הזאת?"
-      : q.steps.length > 1
-        ? `רמז: ${q.steps[0]}`
-        : undefined;
+      : firstStep && `רמז: ${firstStep}`;
   const answer = q.kind === "choice" ? q.options[q.answer] : q.kind === "number" ? <Money v={q.answer} /> : `ח׳ ${q.dr} / ז׳ ${q.cr}`;
   const canCheck = q.kind === "number" ? value.trim() !== "" : dr !== "" && cr !== "";
 
