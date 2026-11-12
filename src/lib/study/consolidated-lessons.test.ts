@@ -15,6 +15,7 @@ import { G_FAIR, G_NET, G_PREMIUM, G_SHARE, GOODWILL, GOODWILL_TAUGHT, M5, PAYS,
 import { AGENT_TEST, AGENT_TEST_START, AGENTS, FUND_LARGE, FUND_SMALL, MASTER3_POSITION, MASTER3_REWARD, MASTER3_SISTER, MASTER3_TOGETHER, RETURNS, RETURNS_TAUGHT } from "./consolidated/lessons/returns";
 import { BEFORE11, BOND11, BOND11_FIG, BOND11_PRICE, FIN11, FV11, LEASEBONDS, LEASEBONDS_TAUGHT, M11, M11_FIG, M11_PRICE, RESALE11, ROU11, ROU11_NCI, WHO11 } from "./consolidated/lessons/leasebonds";
 import { PERIOD_W, W_PERIOD } from "./consolidated/worked/goodwill";
+import { W_STORY_POSITION, W_STORY_SEPARATE, WHAT_W } from "./consolidated/worked/what";
 import { W64, W65, W66, W67, W68, W69 } from "./consolidated/worked/leasebonds";
 import type { Worked } from "./consolidated/worked/types";
 import { BORROW10, DEFER10, INTERCOMPANY, INTERCOMPANY_TAUGHT, INV10, LAND10, LOSS10, M10, MACH10, MACH10_FIG, MISTAKE10, PRIOR10, SAME10, SPLIT10, WD10 } from "./consolidated/lessons/intercompany";
@@ -216,6 +217,12 @@ describe("lesson 1: figures, against a separate calculation in Python", () => {
     assert.deepEqual(MASTER_SEPARATE, { dividendShare: 42_000, profitShare: 112_000, atCost: { balance: 420_000, income: 42_000 }, atEquity: { balance: 490_000, income: 112_000 } });
     // Bought at the share of net assets on 1.1: closing 700,000 less the year's profit plus the dividend, times 70%.
     assert.equal((700_000 - 160_000 + 60_000) * 0.7, 420_000);
+  });
+  it("the story's worked solutions: every figure they add, and the step count", () => {
+    assert.deepEqual(WHAT_W, { subNet: 440_000, parentNet: 770_000, share: 330_000, goodwill: 0, parentEquity: 1_100_000, profitShare: 48_000, dividendShare: 18_000 });
+    assert.equal(WHAT_W.parentEquity, STORY_POSITION.owners);
+    assert.equal(W_STORY_POSITION.steps.length, 4);
+    assert.equal(W_STORY_SEPARATE.steps.length, 4);
   });
   it("what the mistake screen corrects", () => {
     const g = groupPosition({ parentAssets: 540_000, parentLiabilities: 0, subAssets: 230_000, subLiabilities: 60_000, holding: 0.9 });

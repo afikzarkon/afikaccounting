@@ -1,13 +1,14 @@
 import { Building2, FileSignature, Handshake, ListChecks, Wheat } from "lucide-react";
-import { JournalEntry } from "@/components/study/blocks";
 import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { ltrFormulas } from "@/lib/study/ias19/ltr";
-import { CASE_OPTIONS, CASES, EXEMPT_TEST, EXEMPT_TEST_START, MASTER, MASTER_POSITION, MASTER_PROFIT, MASTER_SEPARATE, STORY, STORY_POSITION, STORY_PROFIT, STORY_SEPARATE } from "@/lib/study/consolidated/lessons/what";
+import { CASE_OPTIONS, CASES, EXEMPT_TEST, EXEMPT_TEST_START, MASTER, MASTER_POSITION, MASTER_PROFIT, MASTER_SEPARATE } from "@/lib/study/consolidated/lessons/what";
+import { W_STORY_POSITION, W_STORY_SEPARATE } from "@/lib/study/consolidated/worked/what";
 import { ConsolidatedDrill, GroupLab } from "./consolidated-interactive";
 import { Calc, Expansion, HoldingChart, LecturerNote, quiz } from "./consolidated-parts";
 import { TaskFrame, TaskText } from "./ias19-question";
 import { Bridge, FullSteps } from "./ias19-ui";
+import { WorkedExample } from "./consolidated-worked";
 import { DecisionTree, Tree, TwoPanel, WrongRight } from "./ias19-visuals";
 import { DecisionWalk } from "./ifrs16-interactive";
 import { FullSolution, P, T16, Tbl } from "./ifrs16-parts";
@@ -215,36 +216,8 @@ export const CONSOLIDATED_BASICS_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>הדוחות המאוחדים כוללים חמישה חלקים: דוח על המצב הכספי, דוח על הרווח הכולל, דוח על השינויים בהון, דוח על תזרימי המזומנים, וביאורים.</P>
-        <P>נניח ששיבולת קנתה את הטחנה בדיוק לפי החלק שלה בנכסים נטו, כך שאין מוניטין. הנה הדוח המאוחד על המצב הכספי מיד אחרי הקנייה. אצל שיבולת סופרים את הנכסים בלי ההשקעה, כי במקומה מופיע כל מה שיש לטחנה.</P>
-        <Tbl
-          dense
-          head={["", "שיבולת", "הטחנה", "מאוחד"]}
-          rows={[
-            ["נכסים", STORY.parentAssets, STORY.subAssets, STORY_POSITION.assets],
-            ["התחייבויות", STORY.parentLiabilities, STORY.subLiabilities, STORY_POSITION.liabilities],
-          ]}
-          foot={["נכסים נטו", STORY_POSITION.parentNet, STORY_POSITION.subNet, STORY_POSITION.net]}
-        />
-        <P>
-          שיעור ההחזקה לא נגע בנכסים ובהתחייבויות. הוא נכנס רק כשמחלקים את ההון של <bdi dir="ltr" className="num whitespace-nowrap">{STORY_POSITION.net.toLocaleString("en-US")}</bdi> ש״ח:
-        </P>
-        <Tbl
-          head={["ההון המאוחד", "סכום"]}
-          rows={[
-            [<Calc key="בעלים של האם" label="בעלים של האם" formula="770,000 + 440,000 × 75%" />, STORY_POSITION.owners],
-            [<Calc key="זשמ״ש" label="זשמ״ש" formula="440,000 × 25%" />, STORY_POSITION.nci],
-          ]}
-          foot={["סך ההון", STORY_POSITION.net]}
-        />
-        <P>באותו אופן ברווח. שיבולת הרוויחה 176,000 ש״ח והטחנה 64,000 ש״ח:</P>
-        <Tbl
-          head={["הרווח המאוחד", "סכום"]}
-          rows={[
-            [<Calc key="בעלים של האם" label="בעלים של האם" formula="176,000 + 64,000 × 75%" />, STORY_PROFIT.owners],
-            [<Calc key="זשמ״ש" label="זשמ״ש" formula="64,000 × 25%" />, STORY_PROFIT.nci],
-          ]}
-          foot={["סך הרווח", STORY_PROFIT.total]}
-        />
+        <P>נניח ששיבולת קנתה את הטחנה בדיוק לפי החלק שלה בנכסים נטו, כך שאין מוניטין. כך נראים הדוחות המאוחדים מיד אחרי הקנייה:</P>
+        <WorkedExample ex={W_STORY_POSITION} />
         <P>בדוח על השינויים בהון, ההון של הבעלים מפורט לסעיפים: הון מניות, פרמיה, עודפים וקרנות. הזשמ״ש מוצגים במספר אחד.</P>
         <LecturerNote title="החלוקה בין הבעלים לזשמ״ש: מה קורה כשיש מוניטין">
           <p>
@@ -326,23 +299,9 @@ export const CONSOLIDATED_BASICS_SCREENS: Record<string, ScreenContent> = {
         <P>
           לפי <T16 he="IAS 27" par="סעיף 10" /> יש שלוש דרכים: לפי עלות, לפי IFRS 9, או בשיטת השווי המאזני. השיטה קובעת גם מה קורה עם הרווח והדיבידנד של הבת.
         </P>
-        <P>
-          שיבולת שילמה 330,000 ש״ח. השנה הטחנה הרוויחה 64,000 ש״ח, וחילקה דיבידנד של 24,000 ש״ח. החלק של שיבולת בדיבידנד הוא <bdi dir="ltr" className="num whitespace-nowrap">24,000 × 75% = 18,000</bdi>, ובאותו אופן החלק שלה ברווח הוא <bdi dir="ltr" className="num whitespace-nowrap">64,000 × 75% = 48,000</bdi>.
-        </P>
-        <Tbl
-          head={["", "לפי עלות", "שווי מאזני"]}
-          rows={[
-            ["הכנסה השנה", STORY_SEPARATE.atCost.income, STORY_SEPARATE.atEquity.income],
-            ["השקעה ב־1.1", STORY.paid, STORY.paid],
-            ["חלק ברווח", 0, STORY_SEPARATE.profitShare],
-            ["חלק בדיבידנד", 0, -STORY_SEPARATE.dividendShare],
-          ]}
-          foot={["השקעה ב־31.12", STORY_SEPARATE.atCost.balance, STORY_SEPARATE.atEquity.balance]}
-        />
-        <P>אותו דיבידנד, ושתי פקודות שונות:</P>
-        <JournalEntry title="לפי עלות: הדיבידנד הוא הכנסה" lines={[{ account: "מזומן", dr: STORY_SEPARATE.dividendShare }, { account: "הכנסות מדיבידנד", cr: STORY_SEPARATE.dividendShare }]} />
-        <JournalEntry title="בשווי מאזני: הדיבידנד מקטין את ההשקעה" lines={[{ account: "מזומן", dr: STORY_SEPARATE.dividendShare }, { account: "השקעה בחברה בת", cr: STORY_SEPARATE.dividendShare }]} />
-        <P>בשווי מאזני ההכנסה כבר נרשמה כשהוכר החלק ברווח. לכן הדיבידנד הוא רק העברה: הכסף יוצא מההשקעה ונכנס למזומן. אם מודדים לפי IFRS 9, ההשקעה נמדדת בשווי ההוגן שלה, והדיבידנד נרשם ברווח או הפסד.</P>
+        <P>הנה אותה השקעה בשתי הדרכים שאפשר לחשב מהמספרים של הטחנה עצמה:</P>
+        <WorkedExample ex={W_STORY_SEPARATE} />
+        <P>אם מודדים לפי IFRS 9, ההשקעה נמדדת בשווי ההוגן שלה, והדיבידנד נרשם ברווח או הפסד.</P>
         <P>ומה עם הדוחות המאוחדים? שם ההשקעה וההכנסות ממנה מתבטלות, ולכן הם יוצאים אותו דבר בכל שיטה שנבחרה בדוח הנפרד. כך נלמד בשיעור 6.</P>
         <Expansion title="אותה שיטה לכל קטגוריה, ומה קורה כשמוכרים">
           <p>סעיף 10 של IAS 27 דורש אותו טיפול לכל קטגוריה של השקעות: בנות, כלולות או עסקאות משותפות. השקעה לפי עלות או בשווי מאזני שסווגה כמוחזקת למכירה עוברת ל־IFRS 5. השקעה לפי IFRS 9 ממשיכה להימדד כרגיל.</p>
