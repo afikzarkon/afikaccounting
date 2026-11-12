@@ -2,11 +2,16 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
-<title>מצטרפים כניסיינים</title>
+<title>מצטרפים לצוות הניסיינים</title>
 <!--
   The deck sent to course testers (as a PDF, on WhatsApp). One .page per slide, 1920×1080.
-  Make the PDF: msedge --headless --print-to-pdf=tester-deck.pdf --no-pdf-header-footer tester-deck.html
-  Placeholders to fill before sending are marked [כך].
+  Two versions from this one file, chosen by ?v= in the address:
+    ?v=ias19   הטבות עובד (IAS 19): second-year students, who already know Afik
+    ?v=basics  חשבונאות מאפס: students who don't know him yet
+  An element with data-only="ias19" or data-only="basics" shows in that version only; page numbers are set on load.
+  Make the PDFs (from this folder):
+    msedge --headless --no-pdf-header-footer --virtual-time-budget=8000 --print-to-pdf=tester-deck-ias19.pdf  "file:///…/tester-deck.html?v=ias19"
+    msedge --headless --no-pdf-header-footer --virtual-time-budget=8000 --print-to-pdf=tester-deck-basics.pdf "file:///…/tester-deck.html?v=basics"
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&display=swap">
@@ -26,10 +31,11 @@
     display: flex; flex-direction: column; gap: 48px;
     page-break-after: always; break-after: page;
   }
-  .page:last-child { page-break-after: auto; break-after: auto; }
+  .page.last { page-break-after: auto; break-after: auto; }
   @media screen { .page { margin: 40px auto; box-shadow: 0 8px 40px rgba(0,0,0,.12); } }
   .dark { background: var(--brand); color: #f3f1e8; }
   .gold { background: var(--gold-soft); }
+  .hide { display: none !important; }
 
   h1, h2 { font-family: "Frank Ruhl Libre", Georgia, serif; font-weight: 700; letter-spacing: -1px; }
   h1 { font-size: 132px; line-height: 1.05; }
@@ -52,11 +58,11 @@
   .cards { display: grid; gap: 32px; }
   .c3 { grid-template-columns: repeat(3, 1fr); }
   .c2 { grid-template-columns: repeat(2, 1fr); }
-  .c4 { grid-template-columns: repeat(4, 1fr); }
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: 24px; padding: 44px; display: flex; flex-direction: column; gap: 16px; }
   .card p { font-size: 30px; color: var(--muted); }
+  .dark .card { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.14); }
+  .dark .card p { color: var(--mint); }
   .num { font-family: "Frank Ruhl Libre", Georgia, serif; font-size: 72px; font-weight: 900; line-height: 1; color: var(--gold-strong); }
-  .tag { align-self: flex-start; font-size: 26px; font-weight: 600; border-radius: 999px; padding: 6px 22px; }
 
   ul.list { list-style: none; display: flex; flex-direction: column; gap: 26px; }
   ul.list li { display: flex; gap: 24px; align-items: flex-start; }
@@ -87,42 +93,169 @@
   .tl { padding: 40px 0 0 48px; display: flex; flex-direction: column; gap: 14px; position: relative; }
   .tl::before { content: ""; position: absolute; top: -21px; right: 0; width: 36px; height: 36px; border-radius: 50%; background: var(--accent); border: 6px solid var(--canvas); }
   .tl p { font-size: 30px; color: var(--muted); }
-  .ltr { direction: ltr; unicode-bidi: embed; }
+  .ltr { direction: ltr; unicode-bidi: embed; display: inline-block; }
+
+  /* "About me": the credentials as a column of badges beside the story. */
+  .creds { display: flex; flex-direction: column; gap: 22px; width: 620px; flex: none; }
+  .cred { display: flex; align-items: center; gap: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 26px 30px; }
+  .cred .ic { flex: none; width: 64px; height: 64px; border-radius: 18px; background: var(--gold-soft); color: var(--gold); display: grid; place-items: center; }
+  .cred p { font-size: 30px; line-height: 1.35; font-weight: 600; color: var(--fg); }
+  .cred span { display: block; font-size: 24px; font-weight: 400; color: var(--muted); }
+
+  /* A lesson screen, as a vertical strip of its parts. */
+  .lesson { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 24px; overflow: hidden; background: var(--surface); }
+  .lesson > div { padding: 36px 34px; display: flex; flex-direction: column; gap: 12px; border-inline-start: 1px solid var(--line); }
+  .lesson > div:first-child { border-inline-start: none; }
+  .lesson .k { font-size: 24px; font-weight: 600; color: var(--accent); letter-spacing: 1px; }
+  .lesson p { font-size: 29px; color: var(--muted); }
+  .video { display: flex; align-items: center; gap: 22px; background: var(--brand); color: #f3f1e8; border-radius: 24px; padding: 30px 36px; }
+  .video .play { flex: none; width: 76px; height: 76px; border-radius: 50%; background: var(--gold-strong); display: grid; place-items: center; }
+  .video p { font-size: 32px; color: var(--mint); }
+  .video b { color: #fff; }
+  .phone { font-weight: 700; color: var(--fg); }
+  /* Blocks keep their height: a slide that holds too much overflows visibly instead of squeezing a block to nothing. */
+  .cards, .lesson, .video, .steps, .timeline, .after { flex-shrink: 0; }
+  .tight { gap: 36px; }
+  .compact .card { padding: 32px 38px; gap: 10px; }
+  .compact .card h3 { font-size: 34px; }
+  .compact .card p { font-size: 27px; line-height: 1.45; }
+  .after { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; font-size: 30px; color: var(--muted); }
+  .after b { color: var(--fg); }
+  .after .pill { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 14px 28px; color: var(--fg); }
+  .dark .phone { color: #fff; }
 </style>
 </head>
 <body>
 
 <!-- 1. Cover -->
 <section class="page dark" style="justify-content:center; gap:40px">
-  <p class="eyebrow">AfikAccounting · בדיקת קורס</p>
+  <p class="eyebrow" data-only="ias19">AfikAccounting · בדיקת קורס · הטבות עובד (IAS 19)</p>
+  <p class="eyebrow" data-only="basics">AfikAccounting · בדיקת קורס · חשבונאות מאפס</p>
   <h1>מצטרפים לצוות<br>הניסיינים</h1>
-  <p class="lead">לומדים לקראת המבחן עם <b style="color:#fff">חשבונאות מאפס</b> ו<b style="color:#fff">הטבות עובד (IAS 19)</b>,<br>ועוזרים לנו לגלות מה באתר עובד ומה צריך לשפר.</p>
-  <div class="footer"><span>מצגת לניסיין</span><span>1</span></div>
+  <p class="lead" data-only="ias19">לומדים לקראת המבחן ב<b style="color:#fff">הטבות עובד (IAS 19)</b> עם האתר שבניתי,<br>ועוזרים לי לגלות מה בו עובד ומה צריך לשפר.</p>
+  <p class="lead" data-only="basics">לומדים <b style="color:#fff">חשבונאות מאפס</b> עם האתר שבניתי,<br>ועוזרים לי לגלות מה בו עובד ומה צריך לשפר.</p>
+  <div class="footer"><span>אפיק זרקון · <span class="ltr">058-632-8332</span></span><span class="pn"></span></div>
 </section>
 
-<!-- 2. Your role -->
+<!-- 2. About me: a reminder for those who know Afik, an introduction for those who don't -->
+<section class="page">
+  <p class="eyebrow" data-only="ias19">אתם כבר מכירים אותי</p>
+  <p class="eyebrow" data-only="basics">נעים להכיר</p>
+  <h2 data-only="ias19">אפיק זרקון, הפעם מהצד של האתר</h2>
+  <h2 data-only="basics">אני אפיק זרקון</h2>
+  <div style="display:flex; gap:80px; align-items:center; flex:1">
+    <div style="flex:1; display:flex; flex-direction:column; gap:30px">
+      <p class="lead" style="font-size:40px" data-only="basics">סטודנט שנה ג' לראיית חשבון במכללה למנהל. אני מלמד את תקני החשבונאות בשיעורים פרטיים ובהרצאות מול 50 עד 60 סטודנטים.</p>
+      <p class="lead" style="font-size:40px" data-only="ias19">סטודנט שנה ג' לראיית חשבון במכללה למנהל, ומי שלימד אתכם את התקנים בשיעורים ובהרצאות.</p>
+      <p class="lead" style="font-size:40px">מול הסטודנטים ראיתי שוב ושוב איפה נתקעים. הבנתי שהדרך שבה מלמדים חשבונאות בהרצאות חלקית, ושיש דרך טובה יותר ללמוד. בשביל זה בניתי את האתר.</p>
+    </div>
+    <div class="creds">
+      <div class="cred">
+        <span class="ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="6"/><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"/></svg></span>
+        <p>מצטיין דיקן, פעמיים</p>
+      </div>
+      <div class="cred">
+        <span class="ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.8 1.5 7L12 17.6 5.7 21.1l1.5-7L2 9.3l7-.8z"/></svg></span>
+        <p>מצטיין נשיא<span>המכללה למנהל</span></p>
+      </div>
+      <div class="cred">
+        <span class="ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        <p>מלמד את התקנים<span>שיעורים פרטיים, והרצאות מול 50–60 סטודנטים</span></p>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span class="pn"></span></div>
+</section>
+
+<!-- 3. What the site is -->
+<section class="page">
+  <p class="eyebrow">מה זה AfikAccounting</p>
+  <h2>הבנתם בהרצאה, ונתקעתם לבד בבית?</h2>
+  <p class="lead">האתר נבנה בשביל הרגע הזה: ללמוד את החומר צעד אחר צעד, ולבדוק כל תשובה מיד, ברמה של הקורס, בלי לחכות לתרגול.</p>
+  <div class="grow"></div>
+  <div class="cards c3">
+    <div class="card"><h3>רעיון אחד בכל מסך</h3><p>שיעורים קצרים שבונים את החומר מהבסיס, בלי לדלג על שלבים.</p></div>
+    <div class="card"><h3>בדיקה מיידית</h3><p>כל תשובה נבדקת מיד, ולכל טעות יש הסבר: מה פספסתם ולמה זה מפתה.</p></div>
+    <div class="card"><h3>כל הדרך עד המספר</h3><p>פתרונות וכלים שמראים איך מגיעים לתוצאה, לא רק מה התוצאה.</p></div>
+  </div>
+  <p class="muted" style="font-size:30px" data-only="ias19">הקורס שתבדקו: <b style="color:var(--fg)">הטבות עובד (IAS 19)</b>, שמונה שיעורים, מארבעת סוגי ההטבות ועד שאלות ברמת מבחן.</p>
+  <p class="muted" style="font-size:30px" data-only="basics">הקורס שתבדקו: <b style="color:var(--fg)">חשבונאות מאפס</b>, תשעה שיעורים, מחובה וזכות ועד דוחות כספיים וגיליון רב-טורי מלא.</p>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span class="pn"></span></div>
+</section>
+
+<!-- 4. How a lesson works -->
+<section class="page tight">
+  <p class="eyebrow">איך נראה שיעור</p>
+  <h2>מסבירים, מראים, ומתרגלים מיד</h2>
+  <div class="grow"></div>
+  <div class="video">
+    <span class="play"><svg width="34" height="34" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
+    <p><b>סרטון הסבר לצד כל הסבר, בכל השיעורים.</b> קוראים, צופים, או גם וגם.</p>
+  </div>
+  <div class="lesson">
+    <div><span class="k">1 · הסבר</span><h3>הרעיון</h3><p>מה המושג אומר, במילים פשוטות.</p></div>
+    <div><span class="k">2 · דוגמה</span><h3>עם מספרים</h3><p>דוגמה שמראה איך זה עובד בפועל.</p></div>
+    <div><span class="k">3 · להעמיק</span><h3>למי שרוצה</h3><p>הרחבה מקופלת, שנפתחת רק כשצריך.</p></div>
+    <div><span class="k">4 · שורה תחתונה</span><h3>מה לזכור</h3><p>המשפט האחד שכדאי לקחת למבחן.</p></div>
+  </div>
+  <div class="after">
+    <b>ואחרי ההסבר:</b>
+    <span class="pill">תרגול עם משוב לכל תשובה</span>
+    <span class="pill">מלכודות מהבחינות</span>
+    <span class="pill">רמזים שלא מגלים את התשובה</span>
+  </div>
+  <div class="grow"></div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span class="pn"></span></div>
+</section>
+
+<!-- 5. Tools -->
+<section class="page tight compact">
+  <p class="eyebrow">הכלים שמלווים את הלימוד</p>
+  <h2>יותר מהסברים ושאלות</h2>
+  <div class="grow"></div>
+  <div class="cards c3" data-only="ias19">
+    <div class="card"><h3>מחשבון הטבות עובד</h3><p>מזינים את נתוני השאלה, ורואים את כל הדרך: ערך נוכחי, מעגל ההתחייבות והרישום.</p></div>
+    <div class="card"><h3>פתרונות מלאים</h3><p>לכל שאלה: הנוסחה, המספרים, והדרך לעשות את זה באקסל.</p></div>
+    <div class="card"><h3>גיליון אקסל מובנה</h3><p>גיליון שנפתח לצד השיעור, לחשב בו בלי לצאת מהאתר.</p></div>
+    <div class="card"><h3>שאלות ברמת מבחן</h3><p>כל שיעור נגמר בשאלות ברמת חוברת התרגילים, ויש מצב בחינה עם זמן.</p></div>
+    <div class="card"><h3>חזרה מרווחת</h3><p>האתר מחזיר אתכם לשאלות שטעיתם בהן, בדיוק כשמתחילים לשכוח.</p></div>
+    <div class="card"><h3>מכל מכשיר</h3><p>ההתקדמות נשמרת בחשבון, וממשיכים מאיפה שעצרתם, במחשב או בטלפון.</p></div>
+  </div>
+  <div class="cards c3" data-only="basics">
+    <div class="card"><h3>עסק שלם, פקודה אחר פקודה</h3><p>רושמים את הפעולות של עסק אמיתי, ורואים איך כל פקודה זזה בכרטיסים ובדוחות.</p></div>
+    <div class="card"><h3>גיליון רב-טורי</h3><p>מבנים יחד גיליון מלא, ממאזן בוחן ועד הדוחות הכספיים.</p></div>
+    <div class="card"><h3>מחשבון הפסדי אשראי</h3><p>מחשב את ההפרשה ומראה את כל הדרך, לא רק את התוצאה.</p></div>
+    <div class="card"><h3>שמונה מבחנים מסכמים</h3><p>בודקים את עצמכם על כל החומר, עם פתרון מלא לכל שאלה.</p></div>
+    <div class="card"><h3>חזרה מרווחת</h3><p>האתר מחזיר אתכם לשאלות שטעיתם בהן, בדיוק כשמתחילים לשכוח.</p></div>
+    <div class="card"><h3>גיליון אקסל, מכל מכשיר</h3><p>גיליון שנפתח לצד השיעור, וההתקדמות נשמרת בחשבון, במחשב או בטלפון.</p></div>
+  </div>
+  <div class="grow"></div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span class="pn"></span></div>
+</section>
+
+<!-- 6. Your role -->
 <section class="page">
   <p class="eyebrow">התפקיד שלכם</p>
   <h2>אתם לא נבחנים.<br>האתר נבחן.</h2>
-  <p class="lead">בניתי את האתר בשביל הרגע שבו הבנתם בהרצאה ונתקעתם לבד בבית. אתם הראשונים שמשתמשים בו באמת, ואתם רואים אותו בעיניים של סטודנט. כל מקום שבו התבלבלתם, נתקעתם או השתעממתם הוא מקום שאני צריך לתקן.</p>
+  <p class="lead">אתם הראשונים שמשתמשים באתר באמת, ואתם רואים אותו בעיניים של סטודנט. כל מקום שבו התבלבלתם, נתקעתם או השתעממתם הוא מקום שאני צריך לתקן.</p>
   <div class="grow"></div>
   <div class="cards c3">
     <div class="card"><h3>לומדים</h3><p>כמו שהייתם לומדים בכל מקרה, לקראת המבחן האמיתי שלכם.</p></div>
     <div class="card"><h3>שמים לב</h3><p>מה עזר, מה בלבל, מה היה חסר ומה היה מיותר.</p></div>
     <div class="card"><h3>מספרים לי</h3><p>בכפתור המשוב שבאתר, תוך כדי לימוד. שורה אחת מספיקה.</p></div>
   </div>
-  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>2</span></div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span class="pn"></span></div>
 </section>
 
-<!-- 3. The question -->
+<!-- 7. The question -->
 <section class="page gold" style="justify-content:center">
   <p class="eyebrow" style="color:var(--gold)">השאלה שאנחנו בודקים</p>
   <h2 style="font-size:96px; max-width:1500px">האם אפשר להגיע מוכנים למבחן<br>עם האתר הזה?</h2>
   <p class="lead" style="color:#5c4a1f">התשובה לא תבוא מהציון שלכם, אלא ממה שתרשמו בדרך: איפה האתר הכין אתכם, ואיפה הייתם צריכים לחפש עזרה במקום אחר.</p>
-  <div class="footer" style="color:#7a6430"><span>מצטרפים לצוות הניסיינים</span><span>3</span></div>
+  <div class="footer" style="color:#7a6430"><span>מצטרפים לצוות הניסיינים</span><span class="pn"></span></div>
 </section>
 
-<!-- 4. What you get -->
+<!-- 8. What you get -->
 <section class="page">
   <p class="eyebrow">מה יוצא לכם מזה</p>
   <h2>שלושה דברים שמקבלים כניסיינים</h2>
@@ -130,13 +263,15 @@
   <div class="cards c3">
     <div class="card">
       <p class="num">01</p>
-      <h3>גישה חינם לקורסים</h3>
-      <p>חשבונאות מאפס והטבות עובד (IAS 19) פתוחים לכם בחינם לאורך כל הבדיקה, וגם אחריה, עד סוף הסמסטר.</p>
+      <h3 data-only="ias19">גישה חינם לקורס</h3>
+      <h3 data-only="basics">גישה לאתר לפני כולם</h3>
+      <p data-only="ias19">הטבות עובד (IAS 19) פתוח לכם בחינם לאורך כל הבדיקה, וגם אחריה, עד סוף הסמסטר.</p>
+      <p data-only="basics">האתר עדיין סגור לציבור. חשבונאות מאפס פתוח לכם לאורך כל הבדיקה, וגם אחריה, עד סוף הסמסטר.</p>
     </div>
     <div class="card">
       <p class="num">02</p>
       <h3>הכנה אמיתית למבחן</h3>
-      <p>שיעורים קצרים, תרגול עם הסבר לכל טעות, פתרונות מלאים, מחשבון הטבות עובד ובחינות עבר במצב בחינה.</p>
+      <p>שיעורים קצרים עם סרטונים, תרגול עם הסבר לכל טעות, פתרונות מלאים ומבחנים לבדוק את עצמכם.</p>
     </div>
     <div class="card">
       <p class="num">03</p>
@@ -145,26 +280,26 @@
     </div>
   </div>
   <div class="grow"></div>
-  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>4</span></div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span class="pn"></span></div>
 </section>
 
-<!-- 5. Getting started -->
+<!-- 9. Getting started -->
 <section class="page">
   <p class="eyebrow">איך מתחילים</p>
   <h2>ארבעה צעדים, ואתם בפנים</h2>
   <div class="grow"></div>
   <div class="steps">
     <div class="step"><span class="n">1</span><h3>נרשמים לאתר</h3><p>בכתובת <span class="ltr">afikaccounting.vercel.app</span>, עם האימייל שלכם.</p></div>
-    <div class="step"><span class="n">2</span><h3>שולחים לי את האימייל</h3><p>למי ששלח לכם את המצגת: עם איזה אימייל נרשמתם.</p></div>
-    <div class="step"><span class="n">3</span><h3>אני פותח לכם</h3><p>מאשר את החשבון, פותח את שני הקורסים ומגדיר אתכם כניסיינים.</p></div>
+    <div class="step"><span class="n">2</span><h3>שולחים לי הודעה</h3><p>בוואטסאפ ל-<span class="ltr phone">058-632-8332</span>: עם איזה אימייל נרשמתם.</p></div>
+    <div class="step"><span class="n">3</span><h3>אני פותח לכם</h3><p data-only="ias19">מאשר את החשבון, פותח את הטבות עובד ומגדיר אתכם כניסיינים.</p><p data-only="basics">מאשר את החשבון, פותח את חשבונאות מאפס ומגדיר אתכם כניסיינים.</p></div>
     <div class="step"><span class="n">4</span><h3>מופיע כפתור כתום</h3><p>כפתור "משוב" בפינת המסך, בכל דף. מעכשיו אתם ניסיינים.</p></div>
   </div>
   <div class="grow"></div>
   <p class="muted" style="font-size:30px">עד שהחשבון מאושר תראו מסך "החשבון ממתין לאישור". זה תקין.</p>
-  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>5</span></div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span class="pn"></span></div>
 </section>
 
-<!-- 6. The feedback button -->
+<!-- 10. The feedback button -->
 <section class="page">
   <p class="eyebrow">כפתור המשוב</p>
   <h2>נתקעתם? לוחצים, וכותבים שורה</h2>
@@ -182,9 +317,11 @@
       <div class="panel">
         <h3 style="font-size:34px">משוב מהיר</h3>
         <div><span class="chip on">נתקעתי כאן</span><span class="chip">הערה</span></div>
-        <div class="field">הטבה מוגדרת 1: מדידה בנקודת זמן</div>
+        <div class="field" data-only="ias19">הטבה מוגדרת 1: מדידה בנקודת זמן</div>
+        <div class="field" data-only="basics">מכרטיסי T ועד הדוחות</div>
         <div><span class="chip on">הבנה</span><span class="chip">פער בחינה</span><span class="chip">ממשק</span></div>
-        <div class="field" style="height:110px">לא הבנתי איך מחשבים את מספר השנים עד התשלום</div>
+        <div class="field" style="height:110px" data-only="ias19">לא הבנתי איך מחשבים את מספר השנים עד התשלום</div>
+        <div class="field" style="height:110px" data-only="basics">לא הבנתי למה היתרה של הספקים בצד הזכות</div>
       </div>
       <span class="button-demo">
         <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7v4"/><path d="M12 14h.01"/></svg>
@@ -192,10 +329,10 @@
       </span>
     </div>
   </div>
-  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>6</span></div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span class="pn"></span></div>
 </section>
 
-<!-- 7. What to look for -->
+<!-- 11. What to look for -->
 <section class="page">
   <p class="eyebrow">מה אני הכי רוצה לדעת</p>
   <h2>ארבעה דברים לשים אליהם לב</h2>
@@ -204,13 +341,13 @@
     <div class="card"><h3>איפה לא הבנתם</h3><p>הסבר שקראתם שלוש פעמים, מושג שהשיעור הניח שאתם כבר מכירים, דוגמה שלא התחברה.</p></div>
     <div class="card"><h3>איפה הבחינה דרשה יותר</h3><p>הבנתם את השיעור, אבל שאלת הבחינה ביקשה משהו שלא למדתם, או ברמה קשה יותר.</p></div>
     <div class="card"><h3>מה מבלבל באתר</h3><p>לא ברור מה ללחוץ, איפה אתם בקורס, מה להזין במחשבון, או משהו שלא נוח בטלפון.</p></div>
-    <div class="card"><h3>מה עמוס ומה חסר</h3><p>מסך שהיה ארוך מדי, תרגול שהיה מיותר, או נושא שהייתם רוצים עוד ממנו.</p></div>
+    <div class="card"><h3>מה עמוס ומה חסר</h3><p>מסך שהיה ארוך מדי, תרגול שהיה מיותר, סרטון שלא עזר, או נושא שהייתם רוצים עוד ממנו.</p></div>
   </div>
   <div class="grow"></div>
-  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>7</span></div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span class="pn"></span></div>
 </section>
 
-<!-- 8. Allowed -->
+<!-- 12. Allowed -->
 <section class="page">
   <p class="eyebrow">מה מותר</p>
   <h2>לומדים כמו שאתם רגילים</h2>
@@ -223,10 +360,10 @@
     <li><span class="mark">✓</span><span><b>ללמוד מהמחשב או מהטלפון.</b> <span class="t">ולספר לי אם משהו לא עובד טוב באחד מהם.</span></span></li>
   </ul>
   <div class="grow"></div>
-  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>8</span></div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span class="pn"></span></div>
 </section>
 
-<!-- 9. Not allowed -->
+<!-- 13. Not allowed -->
 <section class="page">
   <p class="eyebrow" style="color:var(--trap)">מה אסור</p>
   <h2>שלושה דברים שאני מבקש לא לעשות</h2>
@@ -237,10 +374,10 @@
     <li><span class="mark">✕</span><span><b>לעבור על החומר בלי לבדוק באמת.</b> <span class="t">לחיצות מהירות בלי לקרוא לא מלמדות אותי כלום. עדיף לעשות פחות, אבל ברצינות.</span></span></li>
   </ul>
   <div class="grow"></div>
-  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>9</span></div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span class="pn"></span></div>
 </section>
 
-<!-- 10. Severity -->
+<!-- 14. Severity -->
 <section class="page">
   <p class="eyebrow">כשמשהו לא עובד</p>
   <h2>כמה זה עצר אתכם?</h2>
@@ -251,11 +388,11 @@
     <tr><td><span class="dot" style="background:#eab308"></span>קוסמטי</td><td>לא הפריע ללמוד, אבל בולט לעין.<br><span class="muted">טבלה שגולשת מהמסך, טעות הקלדה.</span></td></tr>
   </table>
   <div class="grow"></div>
-  <p style="font-size:32px"><b>משהו חוסם?</b> <span class="muted">רשמו אותו מיד בכפתור המשוב וסמנו "חוסם". אני רואה את הדיווחים האלה ראשונים.</span></p>
-  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>10</span></div>
+  <p style="font-size:32px"><b>משהו חוסם?</b> <span class="muted">רשמו אותו מיד בכפתור המשוב וסמנו "חוסם". לא מצליחים להיכנס בכלל? הודעה בוואטסאפ ל-<span class="ltr phone">058-632-8332</span>.</span></p>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span class="pn"></span></div>
 </section>
 
-<!-- 11. Timeline -->
+<!-- 15. Timeline -->
 <section class="page">
   <p class="eyebrow">לוח הזמנים</p>
   <h2>מהיום ועד המבחן שלכם</h2>
@@ -266,17 +403,34 @@
     <div class="tl"><h3>אחרי המבחן</h3><p>ממלאים את חלק הסיכום: איך הלך, באילו נושאים הרגשתם מוכנים, ואם הייתם ממליצים לחבר ללמוד מהאתר.</p></div>
   </div>
   <div class="grow"></div>
-  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>11</span></div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span class="pn"></span></div>
 </section>
 
-<!-- 12. Closing -->
-<section class="page dark" style="justify-content:center; gap:40px">
+<!-- 16. Closing -->
+<section class="page dark last" style="justify-content:center; gap:40px">
   <p class="eyebrow">תודה</p>
   <h1 style="font-size:112px">המשוב שלכם הוא מה<br>שיהפוך את האתר לטוב יותר</h1>
   <p class="lead">כל שורה שתכתבו עוזרת לי לשפר את האתר, בשבילכם ובשביל הסטודנטים שיבואו אחריכם. בהצלחה במבחן.</p>
-  <p style="font-size:34px; color:#f3f1e8">נרשמים כאן: <span class="ltr" style="font-weight:700">afikaccounting.vercel.app</span></p>
-  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>12</span></div>
+  <div style="display:flex; gap:64px; font-size:34px; color:#f3f1e8">
+    <p>נרשמים: <span class="ltr" style="font-weight:700">afikaccounting.vercel.app</span></p>
+    <p>אפיק זרקון: <span class="ltr phone">058-632-8332</span></p>
+  </div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span class="pn"></span></div>
 </section>
 
+<script>
+  // Show one version (?v=ias19 | ?v=basics), then number the pages in order.
+  (function () {
+    var v = new URLSearchParams(location.search).get("v") === "basics" ? "basics" : "ias19";
+    document.querySelectorAll("[data-only]").forEach(function (el) {
+      if (el.getAttribute("data-only") !== v) el.classList.add("hide");
+    });
+    document.title = v === "basics" ? "מצטרפים לצוות הניסיינים · חשבונאות מאפס" : "מצטרפים לצוות הניסיינים · הטבות עובד";
+    document.querySelectorAll(".page").forEach(function (p, i) {
+      var n = p.querySelector(".pn");
+      if (n) n.textContent = String(i + 1);
+    });
+  })();
+</script>
 </body>
 </html>
