@@ -22,6 +22,8 @@ export type WStep = {
   xl?: string;
 };
 export type Worked = {
+  /** The course's own numbers, not the lecturer's: no "from the material" over the givens, no workbook cell. */
+  own?: boolean;
   title: string;
   givens: string[];
   tables?: WTable[];

@@ -126,7 +126,7 @@ export function WorkedExample({ ex }: { ex: Worked }) {
     <article className="my-4 overflow-hidden rounded-xl border-2 border-accent bg-surface">
       <header className="bg-accent-soft px-4 py-3 text-[16px] font-bold text-fg">{ex.title}</header>
       <section className="border-t border-line px-4 py-3">
-        <h4 className="mb-1.5 text-[14.5px] font-bold">הנתונים (כל הנתונים מהחומר)</h4>
+        <h4 className="mb-1.5 text-[14.5px] font-bold">{ex.own ? "הנתונים" : "הנתונים (כל הנתונים מהחומר)"}</h4>
         <ol className="flex list-decimal flex-col gap-1 ps-5 text-[14.5px]">
           {ex.givens.map((g, i) => (
             <li key={i}>
@@ -192,7 +192,7 @@ export function WorkedExample({ ex }: { ex: Worked }) {
                 )}
                 {s.xl && (
                   <div className="text-[12.5px] text-muted">
-                    בחוברת האקסל: <Text s={s.xl} />
+                    {ex.own ? "באקסל" : "בחוברת האקסל"}: <Text s={s.xl} />
                   </div>
                 )}
               </div>

@@ -2,7 +2,7 @@ import { Building2, FileSignature, ListChecks, Scale } from "lucide-react";
 import { JournalEntry } from "@/components/study/blocks";
 import { Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
-import { G, G_FAIR, G_NET, G_PREMIUM, G_SHARE, M5, PAY_OPTIONS, PAYS, PERIOD, PERIOD_TEST, PERIOD_TEST_START } from "@/lib/study/consolidated/lessons/goodwill";
+import { G, G_FAIR, G_NET, G_PREMIUM, G_SHARE, M5, PAY_OPTIONS, PAYS, PERIOD_TEST, PERIOD_TEST_START } from "@/lib/study/consolidated/lessons/goodwill";
 import { ConsolidatedDrill, GoodwillLab } from "./consolidated-interactive";
 import { Calc, Expansion, LecturerNote, quiz } from "./consolidated-parts";
 import { TaskFrame, TaskText } from "./ias19-question";
@@ -12,6 +12,8 @@ import { DecisionWalk } from "./ifrs16-interactive";
 import { FullSolution, P, T16, Tbl } from "./ifrs16-parts";
 import { SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
+import { W_PERIOD } from "@/lib/study/consolidated/worked/goodwill";
+import { WorkedExample } from "./consolidated-worked";
 
 /**
  * The consolidated statements course, lesson 5: the rest of the acquisition
@@ -414,27 +416,7 @@ export const CONSOLIDATED_GOODWILL_SCREENS: Record<string, ScreenContent> = {
         />
         <P>בוחנים את התזמון ואת הסיבה לשינוי: ככל שהמידע התקבל קרוב יותר למועד הרכישה, סביר יותר שהוא משקף נסיבות שהיו.</P>
         <P>עלייה בסכום של נכס מקטינה את המוניטין, ועלייה בהתחייבות מגדילה אותו. מציגים כאילו הטיפול הושלם במועד הרכישה: מתקנים מספרי השוואה, כולל פחת והפחתות.</P>
-        <P>דוגמה. ב־1.10.2025 נקנו 9,000 מתוך 12,000 מניות, במחיר שוק של 14 ש״ח למניה. התמורה: 130,000 ש״ח במזומן, קרקע בשווי ארעי של 22,000 ש״ח, ותמורה מותנית הונית בשווי ארעי של 4,000 ש״ח. הון הבת 110,000 ש״ח. למכונה עודף ארעי של 28,000 ש״ח, ו־4 שנות חיים. המס 25%. באפריל 2026, אחרי פרסום הדוחות, נקבע: קרקע 27,000 ש״ח, עודף על המכונה 40,000 ש״ח, ותמורה מותנית 5,300 ש״ח.</P>
-        <Tbl
-          dense
-          head={["טבלת עודף העלות למפרע", "ייחוס", "הפחתה 2025", "31.12.25", "הפחתה 2026", "31.12.26"]}
-          rows={[
-            ["מכונה", 40_000, -2_500, 37_500, -10_000, 27_500],
-            ["מס נדחה", -10_000, 625, -9_375, 2_500, -6_875],
-          ]}
-          foot={["סך הכול", 30_000, -1_875, 28_125, -7_500, 20_625]}
-        />
-        <Tbl
-          dense
-          head={["מוניטין, זשמ״ש בשווי הוגן", "כפי שפורסם", "למפרע"]}
-          rows={[
-            ["תמורה שהועברה", PERIOD.pubFair.cost - PERIOD.pubFair.nci, PERIOD.finalFair.cost - PERIOD.finalFair.nci],
-            [<Calc key="ז" label="זשמ״ש" formula="3,000 × 14" />, PERIOD.pubFair.nci, PERIOD.finalFair.nci],
-            ["נכסים מזוהים נטו", -PERIOD.pubNet, -PERIOD.finalNet],
-          ]}
-          foot={["מוניטין", PERIOD.pubFair.goodwill, PERIOD.finalFair.goodwill]}
-        />
-        <P>לפי חלק בנמ״נ, המוניטין עובר מ־{PERIOD.pubShare.goodwill.toLocaleString("en-US")} ש״ח ל־{PERIOD.finalShare.goodwill.toLocaleString("en-US")} ש״ח. טבלת עודף העלות זהה בשתי המדידות, כי היא לפי 100%.</P>
+        <WorkedExample ex={W_PERIOD} />
         <LecturerNote title="מה מתוקן כשהמידע נוגע לעלות">
           <p>עמ׳ 44 בסיכום כותב: אם המידע קשור לעלות צירוף העסקים, ״התיקון למפרע הוא של סך עודף העלות״. בגיליון 4.3 שינוי בתמורה מתאם את המוניטין, ולא נוגע בטבלת עודף העלות, וכך גם סעיפים 46(ב), 48 ו־58. בעמ׳ 29 עודף עלות הוא הפרשים בפריטים מזוהים. אנחנו הולכים לפי הגיליון. לא ברור למה התכוון הסיכום.</p>
         </LecturerNote>

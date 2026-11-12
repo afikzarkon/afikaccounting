@@ -14,6 +14,7 @@ import { ACQUISITION, ACQUISITION_TAUGHT, BOND, ITEMS, LESSEE, LESSOR, MASTER4_T
 import { G_FAIR, G_NET, G_PREMIUM, G_SHARE, GOODWILL, GOODWILL_TAUGHT, M5, PAYS, PERIOD, PERIOD_TEST, PERIOD_TEST_START } from "./consolidated/lessons/goodwill";
 import { AGENT_TEST, AGENT_TEST_START, AGENTS, FUND_LARGE, FUND_SMALL, MASTER3_POSITION, MASTER3_REWARD, MASTER3_SISTER, MASTER3_TOGETHER, RETURNS, RETURNS_TAUGHT } from "./consolidated/lessons/returns";
 import { BEFORE11, BOND11, BOND11_FIG, BOND11_PRICE, FIN11, FV11, LEASEBONDS, LEASEBONDS_TAUGHT, M11, M11_FIG, M11_PRICE, RESALE11, ROU11, ROU11_NCI, WHO11 } from "./consolidated/lessons/leasebonds";
+import { PERIOD_W, W_PERIOD } from "./consolidated/worked/goodwill";
 import { W64, W65, W66, W67, W68, W69 } from "./consolidated/worked/leasebonds";
 import type { Worked } from "./consolidated/worked/types";
 import { BORROW10, DEFER10, INTERCOMPANY, INTERCOMPANY_TAUGHT, INV10, LAND10, LOSS10, M10, MACH10, MACH10_FIG, MISTAKE10, PRIOR10, SAME10, SPLIT10, WD10 } from "./consolidated/lessons/intercompany";
@@ -399,6 +400,18 @@ describe("lesson 5: the walk, the sorting and the figures, against a separate ca
     assert.equal(PERIOD.pubShare.goodwill, 57_750);
     assert.equal(PERIOD.finalFair.goodwill, 64_300);
     assert.equal(PERIOD.finalShare.goodwill, 57_300);
+  });
+  it("the measurement period's worked solution agrees with the solver, step by step", () => {
+    const { p, f } = PERIOD_W;
+    assert.deepEqual([p.paid, f.paid, PERIOD_W.nciFair], [156_000, 162_300, 42_000]);
+    assert.deepEqual([p.net, f.net, p.gwFair, f.gwFair, p.gwShare, f.gwShare], [PERIOD.pubNet, PERIOD.finalNet, PERIOD.pubFair.goodwill, PERIOD.finalFair.goodwill, PERIOD.pubShare.goodwill, PERIOD.finalShare.goodwill]);
+    assert.deepEqual([p.nciShare, f.nciShare], [32_750, 35_000]);
+    assert.deepEqual([p.amort25, f.amort25, f.year], [1_750, 2_500, 10_000]);
+    assert.deepEqual([PERIOD_W.extra, PERIOD_W.extraNet, PERIOD_W.landGain, PERIOD_W.nciOfExtra], [750, 562.5, 5_000, 140.625]);
+    // The correcting entry balances, under both measurements of the minority.
+    assert.equal(12_000, 3_000 + 5_000 + 1_300 + (p.gwFair - f.gwFair));
+    assert.equal(12_000, 3_000 + 5_000 + 1_300 + (p.gwShare - f.gwShare) + (f.nciShare - p.nciShare));
+    assert.equal(W_PERIOD.steps.length, 9);
   });
   it("the closing question", () => {
     assert.equal(M5.net, 223_000);
