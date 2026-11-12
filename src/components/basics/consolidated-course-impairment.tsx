@@ -1,14 +1,15 @@
-import { Building2, FileSignature, ListChecks } from "lucide-react";
-import { JournalEntry } from "@/components/study/blocks";
+import { FileSignature, ListChecks } from "lucide-react";
 import { Deeper, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
-import { DATES9, DTA9, IMP9, M9, M9_NCI_END, PREF9, PREF_PROFIT, PREF_PROFIT_OPTIONS } from "@/lib/study/consolidated/lessons/impairment";
+import { PREF_PROFIT, PREF_PROFIT_OPTIONS } from "@/lib/study/consolidated/lessons/impairment";
+import { W9_DATES, W9_DTA, W9_IMP, W9_MASTER, W9_PREFAT, W9_PREFISSUE, W9_PREFNA, W9_PREFPROFIT } from "@/lib/study/consolidated/worked/impairment";
 import { ConsolidatedDrill, ImpairLab } from "./consolidated-interactive";
-import { Calc, Expansion, LecturerNote, quiz } from "./consolidated-parts";
-import { TaskFrame, TaskText } from "./ias19-question";
-import { Bridge, FullSteps } from "./ias19-ui";
+import { Expansion, LecturerNote, quiz } from "./consolidated-parts";
+import { WorkedExample } from "./consolidated-worked";
+import { TaskFrame } from "./ias19-question";
+import { Bridge } from "./ias19-ui";
 import { WrongRight } from "./ias19-visuals";
-import { FullSolution, P, T16, Tbl } from "./ifrs16-parts";
+import { P, T16, Tbl } from "./ifrs16-parts";
 import { SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 
@@ -20,8 +21,6 @@ import { Story } from "./inventory-teach";
  */
 
 const bdi = (s: string) => <bdi dir="ltr" className="num whitespace-nowrap">{s}</bdi>;
-const n = (v: number) => v.toLocaleString("en-US");
-const R = IMP9.rows;
 
 export const CONSOLIDATED_IMPAIRMENT_SCREENS: Record<string, ScreenContent> = {
   "ls-con-impsub": {
@@ -59,30 +58,7 @@ export const CONSOLIDATED_IMPAIRMENT_SCREENS: Record<string, ScreenContent> = {
             ["ג: עודף העלות", "ההפרש בין שתי היתרות, והשינוי בו הוא ההפחתה של השנה"],
           ]}
         />
-        <Story icon={<Building2 />} title="סהר ולבנה">
-          <p>ב־1.1.2025 חברת ״סהר״ קנתה 75% ממניות חברת ״לבנה״. ללבנה מכונה בערך בספרים של 120,000 ש״ח, ובשווי הוגן של 168,000 ש״ח, ונותרו לה 8 שנים. בסוף כל שנה יש סימן לירידת ערך או לביטולה. הסכום בר ההשבה: 140,000 ש״ח ב־2025, 84,000 ש״ח ב־2026, ו־112,000 ש״ח ב־2027. שיעור המס 23%.</p>
-        </Story>
-        <Tbl
-          dense
-          head={["31.12", "עלות מופחתת: הבת", "עלות מופחתת: הקבוצה", "סכום בר השבה"]}
-          rows={R.map((r, i) => [String(2025 + i), r.subAc, r.groupAc, r.recoverable])}
-        />
-        <Tbl
-          dense
-          head={["31.12", "יתרה: הבת", "יתרה: הקבוצה", "עודף העלות"]}
-          rows={[["1.1.2025", 120_000, 168_000, IMP9.excessAt], ...R.map((r, i) => [String(2025 + i), r.sub, r.group, r.excess])]}
-        />
-        <P>ב־2025 רק לקבוצה יש ירידת ערך: {bdi("147,000 − 140,000 = 7,000")}.</P>
-        <P>ב־2026 שתיהן יורדות לאותו סכום, ולכן העודף מתאפס, אבל ההפסדים שונים: לבת {n(R[0].sub - 15_000 - R[1].sub)} ש״ח, ולקבוצה {n(R[0].group - 20_000 - R[1].group)} ש״ח. ב־2027 שתיהן מבטלות, כל אחת עד העלות המופחתת שלה.</P>
-        <Tbl
-          dense
-          head={["עודף עלות", "2025", "2026", "2027"]}
-          rows={[
-            ["מכונה", R[0].excess - IMP9.excessAt, R[1].excess - R[0].excess, R[2].excess - R[1].excess],
-            ["מס נדחה", Math.round(-(R[0].excess - IMP9.excessAt) * 0.23), Math.round(-(R[1].excess - R[0].excess) * 0.23), Math.round(-(R[2].excess - R[1].excess) * 0.23)],
-          ]}
-          foot={["הפחתה נטו", Math.round((R[0].excess - IMP9.excessAt) * 0.77), Math.round((R[1].excess - R[0].excess) * 0.77), Math.round((R[2].excess - R[1].excess) * 0.77)]}
-        />
+        <WorkedExample ex={W9_IMP} />
         <WrongRight label="טעות: מעתיקים את ירידת הערך של הבת. נכון: מחשבים את היתרה של הקבוצה בנפרד" wrong={<p>״ב־2025 לבת אין ירידת ערך, אז גם במאוחד אין.״</p>} right={<p>לקבוצה עלות גבוהה יותר, ולכן אצלה יש ירידת ערך של 7,000 ש״ח, והיא עוברת דרך הפחתת עודף העלות.</p>} />
         <LecturerNote title="״הנמוך מבין עלות מופחתת לסכום בר השבה״">
           <p>עמ׳ 55 בסיכום מציג את השלבים בלי סייג. גיליון 5.5 מוסיף שזה כך ״מאחר וקיימים סימנים״. בשנה שאין בה סימן, הנכס ממשיך מהיתרה המופחתת שאחרי ירידת הערך, ולא חוזרים לנמוך מבין השניים. בדוגמה שלנו יש סימן בכל שנה, ולכן שתי הגרסאות נותנות אותו מספר.</p>
@@ -120,16 +96,7 @@ export const CONSOLIDATED_IMPAIRMENT_SCREENS: Record<string, ScreenContent> = {
             ["לא נוצרו תנאים כאלה", "מכירים בנכס מס מנקודת המבט של הקבוצה. התחייבות המס על עודפי העלות מאפשרת להכיר בו לפחות בגובהה"],
           ]}
         />
-        <P>
-          למה ההתחייבות מאפשרת נכס? כי היא תתהפך בעתיד ותיצור הכנסה חייבת, ומולה אפשר לנצל את ההפסד. בדוגמה של לבנה: הפסד מועבר של 200,000 ש״ח, ועודף על המכונה של 48,000 ש״ח. ההתחייבות ביום הרכישה: {bdi("48,000 × 23% = 11,040")}.
-        </P>
-        <P>ובסוף 2025? נניח שאחרי אירוע שקרה אחרי הרכישה, לבנה צופה הכנסה חייבת ומכירה בנכס לפיה. העודף על המכונה ירד ל־35,000 ש״ח, וההתחייבות עליו {n(DTA9.liabilityEnd)} ש״ח. לפי המרצה, הנכס במאוחד הוא הגבוה מבין ההתחייבות לבין הנכס לפי התחזית:</P>
-        <Tbl
-          dense
-          head={["התחזית של לבנה", "נכס אצל לבנה", "נכס במאוחד", "עודף עלות"]}
-          rows={DTA9.cases.map((c) => [c.forecast ? c.forecast : "אין", c.subAsset, c.group, c.excess])}
-        />
-        <P>ככל שהתחזית של לבנה גדולה יותר, היא מכירה בעצמה ביותר, ועודף העלות על הנכס קטן. השינוי בעודף עובר דרך הרווח, כי הוא נובע מאירוע שאחרי הרכישה.</P>
+        <WorkedExample ex={W9_DTA} />
         <LecturerNote title="״הגבוה מבין״ או מצטבר">
           <p>בגיליון 5.6 הנכס במאוחד הוא הגבוה מבין ההתחייבות לבין התחזית, אבל הטקסט שלידו נשמע מצטבר: ״לפחות בגובה ההתחייבות, ומעבר לכך לפי ההכנסה הצפויה״. IAS 12 סעיפים 28 ו־29 לא מכריעים אם תחזית נתונה כבר כוללת את ההיפוך של ההתחייבות. אם כוללת, ״הגבוה מבין״ נכון. אם לא, מחברים. אנחנו הולכים לפי הגיליון.</p>
         </LecturerNote>
@@ -162,18 +129,7 @@ export const CONSOLIDATED_IMPAIRMENT_SCREENS: Record<string, ScreenContent> = {
           לפי <T16 he="IFRS 10 ב92" />, הדוחות שמאחדים נערכים לאותו מועד. אם המועדים שונים, הבת מכינה לצורך האיחוד מידע כספי נוסף למועד של האם, אלא אם זה לא מעשי.
         </P>
         <P>לפי ב93, אם זה לא מעשי, מאחדים את הדוחות האחרונים של הבת, ומתאימים לעסקאות ולאירועים משמעותיים שקרו בין מועד הדוחות שלה לבין המועד של המאוחד. הפער לא יעלה על שלושה חודשים, ואורך התקופות והפער נשארים זהים משנה לשנה.</P>
-        <Story icon={<Building2 />} title="לבנה עם שנה אחרת">
-          <p>נניח שהשנה של לבנה מסתיימת ב־30.9, ושל סהר ב־31.12, ושלא מעשי להכין מידע נוסף. הרווח של לבנה לשנה עד 30.9.2026 הוא 60,000 ש״ח. ב־20.11.2026 נשרפה לה מכונה בערך של 16,000 ש״ח, בלי ביטוח. ב־15.12.2026 היא הכריזה וחילקה דיבידנד של 20,000 ש״ח. שני אלה אירועים משמעותיים. שיעור המס 23%, וסהר מחזיקה 75%.</p>
-        </Story>
-        <Tbl
-          head={["הזשמ״ש ב־2026", "סכום"]}
-          rows={[
-            [<Calc key="ה" label="ההפסד מהשרפה, נטו ממס" formula="16,000 × 77%" />, -DATES9.lossNet],
-            [<Calc key="ר" label="חלק ברווח המותאם" formula="(60,000 − 12,320) × 25%" />, DATES9.nciProfit],
-            [<Calc key="ד" label="דיבידנד למיעוט" formula="20,000 × 25%" />, -DATES9.dividendNci],
-          ]}
-        />
-        <P>השורה הראשונה היא ההתאמה לרווח של לבנה. היא לא נכנסת ליתרה בפני עצמה: היא מקטינה את הרווח שממנו הזשמ״ש מקבלים את חלקם.</P>
+        <WorkedExample ex={W9_DATES} />
         <Remember>מועד אחר: מידע נוסף, ואם לא מעשי, הדוחות האחרונים ועוד אירועים משמעותיים. עד שלושה חודשים, ועקבי.</Remember>
       </>
     ),
@@ -203,9 +159,8 @@ export const CONSOLIDATED_IMPAIRMENT_SCREENS: Record<string, ScreenContent> = {
     lead: "הבת הנפיקה מניות בכורה אחרי הרכישה. מה נכנס למאוחד?",
     body: (
       <>
-        <P>במאוחד משקפים רק את התמורה מהחיצוניים, כזשמ״ש. מה שהאם שילמה הוא העברה בתוך הקבוצה. למשל, הבת הנפיקה בכורה תמורת 40,000 ש״ח, והאם קנתה 25% מהן:</P>
-        <JournalEntry title="בדוחות המאוחדים" lines={[{ account: "מזומן", dr: 30_000 }, { account: "זשמ״ש", cr: 30_000 }]} />
-        <P>בדוח המאוחד על השינויים בהון זה מוצג כהנפקה לזשמ״ש: {bdi("40,000 × 75% = 30,000")}.</P>
+        <P>במאוחד משקפים רק את התמורה מהחיצוניים, כזשמ״ש. מה שהאם שילמה הוא העברה בתוך הקבוצה.</P>
+        <WorkedExample ex={W9_PREFISSUE} />
         <LecturerNote title="תמורה מול ערך נקוב">
           <p>עמ׳ 58 רושם את הזשמ״ש לפי התמורה מהחיצוניים. הטבלה בעמ׳ 59 מייחסת לבכורה שהונפקה אחרי הצירוף את הערך הנקוב שלה, ובצוברת גם את הדיבידנד בפיגור. כשהתמורה שונה מהערך הנקוב, שני הסכומים לא מתיישבים, ואין בחומר הסבר לאן הולך ההפרש. התקן לא עוסק בזה.</p>
         </LecturerNote>
@@ -236,9 +191,7 @@ export const CONSOLIDATED_IMPAIRMENT_SCREENS: Record<string, ScreenContent> = {
             ["הנמ״נ של הרגילות", "כל הנמ״נ, פחות השווי ההוגן של הבכורה"],
           ]}
         />
-        <P>
-          דוגמה קטנה: הנמ״נ 200,000 ש״ח, ושווי הבכורה 40,000 ש״ח, כולה בידי אחרים. האם מחזיקה 80% מהרגילות, והזשמ״ש ברגילות לפי החלק בנמ״נ. הנמ״נ של הרגילות: {bdi("200,000 − 40,000 = 160,000")}. הזשמ״ש ברגילות: {bdi("160,000 × 20% = 32,000")}. ובסך הכול, עם הבכורה: {bdi("32,000 + 40,000 = 72,000")}.
-        </P>
+        <WorkedExample ex={W9_PREFAT} />
         <P>מנקודת המבט של בעלי המניות הרגילות, הבכורה היא מעין התחייבות: היא קודמת להם, ולכן מורידים אותה לפני שמחשבים את חלקם.</P>
         <Expansion title="בכורה משתתפת">
           <p>לפי IFRS 3 סעיף 19, מה שקובע הוא אם המכשיר מזכה בחלק יחסי מהנכסים בפירוק. בכורה משתתפת שמזכה בכך יכולה להימדד גם לפי החלק בנמ״נ. ההפחתה של הבכורה מהנמ״נ והטבלה בעמ׳ 59 הן של המרצה, ולא כתובות בתקן.</p>
@@ -267,16 +220,7 @@ export const CONSOLIDATED_IMPAIRMENT_SCREENS: Record<string, ScreenContent> = {
           ]}
         />
         <P>המניות הרגילות מקבלות את השאר, PN. ואז כל חלק מתחלק לפי ההחזקה של האם במכשיר ההוא.</P>
-        <P>דוגמה: רווח הבת 60,000 ש״ח. בכורה צוברת בערך נקוב של 50,000 ש״ח, 8% בשנה. האם מחזיקה 80% מהרגילות ו־25% מהבכורה.</P>
-        <Tbl
-          dense
-          head={["", "סכום", "הבעלים", "זשמ״ש"]}
-          rows={[
-            [<Calc key="ב" label="לבכורה" formula="50,000 × 8%" />, PREF9.preference, PREF9.preference * 0.25, PREF9.preference * 0.75],
-            ["לרגילות", PREF9.ordinary, PREF9.ordinary * 0.8, PREF9.ordinary * 0.2],
-          ]}
-          foot={["סך הכול", 60_000, PREF9.owners, PREF9.nci]}
-        />
+        <WorkedExample ex={W9_PREFPROFIT} />
         <LecturerNote title="סעיף ב95, ומה שמעבר לו">
           <p>IFRS 10 ב95 עוסק בבכורה צוברת שמסווגת כהון ומוחזקת בידי הזשמ״ש: החלק שלה ברווח הוא הצבירה, גם בלי הכרזה. הכלל לבכורה לא צוברת, וחלוקה כשגם האם מחזיקה בבכורה, הם של המרצה, ולא כתובים בסעיף.</p>
         </LecturerNote>
@@ -307,9 +251,7 @@ export const CONSOLIDATED_IMPAIRMENT_SCREENS: Record<string, ScreenContent> = {
             ["צוברת, הונפקה לפני הצירוף", "השווי ההוגן ביום הצירוף, ועוד מה שנצבר מאז, פחות מה שהוכרז עליה מאז"],
           ]}
         />
-        <P>
-          למשל, בכורה צוברת שהייתה קיימת ביום הרכישה בשווי 40,000 ש״ח. מאז נצבר לה 4,000 ש״ח, ולא הוכרז דיבידנד. מיוחס לה: {bdi("40,000 + 4,000 = 44,000")}.
-        </P>
+        <WorkedExample ex={W9_PREFNA} />
         <P>ודיבידנד שהבת הכריזה, על הבכורה ועל הרגילות, מוצג בדוח המאוחד על השינויים בהון כדיבידנד לזשמ״ש, בחלק של החיצוניים בכל מכשיר.</P>
         <Remember>הנמ״נ: קודם לבכורה לפי הטבלה, והשאר לרגילות. כל חלק לפי ההחזקה שלו.</Remember>
       </>
@@ -364,100 +306,7 @@ export const CONSOLIDATED_IMPAIRMENT_SCREENS: Record<string, ScreenContent> = {
     lead: "שאלה אחת, כמו במבחן. קודם פתרו לבד, ואז פתחו את הפתרון.",
     body: (
       <>
-        <TaskFrame>
-          <TaskText>
-            <p>ב־1.1.2025 חברת ״רותם״ קנתה 6,000 מתוך 8,000 המניות הרגילות של חברת ״גלית״, תמורת 300,000 ש״ח. מחיר מניה רגילה של גלית באותו יום 48 ש״ח. הזשמ״ש נמדדים בשווי הוגן.</p>
-            <p className="mt-2">ההון של גלית ביום הרכישה: מניות רגילות 8,000 ש״ח, מניות בכורה בערך נקוב 80,000 ש״ח, ועודפים 250,000 ש״ח. מניות הבכורה צוברות דיבידנד של 10% בשנה, אין להן פדיון, וכולן בידי אחרים. ביום הרכישה יש עליהן דיבידנד בפיגור לשנה אחת, ושוויין ההוגן 92,000 ש״ח.</p>
-            <p className="mt-2">לקרקע של גלית עודף עלות של 64,000 ש״ח, ושיעור המס 23%. ב־2025 גלית הרוויחה 104,000 ש״ח, ולא הכריזה על דיבידנד.</p>
-            <p className="mt-2 font-semibold">נדרש:</p>
-            <ol className="mt-1 list-decimal space-y-1 ps-5">
-              <li>חשבו את המוניטין, וחלקו אותו בין רותם לזשמ״ש.</li>
-              <li>חלקו את הרווח של גלית ב־2025 בין הבעלים של רותם לזשמ״ש.</li>
-              <li>חשבו את הזשמ״ש ב־31.12.2025, לפי כל מכשיר.</li>
-              <li>מה היה חלק הזשמ״ש ברווח, אילו הבכורה הייתה לא צוברת?</li>
-            </ol>
-          </TaskText>
-          <FullSolution>
-            <FullSteps
-              label="הפתרון המלא"
-              steps={[
-                {
-                  title: "סעיף 1: המוניטין",
-                  body: (
-                    <>
-                      <Tbl
-                        head={["", "סכום"]}
-                        rows={[
-                          ["תמורה", 300_000],
-                          [<Calc key="ר" label="זשמ״ש ברגילות, בשווי הוגן" formula="2,000 × 48" />, 96_000],
-                          ["זשמ״ש בבכורה, בשווי הוגן", 92_000],
-                          ["עלות צירוף העסקים", M9.cost],
-                          [<Calc key="נ" label="נמ״נ" formula="338,000 + 64,000 × 77%" />, -M9.net],
-                        ]}
-                        foot={["מוניטין", M9.goodwill]}
-                      />
-                      <p>
-                        אין עודף עלות על הבכורה. הנמ״נ של הרגילות: {bdi("387,280 − 92,000 = 295,280")}.
-                      </p>
-                      <Tbl
-                        head={["מוניטין", "סכום"]}
-                        rows={[
-                          [<Calc key="ר" label="של רותם" formula="300,000 − 295,280 × 75%" />, M9.ownersGoodwill],
-                          [<Calc key="ז" label="של הזשמ״ש ברגילות" formula="96,000 − 295,280 × 25%" />, M9.nciGoodwill],
-                          ["של הזשמ״ש בבכורה", 0],
-                        ]}
-                        foot={["סך המוניטין", M9.goodwill]}
-                      />
-                    </>
-                  ),
-                },
-                {
-                  title: "סעיף 2: חלוקת הרווח",
-                  body: (
-                    <Tbl
-                      dense
-                      head={["", "סכום", "הבעלים", "זשמ״ש"]}
-                      rows={[
-                        [<Calc key="ב" label="לבכורה, צבירה" formula="80,000 × 10%" />, M9.split.preference, 0, M9.split.preference],
-                        ["לרגילות", M9.split.ordinary, M9.split.ordinary * 0.75, M9.split.ordinary * 0.25],
-                      ]}
-                      foot={["סך הכול", 104_000, M9.split.owners, M9.split.nci]}
-                    />
-                  ),
-                },
-                {
-                  title: "סעיף 3: הזשמ״ש בסוף 2025",
-                  body: (
-                    <>
-                      <p>
-                        לבכורה, שהייתה קיימת ביום הרכישה: {bdi("92,000 + 8,000 − 0 = 100,000")}. הנמ״נ בסוף השנה: {bdi("442,000 + 49,280 = 491,280")}.
-                      </p>
-                      <Tbl
-                        head={["זשמ״ש", "סכום"]}
-                        rows={[
-                          ["בבכורה", M9.prefEnd],
-                          [<Calc key="ר" label="ברגילות: חלק בנמ״נ" formula="(491,280 − 100,000) × 25%" />, M9.nciOrdinaryEnd - M9.nciGoodwill],
-                          ["ברגילות: מוניטין", M9.nciGoodwill],
-                        ]}
-                        foot={["סך הזשמ״ש", M9_NCI_END]}
-                      />
-                      <p>בדיקה: ביום הרכישה {n(96_000 + 92_000)} ש״ח, ועוד החלק ברווח, {n(M9.split.nci)} ש״ח.</p>
-                    </>
-                  ),
-                },
-                {
-                  title: "סעיף 4: אילו הייתה לא צוברת",
-                  body: (
-                    <p>
-                      בלי הכרזה, לבכורה אין רווח השנה. הזשמ״ש מקבלים רק מהרגילות: {bdi("104,000 × 25% = 26,000")}.
-                    </p>
-                  ),
-                },
-                { title: "מלכודת נפוצה", body: <p>לשכוח את הבכורה בעלות הצירוף, לא להוריד אותה מהנמ״נ של הרגילות, לרשום עליה עודף עלות, או לחלק את כל הרווח לפי הרגילות.</p> },
-              ]}
-            />
-          </FullSolution>
-        </TaskFrame>
+        <WorkedExample ex={W9_MASTER} />
         <Deeper title="למה ההפסד במאוחד שונה, גם כשהיתרה זהה">
           <p>בשיעור הזה ראינו פעמיים את אותו רעיון: לבת ולקבוצה עלויות שונות לאותו נכס. לכן כל אירוע שקורה לנכס, ירידת ערך או שערוך או מכירה, מתפצל אחרת אצל כל אחת, גם כשבסוף היתרה זהה.</p>
         </Deeper>

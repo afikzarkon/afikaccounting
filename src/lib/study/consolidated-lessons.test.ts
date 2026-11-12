@@ -18,6 +18,7 @@ import { CONTROL_W, W_ATTEND, W_CONVERT } from "./consolidated/worked/control";
 import { ACQUISITION_W, W_CLAIM, W_EXCESS, W_HFS, W_LESSEE, W_LESSOR, W_TABLE, W_TAX } from "./consolidated/worked/acquisition";
 import { POLICY_W, W7_BUILDING, W7_IP, W7_LAND, W7_MASTER, W7_QUALIFY, W7_REVAFTER, W7_TABLE } from "./consolidated/worked/policy";
 import { FINANCE_W, W8_AC, W8_CONTROLLER, W8_FVOCI, W8_IMPAIR, W8_MASTER, W8_SHARES } from "./consolidated/worked/finance";
+import { IMPAIRMENT_W, W9_DATES, W9_DTA, W9_IMP, W9_MASTER, W9_PREFAT, W9_PREFISSUE, W9_PREFNA, W9_PREFPROFIT } from "./consolidated/worked/impairment";
 import { GOODWILL_W, PERIOD_W, W_BARGAIN, W_BUYBACK, W_COSTS, W_EARNOUT, W_ENTRY, W_GW, W_NCI, W_PERIOD, W_PRIOR } from "./consolidated/worked/goodwill";
 import { RETURNS_W, W_FUND } from "./consolidated/worked/returns";
 import { W6_BS, W6_DATA, W6_ELIM, W6_EQUITY, W6_EXCESS, W6_MASTER, W6_PL, W6_SOCE, W6_SPLIT, W6_YEAR2, WORKSHEET_W } from "./consolidated/worked/worksheet";
@@ -678,6 +679,25 @@ describe("lesson 8: the walk, the sorting and the figures, against a separate ca
 });
 
 describe("lesson 9: the sorting and the figures, against a separate calculation in Python", () => {
+  it("the worked solutions: every figure they add, checked by hand, and the step counts", () => {
+    assert.deepEqual(IMPAIRMENT_W, {
+      subDep: 15_000, groupDep: 21_000, groupLoss25: 7_000,
+      subDep26: 15_000, groupDep26: 20_000, subLoss26: 6_000, groupLoss26: 36_000,
+      subBefore27: 70_000, groupBefore27: 70_000, subReversal27: 5_000, groupReversal27: 35_000,
+      moves: [-13_000, -35_000, 30_000], moveTax: [2_990, 8_050, -6_900], moveNet: [-10_010, -26_950, 23_100],
+      dtaMoves: [-2_990, -8_740, -11_040],
+      datesAdjusted: 47_680, prefOrdinaryNa: 160_000, prefNciOrdinary: 32_000,
+      mOrdinaryOwners: 221_460, mOrdinaryNci: 73_820, mNoPremium: 88_720, mNetEnd: 491_280,
+    });
+    // each year's move in the excess is the extra depreciation plus the difference in impairment
+    assert.equal(-(21_000 - 15_000) - 7_000, IMPAIRMENT_W.moves[0]);
+    assert.equal(-(20_000 - 15_000) - (36_000 - 6_000), IMPAIRMENT_W.moves[1]);
+    assert.equal(35_000 - 5_000, IMPAIRMENT_W.moves[2]);
+    // goodwill through the control premium
+    assert.equal(12_000 + IMPAIRMENT_W.mNoPremium * 0.75, M9.ownersGoodwill);
+    assert.equal(IMPAIRMENT_W.mNoPremium * 0.25, M9.nciGoodwill);
+    assert.deepEqual([W9_IMP, W9_DTA, W9_DATES, W9_PREFISSUE, W9_PREFAT, W9_PREFPROFIT, W9_PREFNA, W9_MASTER].map((w) => w.steps.length), [5, 3, 3, 1, 2, 2, 1, 6]);
+  });
   it("eight preference shares to sort, both answers among them", () => {
     assert.equal(PREF_PROFIT.length, 8);
     assert.ok(PREF_PROFIT.some((x) => x.answer === "accrual") && PREF_PROFIT.some((x) => x.answer === "declared"));
