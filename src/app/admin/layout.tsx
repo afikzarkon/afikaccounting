@@ -2,6 +2,7 @@ import { ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AdminNav, AdminNavLinks } from "@/components/admin/admin-nav";
+import { MarkInternal } from "@/components/admin/mark-internal";
 import { Container } from "@/components/ui/primitives";
 
 export const metadata: Metadata = { title: { default: "ניהול", template: "%s · ניהול" }, robots: { index: false } };
@@ -14,6 +15,7 @@ export const metadata: Metadata = { title: { default: "ניהול", template: "%
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {
   return (
     <Container className="pt-6 pb-10 lg:pt-10">
+      <MarkInternal />
       <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <p className="mb-3 hidden items-center gap-2 px-3 text-xs font-semibold text-accent lg:flex">

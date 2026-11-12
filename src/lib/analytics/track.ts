@@ -3,6 +3,58 @@ import type { TrackEvent } from "./events";
 const KEY = "aa_session";
 const VISITOR = "aa_visitor";
 const ENTRY = "aa_entry";
+const INTERNAL = "aa_internal";
+const LAST_VIEW = "aa_last_view";
+/** The same page again in the same tab within this long is a reload, not another view. */
+export const RELOAD_WINDOW_MS = 30_000;
+
+/**
+ * A browser that has opened the admin is the team's, not a visitor's: from then on it records
+ * nothing, signed in or not (components/admin/mark-internal.tsx sets it).
+ */
+export function markInternal() {
+  try {
+    localStorage.setItem(INTERNAL, "1");
+  } catch {}
+}
+
+function isInternal() {
+  try {
+    return localStorage.getItem(INTERNAL) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** Whether a page view repeats the last one in this tab within the reload window. Pure, so it is tested. */
+export function isReload(last: { path: string; at: number } | null, path: string, now: number) {
+  return !!last && last.path === path && now - last.at >= 0 && now - last.at < RELOAD_WINDOW_MS;
+}
+
+/** A page view in this tab: false when it only reloads the last one (a reload loop, a refresh). */
+function freshView(path: string) {
+  try {
+    const raw = sessionStorage.getItem(LAST_VIEW);
+    const last = raw ? (JSON.parse(raw) as { path: string; at: number }) : null;
+    const now = Date.now();
+    if (isReload(last, path, now)) return false;
+    sessionStorage.setItem(LAST_VIEW, JSON.stringify({ path, at: now }));
+  } catch {}
+  return true;
+}
+
+/** The kind of device, from the screen and the pointer: enough to tell phones from computers. */
+function deviceKind() {
+  try {
+    const w = Math.min(window.screen.width, window.screen.height);
+    const touch = window.matchMedia("(pointer: coarse)").matches;
+    if (touch && w < 600) return "mobile";
+    if (touch) return "tablet";
+    return "desktop";
+  } catch {
+    return "unknown";
+  }
+}
 
 /** A random id per browser tab, kept for the tab's lifetime. Counts sessions, identifies no one. */
 function sessionId() {
@@ -43,7 +95,8 @@ function visitorId() {
 export function track(event: TrackEvent) {
   if (typeof window === "undefined") return;
   const path = event.path ?? window.location.pathname;
-  if (path.startsWith("/admin")) return;
+  if (path.startsWith("/admin") || isInternal()) return;
+  if (event.kind === "page_view" && !freshView(path)) return;
   try {
     const v = visitorId();
     const meta = v ? { v, ...event.meta } : event.meta;
@@ -91,5 +144,5 @@ export function trackEntry() {
   } catch {
     // Storage blocked: count it anyway.
   }
-  track({ kind: "landing_view", meta: entrySource(window.location.search, document.referrer, window.location.host) });
+  track({ kind: "landing_view", meta: { ...entrySource(window.location.search, document.referrer, window.location.host), device: deviceKind() } });
 }

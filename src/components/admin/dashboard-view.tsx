@@ -1,9 +1,10 @@
-import { Activity, Calculator, Download, Eye, PlayCircle, Timer, Users } from "lucide-react";
+import { Activity, Calculator, Download, Eye, LogIn, MonitorSmartphone, Timer, UserRound } from "lucide-react";
 import Link from "next/link";
-import type { Analytics, DailyPoint, StorageUse } from "@/lib/data/admin";
+import type { Analytics, DailyPoint, StorageUse, VisitAnalysis } from "@/lib/data/admin";
 import { CALCULATORS } from "@/lib/engine/registry";
 import { cn } from "@/lib/utils";
 import { ColumnChart, type Point, RankedBars, ShareBar } from "./charts";
+import { Glossary, WHO_TERMS } from "./glossary";
 import { AdminHeader, bytes, count, Kpi, Panel, pct } from "./ui";
 
 export const RANGES = [
@@ -53,7 +54,8 @@ export function DashboardView({ data, storage, days, grain }: { data: Analytics;
 
   return (
     <div>
-      <AdminHeader title="דאשבורד ואנליטיקה" description="תמונת מצב של השימוש באתר. כל הנתונים אנונימיים: מזהה אקראי לכל לשונית דפדפן, ללא קישור לחשבון." />
+      <AdminHeader title="דאשבורד ואנליטיקה" description="מי נכנס לאתר, מאיפה, ומה עשה בו. משתמש מחובר נרשם עם החשבון שלו; מבקר שלא התחבר נרשם לפי מזהה אקראי של הדפדפן." />
+      <DashboardGlossary />
 
       {/* One filter row scopes everything below it. */}
       <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -62,11 +64,12 @@ export function DashboardView({ data, storage, days, grain }: { data: Analytics;
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <Kpi icon={Users} label="סשנים" value={count(t.sessions)} hint={`${count(t.events)} אירועים`} />
-        <Kpi icon={Eye} label="צפיות בדפים" value={count(t.pageViews)} hint={t.sessions ? `${(t.pageViews / t.sessions).toFixed(1)} לסשן` : undefined} />
+        <Kpi icon={LogIn} label="כניסות" value={t.entries === undefined ? "—" : count(t.entries)} hint={`${count(t.sessions)} לשוניות · ${count(t.events)} אירועים`} />
+        <Kpi icon={MonitorSmartphone} label="מבקרים ייחודיים" value={t.visitors === undefined ? "—" : count(t.visitors)} hint="דפדפנים שונים" />
+        <Kpi icon={UserRound} label="אנשים (הערכה)" value={t.people === undefined ? "—" : count(t.people)} hint={t.accounts === undefined ? undefined : `${count(t.accounts)} מהם משתמשים מחוברים`} />
+        <Kpi icon={Eye} label="צפיות בדפים" value={count(t.pageViews)} hint={data.visits?.pagesPerVisit ? `${data.visits.pagesPerVisit} דפים לכניסה` : undefined} />
         <Kpi icon={Calculator} label="חישובים" value={count(t.calcRuns)} hint={`${pct(s.solveOk + s.solveFailed, t.calcRuns)} עם נעלם`} />
-        <Kpi icon={Download} label="הורדות קבצים" value={count(t.downloads)} />
-        <Kpi icon={PlayCircle} label="הפעלות סרטונים" value={count(t.videoPlays)} />
+        <Kpi icon={Download} label="הורדות וסרטונים" value={count(t.downloads + t.videoPlays)} hint={`${count(t.downloads)} הורדות · ${count(t.videoPlays)} סרטונים`} />
         <Kpi
           icon={Timer}
           label="זמן חישוב ממוצע"
@@ -77,7 +80,10 @@ export function DashboardView({ data, storage, days, grain }: { data: Analytics;
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
-        <Panel title="צפיות בדפים" description="נפח הפעילות לאורך זמן">
+        <Panel title="כניסות ומבקרים לאורך זמן" description="כניסות, ומבקרים ייחודיים בכל יום. בתצוגה שבועית או חודשית: סכום הימים, כך שמבקר שחזר בכמה ימים נספר בכל אחד מהם.">
+          <ColumnChart points={series.map((p) => ({ ...p, values: [p.raw.entries, p.raw.visitors] }))} series={[{ name: "כניסות" }, { name: "מבקרים" }]} />
+        </Panel>
+        <Panel title="צפיות בדפים" description="כל מעבר לדף, בלי ריענונים מהירים של אותו דף">
           <ColumnChart points={series.map((p) => ({ ...p, values: [p.raw.pageViews] }))} series={[{ name: "צפיות" }]} />
         </Panel>
         <Panel title="חישובים: רגיל מול שחזור נעלם" description="כל פתרון שהופק במחשבונים">
@@ -162,8 +168,13 @@ export function DashboardView({ data, storage, days, grain }: { data: Analytics;
         </Panel>
       </div>
 
-      <Panel title="עמודים מובילים" className="mt-6">
-        <RankedBars rows={data.pages.map((p) => ({ label: p.path, values: [p.count] }))} />
+      {data.visits ? <VisitsSection v={data.visits} /> : null}
+
+      <Panel title="עמודים מובילים" description="צפיות בכל דף, ובכמה אנשים שונים צפו בו" className="mt-6">
+        <RankedBars
+          rows={data.pages.map((p) => ({ label: p.path, values: p.people === undefined ? [p.count] : [p.count, p.people] }))}
+          series={data.pages[0]?.people === undefined ? undefined : [{ name: "צפיות" }, { name: "אנשים" }]}
+        />
       </Panel>
     </div>
   );
@@ -220,7 +231,7 @@ function SuccessRow({ label, ok, failed, invalid, attempts }: { label: string; o
   );
 }
 
-type Bucket = Point & { raw: Omit<DailyPoint, "day"> };
+type Bucket = Point & { raw: Required<Omit<DailyPoint, "day">> };
 
 /**
  * Daily rows from the database, with empty days filled in, rolled up by day,
@@ -238,12 +249,95 @@ function bucket(daily: DailyPoint[], days: number, grain: Grain): Bucket[] {
     const [y, m, dd] = key.split("-");
     const label = grain === "month" ? `${m}/${y}` : grain === "week" ? `שבוע מ-${dd}/${m}/${y}` : `${dd}/${m}/${y}`;
     const tick = grain === "month" ? `${m}/${y.slice(2)}` : `${dd}/${m}`;
-    const b = out.get(key) ?? { label, tick, values: [], raw: { pageViews: 0, calcRegular: 0, calcSolve: 0, downloads: 0, videoPlays: 0, sessions: 0 } };
+    const b = out.get(key) ?? { label, tick, values: [], raw: { pageViews: 0, calcRegular: 0, calcSolve: 0, downloads: 0, videoPlays: 0, sessions: 0, entries: 0, visitors: 0, people: 0 } };
     const row = byDay.get(iso);
     if (row) {
-      for (const k of Object.keys(b.raw) as (keyof Bucket["raw"])[]) b.raw[k] += Number(row[k]);
+      for (const k of Object.keys(b.raw) as (keyof Bucket["raw"])[]) b.raw[k] += Number(row[k] ?? 0);
     }
     out.set(key, b);
   }
   return [...out.values()];
+}
+
+const SOURCE_NAMES: Record<string, string> = { direct: "ישיר (בלי מקור)", whatsapp: "וואטסאפ", email: "מייל", share: "שיתוף מהאתר" };
+const sourceName = (s: string) => SOURCE_NAMES[s] ?? (s.startsWith("ref:") ? `שגריר: ${s.slice(4)}` : s.startsWith("site:") ? `אתר: ${s.slice(5)}` : s);
+const DEVICES: Record<string, string> = { mobile: "טלפון", tablet: "טאבלט", desktop: "מחשב", unknown: "לא ידוע (לפני המדידה)" };
+const WEEKDAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+
+/** Where visits came from, where they landed, on what, and whether they stayed: one section. */
+function VisitsSection({ v }: { v: VisitAnalysis }) {
+  const hours = Array.from({ length: 24 }, (_, h) => ({ label: `${h}:00`, tick: h % 3 === 0 ? String(h) : "", values: [Number(v.byHour.find((x) => x.hour === h)?.entries ?? 0)] }));
+  const days = WEEKDAYS.map((name, d) => ({ label: name, tick: name.slice(0, 2), values: [Number(v.byWeekday.find((x) => x.dow === d)?.entries ?? 0)] }));
+  return (
+    <section className="mt-8">
+      <h2 className="mb-1 text-lg font-semibold text-fg">ניתוח כניסות</h2>
+      <p className="mb-4 max-w-3xl text-sm text-muted">כל כניסה היא פתיחה של האתר בלשונית חדשה. כאן: מאיפה הגיעו, לאיזה דף, מאיזה מכשיר, אם חזרו, ואם המשיכו מעבר לדף הראשון.</p>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Kpi icon={UserRound} label="מבקרים חדשים" value={count(v.newVisitors)} hint="דפדפן שנראה לראשונה בטווח הזה" />
+        <Kpi icon={UserRound} label="מבקרים חוזרים" value={count(v.returningVisitors)} hint="דפדפן שכבר ביקר לפני הטווח" />
+        <Kpi icon={LogIn} label="כניסות של משתמשים מחוברים" value={pct(v.signedInEntries, v.visitsCounted)} hint={`${count(v.signedInEntries)} מתוך ${count(v.visitsCounted)} כניסות`} />
+        <Kpi
+          icon={Eye}
+          label="כניסות של דף אחד"
+          value={pct(v.onePageVisits, v.visitsCounted)}
+          hint="נכנסו וראו רק את הדף הראשון"
+          tone={v.visitsCounted >= 20 && v.onePageVisits / v.visitsCounted > 0.6 ? "warn" : undefined}
+        />
+      </div>
+      <div className="mt-6 grid gap-6 xl:grid-cols-2">
+        <Panel title="מקורות" description="מאיפה הגיעו הכניסות. ישיר: הקלדה, סימנייה, או אפליקציה שלא מעבירה מאיפה הגיעו (וואטסאפ, למשל, לרוב).">
+          <RankedBars rows={v.sources.map((s) => ({ label: sourceName(s.source), values: [s.entries, s.visitors] }))} series={[{ name: "כניסות" }, { name: "מבקרים" }]} />
+        </Panel>
+        <Panel title="דפי נחיתה" description="הדף הראשון שנפתח בכל כניסה">
+          <RankedBars rows={v.landings.map((l) => ({ label: l.path, values: [l.entries, l.visitors] }))} series={[{ name: "כניסות" }, { name: "מבקרים" }]} />
+        </Panel>
+        <Panel title="מכשירים" description="לפי גודל המסך וסוג המגע. נמדד מאז שהתיקון עלה; כניסות קודמות מסומנות לא ידוע.">
+          <ShareBar parts={v.devices.map((d) => ({ name: DEVICES[d.device] ?? d.device, value: Number(d.entries) }))} />
+        </Panel>
+        <Panel title="חדשים מול חוזרים" description="מבקרים שבאו בטווח הזה: כמה מהם כאן בפעם הראשונה">
+          <ShareBar parts={[{ name: "חדשים", value: v.newVisitors }, { name: "חוזרים", value: v.returningVisitors }]} />
+        </Panel>
+        <Panel title="שעות ביום" description="כניסות לפי שעה (שעון ישראל)">
+          <ColumnChart height={160} points={hours} series={[{ name: "כניסות" }]} />
+        </Panel>
+        <Panel title="ימים בשבוע" description="כניסות לפי יום">
+          <ColumnChart height={160} points={days} series={[{ name: "כניסות" }]} />
+        </Panel>
+      </div>
+    </section>
+  );
+}
+
+function DashboardGlossary() {
+  return (
+    <Glossary
+      title="מה כל מושג אומר, ומה נחשב כניסה"
+      intro="שלושה מזהים נרשמים עם כל פעולה: לשונית, דפדפן, וחשבון (כשמחוברים). כל אחד סופר דבר אחר, ולכן אותו ביקור יכול להיות כניסה אחת, מבקר אחד ואדם אחד, או שלוש כניסות של אותו אדם."
+      groups={[
+        { title: "מי נכנס", terms: WHO_TERMS },
+        {
+          title: "מה עשו",
+          terms: [
+            { term: "צפייה בדף", meaning: "כל מעבר לדף. אותו דף שנפתח שוב באותה לשונית בתוך 30 שניות נחשב ריענון ואינו נספר." },
+            { term: "דפים לכניסה", meaning: "כמה דפים ראו בממוצע בכל כניסה, מהדף הראשון ועד שעזבו." },
+            { term: "כניסה של דף אחד", meaning: "נכנסו, ראו את הדף הראשון ולא המשיכו. אחוז גבוה בדף נחיתה מסוים מרמז שהדף לא מוביל הלאה." },
+            { term: "מקור", meaning: "שגריר: קישור אישי עם ?ref=. קמפיין: קישור עם utm_source. אתר: אתר אחר שהפנה. ישיר: בלי מקור ידוע." },
+            { term: "מבקר חדש / חוזר", meaning: "חדש: הדפדפן נראה לראשונה בטווח הזמן שנבחר. חוזר: הוא כבר ביקר לפני הטווח." },
+            { term: "אירוע", meaning: "כל פעולה שנרשמה: צפייה, כניסה, חישוב, תשובה בתרגול, הורדה ועוד. נפח גולמי, לא מדד בפני עצמו." },
+          ],
+        },
+        {
+          title: "מחשבונים",
+          terms: [
+            { term: "חישוב רגיל", meaning: "המשתמש הזין את כל הנתונים וקיבל פתרון." },
+            { term: "שחזור נעלם (X)", meaning: "המשתמש סימן נתון אחד כלא ידוע, והמחשבון חישב אותו לאחור מהשאר." },
+            { term: "שגיאת קלט", meaning: "החישוב לא רץ כי נתון חסר או לא תקין." },
+            { term: "כשל בפתרון", meaning: "החישוב רץ, אבל המחשבון לא מצא פתרון." },
+            { term: "זמן חישוב, P95", meaning: "כמה זמן לקח לחשב. P95: 95% מהחישובים מהירים מהמספר הזה, ורק 5% איטיים ממנו." },
+            { term: "תרחיש מוכן", meaning: "דוגמה שמורה שטוענת נתונים מוכנים למחשבון." },
+          ],
+        },
+      ]}
+    />
+  );
 }

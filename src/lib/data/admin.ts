@@ -23,9 +23,49 @@ function check<T>(res: { data: T | null; error: { code?: string; message: string
 
 // ---- analytics -------------------------------------------------------------
 
-export type DailyPoint = { day: string; pageViews: number; calcRegular: number; calcSolve: number; downloads: number; videoPlays: number; sessions: number };
+export type DailyPoint = {
+  day: string;
+  pageViews: number;
+  calcRegular: number;
+  calcSolve: number;
+  downloads: number;
+  videoPlays: number;
+  sessions: number;
+  /** Visits (landing_view), browsers and people that day; absent until the revised function (20261112010000) runs. */
+  entries?: number;
+  visitors?: number;
+  people?: number;
+};
+
+/** Where visits came from and what they did (admin_analytics.visits); absent until the revised function runs. */
+export type VisitAnalysis = {
+  sources: { source: string; entries: number; visitors: number }[];
+  landings: { path: string; entries: number; visitors: number }[];
+  devices: { device: string; entries: number; visitors: number }[];
+  newVisitors: number;
+  returningVisitors: number;
+  signedInEntries: number;
+  pagesPerVisit: number | null;
+  onePageVisits: number;
+  visitsCounted: number;
+  byHour: { hour: number; entries: number }[];
+  byWeekday: { dow: number; entries: number }[];
+};
 export type Analytics = {
-  totals: { events: number; sessions: number; pageViews: number; calcRuns: number; downloads: number; videoPlays: number; presetLoads: number };
+  totals: {
+    events: number;
+    sessions: number;
+    pageViews: number;
+    calcRuns: number;
+    downloads: number;
+    videoPlays: number;
+    presetLoads: number;
+    entries?: number;
+    visitors?: number;
+    people?: number;
+    accounts?: number;
+  };
+  visits?: VisitAnalysis;
   daily: DailyPoint[];
   calculators: { slug: string; runs: number; regular: number; solve: number; ok: number; failed: number; invalid: number }[];
   solver: { regularOk: number; regularFailed: number; regularInvalid: number; solveOk: number; solveFailed: number; solveInvalid: number };
@@ -35,7 +75,7 @@ export type Analytics = {
   videoSources: { source: string; count: number }[];
   videos: { slug: string; title: string | null; source: string | null; count: number }[];
   modules: { module: string; count: number; sessions: number }[];
-  pages: { path: string; count: number }[];
+  pages: { path: string; count: number; people?: number }[];
   timing: { samples: number; avgMs: number | null; p95Ms: number | null };
 };
 export type StorageUse = { kind: string; source: string; files: number; bytes: number }[];
@@ -316,11 +356,28 @@ export async function getExamAdmin(id: string): Promise<AdminExam | null> {
 
 // ---- growth funnel -------------------------------------------------------------
 
-export type FunnelSteps = { entered: number; answered: number; activated: number; signedUp: number; returned: number; paywall: number; plan: number; checkout: number; paid: number };
+export type FunnelSteps = {
+  entered: number;
+  /** People with an account, its approval now, and who opened a lesson: absent until 20261112020000 runs. */
+  accounts?: number;
+  approved?: number;
+  lessonStarted?: number;
+  answered: number;
+  activated: number;
+  signedUp: number;
+  returned: number;
+  paywall: number;
+  plan: number;
+  checkout: number;
+  paid: number;
+};
 export type Funnel = {
   funnel: FunnelSteps;
   newVisitors: number;
-  sources: { source: string; visitors: number; answered: number; activated: number; signedUp: number; paid: number }[];
+  /** Accounts waiting for approval now, and accounts created in the window (20261112020000). */
+  pendingApproval?: number;
+  newAccounts?: number;
+  sources: { source: string; visitors: number; answered: number; activated: number; signedUp: number; accounts?: number; paid: number }[];
   daily: { day: string; entries: number; learners: number; signups: number; payments: number }[];
   weekly: { week: string; learners: number }[];
   retention: { week: string; size: number; d1: number; d7: number; d30: number }[];

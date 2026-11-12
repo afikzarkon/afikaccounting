@@ -81,7 +81,7 @@ describe("admin_funnel", () => {
 
   it("counts each browser once per step, in the window only", async () => {
     const f = await funnel();
-    assert.deepEqual(f.funnel, { entered: 3, answered: 3, activated: 1, signedUp: 1, returned: 1, paywall: 2, plan: 1, checkout: 1, paid: 1 });
+    assert.deepEqual(f.funnel, { entered: 3, accounts: 0, approved: 0, lessonStarted: 0, answered: 3, activated: 1, signedUp: 1, returned: 1, paywall: 2, plan: 1, checkout: 1, paid: 1 });
   });
 
   it("splits by source, and filters to one", async () => {

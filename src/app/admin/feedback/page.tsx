@@ -1,11 +1,12 @@
-import { CircleAlert, ClipboardList, Layers, Users } from "lucide-react";
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { AdminHeader, AdminSkeleton, Kpi, Panel, SetupRequired, count } from "@/components/admin/ui";
+import { AdminHeader, AdminSkeleton, Panel, SetupRequired } from "@/components/admin/ui";
 import { buttonClass } from "@/components/ui/button";
 import { requireAdmin } from "@/lib/auth/dal";
+import { FeedbackAnalysis } from "@/components/admin/feedback-analysis";
 import { AddTester, RemoveTester } from "@/components/admin/testers-manager";
 import { getTesterFeedback, listTesters, unlessSetupRequired } from "@/lib/data/admin";
+import { analyze, forClaude, type TesterInput } from "@/lib/tester/analysis";
 import { type FormState, type Row, moduleName, sanitizeState, toMarkdown } from "@/lib/tester/form";
 
 export const metadata: Metadata = { title: "משוב ניסיינים" };
@@ -43,10 +44,9 @@ async function FeedbackPage() {
     .map((r) => ({ ...r, state: sanitizeState(r.answers) }))
     .filter((r): r is typeof r & { state: FormState } => r.state !== null)
     .map((r) => ({ ...r, s: summarize(r.state) }));
-  const total = testers.reduce(
-    (t, x) => ({ modules: t.modules + x.s.modules.length, points: t.points + x.s.points, blockers: t.blockers + x.s.blockers }),
-    { modules: 0, points: 0, blockers: 0 },
-  );
+  // Each tester under the name they gave the form, else their name or email.
+  const inputs: TesterInput[] = testers.map((t) => ({ id: t.userId, label: t.s.code || t.name || emails.get(t.userId) || "ניסיין", state: t.state }));
+  const analysis = analyze(inputs);
   const all = JSON.stringify(testers.map((t) => ({ userId: t.userId, name: t.name, updatedAt: t.updatedAt, ...t.state })), null, 2);
 
   return (
@@ -98,12 +98,9 @@ async function FeedbackPage() {
         )}
       </Panel>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Kpi icon={Users} label="ניסיינים" value={count(people.length)} hint={`${count(testers.length)} כבר כתבו משוב`} />
-        <Kpi icon={Layers} label="מודולים שתועדו" value={count(total.modules)} />
-        <Kpi icon={ClipboardList} label="נקודות היתקעות" value={count(total.points)} />
-        <Kpi icon={CircleAlert} label="חוסמות" value={count(total.blockers)} tone={total.blockers > 0 ? "warn" : undefined} />
-      </div>
+      {testers.length > 0 && <FeedbackAnalysis a={analysis} claudeText={forClaude(analysis, inputs)} />}
+
+      {testers.length > 0 && <h2 className="pt-2 text-lg font-semibold text-fg">המשוב של כל ניסיין</h2>}
 
       {testers.length === 0 ? (
         <Panel title="עוד אין משוב">

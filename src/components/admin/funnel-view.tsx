@@ -1,26 +1,34 @@
-import { CalendarCheck, Flame, Mail, Repeat, Share2, TrendingUp, UserPlus, Users, Wallet, Zap } from "lucide-react";
+import { CalendarCheck, Clock, Flame, Mail, Repeat, Share2, TrendingUp, UserPlus, Users, Wallet, Zap } from "lucide-react";
 import Link from "next/link";
 import type { Funnel, FunnelSteps, VariantResult } from "@/lib/data/admin";
 import { compare, EXPERIMENTS } from "@/lib/experiments";
 import { cn } from "@/lib/utils";
 import { ColumnChart, type Point } from "./charts";
+import { Glossary, WHO_TERMS } from "./glossary";
 import { RANGES, Segmented } from "./dashboard-view";
 import { AdminHeader, count, Kpi, Panel, pct } from "./ui";
 
 /** Names for what the server sends as ids: lessons, traps and courses (built on the server from the catalog). */
 export type FunnelLabels = { lessons: Record<string, string>; traps: Record<string, string>; courses: Record<string, string> };
 
+/** The closed site's path: in, an account, approved, a lesson, an answer, activation, back another day. */
 const STEPS: { key: keyof FunnelSteps; label: string; hint: string }[] = [
-  { key: "entered", label: "נכנסו לאתר", hint: "דפדפנים שנכנסו בטווח, בכל עמוד" },
-  { key: "answered", label: "ענו על שאלה", hint: "לפחות תשובה אחת בתרגול, בחזרה, בבדיקה או בדף הבית" },
+  { key: "entered", label: "נכנסו לאתר", hint: "אנשים שנכנסו בטווח (אדם אחד מכל המכשירים שלו)" },
+  { key: "accounts", label: "יש להם חשבון", hint: "נכנסו עם חשבון, או שהדפדפן שלהם חובר פעם לחשבון" },
+  { key: "approved", label: "מאושרים", hint: "החשבון אושר בניהול (מצב נוכחי)" },
+  { key: "lessonStarted", label: "פתחו שיעור", hint: "התחילו לפחות שיעור אחד" },
+  { key: "answered", label: "ענו על שאלה", hint: "לפחות תשובה אחת בתרגול, בחזרה או במבחן" },
   { key: "activated", label: "Activation", hint: "5 תשובות ומעלה, ואחת מהן מלכודת" },
-  { key: "signedUp", label: "נרשמו", hint: "פתחו חשבון" },
   { key: "returned", label: "חזרו ביום אחר", hint: "פעילות בשני ימים שונים לפחות" },
+];
+/** Payment steps: shown only once there is something in them (pricing is hidden for now). */
+const PAY_STEPS: { key: keyof FunnelSteps; label: string; hint: string }[] = [
   { key: "paywall", label: "ראו פייוול", hint: "הגיעו לשיעור או מבחן נעול" },
   { key: "plan", label: "בחרו מסלול", hint: "לחצו על מסלול בעמוד המחירים או בפייוול" },
   { key: "checkout", label: "התחילו תשלום", hint: "נכנסו לעמוד התשלום" },
   { key: "paid", label: "שילמו", hint: "תשלום שעבר" },
 ];
+const val = (f: FunnelSteps, k: keyof FunnelSteps) => Number(f[k] ?? 0);
 
 export function sourceLabel(s: string) {
   if (s === "direct") return "ישיר (בלי מקור)";
@@ -57,15 +65,19 @@ export function FunnelView({ now, before, days, source, labels, asOf, experiment
   // follow each other (entry → answer → activation → sign-up; paywall → plan → checkout → payment). "Back on another
   // day" isn't a step after sign-up, so it isn't compared.
   const CHAIN: [keyof FunnelSteps, keyof FunnelSteps][] = [
-    ["entered", "answered"],
+    ["entered", "accounts"],
+    ["accounts", "approved"],
+    ["approved", "lessonStarted"],
+    ["lessonStarted", "answered"],
     ["answered", "activated"],
-    ["activated", "signedUp"],
     ["paywall", "plan"],
     ["plan", "checkout"],
     ["checkout", "paid"],
   ];
   const prevOf = Object.fromEntries(CHAIN.map(([a, c]) => [c, a])) as Partial<Record<keyof FunnelSteps, keyof FunnelSteps>>;
-  const worst = CHAIN.filter(([a, c]) => f[a] > 0 && f[c] <= f[a]).sort(([a1, c1], [a2, c2]) => f[c1] / f[a1] - f[c2] / f[a2])[0]?.[1];
+  const worst = CHAIN.filter(([a, c]) => val(f, a) > 0 && val(f, c) <= val(f, a)).sort(([a1, c1], [a2, c2]) => val(f, c1) / val(f, a1) - val(f, c2) / val(f, a2))[0]?.[1];
+  const paying = PAY_STEPS.some((s) => val(f, s.key) > 0);
+  const shown = f.accounts === undefined ? STEPS.filter((s) => s.key !== "accounts" && s.key !== "approved" && s.key !== "lessonStarted") : STEPS;
   const lastWeek = now.weekly.at(-1)?.learners ?? 0;
   const prevWeek = before.weekly.at(-1)?.learners ?? 0;
 
@@ -73,8 +85,9 @@ export function FunnelView({ now, before, days, source, labels, asOf, experiment
     <div>
       <AdminHeader
         title="משפך וצמיחה"
-        description="מכניסה ועד תשלום: איפה סטודנטים נושרים, מאיפה הם מגיעים, והאם הם חוזרים. נתונים מצרפיים בלבד — כל דפדפן נספר פעם אחת בכל שלב, ואין כאן מידע על משתמש בודד."
+        description="מכניסה ועד לימוד קבוע: איפה סטודנטים נעצרים, מאיפה הם מגיעים, והאם הם חוזרים. כל אדם נספר פעם אחת בכל שלב, מכל המכשירים שלו."
       />
+      <FunnelGlossary />
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <Segmented label="טווח" options={RANGES.map((r) => ({ label: r.label, href: href({ range: String(r.days) }), on: r.days === days }))} />
@@ -91,8 +104,14 @@ export function FunnelView({ now, before, days, source, labels, asOf, experiment
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         <Kpi icon={Users} label="נכנסו לאתר" value={count(f.entered)} hint={delta(f.entered, b.entered) ?? `${count(now.newVisitors)} חדשים`} tone={tone(f.entered, b.entered)} />
         <Kpi icon={Zap} label="Activation" value={pct(f.activated, f.entered)} hint={`${count(f.activated)} דפדפנים · קודם ${pct(b.activated, b.entered)}`} />
-        <Kpi icon={UserPlus} label="נרשמו" value={count(f.signedUp)} hint={[`${pct(f.signedUp, f.entered)} מהנכנסים`, delta(f.signedUp, b.signedUp)].filter(Boolean).join(" · ")} tone={tone(f.signedUp, b.signedUp)} />
-        <Kpi icon={Wallet} label="שילמו" value={count(f.paid)} hint={`${pct(f.paid, f.entered)} מהנכנסים`} tone={tone(f.paid, b.paid)} />
+        <Kpi icon={UserPlus} label="חשבונות חדשים" value={now.newAccounts === undefined ? count(f.signedUp) : count(now.newAccounts)} hint={delta(now.newAccounts ?? f.signedUp, before.newAccounts ?? b.signedUp) ?? "נרשמו לאתר בטווח"} tone={tone(now.newAccounts ?? f.signedUp, before.newAccounts ?? b.signedUp)} />
+        {now.pendingApproval !== undefined ? (
+          <Link href="/admin/users" className="block">
+            <Kpi icon={Clock} label="ממתינים לאישור" value={count(now.pendingApproval)} hint={now.pendingApproval ? "לחצו לאישור בעמוד המשתמשים" : "אין ממתינים"} tone={now.pendingApproval ? "warn" : undefined} />
+          </Link>
+        ) : (
+          <Kpi icon={Wallet} label="שילמו" value={count(f.paid)} hint={`${pct(f.paid, f.entered)} מהנכנסים`} tone={tone(f.paid, b.paid)} />
+        )}
         <Kpi icon={TrendingUp} label="לומדים שבועיים (10+)" value={count(lastWeek)} hint={delta(lastWeek, prevWeek) ?? "השבוע האחרון בטווח"} tone={tone(lastWeek, prevWeek)} />
         <Kpi icon={Repeat} label="חזרו ביום אחר" value={pct(f.returned, f.entered)} hint={`קודם ${pct(b.returned, b.entered)}`} />
       </div>
@@ -102,8 +121,8 @@ export function FunnelView({ now, before, days, source, labels, asOf, experiment
           <p className="text-sm text-muted">אין עדיין כניסות בטווח הזה.</p>
         ) : (
           <ol className="space-y-2.5">
-            {STEPS.map((s) => {
-              const v = f[s.key];
+            {[...shown, ...(paying ? PAY_STEPS : [])].map((s) => {
+              const v = val(f, s.key);
               const from = prevOf[s.key];
               const bad = s.key === worst;
               return (
@@ -118,7 +137,7 @@ export function FunnelView({ now, before, days, source, labels, asOf, experiment
                   <span className="num text-end">
                     <span className="font-semibold text-fg">{count(v)}</span>{" "}
                     <span className="text-xs text-muted">{pct(v, f.entered)}</span>
-                    {from && f[from] > 0 && v <= f[from] && <span className="block text-[11px] text-subtle">{pct(v, f[from])} מהשלב הקודם</span>}
+                    {from && val(f, from) > 0 && v <= val(f, from) && <span className="block text-[11px] text-subtle">{pct(v, val(f, from))} מהשלב הקודם</span>}
                     {bad && <span className="block text-[11px] text-amber-700 dark:text-amber-400">הנשירה הגדולה</span>}
                   </span>
                 </li>
@@ -126,7 +145,7 @@ export function FunnelView({ now, before, days, source, labels, asOf, experiment
             })}
           </ol>
         )}
-        <p className="mt-4 text-xs text-subtle">האחוז הראשי: מתוך כל הנכנסים. מתחתיו, בשלבים שבאים זה אחר זה: מתוך מי שהגיע לשלב הקודם. ״חזרו ביום אחר״ ו״ראו פייוול״ לא תלויים בהרשמה, ולכן הם לא מושווים לשלב שלפניהם.</p>
+        <p className="mt-4 text-xs text-subtle">האחוז הראשי: מתוך כל הנכנסים. מתחתיו: מתוך מי שהגיע לשלב הקודם. ״מאושרים״ הוא מצב החשבון היום, לא ביום הכניסה. ״חזרו ביום אחר״ לא תלוי בשלב שלפניו, ולכן לא מושווה אליו. {paying ? "" : "שלבי התשלום מוסתרים כל עוד אין בהם נתונים (עמוד המחירים מוסתר)."}</p>
       </Panel>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
@@ -138,15 +157,15 @@ export function FunnelView({ now, before, days, source, labels, asOf, experiment
             <p className="text-sm text-muted">אין נתונים בטווח הזה.</p>
           ) : (
             <Table
-              head={["מקור", "נכנסו", "ענו", "Activation", "נרשמו", "שילמו"]}
+              head={["מקור", "נכנסו", "עם חשבון", "ענו", "Activation", "שילמו"]}
               rows={now.sources.map((s) => [
                 <Link key="s" href={href({ source: s.source })} className="font-medium text-fg hover:text-accent hover:underline">
                   {sourceLabel(s.source)}
                 </Link>,
                 count(s.visitors),
+                s.accounts === undefined ? pct(s.signedUp, s.visitors) : pct(s.accounts, s.visitors),
                 pct(s.answered, s.visitors),
                 pct(s.activated, s.visitors),
-                pct(s.signedUp, s.visitors),
                 count(s.paid),
               ])}
             />
@@ -397,5 +416,40 @@ function Stat({ icon: Icon, label, value, hint }: { icon?: typeof Users; label: 
       <p className="num mt-1 text-xl font-semibold text-fg">{value}</p>
       {hint && <p className="num mt-0.5 text-[11px] text-subtle">{hint}</p>}
     </div>
+  );
+}
+
+function FunnelGlossary() {
+  return (
+    <Glossary
+      intro="המשפך עוקב אחרי אנשים, לא אחרי דפדפנים: סטודנט שנכנס מהמחשב ומהטלפון ומחובר לחשבון נספר פעם אחת. כל שלב סופר כמה מהנכנסים בטווח הגיעו אליו אי פעם בתוך הטווח."
+      groups={[
+        { title: "מי נכנס", terms: WHO_TERMS },
+        {
+          title: "שלבי המשפך",
+          terms: [
+            { term: "נכנסו לאתר", meaning: "אנשים שהייתה להם לפחות כניסה אחת בטווח. מקור הכניסה הוא המקור של הכניסה הראשונה שלהם בטווח." },
+            { term: "יש להם חשבון", meaning: "נכנסו מחוברים, או מדפדפן שהתחברו ממנו פעם. האתר סגור, אז מי שאין לו חשבון רואה רק את דף ההתחברות וההרשמה." },
+            { term: "מאושרים", meaning: "החשבון אושר בעמוד משתמשים והרשאות. זה המצב היום: מי שאושר אחרי סוף הטווח נספר גם הוא." },
+            { term: "פתחו שיעור", meaning: "פתחו לפחות שיעור אחד בטווח." },
+            { term: "ענו על שאלה", meaning: "לפחות תשובה אחת: תרגול בשיעור, מלכודת, חזרה מרווחת או מבחן." },
+            { term: "Activation", meaning: "הרגע שבו סטודנט באמת התחיל ללמוד: 5 תשובות לפחות, ואחת מהן על מלכודת. מי שעבר אותו נוטה הרבה יותר לחזור." },
+            { term: "חזרו ביום אחר", meaning: "היו פעילים בשני ימים שונים לפחות בתוך הטווח." },
+            { term: "הנשירה הגדולה", meaning: "השלב שבו הולך לאיבוד החלק הגדול ביותר ממי שהגיע לשלב שלפניו. שם כדאי להתחיל לשפר." },
+          ],
+        },
+        {
+          title: "שאר המדדים",
+          terms: [
+            { term: "חשבונות חדשים", meaning: "חשבונות שנפתחו בטווח, לפי מסד הנתונים (לא לפי מעקב הדפדפן)." },
+            { term: "ממתינים לאישור", meaning: "חשבונות שנרשמו ועדיין מחכים לאישור שלך. עד שתאשר, הם רואים רק מסך המתנה." },
+            { term: "לומדים שבועיים (10+)", meaning: "אנשים שענו על 10 שאלות לפחות באותו שבוע. מדד הצפון: הוא מראה כמה לומדים באמת, שבוע אחרי שבוע." },
+            { term: "שימור", meaning: "מכל מי שנכנס לראשונה בשבוע מסוים: כמה חזרו למחרת, בשבוע השני ובחודש השני. ״—״: השבוע צעיר מכדי למדוד." },
+            { term: "דיוק ראשון", meaning: "אחוז התשובות הנכונות בניסיון הראשון בשיעור. נמוך מאוד: השאלה קשה מדי, או שההסבר לפניה לא מספיק." },
+            { term: "נפילה במלכודות", meaning: "אחוז התשובות השגויות במלכודות של השיעור. המלכודות נועדו להפיל, אבל אחוז גבוה מאוד מרמז שהמושג לא הוסבר טוב." },
+          ],
+        },
+      ]}
+    />
   );
 }

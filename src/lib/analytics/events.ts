@@ -90,3 +90,12 @@ export function toRow(body: unknown, sessionId: unknown) {
     meta,
   };
 }
+
+/**
+ * Whether this server records events: only the live site. A dev server, a preview
+ * deployment or a test run would otherwise write into the live numbers (they share the
+ * database). ANALYTICS_ANYWHERE=1 turns recording on elsewhere, to test the tracker.
+ */
+export function recordsEvents(env: { VERCEL_ENV?: string; ANALYTICS_ANYWHERE?: string }) {
+  return env.VERCEL_ENV === "production" || env.ANALYTICS_ANYWHERE === "1";
+}
