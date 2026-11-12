@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>מצטרפים כניסיינים</title>
+<!--
+  The deck sent to course testers (as a PDF, on WhatsApp). One .page per slide, 1920×1080.
+  Make the PDF: msedge --headless --print-to-pdf=tester-deck.pdf --no-pdf-header-footer tester-deck.html
+  Placeholders to fill before sending are marked [כך].
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&display=swap">
+<style>
+  @page { size: 1920px 1080px; margin: 0; }
+  :root {
+    --brand: #0f3d2e; --accent: #1d6b47; --canvas: #fbfaf6; --surface: #ffffff; --line: #e2e6df;
+    --fg: #16261f; --muted: #4b5a52; --gold: #8a5a00; --gold-strong: #d99a12; --gold-soft: #fcefc7;
+    --trap: #c2410c; --trap-soft: #fdebe1; --mint: #cfe3d7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #d9ddd6; }
+  body { font-family: "IBM Plex Sans Hebrew", Arial, sans-serif; color: var(--fg); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page {
+    width: 1920px; height: 1080px; position: relative; overflow: hidden;
+    padding: 120px 144px 150px; background: var(--canvas);
+    display: flex; flex-direction: column; gap: 48px;
+    page-break-after: always; break-after: page;
+  }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+  @media screen { .page { margin: 40px auto; box-shadow: 0 8px 40px rgba(0,0,0,.12); } }
+  .dark { background: var(--brand); color: #f3f1e8; }
+  .gold { background: var(--gold-soft); }
+
+  h1, h2 { font-family: "Frank Ruhl Libre", Georgia, serif; font-weight: 700; letter-spacing: -1px; }
+  h1 { font-size: 132px; line-height: 1.05; }
+  h2 { font-size: 80px; line-height: 1.1; color: var(--brand); }
+  .dark h2 { color: #f3f1e8; }
+  h3 { font-size: 40px; line-height: 1.25; font-weight: 700; }
+  p, li { font-size: 34px; line-height: 1.5; }
+  .eyebrow { font-size: 28px; font-weight: 600; letter-spacing: 2px; color: var(--accent); }
+  .dark .eyebrow { color: var(--gold-strong); }
+  .lead { font-size: 44px; line-height: 1.45; color: var(--muted); max-width: 1400px; }
+  .dark .lead { color: var(--mint); }
+  .muted { color: var(--muted); }
+  .footer {
+    position: absolute; left: 144px; right: 144px; bottom: 60px;
+    display: flex; justify-content: space-between; font-size: 24px; color: var(--muted);
+  }
+  .dark .footer { color: var(--mint); }
+  .grow { flex: 1; }
+
+  .cards { display: grid; gap: 32px; }
+  .c3 { grid-template-columns: repeat(3, 1fr); }
+  .c2 { grid-template-columns: repeat(2, 1fr); }
+  .c4 { grid-template-columns: repeat(4, 1fr); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 24px; padding: 44px; display: flex; flex-direction: column; gap: 16px; }
+  .card p { font-size: 30px; color: var(--muted); }
+  .num { font-family: "Frank Ruhl Libre", Georgia, serif; font-size: 72px; font-weight: 900; line-height: 1; color: var(--gold-strong); }
+  .tag { align-self: flex-start; font-size: 26px; font-weight: 600; border-radius: 999px; padding: 6px 22px; }
+
+  ul.list { list-style: none; display: flex; flex-direction: column; gap: 26px; }
+  ul.list li { display: flex; gap: 24px; align-items: flex-start; }
+  ul.list li .mark { flex: none; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 30px; font-weight: 700; margin-top: 2px; }
+  .yes .mark { background: #dcefe3; color: var(--accent); }
+  .no .mark { background: var(--trap-soft); color: var(--trap); }
+  ul.list b { color: var(--fg); }
+  ul.list span.t { color: var(--muted); }
+
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
+  .step { display: flex; flex-direction: column; gap: 18px; }
+  .step .n { width: 72px; height: 72px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-size: 36px; font-weight: 700; }
+  .step p { font-size: 30px; color: var(--muted); }
+
+  .button-demo { display: inline-flex; align-items: center; gap: 14px; background: #f59e0b; color: #fff; font-size: 34px; font-weight: 700; padding: 18px 34px; border-radius: 999px; box-shadow: 0 10px 30px rgba(245,158,11,.35); }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 24px; padding: 36px 40px; display: flex; flex-direction: column; gap: 20px; width: 640px; box-shadow: 0 8px 40px rgba(15,61,46,.08); }
+  .chip { display: inline-block; font-size: 26px; border: 1px solid #c9d1c8; border-radius: 14px; padding: 8px 18px; margin-inline-end: 10px; }
+  .chip.on { border-color: var(--accent); background: #e6f2ea; color: var(--accent); font-weight: 600; }
+  .field { border: 1px solid #c9d1c8; border-radius: 14px; padding: 14px 20px; font-size: 26px; color: var(--muted); }
+
+  table.sev { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 32px; }
+  table.sev td { padding: 30px 32px; border-top: 1px solid var(--line); vertical-align: top; }
+  table.sev tr:first-child td { border-top: none; }
+  table.sev td:first-child { width: 300px; font-weight: 700; }
+  .dot { display: inline-block; width: 26px; height: 26px; border-radius: 50%; margin-inline-end: 14px; vertical-align: -2px; }
+
+  .timeline { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 6px solid var(--mint); }
+  .tl { padding: 40px 0 0 48px; display: flex; flex-direction: column; gap: 14px; position: relative; }
+  .tl::before { content: ""; position: absolute; top: -21px; right: 0; width: 36px; height: 36px; border-radius: 50%; background: var(--accent); border: 6px solid var(--canvas); }
+  .tl p { font-size: 30px; color: var(--muted); }
+  .ltr { direction: ltr; unicode-bidi: embed; }
+</style>
+</head>
+<body>
+
+<!-- 1. Cover -->
+<section class="page dark" style="justify-content:center; gap:40px">
+  <p class="eyebrow">AfikAccounting · בדיקת קורס</p>
+  <h1>מצטרפים לצוות<br>הניסיינים</h1>
+  <p class="lead">לומדים לקראת המבחן עם <b style="color:#fff">חשבונאות מאפס</b> ו<b style="color:#fff">הטבות עובד (IAS 19)</b>,<br>ועוזרים לנו לגלות מה באתר עובד ומה צריך לשפר.</p>
+  <div class="footer"><span>מצגת לניסיין</span><span>1</span></div>
+</section>
+
+<!-- 2. Your role -->
+<section class="page">
+  <p class="eyebrow">התפקיד שלכם</p>
+  <h2>אתם לא נבחנים.<br>האתר נבחן.</h2>
+  <p class="lead">בניתי את האתר בשביל הרגע שבו הבנתם בהרצאה ונתקעתם לבד בבית. אתם הראשונים שמשתמשים בו באמת, ואתם רואים אותו בעיניים של סטודנט. כל מקום שבו התבלבלתם, נתקעתם או השתעממתם הוא מקום שאני צריך לתקן.</p>
+  <div class="grow"></div>
+  <div class="cards c3">
+    <div class="card"><h3>לומדים</h3><p>כמו שהייתם לומדים בכל מקרה, לקראת המבחן האמיתי שלכם.</p></div>
+    <div class="card"><h3>שמים לב</h3><p>מה עזר, מה בלבל, מה היה חסר ומה היה מיותר.</p></div>
+    <div class="card"><h3>מספרים לי</h3><p>בכפתור המשוב שבאתר, תוך כדי לימוד. שורה אחת מספיקה.</p></div>
+  </div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>2</span></div>
+</section>
+
+<!-- 3. The question -->
+<section class="page gold" style="justify-content:center">
+  <p class="eyebrow" style="color:var(--gold)">השאלה שאנחנו בודקים</p>
+  <h2 style="font-size:96px; max-width:1500px">האם אפשר להגיע מוכנים למבחן<br>עם האתר הזה?</h2>
+  <p class="lead" style="color:#5c4a1f">התשובה לא תבוא מהציון שלכם, אלא ממה שתרשמו בדרך: איפה האתר הכין אתכם, ואיפה הייתם צריכים לחפש עזרה במקום אחר.</p>
+  <div class="footer" style="color:#7a6430"><span>מצטרפים לצוות הניסיינים</span><span>3</span></div>
+</section>
+
+<!-- 4. What you get -->
+<section class="page">
+  <p class="eyebrow">מה יוצא לכם מזה</p>
+  <h2>שלושה דברים שמקבלים כניסיינים</h2>
+  <div class="grow"></div>
+  <div class="cards c3">
+    <div class="card">
+      <p class="num">01</p>
+      <h3>גישה חינם לקורסים</h3>
+      <p>חשבונאות מאפס והטבות עובד (IAS 19) פתוחים לכם בחינם לאורך כל הבדיקה, וגם אחריה, עד סוף הסמסטר.</p>
+    </div>
+    <div class="card">
+      <p class="num">02</p>
+      <h3>הכנה אמיתית למבחן</h3>
+      <p>שיעורים קצרים, תרגול עם הסבר לכל טעות, פתרונות מלאים, מחשבון הטבות עובד ובחינות עבר במצב בחינה.</p>
+    </div>
+    <div class="card">
+      <p class="num">03</p>
+      <h3>השפעה על האתר</h3>
+      <p>מה שתכתבו ישנה את האתר. בסוף הסבב תקבלו ממני רשימה של מה שתוקן בזכותכם.</p>
+    </div>
+  </div>
+  <div class="grow"></div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>4</span></div>
+</section>
+
+<!-- 5. Getting started -->
+<section class="page">
+  <p class="eyebrow">איך מתחילים</p>
+  <h2>ארבעה צעדים, ואתם בפנים</h2>
+  <div class="grow"></div>
+  <div class="steps">
+    <div class="step"><span class="n">1</span><h3>נרשמים לאתר</h3><p>בכתובת <span class="ltr">afikaccounting.vercel.app</span>, עם האימייל שלכם.</p></div>
+    <div class="step"><span class="n">2</span><h3>שולחים לי את האימייל</h3><p>למי ששלח לכם את המצגת: עם איזה אימייל נרשמתם.</p></div>
+    <div class="step"><span class="n">3</span><h3>אני פותח לכם</h3><p>מאשר את החשבון, פותח את שני הקורסים ומגדיר אתכם כניסיינים.</p></div>
+    <div class="step"><span class="n">4</span><h3>מופיע כפתור כתום</h3><p>כפתור "משוב" בפינת המסך, בכל דף. מעכשיו אתם ניסיינים.</p></div>
+  </div>
+  <div class="grow"></div>
+  <p class="muted" style="font-size:30px">עד שהחשבון מאושר תראו מסך "החשבון ממתין לאישור". זה תקין.</p>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>5</span></div>
+</section>
+
+<!-- 6. The feedback button -->
+<section class="page">
+  <p class="eyebrow">כפתור המשוב</p>
+  <h2>נתקעתם? לוחצים, וכותבים שורה</h2>
+  <div style="display:flex; gap:96px; align-items:center; flex:1">
+    <div style="flex:1; display:flex; flex-direction:column; gap:30px">
+      <p style="font-size:36px">הכפתור הכתום פותח חלונית צד, בלי לצאת מהשיעור:</p>
+      <ul class="list yes">
+        <li><span class="mark">1</span><span><b>בוחרים מה קרה:</b> <span class="t">לא הבנתי, שאלת הבחינה דרשה יותר, משהו באתר מבלבל, או תקלה.</span></span></li>
+        <li><span class="mark">2</span><span><b>כמה זה עצר אתכם:</b> <span class="t">חוסם, מאט או קוסמטי.</span></span></li>
+        <li><span class="mark">3</span><span><b>כותבים במשפט מה קרה.</b> <span class="t">השיעור והמסך נרשמים לבד.</span></span></li>
+      </ul>
+      <p class="muted" style="font-size:30px">הכל נשמר בחשבון שלכם ומגיע אליי ישירות. לא צריך לשלוח כלום.</p>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:flex-start; gap:36px">
+      <div class="panel">
+        <h3 style="font-size:34px">משוב מהיר</h3>
+        <div><span class="chip on">נתקעתי כאן</span><span class="chip">הערה</span></div>
+        <div class="field">הטבה מוגדרת 1: מדידה בנקודת זמן</div>
+        <div><span class="chip on">הבנה</span><span class="chip">פער בחינה</span><span class="chip">ממשק</span></div>
+        <div class="field" style="height:110px">לא הבנתי איך מחשבים את מספר השנים עד התשלום</div>
+      </div>
+      <span class="button-demo">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7v4"/><path d="M12 14h.01"/></svg>
+        משוב
+      </span>
+    </div>
+  </div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>6</span></div>
+</section>
+
+<!-- 7. What to look for -->
+<section class="page">
+  <p class="eyebrow">מה אני הכי רוצה לדעת</p>
+  <h2>ארבעה דברים לשים אליהם לב</h2>
+  <div class="grow"></div>
+  <div class="cards c2">
+    <div class="card"><h3>איפה לא הבנתם</h3><p>הסבר שקראתם שלוש פעמים, מושג שהשיעור הניח שאתם כבר מכירים, דוגמה שלא התחברה.</p></div>
+    <div class="card"><h3>איפה הבחינה דרשה יותר</h3><p>הבנתם את השיעור, אבל שאלת הבחינה ביקשה משהו שלא למדתם, או ברמה קשה יותר.</p></div>
+    <div class="card"><h3>מה מבלבל באתר</h3><p>לא ברור מה ללחוץ, איפה אתם בקורס, מה להזין במחשבון, או משהו שלא נוח בטלפון.</p></div>
+    <div class="card"><h3>מה עמוס ומה חסר</h3><p>מסך שהיה ארוך מדי, תרגול שהיה מיותר, או נושא שהייתם רוצים עוד ממנו.</p></div>
+  </div>
+  <div class="grow"></div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>7</span></div>
+</section>
+
+<!-- 8. Allowed -->
+<section class="page">
+  <p class="eyebrow">מה מותר</p>
+  <h2>לומדים כמו שאתם רגילים</h2>
+  <div class="grow"></div>
+  <ul class="list yes">
+    <li><span class="mark">✓</span><span><b>להיעזר גם בהרצאה, בחברים, ביוטיוב או ב-ChatGPT.</b> <span class="t">רק תרשמו בכפתור המשוב מתי יצאתם מהאתר, ולמה. זה אחד הממצאים הכי חשובים בשבילי.</span></span></li>
+    <li><span class="mark">✓</span><span><b>לדלג על מסך או תרגיל.</b> <span class="t">רק כתבו למה: משעמם, ארוך מדי, או שלא הבנתם.</span></span></li>
+    <li><span class="mark">✓</span><span><b>לכתוב ביקורת ישירה.</b> <span class="t">"זה מבלבל" ו"זה מיותר" הם המשוב הכי שימושי. אין לי מה לעשות עם מחמאות בלבד.</span></span></li>
+    <li><span class="mark">✓</span><span><b>לשאול שאלות שנראות לכם פשוטות.</b> <span class="t">אם משהו לא ברור לכם, הוא כנראה לא כתוב טוב מספיק.</span></span></li>
+    <li><span class="mark">✓</span><span><b>ללמוד מהמחשב או מהטלפון.</b> <span class="t">ולספר לי אם משהו לא עובד טוב באחד מהם.</span></span></li>
+  </ul>
+  <div class="grow"></div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>8</span></div>
+</section>
+
+<!-- 9. Not allowed -->
+<section class="page">
+  <p class="eyebrow" style="color:var(--trap)">מה אסור</p>
+  <h2>שלושה דברים שאני מבקש לא לעשות</h2>
+  <div class="grow"></div>
+  <ul class="list no">
+    <li><span class="mark">✕</span><span><b>להעביר את פרטי החשבון לאחרים.</b> <span class="t">החשבון אישי. האתר מאפשר להיות מחוברים ממכשיר אחד בכל פעם, וכניסה ממכשיר נוסף מנתקת את הקודם.</span></span></li>
+    <li><span class="mark">✕</span><span><b>להוציא תוכן מהאתר.</b> <span class="t">בלי צילומי מסך, קבצים או פתרונות שעוברים לחברים או לקבוצות. התוכן עדיין לא פתוח לציבור.</span></span></li>
+    <li><span class="mark">✕</span><span><b>לעבור על החומר בלי לבדוק באמת.</b> <span class="t">לחיצות מהירות בלי לקרוא לא מלמדות אותי כלום. עדיף לעשות פחות, אבל ברצינות.</span></span></li>
+  </ul>
+  <div class="grow"></div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>9</span></div>
+</section>
+
+<!-- 10. Severity -->
+<section class="page">
+  <p class="eyebrow">כשמשהו לא עובד</p>
+  <h2>כמה זה עצר אתכם?</h2>
+  <div class="grow"></div>
+  <table class="sev">
+    <tr><td><span class="dot" style="background:#dc2626"></span>חוסם</td><td>לא יכולתי להמשיך בלי עזרה מבחוץ.<br><span class="muted">מחשבון שמחזיר שגיאה, מושג שלא מוסבר בשום מקום.</span></td></tr>
+    <tr><td><span class="dot" style="background:#f59e0b"></span>מאט</td><td>הסתדרתי, אבל זה לקח זמן או כמה ניסיונות.<br><span class="muted">לא ברור מה להזין בשדה, הסבר שקראתי שלוש פעמים.</span></td></tr>
+    <tr><td><span class="dot" style="background:#eab308"></span>קוסמטי</td><td>לא הפריע ללמוד, אבל בולט לעין.<br><span class="muted">טבלה שגולשת מהמסך, טעות הקלדה.</span></td></tr>
+  </table>
+  <div class="grow"></div>
+  <p style="font-size:32px"><b>משהו חוסם?</b> <span class="muted">רשמו אותו מיד בכפתור המשוב וסמנו "חוסם". אני רואה את הדיווחים האלה ראשונים.</span></p>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>10</span></div>
+</section>
+
+<!-- 11. Timeline -->
+<section class="page">
+  <p class="eyebrow">לוח הזמנים</p>
+  <h2>מהיום ועד המבחן שלכם</h2>
+  <div class="grow"></div>
+  <div class="timeline">
+    <div class="tl"><h3>לפני שמתחילים</h3><p>פותחים את טופס המשוב (קישור "לטופס המלא" בחלונית) וממלאים את חלק הפתיחה: מה כבר למדתם ומה נראה לכם הכי קשה.</p></div>
+    <div class="tl"><h3>תוך כדי לימוד</h3><p>נתקעתם? כפתור המשוב. בסוף כל שיעור, 5 עד 10 דקות בטופס: מה היה מצוין, מה לשפר, מה עמוס ומה חסר.</p></div>
+    <div class="tl"><h3>אחרי המבחן</h3><p>ממלאים את חלק הסיכום: איך הלך, באילו נושאים הרגשתם מוכנים, ואם הייתם ממליצים לחבר ללמוד מהאתר.</p></div>
+  </div>
+  <div class="grow"></div>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>11</span></div>
+</section>
+
+<!-- 12. Closing -->
+<section class="page dark" style="justify-content:center; gap:40px">
+  <p class="eyebrow">תודה</p>
+  <h1 style="font-size:112px">המשוב שלכם הוא מה<br>שיהפוך את האתר לטוב יותר</h1>
+  <p class="lead">כל שורה שתכתבו עוזרת לי לשפר את האתר, בשבילכם ובשביל הסטודנטים שיבואו אחריכם. בהצלחה במבחן.</p>
+  <p style="font-size:34px; color:#f3f1e8">נרשמים כאן: <span class="ltr" style="font-weight:700">afikaccounting.vercel.app</span></p>
+  <div class="footer"><span>מצטרפים לצוות הניסיינים</span><span>12</span></div>
+</section>
+
+</body>
+</html>
