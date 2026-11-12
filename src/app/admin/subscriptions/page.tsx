@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { GrantTier, RevokeTier } from "@/components/admin/grant-tier";
+import Link from "next/link";
+import { RevokeTier } from "@/components/admin/grant-tier";
 import { AdminHeader, AdminSkeleton, Panel, SetupRequired } from "@/components/admin/ui";
 import { TierBadge } from "@/components/pricing/tier-badge";
 import { requireAdmin } from "@/lib/auth/dal";
@@ -16,7 +17,7 @@ export default function AdminSubscriptionsPage() {
     <>
       <AdminHeader
         title="מנויים"
-        description="עד שיחובר ספק תשלומים, מסלול ניתן כאן ידנית. משתמש בלי מסלול פעיל — או אורח — נמצא בחינם: הקורס החינמי והשיעור הראשון בכל קורס."
+        description="המסלולים והתשלומים של המשתמשים. הגישה לקורסים עצמם נקבעת בדף משתמשים והרשאות."
       />
       <Suspense fallback={<AdminSkeleton />}>
         <Subscriptions />
@@ -32,8 +33,15 @@ async function Subscriptions() {
 
   return (
     <div className="space-y-6">
-      <Panel title="הענקת מסלול" description="המשתמש צריך להיות רשום לאתר. הענקה למשתמש שכבר יש לו מסלול מחליפה אותו.">
-        <GrantTier />
+      {/* The closed site: access is per course, from the users page; a plan opens nothing on its own. */}
+      <Panel title="גישה לקורסים" description="האתר סגור: מה שמשתמש רואה נקבע רק לפי הקורסים שסימנתם לו — לא לפי מסלול.">
+        <p className="text-sm text-muted">
+          כדי לאשר משתמש ולפתוח לו קורס ספציפי (בלי גישה לשאר הקורסים), עברו ל
+          <Link href="/admin/users" className="font-semibold text-accent hover:underline">
+            משתמשים והרשאות
+          </Link>
+          . המסלולים שבהמשך הדף נשמרים לתיעוד בלבד, ואינם פותחים קורסים.
+        </p>
       </Panel>
 
       <Panel title="מסלולים" description={`${data.subscriptions.length} משתמשים`}>
