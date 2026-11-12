@@ -15,6 +15,7 @@ import { G_FAIR, G_NET, G_PREMIUM, G_SHARE, GOODWILL, GOODWILL_TAUGHT, M5, PAYS,
 import { AGENT_TEST, AGENT_TEST_START, AGENTS, FUND_LARGE, FUND_SMALL, MASTER3_POSITION, MASTER3_REWARD, MASTER3_SISTER, MASTER3_TOGETHER, RETURNS, RETURNS_TAUGHT } from "./consolidated/lessons/returns";
 import { BEFORE11, BOND11, BOND11_FIG, BOND11_PRICE, FIN11, FV11, LEASEBONDS, LEASEBONDS_TAUGHT, M11, M11_FIG, M11_PRICE, RESALE11, ROU11, ROU11_NCI, WHO11 } from "./consolidated/lessons/leasebonds";
 import { CONTROL_W, W_ATTEND, W_CONVERT } from "./consolidated/worked/control";
+import { ACQUISITION_W, W_CLAIM, W_EXCESS, W_HFS, W_LESSEE, W_LESSOR, W_TABLE, W_TAX } from "./consolidated/worked/acquisition";
 import { PERIOD_W, W_PERIOD } from "./consolidated/worked/goodwill";
 import { RETURNS_W, W_FUND } from "./consolidated/worked/returns";
 import { W_STORY_POSITION, W_STORY_SEPARATE, WHAT_W } from "./consolidated/worked/what";
@@ -360,6 +361,30 @@ describe("lesson 3: the walk, the sorting and the figures, against a separate ca
 });
 
 describe("lesson 4: figures, against a separate calculation in Python", () => {
+  it("the worked solutions: every figure they add, checked by hand, and the step counts", () => {
+    assert.deepEqual(ACQUISITION_W, {
+      invExcess: 15_000, invSoldBook: 84_000, invSoldExcess: 9_000, invSoldGroup: 93_000,
+      // 40,000/1.05 + 36,000/1.05² + 36,000/1.05³ + 36,000/1.05⁴
+      lessorPv: 131_463.74, lessorPremium: 3_810,
+      // 12,000 × 4.212364, the lessee's asset at the start, before 2 of 5 years
+      lesseeStart: 50_548, lesseeLiabilityExcess: 1_151, lesseeRouExcess: 3_173,
+      claimStates: [
+        { provision: 0, group: 32_000, balance: -32_000, amortized: 0 },
+        { provision: 14_000, group: 32_000, balance: -18_000, amortized: 14_000 },
+        { provision: 36_000, group: 36_000, balance: 0, amortized: 32_000 },
+      ],
+      dtl: 13_800, netOfTax: 46_200, hfsNet: 125_000, hfsExcess: 12_000,
+      eqExcess: 48_000, eqHalfYear: 3_000, patentHalfYear: 5_000, hfsEnd: 8_000,
+      // 10,000/1.07 + 210,000/1.07², and the same at 3%
+      bondNeed: 192_767.93, bondBook: 207_653.88,
+      taxBaseAt: 119_886, taxBaseEnd: 95_345,
+    });
+    assert.equal(Math.round(ACQUISITION_W.lessorPv), LESSOR.value);
+    assert.equal(Math.round(ACQUISITION_W.bondNeed), BOND.need);
+    assert.equal(Math.round(ACQUISITION_W.bondBook), BOND.book);
+    assert.equal(Math.round(-ACQUISITION_W.taxBaseAt * 0.23), STORY_TABLE.tax.at);
+    assert.deepEqual([W_EXCESS, W_LESSOR, W_LESSEE, W_CLAIM, W_TAX, W_HFS, W_TABLE].map((w) => w.steps.length), [3, 3, 5, 2, 3, 2, 9]);
+  });
   it("the bond", () => {
     assert.deepEqual([BOND.need, BOND.book, BOND.needEnd, BOND.bookEnd], [192_768, 207_654, 199_401, 210_746]);
   });
