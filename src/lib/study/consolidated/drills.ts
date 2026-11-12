@@ -53,6 +53,10 @@ export const DRILL_FAMILIES = {
   bdreal: "מימוש דרך הריבית",
   lsrou: "חכירה: החוכר הכיר בנכס",
   lsfin: "חכירה מימונית: המחכיר",
+  lcgain: "רווח מאיבוד שליטה",
+  ncibuy: "ירידה בזשמ״ש בעלייה בשיעור",
+  ncires: "קרן בעלייה בשיעור",
+  lckeep: "רווח עם השקעה שנותרה",
 } as const;
 
 export type DrillFamily = keyof typeof DRILL_FAMILIES;
@@ -652,6 +656,76 @@ export function drill(family: DrillFamily, seed: number): Drill {
         { title: "הרווח שבוטל, פחות המימוש", numbers: `${fmt(gain)} − ${fmt(gain / years)} = ${fmt(left)}` },
       ],
       trap: "לבטל את כל הרווח, בלי המימוש של השנה.",
+    };
+  }
+  if (family === "lcgain") {
+    // NCI at fair value, all goodwill split: the gain is the price less the parent's share of net assets and goodwill.
+    const net = r.int(20, 60) * 20_000;
+    const gw = r.int(2, 10) * 20_000;
+    const nci = whole((net + gw) * (out / 100));
+    const price = whole((net + gw) * h) + r.int(1, 40) * 5_000;
+    const gain = price + nci - net - gw;
+    return {
+      prompt: `בלי מסים. האם מחזיקה ${pct}% מהבת, והזשמ״ש נמדדו בשווי הוגן. ביום שבו מכרה את כל ההחזקה ב־${fmt(price)} ש״ח: הנכסים נטו של הבת במאוחד ${fmt(net)} ש״ח, והמוניטין ${fmt(gw)} ש״ח, כולו מוניטין שמתחלק. אין קרנות ואין רט״מ. מה הרווח מאיבוד השליטה?`,
+      answer: gain,
+      steps: [
+        { title: "הזשמ״ש שנגרעים", numbers: `(${fmt(net)} + ${fmt(gw)}) × ${out}% = ${fmt(nci)}` },
+        { title: "תמורה וזשמ״ש, פחות נכסים נטו וכל המוניטין", numbers: `${fmt(price)} + ${fmt(nci)} − ${fmt(net)} − ${fmt(gw)} = ${fmt(gain)}` },
+      ],
+      trap: "לגרוע רק את חלק האם בנכסים, או לשכוח את הזשמ״ש.",
+    };
+  }
+  if (family === "ncibuy" || family === "ncires") {
+    // An increase without loss of control: NCI on net assets and split goodwill, before and after.
+    const before = r.int(55, 80, 5);
+    const points = r.int(1, 3) * 5;
+    const base = r.int(20, 80) * 20_000;
+    const nciBefore = whole((base * (100 - before)) / 100);
+    const nciAfter = whole((base * (100 - before - points)) / 100);
+    const change = nciBefore - nciAfter;
+    if (family === "ncibuy")
+      return {
+        prompt: `האם הגדילה את ההחזקה בבת מ־${before}% ל־${before + points}%, והשליטה נשארה. הזשמ״ש נמדדו בשווי הוגן. הנכסים המזוהים נטו של הבת במאוחד והמוניטין שמתחלק יחד ${fmt(base)} ש״ח, ואין רט״מ. בכמה ירדו הזשמ״ש?`,
+        answer: change,
+        steps: [
+          { title: "לפני", numbers: `${fmt(base)} × ${100 - before}% = ${fmt(nciBefore)}` },
+          { title: "אחרי", numbers: `${fmt(base)} × ${100 - before - points}% = ${fmt(nciAfter)}` },
+          { title: "הירידה", numbers: `${fmt(nciBefore)} − ${fmt(nciAfter)} = ${fmt(change)}` },
+        ],
+        trap: "לחשב את השינוי על הנכסים בלבד, בלי המוניטין שמתחלק.",
+      };
+    const reserve = r.int(1, 5) * 20_000;
+    const move = whole((reserve * points) / 100);
+    const cash = change + r.int(1, 30) * 1_000;
+    const debit = cash + move - change;
+    return {
+      prompt: `בלי מסים. האם הגדילה את ההחזקה בבת מ־${before}% ל־${before + points}%, ושילמה לזשמ״ש ${fmt(cash)} ש״ח. הזשמ״ש ירדו ב־${fmt(change)} ש״ח. בספרי הבת קרן הערכה מחדש של ${fmt(reserve)} ש״ח. כמה נזקף לחובת קרן עסקאות עם זשמ״ש?`,
+      answer: debit,
+      steps: [
+        { title: "חלק האם בקרן הערכה מחדש גדל", numbers: `${fmt(reserve)} × ${points}% = ${fmt(move)}` },
+        { title: "מזומן וקרן, פחות הירידה בזשמ״ש", numbers: `${fmt(cash)} + ${fmt(move)} − ${fmt(change)} = ${fmt(debit)}` },
+      ],
+      trap: "לרשום את ההפרש כהפסד, או לשכוח את הקרן הערכה מחדש.",
+    };
+  }
+  if (family === "lckeep") {
+    // A sale that leaves a small stake: the retained part at fair value, priced like the shares sold.
+    const net = r.int(20, 60) * 20_000;
+    const gw = r.int(2, 10) * 20_000;
+    const keep = r.int(1, 4) * 5;
+    const perPoint = (net + gw) / 100 + r.int(1, 30) * 100;
+    const proceeds = (pct - keep) * perPoint;
+    const retained = keep * perPoint;
+    const nci = whole((net + gw) * (out / 100));
+    const gain = proceeds + retained + nci - net - gw;
+    return {
+      prompt: `בלי מסים. האם מחזיקה ${pct}% מהבת, והזשמ״ש נמדדו בשווי הוגן. היא מכרה ${pct - keep}% ב־${fmt(proceeds)} ש״ח, ונשארה עם ${keep}% שהשווי ההוגן שלהם ${fmt(retained)} ש״ח. ביום המכירה הנכסים נטו של הבת במאוחד ${fmt(net)} ש״ח, והמוניטין ${fmt(gw)} ש״ח, כולו מוניטין שמתחלק. מה הרווח מאיבוד השליטה?`,
+      answer: gain,
+      steps: [
+        { title: "הזשמ״ש שנגרעים", numbers: `(${fmt(net)} + ${fmt(gw)}) × ${out}% = ${fmt(nci)}` },
+        { title: "תמורה, השקעה שנותרה וזשמ״ש, פחות נכסים נטו וכל המוניטין", numbers: `${fmt(proceeds)} + ${fmt(retained)} + ${fmt(nci)} − ${fmt(net)} − ${fmt(gw)} = ${fmt(gain)}` },
+      ],
+      trap: "להכיר בהשקעה שנותרה לפי חלקה בנכסים נטו, ולפספס את המדידה מחדש.",
     };
   }
   if (family === "ncieq")

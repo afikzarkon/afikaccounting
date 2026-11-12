@@ -26,6 +26,9 @@ import { RETURNS_W, W_FUND } from "./consolidated/worked/returns";
 import { W6_BS, W6_DATA, W6_ELIM, W6_EQUITY, W6_EXCESS, W6_MASTER, W6_PL, W6_SOCE, W6_SPLIT, W6_YEAR2, WORKSHEET_W } from "./consolidated/worked/worksheet";
 import { W_STORY_POSITION, W_STORY_SEPARATE, WHAT_W } from "./consolidated/worked/what";
 import { W64, W65, W66, W67, W68, W69 } from "./consolidated/worked/leasebonds";
+import { W71, W71B, W72, W72B, W73, W73B } from "./consolidated/worked/holding";
+import { L12_DOWN, L12_ENTRY, L12_GAIN, L12_ISSUE, L12_KEEP, L12_RESERVES, L12_TAX, L12_UNREAL, L12_UP, L12_YEAR, MASTER12 } from "./consolidated/worked/holding-own";
+import { DOWN12, GAIN12, HOLDING, HOLDING_TAUGHT, ISSUE12, KEEP12, LC12, M12, RES12, SORT12, TAX12, UNREAL12, UP12, YEAR12 } from "./consolidated/lessons/holding";
 import type { Worked } from "./consolidated/worked/types";
 import { BORROW10, DEFER10, INTERCOMPANY, INTERCOMPANY_TAUGHT, INV10, LAND10, LOSS10, M10, MACH10, MACH10_FIG, MISTAKE10, PRIOR10, SAME10, SPLIT10, WD10 } from "./consolidated/lessons/intercompany";
 import { DATES9, DTA9, IMP9, IMPAIRMENT, IMPAIRMENT_TAUGHT, M9, M9_NCI_END, PREF9, PREF_PROFIT } from "./consolidated/lessons/impairment";
@@ -37,7 +40,7 @@ import { type ConsolidatedQuestion, LESSON_N } from "./consolidated/shared";
 import { ltrFormulas } from "./ias19/ltr";
 
 /** What teaches each question, lesson by lesson. */
-const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT, "consolidated-acquisition": ACQUISITION_TAUGHT, "consolidated-goodwill": GOODWILL_TAUGHT, "consolidated-worksheet": WORKSHEET_TAUGHT, "consolidated-policy": POLICY_TAUGHT, "consolidated-finance": FINANCE_TAUGHT, "consolidated-impairment": IMPAIRMENT_TAUGHT, "consolidated-intercompany": INTERCOMPANY_TAUGHT, "consolidated-leasebonds": LEASEBONDS_TAUGHT };
+const TAUGHT: Record<string, Record<string, string>> = { "consolidated-what": WHAT_TAUGHT, "consolidated-control": CONTROL_TAUGHT, "consolidated-returns": RETURNS_TAUGHT, "consolidated-acquisition": ACQUISITION_TAUGHT, "consolidated-goodwill": GOODWILL_TAUGHT, "consolidated-worksheet": WORKSHEET_TAUGHT, "consolidated-policy": POLICY_TAUGHT, "consolidated-finance": FINANCE_TAUGHT, "consolidated-impairment": IMPAIRMENT_TAUGHT, "consolidated-intercompany": INTERCOMPANY_TAUGHT, "consolidated-leasebonds": LEASEBONDS_TAUGHT, "consolidated-holding": HOLDING_TAUGHT };
 
 describe("the consolidated statements course", () => {
   it("lessons numbered in order, on the course's page, the first free", () => {
@@ -831,6 +834,56 @@ describe("lesson 11: the sorting and the figures, against a separate calculation
   });
 });
 
+describe("lesson 12: the sorting and the figures, against a separate calculation in Python", () => {
+  it("eight amounts to sort, both answers among them", () => {
+    assert.equal(SORT12.length, 8);
+    assert.ok(SORT12.some((x) => x.answer === "pl") && SORT12.some((x) => x.answer === "equity"));
+  });
+  it("loss of control: Shaked and Arava", () => {
+    assert.deepEqual(LC12, { paid: 600_000, nciFair: 180_000, premium: 60_000, net0: 580_000, goodwill: 200_000, split: 140_000, patentLeft: 55_000, equity: 760_000, net: 815_000, nci: 238_750, price: 900_000, gain: 123_750, parentNet: 611_250, parentGoodwill: 165_000, parentTotal: 776_250 });
+    assert.equal(LC12.price - LC12.parentTotal, LC12.gain);
+    assert.deepEqual(RES12, { reval: 40_000, debt: 12_000, revalOwners: 30_000, debtOwners: 9_000, toProfit: 132_750 });
+    assert.deepEqual(KEEP12, { proceeds: 610_000, retained: 275_000, gain: 108_750, soldPart: 517_500, keptPart: 258_750, onSold: 92_500, onKept: 16_250 });
+    assert.equal(KEEP12.onSold + KEEP12.onKept, KEEP12.gain);
+    assert.deepEqual(UNREAL12, { down: 40_000, up: 20_000, nci: 233_750, upNciPart: 5_000, upLeft: 15_000, assetsOut: 775_000, gain: 163_750 });
+    assert.deepEqual(YEAR12, { parentOwn: 500_000, separateGain: 300_000, adjust: -176_250, parent: 323_750, sub: 89_000, total: 412_750, nci: 22_250, owners: 390_500 });
+  });
+  it("changes without loss of control: Gilboa, Tavor, Yasmin, Hatzav", () => {
+    assert.deepEqual(UP12, { paid: 420_000, nciFair: 260_000, premium: 30_000, excessNet0: 49_280, net0: 499_280, goodwill: 180_720, split: 150_720, excessLeft: 36_000, excessLeftNet: 27_720, excessLeftTax: 8_280, upGross: 16_000, upNet: 12_320, net: 647_720, base: 786_120, nciBefore: 314_448, nciAfter: 196_530, cash: 164_000, nciDown: 117_918, reserveUp: 4_500, toReserve: 50_582 });
+    assert.equal(UP12.nciDown + UP12.toReserve, UP12.cash + UP12.reserveUp);
+    assert.deepEqual(DOWN12, { paid: 1_040_000, nciFair: 240_000, premium: 80_000, goodwill: 280_000, split: 200_000, net: 1_180_000, nciBefore: 276_000, afterA: 414_000, afterB: 424_000, upA: 138_000, upB: 148_000, reserveDown: 4_000, toReserveA: 26_000, toReserveB: 16_000, premiumMoved: 10_000 });
+    assert.equal(160_000 + DOWN12.reserveDown, DOWN12.upA + DOWN12.toReserveA);
+    assert.deepEqual(TAX12, { costSold: 130_000, separateGain: 30_000, payable: 6_900, toReserve: 5_980, expense: 920, reserveNet: 20_020, profitAdjust: -24_020 });
+    assert.deepEqual(ISSUE12, { after: 0.64, cash: 300_000, nciBefore: 140_000, gwToNci: 20_000, nciAfter: 380_000, nciUp: 240_000, toReserve: 60_000, parentBefore: 660_000, parentAfter: 720_000 });
+    assert.equal(ISSUE12.parentAfter - ISSUE12.parentBefore, ISSUE12.toReserve);
+    assert.deepEqual(GAIN12, { holding: 0.6, net: 1_300_000, nci: 520_000, goodwill: 120_000 });
+  });
+  it("the closing question", () => {
+    assert.deepEqual(M12, {
+      paid: 880_000, nciFair: 210_000, premium: 40_000, landNet: 77_000, net0: 977_000, goodwill: 113_000, split: 73_000, base1: 1_390_000, nci1Before: 278_000, nci1After: 417_000, nciUp1: 139_000, reserve1: 8_000,
+      separateGain: 37_000, taxPayable: 8_510, taxToReserve: 1_840, taxExpense: 6_670, holding2: 0.68, base2: 1_460_000, nci2Before: 438_000, nci2After: 601_600, nciUp2: 163_600, reserve2: 4_400, reserveEnd: 10_560,
+      parent: 414_840, total: 694_840, nci: 71_400, owners: 623_440,
+    });
+  });
+  it("the worked solutions: every journal table balances, and the step counts", () => {
+    for (const w of [L12_ENTRY, L12_RESERVES, L12_KEEP, L12_UNREAL, L12_YEAR, L12_UP, L12_DOWN, L12_TAX, L12_ISSUE, L12_GAIN, MASTER12, W71, W71B, W72, W72B, W73, W73B])
+      for (const st of w.steps)
+        for (const t of st.tables ?? [])
+          if (t.head[1] === "חובה") {
+            const sum = (k: number) => t.rows.reduce((s, r) => s + (typeof r.c[k] === "number" ? (r.c[k] as number) : 0), 0);
+            assert.ok(Math.abs(sum(1) - sum(2)) < 0.01, `${w.title}: ${t.cap}`);
+          }
+    for (const w of [L12_ENTRY, L12_RESERVES, L12_KEEP, L12_UNREAL, L12_YEAR, L12_UP, L12_DOWN, L12_TAX, L12_ISSUE, L12_GAIN, MASTER12]) assert.ok(w.own, w.title);
+    assert.deepEqual([L12_ENTRY, L12_RESERVES, L12_KEEP, L12_UNREAL, L12_YEAR, L12_UP, L12_DOWN, L12_TAX, L12_ISSUE, L12_GAIN, MASTER12].map((w) => w.steps.length), [3, 2, 3, 3, 2, 4, 3, 3, 3, 2, 5]);
+  });
+  it("calculations in the practice", () => {
+    const expected: Record<string, number> = { "lc-gain-n": 92_000, "lc-nci-n": 219_000, "inc-nci-n": 135_000, "inc-res-n": 23_000, "dec-nci-n": 110_000, "dec-tax-n": 6_900, "iss-nci-n": 330_000, "year-adj": 70_000, "lc-res-pl": 65_000, "keep-gain": 100_000, "up-restore": 9_000, "down-gain": 144_000, "year-owners": 355_000, "iss-res": 90_000, "dec-polb": 121_000, "issue-gw": 180_000, "tax-expense": 5_750 };
+    const answer = (id: string) => (HOLDING.exercises.find((x) => x.id === id) as { answer: number }).answer;
+    for (const [id, want] of Object.entries(expected)) assert.equal(answer(id), want, id);
+    assert.deepEqual(HOLDING.exercises.filter((x) => x.kind === "number").map((x) => x.id).sort(), Object.keys(expected).sort());
+  });
+});
+
 describe("worked examples: the lecturer's own examples, matching the workbook to the agora", () => {
   const amounts = (w: Worked) => {
     const out = new Set<string>();
@@ -848,6 +901,12 @@ describe("worked examples: the lecturer's own examples, matching the workbook to
     ["6.6", W66, [64_400.14, 62_139.92, 2_260.22, 565.06, 1_695.17, 3_864.01, 4_971.19, 62_264.15, 61_111.11, 3_735.85, 4_888.89, 1_153.04, 288.26]],
     ["6.7", W67, [112_493.78, 135_539.11, 8_999.5, 6_776.96, 124_839.18, 7_476.89, 111_493.28, 7_490.35, 122_329.53, 9_699.44, 1_429.11, 23_045.33, 20_822.79, 18_519.13, 13_345.9, 11_916.79, 6_602.34]],
     ["6.8", W68, [89_080.99, 83_439.37, 5_641.62, 65_535.04, 62_114.52, 3_420.52, 2_221.1, 64_359.84, 1_175.2, 2_245.33]],
+    ["7.1", W71, [772_500, 130_000, 167_300, 2_000, 33_200, 3_200, 72_500, 7_500, 776_500, 621_200, 116_000, 704_000]],
+    ["7.1", W71B, [475_300, 388_800, 86_500, 479_300, 392_000, 87_300, 353_200, 42_800, 432_500]],
+    ["7.2", W72, [108_575, 8_000, 575, 325_725, 217_150, 110_000, 33_000, 8_250, 24_750, 9_000, 1_015_750]],
+    ["7.2", W72B, [300_000, 320_712.5, 4_000, 24_712.5, 646_437.5, 20_712.5]],
+    ["7.3", W73, [54_287.5, 57_144.64, 4_000, 11_712.5, 8_855.36, 380_012.5, 382_869.64]],
+    ["7.3", W73B, [39_142.86, 9_785.71, 2_928.13, 2_213.84, 6_857.59, 7_571.88, 36_214.73]],
     ["6.9", W69, [16_274.54, 93_725.46, 32_541.39, 37_026.18, 4_484.79, 2_603.31, 531.19, 5_209.22, 29_935.48, 32_348.16, 2_412.67, 3_732.79, 1_320.11]],
   ];
   for (const [sheet, w, want] of workbook)

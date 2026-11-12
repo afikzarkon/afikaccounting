@@ -383,3 +383,57 @@ export function rightOfUseYear(a: { payment: number; years: number; rate: number
   const interest = whole(asset * a.rate);
   return { asset, dep, interest, net: dep + interest - a.payment, assetEnd: asset - dep, liabilityEnd: asset + interest - a.payment };
 }
+
+/**
+ * The non-controlling interests in a subsidiary on a given day, the lecturer's
+ * way: their share of its net identifiable assets as the group sees them, less
+ * an Up deferral, plus their share of the goodwill that is split, plus any part
+ * of the control premium they hold. With NCI measured at their share of net
+ * assets the split goodwill is nil.
+ */
+export function nciAt(a: { net: number; up?: number; splitGoodwill?: number; share: number; premium?: number; premiumShare?: number }) {
+  return (a.net - (a.up ?? 0)) * a.share + (a.splitGoodwill ?? 0) * a.share + (a.premium ?? 0) * (a.premiumShare ?? 0);
+}
+
+/**
+ * Loss of control, by IFRS 10 B98 and the lecturer's entry: the cash received
+ * and any investment kept at fair value, plus the NCI derecognised and the NCI
+ * part of an Up deferral put back on the asset, less the subsidiary's net
+ * assets as consolidated (after a Down deferral) and all the goodwill. The rest
+ * is the parent's gain or loss.
+ */
+export function lossOfControl(a: { proceeds: number; retainedFv?: number; net: number; down?: number; goodwill: number; nci: number; upNciPart?: number }) {
+  const assetsOut = a.net - (a.down ?? 0);
+  const gain = a.proceeds + (a.retainedFv ?? 0) + a.nci + (a.upNciPart ?? 0) - assetsOut - a.goodwill;
+  return { assetsOut, gain };
+}
+
+/**
+ * A change in the holding without loss of control: an equity transaction. The
+ * NCI move from one share to the other, the parent's share of the
+ * subsidiary's OCI reserves moves with them, and the difference against the
+ * cash goes to the reserve for transactions with NCI. A credit is positive:
+ * NCI that grow, a reserve share that grows, and the reserve itself.
+ * `cash` is what the group receives (positive) or pays (negative).
+ */
+export function holdingChange(a: { nciBefore: number; nciAfter: number; reserves?: number; shareBefore: number; shareAfter: number; cash: number }) {
+  const nciMove = a.nciAfter - a.nciBefore;
+  const reserveMove = (a.reserves ?? 0) * (a.shareAfter - a.shareBefore);
+  const toReserve = a.cash - nciMove - reserveMove;
+  return { nciMove, reserveMove, toReserve };
+}
+
+/**
+ * Tax on a sale of shares without loss of control (summary p. 71): the tax on
+ * the capital gain in the separate books, the part that belongs to the equity
+ * reserve, and the rest, which stays in tax expense.
+ */
+export function saleTax(a: { proceeds: number; costSold: number; reserveGross: number; rate: number }) {
+  const separateGain = a.proceeds - a.costSold;
+  const payable = separateGain * a.rate;
+  const toReserve = a.reserveGross * a.rate;
+  return { separateGain, payable, toReserve, expense: payable - toReserve, reserveNet: a.reserveGross - toReserve, profitAdjust: -separateGain + toReserve };
+}
+
+/** The parent's holding after the subsidiary issues shares, as a fraction. */
+export const holdingAfterIssue = (a: { parentShares: number; totalShares: number; newShares: number; parentBuys: number }) => (a.parentShares + a.parentBuys) / (a.totalShares + a.newShares);

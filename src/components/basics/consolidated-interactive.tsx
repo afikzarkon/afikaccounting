@@ -2,7 +2,7 @@
 
 import { RotateCcw } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { bondRedemption, impairmentViews, inventoryDeferral, type Books, consolidate, excessTable, goodwillCalc, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, pvBond, revalue, whole, amortizedCost } from "@/lib/learn/consolidated";
+import { bondRedemption, impairmentViews, inventoryDeferral, type Books, consolidate, excessTable, goodwillCalc, groupPosition, managerReward, meetingShare, partnersToBeat, profitSplit, pvBond, revalue, whole, amortizedCost, nciAt, holdingChange, lossOfControl } from "@/lib/learn/consolidated";
 import { drill, DRILL_FAMILIES, type DrillFamily } from "@/lib/study/consolidated/drills";
 import { ARMON, NOFAR } from "@/lib/study/consolidated/lessons/worksheet";
 import { cn } from "@/lib/utils";
@@ -459,6 +459,57 @@ export function BondRedeemLab() {
           [v.adjust <= 0 ? "ביטול הריבית מקטין את הרווח ב־" : "ביטול הריבית מגדיל את הרווח ב־", Math.abs(v.adjust)],
         ]}
       />
+    </section>
+  );
+}
+
+/** Ofer holds 80% of Shita. Move the holding after the deal and the price of one percent, and see whether it is an equity transaction or a loss of control. The lab assumes control goes with more than half the shares; in a real case, control is decided as in lessons 2 and 3. */
+export function HoldingLab() {
+  const [after, setAfter] = useState(70);
+  const [price, setPrice] = useState(11_000);
+  const net = 800_000;
+  const split = 100_000;
+  const premium = 40_000;
+  const base = net + split;
+  const nciBefore = whole(nciAt({ net, splitGoodwill: split, share: 0.2 }));
+  const lost = after <= 50;
+  const nciAfter = whole(nciAt({ net, splitGoodwill: split, share: 1 - after / 100 }));
+  const cash = (80 - after) * price;
+  const c = holdingChange({ nciBefore, nciAfter, shareBefore: 0.8, shareAfter: after / 100, cash });
+  const loss = lossOfControl({ proceeds: cash, retainedFv: after * price, net, goodwill: split + premium, nci: nciBefore });
+  return (
+    <section aria-label="מעבדה: שיעור לפני ואחרי, ומחיר" className="card space-y-4 p-4 sm:p-5">
+      <p className="text-[14px] text-muted">
+        עופר מחזיקה 80% משיטה. במאוחד: נכסים מזוהים נטו {whole(net).toLocaleString("en-US")}, מוניטין שמתחלק {split.toLocaleString("en-US")}, ופרמיית שליטה {premium.toLocaleString("en-US")} שכולה של עופר. הזשמ״ש בשווי הוגן, בלי מסים. ההנחה במעבדה: מעל 50% יש שליטה.
+      </p>
+      <Percent label="השיעור של עופר אחרי העסקה" value={after} onChange={setAfter} min={0} max={100} />
+      <Amount label="מחיר של אחוז אחד מהמניות" value={price} onChange={setPrice} step={500} />
+      {lost ? (
+        <Tbl
+          head={["איבוד שליטה", "סכום"]}
+          rows={[
+            ["תמורה", cash],
+            ["השקעה שנותרה, בשווי הוגן", after * price],
+            ["זשמ״ש שנגרעים", nciBefore],
+            ["נכסים נטו ומוניטין שנגרעים", -(net + split + premium)],
+            [loss.gain >= 0 ? "רווח ברווח או הפסד" : "הפסד ברווח או הפסד", Math.abs(loss.gain)],
+          ]}
+        />
+      ) : after === 80 ? (
+        <p className="text-[14px]">אין שינוי בשיעור, ואין מה לרשום.</p>
+      ) : (
+        <Tbl
+          head={[after > 80 ? "עלייה בשיעור: עסקה הונית" : "ירידה בשיעור: עסקה הונית", "סכום"]}
+          rows={[
+            ["זשמ״ש לפני", nciBefore],
+            ["זשמ״ש אחרי", nciAfter],
+            [after > 80 ? "מזומן ששולם" : "מזומן שהתקבל", Math.abs(cash)],
+            [c.toReserve >= 0 ? "לזכות קרן עסקאות עם זשמ״ש" : "לחובת קרן עסקאות עם זשמ״ש", Math.abs(whole(c.toReserve))],
+            ["רווח או הפסד", 0],
+          ]}
+        />
+      )}
+      <p className="text-[13.5px] text-muted">{`הבסיס לזשמ״ש: ${base.toLocaleString("en-US")}. הפרמיה נשארת אצל עופר כל עוד השליטה נשארת.`}</p>
     </section>
   );
 }
