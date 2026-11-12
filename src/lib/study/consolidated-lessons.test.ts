@@ -20,6 +20,7 @@ import { POLICY_W, W7_BUILDING, W7_IP, W7_LAND, W7_MASTER, W7_QUALIFY, W7_REVAFT
 import { FINANCE_W, W8_AC, W8_CONTROLLER, W8_FVOCI, W8_IMPAIR, W8_MASTER, W8_SHARES } from "./consolidated/worked/finance";
 import { IMPAIRMENT_W, W9_DATES, W9_DTA, W9_IMP, W9_MASTER, W9_PREFAT, W9_PREFISSUE, W9_PREFNA, W9_PREFPROFIT } from "./consolidated/worked/impairment";
 import { INTERCOMPANY_W, W10_BAL, W10_BORROW, W10_LAND, W10_LOSS, W10_MACHINE, W10_MASTER, W10_PRIOR, W10_SOLD, W10_UNSOLD, W10_UPDOWN } from "./consolidated/worked/intercompany";
+import { L11_AFTER, L11_BEFORE, L11_FAIR, L11_FIN, L11_REDEEM, L11_RESALE, L11_ROU, LEASEBONDS_OWN_W } from "./consolidated/worked/leasebonds-own";
 import { GOODWILL_W, PERIOD_W, W_BARGAIN, W_BUYBACK, W_COSTS, W_EARNOUT, W_ENTRY, W_GW, W_NCI, W_PERIOD, W_PRIOR } from "./consolidated/worked/goodwill";
 import { RETURNS_W, W_FUND } from "./consolidated/worked/returns";
 import { W6_BS, W6_DATA, W6_ELIM, W6_EQUITY, W6_EXCESS, W6_MASTER, W6_PL, W6_SOCE, W6_SPLIT, W6_YEAR2, WORKSHEET_W } from "./consolidated/worked/worksheet";
@@ -780,6 +781,25 @@ describe("lesson 10: the sorting and the figures, against a separate calculation
 });
 
 describe("lesson 11: the sorting and the figures, against a separate calculation in Python", () => {
+  it("the course's own worked solutions: every figure they add, checked by hand, the entries balance, and the step counts", () => {
+    assert.deepEqual(LEASEBONDS_OWN_W, {
+      // 40,000 × 3.992710, and 65,000 × 3.312127
+      rouPv: 159_708.4, finPv: 215_288.24,
+      finInvEnd: 167_511, finRouEnd: 172_230, finDepGap: 7_058,
+      // each sheet's two rounded lines and their sum
+      price9: 90_280.84, sale5: 102_723.25, fair7: 97_375.69,
+      sellerTax: 2_373, beforeFv: 168_714.4, beforeBuy: 162_933.43, beforeExcessLeft: 5_950,
+    });
+    // the entries balance
+    assert.equal(ROU11.liabilityEnd + 40_000, ROU11.assetEnd + ROU11.dep + ROU11.interest);
+    const f = LEASEBONDS_OWN_W;
+    assert.equal(FIN11.gain + FIN11.interest + f.finInvEnd + 144_000 + FIN11.tax, f.finInvEnd + f.finRouEnd + f.finDepGap + FIN11.interest + FIN11.tax);
+    assert.equal(100_000 + BOND11.income, BOND11.investorEnd + BOND11.taxEnd + BOND11.net + BOND11.expense + BOND11.taxMove);
+    assert.equal(Math.round(f.price9), BOND11_PRICE);
+    assert.equal(Math.round(f.sale5), RESALE11.sale);
+    assert.equal(Math.round(f.fair7), FV11.fair);
+    assert.deepEqual([L11_ROU, L11_FIN, L11_REDEEM, L11_AFTER, L11_RESALE, L11_BEFORE, L11_FAIR].map((w) => w.steps.length), [3, 3, 2, 3, 2, 3, 3]);
+  });
   it("eight adjustments to sort, both answers among them", () => {
     assert.equal(WHO11.length, 8);
     assert.ok(WHO11.some((x) => x.answer === "issuer") && WHO11.some((x) => x.answer === "investor"));

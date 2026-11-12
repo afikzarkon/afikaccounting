@@ -1,13 +1,14 @@
-import { Building2, FileSignature, Landmark, ListChecks, Wrench } from "lucide-react";
+import { FileSignature, ListChecks } from "lucide-react";
 import { JournalEntry } from "@/components/study/blocks";
 import { Deeper, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
-import { BEFORE11, BOND11, BOND11_FIG, BOND11_PRICE, FIN11, FV11, M11, M11_FIG, M11_PRICE, RESALE11, ROU11, ROU11_NCI, WHO11, WHO11_OPTIONS } from "@/lib/study/consolidated/lessons/leasebonds";
+import { M11, M11_FIG, M11_PRICE, WHO11, WHO11_OPTIONS } from "@/lib/study/consolidated/lessons/leasebonds";
 import { W64, W65, W66, W67, W68, W69 } from "@/lib/study/consolidated/worked/leasebonds";
+import { L11_AFTER, L11_BEFORE, L11_FAIR, L11_FIN, L11_REDEEM, L11_RESALE, L11_ROU } from "@/lib/study/consolidated/worked/leasebonds-own";
 import { agora, type Worked } from "@/lib/study/consolidated/worked/types";
 import { BondRedeemLab, ConsolidatedDrill } from "./consolidated-interactive";
 import { WorkedExample } from "./consolidated-worked";
-import { Calc, Expansion, LecturerNote, quiz } from "./consolidated-parts";
+import { Expansion, LecturerNote, quiz } from "./consolidated-parts";
 import { TaskFrame } from "./ias19-question";
 import { Bridge } from "./ias19-ui";
 import { WrongRight } from "./ias19-visuals";
@@ -22,16 +23,7 @@ import { Story } from "./inventory-teach";
  * 23% where a question says so.
  */
 
-const bdi = (s: string) => <bdi dir="ltr" className="num whitespace-nowrap">{s}</bdi>;
-const n = (v: number) => v.toLocaleString("en-US");
-const FIN_INV_END = FIN11.investment + FIN11.interest - 65_000;
-const FIN_ROU_END = FIN11.investment - FIN11.lesseeDep;
 
-const BONDS = (
-  <Story icon={<Landmark />} title="האג״ח של כלנית">
-    <p>חברת ״נורית״ מחזיקה 80% ממניות חברת ״כלנית״. ב־1.1.2025 כלנית הנפיקה לציבור אג״ח בערך נקוב של 200,000 ש״ח, לפי הערך הנקוב, ל־5 שנים, בריבית 6% שמשולמת בסוף כל שנה. ב־31.12.2025, אחרי תשלום הריבית, נורית קנתה בשוק חצי מהאג״ח. ריבית השוק באותו יום 9%. נורית מודדת את ההשקעה בעלות מופחתת. שיעור המס 23%.</p>
-  </Story>
-);
 
 
 /** The closing question, in the worked-example layout, with the course's own numbers. */
@@ -178,32 +170,7 @@ export const CONSOLIDATED_LEASEBONDS_SCREENS: Record<string, ScreenContent> = {
     lead: "מצב 2: המחכיר רואה חכירה תפעולית, אבל החוכר רשם נכס זכות שימוש והתחייבות.",
     body: (
       <>
-        <Story icon={<Building2 />} title="המשרדים של נורית">
-          <p>ב־1.1.2025 נורית החכירה לכלנית קומת משרדים ל־5 שנים, תמורת 40,000 ש״ח בסוף כל שנה. אצל נורית החכירה תפעולית: היא ממשיכה להפחית את המבנה, ורושמת הכנסות משכירות. כלנית הכירה בנכס זכות שימוש ובהתחייבות, לפי ריבית של 8%. בלי מסים.</p>
-        </Story>
-        <Tbl
-          dense
-          head={["אצל כלנית, 2025", "סכום"]}
-          rows={[
-            [<Calc key="נ" label="נכס זכות שימוש בתחילת החכירה" formula="PV(8%, 5, 40,000)" />, ROU11.asset],
-            [<Calc key="פ" label="הוצאות פחת" formula="÷ 5" />, ROU11.dep],
-            [<Calc key="מ" label="הוצאות מימון" formula="× 8%" />, ROU11.interest],
-          ]}
-        />
-        <P>במאוחד אין חכירה: המשרדים של הקבוצה, ונורית ממשיכה להפחית אותם כרגיל. לכן מבטלים את כל מה שכלנית רשמה, ואת ההכנסות של נורית:</P>
-        <JournalEntry
-          title="פקודת עזר במאוחד, 2025"
-          lines={[
-            { account: "התחייבות חכירה", dr: ROU11.liabilityEnd },
-            { account: "נכס זכות שימוש", cr: ROU11.assetEnd },
-            { account: "הכנסות משכירות", dr: 40_000 },
-            { account: "הוצאות פחת", cr: ROU11.dep },
-            { account: "הוצאות מימון", cr: ROU11.interest },
-          ]}
-        />
-        <P>
-          הרווח גדל: {bdi("31,942 + 12,777 − 40,000 = 4,719")}. ההשפעה על חשבון החוכר, כלנית, ולכן הזשמ״ש ברווח גדלים ב־{n(ROU11_NCI)} ש״ח.
-        </P>
+        <WorkedExample ex={L11_ROU} />
         <LecturerNote title="מס נדחה על ההתאמה">
           <p>בדוגמה 6.4 ובעמ׳ 64 אין מס על ההתאמה. לפי ב86(ג) ו־IAS 12, גם כאן נוצר הפרש זמני, ולכן היה צריך מס נדחה. השמטת המס היא פישוט, והיא לא כתובה כך בחומר. בשאלות שלנו על מצב 2 כתוב במפורש ״בלי מסים״.</p>
         </LecturerNote>
@@ -225,38 +192,7 @@ export const CONSOLIDATED_LEASEBONDS_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>במימונית המחכיר גורע את נכס הבסיס, רושם השקעה נטו בחכירה, מכיר ברווח מהמכירה בתחילת החכירה, ובהמשך בהכנסות מימון. במאוחד מבטלים את כל אלה ואת כל מה שהחוכר רשם, ומכירים בנכס הבסיס לפי העלות המקורית שלו, עם פחת בהתאם.</P>
-        <Story icon={<Wrench />} title="המכונה של נורית">
-          <p>ב־1.1.2025 נורית החכירה לכלנית מכונה שהעלות המופחתת שלה 180,000 ש״ח, ונותרו לה 5 שנים. כלנית תשלם 65,000 ש״ח בסוף כל שנה, במשך 4 שנים, ובסוף התקופה המכונה עוברת לבעלותה. הריבית הגלומה 8%. החכירה מימונית אצל נורית, וכלנית הכירה בנכס זכות שימוש ומפחיתה אותו על פני 5 שנים. שיעור המס 23%, ולצורכי מס המכונה נשארת אצל נורית עד סוף החכירה.</p>
-        </Story>
-        <Tbl
-          dense
-          head={["2025", "סכום"]}
-          rows={[
-            [<Calc key="ה" label="ההשקעה נטו בחכירה, ונכס זכות השימוש" formula="PV(8%, 4, 65,000)" />, FIN11.investment],
-            [<Calc key="ר" label="רווח של נורית מהמכירה" formula="215,288 − 180,000" />, FIN11.gain],
-            [<Calc key="מ" label="ריבית: הכנסה לנורית והוצאה לכלנית" formula="× 8%" />, FIN11.interest],
-            [<Calc key="פ" label="פחת אצל כלנית" formula="215,288 ÷ 5" />, FIN11.lesseeDep],
-            [<Calc key="ק" label="פחת שצריך: הקבוצה" formula="180,000 ÷ 5" />, FIN11.groupDep],
-          ]}
-        />
-        <JournalEntry
-          title="פקודת עזר במאוחד, 2025"
-          lines={[
-            { account: "רווח ממכירה", dr: FIN11.gain },
-            { account: "הכנסות מימון", dr: FIN11.interest },
-            { account: "התחייבות חכירה", dr: FIN_INV_END },
-            { account: "מכונה", dr: 180_000 - FIN11.groupDep },
-            { account: "השקעה נטו בחכירה", cr: FIN_INV_END },
-            { account: "נכס זכות שימוש", cr: FIN_ROU_END },
-            { account: "הוצאות פחת", cr: FIN11.lesseeDep - FIN11.groupDep },
-            { account: "הוצאות מימון", cr: FIN11.interest },
-            { account: "נכס מסים נדחים", dr: FIN11.tax },
-            { account: "הוצאות מסים", cr: FIN11.tax },
-          ]}
-        />
-        <P>
-          הריבית וההתחייבות מול ההשקעה מתקזזות. מה שנשאר הוא רווח המכירה שבוטל, פחות הפחת המנופח שהתממש: {bdi("−35,288 + 7,058 = −28,230")}. בדיוק כמו מכירה של מכונה בתוך הקבוצה, ולכן כולו על חשבון נורית, המחכירה. במקרה שלנו לא נשאר דבר לחוכר.
-        </P>
+        <WorkedExample ex={L11_FIN} />
         <P>מצב 4, מימונית והחוכר בהקלה, נדיר: ההקלה חלה רק על חכירה קצרה או על נכס בעל ערך נמוך. ההתאמה דומה, אלא שאצל החוכר מבטלים הוצאות חכירה במקום פחת וריבית.</P>
         <LecturerNote title="ייחוס המס בגיליון 6.5">
           <p>בגיליון 6.5 המס מחושב בשני שיעורים, ואז כולו מיוחס למחכיר, בלי הסבר. ייחוס לפי מי שאצלו כל יתרה במאזן נותן חלוקה אחרת. בשאלות שלנו לשתי החברות אותו שיעור, וכל ההשפעה אצל המחכיר, ולכן השאלה לא עולה.</p>
@@ -278,34 +214,10 @@ export const CONSOLIDATED_LEASEBONDS_SCREENS: Record<string, ScreenContent> = {
     lead: "חברה בקבוצה קונה בשוק אג״ח שחברה אחרת בקבוצה הנפיקה. בעיני הקבוצה, היא פדתה את החוב של עצמה.",
     body: (
       <>
-        {BONDS}
         <P>
-          לפי <T16 he="IFRS 9" /> סעיפים 3.3.1 ו־3.3.3, כשהתחייבות מסולקת, ההפרש בין הערך שלה לבין מה ששולם הוא רווח או הפסד. בדוחות הנפרדים אף אחת לא רשמה אותו: כלנית ממשיכה לרשום חוב, ונורית רשמה השקעה. הרווח קיים רק במאוחד.
+          לפי <T16 he="IFRS 9" /> סעיפים 3.3.1 ו־3.3.3, כשהתחייבות מסולקת, ההפרש בין הערך שלה לבין מה ששולם הוא רווח או הפסד. בדוחות הנפרדים אף אחת לא רשמה אותו, והוא קיים רק במאוחד.
         </P>
-        <Tbl
-          dense
-          head={["31.12.2025, החצי שנקנה", "סכום"]}
-          rows={[
-            ["ההתחייבות בספרי כלנית", 100_000],
-            [<Calc key="ת" label="התמורה: שווי הוגן" formula="PV(9%, 4, 6,000, 100,000)" />, -BOND11_PRICE],
-            ["רווח מפדיון מוקדם", BOND11.gain],
-            [<Calc key="מ" label="מס נדחה" formula="× 23%" />, -BOND11.tax],
-          ]}
-          foot={["רווח נטו, על חשבון כלנית", BOND11.net]}
-        />
-        <JournalEntry
-          title="פקודת עזר במאוחד, 31.12.2025"
-          lines={[
-            { account: "אג״ח לשלם", dr: 100_000 },
-            { account: "השקעה באג״ח", cr: BOND11_PRICE },
-            { account: "רווח מפדיון מוקדם", cr: BOND11.gain },
-            { account: "הוצאות מסים", dr: BOND11.tax },
-            { account: "התחייבות מסים נדחים", cr: BOND11.tax },
-          ]}
-        />
-        <P>
-          למה רווח? הריבית בשוק עלתה, ולכן החוב שווה פחות ממה שרשום. הקבוצה סילקה חוב של 100,000 בפחות. והרווח מיוחס למנפיקה, כלנית, ולכן הזשמ״ש ברווח גדלים ב־{bdi("7,484 × 20% = 1,497")}.
-        </P>
+        <WorkedExample ex={L11_REDEEM} />
         <WrongRight
           label="טעות: אף חברה לא רשמה רווח, אז אין רווח. נכון: הפדיון יוצר רווח במאוחד"
           wrong={<p>״נורית רשמה השקעה, כלנית רשמה חוב. מבטלים אחד מול השני, וזהו.״</p>}
@@ -329,34 +241,7 @@ export const CONSOLIDATED_LEASEBONDS_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>ב־2026 כלנית רושמת הוצאות ריבית לפי 6%, ונורית רושמת הכנסות ריבית לפי 9%, הריבית ביום הקנייה. במאוחד מבטלים את שתיהן, ואת ההשקעה מול האג״ח לשלם.</P>
-        <Tbl
-          dense
-          head={["2026", "נורית: השקעה", "כלנית: אג״ח", "הפער"]}
-          rows={[
-            ["31.12.2025", BOND11_PRICE, 100_000, BOND11.gain],
-            ["ריבית", BOND11.income, BOND11.expense, BOND11.adjust],
-            ["תשלום", -6_000, -6_000, 0],
-          ]}
-          foot={["31.12.2026", BOND11.investorEnd, BOND11.issuerEnd, BOND11.left]}
-        />
-        <P>
-          ביטול הריבית מקטין את הרווח ב־{n(-BOND11.adjust)} ש״ח. זה המימוש של הרווח מהפדיון: הקבוצה הכירה בו מראש, ועכשיו הוא חוזר בהדרגה, לאורך יתרת חיי האג״ח. בסוף 2026 נשאר רווח שעוד לא מומש של {n(BOND11.left)} ש״ח.
-        </P>
-        <JournalEntry
-          title="פקודת עזר במאוחד, 2026"
-          lines={[
-            { account: "אג״ח לשלם", dr: 100_000 },
-            { account: "השקעה באג״ח", cr: BOND11.investorEnd },
-            { account: "התחייבות מסים נדחים", cr: BOND11.taxEnd },
-            { account: "עודפים י.פ.", cr: BOND11.net },
-            { account: "הכנסות מימון", dr: BOND11.income },
-            { account: "הוצאות מימון", cr: BOND11.expense },
-            { account: "הוצאות מסים", cr: BOND11.taxMove },
-          ]}
-        />
-        <P>
-          המס הנדחה בסוף 2026: {bdi("7,594 × 23% = 1,747")}. מה שירד ממנו השנה הוא הכנסות מס. וגם המימוש על חשבון כלנית: הזשמ״ש ברווח קטנים ב־{n(-BOND11_FIG.plNci)} ש״ח.
-        </P>
+        <WorkedExample ex={L11_AFTER} />
         <LecturerNote title="ריבית לחלק משנה">
           <p>כשקונים אג״ח באמצע שנה, צריך ריבית לחלק מהשנה. בגיליון 4.2 המרצה מחשב אותה בריבית דריבית, כלומר מעלה את 1 ועוד הריבית בחזקת החלק מהשנה. התקן לא קובע מוסכמה. בשאלות שלנו הקנייה תמיד בתחילת שנה או בסופה, ולכן זה לא עולה.</p>
         </LecturerNote>
@@ -376,23 +261,8 @@ export const CONSOLIDATED_LEASEBONDS_SCREENS: Record<string, ScreenContent> = {
     lead: "ב־31.12.2026 נורית מכרה בשוק את האג״ח שקנתה. בעיני הקבוצה, היא הנפיקה אותן מחדש.",
     body: (
       <>
-        <P>
-          ריבית השוק ירדה ל־5%, ונורית מכרה את ההשקעה ב־{n(RESALE11.sale)} ש״ח, ורשמה רווח של {bdi("102,723 − 92,406 = 10,317")}.
-        </P>
-        <P>לפי עמ׳ 65, המכירה לא מממשת את העסקה המקורית. היא עסקה חדשה: הנפקה של אג״ח לחיצוניים, בלי רווח. מעכשיו ההתחייבות במאוחד נמדדת בעלות מופחתת, לפי ריבית של 5%, מסכום של {n(RESALE11.sale)} ש״ח.</P>
-        <Tbl
-          dense
-          head={["31.12.2026, לפני מס", "סכום", "על חשבון"]}
-          rows={[
-            [<Calc key="מ" label="הפדיון שעוד לא מומש" formula="100,000 − 92,406" />, RESALE11.issuer, "כלנית, המנפיקה"],
-            ["ביטול הרווח של נורית מהמכירה", RESALE11.seller, "נורית, המוכרת"],
-          ]}
-          foot={["סך ההתאמה להון", RESALE11.issuer + RESALE11.seller, ""]}
-        />
-        <P>
-          ובדיקה מהצד של ההתחייבות: בספרי כלנית 100,000, ובמאוחד {n(RESALE11.sale)}. ההתחייבות במאוחד גבוהה ב־{n(RESALE11.liability)} ש״ח, וזו בדיוק ההתאמה להון. על כל חלק נרשם מס נדחה של 23%, על חשבון אותה חברה.
-        </P>
-        <P>בשנים הבאות כל חלק מתממש לבד: החלק של כלנית לפי ההפרש בין הריבית בספרים שלה לבין 9%, והחלק של נורית לפי ההפרש בין 9% ל־5%.</P>
+        <P>לפי עמ׳ 65, המכירה לא מממשת את העסקה המקורית. היא עסקה חדשה: הנפקה של אג״ח לחיצוניים, בלי רווח.</P>
+        <WorkedExample ex={L11_RESALE} />
         <WorkedExample ex={W67} />
         <Remember>מכירה בחזרה לשוק היא הנפקה מחדש, בלי רווח. הפדיון שלא מומש נשאר אצל המנפיקה, ושאר ההתאמה אצל המוכרת.</Remember>
       </>
@@ -410,23 +280,7 @@ export const CONSOLIDATED_LEASEBONDS_SCREENS: Record<string, ScreenContent> = {
     lead: "אג״ח שהבת הנפיקה לפני הצירוף: לקבוצה יש עליהן עודף עלות, ולכן גם ערך אחר.",
     body: (
       <>
-        <Story icon={<Landmark />} title="האג״ח הישנות של כלנית">
-          <p>לכלנית אג״ח בערך נקוב של 160,000 ש״ח, רשומות לפי הערך הנקוב, בריבית 7%, ונותרו להן 3 שנים ביום שנורית רכשה את השליטה, 1.1.2025. ריבית השוק באותו יום 5%. ב־1.1.2026 נורית קנתה את כל האג״ח בשוק, כשהריבית 6%. בלי מסים.</p>
-        </Story>
-        <Tbl
-          dense
-          head={["", "סכום"]}
-          rows={[
-            [<Calc key="ש" label="שווי הוגן ביום הצירוף" formula="PV(5%, 3, 11,200, 160,000)" />, BEFORE11.fairAt],
-            ["עודף עלות על ההתחייבות", BEFORE11.excess],
-            [<Calc key="ע" label="במאוחד ב־1.1.2026" formula="168,714 × 1.05 − 11,200" />, BEFORE11.carrying],
-            [<Calc key="ת" label="התמורה" formula="PV(6%, 2, 11,200, 160,000)" />, BEFORE11.price],
-          ]}
-          foot={["רווח מפדיון במאוחד", BEFORE11.groupGain]}
-        />
-        <P>
-          לפי עמ׳ 66, הרווח מחושב מול הערך במאוחד לפני הפדיון, כלומר כולל עודף העלות. מול הספרים של כלנית היינו מקבלים הפסד: {bdi("160,000 − 162,933 = −2,933")}. ההבדל הוא עודף העלות שעוד לא הופחת, ובפדיון הוא נסגר.
-        </P>
+        <WorkedExample ex={L11_BEFORE} />
         <WorkedExample ex={W68} />
         <Remember>אג״ח מלפני הצירוף: הרווח או ההפסד מהפדיון מול הערך במאוחד, כולל עודף העלות. ועל חשבון המנפיקה.</Remember>
       </>
@@ -445,19 +299,7 @@ export const CONSOLIDATED_LEASEBONDS_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>לפי עמ׳ 66, מבטלים את כל מה שהמשקיעה רשמה על ההשקעה, כולל שינויי השווי ההוגן. את השפעת הפדיון מייחסים למנפיקה, ואת השאר למשקיעה.</P>
-        <P>נחזור לאג״ח של כלנית, ונניח שנורית מודדת אותן בשווי הוגן דרך רווח או הפסד. בסוף 2026 ריבית השוק 7%, והשווי ההוגן של ההשקעה {n(FV11.fair)} ש״ח.</P>
-        <Tbl
-          dense
-          head={["2026", "סכום", "על חשבון"]}
-          rows={[
-            [<Calc key="נ" label="מה שנורית רשמה" formula="6,000 + 97,376 − 90,281" />, FV11.income, ""],
-            ["אילו מדדה בעלות מופחתת", BOND11.income, ""],
-            [<Calc key="פ" label="מימוש הפדיון" formula="6,000 − 8,125" />, BOND11.adjust, "כלנית, המנפיקה"],
-            [<Calc key="ש" label="ביטול עודף השווי ההוגן" formula="8,125 − 13,095" />, FV11.investor, "נורית, המשקיעה"],
-          ]}
-          foot={["סך ההתאמה לרווח, לפני מס", FV11.total, ""]}
-        />
-        <P>החלק של כלנית זהה למה שראינו בעלות מופחתת. כל מה שנובע מכך שנורית בחרה בשווי הוגן נשאר אצל נורית.</P>
+        <WorkedExample ex={L11_FAIR} />
         <P>ובשווי הוגן דרך רווח כולל אחר: מבטלים גם את הקרן ברווח כולל אחר, ואת הריבית לפי ריבית ביום הקנייה, וההשפעה של הקרן על חשבון המשקיעה.</P>
         <WorkedExample ex={W69} />
         <Remember>משקיעה בשווי הוגן: מבטלים את כל מה שרשמה. מה שהיה בעלות מופחתת הוא הפדיון, על חשבון המנפיקה. השאר על חשבון המשקיעה.</Remember>
