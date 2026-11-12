@@ -1,4 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "rm -rf node_modules/@fortune-sheet && npm install",
   "crons": [{ "path": "/api/reminders", "schedule": "0 16 * * *" }]
 }
