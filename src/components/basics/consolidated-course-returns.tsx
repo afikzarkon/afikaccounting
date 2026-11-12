@@ -1,9 +1,11 @@
 import { Building2, FileSignature, ListChecks, Milk, Wallet } from "lucide-react";
 import { Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
-import { AGENT_OPTIONS, AGENT_TEST, AGENT_TEST_START, AGENTS, FUND, FUND_LARGE, FUND_SMALL, MASTER3, MASTER3_POSITION, MASTER3_REWARD, MASTER3_SISTER, MASTER3_TOGETHER } from "@/lib/study/consolidated/lessons/returns";
+import { AGENT_OPTIONS, AGENT_TEST, AGENT_TEST_START, AGENTS, MASTER3, MASTER3_POSITION, MASTER3_REWARD, MASTER3_SISTER, MASTER3_TOGETHER } from "@/lib/study/consolidated/lessons/returns";
+import { W_FUND } from "@/lib/study/consolidated/worked/returns";
 import { ConsolidatedDrill, ManagerLab } from "./consolidated-interactive";
 import { Calc, CaseList, Expansion, LecturerNote, quiz } from "./consolidated-parts";
+import { WorkedExample } from "./consolidated-worked";
 import { TaskFrame, TaskText } from "./ias19-question";
 import { Bridge, FullSteps } from "./ias19-ui";
 import { Tree, TwoPanel, WrongRight } from "./ias19-visuals";
@@ -148,17 +150,9 @@ export const CONSOLIDATED_RETURNS_SCREENS: Record<string, ScreenContent> = {
             { story: "החזקה של 25%, אבל לקרן דירקטוריון שחבריו בלתי תלויים במנהל, והמשקיעים ממנים אותם. הוא ממנה את המנהל מדי שנה, ויש מנהלים אחרים בשוק", verdict: "סוכן", yes: false, why: "החשיפה משמעותית, אבל למשקיעים יש זכות ממשית להחליף אותו, והדירקטוריון הוא המנגנון לכך" },
           ]}
         />
-        <P>מה ההבדל בכסף? הקרן שווה {FUND.nav.toLocaleString("en-US")} ש״ח נטו, והרווח לפני עמלות הוא {FUND.profit.toLocaleString("en-US")} ש״ח. העמלה על הביצועים היא 15% מהרווח מעל {FUND.hurdle.toLocaleString("en-US")} ש״ח:</P>
-        <Tbl
-          head={["", "החזקה 3%", "החזקה 25%"]}
-          rows={[
-            ["עמלה קבועה", FUND_SMALL.fee, FUND_LARGE.fee],
-            ["עמלה על ביצועים", FUND_SMALL.performance, FUND_LARGE.performance],
-            ["החלק מהנשאר", FUND_SMALL.fromHolding, FUND_LARGE.fromHolding],
-          ]}
-          foot={["סך הכול למנהל", FUND_SMALL.total, FUND_LARGE.total]}
-        />
-        <P>ההחזקה הופכת חשיפה של {FUND_SMALL.share.toFixed(1)}% מהרווח לחשיפה של {FUND_LARGE.share}%. החישוב עוזר להבין, אבל אין בתקן סף של אחוזים: השקעה של אחוז מסוים יכולה להספיק, ובנסיבות אחרות שליטה יכולה לנבוע מרמה אחרת.</P>
+        <P>מה ההבדל בכסף בין המנהל עם 3% למנהל עם 25%? הנה החישוב המלא:</P>
+        <WorkedExample ex={W_FUND} />
+        <P>החישוב עוזר להבין, אבל אין בתקן סף של אחוזים: השקעה של אחוז מסוים יכולה להספיק, ובנסיבות אחרות שליטה יכולה לנבוע מרמה אחרת.</P>
         <Remember>שני דברים מזיזים את התשובה: כמה מהתוצאות מגיע אליו, ומי יכול באמת להחליף אותו.</Remember>
       </>
     ),

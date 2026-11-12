@@ -16,6 +16,7 @@ import { AGENT_TEST, AGENT_TEST_START, AGENTS, FUND_LARGE, FUND_SMALL, MASTER3_P
 import { BEFORE11, BOND11, BOND11_FIG, BOND11_PRICE, FIN11, FV11, LEASEBONDS, LEASEBONDS_TAUGHT, M11, M11_FIG, M11_PRICE, RESALE11, ROU11, ROU11_NCI, WHO11 } from "./consolidated/lessons/leasebonds";
 import { CONTROL_W, W_ATTEND, W_CONVERT } from "./consolidated/worked/control";
 import { PERIOD_W, W_PERIOD } from "./consolidated/worked/goodwill";
+import { RETURNS_W, W_FUND } from "./consolidated/worked/returns";
 import { W_STORY_POSITION, W_STORY_SEPARATE, WHAT_W } from "./consolidated/worked/what";
 import { W64, W65, W66, W67, W68, W69 } from "./consolidated/worked/leasebonds";
 import type { Worked } from "./consolidated/worked/types";
@@ -317,6 +318,10 @@ describe("lesson 2: figures, against a separate calculation in Python", () => {
 });
 
 describe("lesson 3: the walk, the sorting and the figures, against a separate calculation in Python", () => {
+  it("the fund's worked solution: every figure it adds, and the step count", () => {
+    assert.deepEqual(RETURNS_W, { fee: 600_000, aboveHurdle: 4_000_000, performance: 600_000, left: 3_800_000 });
+    assert.equal(W_FUND.steps.length, 5);
+  });
   it("every path of the walk ends, and both verdicts are reachable", () => {
     const ends = new Set<boolean>();
     const reach = (id: string, seen: string[]): void => {
