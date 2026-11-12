@@ -17,6 +17,7 @@ import { BEFORE11, BOND11, BOND11_FIG, BOND11_PRICE, FIN11, FV11, LEASEBONDS, LE
 import { CONTROL_W, W_ATTEND, W_CONVERT } from "./consolidated/worked/control";
 import { ACQUISITION_W, W_CLAIM, W_EXCESS, W_HFS, W_LESSEE, W_LESSOR, W_TABLE, W_TAX } from "./consolidated/worked/acquisition";
 import { POLICY_W, W7_BUILDING, W7_IP, W7_LAND, W7_MASTER, W7_QUALIFY, W7_REVAFTER, W7_TABLE } from "./consolidated/worked/policy";
+import { FINANCE_W, W8_AC, W8_CONTROLLER, W8_FVOCI, W8_IMPAIR, W8_MASTER, W8_SHARES } from "./consolidated/worked/finance";
 import { GOODWILL_W, PERIOD_W, W_BARGAIN, W_BUYBACK, W_COSTS, W_EARNOUT, W_ENTRY, W_GW, W_NCI, W_PERIOD, W_PRIOR } from "./consolidated/worked/goodwill";
 import { RETURNS_W, W_FUND } from "./consolidated/worked/returns";
 import { W6_BS, W6_DATA, W6_ELIM, W6_EQUITY, W6_EXCESS, W6_MASTER, W6_PL, W6_SOCE, W6_SPLIT, W6_YEAR2, WORKSHEET_W } from "./consolidated/worked/worksheet";
@@ -377,8 +378,8 @@ describe("lesson 4: figures, against a separate calculation in Python", () => {
       ],
       dtl: 13_800, netOfTax: 46_200, hfsNet: 125_000, hfsExcess: 12_000,
       eqExcess: 48_000, eqHalfYear: 3_000, patentHalfYear: 5_000, hfsEnd: 8_000,
-      // 10,000/1.07 + 210,000/1.07², and the same at 3%
-      bondNeed: 192_767.93, bondBook: 207_653.88,
+      // 10,000/1.07 + 210,000/1.07², each line rounded to the agora as the table shows it, and the same at 3%
+      bondNeed: 192_767.92, bondBook: 207_653.88,
       taxBaseAt: 119_886, taxBaseEnd: 95_345,
     });
     assert.equal(Math.round(ACQUISITION_W.lessorPv), LESSOR.value);
@@ -623,6 +624,19 @@ describe("lesson 7: the walk, the sorting and the figures, against a separate ca
 });
 
 describe("lesson 8: the walk, the sorting and the figures, against a separate calculation in Python", () => {
+  it("the worked solutions: every figure they add, checked by hand, and the step counts", () => {
+    assert.deepEqual(FINANCE_W, {
+      // 4,500 × 3.465106 + 100,000 × 0.792094, and 4,500 × 2.723248 + 100,000 × 0.863838
+      pricePv: 94_802.35, fairPv: 98_638.38,
+      excessAt: 2_648, excessEnd25: 1_821, impairExtra: 90,
+      caseANci: 15_000, caseAOwners: 35_000, mExcessMove: -875, mBenefit: 6_000,
+    });
+    // the excess at fair value through OCI, on a sale, is the amortized-cost excess left that day
+    assert.equal(BOND8_OCI.subReserve - BOND8_OCI.groupReserve, FINANCE_W.excessEnd25);
+    // the excess runs off to nothing over the three years
+    assert.equal(BOND8.group.reduce((s, g, i) => s + g.interest - BOND8.sub[i + 1].interest, 0), -FINANCE_W.excessAt);
+    assert.deepEqual([W8_SHARES, W8_AC, W8_FVOCI, W8_IMPAIR, W8_CONTROLLER, W8_MASTER].map((w) => w.steps.length), [5, 5, 4, 2, 4, 5]);
+  });
   it("every path of the walk ends, and both verdicts are reachable", () => {
     const ends = new Set<boolean>();
     const reach = (id: string, seen: string[]): void => {
