@@ -16,7 +16,7 @@ import { AGENT_TEST, AGENT_TEST_START, AGENTS, FUND_LARGE, FUND_SMALL, MASTER3_P
 import { BEFORE11, BOND11, BOND11_FIG, BOND11_PRICE, FIN11, FV11, LEASEBONDS, LEASEBONDS_TAUGHT, M11, M11_FIG, M11_PRICE, RESALE11, ROU11, ROU11_NCI, WHO11 } from "./consolidated/lessons/leasebonds";
 import { CONTROL_W, W_ATTEND, W_CONVERT } from "./consolidated/worked/control";
 import { ACQUISITION_W, W_CLAIM, W_EXCESS, W_HFS, W_LESSEE, W_LESSOR, W_TABLE, W_TAX } from "./consolidated/worked/acquisition";
-import { PERIOD_W, W_PERIOD } from "./consolidated/worked/goodwill";
+import { GOODWILL_W, PERIOD_W, W_BARGAIN, W_BUYBACK, W_COSTS, W_EARNOUT, W_ENTRY, W_GW, W_NCI, W_PERIOD, W_PRIOR } from "./consolidated/worked/goodwill";
 import { RETURNS_W, W_FUND } from "./consolidated/worked/returns";
 import { W_STORY_POSITION, W_STORY_SEPARATE, WHAT_W } from "./consolidated/worked/what";
 import { W64, W65, W66, W67, W68, W69 } from "./consolidated/worked/leasebonds";
@@ -444,6 +444,21 @@ describe("lesson 5: the walk, the sorting and the figures, against a separate ca
     assert.equal(PERIOD.pubShare.goodwill, 57_750);
     assert.equal(PERIOD.finalFair.goodwill, 64_300);
     assert.equal(PERIOD.finalShare.goodwill, 57_300);
+  });
+  it("the rest of the lesson's worked solutions: every figure they add, and the step counts", () => {
+    assert.deepEqual(GOODWILL_W, {
+      consideration: 270_000, earnoutExpense: 4_300, priorGross: 12_000, priorTax: 3_000,
+      ownersShareOfNet: 161_600, nciShareOfNet: 40_400, boughtAtMarket: 168_000, gwNoPremium: 38_000,
+      entryNet: 216_000, entryNci: 54_000, entryGoodwill: 8_000,
+      bargainCost: 278_000, bargainGain: 22_000,
+      before: 42.5, left: 6_000, after: 85,
+    });
+    // the screen's split of goodwill: the premium to the parent, the rest by 80/20
+    assert.equal(15_000 + GOODWILL_W.gwNoPremium * 0.8, 45_400);
+    assert.equal(Math.round(GOODWILL_W.gwNoPremium * 0.2), 7_600);
+    // the entry balances
+    assert.equal(260_000 + GOODWILL_W.entryGoodwill, 44_000 + 170_000 + GOODWILL_W.entryNci);
+    assert.deepEqual([W_COSTS, W_EARNOUT, W_PRIOR, W_NCI, W_GW, W_ENTRY, W_BARGAIN, W_BUYBACK].map((w) => w.steps.length), [2, 5, 3, 3, 4, 2, 2, 3]);
   });
   it("the measurement period's worked solution agrees with the solver, step by step", () => {
     const { p, f } = PERIOD_W;

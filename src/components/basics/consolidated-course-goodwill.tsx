@@ -1,8 +1,7 @@
 import { Building2, FileSignature, ListChecks, Scale } from "lucide-react";
-import { JournalEntry } from "@/components/study/blocks";
 import { Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
-import { G, G_FAIR, G_NET, G_PREMIUM, G_SHARE, M5, PAY_OPTIONS, PAYS, PERIOD_TEST, PERIOD_TEST_START } from "@/lib/study/consolidated/lessons/goodwill";
+import { M5, PAY_OPTIONS, PAYS, PERIOD_TEST, PERIOD_TEST_START } from "@/lib/study/consolidated/lessons/goodwill";
 import { ConsolidatedDrill, GoodwillLab } from "./consolidated-interactive";
 import { Calc, Expansion, LecturerNote, quiz } from "./consolidated-parts";
 import { TaskFrame, TaskText } from "./ias19-question";
@@ -12,7 +11,7 @@ import { DecisionWalk } from "./ifrs16-interactive";
 import { FullSolution, P, T16, Tbl } from "./ifrs16-parts";
 import { SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
-import { W_PERIOD } from "@/lib/study/consolidated/worked/goodwill";
+import { W_BARGAIN, W_BUYBACK, W_COSTS, W_EARNOUT, W_ENTRY, W_GW, W_NCI, W_PERIOD, W_PRIOR } from "@/lib/study/consolidated/worked/goodwill";
 import { WorkedExample } from "./consolidated-worked";
 
 /**
@@ -96,8 +95,9 @@ export const CONSOLIDATED_GOODWILL_SCREENS: Record<string, ScreenContent> = {
           ]}
         />
         <P>
-          <strong>עסקאות נפרדות</strong> (סעיף 12): מה שנרכש ומה שניתן חייבים להיות חלק מהחלפה בצירוף עצמו. למשל, הרוכש חייב למוכר 40,000 ש״ח מלפני העסקה, ומשלם לו 310,000 ש״ח, כולל סילוק החוב. התמורה היא <bdi dir="ltr" className="num whitespace-nowrap">310,000 − 40,000 = 270,000</bdi>, והיתרה היא פירעון חוב.
+          <strong>עסקאות נפרדות</strong> (סעיף 12): מה שנרכש ומה שניתן חייבים להיות חלק מהחלפה בצירוף עצמו.
         </P>
+        <WorkedExample ex={W_COSTS} />
         <Expansion title="עלויות שלא בסיכום">
           <p>סעיף 53 מוסיף עלויות מנהליות כלליות, כולל מחלקת רכישות פנימית: גם הן הוצאה. לפי IAS 32, סעיפים 37, 38, רק עלויות תוספתיות שמיוחסות ישירות להנפקה יורדות מההון. עלויות של עסקה שננטשה הן הוצאה, ועלויות משותפות לצירוף ולהנפקה מוקצות ביניהם.</p>
         </Expansion>
@@ -133,11 +133,7 @@ export const CONSOLIDATED_GOODWILL_SCREENS: Record<string, ScreenContent> = {
             ["היעד לא הושג", "סוגרים את ההתחייבות, כנגד רווח", "פקיעה: מיון בהון"],
           ]}
         />
-        <P>דוגמה: שווי הוגן של 3,300 ש״ח במועד הרכישה. היעד הושג, והסכום 7,600 ש״ח:</P>
-        <JournalEntry title="תמורה במזומן: עדכון בסוף השנה" lines={[{ account: "הוצאות מימון ושערוך", dr: 4_300 }, { account: "התחייבות בגין תמורה מותנית", cr: 4_300 }]} />
-        <P>אילו היעד לא היה מושג, נרשם רווח של 3,300 ש״ח. ואם התחייבו להנפיק 200 מניות בערך נקוב של 1 ש״ח, נרשמת קרן הון של 3,300 ש״ח:</P>
-        <JournalEntry title="מניות: היעד הושג, והן הונפקו" lines={[{ account: "קרן הון", dr: 3_300 }, { account: "הון מניות", cr: 200 }, { account: "פרמיה", cr: 3_100 }]} />
-        <JournalEntry title="מניות: היעד לא הושג, ופקעה" lines={[{ account: "קרן הון", dr: 3_300 }, { account: "פרמיה", cr: 3_300 }]} />
+        <WorkedExample ex={W_EARNOUT} />
         <P>השינויים האלה הם מאירועים אחרי מועד הרכישה: עמידה ביעד, מחיר מניה, או אבן דרך במחקר. הם שונים מתיקון בתקופת המדידה, שנלמד בהמשך השיעור.</P>
         <Expansion title="מתי זה הון ומתי התחייבות">
           <p>לפי IAS 32, סעיפים 11(ב)(i), 21 וא27(ד), התחייבות למספר משתנה של מניות, או למניות בשווי של סכום קבוע, היא התחייבות. כמות קבועה היא הון. התקן לא אומר במפורש איך לסווג ״כמות קבועה, או כלום״.</p>
@@ -168,9 +164,7 @@ export const CONSOLIDATED_GOODWILL_SCREENS: Record<string, ScreenContent> = {
             ["בשווי הוגן דרך רווח כולל אחר", "ההפרש ברווח כולל אחר. קרן ההון ברוטו עוברת לעודפים"],
           ]}
         />
-        <P>דוגמה: השקעה בשווי הוגן דרך רווח כולל אחר, והקרן נטו 9,000 ש״ח. שיעור המס 25%. הקרן ברוטו היא <bdi dir="ltr" className="num whitespace-nowrap">9,000 / 0.75 = 12,000</bdi>, והמס הנדחה 3,000 ש״ח. במאוחד משקפים מכירה רעיונית:</P>
-        <JournalEntry title="סוגרים את המס הנדחה כנגד הקרן: מגדיל את הרווח הכולל האחר" lines={[{ account: "התחייבות מסים נדחים", dr: 3_000 }, { account: "קרן הון", cr: 3_000 }]} />
-        <JournalEntry title="מעבירים את הקרן ברוטו לעודפים: בדוח על השינויים בהון" lines={[{ account: "קרן הון", dr: 12_000 }, { account: "עודפים", cr: 12_000 }]} />
+        <WorkedExample ex={W_PRIOR} />
         <LecturerNote title="העברת הקרן לעודפים: חובה או בחירה">
           <p>עמ׳ 39 בסיכום מציג את העברת הקרן ברוטו לעודפים כדרך עבודה קבועה, וכך גם עמ׳ 50, עמ׳ 68 וגיליון 7.1. לפי IFRS 9, סעיף ב5.7.1, סכומים ברווח כולל אחר על מכשיר הוני לא עוברים לרווח או הפסד, והעברה בתוך ההון מותרת, אבל אינה חובה. אנחנו הולכים לפי המרצה. הסיבה לא כתובה בחומר.</p>
         </LecturerNote>
@@ -204,25 +198,7 @@ export const CONSOLIDATED_GOODWILL_SCREENS: Record<string, ScreenContent> = {
           ]}
         />
         <P>כל שאר הרכיבים של זשמ״ש נמדדים בשווי הוגן, אלא אם תקן אחר דורש אחרת. סכום הזשמ״ש במועד הרכישה מוצג בדוח על השינויים בהון כשינוי בהון.</P>
-        <Story icon={<Building2 />} title="הדוגמה שלנו">
-          <p>{`חברה מחזיקה 10% מהבת (2,000 מניות, בשווי הוגן של 24,000 ש״ח), וקונה עוד 70% (14,000 מניות) ב־183,000 ש״ח במזומן. נשארים 4,000 מניות של המיעוט, 20%. מחיר מניה בשוק 12 ש״ח. הון הבת 190,000 ש״ח. לרכוש הקבוע עודף עלות של 16,000 ש״ח, ושיעור המס 25%.`}</p>
-        </Story>
-        <Tbl
-          head={["הנכסים המזוהים נטו", "סכום"]}
-          rows={[
-            ["הון הבת", G.equity],
-            ["עודף עלות: רכוש קבוע", G.excess],
-            ["מס נדחה", -G.tax],
-          ]}
-          foot={["נמ״נ", G_NET]}
-        />
-        <Tbl
-          head={["הזשמ״ש", "סכום"]}
-          rows={[
-            [<Calc key="א" label="שווי הוגן" formula="4,000 × 12" />, G_FAIR.nci],
-            [<Calc key="ב" label="חלק בנמ״נ" formula="202,000 × 20%" />, G_SHARE.nci],
-          ]}
-        />
+        <WorkedExample ex={W_NCI} />
         <LecturerNote title="״שווי הוגן של הנכסים המזוהים״">
           <p>עמ׳ 44 וגיליון 4.3 מנסחים את הנחה ב כ״שווי הוגן של הנכסים המזוהים״. עמ׳ 39 ופתרון הגיליון עצמו מדברים על חלק בנכסים המזוהים נטו, וכך גם סעיף 19(ב). הם כוללים מסים נדחים וחריגים, ולכן הם לא בדיוק שווי הוגן. הסיבה לנוסח לא כתובה בחומר. אנחנו כותבים ״חלק בנמ״נ״.</p>
         </LecturerNote>
@@ -242,43 +218,10 @@ export const CONSOLIDATED_GOODWILL_SCREENS: Record<string, ScreenContent> = {
     lead: "עכשיו מחברים הכול. אותה עסקה, שתי תשובות למוניטין, ועוד שאלה: של מי הוא.",
     body: (
       <>
-        <P>ממשיכים עם הדוגמה מהמסך הקודם:</P>
-        <Tbl
-          dense
-          head={["", "זשמ״ש בשווי הוגן", "זשמ״ש בחלק בנמ״נ"]}
-          rows={[
-            ["תמורה ששולמה", G.paid, G.paid],
-            ["שווי הוגן של ההשקעה הקודמת", G.prior, G.prior],
-            ["זשמ״ש", G_FAIR.nci, G_SHARE.nci],
-            ["עלות צירוף העסקים", G_FAIR.cost, G_SHARE.cost],
-            ["נכסים מזוהים נטו", -G_NET, -G_NET],
-          ]}
-          foot={["מוניטין", G_FAIR.goodwill, G_SHARE.goodwill]}
-        />
+        <WorkedExample ex={W_GW} />
         <P>המוניטין מגלם סינרגיה, נתח שוק, שווי של פריטים שלא מזוהים, ופרמיית שליטה.</P>
-        <P><strong>של מי המוניטין?</strong> של כל קבוצה: מה שהיא ״השקיעה״, פחות חלקה בנמ״נ.</P>
-        <Tbl
-          dense
-          head={["", "בשווי הוגן", "בחלק בנמ״נ"]}
-          rows={[
-            [<Calc key="א" label="בעלי מניות האם" formula="183,000 + 24,000 − 202,000 × 80%" />, G_FAIR.ownersGoodwill, G_SHARE.ownersGoodwill],
-            [<Calc key="ב" label="זשמ״ש" words="הזשמ״ש פחות" formula="202,000 × 20%" />, G_FAIR.nciGoodwill, G_SHARE.nciGoodwill],
-          ]}
-          foot={["סך המוניטין", G_FAIR.goodwill, G_SHARE.goodwill]}
-        />
-        <P>לפי החלק בנמ״נ, כל המוניטין של האם. ובשווי הוגן לזשמ״ש יש חלק, אבל לא בהכרח לפי שיעורי ההחזקה. למה? בגלל <strong>פרמיית השליטה</strong>: ההפרש בין התמורה לבין השווי ההוגן של המניות שנרכשו.</P>
-        <Tbl
-          head={["", "סכום", "האם", "זשמ״ש"]}
-          dense
-          rows={[
-            [<Calc key="פ" label="פרמיית שליטה" formula="183,000 − 14,000 × 12" />, G_PREMIUM, G_PREMIUM, 0],
-            [<Calc key="מ" label="מוניטין בלי פרמיה" formula="53,000 − 15,000" />, G_FAIR.goodwill - G_PREMIUM, Math.round((G_FAIR.goodwill - G_PREMIUM) * 0.8), Math.round((G_FAIR.goodwill - G_PREMIUM) * 0.2)],
-          ]}
-          foot={["סך הכול", G_FAIR.goodwill, G_FAIR.ownersGoodwill, G_FAIR.nciGoodwill]}
-        />
-        <P>הפרמיה כולה של האם, כי היא זו ששילמה אותה. מה שנשאר מתחלק לפי האחוזים, 80/20.</P>
-        <P>וכך נראית הפקודה בדוח המאוחד, במקרה של חלק בנמ״נ, בלי עודף עלות, בדוגמה קטנה: 75% ב־170,000 ש״ח, מלאי של 260,000 ש״ח וספקים של 44,000 ש״ח:</P>
-        <JournalEntry title="בדוח המאוחד, במועד הרכישה" lines={[{ account: "מלאי", dr: 260_000 }, { account: "מוניטין", dr: 8_000 }, { account: "ספקים", cr: 44_000 }, { account: "מזומן", cr: 170_000 }, { account: "זשמ״ש", cr: 54_000 }]} />
+        <P>הפרמיה כולה של האם, כי היא זו ששילמה אותה. מה שנשאר מתחלק לפי האחוזים, 80/20. וכך נראית הפקודה בדוח המאוחד, בדוגמה קטנה בלי עודף עלות:</P>
+        <WorkedExample ex={W_ENTRY} />
         <WrongRight label="טעות: מחלקים את כל המוניטין לפי 80/20. נכון: לפי מה שכל קבוצה השקיעה" wrong={<p>״המוניטין 53,000. לאם 80%, ולזשמ״ש 20%.״</p>} right={<p>לכל קבוצה מה שהשקיעה פחות חלקה בנמ״נ: 45,400 לאם, ו־7,600 לזשמ״ש.</p>} />
         <Expansion title="ההגדרה בתקן">
           <p>בנספח א של IFRS 3 מוניטין הוא נכס שמייצג הטבות כלכליות עתידיות מנכסים שלא זוהו והוכרו בנפרד. הפירוט של סינרגיה ונתח שוק הוא הסבר של המרצה. הפרמיה נמדדת ב־ב45 למניה.</p>
@@ -317,7 +260,7 @@ export const CONSOLIDATED_GOODWILL_SCREENS: Record<string, ScreenContent> = {
           rows={[["הנכסים הניתנים לזיהוי וההתחייבויות שניטלו"], ["הזשמ״ש"], ["הזכות ההונית שהוחזקה קודם"], ["התמורה שהועברה"]]}
         />
         <P>אם גם אחרי זה נשאר עודף, מכירים ברווח ברווח או הפסד במועד הרכישה, שמיוחס לרוכש. כיוון שבדוח הנפרד ההשקעה רשומה לפי מה ששולם, הרווח הזה לא שם, ונדרשת התאמה בין הנפרד למאוחד.</P>
-        <P>דוגמה: תמורה של 190,000 ש״ח, זשמ״ש של 88,000 ש״ח, ונמ״נ של 300,000 ש״ח. הרווח: <bdi dir="ltr" className="num whitespace-nowrap">300,000 − 278,000 = 22,000</bdi>.</P>
+        <WorkedExample ex={W_BARGAIN} />
         <Expansion title="עוד מקור לרווח כזה">
           <p>לפי סעיף 35, גם החריגים להכרה ולמדידה יכולים ליצור רווח, כי חלק מהפריטים לא נמדדים בשווי הוגן.</p>
         </Expansion>
@@ -346,9 +289,7 @@ export const CONSOLIDATED_GOODWILL_SCREENS: Record<string, ScreenContent> = {
             ["צירוף בחוזה בלבד", "לא מועברת תמורה, ולרוכש אין זכויות הוניות בנרכש"],
           ]}
         />
-        <P>
-          בקנייה עצמית, המניות שנקנו יוצאות מהספירה. שיעור ההחזקה של החברה: <bdi dir="ltr" className="num whitespace-nowrap">5,100 / 6,000 = 85%</bdi>.
-        </P>
+        <WorkedExample ex={W_BUYBACK} />
         <P>עלות צירוף העסקים בשני המקרים הראשונים כוללת את השווי ההוגן של הזכויות הקודמות ואת הזשמ״ש. תמורה אין.</P>
         <Expansion title="צירוף בחוזה: למי הנכסים">
           <p>לפי סעיף 44, בצירוף בחוזה בלבד הנכסים נטו של הנרכש מיוחסים לבעלים שלו. כל ההון שלו עשוי להיות זשמ״ש.</p>
