@@ -3,6 +3,7 @@
 import { BookOpen, Check, ChevronLeft, RotateCcw, X } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useCloseWhenHidden } from "@/lib/use-close-when-hidden";
 
 /**
  * The inventory lessons' ways of saying less at once: a story to start from,
@@ -26,6 +27,7 @@ export function Story({ icon, title, children, className }: { icon?: ReactNode; 
 /** What is not needed to get the principle — a full table, an exception — behind a button, in a window (Esc or a click outside closes it). */
 export function MoreDialog({ label, title, children }: { label: string; title?: string; children: ReactNode }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  useCloseWhenHidden(dialog);
   return (
     <>
       <button

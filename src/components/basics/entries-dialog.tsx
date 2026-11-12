@@ -2,6 +2,7 @@
 
 import { NotebookPen, X } from "lucide-react";
 import { type ReactNode, useRef } from "react";
+import { useCloseWhenHidden } from "@/lib/use-close-when-hidden";
 
 /**
  * A solution's journal entries kept a click away, on the step that explains
@@ -10,6 +11,7 @@ import { type ReactNode, useRef } from "react";
  */
 export function EntriesDialog({ children }: { children: ReactNode }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  useCloseWhenHidden(dialog);
   return (
     <>
       <button

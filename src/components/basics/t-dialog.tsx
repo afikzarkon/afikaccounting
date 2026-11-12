@@ -4,6 +4,7 @@ import { Columns2, X } from "lucide-react";
 import { useRef } from "react";
 import type { TAccount } from "@/lib/learn/basics";
 import { TBox, THead } from "./t-accounts";
+import { useCloseWhenHidden } from "@/lib/use-close-when-hidden";
 
 /**
  * T-accounts kept off the page until asked for: a button that opens them in a
@@ -12,6 +13,7 @@ import { TBox, THead } from "./t-accounts";
  */
 export function TCardsDialog({ cards, fresh, openingLabel, help = true }: { cards: TAccount[]; fresh?: string; openingLabel?: string; help?: boolean }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  useCloseWhenHidden(dialog);
   const many = cards.length > 1;
   return (
     <>

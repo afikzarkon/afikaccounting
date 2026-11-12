@@ -2,10 +2,12 @@
 
 import { X } from "lucide-react";
 import { type ReactNode, useEffect, useRef } from "react";
+import { useCloseWhenHidden } from "@/lib/use-close-when-hidden";
 
 /** A dialog on the native <dialog> element: focus trap, Escape and backdrop come with it. */
 export function Modal({ open, title, onClose, children, wide }: { open: boolean; title: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
   const ref = useRef<HTMLDialogElement>(null);
+  useCloseWhenHidden(ref);
   useEffect(() => {
     const d = ref.current;
     if (!d) return;

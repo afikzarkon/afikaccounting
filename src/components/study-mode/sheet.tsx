@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { type ReactNode, useEffect, useRef } from "react";
+import { useCloseWhenHidden } from "@/lib/use-close-when-hidden";
 
 /**
  * A panel that rises from the bottom of the screen, on the native <dialog>
@@ -9,6 +10,7 @@ import { type ReactNode, useEffect, useRef } from "react";
  */
 export function Sheet({ open, title, onClose, children }: { open: boolean; title: string; onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null);
+  useCloseWhenHidden(ref);
   useEffect(() => {
     const d = ref.current;
     if (!d) return;

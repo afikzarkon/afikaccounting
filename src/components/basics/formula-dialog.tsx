@@ -2,6 +2,7 @@
 
 import { Sigma, X } from "lucide-react";
 import { type ReactNode, useRef } from "react";
+import { useCloseWhenHidden } from "@/lib/use-close-when-hidden";
 
 /**
  * The credit-loss formula kept a click away in every worked example: a button
@@ -10,6 +11,7 @@ import { type ReactNode, useRef } from "react";
  */
 export function FormulaDialog({ children }: { children: ReactNode }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  useCloseWhenHidden(dialog);
   return (
     <>
       <button

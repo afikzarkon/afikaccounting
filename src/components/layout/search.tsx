@@ -7,6 +7,7 @@ import { useLast } from "@/components/study-mode/progress-store";
 import { search, SEARCH_KINDS, type SearchItem } from "@/lib/search";
 import { studyHref } from "@/lib/study/href";
 import { cn } from "@/lib/utils";
+import { useCloseWhenHidden } from "@/lib/use-close-when-hidden";
 
 const OPEN = "afik-open-search";
 /** Open the quick search from anywhere (the header, the phone's bottom bar). */
@@ -47,6 +48,7 @@ export function SearchTrigger() {
 export function SearchPalette() {
   const router = useRouter();
   const ref = useRef<HTMLDialogElement>(null);
+  useCloseWhenHidden(ref);
   const input = useRef<HTMLInputElement>(null);
   const listId = useId();
   const [open, setOpen] = useState(false);
