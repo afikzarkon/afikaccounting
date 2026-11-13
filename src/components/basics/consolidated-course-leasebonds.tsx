@@ -29,6 +29,7 @@ import { Story } from "./inventory-teach";
 /** The closing question, in the worked-example layout, with the course's own numbers. */
 const M11_FLOWS = [6_000, 6_000, 6_000, 126_000];
 const MASTER11: Worked = {
+  own: true,
   title: "שאלה מסכמת: תמרית וסיגלית (שאלה מקורית של הקורס, ברמה של שאלות 12 ו־13 בחוברת)",
   givens: [
     "חברת ״תמרית״ מחזיקה **80%** ממניות חברת ״סיגלית״ מאז שנים.",
