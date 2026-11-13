@@ -568,10 +568,10 @@ function AdjustStage({ c, onDone }: { c: WorksheetCase; onDone: () => void }) {
                 </tr>
                 <tr>
                   {["b", "a"].flatMap((g) => [
-                    <th key={`${g}d`} className="border-s border-line/60 px-2 py-1 text-end text-[11px] font-medium text-debit">
+                    <th key={`${g}d`} className="border-s border-line/60 px-2 py-1 text-right text-[11px] font-medium text-debit">
                       חובה
                     </th>,
-                    <th key={`${g}c`} className="px-2 py-1 text-end text-[11px] font-medium text-credit">
+                    <th key={`${g}c`} className="px-2 py-1 text-right text-[11px] font-medium text-credit">
                       זכות
                     </th>,
                   ])}
@@ -584,8 +584,8 @@ function AdjustStage({ c, onDone }: { c: WorksheetCase; onDone: () => void }) {
                       {r.account}
                       {r.isNew && <span className="ms-1.5 rounded bg-accent px-1 text-[10px] font-bold text-accent-fg">חדש</span>}
                     </td>
-                    <td className="border-s border-line/60 px-2 py-1 text-end">{r.before > 0 && <Money v={r.before} plain />}</td>
-                    <td className="px-2 py-1 text-end">{r.before < 0 && <Money v={-r.before} plain />}</td>
+                    <td className="border-s border-line/60 px-2 py-1 text-right">{r.before > 0 && <Money v={r.before} plain />}</td>
+                    <td className="px-2 py-1 text-right">{r.before < 0 && <Money v={-r.before} plain />}</td>
                     {(["dr", "cr"] as const).map((s) => (
                       <td key={s} className={cn("px-1.5 py-1", s === "dr" && "border-s border-line/60")}>
                         <input
@@ -605,16 +605,16 @@ function AdjustStage({ c, onDone }: { c: WorksheetCase; onDone: () => void }) {
               <tfoot className="font-semibold">
                 <tr className="border-t-2 border-line-strong">
                   <td className="px-3 py-2 text-fg">סה״כ</td>
-                  <td className="border-s border-line/60 px-2 py-2 text-end">
+                  <td className="border-s border-line/60 px-2 py-2 text-right">
                     <Money v={round2(rows.reduce((t, r) => t + Math.max(r.before, 0), 0))} plain />
                   </td>
-                  <td className="px-2 py-2 text-end">
+                  <td className="px-2 py-2 text-right">
                     <Money v={round2(rows.reduce((t, r) => t + Math.max(-r.before, 0), 0))} plain />
                   </td>
-                  <td className={cn("border-s border-line/60 px-2 py-2 text-end", dr !== cr && "text-danger")}>
+                  <td className={cn("border-s border-line/60 px-2 py-2 text-right", dr !== cr && "text-danger")}>
                     <Money v={dr} plain />
                   </td>
-                  <td className={cn("px-2 py-2 text-end", dr !== cr && "text-danger")}>
+                  <td className={cn("px-2 py-2 text-right", dr !== cr && "text-danger")}>
                     <Money v={cr} plain />
                   </td>
                 </tr>
@@ -705,15 +705,15 @@ function ClassifyStage({ c, onDone }: { c: WorksheetCase; onDone: (profitTries: 
           <thead className="bg-surface-2/40">
             <tr className="text-xs">
               <th className="px-3 py-2 text-start font-semibold text-fg">חשבון</th>
-              <th className="border-s border-line/60 px-2 py-2 text-end font-medium text-debit">סופי · חובה</th>
-              <th className="px-2 py-2 text-end font-medium text-credit">סופי · זכות</th>
+              <th className="border-s border-line/60 px-2 py-2 text-right font-medium text-debit">סופי · חובה</th>
+              <th className="px-2 py-2 text-right font-medium text-credit">סופי · זכות</th>
               <th className="border-s border-line/60 bg-accent-soft px-2 py-2 text-center font-semibold text-fg">סיווג</th>
               {classified && (
                 <>
-                  <th className="border-s border-line/60 px-2 py-2 text-end font-medium text-debit">תוצאתי · ח׳</th>
-                  <th className="px-2 py-2 text-end font-medium text-credit">תוצאתי · ז׳</th>
-                  <th className="border-s border-line/60 px-2 py-2 text-end font-medium text-debit">מאזני · ח׳</th>
-                  <th className="px-2 py-2 text-end font-medium text-credit">מאזני · ז׳</th>
+                  <th className="border-s border-line/60 px-2 py-2 text-right font-medium text-debit">תוצאתי · ח׳</th>
+                  <th className="px-2 py-2 text-right font-medium text-credit">תוצאתי · ז׳</th>
+                  <th className="border-s border-line/60 px-2 py-2 text-right font-medium text-debit">מאזני · ח׳</th>
+                  <th className="px-2 py-2 text-right font-medium text-credit">מאזני · ז׳</th>
                 </>
               )}
             </tr>
@@ -725,8 +725,8 @@ function ClassifyStage({ c, onDone }: { c: WorksheetCase; onDone: (profitTries: 
                   <span className="whitespace-nowrap">{r.account}</span>
                   {wrong?.has(r.account) && <span className="mt-0.5 block text-[12px] leading-snug text-danger">{whyKind(r.account)}</span>}
                 </td>
-                <td className="border-s border-line/60 px-2 py-1.5 text-end">{r.after > 0 && <Money v={r.after} plain />}</td>
-                <td className="px-2 py-1.5 text-end">{r.after < 0 && <Money v={-r.after} plain />}</td>
+                <td className="border-s border-line/60 px-2 py-1.5 text-right">{r.after > 0 && <Money v={r.after} plain />}</td>
+                <td className="px-2 py-1.5 text-right">{r.after < 0 && <Money v={-r.after} plain />}</td>
                 <td className="border-s border-line/60 px-2 py-1">
                   <div className="flex justify-center gap-1">
                     {(["bs", "pl"] as const).map((k) => (
@@ -751,10 +751,10 @@ function ClassifyStage({ c, onDone }: { c: WorksheetCase; onDone: (profitTries: 
                 </td>
                 {classified && (
                   <>
-                    <td className="border-s border-line/60 px-2 py-1.5 text-end">{!r.balanceSheet && r.after > 0 && <Money v={r.after} plain />}</td>
-                    <td className="px-2 py-1.5 text-end">{!r.balanceSheet && r.after < 0 && <Money v={-r.after} plain />}</td>
-                    <td className="border-s border-line/60 px-2 py-1.5 text-end">{r.balanceSheet && r.after > 0 && <Money v={r.after} plain />}</td>
-                    <td className="px-2 py-1.5 text-end">{r.balanceSheet && r.after < 0 && <Money v={-r.after} plain />}</td>
+                    <td className="border-s border-line/60 px-2 py-1.5 text-right">{!r.balanceSheet && r.after > 0 && <Money v={r.after} plain />}</td>
+                    <td className="px-2 py-1.5 text-right">{!r.balanceSheet && r.after < 0 && <Money v={-r.after} plain />}</td>
+                    <td className="border-s border-line/60 px-2 py-1.5 text-right">{r.balanceSheet && r.after > 0 && <Money v={r.after} plain />}</td>
+                    <td className="px-2 py-1.5 text-right">{r.balanceSheet && r.after < 0 && <Money v={-r.after} plain />}</td>
                   </>
                 )}
               </tr>
@@ -764,23 +764,23 @@ function ClassifyStage({ c, onDone }: { c: WorksheetCase; onDone: (profitTries: 
             <tfoot className="font-semibold">
               <tr className="border-t-2 border-line-strong">
                 <td className="px-3 py-2 text-fg">סה״כ</td>
-                <td className="border-s border-line/60 px-2 py-2 text-end">
+                <td className="border-s border-line/60 px-2 py-2 text-right">
                   <Money v={sum((r) => sideCell(r.after, "dr"))} plain />
                 </td>
-                <td className="px-2 py-2 text-end">
+                <td className="px-2 py-2 text-right">
                   <Money v={sum((r) => sideCell(r.after, "cr"))} plain />
                 </td>
                 <td className="border-s border-line/60" />
-                <td className="border-s border-line/60 px-2 py-2 text-end">
+                <td className="border-s border-line/60 px-2 py-2 text-right">
                   <Money v={plDr} plain />
                 </td>
-                <td className="px-2 py-2 text-end">
+                <td className="px-2 py-2 text-right">
                   <Money v={plCr} plain />
                 </td>
-                <td className="border-s border-line/60 px-2 py-2 text-end text-danger">
+                <td className="border-s border-line/60 px-2 py-2 text-right text-danger">
                   <Money v={sum((r) => (r.balanceSheet ? sideCell(r.after, "dr") : 0))} plain />
                 </td>
-                <td className="px-2 py-2 text-end text-danger">
+                <td className="px-2 py-2 text-right text-danger">
                   <Money v={sum((r) => (r.balanceSheet ? sideCell(r.after, "cr") : 0))} plain />
                 </td>
               </tr>

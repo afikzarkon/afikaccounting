@@ -204,10 +204,10 @@ function JournalTable({ journal }: { journal: JournalEntry[] }) {
         <thead>
           <tr className="border-b border-line text-start text-[11px] text-subtle">
             <th className="px-5 py-2.5 font-medium">חשבון</th>
-            <th className="w-36 bg-debit/[0.06] px-5 py-2.5 text-end font-medium">
+            <th className="w-36 bg-debit/[0.06] px-5 py-2.5 text-right font-medium">
               <span className="text-debit">חובה (Dr)</span>
             </th>
-            <th className="w-36 bg-credit/[0.06] px-5 py-2.5 text-end font-medium">
+            <th className="w-36 bg-credit/[0.06] px-5 py-2.5 text-right font-medium">
               <span className="text-credit">זכות (Cr)</span>
             </th>
           </tr>
@@ -235,16 +235,16 @@ function JournalTable({ journal }: { journal: JournalEntry[] }) {
                     </span>
                     <span className={l.credit > 0 ? "" : "text-fg"}>{l.account}</span>
                   </td>
-                  <td className="num bg-debit/[0.06] px-5 py-2 text-end font-mono text-[13px] text-debit">{l.debit ? amount(l.debit) : ""}</td>
-                  <td className="num bg-credit/[0.06] px-5 py-2 text-end font-mono text-[13px] text-credit">{l.credit ? amount(l.credit) : ""}</td>
+                  <td className="num bg-debit/[0.06] px-5 py-2 text-right font-mono text-[13px] text-debit">{l.debit ? amount(l.debit) : ""}</td>
+                  <td className="num bg-credit/[0.06] px-5 py-2 text-right font-mono text-[13px] text-credit">{l.credit ? amount(l.credit) : ""}</td>
                 </tr>
               ))}
               <tr>
-                <td className="px-5 pt-1 pb-3 text-end text-[11px] text-subtle">מאוזן</td>
-                <td className="num px-5 pt-1 pb-3 text-end font-mono text-[12px] text-muted">
+                <td className="px-5 pt-1 pb-3 text-right text-[11px] text-subtle">מאוזן</td>
+                <td className="num px-5 pt-1 pb-3 text-right font-mono text-[12px] text-muted">
                   <span className="border-t border-double border-line-strong pt-1">{amount(dr)}</span>
                 </td>
-                <td className="num px-5 pt-1 pb-3 text-end font-mono text-[12px] text-muted">
+                <td className="num px-5 pt-1 pb-3 text-right font-mono text-[12px] text-muted">
                   <span className="border-t border-double border-line-strong pt-1">{amount(dr)}</span>
                 </td>
               </tr>
@@ -302,7 +302,7 @@ function ScheduleCard({ table, fileBase }: { table: ScheduleTable; fileBase: str
                   key={c.key}
                   className={cn(
                     "px-4 py-2.5 text-[11px] font-medium whitespace-nowrap text-subtle",
-                    i === 0 ? "text-start" : "text-end",
+                    i === 0 ? "text-start" : "text-right",
                   )}
                 >
                   {c.label}
@@ -327,7 +327,7 @@ function ScheduleCard({ table, fileBase }: { table: ScheduleTable; fileBase: str
                     key={c.key}
                     className={cn(
                       "px-4 py-2 whitespace-nowrap",
-                      i === 0 ? "text-start" : "num text-end font-mono",
+                      i === 0 ? "text-start" : "num text-right font-mono",
                       i === 0 && "text-fg",
                     )}
                   >
@@ -341,7 +341,7 @@ function ScheduleCard({ table, fileBase }: { table: ScheduleTable; fileBase: str
             <tfoot>
               <tr className="border-t-2 border-line-strong bg-surface-2/60 font-semibold text-fg">
                 {table.columns.map((c, i) => (
-                  <td key={c.key} className={cn("px-4 py-2.5 whitespace-nowrap", i === 0 ? "text-start" : "num text-end font-mono")}>
+                  <td key={c.key} className={cn("px-4 py-2.5 whitespace-nowrap", i === 0 ? "text-start" : "num text-right font-mono")}>
                     {formatCell(table.totals![c.key], c.format)}
                   </td>
                 ))}
@@ -547,7 +547,7 @@ function WalkTable({ table }: { table: ScheduleTable }) {
         <thead>
           <tr className="border-b border-line">
             {table.columns.map((c, i) => (
-              <th key={c.key} className={cn("px-3 py-2 text-[11.5px] font-medium whitespace-nowrap text-subtle", i === 0 || c.format === "text" ? "text-start" : "text-end")}>
+              <th key={c.key} className={cn("px-3 py-2 text-[11.5px] font-medium whitespace-nowrap text-subtle", i === 0 || c.format === "text" ? "text-start" : "text-right")}>
                 {c.label}
               </th>
             ))}
@@ -560,7 +560,7 @@ function WalkTable({ table }: { table: ScheduleTable }) {
                 const v = row[c.key];
                 const isX = typeof v === "string" && v.includes("X");
                 return (
-                  <td key={c.key} className={cn("px-3 py-2 align-top", c.format === "text" || i === 0 ? "text-start" : "num text-end font-mono whitespace-nowrap", i === 0 && "font-medium text-fg", isX && "font-semibold text-accent")}>
+                  <td key={c.key} className={cn("px-3 py-2 align-top", c.format === "text" || i === 0 ? "text-start" : "num text-right font-mono whitespace-nowrap", i === 0 && "font-medium text-fg", isX && "font-semibold text-accent")}>
                     {formatCell(v, c.format)}
                   </td>
                 );
@@ -764,7 +764,7 @@ function Statement({ lines }: { lines: StatementLine[] }) {
         {lines.map((l) => (
           <tr key={l.label} className={cn("border-b border-line/60 last:border-b-0", l.emphasis ? STATEMENT_EMPHASIS[l.emphasis] : "text-muted")}>
             <td className="px-4 py-2">{l.label}</td>
-            <td className="num px-4 py-2 text-end font-mono">{amount(l.value)}</td>
+            <td className="num px-4 py-2 text-right font-mono">{amount(l.value)}</td>
           </tr>
         ))}
       </tbody>

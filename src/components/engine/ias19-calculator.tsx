@@ -137,9 +137,9 @@ function Summary({ solutions }: { solutions: CalcSolution[] }) {
           <thead>
             <tr className="text-[12.5px] text-muted">
               <th className="px-2 py-1.5 text-start font-medium">הטבה</th>
-              <th className="px-2 py-1.5 text-end font-medium">רווח והפסד</th>
-              <th className="px-2 py-1.5 text-end font-medium">OCI</th>
-              <th className="px-2 py-1.5 text-end font-medium">מאזן</th>
+              <th className="px-2 py-1.5 text-right font-medium">רווח והפסד</th>
+              <th className="px-2 py-1.5 text-right font-medium">OCI</th>
+              <th className="px-2 py-1.5 text-right font-medium">מאזן</th>
             </tr>
           </thead>
           {years.map((y) => {
@@ -150,16 +150,16 @@ function Summary({ solutions }: { solutions: CalcSolution[] }) {
                 {of.map((r, i) => (
                   <tr key={i}>
                     <td className="px-2 py-1.5">{r.label}</td>
-                    <td className="px-2 py-1.5 text-end">{n(r.pl)}</td>
-                    <td className="px-2 py-1.5 text-end">{n(r.oci)}</td>
-                    <td className="px-2 py-1.5 text-end">{n(r.balance)}</td>
+                    <td className="px-2 py-1.5 text-right">{n(r.pl)}</td>
+                    <td className="px-2 py-1.5 text-right">{n(r.oci)}</td>
+                    <td className="px-2 py-1.5 text-right">{n(r.balance)}</td>
                   </tr>
                 ))}
                 <tr className="font-bold">
                   <td className="px-2 py-1.5">סה״כ {y}</td>
-                  <td className="px-2 py-1.5 text-end">{n(add("pl"))}</td>
-                  <td className="px-2 py-1.5 text-end">{n(add("oci"))}</td>
-                  <td className="px-2 py-1.5 text-end">{n(add("balance"))}</td>
+                  <td className="px-2 py-1.5 text-right">{n(add("pl"))}</td>
+                  <td className="px-2 py-1.5 text-right">{n(add("oci"))}</td>
+                  <td className="px-2 py-1.5 text-right">{n(add("balance"))}</td>
                 </tr>
               </tbody>
             );

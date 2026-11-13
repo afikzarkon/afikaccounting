@@ -52,7 +52,7 @@ export function Note({ n }: { n: BkNote }) {
             <tr className="bg-surface-2/70 text-[12.5px] text-muted">
               <th className="px-3 py-2 text-start font-medium">מה מחשבים</th>
               <th className="px-3 py-2 text-start font-medium">חישוב</th>
-              <th className="px-3 py-2 text-end font-medium">תוצאה</th>
+              <th className="px-3 py-2 text-right font-medium">תוצאה</th>
             </tr>
           </thead>
           <tbody>
@@ -71,7 +71,7 @@ export function Note({ n }: { n: BkNote }) {
                     l.text
                   )}
                 </td>
-                <td className="px-3 py-2 text-end font-bold whitespace-nowrap text-fg">
+                <td className="px-3 py-2 text-right font-bold whitespace-nowrap text-fg">
                   {l.value !== undefined && (
                     <>
                       <bdi dir="ltr" className="num">

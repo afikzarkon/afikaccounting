@@ -455,7 +455,7 @@ export function BankStatement({ title = "דף חשבון", opening, moves, closi
             <th scope="row" className="py-1.5 text-start font-semibold text-fg">
               יתרת פתיחה
             </th>
-            <td className="py-1.5 text-end font-semibold">
+            <td className="py-1.5 w-px whitespace-nowrap text-right font-semibold">
               <N v={opening} />
             </td>
           </tr>
@@ -464,7 +464,7 @@ export function BankStatement({ title = "דף חשבון", opening, moves, closi
               <th scope="row" className="py-1.5 text-start font-normal text-fg/90">
                 {m.label}
               </th>
-              <td className={cn("py-1.5 text-end font-semibold", m.v >= 0 ? "text-success" : "text-danger")}>
+              <td className={cn("py-1.5 w-px whitespace-nowrap text-right font-semibold", m.v >= 0 ? "text-success" : "text-danger")}>
                 <bdi dir="ltr" className="num">
                   {m.v >= 0 ? "+" : "−"}
                   {nf.format(Math.abs(m.v))}
@@ -477,7 +477,7 @@ export function BankStatement({ title = "דף חשבון", opening, moves, closi
               <th scope="row" className="py-1.5 ps-1 text-start font-bold text-fg">
                 {unexplained}
               </th>
-              <td className="py-1.5 pe-1 text-end font-bold">
+              <td className="py-1.5 pe-1 w-px whitespace-nowrap text-right font-bold">
                 <bdi dir="ltr" className="num">
                   {gap >= 0 ? "+" : "−"}
                   {nf.format(Math.abs(gap))}
@@ -489,7 +489,7 @@ export function BankStatement({ title = "דף חשבון", opening, moves, closi
             <th scope="row" className="pt-1.5 text-start font-bold text-fg">
               יתרת סגירה
             </th>
-            <td className="pt-1.5 text-end font-bold">
+            <td className="pt-1.5 w-px whitespace-nowrap text-right font-bold">
               <span className="border-t-2 border-b-4 border-double border-fg/70 px-1">
                 <N v={closing} />
               </span>

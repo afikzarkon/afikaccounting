@@ -56,7 +56,7 @@ export function AssetSheet({ caption, rows, grow, mark }: { caption: string; row
               <tr className="bg-surface-2/60 text-[12.5px] text-fg">
                 <th className="border border-line px-1 py-1 text-[11px] font-medium text-muted">1</th>
                 {HEAD.map((h, i) => (
-                  <th key={i} scope="col" className={cn("border border-line px-2 py-1 font-bold", i === 0 ? "text-start" : "text-end")}>
+                  <th key={i} scope="col" className={cn("border border-line px-2 py-1 font-bold", i === 0 ? "text-start" : "text-right")}>
                     {h || "שנה"}
                   </th>
                 ))}
@@ -75,7 +75,7 @@ export function AssetSheet({ caption, rows, grow, mark }: { caption: string; row
                   <td className="border border-line px-1 py-1 text-center text-[11px] text-muted">{i + 2}</td>
                   <td className={cn("border border-line px-2 py-1 font-semibold", r.event ? "text-danger" : "text-fg")}>{r.label}</td>
                   {[r.cost, r.charge, r.accumulated, r.carrying].map((v, j) => (
-                    <td key={j} className={cn("num border border-line px-2 py-1 text-end", j === 3 && "font-bold text-accent")}>
+                    <td key={j} className={cn("num border border-line px-2 py-1 text-right", j === 3 && "font-bold text-accent")}>
                       {cell(v)}
                     </td>
                   ))}

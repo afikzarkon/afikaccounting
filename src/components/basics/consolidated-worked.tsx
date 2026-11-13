@@ -34,9 +34,23 @@ function Text({ s }: { s: string }) {
 }
 
 const isNumeric = (c: WCell) => typeof c === "number" || /^[\s\d.,()%×÷+−=\-²^]+$/.test(c);
-const show = (c: WCell) => (typeof c === "number" ? <Num>{acc(c)}</Num> : isNumeric(c) ? <Num>{c}</Num> : <Text s={c} />);
+/** A positive amount beside a negative one keeps room for the closing parenthesis of a negative one, so the units still fall under each other. */
+const Hang = () => <span aria-hidden className="invisible">)</span>;
+const plain = (c: WCell) => (typeof c === "number" ? c >= 0 : /^[d,.]+$/.test(c));
+/** Whether a column or a sheet holds a negative amount in parentheses: only then do its positive amounts keep the room. */
+const hasParen = (cs: WCell[]) => cs.some((c) => (typeof c === "number" ? c < 0 : /^(.*)$/.test(c)));
+const show = (c: WCell, hang = false) =>
+  typeof c === "number" || isNumeric(c) ? (
+    <Num>
+      {typeof c === "number" ? acc(c) : c}
+      {hang && plain(c) && <Hang />}
+    </Num>
+  ) : (
+    <Text s={c} />
+  );
 
 export function WTableView({ t }: { t: WTable }) {
+  const paren = t.head.map((_, i) => hasParen(t.rows.map((r) => r.c[i] ?? "")));
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-[13.5px]">
@@ -54,8 +68,8 @@ export function WTableView({ t }: { t: WTable }) {
           {t.rows.map((r, k) => (
             <tr key={k} className={cn("border-b border-line", r.res && "bg-amber-50 font-bold dark:bg-amber-950/40")}>
               {r.c.map((c, i) => (
-                <td key={i} className={cn("px-2 py-1.5", isNumeric(c) && c !== "" ? "text-left" : "text-start")}>
-                  {show(c)}
+                <td key={i} className={cn("px-2 py-1.5", isNumeric(c) && c !== "" ? "text-right" : "text-start")}>
+                  {show(c, paren[i])}
                 </td>
               ))}
             </tr>
@@ -67,6 +81,7 @@ export function WTableView({ t }: { t: WTable }) {
 }
 
 function Sheet({ lines }: { lines: WLine[] }) {
+  const paren = hasParen(lines.map((l) => l.a));
   return (
     <div className="flex flex-col text-[14.5px]">
       {lines.map((l, i) => (
@@ -82,7 +97,7 @@ function Sheet({ lines }: { lines: WLine[] }) {
           <span>
             <Text s={l.l} />
           </span>
-          <span className="min-w-[7rem] text-left">{show(l.a)}</span>
+          <span className="inline-block min-w-[7rem] text-right">{show(l.a, paren)}</span>
         </div>
       ))}
     </div>

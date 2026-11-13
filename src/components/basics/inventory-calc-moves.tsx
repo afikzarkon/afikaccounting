@@ -260,8 +260,8 @@ export function QuickEntry({
               <th scope="col" className="w-28 px-1 py-2 text-start font-medium">תאריך</th>
               <th scope="col" className="px-1 py-2 text-start font-medium">כמות</th>
               <th scope="col" className="px-1 py-2 text-start font-medium">מחיר ליחידה (₪)</th>
-              <th scope="col" className="px-2 py-2 text-end font-medium">עלות / הכנסה</th>
-              <th scope="col" className="bg-accent-soft px-2 py-2 text-end font-semibold text-fg">יתרה (יח׳)</th>
+              <th scope="col" className="px-2 py-2 text-right font-medium">עלות / הכנסה</th>
+              <th scope="col" className="bg-accent-soft px-2 py-2 text-right font-semibold text-fg">יתרה (יח׳)</th>
               <th scope="col" className="w-24 px-1 py-2">
                 <span className="sr-only">פעולות</span>
               </th>
@@ -341,7 +341,7 @@ export function QuickEntry({
                       <td className="px-1 py-1.5">
                         <NumCell cellProps={at(3)} label={`מחיר, שורה ${n + 1}`} f={f.price} letter={built.letters[key("price")]} bad={!!built.errors[key("price")]} onChange={(v) => patch(row, "price", v)} />
                       </td>
-                      <td className="px-2 py-1.5 text-end text-xs text-muted">
+                      <td className="px-2 py-1.5 text-right text-xs text-muted">
                         {cost ? (
                           <span title={`סה״כ ${cost.total.toLocaleString("he-IL")} ₪`}>
                             <Money v={cost.perUnit} /> ליח׳
@@ -352,7 +352,7 @@ export function QuickEntry({
                           "—"
                         )}
                       </td>
-                      <td className={cn("bg-accent-soft/60 px-2 py-1.5 text-end font-semibold", bal !== undefined && bal < 0 ? "text-danger" : "text-fg")}>
+                      <td className={cn("bg-accent-soft/60 px-2 py-1.5 text-right font-semibold", bal !== undefined && bal < 0 ? "text-danger" : "text-fg")}>
                         {bal === undefined || !Number.isFinite(bal) ? "?" : bal.toLocaleString("he-IL", { maximumFractionDigits: 2 })}
                       </td>
                       <td className="px-1 py-1.5">
