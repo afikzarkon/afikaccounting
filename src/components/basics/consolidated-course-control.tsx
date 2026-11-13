@@ -1,8 +1,9 @@
 import { FileSignature, Landmark, ListChecks, Milk, Sun } from "lucide-react";
 import { Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
-import { MASTER2, MASTER2_NOW, MASTER2_OPTION, MASTER2_POSITION, POWER_TEST, POWER_TEST_START, RIGHT_OPTIONS, RIGHTS } from "@/lib/study/consolidated/lessons/control";
+import { POWER_TEST, POWER_TEST_START, RIGHT_OPTIONS, RIGHTS } from "@/lib/study/consolidated/lessons/control";
 import { W_ATTEND, W_CONVERT } from "@/lib/study/consolidated/worked/control";
+import { W2_MASTER } from "@/lib/study/consolidated/worked/masters";
 import { AttendanceLab, ConsolidatedDrill } from "./consolidated-interactive";
 import { Calc, CaseList, Expansion, LecturerNote, PowerFlow, quiz } from "./consolidated-parts";
 import { WorkedExample } from "./consolidated-worked";
@@ -671,114 +672,7 @@ export const CONSOLIDATED_CONTROL_SCREENS: Record<string, ScreenContent> = {
     lead: "שאלה אחת, כמו במבחן. קודם פתרו לבד, ואז פתחו את הפתרון.",
     body: (
       <>
-        <TaskFrame>
-          <TaskText>
-            <p>חברת ״צוקים״ קנתה ב־1.1 את 36% ממניות חברת ״ערבה״ תמורת 230,400 ש״ח, בדיוק לפי חלקה בנכסים נטו של ערבה. החזקות בעלי המניות בערבה מיד אחרי הקנייה:</p>
-            <Tbl
-              head={["בעל מניות", "קולות"]}
-              rows={[
-                ["צוקים", "36%"],
-                ["משקיע פרטי", "9%"],
-                ["קרן גל", "6%"],
-                ["קרן ים", "5%"],
-                ["קרן שחף", "5%"],
-                ["אלפי מחזיקים, כל אחד מתחת ל־0.5%", "39%"],
-              ]}
-              foot={["סך הכול", "100%"]}
-            />
-            <p>האסיפה בוחרת את הדירקטוריון ברוב קולות הנוכחים, והוא מקבל את כל ההחלטות על התקציב, המימון וההנהלה. בחמש השנים האחרונות נכחו בכל אסיפה 60% מהקולות, והמשקיע הפרטי תמיד נוכח. אין הסכמי הצבעה.</p>
-            <p className="mt-2">זכויות נוספות:</p>
-            <ul className="mt-1 list-disc space-y-1 ps-5">
-              <li>לקרן גל יש וטו על שינוי שם החברה ועל החלפת רואה החשבון.</li>
-              <li>לבנק שהלווה לערבה יש זכות לתפוס נכסים אם ההלוואה לא תיפרע.</li>
-              <li>לצוקים יש אופציה לקנות את כל 9% של המשקיע הפרטי, ניתנת למימוש מיד, עמוק בתוך הכסף.</li>
-            </ul>
-            <p className="mt-2">הנתונים ב־1.1 (בש״ח), בלי ההשקעה בצוקים:</p>
-            <Tbl
-              head={["", "צוקים", "ערבה"]}
-              rows={[
-                ["נכסים", MASTER2.parentAssets, MASTER2.subAssets],
-                ["התחייבויות", MASTER2.parentLiabilities, MASTER2.subLiabilities],
-              ]}
-            />
-            <p className="mt-2 font-semibold">נדרש:</p>
-            <ol className="mt-1 list-decimal space-y-1 ps-5">
-              <li>אילו מהזכויות של קרן גל ושל הבנק משפיעות על כוח ההשפעה של צוקים?</li>
-              <li>כמה קולות יש לצוקים באסיפה, ומאיזו נוכחות היא מאבדת את הרוב בחדר?</li>
-              <li>האם ארבעת בעלי המניות הגדולים האחרים יכולים לגבור עליה בלי המחזיקים הקטנים?</li>
-              <li>איך האופציה משנה את החישוב?</li>
-              <li>האם יש לצוקים כוח השפעה? הניחו ששני המרכיבים האחרים של שליטה מתקיימים.</li>
-              <li>אם האופציה לא מומשה ומאחדים, מה סך הנכסים, סך ההתחייבויות וחלוקת ההון בדוח המאוחד ב־1.1? הניחו שההשקעה נקנתה בלי מוניטין.</li>
-            </ol>
-          </TaskText>
-          <FullSolution>
-            <FullSteps
-              label="הפתרון המלא"
-              steps={[
-                { title: "סעיף 1: זכויות", body: <p>אף אחת מהן. וטו על שם החברה ועל רואה החשבון, ותפיסת נכסים של מלווה, הן זכויות מגינות. הן לא נותנות כוח, ולא מונעות כוח מאחר.</p> },
-                {
-                  title: "סעיף 2: באסיפה",
-                  body: (
-                    <Tbl
-                      head={["בדיקה", "תוצאה"]}
-                      rows={[
-                        [<Calc key="חלק" label="חלק באסיפה" formula="36 / 60" />, `${MASTER2_NOW.share}%`],
-                        [<Calc key="סף" label="מאבדת את הרוב בנוכחות של" formula="36 × 2" />, `${MASTER2_NOW.lostAbove}%`],
-                      ]}
-                    />
-                  ),
-                },
-                {
-                  title: "סעיף 3: לגבור עליה",
-                  body: (
-                    <>
-                      <p>
-                        <bdi dir="ltr" className="num whitespace-nowrap">9 + 6 + 5 + 5 = 25%</bdi>, פחות מ־36%. כל הגדולים יחד לא מגיעים. כדי לגבור עליה צריך גם רבים מהמחזיקים הקטנים, שמפוזרים ואין ביניהם הסדר.
-                      </p>
-                    </>
-                  ),
-                },
-                {
-                  title: "סעיף 4: האופציה",
-                  body: (
-                    <>
-                      <p>האופציה עמוק בתוך הכסף וניתנת למימוש מיד, ולכן היא ממשית ונכנסת לבחינה. הקנייה היא ממניות קיימות, והמוכר נוכח באסיפות, ולכן הנוכחות לא משתנה.</p>
-                      <Tbl
-                        head={["אחרי מימוש", "תוצאה"]}
-                        rows={[
-                          [<Calc key="החזקה" label="החזקה" formula="36 + 9" />, "45%"],
-                          [<Calc key="חלק" label="חלק באסיפה" formula="45 / 60" />, `${MASTER2_OPTION.share}%`],
-                          [<Calc key="סף" label="מאבדת את הרוב בנוכחות של" formula="45 × 2" />, `${MASTER2_OPTION.lostAbove}%`],
-                        ]}
-                      />
-                    </>
-                  ),
-                },
-                { title: "סעיף 5: מסקנה", body: <p>כן. צוקים ממנה בפועל את הדירקטוריון, שמתווה את הפעילויות. יש לה רוב ברור באסיפה, הפיזור מקשה על התארגנות נגדה, והאופציה הממשית מחזקת את זה. בהנחה ששני המרכיבים האחרים מתקיימים, היא שולטת בערבה.</p> },
-                {
-                  title: "סעיף 6: הדוח המאוחד",
-                  body: (
-                    <>
-                      <p>מחברים 100%. ההון מתחלק לפי שיעור ההחזקה בפועל, 36%, כי האופציה לא מומשה. הזשמ״ש מחזיקים ב־64%, יותר מהאם.</p>
-                      <Tbl
-                        head={["", "סכום"]}
-                        rows={[
-                          [<Calc key="נכסים" label="נכסים" formula="2,050,000 + 1,100,000" />, MASTER2_POSITION.assets],
-                          [<Calc key="התחייבויות" label="התחייבויות" formula="830,000 + 460,000" />, MASTER2_POSITION.liabilities],
-                          [<Calc key="בעלים" label="הון, בעלים של צוקים" formula="1,220,000 + 640,000 × 36%" />, MASTER2_POSITION.owners],
-                          [<Calc key="זשמ״ש" label="הון, זשמ״ש" formula="640,000 × 64%" />, MASTER2_POSITION.nci],
-                        ]}
-                        foot={["סך ההון", MASTER2_POSITION.net]}
-                      />
-                      <p>ב־Excel: <bdi dir="ltr" className="num whitespace-nowrap">=640000*64%</bdi></p>
-                    </>
-                  ),
-                },
-                { title: "מלכודת נפוצה", body: <p>להגיד ״אין שליטה כי פחות מ־50%״. או להפך: לקבוע שיש שליטה, ואז לקחת רק 36% מהנכסים, או לחשב את הזשמ״ש לפי 55%, כאילו האופציה כבר מומשה. שיעור ההחזקה בפועל הוא שקובע את חלוקת ההון.</p> },
-              ]}
-            />
-          </FullSolution>
-        </TaskFrame>
+        <WorkedExample ex={W2_MASTER} />
         <Bridge summary="עכשיו אתם יודעים לבחון את המרכיב הראשון של שליטה: כוח השפעה.">בשיעור הבא נשלים את שני האחרים: תשואות משתנות, ומתי מי שמחליט הוא רק סוכן של מישהו אחר.</Bridge>
       </>
     ),

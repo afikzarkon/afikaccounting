@@ -1,15 +1,16 @@
 import { Coffee, FileSignature, ListChecks, Scale } from "lucide-react";
 import { Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
-import { ITEM_OPTIONS, ITEMS, MASTER4_TABLE } from "@/lib/study/consolidated/lessons/acquisition";
+import { ITEM_OPTIONS, ITEMS } from "@/lib/study/consolidated/lessons/acquisition";
 import { W_CLAIM, W_EXCESS, W_HFS, W_LESSEE, W_LESSOR, W_TABLE, W_TAX } from "@/lib/study/consolidated/worked/acquisition";
+import { W4_MASTER } from "@/lib/study/consolidated/worked/masters";
 import { ConsolidatedDrill, ExcessLab } from "./consolidated-interactive";
-import { Expansion, ExcessTbl, LecturerNote, quiz } from "./consolidated-parts";
+import { Expansion, LecturerNote, quiz } from "./consolidated-parts";
 import { WorkedExample } from "./consolidated-worked";
-import { TaskFrame, TaskText } from "./ias19-question";
-import { Bridge, FullSteps } from "./ias19-ui";
+import { TaskFrame } from "./ias19-question";
+import { Bridge } from "./ias19-ui";
 import { Tree, TwoPanel, WrongRight } from "./ias19-visuals";
-import { FullSolution, P, T16, Tbl } from "./ifrs16-parts";
+import { P, T16, Tbl } from "./ifrs16-parts";
 import { SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 
@@ -492,91 +493,7 @@ export const CONSOLIDATED_ACQUISITION_SCREENS: Record<string, ScreenContent> = {
     lead: "שאלה אחת, כמו במבחן. קודם פתרו לבד, ואז פתחו את הפתרון.",
     body: (
       <>
-        <TaskFrame>
-          <TaskText>
-            <p>חברת ״הדר״ הנפיקה מניות לבעלי חברת ״ציפורי״, וקיבלה 75% מהמניות שלה. אחרי העסקה לבעלי הדר 70% מהקולות, והם ממנים את רוב הדירקטוריון ואת ההנהלה. ההסכם נחתם ב־1.2. האישור הרגולטורי המהותי התקבל ב־1.4, ובאותו יום הושגה השליטה. הסגירה המשפטית ב־15.4.</p>
-            <p className="mt-2">השווי ההוגן של ציפורי זהה לערך בספרים, חוץ מאלה. שיעור המס 23%.</p>
-            <Tbl
-              head={["פריט", "ספרים", "שווי", "הערה לסוף השנה"]}
-              rows={[
-                ["מלאי", 90_000, 102_000, "75% נמכרו"],
-                ["קרקע", 200_000, 260_000, ""],
-                ["ציוד", 120_000, 150_000, "5 שנות חיים מ־1.4"],
-                ["מבנה מוחזק למכירה", 70_000, 78_000, "עלויות מכירה 3,000. סוף השנה: שווי נטו 72,000"],
-              ]}
-            />
-            <p>נתונים נוספים:</p>
-            <ul className="mt-1 list-disc space-y-1 ps-5">
-              <li>לציפורי רשימת לקוחות שלא נרשמה. אין עליה מגבלות, ויש עסקאות בשוק ברשימות דומות. שווי 32,000 ש״ח, ו־4 שנות חיים.</li>
-              <li>לציפורי עובדים מנוסים, שהרוכש מעריך ב־40,000 ש״ח.</li>
-              <li>ציפורי מנהלת משא ומתן עם לקוח גדול, בשווי מוערך של 15,000 ש״ח. לא נחתם חוזה.</li>
-              <li>תביעה א: מחויבות קיימת, לא צפוי תזרים, בלי הפרשה. שווי 18,000 ש״ח. לא השתנתה עד סוף השנה.</li>
-              <li>תביעה ב: הסיכוי שקיימת מחויבות 25%. בלי הפרשה. שווי 9,000 ש״ח.</li>
-              <li>התחייבות להטבות עובד של 35,000 ש״ח נמדדה לפי IAS 19, ולפי אותן הנחות. שווי הוגן לפי הרוכש 41,000 ש״ח.</li>
-            </ul>
-            <p className="mt-2 font-semibold">נדרש:</p>
-            <ol className="mt-1 list-decimal space-y-1 ps-5">
-              <li>מי הרוכש, ומהו מועד הרכישה?</li>
-              <li>אילו מהפריטים בנתונים הנוספים נכנסים לטבלה, ולמה?</li>
-              <li>בנו טבלת עודף עלות: ייחוס, הפחתה ויתרה ב־31.12.</li>
-              <li>מה עלות המכר של המלאי הזה בדוח המאוחד?</li>
-              <li>מה יתרת המבנה המוחזק למכירה בדוח המאוחד ב־31.12?</li>
-            </ol>
-          </TaskText>
-          <FullSolution>
-            <FullSteps
-              label="הפתרון המלא"
-              steps={[
-                { title: "סעיף 1: רוכש ומועד", body: <p>הרוכש הוא הדר: היא המנפיקה, וגם הקולות, הדירקטוריון וההנהלה מצביעים עליה. מועד הרכישה הוא 1.4, מועד השגת השליטה. לא 1.2, כי התנאי המהותי עוד לא התקיים, ולא 15.4, כי השליטה כבר הושגה. לכן עד סוף השנה 9 חודשים, כלומר 0.75 שנה.</p> },
-                {
-                  title: "סעיף 2: מה נכנס",
-                  body: (
-                    <Tbl
-                      head={["הפריט", "נכנס?", "למה"]}
-                      rows={[
-                        ["רשימת לקוחות", "כן", "ניתנת להפרדה"],
-                        ["עובדים מנוסים", "לא", "אין שליטה. במוניטין"],
-                        ["משא ומתן", "לא", "אין זכות. במוניטין"],
-                        ["תביעה א", "כן", "מחויבות קיימת ויש שווי"],
-                        ["תביעה ב", "לא", "מחויבות אפשרית בלבד"],
-                        ["הטבות עובד", "לא", "נמדדות לפי IAS 19, אותן הנחות, ולכן אין הפרש"],
-                      ]}
-                    />
-                  ),
-                },
-                {
-                  title: "סעיף 3: הטבלה",
-                  body: (
-                    <>
-                      <ExcessTbl table={MASTER4_TABLE} />
-                      <Tbl
-                        head={["השורה", "החישוב"]}
-                        rows={[
-                          ["מלאי", <bdi key="a" dir="ltr" className="num">102,000 − 90,000 = 12,000; 12,000 × 25% = 3,000</bdi>],
-                          ["ציוד", <bdi key="b" dir="ltr" className="num">30,000 − 30,000 × 0.75 / 5 = 25,500</bdi>],
-                          ["רשימה", <bdi key="c" dir="ltr" className="num">32,000 − 32,000 × 0.75 / 4 = 26,000</bdi>],
-                          ["מבנה", <bdi key="d" dir="ltr" className="num">78,000 − 3,000 − 70,000 = 5,000; 72,000 − 70,000 = 2,000</bdi>],
-                          ["מס נדחה", <bdi key="e" dir="ltr" className="num">121,000 × 23% = 27,830; 98,500 × 23% = 22,655</bdi>],
-                        ]}
-                      />
-                    </>
-                  ),
-                },
-                {
-                  title: "סעיף 4: עלות המכר",
-                  body: (
-                    <>
-                      <p><bdi dir="ltr" className="num whitespace-nowrap">102,000 × 75% = 76,500</bdi></p>
-                      <p>בספרי ציפורי: <bdi dir="ltr" className="num whitespace-nowrap">90,000 × 75% = 67,500</bdi>. ההפחתה: 9,000 ש״ח.</p>
-                    </>
-                  ),
-                },
-                { title: "סעיף 5: המבנה", body: <p>72,000 ש״ח: הנמוך מבין 75,000 ש״ח שנמדדו במועד הרכישה, לבין 72,000 ש״ח. בספרי ציפורי הוא נשאר 70,000 ש״ח, ולכן נשאר עודף של 2,000 ש״ח.</p> },
-                { title: "מלכודת נפוצה", body: <p>לכלול את העובדים והמשא ומתן כי יש להם שווי, להכפיל ב־75%, או להפחית שנה שלמה במקום 9 חודשים.</p> },
-              ]}
-            />
-          </FullSolution>
-        </TaskFrame>
+        <WorkedExample ex={W4_MASTER} />
         <Bridge summary="עכשיו אתם יודעים מי רכש, מתי, ואיך בונים טבלת עודף עלות.">בשיעור הבא נשלים את התמונה: מה נכלל בתמורה, איך מודדים זשמ״ש, ואיך יוצא המוניטין.</Bridge>
       </>
     ),

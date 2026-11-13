@@ -1,17 +1,18 @@
 import { Building2, FileSignature, ListChecks, Scale } from "lucide-react";
 import { Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
-import { M5, PAY_OPTIONS, PAYS, PERIOD_TEST, PERIOD_TEST_START } from "@/lib/study/consolidated/lessons/goodwill";
+import { PAY_OPTIONS, PAYS, PERIOD_TEST, PERIOD_TEST_START } from "@/lib/study/consolidated/lessons/goodwill";
 import { ConsolidatedDrill, GoodwillLab } from "./consolidated-interactive";
-import { Calc, Expansion, LecturerNote, quiz } from "./consolidated-parts";
-import { TaskFrame, TaskText } from "./ias19-question";
-import { Bridge, FullSteps } from "./ias19-ui";
+import { Expansion, LecturerNote, quiz } from "./consolidated-parts";
+import { TaskFrame } from "./ias19-question";
+import { Bridge } from "./ias19-ui";
 import { TwoPanel, WrongRight } from "./ias19-visuals";
 import { DecisionWalk } from "./ifrs16-interactive";
-import { FullSolution, P, T16, Tbl } from "./ifrs16-parts";
+import { P, T16, Tbl } from "./ifrs16-parts";
 import { SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { W_BARGAIN, W_BUYBACK, W_COSTS, W_EARNOUT, W_ENTRY, W_GW, W_NCI, W_PERIOD, W_PRIOR } from "@/lib/study/consolidated/worked/goodwill";
+import { W5_MASTER } from "@/lib/study/consolidated/worked/masters";
 import { WorkedExample } from "./consolidated-worked";
 
 /**
@@ -411,112 +412,7 @@ export const CONSOLIDATED_GOODWILL_SCREENS: Record<string, ScreenContent> = {
     lead: "שאלה אחת, כמו במבחן. קודם פתרו לבד, ואז פתחו את הפתרון.",
     body: (
       <>
-        <TaskFrame>
-          <TaskText>
-            <p>ב־1.4.2025 חברת ״אגמון״, שכבר מחזיקה 2,000 מניות של חברת ״נטעים״, רכשה עוד 13,000 מניות. לנטעים 20,000 מניות, ומחיר המניה בשוק באותו יום 15 ש״ח. ההחזקה הקודמת נמדדה בשווי הוגן דרך רווח או הפסד, וערכה 25,000 ש״ח.</p>
-            <p className="mt-2">התמורה:</p>
-            <ul className="mt-1 list-disc space-y-1 ps-5">
-              <li>170,000 ש״ח במזומן.</li>
-              <li>קרקע שהועברה למוכר. ערך בספרים 33,000 ש״ח, ושווי הוגן 41,000 ש״ח.</li>
-              <li>1,000 מניות של אגמון, בערך נקוב של 1 ש״ח ובמחיר שוק של 18 ש״ח. עלויות ההנפקה 700 ש״ח.</li>
-              <li>תמורה מותנית במזומן, בשווי הוגן של 5,000 ש״ח.</li>
-            </ul>
-            <p className="mt-2">עוד שולמו 6,000 ש״ח ליועצים על העסקה. הון נטעים 190,000 ש״ח. עודפי העלות לפני מס: פטנט 40,000 ש״ח, מלאי 12,000 ש״ח, ותביעה בסימן של התחייבות 8,000 ש״ח. שיעור המס 25%.</p>
-            <p className="mt-2 font-semibold">נדרש:</p>
-            <ol className="mt-1 list-decimal space-y-1 ps-5">
-              <li>חשבו את התמורה שהועברה. מה הטיפול בעלויות?</li>
-              <li>מה ההשפעה של הצירוף על הרווח במועד הרכישה, לפני מס?</li>
-              <li>חשבו מוניטין בשתי מדידות הזשמ״ש.</li>
-              <li>חלקו את המוניטין בשווי הוגן בין האם לזשמ״ש, והראו את פרמיית השליטה.</li>
-              <li>בספטמבר התקבלה הערכה לתביעה כפי שהייתה ב־1.4: 12,000 ש״ח במקום 8,000 ש״ח. מה קורה למוניטין בשווי הוגן?</li>
-              <li>בסוף 2025 היעד הושג, והסכום לתשלום 9,500 ש״ח. מה הטיפול?</li>
-            </ol>
-          </TaskText>
-          <FullSolution>
-            <FullSteps
-              label="הפתרון המלא"
-              steps={[
-                {
-                  title: "סעיף 1: התמורה",
-                  body: (
-                    <>
-                      <Tbl
-                        head={["", "סכום"]}
-                        rows={[
-                          ["מזומן", 170_000],
-                          ["קרקע, בשווי הוגן", 41_000],
-                          [<Calc key="מ" label="מניות" formula="1,000 × 18" />, 18_000],
-                          ["תמורה מותנית", 5_000],
-                        ]}
-                        foot={["תמורה שהועברה", M5.consideration]}
-                      />
-                      <p>6,000 ש״ח ליועצים הם הוצאה. 700 ש״ח של ההנפקה יורדים מההון.</p>
-                    </>
-                  ),
-                },
-                {
-                  title: "סעיף 2: הרווח",
-                  body: (
-                    <Tbl
-                      head={["", "סכום"]}
-                      rows={[
-                        [<Calc key="ק" label="רווח על הקרקע" formula="41,000 − 33,000" />, 8_000],
-                        [<Calc key="ה" label="רווח על ההחזקה הקודמת" formula="2,000 × 15 − 25,000" />, 5_000],
-                        ["הוצאות ייעוץ", -6_000],
-                      ]}
-                      foot={["השפעה על הרווח", 7_000]}
-                    />
-                  ),
-                },
-                {
-                  title: "סעיף 3: המוניטין",
-                  body: (
-                    <>
-                      <p>
-                        הנמ״נ: <bdi dir="ltr" className="num whitespace-nowrap">190,000 + 44,000 × 75% = 223,000</bdi>. ההחזקה אחרי העסקה 75%, ולמיעוט 5,000 מניות.
-                      </p>
-                      <Tbl
-                        dense
-                        head={["", "שווי הוגן", "חלק בנמ״נ"]}
-                        rows={[
-                          ["תמורה שהועברה", M5.consideration, M5.consideration],
-                          [<Calc key="ק" label="החזקה קודמת" formula="2,000 × 15" />, 30_000, 30_000],
-                          [<Calc key="ז" label="זשמ״ש" formula="5,000 × 15; 223,000 × 25%" />, M5.fair.nci, M5.share.nci],
-                          ["נמ״נ", -M5.net, -M5.net],
-                        ]}
-                        foot={["מוניטין", M5.fair.goodwill, M5.share.goodwill]}
-                      />
-                    </>
-                  ),
-                },
-                {
-                  title: "סעיף 4: החלוקה",
-                  body: (
-                    <Tbl
-                      dense
-                      head={["", "סכום", "האם", "זשמ״ש"]}
-                      rows={[
-                        [<Calc key="פ" label="פרמיית שליטה" formula="234,000 − 13,000 × 15" />, M5.premium, M5.premium, 0],
-                        [<Calc key="מ" label="מוניטין בלי פרמיה" formula="116,000 − 39,000" />, 77_000, 57_750, 19_250],
-                      ]}
-                      foot={["סך הכול", M5.fair.goodwill, M5.fair.ownersGoodwill, M5.fair.nciGoodwill]}
-                    />
-                  ),
-                },
-                {
-                  title: "סעיף 5: תקופת מדידה",
-                  body: (
-                    <p>
-                      התביעה הייתה קיימת במועד הרכישה, ועברו פחות משנה, ולכן מתקנים למפרע. ההתחייבות גדלה ב־4,000 ש״ח. נטו ממס: <bdi dir="ltr" className="num whitespace-nowrap">4,000 × 75% = 3,000</bdi>. הנמ״נ יורדים ל־{(M5.net - 3_000).toLocaleString("en-US")} ש״ח, והמוניטין עולה ל־{M5.after.goodwill.toLocaleString("en-US")} ש״ח.
-                    </p>
-                  ),
-                },
-                { title: "סעיף 6: היעד", body: <p>אירוע מאוחר, ולכן המוניטין לא משתנה. ההתחייבות עולה מ־5,000 ש״ח ל־9,500 ש״ח, והוצאה של 4,500 ש״ח נרשמת ברווח או הפסד.</p> },
-                { title: "מלכודת נפוצה", body: <p>להכניס את היועצים לתמורה, למדוד את הקרקע בערך בספרים, לשכוח את ההחזקה הקודמת, או לתקן את המוניטין גם בעמידה ביעד.</p> },
-              ]}
-            />
-          </FullSolution>
-        </TaskFrame>
+        <WorkedExample ex={W5_MASTER} />
         <Bridge summary="עכשיו אתם יודעים לעבור את כל שיטת הרכישה, עד המוניטין ומי מחזיק בו.">בשיעור הבא מחברים את הדוחות: דף העבודה לאיחוד, שבלעדיו כמעט אי אפשר לפתור שום שאלה.</Bridge>
       </>
     ),
