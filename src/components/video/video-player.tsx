@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { track } from "@/lib/analytics/track";
 import { DEMO_VIDEO_URL } from "@/lib/env";
 import { duration } from "@/lib/engine/format";
-import { type Embed, embedUrl, parseEmbed, thumbnailUrl } from "@/lib/media/embed";
+import { EMBED_NAMES, type Embed, embedUrl, parseEmbed, thumbnailUrl } from "@/lib/media/embed";
 import { cn } from "@/lib/utils";
 
 export type Chapter = { at: number; title: string };
@@ -29,7 +29,7 @@ export function VideoPlayer(props: PlayerProps) {
 }
 
 /** Counts the first play of a mounted player in the usage analytics. */
-function usePlayTracker(item: PlayableItem, source: "upload" | "youtube" | "vimeo" | "demo") {
+function usePlayTracker(item: PlayableItem, source: "upload" | "youtube" | "vimeo" | "demo" | "external") {
   const counted = useRef(false);
   return useCallback(() => {
     if (counted.current) return;
@@ -339,7 +339,8 @@ function ChapterList({
  */
 function EmbedPlayer({ item, startAt = 0, layout = "side", className, embed }: PlayerProps & { embed: Embed }) {
   const [start, setStart] = useState<number | null>(null);
-  const countPlay = usePlayTracker(item, embed.source);
+  // Bunny Stream plays count as "external": the analytics table knows no other embed source.
+  const countPlay = usePlayTracker(item, embed.source === "bunny" ? "external" : embed.source);
   const chapters = [...item.chapters].sort((a, b) => a.at - b.at);
   const play = (t: number) => {
     countPlay();
@@ -364,7 +365,7 @@ function EmbedPlayer({ item, startAt = 0, layout = "side", className, embed }: P
             )}
             <span className="relative grid place-items-center gap-3 text-center">
               <PlayCircle className="h-16 w-16 drop-shadow transition group-hover/embed:scale-105" />
-              <span className="rounded-full bg-black/55 px-3 py-1 text-xs">{embed.source === "youtube" ? "YouTube" : "Vimeo"}</span>
+              <span className="rounded-full bg-black/55 px-3 py-1 text-xs">{EMBED_NAMES[embed.source]}</span>
             </span>
           </button>
         ) : (

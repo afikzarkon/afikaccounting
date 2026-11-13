@@ -1,6 +1,7 @@
 import { Q8_TB, round2 } from "@/lib/learn/basics";
 import type { StudyModule } from "../types";
 import { COURSE, COURSE_HREF, fmt, practice } from "./shared";
+import { basicsVideos } from "./videos";
 
 // Fresh figures for this lesson's own questions; every answer below is computed from them.
 const SUPPLIERS = { opening: 14_000, purchases: 52_000, paid: 47_500 };
@@ -35,6 +36,7 @@ export const BOOKS: StudyModule = {
   course: COURSE,
   n: 3,
   title: "מכרטיסי T ועד הדוחות",
+  videos: basicsVideos(3, "מכרטיסי T ועד הדוחות"),
   description: "כרטיסי T ויתרות, מאזן בוחן, עודפים, ומהיתרות לדוחות — ומה עובר לשנה הבאה ומה מתאפס.",
   goal: "להפוך פקודות יומן לדוחות: מכרטיסי T, דרך מאזן הבוחן, ועד המאזן ורווח והפסד.",
   outcomes: [

@@ -351,7 +351,7 @@ function EmbedForm({ modules, onDone }: { modules: Option[]; onDone: () => void 
 
   return (
     <div className="space-y-4">
-      <Field label="קישור לסרטון" hint={url && !embed ? "לא זוהה קישור YouTube או Vimeo." : embed ? `זוהה: ${embed.source === "youtube" ? "YouTube" : "Vimeo"}` : undefined}>
+      <Field label="קישור לסרטון" hint={url && (!embed || embed.source === "bunny") ? "לא זוהה קישור YouTube או Vimeo." : embed ? `זוהה: ${embed.source === "youtube" ? "YouTube" : "Vimeo"}` : undefined}>
         <input dir="ltr" className={inputClass} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=…" />
       </Field>
       {thumb && (

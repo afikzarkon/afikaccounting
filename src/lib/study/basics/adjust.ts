@@ -2,6 +2,7 @@ import type { Entry } from "@/lib/learn/basics";
 import { accumulatedTo, depreciationOfYear, forMonths, saleEntry } from "@/lib/learn/basics-ppe";
 import type { JournalExercise, StudyModule } from "../types";
 import { COURSE, COURSE_HREF, fmt, practice } from "./shared";
+import { basicsVideos } from "./videos";
 
 /** A journal-entry question: the event, the answer's lines, why, and the accounts offered (the answer's and some that tempt). */
 const journal = (id: string, skill: string, text: string, lines: Entry["lines"], why: string, accounts: string[]): JournalExercise => ({
@@ -56,6 +57,7 @@ export const ADJUST: StudyModule = {
   course: COURSE,
   n: 5,
   title: "התאמות סוף שנה",
+  videos: basicsVideos(5, "התאמות סוף שנה"),
   description: "בסיס מצטבר ועקרון ההקבלה, ארבעת חשבונות החתך, חודש אחרון שונה וריבית לפי תקופה, מלאי סגירה, פחת ומכירה של רכוש קבוע, ודוגמה מלאה של פקודות התאמה.",
   goal: "לרשום פקודות התאמה בסוף השנה, כך שכל הכנסה וכל הוצאה יגיעו לשנה שלהן.",
   outcomes: [

@@ -2,6 +2,7 @@ import { type Entry, round2 } from "@/lib/learn/basics";
 import { ALLOW, AR, EXPENSE, SELF, year } from "@/lib/learn/credit-losses";
 import type { JournalExercise, StudyModule } from "../types";
 import { COURSE, COURSE_HREF, fmt } from "./shared";
+import { basicsVideos } from "./videos";
 
 /** A journal-entry question: the event, the answer's lines, why, and the accounts offered (the answer's and some that tempt). */
 const journal = (id: string, skill: string, text: string, lines: Entry["lines"], why: string, accounts: string[]): JournalExercise => ({
@@ -45,6 +46,7 @@ export const CREDIT: StudyModule = {
   course: COURSE,
   n: 7,
   title: "הפסדי אשראי",
+  videos: basicsVideos(7, "הפסדי אשראי"),
   description: "לקוחות ברוטו, הפרשה ונטו; מחיקה וגבייה של חוב אבוד; מתווה 3 הכללים עם שני כרטיסי T — ועד שאלה ברמת בחינה.",
   goal: "לטפל בלקוחות שאולי לא ישלמו — הפרשה, מחיקה וגבייה — עד שאלה ברמת בחינה.",
   outcomes: [

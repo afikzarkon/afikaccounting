@@ -1,6 +1,7 @@
 import { CREDIT, CANDLES } from "@/lib/learn/basics";
 import type { StudyModule } from "../types";
 import { COURSE, COURSE_HREF, fmt } from "./shared";
+import { basicsVideos } from "./videos";
 
 const BIZ = { assets: 265_000, equity: 118_000 };
 
@@ -15,6 +16,7 @@ export const DOUBLE_ENTRY: StudyModule = {
   course: COURSE,
   n: 2,
   title: "הרישום הכפול ופקודות יומן",
+  videos: basicsVideos(2, "הרישום הכפול ופקודות יומן"),
   description: "נכסים = התחייבויות + הון, הוצאה מול השקעה, פקודת יומן פשוטה ומורכבת — ועסקאות שהכסף בהן עובר לפני או אחרי: אשראי, צ׳קים, מקדמות והלוואות.",
   goal: "לרשום כל עסקה כפקודת יומן מאוזנת — גם כשהכסף עובר לפני העסקה או אחריה.",
   outcomes: [
