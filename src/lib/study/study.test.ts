@@ -594,14 +594,14 @@ describe("the inventory course: the staged solutions agree with the engine", () 
 });
 
 describe("interactive lessons: a lesson's video", () => {
-  it("the file is on the site, its chapters are in order inside it, and a chapter's screen is one of the lesson's", async () => {
+  it("the file is on the site (or an embed link), its chapters are in order inside it, and a chapter's screen is one of the lesson's", async () => {
     const { existsSync } = await import("node:fs");
     const { join } = await import("node:path");
-    // The basics course's videos were withdrawn while the course is rebuilt; any lesson that has one is still checked.
+    const { parseEmbed } = await import("@/lib/media/embed");
     const withVideo = modules.filter((m) => m.videos?.length);
     for (const m of withVideo) {
       for (const v of m.videos!) {
-        assert.ok(existsSync(join(process.cwd(), "public", v.src)), `${m.slug}: no file at public${v.src}`);
+        assert.ok(parseEmbed(v.src) || existsSync(join(process.cwd(), "public", v.src)), `${m.slug}: no file at public${v.src}, and not an embed link`);
         v.chapters.forEach((c, i) => {
           assert.ok(c.at >= 0 && c.at < v.duration, `${m.slug}: chapter ${c.title} outside the video`);
           if (i) assert.ok(c.at > v.chapters[i - 1].at, `${m.slug}: chapters out of order at ${c.title}`);
