@@ -279,8 +279,8 @@ export function TBTable({ tb, caption, kind, changed }: { tb: TrialBalance; capt
           <tr className="bg-surface-2/50 text-xs text-muted">
             <th className="px-4 py-2 text-start font-medium">חשבון</th>
             {kind && <th className="px-4 py-2 text-start font-medium">סוג</th>}
-            <th className="px-4 py-2 text-end font-medium text-debit">חובה</th>
-            <th className="px-4 py-2 text-end font-medium text-credit">זכות</th>
+            <th className="px-4 py-2 text-right font-medium text-debit">חובה</th>
+            <th className="px-4 py-2 text-right font-medium text-credit">זכות</th>
           </tr>
         </thead>
         <tbody>
@@ -294,8 +294,8 @@ export function TBTable({ tb, caption, kind, changed }: { tb: TrialBalance; capt
                   </span>
                 </td>
               )}
-              <td className="px-4 py-2 text-end">{r.dr ? <Money v={r.dr} plain /> : ""}</td>
-              <td className="px-4 py-2 text-end">{r.cr ? <Money v={r.cr} plain /> : ""}</td>
+              <td className="px-4 py-2 text-right">{r.dr ? <Money v={r.dr} plain /> : ""}</td>
+              <td className="px-4 py-2 text-right">{r.cr ? <Money v={r.cr} plain /> : ""}</td>
             </tr>
           ))}
         </tbody>
@@ -305,10 +305,10 @@ export function TBTable({ tb, caption, kind, changed }: { tb: TrialBalance; capt
               סה״כ <span className={cn("ms-1 text-xs font-medium", balanced ? "text-success" : "text-danger")}>{balanced ? "✓ חובה = זכות" : "✗ לא מאוזן"}</span>
             </td>
             {kind && <td />}
-            <td className="px-4 py-2 text-end text-debit">
+            <td className="px-4 py-2 text-right text-debit">
               <Money v={tb.dr} plain />
             </td>
-            <td className="px-4 py-2 text-end text-credit">
+            <td className="px-4 py-2 text-right text-credit">
               <Money v={tb.cr} plain />
             </td>
           </tr>
@@ -342,14 +342,14 @@ export function StatementsView({ s, year }: { s: Statements; year: string }) {
       {rows.map(([a, v]) => (
         <tr key={a} className="border-t border-line/60">
           <td className="px-4 py-1.5 ps-6 text-fg">{a}</td>
-          <td className="px-4 py-1.5 text-end">
+          <td className="px-4 py-1.5 w-px whitespace-nowrap text-right">
             <Money v={v} plain />
           </td>
         </tr>
       ))}
       <tr className="border-t border-line font-semibold">
         <td className="px-4 py-1.5 text-fg">{total}</td>
-        <td className="px-4 py-1.5 text-end">
+        <td className="px-4 py-1.5 w-px whitespace-nowrap text-right">
           <Money v={value} plain />
         </td>
       </tr>
@@ -364,7 +364,7 @@ export function StatementsView({ s, year }: { s: Statements; year: string }) {
             {block("הוצאות", s.expenses, "סך ההוצאות", s.totalExpenses)}
             <tr className="border-t-2 border-line-strong font-semibold">
               <td className={cn("px-4 py-2", s.profit >= 0 ? "text-success" : "text-danger")}>{s.profit >= 0 ? "רווח השנה" : "הפסד השנה"}</td>
-              <td className={cn("px-4 py-2 text-end", s.profit >= 0 ? "text-success" : "text-danger")}>
+              <td className={cn("px-4 py-2 w-px whitespace-nowrap text-right", s.profit >= 0 ? "text-success" : "text-danger")}>
                 <Money v={s.profit} />
               </td>
             </tr>
@@ -379,7 +379,7 @@ export function StatementsView({ s, year }: { s: Statements; year: string }) {
             {block("הון", s.equity, "סך ההון", s.totalEquity)}
             <tr className="border-t-2 border-line-strong font-semibold">
               <td className="px-4 py-2 text-fg">התחייבויות והון</td>
-              <td className="px-4 py-2 text-end">
+              <td className="px-4 py-2 w-px whitespace-nowrap text-right">
                 <Money v={s.totalLiabilities + s.totalEquity} />
               </td>
             </tr>

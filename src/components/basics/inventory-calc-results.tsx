@@ -289,10 +289,10 @@ export function ResultsStep({ st, set, built, solution, method, go }: { st: Calc
                   <thead>
                     <tr className="text-xs text-muted">
                       <th scope="col" className="px-3 py-2 text-start font-medium">שיטה</th>
-                      <th scope="col" className="px-3 py-2 text-end font-medium">מלאי סגירה</th>
-                      <th scope="col" className="px-3 py-2 text-end font-medium">עלות המכר</th>
-                      <th scope="col" className="px-3 py-2 text-end font-medium">רווח גולמי</th>
-                      <th scope="col" className="px-3 py-2 text-end font-medium">שיעור</th>
+                      <th scope="col" className="px-3 py-2 text-right font-medium">מלאי סגירה</th>
+                      <th scope="col" className="px-3 py-2 text-right font-medium">עלות המכר</th>
+                      <th scope="col" className="px-3 py-2 text-right font-medium">רווח גולמי</th>
+                      <th scope="col" className="px-3 py-2 text-right font-medium">שיעור</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -304,10 +304,10 @@ export function ResultsStep({ st, set, built, solution, method, go }: { st: Calc
                             {METHOD_LABEL[mm]}
                             {mm === method && " ✓"}
                           </th>
-                          <td className="px-3 py-1.5 text-end"><Money v={x.closingCarrying} plain /></td>
-                          <td className="px-3 py-1.5 text-end"><Money v={x.cogs} plain /></td>
-                          <td className="px-3 py-1.5 text-end"><Money v={x.grossProfit} plain /></td>
-                          <td className="px-3 py-1.5 text-end"><bdi dir="ltr" className="num">{pc(x.gpPct)}</bdi></td>
+                          <td className="px-3 py-1.5 text-right"><Money v={x.closingCarrying} plain /></td>
+                          <td className="px-3 py-1.5 text-right"><Money v={x.cogs} plain /></td>
+                          <td className="px-3 py-1.5 text-right"><Money v={x.grossProfit} plain /></td>
+                          <td className="px-3 py-1.5 text-right"><bdi dir="ltr" className="num">{pc(x.gpPct)}</bdi></td>
                         </tr>
                       );
                     })}
@@ -396,8 +396,8 @@ function CogsStatement({ r }: { r: PeriodResult }) {
               <th scope="col" className="px-4 py-1.5 text-start font-medium">
                 <span className="sr-only">סעיף</span>
               </th>
-              <th scope="col" className="px-3 py-1.5 text-end font-medium">יח׳</th>
-              <th scope="col" className="px-4 py-1.5 text-end font-medium">₪</th>
+              <th scope="col" className="px-3 py-1.5 text-right font-medium">יח׳</th>
+              <th scope="col" className="px-4 py-1.5 text-right font-medium">₪</th>
             </tr>
           </thead>
           <tbody>
@@ -414,8 +414,8 @@ function CogsStatement({ r }: { r: PeriodResult }) {
                     {l.label}
                     {l.note && <span className="block text-[11.5px] font-normal text-muted">{l.note}</span>}
                   </th>
-                  <td className="px-3 py-1.5 text-end align-top text-muted">{l.units !== undefined && <bdi dir="ltr" className="num">{qty(l.units)}</bdi>}</td>
-                  <td className={cn("px-4 py-1.5 text-end align-top", (l.kind === "total" || l.kind === "result") && "font-bold")}>{l.amount !== undefined && <Money v={l.amount} plain />}</td>
+                  <td className="px-3 py-1.5 text-right align-top text-muted">{l.units !== undefined && <bdi dir="ltr" className="num">{qty(l.units)}</bdi>}</td>
+                  <td className={cn("px-4 py-1.5 text-right align-top", (l.kind === "total" || l.kind === "result") && "font-bold")}>{l.amount !== undefined && <Money v={l.amount} plain />}</td>
                 </tr>
               ),
             )}
@@ -451,7 +451,7 @@ function YearsTable({ st, solution, active }: { st: CalcState; solution: Solutio
                 <span className="sr-only">סעיף</span>
               </th>
               {st.years.map((y, t) => (
-                <th key={y.id} scope="col" className={cn("px-3 py-2 text-end font-medium", t === active && "text-fg")}>
+                <th key={y.id} scope="col" className={cn("px-3 py-2 text-right font-medium", t === active && "text-fg")}>
                   {y.label}
                 </th>
               ))}
@@ -466,7 +466,7 @@ function YearsTable({ st, solution, active }: { st: CalcState; solution: Solutio
                     {label}
                   </th>
                   {st.years.map((y, t) => (
-                    <td key={y.id} className={cn("px-3 py-1.5 text-end", t === active && "bg-accent-soft/50 font-semibold")}>
+                    <td key={y.id} className={cn("px-3 py-1.5 text-right", t === active && "bg-accent-soft/50 font-semibold")}>
                       {rs[t] ? f(rs[t]!) : <span className="text-muted">—</span>}
                     </td>
                   ))}

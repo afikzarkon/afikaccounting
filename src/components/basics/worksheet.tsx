@@ -24,12 +24,12 @@ function Sheet({ c, stage }: { c: WorksheetCase; stage: Stage }) {
   const bs = (r: (typeof rows)[number]) => (r.balanceSheet ? side(retainedShown(r)) : { dr: 0, cr: 0 });
 
   const cell = (v: number, hl?: boolean, key?: string) => (
-    <td key={key} className="px-2 py-1.5 text-end">
+    <td key={key} className="px-2 py-1.5 text-right">
       {v ? <Money v={v} plain className={cn(hl && "font-bold text-accent")} /> : null}
     </td>
   );
   const pair = (p: { dr: number; cr: number }, key: string, hl?: boolean) => [
-    <td key={`${key}d`} className="border-s border-line/60 px-2 py-1.5 text-end">
+    <td key={`${key}d`} className="border-s border-line/60 px-2 py-1.5 text-right">
       {p.dr ? <Money v={p.dr} plain className={cn(hl && "font-bold text-accent")} /> : null}
     </td>,
     cell(p.cr, hl, `${key}c`),
@@ -40,18 +40,18 @@ function Sheet({ c, stage }: { c: WorksheetCase; stage: Stage }) {
     </th>
   );
   const sub = (key: string) => [
-    <th key={`${key}d`} className="border-s border-line/60 px-2 py-1 text-end text-[11px] font-medium text-debit">
+    <th key={`${key}d`} className="border-s border-line/60 px-2 py-1 text-right text-[11px] font-medium text-debit">
       חובה
     </th>,
-    <th key={`${key}c`} className="px-2 py-1 text-end text-[11px] font-medium text-credit">
+    <th key={`${key}c`} className="px-2 py-1 text-right text-[11px] font-medium text-credit">
       זכות
     </th>,
   ];
   const total = (dr: number, cr: number, key: string, warn?: boolean) => [
-    <td key={`${key}d`} className={cn("border-s border-line/60 px-2 py-2 text-end", warn && "text-danger")}>
+    <td key={`${key}d`} className={cn("border-s border-line/60 px-2 py-2 text-right", warn && "text-danger")}>
       <Money v={dr} plain />
     </td>,
-    <td key={`${key}c`} className={cn("px-2 py-2 text-end", warn && "text-danger")}>
+    <td key={`${key}c`} className={cn("px-2 py-2 text-right", warn && "text-danger")}>
       <Money v={cr} plain />
     </td>,
   ];

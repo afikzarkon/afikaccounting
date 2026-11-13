@@ -235,7 +235,7 @@ export function TableFill({ data }: { data: FillData }) {
                 סעיף
               </th>
               {data.years.map((y) => (
-                <th key={y} scope="col" className="px-3 py-2 text-end font-medium">
+                <th key={y} scope="col" className="px-3 py-2 text-right font-medium">
                   {y}
                 </th>
               ))}
@@ -253,7 +253,7 @@ export function TableFill({ data }: { data: FillData }) {
                   const show = data.given[t][ri] || filled.has(k);
                   const isCur = cur && cur.year === t && cur.row === row.key;
                   return (
-                    <td key={y} className={cn("px-3 py-1.5 text-end", isCur && "bg-success/15 font-semibold", !data.given[t][ri] && show && !isCur && "bg-accent-soft/60")}>
+                    <td key={y} className={cn("px-3 py-1.5 text-right", isCur && "bg-success/15 font-semibold", !data.given[t][ri] && show && !isCur && "bg-accent-soft/60")}>
                       {row.key === "opening" && t > 0 && <span className="block text-[10px] font-medium text-accent">← מסגירת {data.years[t - 1]}</span>}
                       {show && v !== null ? (
                         row.pct ? (
@@ -573,7 +573,7 @@ export function FillGrid({ caption, head, rows, hint }: { caption: string; head:
                       />
                     </td>
                   ) : (
-                    <td key={j} className={cn("px-2 py-1.5", typeof c === "number" ? "num text-end" : "text-start")}>
+                    <td key={j} className={cn("px-2 py-1.5", typeof c === "number" ? "num text-right" : "text-start")}>
                       {typeof c === "number" ? fmt(c) : c}
                     </td>
                   ),

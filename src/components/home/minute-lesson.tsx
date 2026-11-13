@@ -58,8 +58,8 @@ export function MinuteLesson({ firstLesson, signUp }: { firstLesson: string; sig
               <thead>
                 <tr className="border-b border-line-strong text-[12.5px] text-muted">
                   <th className="py-1.5 text-start font-semibold">חשבון</th>
-                  <th className="py-1.5 text-end font-semibold">חובה</th>
-                  <th className="py-1.5 text-end font-semibold">זכות</th>
+                  <th className="py-1.5 text-right font-semibold">חובה</th>
+                  <th className="py-1.5 text-right font-semibold">זכות</th>
                 </tr>
               </thead>
               <tbody>
@@ -67,7 +67,7 @@ export function MinuteLesson({ firstLesson, signUp }: { firstLesson: string; sig
                   <td className="py-2">
                     <span className="me-1.5 text-[12.5px] font-bold text-debit">ח׳</span>ציוד
                   </td>
-                  <td className="py-2 text-end">12,000</td>
+                  <td className="py-2 text-right">12,000</td>
                   <td />
                 </tr>
                 <tr className="border-b border-line">
@@ -75,7 +75,7 @@ export function MinuteLesson({ firstLesson, signUp }: { firstLesson: string; sig
                     <span className="me-1.5 text-[12.5px] font-bold text-credit">ז׳</span>מזומנים
                   </td>
                   <td />
-                  <td className="py-2 text-end">12,000</td>
+                  <td className="py-2 text-right">12,000</td>
                 </tr>
               </tbody>
             </table>

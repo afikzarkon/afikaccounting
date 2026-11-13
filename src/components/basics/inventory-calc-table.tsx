@@ -125,7 +125,7 @@ export function TableTab({ st, set }: { st: CalcState; set: Update }) {
                 <tr className="text-xs text-muted">
                   <th scope="col" className="px-3 py-2 text-start font-medium">סעיף</th>
                   {input.years.map((y) => (
-                    <th key={y.label} scope="col" className="px-3 py-2 text-end font-medium">{y.label}</th>
+                    <th key={y.label} scope="col" className="px-3 py-2 text-right font-medium">{y.label}</th>
                   ))}
                 </tr>
               </thead>
@@ -138,7 +138,7 @@ export function TableTab({ st, set }: { st: CalcState; set: Update }) {
                       const solved = solvedSet.has(`${i}:${r}`);
                       const missing = result.missing.some((x) => x.year === i && x.row === r);
                       return (
-                        <td key={i} className={cn("relative px-3 py-1.5 text-end", solved && "bg-success/12 text-fg", missing && "bg-danger/10")}>
+                        <td key={i} className={cn("relative px-3 py-1.5 text-right", solved && "bg-success/12 text-fg", missing && "bg-danger/10")}>
                           {v === undefined ? (missing ? <span className="text-danger">לא ניתן לקבוע</span> : "") : r === "gpPct" ? <bdi dir="ltr" className="num">{fmt(Math.round(v * 10000) / 100)}%</bdi> : <Money v={v} plain />}
                           {solved && <span className="sr-only"> (חושב)</span>}
                         </td>

@@ -119,12 +119,12 @@ export async function Hero({
               {rows.map(([label, n]) => (
                 <tr key={label}>
                   <th scope="row" className="py-1.5 text-start font-normal text-fg">{label}</th>
-                  <td className="py-1.5 text-end font-semibold text-fg">{n}</td>
+                  <td className="py-1.5 w-px whitespace-nowrap text-right font-semibold text-fg">{n}</td>
                 </tr>
               ))}
               <tr className="ledger-total">
                 <th scope="row" className="py-2 text-start font-semibold text-fg">מחיר</th>
-                <td className="py-2 text-end font-display text-[22px] font-black text-accent">
+                <td className="py-2 w-px whitespace-nowrap text-right font-display text-[22px] font-black text-accent">
                   <bdi dir="ltr">₪0</bdi>
                 </td>
               </tr>

@@ -148,7 +148,7 @@ const sheetNum = (v: number | null) => (v === null ? "" : v < 0 ? `−${Math.rou
 export function Worksheet({ head, rows, label }: { head: string[]; rows: SheetRow[]; label: string }) {
   // Five columns of figures inside a solution box are tight on a phone: a smaller type and less padding there.
   const tight = head.length >= 5;
-  const numCell = `${tight ? "px-0.5" : "px-1"} py-1 text-end sm:px-2`;
+  const numCell = `${tight ? "px-0.5" : "px-1"} py-1 text-right sm:px-2`;
   const figures = (r: SheetRow) =>
     r.cells.map((v, i) => (
       <td key={i} className={`${numCell} ${i === r.cells.length - 1 ? "font-semibold text-fg" : ""}`}>
@@ -161,7 +161,7 @@ export function Worksheet({ head, rows, label }: { head: string[]; rows: SheetRo
         <thead>
           <tr className="text-[11px] text-muted">
             {head.map((h) => (
-              <th key={h} className={`${tight ? "px-0.5" : "px-1"} py-1.5 text-end align-bottom font-medium leading-tight`}>{h}</th>
+              <th key={h} className={`${tight ? "px-0.5" : "px-1"} py-1.5 text-right align-bottom font-medium leading-tight`}>{h}</th>
             ))}
           </tr>
         </thead>
@@ -179,7 +179,7 @@ export function Worksheet({ head, rows, label }: { head: string[]; rows: SheetRo
           <tr className="text-xs text-muted">
             <th className="px-3 py-1.5 text-start font-medium" />
             {head.map((h) => (
-              <th key={h} className="px-2 py-1.5 text-end font-medium">{h}</th>
+              <th key={h} className="px-2 py-1.5 text-right font-medium">{h}</th>
             ))}
           </tr>
         </thead>

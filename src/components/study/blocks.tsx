@@ -128,8 +128,8 @@ export function JournalEntry({ title, date, lines, note }: { title: string; date
           <thead>
             <tr className="text-xs text-muted">
               <th className="px-2 py-2 text-start font-medium sm:px-4">חשבון</th>
-              <th className="px-1.5 py-2 text-end font-medium text-debit sm:w-32 sm:px-4">חובה</th>
-              <th className="px-1.5 py-2 text-end font-medium text-credit sm:w-32 sm:px-4">זכות</th>
+              <th className="px-1.5 py-2 text-right font-medium text-debit sm:w-32 sm:px-4">חובה</th>
+              <th className="px-1.5 py-2 text-right font-medium text-credit sm:w-32 sm:px-4">זכות</th>
             </tr>
           </thead>
           <tbody>
@@ -142,8 +142,8 @@ export function JournalEntry({ title, date, lines, note }: { title: string; date
                   {l.account}
                   {l.tag && <span className="ms-2 inline-block align-middle">{l.tag}</span>}
                 </td>
-                <td className="px-1.5 py-2 text-end sm:px-4">{l.dr !== undefined && <Num v={l.dr} />}</td>
-                <td className="px-1.5 py-2 text-end sm:px-4">{l.cr !== undefined && <Num v={l.cr} />}</td>
+                <td className="px-1.5 py-2 text-right sm:px-4">{l.dr !== undefined && <Num v={l.dr} />}</td>
+                <td className="px-1.5 py-2 text-right sm:px-4">{l.cr !== undefined && <Num v={l.cr} />}</td>
               </tr>
             ))}
           </tbody>
@@ -151,10 +151,10 @@ export function JournalEntry({ title, date, lines, note }: { title: string; date
             {/* An accountant's total: a single rule above, a double rule below — the site's signature under every entry. */}
             <tr className="ledger-total font-semibold">
               <td className="px-4 py-2 text-muted">סה״כ</td>
-              <td className="px-4 py-2 text-end text-debit">
+              <td className="px-4 py-2 text-right text-debit">
                 <Num v={dr} />
               </td>
-              <td className="px-1.5 py-2 text-end text-credit sm:px-4">
+              <td className="px-1.5 py-2 text-right text-credit sm:px-4">
                 <Num v={cr} />
               </td>
             </tr>
@@ -187,9 +187,9 @@ export function DataTable({
   fit?: boolean;
 }) {
   const cell = (c: Cell) => (typeof c === "number" ? <Num v={c} /> : c);
-  // One alignment per column, shared by its header: numeric columns to the end, everything else to the start.
+  // One alignment per column, shared by its header: numeric columns to the right, so the units line up, everything else to the start.
   const numeric = head.map((_, i) => i > 0 && [...rows, ...(foot ? [foot] : [])].some((r) => typeof r[i] === "number"));
-  const align = (_: Cell, i: number) => (numeric[i] ? "text-end" : "text-start");
+  const align = (_: Cell, i: number) => (numeric[i] ? "text-right" : "text-start");
   return (
     <div className="my-4 overflow-hidden rounded-xl border border-line">
       {caption && <p className="border-b border-line bg-surface-2/70 px-4 py-2.5 text-sm font-semibold text-fg">{caption}</p>}
@@ -199,7 +199,7 @@ export function DataTable({
           <thead>
             <tr className="text-xs text-muted">
               {head.map((h, i) => (
-                <th key={i} className={cn("px-4 py-2 font-medium whitespace-nowrap", numeric[i] ? "text-end" : "text-start")}>
+                <th key={i} className={cn("px-4 py-2 font-medium whitespace-nowrap", numeric[i] ? "text-right" : "text-start")}>
                   {h}
                 </th>
               ))}

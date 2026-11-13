@@ -32,7 +32,7 @@ const cell = (c: Cell) => (typeof c === "number" ? <bdi dir="ltr" className="num
 /** A table of figures that fits a phone: no minimum width, so the numbers stay in view without scrolling sideways. Amounts show in whole shekels. `dense` is for a table of several years. */
 export function Tbl({ head, rows, foot, dense }: { head: string[]; rows: Cell[][]; foot?: Cell[]; dense?: boolean }) {
   const numeric = head.map((_, i) => i > 0 && [...rows, ...(foot ? [foot] : [])].some((r) => typeof r[i] === "number"));
-  const side = (i: number) => (numeric[i] ? "text-end" : "text-start");
+  const side = (i: number) => (numeric[i] ? "text-right" : "text-start");
   const pad = dense ? "px-1 py-1.5 sm:px-3" : "px-2 py-1.5 sm:px-3";
   return (
     <div className="my-3 overflow-hidden rounded-xl border border-line">

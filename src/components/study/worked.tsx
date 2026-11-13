@@ -19,10 +19,20 @@ const NegContext = createContext<Neg>("paren");
 
 const Num = ({ children }: { children: ReactNode }) => <span className="num whitespace-nowrap [direction:ltr] [unicode-bidi:isolate]">{children}</span>;
 
-function Amount({ v, dec }: { v: WCell; dec?: boolean }) {
+/** A positive amount beside a negative one keeps room for the closing parenthesis of a negative one, so the units still fall under each other. */
+const Hang = () => <span aria-hidden className="invisible">)</span>;
+const plain = (c: WCell) => (typeof c === "number" ? c >= 0 : /^[d,.]+$/.test(c));
+/** Whether a column or a sheet holds a negative amount in parentheses: only then do its positive amounts keep the room. */
+const hasParen = (cs: WCell[]) => cs.some((c) => (typeof c === "number" ? c < 0 : /^(.*)$/.test(c)));
+function Amount({ v, dec, hang }: { v: WCell; dec?: boolean; hang?: boolean }) {
   const neg = useContext(NegContext);
-  if (typeof v === "number") return <Num>{acc(v, neg, dec)}</Num>;
-  return isNumeric(v) ? <Num>{v}</Num> : <Text s={v} />;
+  if (typeof v !== "number" && !isNumeric(v)) return <Text s={v} />;
+  return (
+    <Num>
+      {typeof v === "number" ? acc(v, neg, dec) : v}
+      {hang && neg === "paren" && plain(v) && <Hang />}
+    </Num>
+  );
 }
 
 /** **x** is bold, `x` reads left to right. */
@@ -45,6 +55,9 @@ function Text({ s }: { s: string }) {
 }
 
 export function WTableView({ t }: { t: WTable }) {
+  // A column of figures: its header and every amount sit on the same edge, so the units line up under the header.
+  const numeric = t.head.map((_, i) => i > 0 && t.rows.some((r) => r.c[i] !== undefined && r.c[i] !== "" && isNumeric(r.c[i])));
+  const paren = t.head.map((_, i) => hasParen(t.rows.map((r) => r.c[i] ?? "")));
   return (
     <div className="scroll-x" tabIndex={0} role="region" aria-label={t.cap ?? t.head.filter(Boolean).join(", ")}>
       <table className="w-full border-collapse text-[13.5px]">
@@ -52,7 +65,7 @@ export function WTableView({ t }: { t: WTable }) {
         <thead>
           <tr>
             {t.head.map((h, i) => (
-              <th key={i} className="whitespace-nowrap bg-accent px-2 py-1.5 text-start font-semibold text-accent-fg">
+              <th key={i} className={cn("whitespace-nowrap bg-accent px-2 py-1.5 font-semibold text-accent-fg", numeric[i] ? "text-right" : "text-start")}>
                 {h}
               </th>
             ))}
@@ -62,8 +75,8 @@ export function WTableView({ t }: { t: WTable }) {
           {t.rows.map((r, k) => (
             <tr key={k} className={cn("border-b border-line", r.res && "bg-amber-50 font-bold dark:bg-amber-950/40")}>
               {r.c.map((c, i) => (
-                <td key={i} className={cn("px-2 py-1.5", i === 0 && "whitespace-nowrap", isNumeric(c) ? "text-left" : "text-start")}>
-                  <Amount v={c} dec={t.dec} />
+                <td key={i} className={cn("px-2 py-1.5", i === 0 && "whitespace-nowrap", numeric[i] ? "whitespace-nowrap text-right" : "text-start")}>
+                  <Amount v={c} dec={t.dec} hang={paren[i]} />
                 </td>
               ))}
             </tr>
@@ -75,6 +88,7 @@ export function WTableView({ t }: { t: WTable }) {
 }
 
 function Sheet({ lines }: { lines: WLine[] }) {
+  const paren = hasParen(lines.map((l) => l.a));
   return (
     <div className="flex min-w-0 flex-col text-[14.5px]">
       {lines.map((l, i) => (
@@ -96,9 +110,12 @@ function Sheet({ lines }: { lines: WLine[] }) {
               </span>
             )}
           </span>
-          <span className="flex min-w-[6.5rem] shrink-0 items-baseline justify-end gap-1.5 text-left">
+          <span className="flex shrink-0 items-baseline gap-1.5">
             {l.tag && <span className="rounded border border-line px-1 text-[11px] font-bold text-muted">{l.tag}</span>}
-            <Amount v={l.a} />
+            {/* A fixed box with the amount on its right edge: the units of every line fall under each other. */}
+            <span className="inline-block min-w-[6.5rem] text-right">
+              <Amount v={l.a} hang={paren} />
+            </span>
           </span>
         </div>
       ))}
@@ -141,8 +158,8 @@ function Entry({ e }: { e: WEntry }) {
         <thead>
           <tr className="border-b border-line text-[12.5px] text-muted">
             <th className="px-1.5 py-1 text-start font-semibold">חשבון</th>
-            <th className="w-28 px-1.5 py-1 text-left font-semibold">חובה</th>
-            <th className="w-28 px-1.5 py-1 text-left font-semibold">זכות</th>
+            <th className="w-28 px-1.5 py-1 text-right font-semibold">חובה</th>
+            <th className="w-28 px-1.5 py-1 text-right font-semibold">זכות</th>
           </tr>
         </thead>
         <tbody>
@@ -152,14 +169,14 @@ function Entry({ e }: { e: WEntry }) {
                 {side(l.cr !== undefined)}
                 {l.a}
               </td>
-              <td className="px-1.5 py-1 text-left">{l.dr !== undefined && <Num>{acc(l.dr, neg)}</Num>}</td>
-              <td className="px-1.5 py-1 text-left">{l.cr !== undefined && <Num>{acc(l.cr, neg)}</Num>}</td>
+              <td className="px-1.5 py-1 text-right">{l.dr !== undefined && <Num>{acc(l.dr, neg)}</Num>}</td>
+              <td className="px-1.5 py-1 text-right">{l.cr !== undefined && <Num>{acc(l.cr, neg)}</Num>}</td>
             </tr>
           ))}
           <tr className="border-t border-fg font-bold">
             <td className="px-1.5 py-1">סך הכול</td>
             {[dr, cr].map((v, i) => (
-              <td key={i} className="px-1.5 py-1 text-left">
+              <td key={i} className="px-1.5 py-1 text-right">
                 <span className="border-b-[3px] border-fg pb-px [border-bottom-style:double]">
                   <Num>{acc(v, neg)}</Num>
                 </span>
@@ -305,16 +322,16 @@ function TBView({ t }: { t: WTB }) {
         <thead>
           <tr className="border-b border-line text-[12.5px]">
             <th className="px-2 py-1 text-start font-semibold text-muted">חשבון</th>
-            <th className="w-28 px-2 py-1 text-left font-semibold text-debit">חובה</th>
-            <th className="w-28 px-2 py-1 text-left font-semibold text-credit">זכות</th>
+            <th className="w-28 px-2 py-1 text-right font-semibold text-debit">חובה</th>
+            <th className="w-28 px-2 py-1 text-right font-semibold text-credit">זכות</th>
           </tr>
         </thead>
         <tbody>
           {t.rows.map((r) => (
             <tr key={r.a} className={cn("border-b border-line", r.letter && "bg-success/10")}>
               <td className="px-2 py-1">{r.a}</td>
-              <td className="whitespace-nowrap px-2 py-1 text-left">{cell(r, "dr")}</td>
-              <td className="whitespace-nowrap px-2 py-1 text-left">{cell(r, "cr")}</td>
+              <td className="whitespace-nowrap px-2 py-1 text-right">{cell(r, "dr")}</td>
+              <td className="whitespace-nowrap px-2 py-1 text-right">{cell(r, "cr")}</td>
             </tr>
           ))}
         </tbody>
@@ -322,7 +339,7 @@ function TBView({ t }: { t: WTB }) {
           <tr className="font-bold">
             <td className="border-t-2 border-fg px-2 py-1">סך הכול</td>
             {[dr, cr].map((v, i) => (
-              <td key={i} className="border-t-2 border-fg px-2 py-1 text-left">
+              <td key={i} className="border-t-2 border-fg px-2 py-1 text-right">
                 <span className="border-b-[3px] border-fg [border-bottom-style:double]">
                   <Num>{acc(v, neg)}</Num>
                 </span>
@@ -374,10 +391,10 @@ function WorksheetView({ w }: { w: WWorksheet }) {
           </tr>
           <tr>
             {groups.map((g) => [
-              <th key={`${g.title}d`} className="border-s border-line/60 px-2 py-1 text-left text-[11px] font-medium text-debit">
+              <th key={`${g.title}d`} className="border-s border-line/60 px-2 py-1 text-right text-[11px] font-medium text-debit">
                 חובה
               </th>,
-              <th key={`${g.title}c`} className="px-2 py-1 text-left text-[11px] font-medium text-credit">
+              <th key={`${g.title}c`} className="px-2 py-1 text-right text-[11px] font-medium text-credit">
                 זכות
               </th>,
             ])}
@@ -394,10 +411,10 @@ function WorksheetView({ w }: { w: WWorksheet }) {
                 const p = g.pick(r);
                 const lit = i === 4 && r.a === "עודפים";
                 return [
-                  <td key={`${g.title}d`} className="whitespace-nowrap border-s border-line/60 px-2 py-1.5 text-left">
+                  <td key={`${g.title}d`} className="whitespace-nowrap border-s border-line/60 px-2 py-1.5 text-right">
                     {amount(p.dr, lit)}
                   </td>,
-                  <td key={`${g.title}c`} className="whitespace-nowrap px-2 py-1.5 text-left">
+                  <td key={`${g.title}c`} className="whitespace-nowrap px-2 py-1.5 text-right">
                     {amount(p.cr, lit)}
                   </td>,
                 ];
@@ -409,10 +426,10 @@ function WorksheetView({ w }: { w: WWorksheet }) {
           <tr className="border-t-2 border-line-strong">
             <td className="px-3 py-2 text-fg">סך הכול</td>
             {totals.map((t, i) => [
-              <td key={`t${i}d`} className="whitespace-nowrap border-s border-line/60 px-2 py-2 text-left">
+              <td key={`t${i}d`} className="whitespace-nowrap border-s border-line/60 px-2 py-2 text-right">
                 <Num>{acc(t.dr, neg)}</Num>
               </td>,
-              <td key={`t${i}c`} className="whitespace-nowrap px-2 py-2 text-left">
+              <td key={`t${i}c`} className="whitespace-nowrap px-2 py-2 text-right">
                 <Num>{acc(t.cr, neg)}</Num>
               </td>,
             ])}
@@ -420,7 +437,7 @@ function WorksheetView({ w }: { w: WWorksheet }) {
           <tr className="text-accent">
             <td className="px-3 py-1.5">רווח השנה</td>
             {totals.map((_, i) => [
-              <td key={`p${i}d`} className="whitespace-nowrap border-s border-line/60 px-2 py-1.5 text-left">
+              <td key={`p${i}d`} className="whitespace-nowrap border-s border-line/60 px-2 py-1.5 text-right">
                 {i === 3 && <Num>{acc(profit, neg)}</Num>}
               </td>,
               <td key={`p${i}c`} />,

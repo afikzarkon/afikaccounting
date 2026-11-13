@@ -81,8 +81,8 @@ export function AdjustedTrialBalance({ before, after, moves, caption }: { before
           <thead>
             <tr className="text-xs text-muted">
               <th className="px-4 py-2 text-start font-medium">חשבון</th>
-              <th className="px-4 py-2 text-end font-medium text-debit">חובה</th>
-              <th className="px-4 py-2 text-end font-medium text-credit">זכות</th>
+              <th className="px-4 py-2 text-right font-medium text-debit">חובה</th>
+              <th className="px-4 py-2 text-right font-medium text-credit">זכות</th>
             </tr>
           </thead>
           <tbody>
@@ -102,8 +102,8 @@ export function AdjustedTrialBalance({ before, after, moves, caption }: { before
                       )}
                     </span>
                   </td>
-                  <td className="num px-4 py-2 text-end">{cell(v, "dr", r.account)}</td>
-                  <td className="num px-4 py-2 text-end">{cell(v, "cr", r.account)}</td>
+                  <td className="num px-4 py-2 text-right">{cell(v, "dr", r.account)}</td>
+                  <td className="num px-4 py-2 text-right">{cell(v, "cr", r.account)}</td>
                 </tr>
               );
             })}
@@ -111,10 +111,10 @@ export function AdjustedTrialBalance({ before, after, moves, caption }: { before
           <tfoot>
             <tr className="border-t-2 border-fg/70 font-bold text-fg">
               <td className="px-4 py-2">סה״כ</td>
-              <td className="num px-4 py-2 text-end">
+              <td className="num px-4 py-2 text-right">
                 <Money v={tb.dr} plain />
               </td>
-              <td className="num px-4 py-2 text-end">
+              <td className="num px-4 py-2 text-right">
                 <Money v={tb.cr} plain />
               </td>
             </tr>

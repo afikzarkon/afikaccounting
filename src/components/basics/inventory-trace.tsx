@@ -33,7 +33,7 @@ export function TraceTableView({ t }: { t: TraceTable }) {
             )}
             <tr className="text-xs text-muted">
               {t.head.map((h, i) => (
-                <th key={i} scope="col" className={cn("px-3 py-2 font-medium whitespace-nowrap", numeric[i] ? "text-end" : "text-start", hl(i))}>
+                <th key={i} scope="col" className={cn("px-3 py-2 font-medium whitespace-nowrap", numeric[i] ? "text-right" : "text-start", hl(i))}>
                   {h}
                 </th>
               ))}
@@ -46,7 +46,7 @@ export function TraceTableView({ t }: { t: TraceTable }) {
             return (
               <tr key={ri} className={cn("border-t border-line/70", struck && "text-muted line-through decoration-muted/70", t.highlight?.includes(ri) && "bg-accent-soft/60")}>
                 {r.map((c, i) => (
-                  <td key={i} className={cn("px-3 py-1.5", numeric[i] ? "text-end" : "text-start", !struck && "text-fg", i === 0 && "min-w-[8rem]", hl(i))}>
+                  <td key={i} className={cn("px-3 py-1.5", numeric[i] ? "text-right" : "text-start", !struck && "text-fg", i === 0 && "min-w-[8rem]", hl(i))}>
                     {cell(c)}
                   </td>
                 ))}
@@ -58,7 +58,7 @@ export function TraceTableView({ t }: { t: TraceTable }) {
           <tfoot>
             <tr className="border-t-2 border-line-strong font-semibold">
               {t.foot.map((c, i) => (
-                <td key={i} className={cn("px-3 py-2 text-fg", numeric[i] ? "text-end" : "text-start", hl(i))}>
+                <td key={i} className={cn("px-3 py-2 text-fg", numeric[i] ? "text-right" : "text-start", hl(i))}>
                   {cell(c)}
                 </td>
               ))}
