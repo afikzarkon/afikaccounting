@@ -36,9 +36,9 @@ function Text({ s }: { s: string }) {
 const isNumeric = (c: WCell) => typeof c === "number" || /^[\s\d.,()%×÷+−=\-²^]+$/.test(c);
 /** A positive amount beside a negative one keeps room for the closing parenthesis of a negative one, so the units still fall under each other. */
 const Hang = () => <span aria-hidden className="invisible">)</span>;
-const plain = (c: WCell) => (typeof c === "number" ? c >= 0 : /^[d,.]+$/.test(c));
+const plain = (c: WCell) => (typeof c === "number" ? c >= 0 : /^[\d,.]+$/.test(c));
 /** Whether a column or a sheet holds a negative amount in parentheses: only then do its positive amounts keep the room. */
-const hasParen = (cs: WCell[]) => cs.some((c) => (typeof c === "number" ? c < 0 : /^(.*)$/.test(c)));
+const hasParen = (cs: WCell[]) => cs.some((c) => (typeof c === "number" ? c < 0 : /^\(.*\)$/.test(c)));
 const show = (c: WCell, hang = false) =>
   typeof c === "number" || isNumeric(c) ? (
     <Num>

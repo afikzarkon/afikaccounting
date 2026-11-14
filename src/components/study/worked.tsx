@@ -21,9 +21,9 @@ const Num = ({ children }: { children: ReactNode }) => <span className="num whit
 
 /** A positive amount beside a negative one keeps room for the closing parenthesis of a negative one, so the units still fall under each other. */
 const Hang = () => <span aria-hidden className="invisible">)</span>;
-const plain = (c: WCell) => (typeof c === "number" ? c >= 0 : /^[d,.]+$/.test(c));
+const plain = (c: WCell) => (typeof c === "number" ? c >= 0 : /^[\d,.]+$/.test(c));
 /** Whether a column or a sheet holds a negative amount in parentheses: only then do its positive amounts keep the room. */
-const hasParen = (cs: WCell[]) => cs.some((c) => (typeof c === "number" ? c < 0 : /^(.*)$/.test(c)));
+const hasParen = (cs: WCell[]) => cs.some((c) => (typeof c === "number" ? c < 0 : /^\(.*\)$/.test(c)));
 function Amount({ v, dec, hang }: { v: WCell; dec?: boolean; hang?: boolean }) {
   const neg = useContext(NegContext);
   if (typeof v !== "number" && !isNumeric(v)) return <Text s={v} />;
