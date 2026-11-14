@@ -89,7 +89,7 @@ export function WTableView({ t }: { t: WTable }) {
             <tr key={k} className={cn("border-b border-line", r.res && "bg-amber-50 font-bold dark:bg-amber-950/40")}>
               {r.c.map((c, i) => (
                 <td key={i} className={cn("px-2 py-1.5", isNumeric(c) && c !== "" ? "text-right" : "text-start")}>
-                  <Link id={r.id?.[i]} from={r.from?.[i]}>
+                  <Link id={c === "" ? undefined : r.id?.[i]} from={c === "" ? undefined : r.from?.[i]}>
                     {show(c, paren[i])}
                   </Link>
                 </td>

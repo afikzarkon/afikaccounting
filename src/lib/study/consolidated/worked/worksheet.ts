@@ -34,7 +34,7 @@ const je = (cap: string, lines: [string, number | "", number | ""][]): WTable =>
 
 /** A trial balance as the lecturer gives it: debits positive, credits negative. */
 export function trialTable(s: { a: Books; b: Books; an: string; bn: string; year: string }): WTable {
-  const line = (label: string, f: (k: Books) => number, sign: 1 | -1, id?: string) => ({ c: [label, e(sign * f(s.a)), e(sign * f(s.b))], ...(id ? { id: { 2: id } } : {}) });
+  const line = (label: string, f: (k: Books) => number, sign: 1 | -1, id?: Record<number, string>) => ({ c: [label, e(sign * f(s.a)), e(sign * f(s.b))], ...(id ? { id } : {}) });
   return {
     cap: `מאזני הבוחן לשנת ${s.year}: חובה חיובי, זכות בסוגריים`,
     head: ["", s.an, s.bn],
@@ -42,13 +42,13 @@ export function trialTable(s: { a: Books; b: Books; an: string; bn: string; year
       line("מזומנים", (k) => k.cash, 1),
       line("מלאי", (k) => k.inventory, 1),
       line("רכוש קבוע", (k) => k.ppe, 1),
-      line("השקעה בחברה בת", (k) => k.investment, 1),
+      line("השקעה בחברה בת", (k) => k.investment, 1, { 1: "tb.a.investment" }),
       line("ספקים", (k) => k.suppliers, -1),
       line("מסים נדחים", (k) => k.deferredTax, -1),
-      line("הון מניות", (k) => k.capital, -1, "tb.b.capital"),
-      line("פרמיה", (k) => k.premium, -1, "tb.b.premium"),
+      line("הון מניות", (k) => k.capital, -1, { 2: "tb.b.capital" }),
+      line("פרמיה", (k) => k.premium, -1, { 2: "tb.b.premium" }),
       ...(s.a.reserve || s.b.reserve ? [line("קרן הערכה מחדש", (k) => k.reserve, -1)] : []),
-      line("עודפים 1.1", (k) => k.retainedOpen, -1, "tb.b.retained"),
+      line("עודפים 1.1", (k) => k.retainedOpen, -1, { 2: "tb.b.retained" }),
       line("מכירות", (k) => k.sales, -1),
       line("עלות המכירות", (k) => k.cogs, 1),
       line("הוצאות הנהלה וכלליות", (k) => k.admin, 1),
@@ -64,10 +64,12 @@ function profitStep(s: Story): WStep {
   const A_ = col(s.a);
   const B_ = col(s.b);
   const labels = ["מכירות", "עלות המכירות", "הוצאות הנהלה וכלליות", "הכנסות מדיבידנד", "הוצאות מסים", "רווח נקי"];
+  const pid = (i: number): Record<number, string> | undefined => (i === 3 ? { 1: "pr.div" } : i === labels.length - 1 ? { 1: "pr.a", 2: "pr.b" } : undefined);
   return {
     h: "הרווח בדוח של כל חברה",
     why: ["מאיפה?", "מסכמים את שורות הרווח והפסד במאזן הבוחן. קרן ההערכה מחדש והדיבידנד שהוכרז לא נכנסים לרווח הנקי."],
-    tables: [{ head: ["", s.an, s.bn], rows: labels.map((l, i) => ({ c: [l, A_[i], B_[i]], res: i === labels.length - 1 })) }],
+    // The dividend income and both profits are carried on, to the parent's adjustments and to the adjusted profits.
+    tables: [{ head: ["", s.an, s.bn], rows: labels.map((l, i) => ({ c: [l, A_[i], B_[i]], res: i === labels.length - 1, id: pid(i) })) }],
     result: `${s.an} ${A(profitOf(s.a))}, ${s.bn} ${A(profitOf(s.b))}.`,
   };
 }
@@ -85,9 +87,9 @@ function excessSteps(s: Story): WStep[] {
         {
           head: ["", "ייחוס 1.1", "הפחתה", "יתרה 31.12", "איך"],
           rows: [
-            ...t.items.map((r, i) => ({ c: [r.name, r.at, r.amortized, r.end, s.how[i]] })),
-            { c: [t.tax.name, t.tax.at, t.tax.amortized, t.tax.end, `\`25% × ${n(sumAt)}\` ו־\`25% × ${n(sumEnd)}\`, בסימן הפוך`] },
-            { c: ["סך הכול", t.total.at, t.total.amortized, t.total.end, ""], res: true, id: { 1: "ex.at" } },
+            ...t.items.map((r, i) => ({ c: [r.name, r.at, r.amortized, r.end, s.how[i]], id: { 2: `ex.am.${i}`, 3: `ex.end.${i}` } })),
+            { c: [t.tax.name, t.tax.at, t.tax.amortized, t.tax.end, `\`25% × ${n(sumAt)}\` ו־\`25% × ${n(sumEnd)}\`, בסימן הפוך`], id: { 2: "ex.am.tax", 3: "ex.end.tax" } },
+            { c: ["סך הכול", t.total.at, t.total.amortized, t.total.end, ""], res: true, id: { 1: "ex.at", 2: "ex.am", 3: "ex.end" } },
           ],
         },
       ],
@@ -113,10 +115,10 @@ function excessSteps(s: Story): WStep[] {
       h: "המוניטין",
       sheet: [
         { l: "תמורה שהועברה", a: s.paid },
-        { l: c.premium || s.costs === 0 ? "ועוד זשמ״ש בשווי הוגן" : `ועוד זשמ״ש: \`${n(c.netAt)} × ${pct(1 - s.holding)}\``, a: c.goodwill.nci, k: "op" },
+        { l: c.premium || s.costs === 0 ? "ועוד זשמ״ש בשווי הוגן" : `ועוד זשמ״ש: \`${n(c.netAt)} × ${pct(1 - s.holding)}\``, a: c.goodwill.nci, k: "op", id: "gw.nci" },
         { l: "עלות צירוף העסקים", a: c.goodwill.cost, k: "sub" },
         { l: "פחות נכסים מזוהים נטו", a: -c.netAt, k: "op", from: "netAt" },
-        { l: "מוניטין", a: c.goodwill.goodwill, k: "tot" },
+        { l: "מוניטין", a: c.goodwill.goodwill, k: "tot", id: "gw" },
       ],
       why: s.costs
         ? ["ושכר הטרחה?", `${A(s.costs)} ששולמו לעורכי הדין הם עלויות רכישה. הם לא חלק מהתמורה, ולכן לא נכנסים למוניטין. במאוחד הם הוצאה, על חשבון ${s.an}.`]
@@ -133,7 +135,7 @@ function excessSteps(s: Story): WStep[] {
                 rows: [
                   { c: [`פרמיית שליטה: \`${n(s.paid)} − ${n(c.goodwill.nci)} × 3\``, c.premium, c.premium, 0] },
                   { c: ["מוניטין בלי פרמיה, לפי 75/25", c.goodwill.goodwill - c.premium, c.goodwill.ownersGoodwill - c.premium, c.goodwill.nciGoodwill] },
-                  { c: ["סך המוניטין", c.goodwill.goodwill, c.goodwill.ownersGoodwill, c.goodwill.nciGoodwill], res: true },
+                  { c: ["סך המוניטין", c.goodwill.goodwill, c.goodwill.ownersGoodwill, c.goodwill.nciGoodwill], res: true, from: { 1: "gw" }, id: { 2: "gw.owners", 3: "gw.nciShare" } },
                 ],
               },
             ],
@@ -154,10 +156,10 @@ function adjustedStep(s: Story): WStep {
       {
         head: ["", s.an, s.bn],
         rows: [
-          { c: ["רווח בדוח הנפרד או העצמאי", c.adjusted.a.separate, c.adjusted.b.separate] },
-          { c: ["הפחתת עודפי עלות, נטו ממס", "", c.adjusted.b.excess] },
-          { c: [`ביטול הכנסות מדיבידנד: \`${n(s.b.dividend)} × ${pct(s.holding)}\``, c.adjusted.a.dividend, ""] },
-          ...(s.costs ? [{ c: ["עלויות רכישה", c.adjusted.a.costs, ""] }] : []),
+          { c: ["רווח בדוח הנפרד או העצמאי", c.adjusted.a.separate, c.adjusted.b.separate], from: { 1: "pr.a", 2: "pr.b" } },
+          { c: ["הפחתת עודפי עלות, נטו ממס", "", c.adjusted.b.excess], from: { 2: "pl.adjB" } },
+          { c: [`ביטול הכנסות מדיבידנד: \`${n(s.b.dividend)} × ${pct(s.holding)}\``, c.adjusted.a.dividend, ""], from: { 1: "pl.div" } },
+          ...(s.costs ? [{ c: ["עלויות רכישה", c.adjusted.a.costs, ""], from: { 1: "pl.costs" } }] : []),
           { c: ["רווח מתוקן", c.adjusted.a.total, c.adjusted.b.total], res: true },
         ],
       },
@@ -209,10 +211,11 @@ function incomeSteps(s: Story): WStep[] {
     {
       h: `ההתאמות על חשבון ${s.bn}`,
       sheet: [
-        { l: "עלות המכירות: הפחתת עודף המלאי", a: cogs, id: "pl.cogs" },
-        { l: "הוצאות הנהלה וכלליות: הפחתת העודף", a: admin, k: "op", id: "pl.admin" },
-        { l: `הוצאות מסים: \`25% × ${n(-(cogs + admin))}\``, a: taxAdj, k: "op", id: "pl.tax" },
-        { l: "סך ההתאמות", a: c.profit.adjB, k: "tot", id: "pl.adjB" },
+        // Each from its amortization in the cost-excess table: the first item to cost of sales, the second to administration.
+        { l: "עלות המכירות: הפחתת עודף המלאי", a: cogs, id: "pl.cogs", from: c.table.items[0]?.amortized === cogs ? "ex.am.0" : undefined },
+        { l: "הוצאות הנהלה וכלליות: הפחתת העודף", a: admin, k: "op", id: "pl.admin", from: c.table.items[1]?.amortized === admin ? "ex.am.1" : undefined },
+        { l: `הוצאות מסים: \`25% × ${n(-(cogs + admin))}\``, a: taxAdj, k: "op", id: "pl.tax", from: "ex.am.tax" },
+        { l: "סך ההתאמות", a: c.profit.adjB, k: "tot", id: "pl.adjB", from: "ex.am" },
       ],
       why: ["למה המס בסימן הפוך?", "ההפחתות מקטינות את הרווח לפני מס. המס הנדחה שנגרע איתן מקטין את הוצאות המסים, ולכן הוא חיובי."],
       result: `ההתאמות של ${s.bn} מקטינות את הרווח ב־${A(-c.profit.adjB)}, בדיוק הפחתת עודפי העלות נטו ממס מהטבלה.`,
@@ -220,7 +223,7 @@ function incomeSteps(s: Story): WStep[] {
     {
       h: `ההתאמות על חשבון ${s.an}`,
       sheet: [
-        { l: `ביטול הכנסות מדיבידנד: \`${n(s.b.dividend)} × ${pct(s.holding)}\``, a: -c.dividendOut, id: "pl.div" },
+        { l: `ביטול הכנסות מדיבידנד: \`${n(s.b.dividend)} × ${pct(s.holding)}\``, a: -c.dividendOut, id: "pl.div", from: "pr.div" },
         ...(s.costs ? [{ l: "עלויות רכישה, להוצאות הנהלה וכלליות", a: -s.costs, k: "op" as const, id: "pl.costs" }] : []),
         { l: "סך ההתאמות", a: c.profit.adjA, k: "tot" as const, id: "pl.adjA" },
       ],
@@ -244,7 +247,7 @@ function splitSteps(s: Story): WStep[] {
       h: "חלוקת הרווח הנקי",
       sheet: [
         { l: `זשמ״ש: \`${n(c.adjusted.b.total)} × ${pct(out)}\``, a: c.split.profit.nci },
-        { l: `בעלים של ${s.an}: \`${n(c.adjusted.a.total)} + ${n(c.adjusted.b.total)} × ${pct(s.holding)}\``, a: c.split.profit.owners },
+        { l: `בעלים של ${s.an}: \`${n(c.adjusted.a.total)} + ${n(c.adjusted.b.total)} × ${pct(s.holding)}\``, a: c.split.profit.owners, id: "split.owners" },
         { l: "רווח נקי מאוחד", a: c.split.profit.total, k: "tot" },
       ],
       why: ["למה מהרווח המתוקן?", `הזשמ״ש נושאים בחלקם בהפחתת עודפי העלות, כי הם בעלים ב־${s.bn}. לכן מחשבים מהרווח המתוקן שלה, לא מהרווח בדוח שלה.`],
@@ -255,9 +258,9 @@ function splitSteps(s: Story): WStep[] {
           {
             h: "חלוקת סך הרווח הכולל",
             sheet: [
-              { l: `זשמ״ש: \`(${n(c.adjusted.b.total)} + ${n(s.b.reserve)}) × ${pct(out)}\``, a: c.split.comprehensive.nci },
-              { l: `בעלים: \`${n(c.adjusted.a.total)} + ${n(s.a.reserve)} + (${n(c.adjusted.b.total)} + ${n(s.b.reserve)}) × ${pct(s.holding)}\``, a: c.split.comprehensive.owners },
-              { l: "סך הרווח הכולל המאוחד", a: c.split.comprehensive.total, k: "tot" as const },
+              { l: `זשמ״ש: \`(${n(c.adjusted.b.total)} + ${n(s.b.reserve)}) × ${pct(out)}\``, a: c.split.comprehensive.nci, id: "split.c.nci" },
+              { l: `בעלים: \`${n(c.adjusted.a.total)} + ${n(s.a.reserve)} + (${n(c.adjusted.b.total)} + ${n(s.b.reserve)}) × ${pct(s.holding)}\``, a: c.split.comprehensive.owners, id: "split.c.owners" },
+              { l: "סך הרווח הכולל המאוחד", a: c.split.comprehensive.total, k: "tot" as const, id: "split.c.total" },
             ],
             why: ["מה מוסיפים?", "לכל חברה את הרווח הכולל האחר שלה, ההערכה מחדש, ואז מחלקים באותה דרך."] as [string, string],
             result: `לזשמ״ש ${A(c.split.comprehensive.nci)}, לבעלים ${A(c.split.comprehensive.owners)}.`,
@@ -291,10 +294,18 @@ function positionTable(s: Story): WTable {
 function positionSteps(s: Story): WStep[] {
   const { c } = s;
   const adj = c.position.filter((r) => r.adj !== 0);
+  // Where each adjustment comes from: the investment from the parent's books, goodwill from its calculation, the rest from the balances in the cost-excess table.
+  const bsFrom = (r: { name: string; adj: number }) => {
+    if (r.name === "השקעה בחברה בת") return "tb.a.investment";
+    if (r.name === "מוניטין") return "gw";
+    if (r.name === "מסים נדחים") return r.adj === c.table.tax.end ? "ex.end.tax" : undefined;
+    const k = c.table.items.findIndex((x) => x.end !== 0 && x.end === r.adj);
+    return k === -1 ? undefined : `ex.end.${k}`;
+  };
   return [
     {
       h: "ההתאמות בדוח על המצב הכספי",
-      sheet: adj.map((r, i) => ({ l: r.name, a: r.adj, k: i === 0 ? undefined : ("op" as const), id: "bs." + r.name })),
+      sheet: adj.map((r, i) => ({ l: r.name, a: r.adj, k: i === 0 ? undefined : ("op" as const), id: "bs." + r.name, from: bsFrom(r) })),
       why: ["מה נכנס?", "יתרות עודפי העלות בסוף השנה, לא ההפחתות. המס הנדחה על היתרה מצטרף למסים הנדחים. ההשקעה מתבטלת, והמוניטין נכנס."],
       result: `${adj.map((r) => `${r.name} ${A(r.adj)}`).join(", ")}.`,
     },
@@ -319,8 +330,8 @@ function equitySteps(s: Story): WStep[] {
           head: ["", s.an, s.bn],
           rows: [
             { c: ["הון בדוח הנפרד או העצמאי", eqA, eqB] },
-            { c: ["ועוד יתרות עודפי עלות, נטו ממס", "", c.table.total.end] },
-            { c: ["פחות ביטול ההשקעה", -s.a.investment, ""] },
+            { c: ["ועוד יתרות עודפי עלות, נטו ממס", "", c.table.total.end], from: { 2: "ex.end" } },
+            { c: ["פחות ביטול ההשקעה", -s.a.investment, ""], from: { 1: "bs.השקעה בחברה בת" } },
             { c: ["נמ״נ מתוקנים", c.equity.netA, c.equity.netB], res: true },
           ],
         },
@@ -335,8 +346,8 @@ function equitySteps(s: Story): WStep[] {
           head: ["", `בעלים של ${s.an}`, "זשמ״ש"],
           rows: [
             { c: [`חלק בנמ״נ: \`${n(c.equity.netA)} + ${n(c.equity.netB)} × ${pct(s.holding)}\` ו־\`${n(c.equity.netB)} × ${pct(out)}\``, c.equity.owners - c.goodwill.ownersGoodwill, c.equity.nci - c.goodwill.nciGoodwill] },
-            { c: ["ועוד חלק במוניטין", c.goodwill.ownersGoodwill, c.goodwill.nciGoodwill] },
-            { c: ["סך הכול", c.equity.owners, c.equity.nci], res: true, id: { 1: "eq.owners" } },
+            { c: ["ועוד חלק במוניטין", c.goodwill.ownersGoodwill, c.goodwill.nciGoodwill], ...(c.premium ? { from: { 1: "gw.owners", 2: "gw.nciShare" } } : {}) },
+            { c: ["סך הכול", c.equity.owners, c.equity.nci], res: true, id: { 1: "eq.owners", 2: "eq.nci" } },
           ],
         },
       ],
@@ -451,7 +462,7 @@ export const W6_ELIM: Worked = {
       sheet: [
         { l: "הדיבידנד שערמון הכריזה", a: ARMON.dividend },
         { l: "החלק של נופר: `12,000 × 75%`", a: STORY6.dividendOut, k: "sub" },
-        { l: "החלק של המיעוט: `12,000 × 25%`", a: ARMON.dividend - STORY6.dividendOut, k: "sub" },
+        { l: "החלק של המיעוט: `12,000 × 25%`", a: ARMON.dividend - STORY6.dividendOut, k: "sub", id: "elim.nciDiv" },
       ],
       why: ["לאן הולך כל חלק?", "החלק של נופר רשום אצלה כהכנסה, והוא מתבטל. החלק של המיעוט מקטין את הזשמ״ש. העודפים של ערמון חוזרים כאילו לא חולק דיבידנד בתוך הקבוצה."],
       tables: [je("פקודת עזר: ביטול הדיבידנד", [["ח׳ הכנסות מדיבידנד", STORY6.dividendOut, ""], ["ח׳ זשמ״ש", ARMON.dividend - STORY6.dividendOut, ""], ["ז׳ עודפים (דיבידנד שהוכרז)", "", ARMON.dividend]])],
@@ -520,16 +531,36 @@ export const W6_SOCE: Worked = {
           head: ["", "הון מניות", "פרמיה", "קרן הערכה מחדש", "עודפים", "סך הבעלים", "זשמ״ש", "סך ההון"],
           rows: [
             { c: ["יתרה ל־1.1.2025", C.open.capital, C.open.premium, e(C.open.reserve), C.open.retained, C.open.owners, e(C.open.nci), C.open.total] },
-            { c: ["רכישת חברה בת", "", "", "", "", "", C.acquisition.nci, C.acquisition.total] },
-            { c: ["דיבידנד שהוכרז", "", "", "", C.dividends.retained, C.dividends.owners, C.dividends.nci, C.dividends.total] },
-            { c: ["רווח כולל", "", "", C.comprehensive.reserve, C.comprehensive.retained, C.comprehensive.owners, C.comprehensive.nci, C.comprehensive.total] },
-            { c: ["יתרה ל־31.12.2025", C.close.capital, C.close.premium, C.close.reserve, C.close.retained, C.close.owners, C.close.nci, C.close.total], res: true },
+            { c: ["רכישת חברה בת", "", "", "", "", "", C.acquisition.nci, C.acquisition.total], from: { 6: "gw.nci" } },
+            { c: ["דיבידנד שהוכרז", "", "", "", C.dividends.retained, C.dividends.owners, C.dividends.nci, C.dividends.total], from: { 6: "elim.nciDiv" } },
+            { c: ["רווח כולל", "", "", C.comprehensive.reserve, C.comprehensive.retained, C.comprehensive.owners, C.comprehensive.nci, C.comprehensive.total], from: { 4: "split.owners", 5: "split.c.owners", 6: "split.c.nci", 7: "split.c.total" } },
+            { c: ["יתרה ל־31.12.2025", C.close.capital, C.close.premium, C.close.reserve, C.close.retained, C.close.owners, C.close.nci, C.close.total], res: true, from: { 5: "eq.owners", 6: "eq.nci" } },
           ],
         },
       ],
       result: `העודפים: \`233,000 − 16,000 + 13,000 = ${n(C.close.retained)}\`. היתרות בסוף השנה, ${A(C.close.owners)} לבעלים ו־${A(C.close.nci)} לזשמ״ש, זהות לחלוקת ההון.`,
     },
   ],
+};
+
+/**
+ * The whole example at once: the question and the trial balances once, then
+ * every step from the profits to the statement of changes in equity, so a
+ * figure can be followed back to where it came from.
+ */
+export const W6_FULL: Worked = {
+  ...base,
+  title: "דוגמה פתורה: הדוחות המאוחדים של נופר וערמון לשנת 2025",
+  required: [
+    "1. הציגו את טבלת עודף העלות, וחשבו את הנמ״נ ביום הרכישה ואת המוניטין.",
+    "2. רשמו את פקודות העזר שמבטלות את ההשקעה ואת הדיבידנד של ערמון.",
+    "3. ערכו את דף העבודה של הדוח על הרווח הכולל, וחלקו את הרווח בין הבעלים לזשמ״ש.",
+    "4. ערכו את דף העבודה של הדוח על המצב הכספי ליום 31.12.2025, וחלקו את ההון.",
+    "5. ערכו את הדוח המאוחד על השינויים בהון.",
+  ],
+  tryFirst: "מה מכל טבלת עודף העלות צריך כל דוח: ההפחתות או היתרות? ושל מי כל התאמה?",
+  steps: [W6_DATA, W6_EXCESS, W6_ELIM, W6_PL, W6_SPLIT, W6_BS, W6_EQUITY, W6_SOCE].flatMap((w) => w.steps),
+  notes: W6_ELIM.notes,
 };
 
 /* The second year. */
