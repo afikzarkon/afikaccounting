@@ -15,6 +15,7 @@ import { TOOLKIT } from "./lessons/toolkit";
 import { withLtrFormulas } from "./ltr";
 import { withWorked } from "./worked";
 import { LESSON_N } from "./shared";
+import { ias19Videos } from "./videos";
 
 type Screen = StudyModule["screens"][number];
 
@@ -166,7 +167,9 @@ const FINALS: Screen[] = [
 const EXAM_LESSON = at(EXAMS, "ias19-exams", before(EXAMS.screens, "emp-exam-master", [bk("note", "שאלה 3: מה הביאור מסתיר — במתכונת מבחן"), ...FINALS]));
 
 /** The employee-benefits course: eight lessons, in four stages — foundations, the simple benefits, the defined benefit chain (three lessons, each leaning on the one before), and the extensions with exam-level questions. Each lesson ends with questions at the level of the owner's exercise booklet. Every formula in their practice reads left to right. */
-export const IAS19_LESSONS = [FOUNDATIONS, SHORT_TERM, DC, MEASUREMENT, MOVEMENT, ASSETS_PRESENT, OTHER_TERM, EXAM_LESSON].map((m) => withLtrFormulas(withWorked(m)));
+export const IAS19_LESSONS = [FOUNDATIONS, SHORT_TERM, DC, MEASUREMENT, MOVEMENT, ASSETS_PRESENT, OTHER_TERM, EXAM_LESSON].map((m) =>
+  withLtrFormulas(withWorked({ ...m, videos: ias19Videos(m.n, m.title) })),
+);
 
 /** The lesson and index of a concept screen of the course, by its id. */
 export const findIas19Screen = (id: string) => findScreenIn(IAS19_LESSONS, id);
