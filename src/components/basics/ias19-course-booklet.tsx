@@ -43,7 +43,7 @@ function SolutionBox({ children }: { children: ReactNode }) {
  */
 function bookletQuestion(q: BkQuestion): ScreenContent {
   return {
-    lead: "שאלה ברמת חוברת התרגילים. קראו את הנתונים, פתרו על דף או בגיליון, הזינו את הסכומים, ורק אז פתחו את הפתרון.",
+    lead: "קראו את הנתונים, פתרו על דף או בגיליון, הזינו את הסכומים, ורק אז פתחו את הפתרון.",
     body: (
       <>
         {/* Marked as the question's data for the sheet's "question data" button; `contents` keeps the layout as it was. */}
