@@ -7,9 +7,16 @@
  * left-to-right span for a formula or a figure.
  */
 export type WCell = string | number;
-export type WRow = { c: WCell[]; res?: boolean };
+/**
+ * Links: the same figure, carried from one place in the solution to another.
+ * A figure gets an `id` where it first appears, and every place that carries
+ * it over names that id in `from`; an arrow joins them while the solution is
+ * open. Only for the very same figure, never for one merely equal in amount.
+ * In a row, both are keyed by the column's index.
+ */
+export type WRow = { c: WCell[]; res?: boolean; id?: Record<number, string>; from?: Record<number, string> };
 export type WTable = { cap?: string; head: string[]; rows: WRow[] };
-export type WLine = { l: string; a: WCell; k?: "sub" | "tot" | "op" };
+export type WLine = { l: string; a: WCell; k?: "sub" | "tot" | "op"; id?: string; from?: string };
 export type WPoint = { d: string; n?: string; cf?: number; key?: boolean };
 export type WStep = {
   h: string;

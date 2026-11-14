@@ -34,7 +34,7 @@ const je = (cap: string, lines: [string, number | "", number | ""][]): WTable =>
 
 /** A trial balance as the lecturer gives it: debits positive, credits negative. */
 export function trialTable(s: { a: Books; b: Books; an: string; bn: string; year: string }): WTable {
-  const line = (label: string, f: (k: Books) => number, sign: 1 | -1) => ({ c: [label, e(sign * f(s.a)), e(sign * f(s.b))] });
+  const line = (label: string, f: (k: Books) => number, sign: 1 | -1, id?: string) => ({ c: [label, e(sign * f(s.a)), e(sign * f(s.b))], ...(id ? { id: { 2: id } } : {}) });
   return {
     cap: `מאזני הבוחן לשנת ${s.year}: חובה חיובי, זכות בסוגריים`,
     head: ["", s.an, s.bn],
@@ -45,10 +45,10 @@ export function trialTable(s: { a: Books; b: Books; an: string; bn: string; year
       line("השקעה בחברה בת", (k) => k.investment, 1),
       line("ספקים", (k) => k.suppliers, -1),
       line("מסים נדחים", (k) => k.deferredTax, -1),
-      line("הון מניות", (k) => k.capital, -1),
-      line("פרמיה", (k) => k.premium, -1),
+      line("הון מניות", (k) => k.capital, -1, "tb.b.capital"),
+      line("פרמיה", (k) => k.premium, -1, "tb.b.premium"),
       ...(s.a.reserve || s.b.reserve ? [line("קרן הערכה מחדש", (k) => k.reserve, -1)] : []),
-      line("עודפים 1.1", (k) => k.retainedOpen, -1),
+      line("עודפים 1.1", (k) => k.retainedOpen, -1, "tb.b.retained"),
       line("מכירות", (k) => k.sales, -1),
       line("עלות המכירות", (k) => k.cogs, 1),
       line("הוצאות הנהלה וכלליות", (k) => k.admin, 1),
@@ -87,7 +87,7 @@ function excessSteps(s: Story): WStep[] {
           rows: [
             ...t.items.map((r, i) => ({ c: [r.name, r.at, r.amortized, r.end, s.how[i]] })),
             { c: [t.tax.name, t.tax.at, t.tax.amortized, t.tax.end, `\`25% × ${n(sumAt)}\` ו־\`25% × ${n(sumEnd)}\`, בסימן הפוך`] },
-            { c: ["סך הכול", t.total.at, t.total.amortized, t.total.end, ""], res: true },
+            { c: ["סך הכול", t.total.at, t.total.amortized, t.total.end, ""], res: true, id: { 1: "ex.at" } },
           ],
         },
       ],
@@ -96,12 +96,12 @@ function excessSteps(s: Story): WStep[] {
     {
       h: "הנכסים המזוהים נטו ביום הרכישה",
       sheet: [
-        { l: "הון מניות", a: s.b.capital },
-        { l: "ועוד פרמיה", a: s.b.premium, k: "op" },
-        { l: "ועוד עודפים ב־1.1", a: s.b.retainedOpen, k: "op" },
+        { l: "הון מניות", a: s.b.capital, from: "tb.b.capital" },
+        { l: "ועוד פרמיה", a: s.b.premium, k: "op", from: "tb.b.premium" },
+        { l: "ועוד עודפים ב־1.1", a: s.b.retainedOpen, k: "op", from: "tb.b.retained" },
         { l: `ההון של ${s.bn} ביום הרכישה`, a: c.subEquityAt, k: "sub" },
-        { l: "ועוד עודפי עלות נטו ממס", a: t.total.at, k: "op" },
-        { l: "נכסים מזוהים נטו", a: c.netAt, k: "tot" },
+        { l: "ועוד עודפי עלות נטו ממס", a: t.total.at, k: "op", from: "ex.at" },
+        { l: "נכסים מזוהים נטו", a: c.netAt, k: "tot", id: "netAt" },
       ],
       why: [
         "מה עם הקרן והרווח?",
@@ -115,7 +115,7 @@ function excessSteps(s: Story): WStep[] {
         { l: "תמורה שהועברה", a: s.paid },
         { l: c.premium || s.costs === 0 ? "ועוד זשמ״ש בשווי הוגן" : `ועוד זשמ״ש: \`${n(c.netAt)} × ${pct(1 - s.holding)}\``, a: c.goodwill.nci, k: "op" },
         { l: "עלות צירוף העסקים", a: c.goodwill.cost, k: "sub" },
-        { l: "פחות נכסים מזוהים נטו", a: -c.netAt, k: "op" },
+        { l: "פחות נכסים מזוהים נטו", a: -c.netAt, k: "op", from: "netAt" },
         { l: "מוניטין", a: c.goodwill.goodwill, k: "tot" },
       ],
       why: s.costs
@@ -169,13 +169,22 @@ function adjustedStep(s: Story): WStep {
 function incomeTable(s: Story): WTable {
   const { c } = s;
   const cells = (r: { a: number; b: number; adjA: number; adjB: number; total: number }) => [e(r.a), e(r.b), e(r.adjA), e(r.adjB), r.total];
+  // Each adjustment comes from its line in the two steps before: the subsidiary's in column 4, the parent's in column 3.
+  const fromB = ["", "pl.cogs", "pl.admin", "", "pl.tax"];
+  const fromA = ["", "", "pl.costs", "pl.div", ""];
+  const from = (i: number) => {
+    const f: Record<number, string> = {};
+    if (fromA[i]) f[3] = fromA[i];
+    if (fromB[i]) f[4] = fromB[i];
+    return f;
+  };
   const hasOci = c.oci.a !== 0 || c.oci.b !== 0;
   return {
     cap: `דף העבודה של הדוח על הרווח הכולל לשנת ${s.year}`,
     head: ["", s.an, s.bn, `התאמות ${s.an}`, `התאמות ${s.bn}`, "מאוחד"],
     rows: [
-      ...c.income.map((r) => ({ c: [r.name, ...cells(r)] })),
-      { c: ["רווח נקי", ...cells(c.profit)], res: true },
+      ...c.income.map((r, i) => ({ c: [r.name, ...cells(r)], from: from(i) })),
+      { c: ["רווח נקי", ...cells(c.profit)], res: true, from: { 3: "pl.adjA", 4: "pl.adjB" } },
       ...(hasOci ? [{ c: [c.oci.name, ...cells(c.oci)] }, { c: ["סך הרווח הכולל", ...cells(c.comprehensive)], res: true }] : []),
     ],
   };
@@ -190,10 +199,10 @@ function incomeSteps(s: Story): WStep[] {
     {
       h: `ההתאמות על חשבון ${s.bn}`,
       sheet: [
-        { l: "עלות המכירות: הפחתת עודף המלאי", a: cogs },
-        { l: "הוצאות הנהלה וכלליות: הפחתת העודף", a: admin, k: "op" },
-        { l: `הוצאות מסים: \`25% × ${n(-(cogs + admin))}\``, a: taxAdj, k: "op" },
-        { l: "סך ההתאמות", a: c.profit.adjB, k: "tot" },
+        { l: "עלות המכירות: הפחתת עודף המלאי", a: cogs, id: "pl.cogs" },
+        { l: "הוצאות הנהלה וכלליות: הפחתת העודף", a: admin, k: "op", id: "pl.admin" },
+        { l: `הוצאות מסים: \`25% × ${n(-(cogs + admin))}\``, a: taxAdj, k: "op", id: "pl.tax" },
+        { l: "סך ההתאמות", a: c.profit.adjB, k: "tot", id: "pl.adjB" },
       ],
       why: ["למה המס בסימן הפוך?", "ההפחתות מקטינות את הרווח לפני מס. המס הנדחה שנגרע איתן מקטין את הוצאות המסים, ולכן הוא חיובי."],
       result: `ההתאמות של ${s.bn} מקטינות את הרווח ב־${A(-c.profit.adjB)}, בדיוק הפחתת עודפי העלות נטו ממס מהטבלה.`,
@@ -201,9 +210,9 @@ function incomeSteps(s: Story): WStep[] {
     {
       h: `ההתאמות על חשבון ${s.an}`,
       sheet: [
-        { l: `ביטול הכנסות מדיבידנד: \`${n(s.b.dividend)} × ${pct(s.holding)}\``, a: -c.dividendOut },
-        ...(s.costs ? [{ l: "עלויות רכישה, להוצאות הנהלה וכלליות", a: -s.costs, k: "op" as const }] : []),
-        { l: "סך ההתאמות", a: c.profit.adjA, k: "tot" as const },
+        { l: `ביטול הכנסות מדיבידנד: \`${n(s.b.dividend)} × ${pct(s.holding)}\``, a: -c.dividendOut, id: "pl.div" },
+        ...(s.costs ? [{ l: "עלויות רכישה, להוצאות הנהלה וכלליות", a: -s.costs, k: "op" as const, id: "pl.costs" }] : []),
+        { l: "סך ההתאמות", a: c.profit.adjA, k: "tot" as const, id: "pl.adjA" },
       ],
       why: ["למה מבטלים את הדיבידנד?", `הרווח של ${s.bn} כבר נכנס למאוחד שורה אחרי שורה. אם נשאיר גם את הדיבידנד שהיא חילקה ל־${s.an}, אותו רווח ייספר פעמיים.`],
       result: `ההתאמות של ${s.an}: ${A(c.profit.adjA)}.`,
@@ -255,7 +264,7 @@ function positionTable(s: Story): WTable {
     cap: "דף העבודה של הדוח על המצב הכספי: נכסים חיוביים, התחייבויות והון בסוגריים",
     head: ["", s.an, s.bn, "התאמות", "מאוחד"],
     rows: [
-      ...c.position.map((r) => ({ c: [r.name, e(r.a), e(r.b), e(r.adj), r.total] })),
+      ...c.position.map((r) => ({ c: [r.name, e(r.a), e(r.b), e(r.adj), r.total], ...(r.adj ? { from: { 3: "bs." + r.name } } : {}) })),
       eq("הון מניות", c.equity.capital),
       eq("פרמיה", c.equity.premium),
       ...(c.equity.reserve ? [eq("קרן הערכה מחדש", c.equity.reserve)] : []),
@@ -273,14 +282,14 @@ function positionSteps(s: Story): WStep[] {
   return [
     {
       h: "ההתאמות בדוח על המצב הכספי",
-      sheet: adj.map((r, i) => ({ l: r.name, a: r.adj, k: i === 0 ? undefined : ("op" as const) })),
+      sheet: adj.map((r, i) => ({ l: r.name, a: r.adj, k: i === 0 ? undefined : ("op" as const), id: "bs." + r.name })),
       why: ["מה נכנס?", "יתרות עודפי העלות בסוף השנה, לא ההפחתות. המס הנדחה על היתרה מצטרף למסים הנדחים. ההשקעה מתבטלת, והמוניטין נכנס."],
       result: `${adj.map((r) => `${r.name} ${A(r.adj)}`).join(", ")}.`,
     },
     {
       h: "דף העבודה",
       tables: [positionTable(s)],
-      result: `נכסים ${A(c.assets)}, התחייבויות ${A(c.liabilities)}, הון \`${n(c.assets)} − ${n(c.liabilities)} = ${n(c.equity.total)}\`. שורות ההון באות מחלוקת ההון בין הבעלים לזשמ״ש: ${c.equity.reserve ? `הקרן \`${n(s.a.reserve)} + ${n(s.b.reserve)} × ${pct(s.holding)} = ${n(c.equity.reserve)}\`, ` : ""}העודפים הם ההפרש \`${n(c.equity.owners)} − ${n(c.equity.capital)} − ${n(c.equity.premium)}${c.equity.reserve ? ` − ${n(c.equity.reserve)}` : ""} = ${n(c.equity.retained)}\`, והזשמ״ש ${A(c.equity.nci)}. הפירוט המלא בחלוקת ההון.`,
+      result: `נכסים ${A(c.assets)}, התחייבויות ${A(c.liabilities)}, הון \`${n(c.assets)} − ${n(c.liabilities)} = ${n(c.equity.total)}\`. שורות ההון באות מחלוקת ההון בין הבעלים לזשמ״ש: ${c.equity.reserve ? `הקרן \`${n(s.a.reserve)} + ${n(s.b.reserve)} × ${pct(s.holding)} = ${n(c.equity.reserve)}\`, ` : ""}העודפים הם מה שנשאר מ־${A(c.equity.owners)} של הבעלים אחרי הון המניות, הפרמיה${c.equity.reserve ? " והקרן" : ""}: ${A(c.equity.retained)}, והזשמ״ש ${A(c.equity.nci)}. הפירוט המלא בחלוקת ההון.`,
     },
   ];
 }
@@ -315,7 +324,7 @@ function equitySteps(s: Story): WStep[] {
           rows: [
             { c: [`חלק בנמ״נ: \`${n(c.equity.netA)} + ${n(c.equity.netB)} × ${pct(s.holding)}\` ו־\`${n(c.equity.netB)} × ${pct(out)}\``, c.equity.owners - c.goodwill.ownersGoodwill, c.equity.nci - c.goodwill.nciGoodwill] },
             { c: ["ועוד חלק במוניטין", c.goodwill.ownersGoodwill, c.goodwill.nciGoodwill] },
-            { c: ["סך הכול", c.equity.owners, c.equity.nci], res: true },
+            { c: ["סך הכול", c.equity.owners, c.equity.nci], res: true, id: { 1: "eq.owners" } },
           ],
         },
       ],
@@ -328,7 +337,7 @@ function equitySteps(s: Story): WStep[] {
         { l: `פרמיה, כמו אצל ${s.an}`, a: c.equity.premium },
         ...(c.equity.reserve ? [{ l: `קרן הערכה מחדש: \`${n(s.a.reserve)} + ${n(s.b.reserve)} × ${pct(s.holding)}\``, a: c.equity.reserve }] : []),
         { l: `עודפים: \`${n(c.equity.owners)} − ${n(c.equity.capital)} − ${n(c.equity.premium)}${c.equity.reserve ? ` − ${n(c.equity.reserve)}` : ""}\``, a: c.equity.retained, k: "sub" },
-        { l: "סך ההון של הבעלים", a: c.equity.owners, k: "tot" },
+        { l: "סך ההון של הבעלים", a: c.equity.owners, k: "tot", from: "eq.owners" },
       ],
       p: s.b.reserve
         ? [`הקרן של ${s.bn} נוצרה אחרי הרכישה, ולכן היא של הקבוצה ולא מתבטלת מול ההשקעה. הבעלים מקבלים ממנה ${pct(s.holding)}, והחלק של הזשמ״ש, \`${n(s.b.reserve)} × ${pct(1 - s.holding)} = ${n(Math.round(s.b.reserve * (1 - s.holding)))}\`, נמצא בתוך שורת הזשמ״ש.`]

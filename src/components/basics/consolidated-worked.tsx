@@ -1,8 +1,9 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import { acc, type WCell, type WLine, type WPoint, type Worked, type WTable } from "@/lib/study/consolidated/worked/types";
 import { cn } from "@/lib/utils";
+import { LinkArrows } from "./worked-links";
 
 /**
  * The course's worked example: a lecturer's solution sheet for every
@@ -13,6 +14,16 @@ import { cn } from "@/lib/utils";
 export { acc };
 
 const Num = ({ children }: { children: ReactNode }) => <span className="whitespace-nowrap tabular-nums [direction:ltr] [unicode-bidi:isolate]">{children}</span>;
+
+/** A figure that a link arrow starts from or ends at. */
+const Link = ({ id, from, children }: { id?: string; from?: string; children: ReactNode }) =>
+  id || from ? (
+    <span data-lid={id} data-lfrom={from}>
+      {children}
+    </span>
+  ) : (
+    children
+  );
 
 /** **x** is bold, `x` reads left to right. */
 function Text({ s }: { s: string }) {
@@ -69,7 +80,9 @@ export function WTableView({ t }: { t: WTable }) {
             <tr key={k} className={cn("border-b border-line", r.res && "bg-amber-50 font-bold dark:bg-amber-950/40")}>
               {r.c.map((c, i) => (
                 <td key={i} className={cn("px-2 py-1.5", isNumeric(c) && c !== "" ? "text-right" : "text-start")}>
-                  {show(c, paren[i])}
+                  <Link id={r.id?.[i]} from={r.from?.[i]}>
+                    {show(c, paren[i])}
+                  </Link>
                 </td>
               ))}
             </tr>
@@ -97,7 +110,11 @@ function Sheet({ lines }: { lines: WLine[] }) {
           <span>
             <Text s={l.l} />
           </span>
-          <span className="inline-block min-w-[7rem] text-right">{show(l.a, paren)}</span>
+          <span className="inline-block min-w-[7rem] text-right">
+            <Link id={l.id} from={l.from}>
+              {show(l.a, paren)}
+            </Link>
+          </span>
         </div>
       ))}
     </div>
@@ -136,9 +153,12 @@ function Why({ why }: { why: [string, string] }) {
 
 export function WorkedExample({ ex }: { ex: Worked }) {
   const [open, setOpen] = useState(false);
+  const root = useRef<HTMLElement>(null);
   const n = ex.steps.length;
+  const linked = ex.steps.some((s) => s.sheet?.some((l) => l.id || l.from) || s.tables?.some((t) => t.rows.some((r) => r.id || r.from)));
   return (
-    <article className="my-4 overflow-hidden rounded-xl border-2 border-accent bg-surface">
+    <article ref={root} className={cn("relative my-4 overflow-hidden rounded-xl border-2 border-accent bg-surface", linked && open && "pl-5 sm:pl-7")}>
+      <LinkArrows root={root} on={linked && open} />
       <header className="bg-accent-soft px-4 py-3 text-[16px] font-bold text-fg">{ex.title}</header>
       <section className="border-t border-line px-4 py-3">
         <h4 className="mb-1.5 text-[14.5px] font-bold">{ex.own ? "הנתונים" : "הנתונים (כל הנתונים מהחומר)"}</h4>
@@ -185,7 +205,7 @@ export function WorkedExample({ ex }: { ex: Worked }) {
                 </h5>
                 {s.timeline && <Timeline points={s.timeline} />}
                 {s.sheet ? (
-                  <div className="grid gap-4 sm:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+                  <div className={cn("grid gap-4", !s.sheet.some((l) => l.id || l.from) && "sm:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]")}>
                     <Sheet lines={s.sheet} />
                     {s.why && <Why why={s.why} />}
                   </div>
