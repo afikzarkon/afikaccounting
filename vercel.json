@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "rm -rf node_modules/@fortune-sheet && npm install",
+  "ignoreCommand": "bash scripts/vercel-ignore.sh",
   "crons": [{ "path": "/api/reminders", "schedule": "0 16 * * *" }]
 }
