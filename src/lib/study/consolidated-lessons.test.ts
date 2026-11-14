@@ -529,7 +529,13 @@ describe("lesson 6: the worksheet, against a separate calculation in Python", ()
     assert.equal(WORKSHEET_W.nciCheck, YEAR2_NCI_END);
     // the elimination entry balances
     assert.equal(16_000 + 34_000 + 74_000 + 12_000 + 20_000 + STORY6.goodwill.goodwill, -STORY6.table.tax.at + 140_000 + STORY6.goodwill.nci);
-    assert.deepEqual([W6_DATA, W6_EXCESS, W6_ELIM, W6_PL, W6_SPLIT, W6_BS, W6_EQUITY, W6_SOCE, W6_YEAR2, W6_MASTER].map((w) => w.steps.length), [2, 4, 2, 3, 3, 2, 3, 3, 4, 15]);
+    assert.deepEqual([W6_DATA, W6_EXCESS, W6_ELIM, W6_PL, W6_SPLIT, W6_BS, W6_EQUITY, W6_SOCE, W6_YEAR2, W6_MASTER].map((w) => w.steps.length), [2, 4, 2, 3, 3, 2, 3, 2, 4, 15]);
+    // the total-equity row of the balance-sheet worksheet, as in the lecturer's sheet: 342,000 + 148,000 + (16,000 − 140,000 + 32,000 − 4,000)
+    const ws = W6_BS.steps[1].tables![0].rows;
+    assert.deepEqual(ws.find((r) => r.c[0] === "סך ההון")!.c.slice(1), [342_000, 148_000, -96_000, -394_000]);
+    // the subtotals of the profit worksheet: 310,000 − 182,000, then − 76,000 + 0
+    const pl = W6_PL.steps[2].tables![0].rows;
+    assert.deepEqual(["רווח גולמי", "רווח לפני מס"].map((l) => pl.find((r) => r.c[0] === l)!.c[5]), [128_000, 52_000]);
   });
   it("eight adjustments to sort, both answers among them", () => {
     assert.equal(WHOSE.length, 8);

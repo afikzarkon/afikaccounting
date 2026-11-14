@@ -179,13 +179,23 @@ function incomeTable(s: Story): WTable {
     return f;
   };
   const hasOci = c.oci.a !== 0 || c.oci.b !== 0;
+  const rows = c.income.map((r, i) => ({ c: [r.name, ...cells(r)], from: from(i) }));
+  // As in the lecturer's sheet: the subtotals only in the consolidated column, and under the table each column's share for the minority.
+  const upTo = (k: number) => c.income.slice(0, k).reduce((x, r) => x + r.total, 0);
+  const sub = (label: string, v: number) => ({ c: [label, "", "", "", "", v] });
+  const out = pct(1 - s.holding);
   return {
     cap: `דף העבודה של הדוח על הרווח הכולל לשנת ${s.year}`,
     head: ["", s.an, s.bn, `התאמות ${s.an}`, `התאמות ${s.bn}`, "מאוחד"],
     rows: [
-      ...c.income.map((r, i) => ({ c: [r.name, ...cells(r)], from: from(i) })),
+      ...rows.slice(0, 2),
+      sub("רווח גולמי", upTo(2)),
+      ...rows.slice(2, 4),
+      sub("רווח לפני מס", upTo(4)),
+      ...rows.slice(4),
       { c: ["רווח נקי", ...cells(c.profit)], res: true, from: { 3: "pl.adjA", 4: "pl.adjB" } },
       ...(hasOci ? [{ c: [c.oci.name, ...cells(c.oci)] }, { c: ["סך הרווח הכולל", ...cells(c.comprehensive)], res: true }] : []),
+      { c: ["חלק הזשמ״ש", "0%", out, "0%", out, ""] },
     ],
   };
 }
@@ -271,7 +281,9 @@ function positionTable(s: Story): WTable {
       eq("עודפים", c.equity.retained),
       eq(`סך ההון של בעלי מניות ${s.an}`, c.equity.owners, true),
       eq("זשמ״ש", c.equity.nci),
-      eq("סך ההון", c.equity.total, true),
+      // As in the lecturer's sheet: each column's net assets, and the consolidated equity is their sum, on the credit side.
+      { c: ["סך ההון", ...(["a", "b", "adj"] as const).map((k) => e(c.position.reduce((x, r) => x + r[k], 0))), -c.equity.total], res: true },
+      { c: ["חלק הזשמ״ש", "0%", pct(1 - s.holding), "", ""] },
     ],
   };
 }
@@ -490,49 +502,32 @@ export const W6_SOCE: Worked = {
   steps: [
     {
       h: "השורות",
-      tables: [
-        {
-          head: ["השורה", "החישוב"],
-          rows: [
-            { c: ["יתרה ל־1.1.2025", `ההון של נופר בדוח הנפרד: \`40,000 + 60,000 + 233,000 = ${n(C.open.owners)}\`. אין עדיין זשמ״ש`] },
-            { c: ["רכישת חברה בת", `הזשמ״ש ביום הרכישה, ${n(C.acquisition.nci)}. נופר שילמה במזומן, ולכן ההון של הבעלים לא זז`] },
-            { c: ["דיבידנד שהוכרז", `של נופר: ${n(NOFAR.dividend)} מהעודפים. של ערמון: רק החלק של המיעוט, \`12,000 × 25% = 3,000\``] },
-            { c: ["רווח כולל", `לבעלים ${n(STORY6.split.profit.owners)} בעודפים ו־${n(C.comprehensive.reserve)} בקרן. לזשמ״ש ${n(C.comprehensive.nci)}`] },
-          ],
-        },
+      // Paragraphs, not a table: each line's formula then wraps on a phone instead of running off the box.
+      p: [
+        `**יתרה ל־1.1.2025:** ההון של נופר בדוח הנפרד, \`40,000 + 60,000 + 233,000 = ${n(C.open.owners)}\`. אין עדיין זשמ״ש.`,
+        `**רכישת חברה בת:** הזשמ״ש ביום הרכישה, ${A(C.acquisition.nci)}. נופר שילמה במזומן, ולכן ההון של הבעלים לא זז.`,
+        `**דיבידנד שהוכרז:** של נופר, ${A(NOFAR.dividend)} מהעודפים. של ערמון, רק החלק של המיעוט: \`12,000 × 25% = 3,000\`.`,
+        `**רווח כולל:** לבעלים ${A(STORY6.split.profit.owners)} בעודפים ו־${A(C.comprehensive.reserve)} בקרן. לזשמ״ש ${A(C.comprehensive.nci)}.`,
       ],
       result: "החלק של נופר בדיבידנד של ערמון לא מופיע: הוא התבטל מול ההכנסה שלה.",
     },
     {
-      h: "החלק של הבעלים",
+      h: "הדוח",
       tables: [
         {
-          head: ["", "הון מניות", "פרמיה", "קרן", "עודפים", "סך הבעלים"],
+          // One table, as in the lecturer's sheet: the owners' columns, the minority and the total.
+          cap: "הדוח המאוחד על השינויים בהון לשנת 2025",
+          head: ["", "הון מניות", "פרמיה", "קרן הערכה מחדש", "עודפים", "סך הבעלים", "זשמ״ש", "סך ההון"],
           rows: [
-            { c: ["יתרה ל־1.1.2025", C.open.capital, C.open.premium, e(C.open.reserve), C.open.retained, C.open.owners] },
-            { c: ["דיבידנד שהוכרז", "", "", "", C.dividends.retained, C.dividends.owners] },
-            { c: ["רווח כולל", "", "", C.comprehensive.reserve, C.comprehensive.retained, C.comprehensive.owners] },
-            { c: ["יתרה ל־31.12.2025", C.close.capital, C.close.premium, C.close.reserve, C.close.retained, C.close.owners], res: true },
+            { c: ["יתרה ל־1.1.2025", C.open.capital, C.open.premium, e(C.open.reserve), C.open.retained, C.open.owners, e(C.open.nci), C.open.total] },
+            { c: ["רכישת חברה בת", "", "", "", "", "", C.acquisition.nci, C.acquisition.total] },
+            { c: ["דיבידנד שהוכרז", "", "", "", C.dividends.retained, C.dividends.owners, C.dividends.nci, C.dividends.total] },
+            { c: ["רווח כולל", "", "", C.comprehensive.reserve, C.comprehensive.retained, C.comprehensive.owners, C.comprehensive.nci, C.comprehensive.total] },
+            { c: ["יתרה ל־31.12.2025", C.close.capital, C.close.premium, C.close.reserve, C.close.retained, C.close.owners, C.close.nci, C.close.total], res: true },
           ],
         },
       ],
-      result: `העודפים: \`233,000 − 16,000 + 13,000 = ${n(C.close.retained)}\`.`,
-    },
-    {
-      h: "הסיכום, עם הזשמ״ש",
-      tables: [
-        {
-          head: ["", "סך הבעלים", "זשמ״ש", "סך ההון"],
-          rows: [
-            { c: ["יתרה ל־1.1.2025", C.open.owners, e(C.open.nci), C.open.total] },
-            { c: ["רכישת חברה בת", "", C.acquisition.nci, C.acquisition.total] },
-            { c: ["דיבידנד שהוכרז", C.dividends.owners, C.dividends.nci, C.dividends.total] },
-            { c: ["רווח כולל", C.comprehensive.owners, C.comprehensive.nci, C.comprehensive.total] },
-            { c: ["יתרה ל־31.12.2025", C.close.owners, C.close.nci, C.close.total], res: true },
-          ],
-        },
-      ],
-      result: `היתרות בסוף השנה, ${A(C.close.owners)} לבעלים ו־${A(C.close.nci)} לזשמ״ש, זהות לחלוקת ההון. הכול נסגר.`,
+      result: `העודפים: \`233,000 − 16,000 + 13,000 = ${n(C.close.retained)}\`. היתרות בסוף השנה, ${A(C.close.owners)} לבעלים ו־${A(C.close.nci)} לזשמ״ש, זהות לחלוקת ההון.`,
     },
   ],
 };
