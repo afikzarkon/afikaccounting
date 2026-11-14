@@ -60,7 +60,8 @@ export async function registerUpload(input: Labels & { kind: MediaKind; path: st
 export async function addEmbed(input: Labels & { url: string }): Promise<AdminResult> {
   if (!(await assertAdmin())) return DENIED;
   const embed = parseEmbed(input.url);
-  if (!embed) return { ok: false, error: "הקישור אינו סרטון YouTube או Vimeo מוכר." };
+  // Bunny Stream videos belong to the lessons' own data, not the media library.
+  if (!embed || embed.source === "bunny") return { ok: false, error: "הקישור אינו סרטון YouTube או Vimeo מוכר." };
   const meta = labels(input);
   if (!meta.title) return { ok: false, error: "חסרה כותרת." };
 

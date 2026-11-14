@@ -154,7 +154,7 @@ export const ROLLFORWARD: StudyModule = {
       said(work.pnDB(SALES_2023)),
       "הפסד, ל-OCI.",
     ]),
-    calc("sales-payments", "צוות מכירות: התשלומים", `צוות מכירות, 2024: פתיחה ${fmt(SALES.y2023.closing)}; שיעור ב-31.12.2023 ${pct(SALES.y2024.rate)}; עלות שירות ${fmt(SALES.y2024.service)}; רווח אקטוארי (P.N.) ${fmt(SALES.y2024.gain)}; סגירה ${fmt(SALES.y2024.closing)}. כמה הטבות שולמו?`, SALES_2024.payments, [
+    calc("sales-payments", "צוות מכירות: התשלומים", `צוות מכירות, 2024: פתיחה ${fmt(SALES.y2023.closing)}; שיעור ב-31.12.2023 ${pct(SALES.y2024.rate)}; עלות שירות ${fmt(SALES.y2024.service)}; רווח אקטוארי (P.N.) ${fmt(SALES.y2024.gain)}; סגירה ${fmt(SALES.y2024.closing)}. ההטבות שולמו ביום האחרון של השנה. כמה הטבות שולמו?`, SALES_2024.payments, [
       `ריבית:
 ${said(work.interestCost(SALES.y2023.closing, SALES.y2024.rate))}`,
       `כאן הנעלם הוא התשלומים, וה-P.N. רווח, ולכן בא עם מינוס:

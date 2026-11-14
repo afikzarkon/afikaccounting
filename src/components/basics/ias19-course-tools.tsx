@@ -363,7 +363,7 @@ export const IAS19_TOOLS_SCREENS: Record<string, ScreenContent> = {
         <div className="rounded-xl border border-line bg-surface px-4 py-3">
           <p className="text-[13px] font-bold text-muted">המקרה</p>
           <P>
-            חברת ״אורן״ הבטיחה לעובד, יוסי, מענק של <Money v={CASE.grant} /> שישולם בעוד {CASE.years === 2 ? "שנתיים" : `${CASE.years} שנים`}. שיעור ההיוון {pct(CASE.rate)}. לחברה יש גם הפרשה לחופשה: בתחילת השנה
+            היום 1.1. חברת ״אורן״ הבטיחה לעובד, יוסי, מענק של <Money v={CASE.grant} /> שישולם בעוד {CASE.years === 2 ? "שנתיים" : `${CASE.years} שנים`}. שיעור ההיוון {pct(CASE.rate)}. לחברה יש גם הפרשה לחופשה: בתחילת השנה
             היא הייתה <Money v={CASE.vacation.opening} />, ההוצאה של השנה <Money v={CASE.vacation.expense} />, ובסוף השנה <Money v={CASE.vacation.closing} />.
           </P>
         </div>

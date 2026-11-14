@@ -11,7 +11,7 @@ const origin = (url: string | undefined) => {
 // Supabase serves the API, auth, and Storage (media, signed exam files); the demo video may live elsewhere.
 const supabase = origin(process.env.NEXT_PUBLIC_SUPABASE_URL);
 const demoVideo = origin(process.env.NEXT_PUBLIC_DEMO_VIDEO_URL);
-const embeds = "https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com";
+const embeds = "https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com https://iframe.mediadelivery.net https://player.mediadelivery.net";
 
 // Without nonces: they need every page rendered per request, which Partial Prerendering rules out.
 // Inline scripts stay allowed (Next.js bootstrap, the theme script); everything else is pinned to known origins.

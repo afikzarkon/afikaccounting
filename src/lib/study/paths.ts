@@ -39,5 +39,7 @@ export function outlineOf(m: StudyModule): StudyModule {
     exercises: m.exercises.map((ex) => ({ id: ex.id, kind: ex.kind }) as StudyModule["exercises"][number]),
     traps: m.traps.map((t) => ({ id: t.id, prompt: "", options: [], answer: -1, why: "", traps: [] })),
     tips: [],
+    // Keep the count and chapters, never the video's address.
+    videos: m.videos?.map((v) => ({ ...v, src: "" })),
   };
 }

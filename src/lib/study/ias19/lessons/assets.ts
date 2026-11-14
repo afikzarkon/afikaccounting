@@ -171,7 +171,7 @@ export const ASSETS: StudyModule = {
       `ריבית: ${fmt(SALES_ASSETS.y2023.opening)} × ${pct(SALES.y2023.rate)} = ${fmt(SALES_A_2023.interest)}.`,
       `P.N. = ${fmt(SALES_ASSETS.y2023.closing)} − ${fmt(SALES_ASSETS.y2023.opening)} − ${fmt(SALES_A_2023.interest)} − ${fmt(SALES_ASSETS.y2023.contributions)} + ${fmt(SALES_ASSETS.y2023.paidFromFund)} = ${fmt(SALES_A_2023.pn)} — רק מה ששולם מהקרן.`,
     ]),
-    calc("sales-a-2024", "צוות מכירות: נכסים 2024", `קרן של צוות המכירות, 2024: פתיחה ${fmt(SALES_ASSETS.y2023.closing)}; שיעור ${pct(SALES.y2024.rate)}; הפקדות ${fmt(SALES_ASSETS.y2024.contributions)}; שולמו מהקרן ${fmt(SALES_ASSETS.y2024.paidFromFund)} (מתוך ${fmt(SALES_2024.payments)} ששולמו לעובדים); שווי הוגן בסוף ${fmt(SALES_ASSETS.y2024.closing)}. מה ה-P.N. של הנכסים (רווח — בסכום חיובי)?`, SALES_A_2024.pn, [
+    calc("sales-a-2024", "צוות מכירות: נכסים 2024", `קרן של צוות המכירות, 2024 (הפקדות ותשלומים בסוף השנה): פתיחה ${fmt(SALES_ASSETS.y2023.closing)}; שיעור ${pct(SALES.y2024.rate)}; הפקדות ${fmt(SALES_ASSETS.y2024.contributions)}; שולמו מהקרן ${fmt(SALES_ASSETS.y2024.paidFromFund)} (מתוך ${fmt(SALES_2024.payments)} ששולמו לעובדים); שווי הוגן בסוף ${fmt(SALES_ASSETS.y2024.closing)}. מה ה-P.N. של הנכסים (רווח — בסכום חיובי)?`, SALES_A_2024.pn, [
       `ריבית ${fmt(SALES_A_2024.interest)}; P.N. = ${fmt(SALES_A_2024.pn)} ₪ רווח.`,
     ]),
     calc("split-interest", "ריבית על הפקדה בשנה מפוצלת", `קרן: פתיחה ${fmt(SPLIT.opening)}; שיעור ההתחייבות ${pct(SPLIT.periods[0].i)} עד 30.6 ו-${pct(SPLIT.periods[1].i)} מ-1.7; ב-1.7 הופקדו ${fmt(SPLIT.contribution)}. לפי סעיף 125, מה הכנסות הריבית של השנה (בלי עיגולי ביניים)?`, SPLIT_INTEREST.total, [

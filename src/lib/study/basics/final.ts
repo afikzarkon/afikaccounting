@@ -1,6 +1,7 @@
 import type { StudyModule } from "../types";
 import { A, words } from "../worked";
 import { COURSE, COURSE_HREF } from "./shared";
+import { basicsVideos } from "./videos";
 
 // Almog's exam figures, as the lesson's exam screen states them.
 const ALMOG_PL = {
@@ -28,6 +29,7 @@ export const FINAL: StudyModule = {
   course: COURSE,
   n: 8,
   title: "גיליון רב-טורי ותרגול מסכם",
+  videos: basicsVideos(8, "גיליון רב-טורי ותרגול מסכם"),
   description: "כל מה שלמדנו בטבלה אחת: שאלה מלאה נפתרת צעד אחר צעד, שני משחקים שבהם פותרים גיליון שלם בעצמכם — ושאלת בחינה מסכמת שמשלבת את כל הקורס.",
   goal: "לשלב את כל הקורס בגיליון רב-טורי אחד, ולפתור שאלת בחינה מסכמת.",
   outcomes: [

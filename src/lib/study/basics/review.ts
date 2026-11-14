@@ -3,6 +3,7 @@ import { MULTI, MULTI_RESULTS } from "@/lib/learn/basics-review";
 import { accumulatedTo, depreciationOfYear } from "@/lib/learn/basics-ppe";
 import type { JournalExercise, StudyModule } from "../types";
 import { COURSE, COURSE_HREF, fmt } from "./shared";
+import { basicsVideos } from "./videos";
 
 const journal = (id: string, skill: string, text: string, lines: Entry["lines"], why: string, accounts: string[]): JournalExercise => ({
   kind: "journal",
@@ -32,6 +33,7 @@ export const REVIEW: StudyModule = {
   course: COURSE,
   n: 6,
   title: "מאזן בוחן ראשוני: לזהות, לתקן, להשלים",
+  videos: basicsVideos(6, "מאזן בוחן ראשוני: לזהות, לתקן, להשלים"),
   description: "הלב של שאלת הבחינה: מה כבר נרשם, מה נרשם בטעות ומה חסר. חוזה ישן מול חדש, חוזים שמתחדשים ונגמרים, יתרות ״?״, ופקודות תיקון — עם ההשפעה של כל טעות על הרווח.",
   goal: "לקרוא מאזן בוחן ראשוני: לזהות מה נרשם נכון, מה בטעות ומה חסר — ולתקן.",
   outcomes: [

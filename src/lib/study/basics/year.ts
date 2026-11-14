@@ -2,6 +2,7 @@ import { balancesOf, carryForward, ledger, statements } from "@/lib/learn/basics
 import { OFEK } from "@/lib/learn/basics-year";
 import type { JournalExercise, StudyModule } from "../types";
 import { COURSE, COURSE_HREF, fmt } from "./shared";
+import { basicsVideos } from "./videos";
 
 const B = balancesOf(ledger(OFEK.entries));
 const S = statements(B);
@@ -23,6 +24,7 @@ export const YEAR: StudyModule = {
   course: COURSE,
   n: 4,
   title: "שנה שלמה: מפקודה ראשונה ועד מאזן בוחן",
+  videos: basicsVideos(4, "שנה שלמה: מפקודה ראשונה ועד מאזן בוחן"),
   description: "שאלה של שנה שלמה, כמו בבחינה: עשרים אירועים עם תאריכים, צ׳קים ומקדמות — שיטת עבודה, דוגמה פתורה, שנה שאתם פותרים בעצמכם, ומעבר לשנה הבאה.",
   goal: "לפתור שאלה של שנה שלמה מקצה לקצה, בשיטה קבועה של חמישה צעדים.",
   outcomes: [

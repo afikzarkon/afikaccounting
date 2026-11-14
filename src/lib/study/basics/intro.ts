@@ -1,6 +1,7 @@
 import type { StudyModule } from "../types";
 import { words } from "../worked";
 import { COURSE, COURSE_HREF, fmt, practice } from "./shared";
+import { basicsVideos } from "./videos";
 
 /**
  * Everyday events "translated" into accounting: what changed, account by account.
@@ -65,6 +66,7 @@ export const INTRO: StudyModule = {
   course: COURSE,
   n: 1,
   title: "מהי חשבונאות",
+  videos: basicsVideos(1, "מהי חשבונאות"),
   description: "חשבונאות היא שפה: יש לה מילים, יש לה דקדוק (תקני החשבונאות), והיא מתרגמת את מה שקורה בעסק לשני דוחות שכל העולם קורא.",
   goal: "להבין מה חשבונאות עושה — מתרגמת את מה שקורה בעסק לשני דוחות — ולהכיר את המילים הראשונות שלה.",
   outcomes: [
