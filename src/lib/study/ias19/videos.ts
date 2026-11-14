@@ -12,6 +12,7 @@ const BUNNY_LIBRARY = "808661";
 const BUNNY_IDS: Record<string, string> = {
   "4a": "f33eb84f-2adb-41a6-b33e-383494abfea6",
   "4b": "98455dc7-c4b1-4f07-af5f-d671cc473fd5",
+  "5a": "c0750e84-2d7e-41a9-a1ff-e44e2e5ffe03",
 };
 
 const RECORDINGS: Record<string, Omit<LessonVideo, "src" | "title" | "part">> = {
@@ -43,6 +44,21 @@ const RECORDINGS: Record<string, Omit<LessonVideo, "src" | "title" | "part">> = 
       { at: 448, title: "דוגמה פתורה: מענק שנותן יותר בהתחלה", screen: "emp-attr-solved" },
       { at: 544, title: "פותרים יחד: מענק שקופץ, ושלושה עובדים בשני מסלולים", screen: "emp-attr-together" },
       { at: 733, title: "סיכום" },
+    ],
+  },
+  "5a": {
+    duration: 885,
+    chapters: [
+      { at: 0, title: "פתיחה" },
+      { at: 53, title: "חשבון החיסכון שהפתיע", screen: "emp-roll-hook" },
+      { at: 140, title: "ארבע שורות שמסבירות, ואחת שמאזנת", screen: "emp-roll-lines" },
+      { at: 244, title: "איזו ריבית ואיזה n בכל שורה", screen: "emp-roll-rates" },
+      { at: 336, title: "ריבית כששולם מענק באמצע השנה", screen: "emp-roll-paid" },
+      { at: 430, title: "הכלל: המעגל, ורישום כל שורה", screen: "emp-roll-rule" },
+      { at: 498, title: "לאן הולכת כל שורה: רווח והפסד, OCI, ומה עם ההון", screen: "emp-roll-where" },
+      { at: 552, title: "תבנית פתרון: תנועה בהתחייבות", screen: "emp-roll-template" },
+      { at: 602, title: "דוגמה פתורה: סמנכ״ל כספים, שנתיים", screen: "emp-roll-solved" },
+      { at: 838, title: "סיכום" },
     ],
   },
 };
