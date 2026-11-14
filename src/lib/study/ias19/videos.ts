@@ -10,10 +10,13 @@ const BUNNY_LIBRARY = "808661";
 
 /** Each video's id in the Bunny library; a video without one is not shown. */
 const BUNNY_IDS: Record<string, string> = {
+  "3": "6ccd7b34-fae4-40cf-b2a9-f3ce270c1af6",
   "4a": "f33eb84f-2adb-41a6-b33e-383494abfea6",
   "4b": "98455dc7-c4b1-4f07-af5f-d671cc473fd5",
   "5a": "c0750e84-2d7e-41a9-a1ff-e44e2e5ffe03",
   "5b": "a0f1c2c1-336b-48c8-8d8b-eb6ceeef9ac1",
+  "6a": "2044347f-9dae-4f3a-8f15-1a4e695e1796",
+  "6b": "b48b3765-0907-42a9-81e3-4aeaa303c5f8",
 };
 
 const RECORDINGS: Record<string, Omit<LessonVideo, "src" | "title" | "part">> = {
@@ -74,6 +77,50 @@ const RECORDINGS: Record<string, Omit<LessonVideo, "src" | "title" | "part">> = 
       { at: 439, title: "דוגמה פתורה: מנהל הטכנולוגיה", screen: "emp-amend-solved" },
       { at: 683, title: "פותרים יחד: סילוק, פרישה, וביטול תוכנית", screen: "emp-amend-together" },
       { at: 780, title: "סיכום" },
+    ],
+  },
+  "6a": {
+    duration: 858,
+    chapters: [
+      { at: 0, title: "פתיחה" },
+      { at: 50, title: "חוב, וקופה בצד", screen: "emp-assets-hook" },
+      { at: 93, title: "מתי קופה היא ״נכסי תכנית״", screen: "emp-assets-qualify" },
+      { at: 184, title: "נכסי תכנית, ומעגל משלהם", screen: "emp-assets-what" },
+      { at: 271, title: "תקרת הנכס", screen: "emp-assets-ceiling" },
+      { at: 314, title: "פוליסה שאינה כשירה: נכס שיפוי", screen: "emp-assets-reimburse" },
+      { at: 367, title: "עודף, והפקדה מינימלית: כמה ממנו נכס (IFRIC 14)", screen: "emp-assets-mfr" },
+      { at: 466, title: "הכלל: שני מעגלים, נטו, ותקרה", screen: "emp-assets-rule" },
+      { at: 505, title: "דוגמה פתורה: מענק עם קרן", screen: "emp-assets-solved" },
+      { at: 684, title: "פותרים יחד: עודף שנתקל בתקרה", screen: "emp-assets-together" },
+      { at: 811, title: "סיכום" },
+    ],
+  },
+  "6b": {
+    duration: 848,
+    chapters: [
+      { at: 0, title: "פתיחה" },
+      { at: 47, title: "כל שורה לקופסה שלה", screen: "emp-present-hook" },
+      { at: 93, title: "שלוש כתובות", screen: "emp-present-three" },
+      { at: 191, title: "הנדסה לאחור: מה הביאור מסתיר", screen: "emp-present-reverse" },
+      { at: 287, title: "הכלל: ניתוב כל שורה", screen: "emp-present-rule" },
+      { at: 320, title: "דוגמה פתורה: התיקון, והדוחות", screen: "emp-present-solved" },
+      { at: 560, title: "פותרים יחד: מדיניות אחרת, וביאור של שנה קודמת", screen: "emp-present-together" },
+      { at: 791, title: "סיכום" },
+    ],
+  },
+  "3": {
+    duration: 810,
+    chapters: [
+      { at: 0, title: "פתיחה" },
+      { at: 62, title: "דמי כיס, או ״אני משלם על הכול״", screen: "emp-dc-hook" },
+      { at: 103, title: "מה נחשב הטבה לאחר סיום העסקה", screen: "emp-dc-what" },
+      { at: 155, title: "שתי תוכניות: הפקדה מוגדרת והטבה מוגדרת", screen: "emp-dc-two" },
+      { at: 252, title: "המבחן: מי נושא בסיכון", screen: "emp-dc-test" },
+      { at: 387, title: "הכלל: איך רושמים הפקדה מוגדרת", screen: "emp-dc-record" },
+      { at: 492, title: "תבנית פתרון: שאלת הפקדה מוגדרת", screen: "emp-dc-template" },
+      { at: 591, title: "דוגמה פתורה: הפקדה שעוד לא הועברה", screen: "emp-dc-solved" },
+      { at: 692, title: "פותרים יחד: שכר אחר, ומבטח שלקח את הסיכון", screen: "emp-dc-together" },
+      { at: 751, title: "סיכום" },
     ],
   },
 };
