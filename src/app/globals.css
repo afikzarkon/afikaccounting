@@ -113,6 +113,9 @@
 @layer base {
   html {
     color-scheme: light;
+    /* Keep the scrollbar's space even while a page is shorter than the window (a skeleton still streaming in):
+       otherwise the scrollbar appears when the content lands and the whole page jumps sideways. */
+    scrollbar-gutter: stable;
   }
   html.dark {
     color-scheme: dark;
