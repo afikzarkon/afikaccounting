@@ -13,6 +13,7 @@ const BUNNY_IDS: Record<string, string> = {
   "4a": "f33eb84f-2adb-41a6-b33e-383494abfea6",
   "4b": "98455dc7-c4b1-4f07-af5f-d671cc473fd5",
   "5a": "c0750e84-2d7e-41a9-a1ff-e44e2e5ffe03",
+  "5b": "a0f1c2c1-336b-48c8-8d8b-eb6ceeef9ac1",
 };
 
 const RECORDINGS: Record<string, Omit<LessonVideo, "src" | "title" | "part">> = {
@@ -59,6 +60,20 @@ const RECORDINGS: Record<string, Omit<LessonVideo, "src" | "title" | "part">> = 
       { at: 552, title: "תבנית פתרון: תנועה בהתחייבות", screen: "emp-roll-template" },
       { at: 602, title: "דוגמה פתורה: סמנכ״ל כספים, שנתיים", screen: "emp-roll-solved" },
       { at: 838, title: "סיכום" },
+    ],
+  },
+  "5b": {
+    duration: 833,
+    chapters: [
+      { at: 0, title: "פתיחה" },
+      { at: 55, title: "המענק עולה מ-1 במאי", screen: "emp-amend-hook" },
+      { at: 103, title: "מהי עלות שירות עבר: תיקון, צמצום, ומה לא", screen: "emp-amend-what" },
+      { at: 162, title: "שינוי תנאים: שתי תקופות, ושירות עבר", screen: "emp-amend-split" },
+      { at: 292, title: "סילוק מול פרישה בלתי צפויה", screen: "emp-amend-settle" },
+      { at: 392, title: "הכלל: ארבעה צעדים בשנה מפוצלת", screen: "emp-amend-rule" },
+      { at: 439, title: "דוגמה פתורה: מנהל הטכנולוגיה", screen: "emp-amend-solved" },
+      { at: 683, title: "פותרים יחד: סילוק, פרישה, וביטול תוכנית", screen: "emp-amend-together" },
+      { at: 780, title: "סיכום" },
     ],
   },
 };
