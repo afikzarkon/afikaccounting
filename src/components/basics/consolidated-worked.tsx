@@ -15,12 +15,21 @@ export { acc };
 
 const Num = ({ children }: { children: ReactNode }) => <span className="whitespace-nowrap tabular-nums [direction:ltr] [unicode-bidi:isolate]">{children}</span>;
 
-/** A figure that a link arrow starts from or ends at. */
+/** A figure that a link arrow starts from, or one carried over from elsewhere: tapping it shows where it came from. */
 const Link = ({ id, from, children }: { id?: string; from?: string; children: ReactNode }) =>
-  id || from ? (
-    <span data-lid={id} data-lfrom={from}>
+  from ? (
+    <button
+      type="button"
+      data-lid={id}
+      data-lfrom={from}
+      aria-pressed="false"
+      title="מאיפה המספר הזה?"
+      className="cursor-pointer rounded-sm underline decoration-accent decoration-dotted decoration-2 underline-offset-4 hover:bg-accent-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+    >
       {children}
-    </span>
+    </button>
+  ) : id ? (
+    <span data-lid={id}>{children}</span>
   ) : (
     children
   );
@@ -157,7 +166,7 @@ export function WorkedExample({ ex }: { ex: Worked }) {
   const n = ex.steps.length;
   const linked = ex.steps.some((s) => s.sheet?.some((l) => l.id || l.from) || s.tables?.some((t) => t.rows.some((r) => r.id || r.from)));
   return (
-    <article ref={root} className={cn("relative my-4 overflow-hidden rounded-xl border-2 border-accent bg-surface", linked && open && "pl-5 sm:pl-7")}>
+    <article ref={root} className={cn("relative my-4 overflow-hidden rounded-xl border-2 border-accent bg-surface", linked && open && "pl-3")}>
       <LinkArrows root={root} on={linked && open} />
       <header className="bg-accent-soft px-4 py-3 text-[16px] font-bold text-fg">{ex.title}</header>
       <section className="border-t border-line px-4 py-3">
