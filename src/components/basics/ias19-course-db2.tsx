@@ -676,7 +676,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
           task={
             <>
               ב-31.12.2023: קופה <Money v={SURPLUS.assets} />, חוב <Money v={SURPLUS.obligation} />; התקרה {pct(SURPLUS.ceilingShare)} מהחוב. ב-2024: עלות ריבית <Money v={SURPLUS.interestCost} />, שירות{" "}
-              <Money v={SURPLUS.service} />, חוב בסגירה <Money v={SURPLUS.closingObligation} />, וקופה בסגירה <Money v={SURPLUS.closingAssets} />. מה הנכס נטו בשני התאריכים, ומה ה-OCI של 2024?
+              <Money v={SURPLUS.service} />, חוב בסגירה <Money v={SURPLUS.closingObligation} />, וקופה בסגירה <Money v={SURPLUS.closingAssets} />. לא היו הפקדות לקופה ולא תשלומים. מה הנכס נטו בשני התאריכים, ומה ה-OCI של 2024?
             </>
           }
           hints={[
@@ -841,7 +841,7 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
             {pct(AMENDED.rateEnd)}.
           </p>
           <p>
-            הקופה כמו קודם: <Money v={PLAN.assets.opening} /> בפתיחה, <Money v={PLAN.assets.contribution} /> ב-1.{PLAN.assets.month + 1}, <Money v={PLAN.assets.closing} /> בסוף.
+            הקופה כמו קודם: <Money v={PLAN.assets.opening} /> בפתיחה, <Money v={PLAN.assets.contribution} /> ב-1.{PLAN.assets.month + 1}, <Money v={PLAN.assets.closing} /> בסוף. השווי ההוגן של הקופה ביום התיקון שווה ליתרתה בספרים.
           </p>
         </Story>
         <SplitBar
@@ -931,10 +931,10 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
             רשת מלונות, הביאור לשנה שעברה: יתרת פתיחה {NOTE.openingLast.toLocaleString("en-US")}, עלות ריבית {NOTE.interestLast.toLocaleString("en-US")}.
           </p>
           <p className="text-[14.5px]">
-            הטבות ששולמו {NOTE.paidLast.toLocaleString("en-US")} (מהן מהקופה {NOTE.paidFromAssetsLast.toLocaleString("en-US")}), הפקדה לקופה {NOTE.contributionLast.toLocaleString("en-US")}, ושירות עבר {NOTE.pastServiceLast} (תוספת לדרג א׳).
+            הטבות ששולמו {NOTE.paidLast.toLocaleString("en-US")} (מהן מהקופה {NOTE.paidFromAssetsLast.toLocaleString("en-US")}), הפקדה לקופה {NOTE.contributionLast.toLocaleString("en-US")}, ושירות עבר {NOTE.pastServiceLast}: ב-31.12, אחרי פרישות סוף השנה, תוקנה התוכנית, ועובדי דרג א׳ יקבלו בפרישה הטבה נוספת בשיעור קבוע מהשכר האחרון × שנות השירות, רטרואקטיבית.
           </p>
           <p className="text-[14.5px]">
-            כל התשלומים והתיקון <strong>בסוף השנה</strong>; ההפקדה <strong>ב-30.6</strong>.
+            כל התשלומים והתיקון <strong>בסוף השנה</strong>; ההפקדה <strong>ב-30.6</strong>. שיעור ההיוון לא השתנה במהלך השנה.
           </p>
           <p className="text-[14.5px]">
             כל העובדים התחילו ב-1.1.{EXAM_B.startYear} וצפויים לפרוש ב-31.12.{EXAM_B.retireYear}. ההטבה בפרישה: משכורת חודשית אחרונה לכל שנת שירות. השכר עולה בתחילת כל שנה. ההפקדה לקופה היא אחוז קבוע מהמשכורת

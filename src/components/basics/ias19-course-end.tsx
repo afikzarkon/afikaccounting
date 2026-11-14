@@ -304,7 +304,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
       </>
     ),
     check: quiz("emp-term-template", [
-      { q: "החלטה סופית ב-31.12: 22 עובדים יקבלו 13,000 ₪ כל אחד, בעוד חודשיים. כמה מכירים?", options: ["286,000", "0 — עוד לא שולם", "286,000 מהוון", "143,000"], answer: 0, why: ltrFormulas("22 × 13,000 = 286,000, בלי היוון.") },
+      { q: "החלטה סופית ב-31.12, שהודעה לעובדים כתוכנית מפורטת: 22 עובדים יקבלו 13,000 ₪ כל אחד, בעוד חודשיים. כמה מכירים?", options: ["286,000", "0 — עוד לא שולם", "286,000 מהוון", "143,000"], answer: 0, why: ltrFormulas("22 × 13,000 = 286,000, בלי היוון.") },
     ]),
   },
   "emp-term-drill": {
@@ -385,7 +385,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
           <TaskSolution
             task={
               <>
-                ב-31.12 <Diff>הוחלט סופית</Diff> לסגור את המרכז <Diff>בעוד שנה</Diff>. מי שעוזב לפני הסגירה — <Money v={CLOSING.leaveEarly} />; מי שנשאר עד הסגירה — <Money v={CLOSING.stayToEnd} />. {CLOSING.staff} עובדים; צפוי ש-45
+                ב-31.12 <Diff>הוחלט סופית</Diff> לסגור את המרכז <Diff>בעוד שנה</Diff>, ובאותו יום הודיעו לעובדים על תוכנית מפורטת. מי שעוזב לפני הסגירה — <Money v={CLOSING.leaveEarly} />; מי שנשאר עד הסגירה — <Money v={CLOSING.stayToEnd} />. {CLOSING.staff} עובדים; צפוי ש-45
                 יעזבו מוקדם ו-15 יישארו. מה ההוצאה עכשיו, והפקודה?
               </>
             }
@@ -544,11 +544,11 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             rows={EXAM_A.assembly.groups.map((g) => [`1.1.${g.from}`, g.heads, g.years])}
           />
           <p>
-            ב-1.7.{y2} הוחלט על מענק נוסף של <Money v={EXAM_A.assembly.amendment.grant} /> <Diff>לכל מי שיעבוד {EXAM_A.assembly.amendment.minYears} שנים לפחות</Diff>, שנצבר על {EXAM_A.assembly.amendment.minYears} שנים. שיעור
+            ב-1.7.{y2} הוחלט על מענק נוסף של <Money v={EXAM_A.assembly.amendment.grant} />, מעבר לתקרה, <Diff>לכל מי שיעבוד {EXAM_A.assembly.amendment.minYears} שנים לפחות</Diff>, שנצבר על {EXAM_A.assembly.amendment.minYears} שנים. שיעור
             ההיוון {pct(EXAM_A.assembly.rate)}, <Diff>ובדצמבר {y2} ירד</Diff> ל-{pct(EXAM_A.assembly.endRate)}.
           </p>
           <p>
-            <strong>מחלקת השטח.</strong> מענק של <Money v={EXAM_A.field.grant} /> למי שעבד יותר מ-{EXAM_A.field.serviceYears} שנים, או שסיים את העסקתו אחרי גיל {EXAM_A.field.age}; <Diff>השיוך לפי הסיבה שבגללה העובד
+            <strong>מחלקת השטח.</strong> מענק של <Money v={EXAM_A.field.grant} /> למי שעבד {EXAM_A.field.serviceYears} שנים לפחות, או שסיים את העסקתו אחרי גיל {EXAM_A.field.age}; <Diff>השיוך לפי הסיבה שבגללה העובד
             יהיה זכאי</Diff>.
           </p>
           <DataTable
@@ -726,7 +726,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             </li>
             <li>הפקדה לקרן ב-30.6: {EXAM_B.note.contributionLast.toLocaleString("en-US")}.</li>
             <li>
-              שירות עבר {EXAM_B.note.pastServiceLast} (תוספת לדרג {EXAM_B.note.amendedLast}׳ ב-31.12).
+              שירות עבר {EXAM_B.note.pastServiceLast}: ב-31.12, אחרי פרישות סוף השנה, תוקנה התוכנית. עובדי דרג {EXAM_B.note.amendedLast}׳ יקבלו בפרישה הטבה נוספת בשיעור קבוע מהשכר האחרון × שנות השירות, רטרואקטיבית.
             </li>
             <li>
               יתרת סגירה {EXAM_B.note.obligation.toLocaleString("en-US")}. נכסי התכנית בסוף השנה: {EXAM_B.note.assets.toLocaleString("en-US")}. כל התשלומים בסוף השנה.
@@ -745,6 +745,7 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             <li>ב-30.6 מופקד לקרן אותו אחוז מהמשכורת החודשית כמו בשנה הקודמת.</li>
             <li>לפורשים משולם מהקרן אותו אחוז כמו בשנה הקודמת, והיתר מחשבון הבנק.</li>
             <li>התשואה על הנכסים מעבר להכנסות הריבית: {EXAM_B.excessReturn}.</li>
+            <li>שיעור ההיוון לא השתנה ב-{EXAM_B.year - 1}–{EXAM_B.year}.</li>
           </ul>
         </Story>
         <Timeline
