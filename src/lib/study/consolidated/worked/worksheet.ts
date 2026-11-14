@@ -280,7 +280,7 @@ function positionSteps(s: Story): WStep[] {
     {
       h: "דף העבודה",
       tables: [positionTable(s)],
-      result: `נכסים ${A(c.assets)}, התחייבויות ${A(c.liabilities)}, הון \`${n(c.assets)} − ${n(c.liabilities)} = ${n(c.equity.total)}\`. שורות ההון באות מהחלוקה בשלב הבא.`,
+      result: `נכסים ${A(c.assets)}, התחייבויות ${A(c.liabilities)}, הון \`${n(c.assets)} − ${n(c.liabilities)} = ${n(c.equity.total)}\`. שורות ההון באות מחלוקת ההון בין הבעלים לזשמ״ש: ${c.equity.reserve ? `הקרן \`${n(s.a.reserve)} + ${n(s.b.reserve)} × ${pct(s.holding)} = ${n(c.equity.reserve)}\`, ` : ""}העודפים הם ההפרש \`${n(c.equity.owners)} − ${n(c.equity.capital)} − ${n(c.equity.premium)}${c.equity.reserve ? ` − ${n(c.equity.reserve)}` : ""} = ${n(c.equity.retained)}\`, והזשמ״ש ${A(c.equity.nci)}. הפירוט המלא בחלוקת ההון.`,
     },
   ];
 }
@@ -330,6 +330,9 @@ function equitySteps(s: Story): WStep[] {
         { l: `עודפים: \`${n(c.equity.owners)} − ${n(c.equity.capital)} − ${n(c.equity.premium)}${c.equity.reserve ? ` − ${n(c.equity.reserve)}` : ""}\``, a: c.equity.retained, k: "sub" },
         { l: "סך ההון של הבעלים", a: c.equity.owners, k: "tot" },
       ],
+      p: s.b.reserve
+        ? [`הקרן של ${s.bn} נוצרה אחרי הרכישה, ולכן היא של הקבוצה ולא מתבטלת מול ההשקעה. הבעלים מקבלים ממנה ${pct(s.holding)}, והחלק של הזשמ״ש, \`${n(s.b.reserve)} × ${pct(1 - s.holding)} = ${n(Math.round(s.b.reserve * (1 - s.holding)))}\`, נמצא בתוך שורת הזשמ״ש.`]
+        : undefined,
       why: ["למה לא מחברים את העודפים של שתי החברות?", `העודפים של ${s.bn} מלפני הרכישה נקנו. הם חלק ממה ש־${s.an} שילמה עליו, ולא רווח של הקבוצה. לכן העודפים הם ההפרש.`],
       result: `בדיקה: העודפים של ${s.an} ב־1.1, פחות הדיבידנד שהכריזה, ועוד חלק הבעלים ברווח: \`${n(s.a.retainedOpen)} − ${n(s.a.dividend)} + ${n(c.split.profit.owners)} = ${n(c.equity.retained)}\`.`,
     },
