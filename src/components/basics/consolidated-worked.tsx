@@ -1,7 +1,8 @@
 "use client";
 
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactNode, useMemo, useRef, useState } from "react";
 import { acc, type WCell, type WLine, type WPoint, type Worked, type WTable } from "@/lib/study/consolidated/worked/types";
+import { withLinks } from "@/lib/study/consolidated/worked/apply-links";
 import { cn } from "@/lib/utils";
 import { LinkArrows } from "./worked-links";
 
@@ -160,7 +161,8 @@ function Why({ why }: { why: [string, string] }) {
   );
 }
 
-export function WorkedExample({ ex }: { ex: Worked }) {
+export function WorkedExample({ ex: given }: { ex: Worked }) {
+  const ex = useMemo(() => withLinks(given), [given]);
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLElement>(null);
   const n = ex.steps.length;

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { describe, it } from "node:test";
 import { TOPICS } from "../catalog";
 import { isBalanced } from "../learn/basics";
@@ -14,6 +15,8 @@ import { ACQUISITION, ACQUISITION_TAUGHT, BOND, ITEMS, LESSEE, LESSOR, MASTER4_T
 import { G_FAIR, G_NET, G_PREMIUM, G_SHARE, GOODWILL, GOODWILL_TAUGHT, M5, PAYS, PERIOD, PERIOD_TEST, PERIOD_TEST_START } from "./consolidated/lessons/goodwill";
 import { AGENT_TEST, AGENT_TEST_START, AGENTS, FUND_LARGE, FUND_SMALL, MASTER3_POSITION, MASTER3_REWARD, MASTER3_SISTER, MASTER3_TOGETHER, RETURNS, RETURNS_TAUGHT } from "./consolidated/lessons/returns";
 import { BEFORE11, BOND11, BOND11_FIG, BOND11_PRICE, FIN11, FV11, LEASEBONDS, LEASEBONDS_TAUGHT, M11, M11_FIG, M11_PRICE, RESALE11, ROU11, ROU11_NCI, WHO11 } from "./consolidated/lessons/leasebonds";
+import { withLinks, placeValue } from "./consolidated/worked/apply-links";
+import { LINKS } from "./consolidated/worked/links";
 import { CONTROL_W, W_ATTEND, W_CONVERT } from "./consolidated/worked/control";
 import { ACQUISITION_W, W_CLAIM, W_EXCESS, W_HFS, W_LESSEE, W_LESSOR, W_TABLE, W_TAX } from "./consolidated/worked/acquisition";
 import { POLICY_W, W7_BUILDING, W7_IP, W7_LAND, W7_MASTER, W7_QUALIFY, W7_REVAFTER, W7_TABLE } from "./consolidated/worked/policy";
@@ -965,5 +968,41 @@ describe("the practice generator", () => {
         const last = d.steps.at(-1)!.numbers.split("=").at(-1)!.trim().replaceAll(",", "");
         assert.equal(Number(last), d.answer, `${family}/${seed}`);
       }
+  });
+});
+
+describe("the links in the worked solutions", async () => {
+  const dir = join(import.meta.dirname, "consolidated", "worked");
+  const all: Worked[] = [];
+  for (const f of readdirSync(dir).filter((f) => f.endsWith(".ts") && !["types.ts", "links.ts", "apply-links.ts"].includes(f))) {
+    const mod = await import(pathToFileURL(join(dir, f)).href);
+    for (const v of Object.values(mod)) if (v && typeof v === "object" && Array.isArray((v as Worked).steps) && (v as Worked).title) all.push(v as Worked);
+  }
+  const byTitle = new Map<string, Worked>();
+  for (const ex of all) byTitle.set(ex.title, ex);
+  const amount = (c: unknown) => (typeof c === "number" ? Math.abs(Math.round(c * 100)) : typeof c === "string" && /^\(?-?[\d,]+(\.\d+)?\)?$/.test(c.trim()) ? Math.abs(Math.round(Number(c.replace(/[(),\s]/g, "")) * 100)) : NaN);
+
+  it("every example with links has a title of its own", () => {
+    for (const title of Object.keys(LINKS)) {
+      assert.ok(byTitle.has(title), `no example titled ${title}`);
+      assert.equal(new Set(all.filter((e) => e.title === title)).size, 1, `two examples titled ${title}`);
+    }
+  });
+  it("every link joins two places that show the same figure", () => {
+    for (const [title, links] of Object.entries(LINKS)) {
+      const ex = byTitle.get(title)!;
+      for (const link of links) {
+        const [src, dst] = link.split(">").map((s) => s.trim());
+        assert.ok(!dst.startsWith("g."), `${title}: ${link} carries into the givens`);
+        const a = placeValue(ex, src);
+        const b = placeValue(ex, dst);
+        assert.ok(a !== undefined && b !== undefined, `${title}: ${link} names a place the example lacks`);
+        assert.ok(!Number.isNaN(amount(a)) && amount(a) === amount(b), `${title}: ${link} joins ${a} and ${b}`);
+      }
+    }
+  });
+  it("the links reach the rendered example", () => {
+    const ex = withLinks(byTitle.get(Object.keys(LINKS)[0])!);
+    assert.ok(ex.steps.some((s) => s.sheet?.some((l) => l.from) || s.tables?.some((t) => t.rows.some((r) => r.from))));
   });
 });
