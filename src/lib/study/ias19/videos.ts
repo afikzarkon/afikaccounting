@@ -11,6 +11,7 @@ const BUNNY_LIBRARY = "808661";
 /** Each video's id in the Bunny library; a video without one is not shown. */
 const BUNNY_IDS: Record<string, string> = {
   "4a": "f33eb84f-2adb-41a6-b33e-383494abfea6",
+  "4b": "98455dc7-c4b1-4f07-af5f-d671cc473fd5",
 };
 
 const RECORDINGS: Record<string, Omit<LessonVideo, "src" | "title" | "part">> = {
@@ -27,6 +28,21 @@ const RECORDINGS: Record<string, Omit<LessonVideo, "src" | "title" | "part">> = 
       { at: 451, title: "דוגמה פתורה: סמנכ״לית התפעול", screen: "emp-measure-solved" },
       { at: 555, title: "פותרים יחד: פרישה מאוחרת, וקבוצת עובדים", screen: "emp-measure-together" },
       { at: 646, title: "סיכום" },
+    ],
+  },
+  "4b": {
+    duration: 775,
+    chapters: [
+      { at: 0, title: "פתיחה" },
+      { at: 52, title: "מנוי חינם אחרי 100 אימונים", screen: "emp-attr-hook" },
+      { at: 116, title: "נוסחת התוכנית, או קו ישר", screen: "emp-attr-formula" },
+      { at: 197, title: "תקרה, וזכאות שמתחילה מאוחר", screen: "emp-attr-cap" },
+      { at: 309, title: "שני מסלולים לזכאות: גיל וּותק, או גיל בלבד", screen: "emp-attr-dual" },
+      { at: 367, title: "הכלל: שלוש שאלות לפני כל חישוב", screen: "emp-attr-rule" },
+      { at: 408, title: "תבנית פתרון: שאלת ייחוס", screen: "emp-attr-template" },
+      { at: 448, title: "דוגמה פתורה: מענק שנותן יותר בהתחלה", screen: "emp-attr-solved" },
+      { at: 544, title: "פותרים יחד: מענק שקופץ, ושלושה עובדים בשני מסלולים", screen: "emp-attr-together" },
+      { at: 733, title: "סיכום" },
     ],
   },
 };
