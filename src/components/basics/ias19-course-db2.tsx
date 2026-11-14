@@ -941,8 +941,8 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
             החודשית של מי שעבד ב-30.6.
           </p>
           <DataTable
-            head={["דרג", `עובדים ב-30.6.${EXAM_B.year - 1}`, `משכורת ${EXAM_B.year - 1}`, "עלייה שנתית"]}
-            rows={EXAM_B.grades.map((g) => [g.id, g.headsLastMid, g.salaryLast, pct(g.raise)])}
+            head={["דרג", `עובדים ב-${EXAM_B.year}`, `עובדים ב-30.6.${EXAM_B.year - 1}`, `משכורת ${EXAM_B.year - 1}`, "עלייה שנתית"]}
+            rows={EXAM_B.grades.map((g) => [g.id, g.heads, g.headsLastMid, g.salaryLast, pct(g.raise)])}
           />
           <TaskSolution
             task="חלצו: ריבית ההיוון, אחוז התשלומים מהקופה, שיעור ההפקדה, ושיעור התוספת לדרג א׳."
