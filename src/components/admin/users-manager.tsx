@@ -6,12 +6,21 @@ import { Button } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/form";
 import { setTester } from "@/lib/actions/admin-testers";
 import { setUserAccess } from "@/lib/actions/admin-users";
-import type { AdminUser } from "@/lib/data/admin";
+import type { AdminUser, UserActivity } from "@/lib/data/admin";
 import { cn, shortDate } from "@/lib/utils";
 import { Panel } from "./ui";
 
 type Course = { id: string; label: string };
 type Filter = "pending" | "approved" | "rejected" | "all";
+type Sort = "signup" | "activity" | "recent";
+
+const SORTS: { id: Sort; label: string }[] = [
+  { id: "signup", label: "הרשמה" },
+  { id: "activity", label: "הכי פעילים" },
+  { id: "recent", label: "נראו לאחרונה" },
+];
+
+const NO_ACTIVITY: UserActivity = { userId: "", signIns: 0, visits: 0, activeDays: 0, lastSeen: null };
 
 const STATUS: Record<AdminUser["status"], { label: string; className: string }> = {
   pending: { label: "ממתין לאישור", className: "bg-amber-500/10 text-amber-800 dark:text-amber-300" },
@@ -26,18 +35,42 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "all", label: "כולם" },
 ];
 
-/** Every account: approve or reject it, choose the courses it may open, and mark course testers. */
-export function UsersManager({ users, courses, me, testers = [] }: { users: AdminUser[]; courses: Course[]; me: string; testers?: string[] }) {
+/**
+ * Every account: approve or reject it, choose the courses it may open, and mark course testers.
+ * `activity` is how much each account used the site; null until its migration (20261115000000) runs.
+ */
+export function UsersManager({
+  users,
+  courses,
+  me,
+  testers = [],
+  activity = null,
+}: {
+  users: AdminUser[];
+  courses: Course[];
+  me: string;
+  testers?: string[];
+  activity?: UserActivity[] | null;
+}) {
   const pending = users.filter((u) => u.status === "pending" && u.role !== "admin").length;
   const [filter, setFilter] = useState<Filter>(pending ? "pending" : "all");
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<Sort>("signup");
+  const usage = useMemo(() => new Map((activity ?? []).map((a) => [a.userId, a])), [activity]);
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return users.filter(
+    const list = users.filter(
       (u) => (filter === "all" || (u.role !== "admin" && u.status === filter)) && (!q || u.email.toLowerCase().includes(q) || u.fullName.toLowerCase().includes(q)),
     );
-  }, [users, filter, query]);
+    if (sort === "signup") return list;
+    const of = (u: AdminUser) => usage.get(u.userId) ?? NO_ACTIVITY;
+    return [...list].sort((a, b) =>
+      sort === "activity"
+        ? of(b).visits - of(a).visits || of(b).signIns - of(a).signIns
+        : (of(b).lastSeen ?? "").localeCompare(of(a).lastSeen ?? ""),
+    );
+  }, [users, filter, query, sort, usage]);
 
   return (
     <Panel
@@ -60,6 +93,15 @@ export function UsersManager({ users, courses, me, testers = [] }: { users: Admi
               </button>
             ))}
           </div>
+          {activity && (
+            <select className={cn(inputClass, "h-9 w-auto")} value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="מיון">
+              {SORTS.map((s) => (
+                <option key={s.id} value={s.id}>
+                  מיון: {s.label}
+                </option>
+              ))}
+            </select>
+          )}
           <input type="search" className={cn(inputClass, "h-9 w-48")} placeholder="חיפוש לפי שם או אימייל" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="חיפוש משתמש" />
         </div>
       }
@@ -67,7 +109,14 @@ export function UsersManager({ users, courses, me, testers = [] }: { users: Admi
       {shown.length ? (
         <ul className="divide-y divide-line">
           {shown.map((u) => (
-            <UserRow key={u.userId} user={u} courses={courses} self={u.userId === me} tester={testers.includes(u.userId)} />
+            <UserRow
+              key={u.userId}
+              user={u}
+              courses={courses}
+              self={u.userId === me}
+              tester={testers.includes(u.userId)}
+              activity={activity ? (usage.get(u.userId) ?? NO_ACTIVITY) : null}
+            />
           ))}
         </ul>
       ) : (
@@ -77,7 +126,7 @@ export function UsersManager({ users, courses, me, testers = [] }: { users: Admi
   );
 }
 
-function UserRow({ user, courses, self, tester }: { user: AdminUser; courses: Course[]; self: boolean; tester: boolean }) {
+function UserRow({ user, courses, self, tester, activity }: { user: AdminUser; courses: Course[]; self: boolean; tester: boolean; activity: UserActivity | null }) {
   const [selected, setSelected] = useState<string[]>(user.courses);
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string }>();
@@ -106,6 +155,7 @@ function UserRow({ user, courses, self, tester }: { user: AdminUser; courses: Co
             {user.fullName || "ללא שם"} · נרשם {shortDate(user.createdAt)}
             {user.reviewedAt ? ` · עודכן ${shortDate(user.reviewedAt)}` : ""}
           </span>
+          {activity && <ActivityLine activity={activity} admin={admin} />}
         </span>
         {admin ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent">
@@ -202,4 +252,41 @@ function TesterToggle({ userId, on, approved }: { userId: string; on: boolean; a
       {error && <span className="text-xs text-danger">{error}</span>}
     </span>
   );
+}
+
+/**
+ * Sign-ins, visits and active days, and when the account was last seen. An admin's
+ * visits are never recorded (api/track), so an admin shows only its sign-ins.
+ */
+function ActivityLine({ activity, admin }: { activity: UserActivity; admin: boolean }) {
+  if (admin)
+    return (
+      <span className="mt-1 block text-xs text-muted">
+        <span className="num font-semibold text-fg">{activity.signIns}</span> התחברויות · ביקורים של מנהלים לא נספרים
+      </span>
+    );
+  if (!activity.lastSeen) return <span className="mt-1 block text-xs text-muted">עוד לא נכנס לאתר</span>;
+  const stats = [
+    { value: activity.signIns, label: "התחברויות", title: "כמה פעמים התחבר עם סיסמה או קישור" },
+    { value: activity.visits, label: "ביקורים", title: "כל לשונית שנפתחה באתר כשהוא מחובר" },
+    { value: activity.activeDays, label: "ימים פעילים", title: "בכמה ימים שונים השתמש באתר" },
+  ];
+  return (
+    <span className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted">
+      {stats.map((s) => (
+        <span key={s.label} title={s.title}>
+          <span className="num font-semibold text-fg">{s.value}</span> {s.label}
+        </span>
+      ))}
+      <span>נראה לאחרונה {lastSeen(activity.lastSeen)}</span>
+    </span>
+  );
+}
+
+function lastSeen(iso: string) {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days <= 0) return "היום";
+  if (days === 1) return "אתמול";
+  if (days < 7) return `לפני ${days} ימים`;
+  return `ב-${shortDate(iso)}`;
 }

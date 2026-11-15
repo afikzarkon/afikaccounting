@@ -447,6 +447,14 @@ export async function listUsers(): Promise<AdminUser[]> {
   return check<AdminUser[]>(await supabase.rpc("admin_users"));
 }
 
+export type UserActivity = { userId: string; signIns: number; visits: number; activeDays: number; lastSeen: string | null };
+
+/** How much each account used the site (20261115000000); accounts with no activity are absent. */
+export async function listUserActivity(): Promise<UserActivity[]> {
+  const supabase = await createClient();
+  return check<UserActivity[]>(await supabase.rpc("admin_user_activity"));
+}
+
 // ---- tester feedback -----------------------------------------------------------
 
 export type TesterFeedbackRow = { userId: string; name: string; answers: unknown; createdAt: string; updatedAt: string };
