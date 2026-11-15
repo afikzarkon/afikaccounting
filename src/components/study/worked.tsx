@@ -16,6 +16,8 @@ import { ClosingArrow } from "@/components/basics/closing-arrow";
 
 /** How this course writes a negative amount. */
 const NegContext = createContext<Neg>("paren");
+/** Whether this solution writes a formula and its numbers as a table row. */
+const CalcContext = createContext<"table" | undefined>(undefined);
 
 const Num = ({ children }: { children: ReactNode }) => <span className="num whitespace-nowrap [direction:ltr] [unicode-bidi:isolate]">{children}</span>;
 
@@ -517,6 +519,46 @@ function FxWithExcel({ fx, excel }: { fx?: [string, string]; excel: { formula?: 
   );
 }
 
+/**
+ * A formula and its numbers as one row of a calculation table: the name and
+ * the formula in words, the numbers, the result. A formula that does not
+ * split that way keeps its two lines.
+ */
+function FxTable({ fx }: { fx: [string, string] }) {
+  const w = fx[0].lastIndexOf(" = ");
+  const n = fx[1].lastIndexOf(" = ");
+  if (w < 0 || n < 0) return <Fx fx={fx} />;
+  const raw = fx[1].slice(n + 3).replace(/[₪.\s]+$/, "").trim();
+  const value = /^[−-]?[\d,]*\.?\d+$/.test(raw) ? Number(raw.replace(/[,−-]/g, "")) * (/^[−-]/.test(raw) ? -1 : 1) : raw;
+  return (
+    <div className="scroll-x">
+      <table className="w-full border-collapse text-[13.5px]">
+        <thead>
+          <tr>
+            {["מה מחשבים", "חישוב", "תוצאה"].map((h) => (
+              <th key={h} className="whitespace-nowrap bg-accent px-2 py-1.5 text-start font-semibold text-accent-fg">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-b border-line bg-amber-50 font-bold dark:bg-amber-950/40">
+            <td className="px-2 py-1.5 align-top">
+              <span className="block">{fx[0].slice(w + 3).trim()}</span>
+              <span className="block text-left text-[12.5px] font-normal text-muted [direction:ltr] [unicode-bidi:isolate]">{held(fx[0].slice(0, w).trim())}</span>
+            </td>
+            <td className="num px-2 py-1.5 text-left align-top font-normal [direction:ltr] [unicode-bidi:isolate]">{held(fx[1].slice(0, n).replace(/\s*₪/g, "").trim())}</td>
+            <td className="px-2 py-1.5 text-right align-top">
+              <Amount v={value} />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 /** Every option of a multiple-choice question: the answer in green, a wrong choice in red, and a line under each on where it comes from. */
 function Options({ opts }: { opts: WOption[] }) {
   return (
@@ -546,6 +588,7 @@ function Options({ opts }: { opts: WOption[] }) {
 }
 
 function Step({ s, i, n, light }: { s: WStep; i: number; n: number; light?: boolean }) {
+  const calc = useContext(CalcContext);
   const main = s.sheet ? <Sheet lines={s.sheet} /> : s.entry ? <Entry e={s.entry} /> : s.tcard ? <TCardView t={s.tcard} /> : null;
   return (
     <div className={cn("flex min-w-0 flex-col", light ? "gap-1 border-b border-line pb-2.5 last:border-b-0 last:pb-0" : "gap-3 rounded-xl border border-line p-3.5")}>
@@ -599,7 +642,16 @@ function Step({ s, i, n, light }: { s: WStep; i: number; n: number; light?: bool
       {(s.tables ?? []).map((t, k) => (
         <WTableView key={k} t={t} />
       ))}
-      {s.excel ? <FxWithExcel fx={s.fx} excel={s.excel} /> : s.fx && <Fx fx={s.fx} />}
+      {calc === "table" && s.fx ? (
+        <>
+          <FxTable fx={s.fx} />
+          {s.excel && <FxWithExcel excel={s.excel} />}
+        </>
+      ) : s.excel ? (
+        <FxWithExcel fx={s.fx} excel={s.excel} />
+      ) : (
+        s.fx && <Fx fx={s.fx} />
+      )}
       {s.result && (
         <div className="text-[14.5px] font-bold">
           תוצאה: <Text s={s.result} />
@@ -677,6 +729,7 @@ export function WorkedExample({ ex, neg }: { ex: Worked; neg?: Neg }) {
   const [open, setOpen] = useState(false);
   return (
     <NegContext.Provider value={neg ?? ex.neg ?? "paren"}>
+      <CalcContext.Provider value={ex.calc}>
       <article className="my-4 overflow-hidden rounded-xl border-2 border-accent bg-surface">
         <header className="bg-accent-soft px-4 py-3 text-[16px] font-bold text-fg">{ex.title}</header>
         <Givens w={ex} />
@@ -697,6 +750,7 @@ export function WorkedExample({ ex, neg }: { ex: Worked; neg?: Neg }) {
           )}
         </section>
       </article>
+      </CalcContext.Provider>
     </NegContext.Provider>
   );
 }
@@ -706,6 +760,7 @@ export function WorkedReveal({ w, tryFirst, label = "הצגת הפתרון המ�
   const [open, setOpen] = useState(false);
   return (
     <NegContext.Provider value={neg ?? w.neg ?? "paren"}>
+      <CalcContext.Provider value={w.calc}>
       <article className="overflow-hidden rounded-xl border-2 border-accent bg-surface">
         <section className="px-4 py-3">
           <h4 className="mb-2 text-[14.5px] font-bold">{heading(w)}</h4>
@@ -724,6 +779,7 @@ export function WorkedReveal({ w, tryFirst, label = "הצגת הפתרון המ�
           )}
         </section>
       </article>
+      </CalcContext.Provider>
     </NegContext.Provider>
   );
 }
@@ -808,6 +864,7 @@ export function SolutionReveal({
 export function WorkedSolution({ w, neg, answer }: { w: WorkedBody; neg?: Neg; answer?: ReactNode }) {
   return (
     <NegContext.Provider value={neg ?? w.neg ?? "paren"}>
+      <CalcContext.Provider value={w.calc}>
       <article className="overflow-hidden rounded-xl border-2 border-accent bg-surface">
         <Givens w={w} />
         <section className="border-t border-line px-4 py-3 first:border-t-0">
@@ -815,6 +872,7 @@ export function WorkedSolution({ w, neg, answer }: { w: WorkedBody; neg?: Neg; a
           <Steps w={w} answer={answer} />
         </section>
       </article>
+      </CalcContext.Provider>
     </NegContext.Provider>
   );
 }

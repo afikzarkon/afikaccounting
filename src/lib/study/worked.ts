@@ -104,6 +104,8 @@ export type WorkedBody = {
   neg?: Neg;
   /** Reasoning in words only: short steps under a thin rule, without a box or a step count. */
   light?: boolean;
+  /** "table": each step's formula and its numbers as a row of "what is computed | the calculation | the result", the Excel way under it (IAS 19). */
+  calc?: "table";
 };
 
 /** A worked example on a lesson screen: a title, the givens, what is required, a "try it yourself" box, and the solution behind one button. */

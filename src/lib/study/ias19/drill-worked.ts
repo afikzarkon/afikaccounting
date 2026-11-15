@@ -1,5 +1,6 @@
 import type { WorkedBody, WStep } from "../worked";
 import type { Drill } from "./drills";
+import { answersStep, withCalcTable } from "./calc-table";
 import { ltrFormulas } from "./ltr";
 
 /**
@@ -18,7 +19,7 @@ export function drillWorked(d: Drill): WorkedBody {
   const steps: WStep[] = [
     { h: "מה מחפשים", p: d.seek.map(ltrFormulas) },
     { h: "מה בודקים", p: d.check.map(ltrFormulas) },
-    ...d.build.map((b) => ({ h: ltrFormulas(unnumbered(b.title)), p: b.lines.map(ltrFormulas) })),
+    ...d.build.map((b) => withCalcTable({ h: ltrFormulas(unnumbered(b.title)) }, b.lines.map(ltrFormulas))),
   ];
   if (d.entry) {
     // A step that writes the entry out in words gives way to the entry itself, drawn as one.
@@ -27,8 +28,10 @@ export function drillWorked(d: Drill): WorkedBody {
     if (at >= 0) steps[at] = entry;
     else steps.push(entry);
   }
+  steps.push(answersStep(d.asks.map((a) => [a.label, a.kind === "number" ? (a.unit && a.unit !== "₪" ? `${Math.round(a.answer).toLocaleString("en-US")} ${a.unit}` : Math.round(a.answer)) : a.options[a.answer]])));
   return {
     neg: "minus",
+    calc: "table",
     steps,
     summary: d.table && {
       head: d.table.head,

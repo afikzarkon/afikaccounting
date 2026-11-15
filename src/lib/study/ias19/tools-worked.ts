@@ -22,6 +22,7 @@ const givens = [`חברת ״אורן״ הבטיחה לעובד, יוסי, מענ
 
 export const TOOL_Q1: Worked = {
   neg: "minus",
+  calc: "table",
   title: "1. כמה רושמים היום על המענק ליוסי?",
   givens,
   required: ["מה החוב ליוסי בדוח של היום?"],
@@ -40,6 +41,7 @@ export const TOOL_Q1: Worked = {
 
 export const TOOL_Q2: Worked = {
   neg: "minus",
+  calc: "table",
   title: "2. בכמה גדל החוב ליוסי ברבעון הראשון?",
   givens: [`החוב ליוסי היום \`${f(CASE_TODAY)}\` (שאלה 1).`, `שיעור שנתי \`${pct(CASE.rate)}\`, ריבית דריבית. החברה מפרסמת דוח רבעוני ב־31.3.`],
   required: ["בכמה יגדל החוב עד 31.3?"],
@@ -57,6 +59,7 @@ export const TOOL_Q2: Worked = {
 
 export const TOOL_Q3: Worked = {
   neg: "minus",
+  calc: "table",
   title: "3. מה החוב ליוסי בסוף השנה?",
   givens: [`החוב ליוסי בתחילת השנה \`${f(CASE_TODAY)}\` (שאלה 1).`, `ריבית \`${pct(CASE.rate)}\`. ליוסי לא שולם כלום השנה.`],
   required: ["מה יתרת הסגירה של החוב ליוסי?"],
@@ -77,6 +80,7 @@ export const TOOL_Q3: Worked = {
 
 export const TOOL_Q4: Worked = {
   neg: "minus",
+  calc: "table",
   title: "4. כמה שילמה החברה לעובדים על חופשה?",
   givens: [`הפרשה לחופשה: בתחילת השנה \`${f(v.opening)}\`.`, `ההוצאה של השנה \`${f(v.expense)}\`.`, `בסוף השנה \`${f(v.closing)}\`.`],
   required: ["כמה שולם לעובדים השנה?"],

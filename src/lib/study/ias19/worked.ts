@@ -1,5 +1,6 @@
 import type { StudyModule } from "../types";
 import { FORMULA } from "./formulas";
+import { withCalcTable } from "./calc-table";
 import { ltrFormulas } from "./ltr";
 import type { WLine, WorkedBody, WPoint, WStep, WTable } from "../worked";
 
@@ -128,7 +129,8 @@ const MATH = /[=×÷]/;
 /** A calculation written on one line ("קבוצת 2016: 4 × 4,000 × 6 ÷ 1.06^9 = 56,822"): its label, when it leads with one, heads the step. */
 function oneLine(text: string): WStep {
   const m = text.match(/^([^:=×÷,;\d][^:=×÷,;]{1,24}):\s+(.+)$/);
-  return m ? { h: m[1], p: [m[2]] } : { h: "החישוב", p: [text] };
+  // The calculation as a row of the step's table; one that does not split that way stays a line.
+  return m ? withCalcTable({ h: m[1] }, [m[2]]) : withCalcTable({ h: "החישוב" }, [text]);
 }
 
 export function ias19Worked(prompt: string, steps: string[], kind: "choice" | "number" | "entry" = "number"): WorkedBody {
@@ -177,6 +179,7 @@ export function ias19Worked(prompt: string, steps: string[], kind: "choice" | "n
 function ltrAll(w: WorkedBody): WorkedBody {
   return {
     ...w,
+    calc: "table",
     givens: w.givens?.map(ltrFormulas),
     required: w.required?.map(ltrFormulas),
     steps: w.steps.map((s) => ({ ...s, h: ltrFormulas(s.h), p: s.p?.map(ltrFormulas), why: s.why && [s.why[0], ltrFormulas(s.why[1])] })),

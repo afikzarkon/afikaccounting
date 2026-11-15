@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { isBalanced } from "../learn/basics";
 import { measure, plainYear, pv } from "../learn/ias19";
+import { splitCalc } from "./ias19/calc-table";
 import { drillWorked } from "./ias19/drill-worked";
 import { amendDraw, amendFigures, awardDraw, awardFigures, termDraw, termFigures, assetsDraw, assetsFigures, ceilingDraw, ceilingFigures, dcDraw, dcFigures, payDraw, payFigures, settleDraw, settleFigures, yearDraw, yearFigures, DRILLS, type DrillFamily, pucDraw, pucFigures, seeded, tiersDraw, tiersFigures, windowDraw, windowOf, windowRow } from "./ias19/drills";
 
@@ -177,13 +178,30 @@ describe("IAS 19 drills in the worked-solution layout", () => {
           const s = w.steps[i + 2];
           if (s.entry) return;
           assert.ok(!/^\d+[.)]/.test(s.h), `${family}#${seed}: ${s.h} keeps its own number`);
-          assert.equal(s.p!.length, b.lines.length, `${family}#${seed}: ${b.title}`);
-          // Only direction marks are added: the text itself is the drill's own.
-          s.p!.forEach((line, k) => assert.equal(line.replace(/[⁦-⁩‎‏]/g, ""), b.lines[k].replace(/[⁦-⁩‎‏]/g, ""), `${family}#${seed}: ${b.title}`));
+          // Every line is kept: a sentence as it was, a calculation as a row of the step's table.
+          const rows = s.tables?.[0]?.head[0] === "מה מחשבים" ? s.tables[0].rows.length : 0;
+          assert.equal((s.p?.length ?? 0) + rows, b.lines.length, `${family}#${seed}: ${b.title}`);
+          const strip = (x: string) => x.replace(/[⁦-⁩‎‏]/g, "");
+          for (const line of s.p ?? []) assert.ok(b.lines.map(strip).includes(strip(line)), `${family}#${seed}: ${b.title}`);
+          if (rows) assert.ok(s.tables![0].rows.at(-1)!.res, `${family}#${seed}: the last row is the result`);
         });
-        assert.equal(w.steps.length, 2 + d.build.length + (d.entry && !wordsEntry ? 1 : 0), `${family}#${seed}`);
+        const answers = w.steps.at(-1)!;
+        assert.equal(answers.h, "התשובות");
+        assert.equal(answers.tables![0].rows.length, d.asks.length, `${family}#${seed}: an answer per question`);
+        assert.equal(w.steps.length, 3 + d.build.length + (d.entry && !wordsEntry ? 1 : 0), `${family}#${seed}`);
         assert.equal(w.steps.filter((s) => s.h === "הפקודה").length, d.entry || wordsEntry ? 1 : 0, `${family}#${seed}: one entry`);
         if (d.table) assert.equal(w.summary!.rows.length, d.table.rows.length + (d.table.foot ? 1 : 0));
       }
+  });
+});
+
+describe("IAS 19 calculations as table rows", () => {
+  it("reads a calculation line into what, calculation and result, and leaves a sentence alone", () => {
+    assert.deepEqual(splitCalc("21 × 13,000 × 6.5% = 17,745 ₪."), { what: undefined, calc: "21 × 13,000 × 6.5%", result: 17745, note: undefined });
+    assert.deepEqual(splitCalc("קבוצת 2016: 4 × 4,000 × 6 ÷ 1.06^9 = 56,822"), { what: "קבוצת 2016", calc: "4 × 4,000 × 6 ÷ 1.06^9", result: 56822, note: undefined });
+    assert.equal(splitCalc("124,215 ₪ − 106,470 ₪ = 17,745 ₪ → זכאים (התחייבות).")?.note, "זכאים (התחייבות)");
+    assert.equal(splitCalc("(1 + 6%)^(3/12) − 1 = 1.467%")?.result, "1.467%");
+    assert.equal(splitCalc("הועברו 6 חודשים: 106,470 ₪."), undefined);
+    assert.equal(splitCalc("ולכן ההפרשה היא 8 × 3 = 24 ימים."), undefined);
   });
 });

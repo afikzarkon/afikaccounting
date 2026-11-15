@@ -1,5 +1,6 @@
 import type { BkLine, BkQuestion, BkRoll, BkStep } from "@/lib/learn/ias19-booklet";
 import type { WCell, WLine, WorkedBody, WStep, WTable } from "../worked";
+import { answersStep, withCalcTable } from "./calc-table";
 import { ltrFormulas, ltrMarks } from "./ltr";
 
 /**
@@ -81,7 +82,9 @@ function roll(r: BkRoll): WStep {
 
 function steps(s: BkStep): WStep[] {
   const t = tables(s);
-  const main: WStep = { h: s.title, p: s.text?.map(text), tables: t.length ? t : undefined };
+  // A calculation written in the step's text becomes a row of a table above the step's own tables.
+  const main: WStep = withCalcTable({ h: s.title, tables: t.length ? t : undefined }, s.text?.map(text) ?? []);
+  if (!main.p?.length) delete main.p;
   const rolls = (s.rolls ?? []).map(roll);
   if (main.p || main.tables) return [main, ...rolls];
   // A step that is only its movement table keeps the step's title over the column.
@@ -94,4 +97,9 @@ const LRM = String.fromCharCode(0x200e);
 const xl = (s: string) => "`" + s.replace(/[=+\-*/^();]/g, (op) => `${LRM}${op}${LRM}`) + "`";
 const EXCEL = `כל היוון בפתרון אפשר לחשב גם בגיליון: ${xl("=PV(ריבית;שנים;0;-סכום)")}, וריבית לחלק משנה: ${xl("=יתרה*((1+ריבית)^(חודשים/12)-1)")}.`;
 
-export const bookletWorked = (q: BkQuestion): WorkedBody => ({ neg: "minus", notes: [EXCEL], steps: q.steps.flatMap(steps) });
+export const bookletWorked = (q: BkQuestion): WorkedBody => ({
+  neg: "minus",
+  calc: "table",
+  notes: [EXCEL],
+  steps: [...q.steps.flatMap(steps), answersStep(q.checks.map((c) => [c.label, Math.abs(c.value)]))],
+});

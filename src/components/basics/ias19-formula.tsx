@@ -230,13 +230,39 @@ function marked(n: ReactNode): ReactNode {
   return Children.map(n, (c) => (typeof c === "string" ? ltrMarks(c) : isValidElement<{ children?: ReactNode }>(c) && c.type === Fragment ? cloneElement(c, undefined, marked(c.props.children)) : c));
 }
 
-/** A result worked out on a screen: the course's formula, and under it the same with the numbers in — each line read left to right. */
+/**
+ * A result worked out on a screen, as a row of a calculation table (the
+ * owner's choice of 2026-11-15): what is computed, its formula in words under
+ * it; the numbers; the result. The Excel way, when there is one, as a card
+ * under it. Drawn with spans, so it may sit inside a sentence's block.
+ */
 export function Work({ w }: { w: Worked }) {
-  if (!w.excel) return <WorkLines formula={w.formula} numbers={w.numbers} />;
+  const f = w.formula.lastIndexOf(" = ");
+  const n = w.numbers.lastIndexOf(" = ");
+  if (f < 0 || n < 0) return <WorkLines formula={w.formula} numbers={w.numbers} />;
+  const head = "bg-accent px-2 py-1.5 text-start text-[13px] font-semibold text-accent-fg";
   return (
-    <span className="my-1.5 grid gap-2 sm:grid-cols-2">
-      <WorkLines label="בנוסחה" formula={w.formula} numbers={w.numbers} />
-      <WorkLines label="באקסל" formula={w.excel.formula} numbers={w.excel.numbers} mono />
+    <span className="my-1.5 block space-y-2">
+      <span role="table" className="block overflow-hidden rounded-lg border border-line text-[13.5px]">
+        <span role="row" className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1.2fr)_minmax(0,0.8fr)]">
+          <span role="columnheader" className={head}>מה מחשבים</span>
+          <span role="columnheader" className={head}>חישוב</span>
+          <span role="columnheader" className={head}>תוצאה</span>
+        </span>
+        <span role="row" className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1.2fr)_minmax(0,0.8fr)] bg-amber-50 dark:bg-amber-950/40">
+          <span role="cell" className="px-2 py-1.5">
+            <span className="block font-bold text-fg">{w.formula.slice(f + 3).trim()}</span>
+            <bdi dir="ltr" className="block text-start text-[12.5px] text-muted">{marked(w.formula.slice(0, f).trim())}</bdi>
+          </span>
+          <span role="cell" className="px-2 py-1.5">
+            <bdi dir="ltr" className="num block text-start text-fg">{marked(w.numbers.slice(0, n).trim())}</bdi>
+          </span>
+          <span role="cell" className="px-2 py-1.5">
+            <bdi dir="ltr" className="num block text-end font-bold whitespace-nowrap text-fg">{w.numbers.slice(n + 3).trim()}</bdi>
+          </span>
+        </span>
+      </span>
+      {w.excel && <WorkLines label="באקסל" formula={w.excel.formula} numbers={w.excel.numbers} mono />}
     </span>
   );
 }
