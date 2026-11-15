@@ -43,7 +43,7 @@ function SolutionBox({ children }: { children: ReactNode }) {
  */
 function bookletQuestion(q: BkQuestion): ScreenContent {
   return {
-    lead: "שאלה ברמת חוברת התרגילים. קראו את הנתונים, פתרו על דף או בגיליון, הזינו את הסכומים, ורק אז פתחו את הפתרון.",
+    lead: "קראו את הנתונים, פתרו על דף או בגיליון, הזינו את הסכומים, ורק אז פתחו את הפתרון.",
     body: (
       <>
         {/* Marked as the question's data for the sheet's "question data" button; `contents` keeps the layout as it was. */}
@@ -79,7 +79,7 @@ function bookletQuestion(q: BkQuestion): ScreenContent {
 /** A final-exam question in the booklet's own layout (not part of the worked-layout change). */
 function booklet(q: BkQuestion): ScreenContent {
   return {
-    lead: "שאלה ברמת חוברת התרגילים. קראו את הנתונים, פתרו על דף או בגיליון, הזינו את הסכומים, ורק אז פתחו את הפתרון.",
+    lead: "קראו את הנתונים, פתרו על דף או בגיליון, הזינו את הסכומים, ורק אז פתחו את הפתרון.",
     body: (
       <>
         {/* Marked as the question's data for the sheet's "question data" button; `contents` keeps the layout as it was. */}
@@ -120,7 +120,7 @@ function booklet(q: BkQuestion): ScreenContent {
 
 /** How an answer is written, in the booklet's format: the movement table first, then a note for each line. */
 const FORMAT: ScreenContent = {
-  lead: "בחוברת ובמבחן כל תשובה נכתבת באותה צורה. מי שכותב בצורה הזו לא שוכח שורה, והבודק רואה מאיפה בא כל מספר.",
+  lead: "במבחן כל תשובה נכתבת באותה צורה. מי שכותב בצורה הזו לא שוכח שורה, והבודק רואה מאיפה בא כל מספר.",
   body: (
     <>
       <P>

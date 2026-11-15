@@ -89,7 +89,7 @@ const MEASUREMENT = merge(MEASURE, ATTRIBUTE, {
     "להבחין בין שנות השירות שעברו לבין n, השנים עד התשלום",
     "להחליט בין נוסחת התוכנית לקו ישר, ולקצר את החלון כשיש תקרה",
     "לייחס מענק שאפשר לזכות בו בשתי דרכים",
-    "לפתור שאלת מדידה ברמת חוברת התרגילים",
+    "לפתור שאלת מדידה",
   ],
   screens: before(
     retitle([...MEASURE.screens, ...ATTRIBUTE.screens], {
@@ -114,7 +114,7 @@ const MOVEMENT = merge(ROLLFORWARD, AMEND, {
     "לחשב ריבית כשמשלמים באמצע השנה",
     "לפצל שנה בשינוי תנאים ולחשב עלות שירות עבר",
     "להבחין בין סילוק לבין פרישה בלתי צפויה",
-    "לפתור שאלת תנועה עם שינוי תנאים ברמת חוברת התרגילים",
+    "לפתור שאלת תנועה עם שינוי תנאים",
   ],
   screens: before(
     retitle([...ROLLFORWARD.screens, ...AMEND.screens], {
@@ -138,7 +138,7 @@ const ASSETS_PRESENT = merge(ASSETS, PRESENT, {
     "להגביל נכס נטו בתקרת הנכס",
     "לנתב כל שורה לרווח והפסד, ל-OCI או למאזן",
     "להשלים ביאור חלקי ולחלץ ממנו שיעורים",
-    "לפתור שאלות נכסים והצגה ברמת חוברת התרגילים",
+    "לפתור שאלות נכסים והצגה",
   ],
   screens: before(
     retitle(before([...ASSETS.screens, ...PRESENT.screens], "emp-assets-rule", [{ id: "emp-assets-mfr", title: "עודף, והפקדה מינימלית: כמה ממנו נכס (IFRIC 14)" }]), {
