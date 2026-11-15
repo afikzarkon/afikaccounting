@@ -10,6 +10,7 @@ const BUNNY_LIBRARY = "808661";
 
 /** Each video's id in the Bunny library; a video without one is not shown. */
 const BUNNY_IDS: Record<string, string> = {
+  "1": "47b2671e-4e2a-4cc8-bcef-2416e76fbd6b",
   "3": "6ccd7b34-fae4-40cf-b2a9-f3ce270c1af6",
   "4a": "f33eb84f-2adb-41a6-b33e-383494abfea6",
   "4b": "98455dc7-c4b1-4f07-af5f-d671cc473fd5",
@@ -121,6 +122,24 @@ const RECORDINGS: Record<string, Omit<LessonVideo, "src" | "title" | "part">> = 
       { at: 591, title: "דוגמה פתורה: הפקדה שעוד לא הועברה", screen: "emp-dc-solved" },
       { at: 692, title: "פותרים יחד: שכר אחר, ומבטח שלקח את הסיכון", screen: "emp-dc-together" },
       { at: 751, title: "סיכום" },
+    ],
+  },
+  "1": {
+    duration: 1187,
+    chapters: [
+      { at: 0, title: "פתיחה" },
+      { at: 61, title: "IAS 19 על רגל אחת: מה זה ולמה צריך אותו", screen: "emp-map-why" },
+      { at: 193, title: "איך התקן מחולק: ארבע קבוצות", screen: "emp-map-welcome" },
+      { at: 241, title: "העיקרון: עבודה של היום, התחייבות של היום", screen: "emp-map-principle" },
+      { at: 407, title: "איך מבדילים בין הסוגים, עם תאריכים", screen: "emp-map-types" },
+      { at: 561, title: "הכלל: עץ החלטות של שלוש שאלות", screen: "emp-map-ladder" },
+      { at: 607, title: "ממיינים: חמישה מקרים", screen: "emp-map-sort" },
+      { at: 687, title: "למה צריך מימון בקורס על עובדים", screen: "emp-tool-hook" },
+      { at: 748, title: "קדימה בזמן: ריבית שנתית וערך עתידי", screen: "emp-tool-fv" },
+      { at: 817, title: "אחורה בזמן: ערך נוכחי", screen: "emp-tool-pv" },
+      { at: 906, title: "ריבית לתקופה שאינה שנה", screen: "emp-tool-part" },
+      { at: 1031, title: "המעגל: מה קרה ליתרה במשך השנה", screen: "emp-tool-roll" },
+      { at: 1136, title: "סיכום" },
     ],
   },
 };

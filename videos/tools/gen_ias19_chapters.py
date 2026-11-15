@@ -48,11 +48,15 @@ VIDEOS = {
 old = open(TS, encoding='utf8').read() if os.path.exists(TS) else ''
 m = re.search(r'const BUNNY_IDS: Record<string, string> = \{(.*?)\};', old, re.S)
 ids = dict(re.findall(r'"?(\w+)"?: "([0-9a-f-]+)"', m.group(1))) if m else {}
+# entries already in the file, kept as they are for videos not rendered on this computer
+kept = dict(re.findall(r'^  "(\w+)": (\{\n    duration:.*?\n  \}),$', old, re.S | re.M))
 
 out = []
 for v, (files, mapping) in VIDEOS.items():
     mp4 = f'{ROOT}/videos/ias19-{v}/ias19-{v}.mp4'
     if not os.path.exists(mp4):
+        if v in kept:
+            out.append(f'  "{v}": {kept[v]},')
         continue
     titles = {}
     for f in files:
