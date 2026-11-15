@@ -11,9 +11,7 @@ on a computer where the user's recordings are. Read it all before starting.
 
 | Video | Status |
 |---|---|
-| 3, 4a, 4b, 5a, 5b, 6a, 6b | **Done and live on the site.** Do not touch. |
-| **1** | Recorded. The file is in this computer's Downloads ("שיעור 1 הטבות עובד", about 44 MB). **Next.** |
-| **2** | Recorded. Also in Downloads ("שיעור 2 הטבות עובד", about 45 MB). Do it after 1. |
+| 1, 2, 3, 4a, 4b, 5a, 5b, 6a, 6b | **Done and live on the site.** Do not touch. (1 and 2 finished 2026-11-15.) |
 | 7, 8 | Not recorded yet. Decks and scripts are ready. |
 
 Lessons 4–6 are each split into two videos, "a" and "b". Lessons 1, 2, 7 and 8 are one video each.
