@@ -1,4 +1,4 @@
-import { ArrowDown, BookOpenCheck, ChevronDown, Lightbulb, MapPin, MessageCircle, Signpost, Star, Undo2 } from "lucide-react";
+import { ArrowDown, BookOpenCheck, Lightbulb, MapPin, MessageCircle, Signpost, Star, Undo2 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Roll } from "@/components/study/ledger";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { FORMULA_COLORS, Mark } from "./ias19-formula";
 import { Reveal } from "./inventory-teach";
 import { TaskFrame, TaskText } from "./ias19-question";
+import { SolutionReveal } from "@/components/study/worked";
 
 /**
  * The employee-benefits course's own pieces: the mind map (whole, or as a
@@ -183,8 +184,8 @@ export function DestTag({ to }: { to: keyof typeof DEST }) {
 
 /**
  * A task and its full solution, the way the short-term lesson shows one: the
- * task, then — folded until the learner opens it — a table with the approach
- * and the whole calculation. No hints one at a time. The `hints` keep their old
+ * task, then the site's solution card: a "try it yourself" box, one button,
+ * and two steps, the approach and the whole calculation. No hints one at a time. The `hints` keep their old
  * order (a guiding question, the approach, the first lines, the rest); the
  * guiding question is not shown, and the last two are the calculation.
  */
@@ -193,50 +194,32 @@ export function TaskSolution({ task, hints }: { task: ReactNode; hints: [ReactNo
   return (
     <TaskFrame>
       <TaskText>{task}</TaskText>
-      <details className="group rounded-2xl border border-line bg-surface-2/40 p-3.5">
-        <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-lg border border-line-strong px-3 py-1.5 text-[14px] font-semibold text-accent hover:bg-accent-soft [&::-webkit-details-marker]:hidden">
-          <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden />
-          <span className="group-open:hidden">הצגת הפתרון המלא</span>
-          <span className="hidden group-open:inline">הסתרת הפתרון</span>
-        </summary>
-        <div className="mt-3 overflow-hidden rounded-xl border border-line">
-          <table className="w-full text-[14.5px]">
-            <tbody>
-              <tr className="align-top">
-                <th scope="row" className="w-24 bg-surface-2/70 px-3 py-2.5 text-start text-[13px] font-bold text-muted">
-                  הדרך
-                </th>
-                <td className="px-3 py-2.5 leading-relaxed text-fg">{approach}</td>
-              </tr>
-              <tr className="border-t border-line align-top">
-                <th scope="row" className="w-24 bg-surface-2/70 px-3 py-2.5 text-start text-[13px] font-bold text-muted">
-                  החישוב
-                </th>
-                <td className="space-y-2 px-3 py-2.5 leading-relaxed text-fg">
-                  {first} {rest}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </details>
+      <SolutionReveal
+        tryFirst="פתרו על דף או בגיליון, ורק אז פתחו."
+        steps={[
+          { title: "הדרך", body: approach },
+          {
+            title: "החישוב",
+            body: (
+              <>
+                {first} {rest}
+              </>
+            ),
+          },
+        ]}
+      />
     </TaskFrame>
   );
 }
 
-/** A worked solution shown whole: every step, numbered and titled, one under the other — no stepping through it. */
-export function FullSteps({ steps, label }: { steps: { title: ReactNode; body: ReactNode }[]; label: string }) {
+/** A step's own number ("2. מה שולם") goes: the card numbers its steps. */
+const unnumbered = (t: ReactNode) => (typeof t === "string" ? t.replace(/^\s*\d+[.)]\s*/, "") : t);
+
+/** A worked solution in the site's solution card: a "try it yourself" box, one button, and every step numbered in its frame. */
+export function FullSteps({ steps, label, tryFirst = "פתרו לבד על דף או בגיליון, ורק אז פתחו את הפתרון." }: { steps: { title: ReactNode; body: ReactNode }[]; label: string; tryFirst?: string }) {
   return (
-    <section aria-label={label} className="space-y-3">
-      {steps.map((st, i) => (
-        <div key={i} className="rounded-2xl border border-line bg-surface p-3.5">
-          <p className="mb-2 flex items-center gap-2 text-[15.5px] font-bold text-fg">
-            <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[12px] font-bold text-accent-fg">{i + 1}</span>
-            {st.title}
-          </p>
-          <div className="space-y-2 text-[15px] leading-relaxed">{st.body}</div>
-        </div>
-      ))}
+    <section aria-label={label}>
+      <SolutionReveal tryFirst={tryFirst} steps={steps.map((st) => ({ title: unnumbered(st.title), body: st.body }))} />
     </section>
   );
 }

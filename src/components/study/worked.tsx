@@ -728,6 +728,82 @@ export function WorkedReveal({ w, tryFirst, label = "הצגת הפתרון המ�
   );
 }
 
+/**
+ * One step of a solution, in the same frame as the steps above, for a step
+ * whose body is already drawn (a course's own table, worksheet column or
+ * journal entry) rather than written as data.
+ */
+export function StepCard({ i, n, title, children }: { i: number; n: number; title: ReactNode; children?: ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-3 rounded-xl border border-line p-3.5">
+      {n > 1 && (
+        <div className="text-[12px] text-muted">
+          שלב {i + 1} מתוך {n}
+        </div>
+      )}
+      <h5 className="text-[15.5px] font-bold">
+        <span className="text-accent">{i + 1}.</span> {title}
+      </h5>
+      {children && <div className="flex min-w-0 flex-col gap-2.5 text-[14.5px] leading-relaxed">{children}</div>}
+    </div>
+  );
+}
+
+/**
+ * The solution card of `WorkedReveal`, around steps that are already drawn:
+ * an optional title, a "try it yourself" box, one button, and the steps with
+ * the trap last. Use `StepCard` for each step.
+ */
+export function SolutionReveal({
+  title,
+  steps,
+  tryFirst,
+  trap,
+  label = "הצגת הפתרון המלא",
+  children,
+}: {
+  title?: ReactNode;
+  steps: { title: ReactNode; body?: ReactNode }[];
+  tryFirst?: string;
+  trap?: ReactNode;
+  label?: string;
+  /** Drawn after the steps, before the trap: a summary table, a note. */
+  children?: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <article className="overflow-hidden rounded-xl border-2 border-accent bg-surface">
+      {title && <header className="bg-accent-soft px-4 py-3 text-[16px] font-bold text-fg">{title}</header>}
+      <section className={cn("px-4 py-3", title && "border-t border-line")}>
+        <h4 className="mb-2 text-[14.5px] font-bold">{steps.length > 1 ? "הפתרון, שלב אחר שלב" : "הפתרון"}</h4>
+        {!open && tryFirst && (
+          <div className="rounded-lg border-2 border-dashed border-line px-3 py-2 text-[14px] text-muted">
+            נסו לבד לפני שפותחים: <Text s={tryFirst} />
+          </div>
+        )}
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="mt-2.5 min-h-11 rounded-lg bg-accent px-4 py-2 text-[14.5px] font-semibold text-accent-fg">
+          {open ? "הסתרת הפתרון" : label}
+        </button>
+        {open && (
+          <div className="mt-3 flex flex-col gap-3.5">
+            {steps.map((s, i) => (
+              <StepCard key={i} i={i} n={steps.length} title={s.title}>
+                {s.body}
+              </StepCard>
+            ))}
+            {children}
+            {trap && (
+              <p className="border-t border-line pt-2.5 text-[14.5px]">
+                <span className="font-bold text-danger">מלכודת נפוצה:</span> {trap}
+              </p>
+            )}
+          </div>
+        )}
+      </section>
+    </article>
+  );
+}
+
 /** A practice question's solution, shown when the engine says the question is done: the givens again, the steps, the answer, and the trap last. */
 export function WorkedSolution({ w, neg, answer }: { w: WorkedBody; neg?: Neg; answer?: ReactNode }) {
   return (

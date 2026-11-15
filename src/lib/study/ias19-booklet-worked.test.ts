@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { BK_AMEND, BK_CASES, BK_DC, BK_GIFT, BK_NOTE, BK_OLT, BK_SHORT, BK_THREE, BK_TIER, BK_TIERED } from "../learn/ias19-booklet-cases";
+import { FINAL_EXAMS } from "../learn/ias19-finals";
 import { bookletWorked } from "./ias19/booklet-worked";
 
-const BOOKLET = [BK_SHORT, BK_DC, BK_TIER, BK_AMEND, BK_TIERED, BK_GIFT, BK_CASES, BK_THREE, BK_OLT, BK_NOTE];
+const BOOKLET = [BK_SHORT, BK_DC, BK_TIER, BK_AMEND, BK_TIERED, BK_GIFT, BK_CASES, BK_THREE, BK_OLT, BK_NOTE, ...FINAL_EXAMS];
 
 describe("IAS 19 booklet questions in the worked-solution layout", () => {
   it("keeps every step's title, and every movement table as a worksheet column", () => {

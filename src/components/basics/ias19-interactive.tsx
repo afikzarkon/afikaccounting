@@ -1,10 +1,12 @@
 "use client";
 
-import { Check, ClipboardList, Dices, Eye, Hammer, RotateCcw, Search, ShieldQuestion, X } from "lucide-react";
+import { Check, ClipboardList, Dices, Hammer, RotateCcw, Search, ShieldQuestion, X } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { grown, pv } from "@/lib/learn/ias19";
 import { type Drill, type DrillFamily, drillRight, DRILL_TITLES, makeDrill, windowOf, type WindowRule } from "@/lib/study/ias19/drills";
+import { drillWorked } from "@/lib/study/ias19/drill-worked";
 import { lessonsRef } from "@/lib/study/ias19/shared";
+import { WorkedReveal } from "@/components/study/worked";
 import { cn } from "@/lib/utils";
 
 /**
@@ -12,7 +14,7 @@ import { cn } from "@/lib/utils";
  * a plan, an explorer of the projected unit credit method, an explorer of
  * when service counts toward a grant with two routes, the solving template,
  * and the practice box that draws similar questions with new numbers and
- * shows each one's full solution in the template's three parts.
+ * shows each one's full solution in the site's worked layout.
  */
 
 const n0 = (v: number) => Math.round(v).toLocaleString("en-US");
@@ -336,7 +338,6 @@ function DrillView({ drill }: { drill: Drill }) {
   const [typed, setTyped] = useState<Record<string, string>>({});
   const [picked, setPicked] = useState<Record<string, number>>({});
   const [checked, setChecked] = useState(false);
-  const [solution, setSolution] = useState(false);
   const right = drill.asks.map((a) => (a.kind === "number" ? drillRight(a.answer, typed[a.id] ?? "") : picked[a.id] === a.answer));
   const score = right.filter(Boolean).length;
   return (
@@ -368,7 +369,6 @@ function DrillView({ drill }: { drill: Drill }) {
                 />
                 {a.unit && <span className="text-muted">{a.unit}</span>}
                 {checked && (right[i] ? <Check className="h-5 w-5 text-success" aria-label="נכון" /> : <X className="h-5 w-5 text-danger" aria-label="לא נכון" />)}
-                {checked && !right[i] && solution && <span className="num text-[13.5px] text-muted">התשובה: {n0(a.answer)}</span>}
               </div>
             ) : (
               <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -394,57 +394,13 @@ function DrillView({ drill }: { drill: Drill }) {
         <button type="button" onClick={() => setChecked(true)} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-accent px-5 text-[15px] font-bold text-accent-fg">
           <Check className="h-4 w-4" aria-hidden /> בדיקה
         </button>
-        <button type="button" onClick={() => setSolution(!solution)} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-surface px-5 text-[15px] font-bold text-accent ring-1 ring-accent/40">
-          <Eye className="h-4 w-4" aria-hidden /> {solution ? "הסתרת הפתרון" : "פתרון מלא"}
-        </button>
         {checked && (
           <span className="text-[14px] font-semibold text-fg" aria-live="polite">
             {score} מתוך {drill.asks.length} נכונות{score === drill.asks.length ? " — מצוין!" : ". נסו שוב, או פתחו את הפתרון."}
           </span>
         )}
       </div>
-      {solution && (
-        <div className="anim-step-in space-y-2.5">
-          <SolveTemplate seek={drill.seek} check={drill.check} build={drill.build} compact />
-          {drill.table && (
-            <div className="scroll-x rounded-xl border border-line">
-              <table className="w-full min-w-[30rem] text-[13.5px]">
-                <thead>
-                  <tr className="bg-surface-2/70 text-muted">
-                    {drill.table.head.map((h) => (
-                      <th key={h} className="px-2.5 py-1.5 text-start font-medium">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {drill.table.rows.map((r, i) => (
-                    <tr key={i} className="border-t border-line/70">
-                      {r.map((c, k) => (
-                        <td key={k} className="num px-2.5 py-1.5 text-fg">
-                          {typeof c === "number" ? n0(c) : c}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-                {drill.table.foot && (
-                  <tfoot>
-                    <tr className="border-t border-line bg-surface-2/50 font-bold">
-                      {drill.table.foot.map((c, k) => (
-                        <td key={k} className="num px-2.5 py-1.5 text-fg">
-                          {typeof c === "number" ? n0(c) : c}
-                        </td>
-                      ))}
-                    </tr>
-                  </tfoot>
-                )}
-              </table>
-            </div>
-          )}
-        </div>
-      )}
+      <WorkedReveal w={drillWorked(drill)} tryFirst="ענו על השאלות ובדקו, ורק אז פתחו." />
     </div>
   );
 }

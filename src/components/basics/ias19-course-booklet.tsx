@@ -1,4 +1,3 @@
-import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 import { Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
@@ -7,9 +6,9 @@ import type { BkQuestion } from "@/lib/learn/ias19-booklet";
 import { BK_AMEND, BK_CASES, BK_DC, BK_GIFT, BK_NOTE, BK_OLT, BK_SHORT, BK_THREE, BK_TIER, BK_TIERED } from "@/lib/learn/ias19-booklet-cases";
 import { FINAL_EXAMS } from "@/lib/learn/ias19-finals";
 import { BookletCheck } from "./ias19-booklet-client";
-import { cell, Note, Step } from "./ias19-step";
+import { cell, Note } from "./ias19-step";
 import { rich } from "./ias19-rich";
-import { FullSteps, RollForward } from "./ias19-ui";
+import { RollForward } from "./ias19-ui";
 import { TaskFrame, TaskText } from "./ias19-question";
 import { WorkedReveal } from "@/components/study/worked";
 import { bookletWorked } from "@/lib/study/ias19/booklet-worked";
@@ -17,24 +16,10 @@ import { bookletWorked } from "@/lib/study/ias19/booklet-worked";
 /**
  * The booklet-level questions that close the lessons: the story and its data,
  * what is required, a check of the key amounts, and the solution one step at
- * a time — the movement table, then a note per line, each line saying what it
- * computes, the formula with the numbers, and the result.
+ * a time, in the site's worked layout like the rest of the course.
  */
 
 const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px] leading-relaxed">{children}</p>;
-
-function SolutionBox({ children }: { children: ReactNode }) {
-  return (
-    <details className="group rounded-2xl border border-line bg-surface p-3.5">
-      <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-lg border border-line-strong px-3 py-1.5 text-[14px] font-semibold text-accent hover:bg-accent-soft [&::-webkit-details-marker]:hidden">
-        <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden />
-        <span className="group-open:hidden">הצגת הפתרון המלא</span>
-        <span className="hidden group-open:inline">הסתרת הפתרון</span>
-      </summary>
-      <div className="mt-3">{children}</div>
-    </details>
-  );
-}
 
 /**
  * A booklet question in the site's worked layout (owner's approval,
@@ -75,48 +60,6 @@ function bookletQuestion(q: BkQuestion): ScreenContent {
     ),
   };
 }
-
-/** A final-exam question in the booklet's own layout (not part of the worked-layout change). */
-function booklet(q: BkQuestion): ScreenContent {
-  return {
-    lead: "קראו את הנתונים, פתרו על דף או בגיליון, הזינו את הסכומים, ורק אז פתחו את הפתרון.",
-    body: (
-      <>
-        {/* Marked as the question's data for the sheet's "question data" button; `contents` keeps the layout as it was. */}
-        <div data-givens className="contents">
-          <div className="rounded-xl border border-line bg-surface px-4 py-3">
-            <ul className="list-disc space-y-1.5 ps-5 text-[15px] leading-relaxed">
-              {q.facts.map((f) => (
-                <li key={f}>{rich(f)}</li>
-              ))}
-            </ul>
-          </div>
-          {q.tables.map((t, i) => (
-            <DataTable key={i} caption={t.title} head={t.head} rows={t.rows.map((row) => row.map(cell))} foot={t.foot?.map(cell)} />
-          ))}
-        </div>
-        <TaskFrame label="נדרש">
-          <TaskText>
-            <ol className="list-[hebrew] space-y-1.5 ps-6">
-              {q.required.map((r) => (
-                <li key={r}>{rich(r)}</li>
-              ))}
-            </ol>
-          </TaskText>
-        </TaskFrame>
-        <BookletCheck id={q.id} checks={q.checks} />
-        <SolutionBox>
-          <p className="mb-3 text-[14px] text-muted">
-            כל היוון בפתרון אפשר לחשב גם בגיליון: <bdi dir="ltr" className="num font-semibold">=PV(ריבית;שנים;0;-סכום)</bdi>, וריבית לחלק משנה: <bdi dir="ltr" className="num font-semibold">=יתרה*((1+ריבית)^(חודשים/12)-1)</bdi>.
-          </p>
-          <FullSteps label={q.title} steps={q.steps.map((s) => ({ title: s.title, body: <Step s={s} /> }))} />
-        </SolutionBox>
-        <Remember>{rich(q.point)}</Remember>
-      </>
-    ),
-  };
-}
-
 
 /** How an answer is written, in the booklet's format: the movement table first, then a note for each line. */
 const FORMAT: ScreenContent = {
@@ -206,12 +149,12 @@ export const IAS19_BOOKLET_SCREENS: Record<string, ScreenContent> = {
   "emp-bk-three": { ...bookletQuestion(BK_THREE) },
   "emp-bk-olt": { ...bookletQuestion(BK_OLT) },
   "emp-bk-note": { ...bookletQuestion(BK_NOTE) },
-  "emp-mx-cancel": { ...booklet(FINAL_EXAMS[0]) },
-  "emp-mx-mgmt": { ...booklet(FINAL_EXAMS[1]) },
-  "emp-mx-short": { ...booklet(FINAL_EXAMS[2]) },
-  "emp-mx-three": { ...booklet(FINAL_EXAMS[3]) },
-  "emp-mx-sales": { ...booklet(FINAL_EXAMS[4]) },
-  "emp-mx-trust": { ...booklet(FINAL_EXAMS[5]) },
-  "emp-mx-mfr": { ...booklet(FINAL_EXAMS[6]) },
-  "emp-mx-integrated": { ...booklet(FINAL_EXAMS[7]) },
+  "emp-mx-cancel": { ...bookletQuestion(FINAL_EXAMS[0]) },
+  "emp-mx-mgmt": { ...bookletQuestion(FINAL_EXAMS[1]) },
+  "emp-mx-short": { ...bookletQuestion(FINAL_EXAMS[2]) },
+  "emp-mx-three": { ...bookletQuestion(FINAL_EXAMS[3]) },
+  "emp-mx-sales": { ...bookletQuestion(FINAL_EXAMS[4]) },
+  "emp-mx-trust": { ...bookletQuestion(FINAL_EXAMS[5]) },
+  "emp-mx-mfr": { ...bookletQuestion(FINAL_EXAMS[6]) },
+  "emp-mx-integrated": { ...bookletQuestion(FINAL_EXAMS[7]) },
 };

@@ -1,4 +1,3 @@
-import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 import { Deeper, Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
@@ -13,6 +12,7 @@ import { Ltr, Work } from "./ias19-formula";
 import { RollForward } from "./ias19-ui";
 import { JE, Money } from "./ui";
 import { TaskFrame, TaskText } from "./ias19-question";
+import { SolutionReveal } from "@/components/study/worked";
 
 /**
  * Lesson 3, how to solve an absence question: the guide's six steps, worked
@@ -165,20 +165,6 @@ function Journal({ r }: { r: AbsenceSolution }) {
   );
 }
 
-/** One hidden solution, opened by one button. */
-function SolutionBox({ children }: { children: ReactNode }) {
-  return (
-    <details className="group rounded-2xl border border-line bg-surface p-3.5">
-      <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-lg border border-line-strong px-3 py-1.5 text-[14px] font-semibold text-accent hover:bg-accent-soft [&::-webkit-details-marker]:hidden">
-        <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden />
-        <span className="group-open:hidden">הצגת הפתרון המלא</span>
-        <span className="hidden group-open:inline">הסתרת הפתרון</span>
-      </summary>
-      <div className="mt-3 space-y-3">{children}</div>
-    </details>
-  );
-}
-
 const STEPS = [
   "לסווג את ההיעדרות: נצברת? מבשילה?",
   "להבין מה נכנס להפרשה: רק העלות הנוספת",
@@ -252,30 +238,31 @@ function examScreen(e: AbsenceExam): ScreenContent {
           <TaskText>יתרת הפתיחה, הוצאות השכר, התשלומים ויתרת הסגירה של ההפרשה לשנת 2026{e.modes.length > 1 ? ", בשתי ההנחות" : ""}.</TaskText>
         </TaskFrame>
         <ExamCheck id={e.id} sets={runs.map(({ mode, r }) => ({ mode, answers: { opening: r.opening$, expense: r.expense, payments: r.paid, closing: r.closing$ } }))} hints={HINTS} />
-        <SolutionBox>
-          <div className="rounded-xl bg-surface-2 px-4 py-3 text-[15px] leading-relaxed">
-            <span className="block text-[13px] font-bold text-muted">המלכודת במבחן הזה</span>
-            {e.trap}
-          </div>
-          <P>
-            <strong>שלבים 1–2, סיווג:</strong> ימים שלא נוצלו עוברים לשנה אחת, ולכן ההיעדרות נצברת.{" "}
-            {e.modes.length > 1 ? "פותרים פעמיים: בלי פדיון (הנחה א׳) ועם פדיון (הנחה ב׳)." : e.modes[0] === "B" ? "עוזב מקבל פדיון, ולכן היא מבשילה (הנחה ב׳)." : "אין פדיון, ולכן היא לא מבשילה (הנחה א׳)."} רק הימים שמעבר ל-
-            {e.data.entitlement} ימי הזכאות של השנה נלקחים מהיתרה. היתרה לעובד: {n(balanceOf(e.data))} ימים.
-          </P>
-          {runs.map(({ mode, r }) => (
-            <div key={mode} className="space-y-2">
-              {runs.length > 1 && <p className="text-[16px] font-bold">הנחה {mode === "A" ? "א׳: לא מבשילה" : "ב׳: מבשילה"}</p>}
-              <p className="text-[14px] font-bold text-muted">שלב 3: פתיחה, לפי הצפי</p>
-              <OpeningTable c={e.data} r={r} />
-              <p className="text-[14px] font-bold text-muted">שלב 4: תשלומים, לפי מה שקרה</p>
-              <PaymentsTable c={e.data} r={r} />
-              <p className="text-[14px] font-bold text-muted">שלב 5: סגירה, רק הנשארים</p>
-              <ClosingTable c={e.data} r={r} />
-              <p className="text-[14px] font-bold text-muted">שלב 6: טבלת התנועה</p>
-              <Movement r={r} />
-            </div>
-          ))}
-        </SolutionBox>
+        <SolutionReveal
+          tryFirst="הזינו את ארבעת הסכומים ובדקו, ורק אז פתחו."
+          trap={e.trap}
+          steps={[
+            {
+              title: "שלבים 1–2: סיווג",
+              body: (
+                <P>
+                  ימים שלא נוצלו עוברים לשנה אחת, ולכן ההיעדרות נצברת.{" "}
+                  {e.modes.length > 1 ? "פותרים פעמיים: בלי פדיון (הנחה א׳) ועם פדיון (הנחה ב׳)." : e.modes[0] === "B" ? "עוזב מקבל פדיון, ולכן היא מבשילה (הנחה ב׳)." : "אין פדיון, ולכן היא לא מבשילה (הנחה א׳)."} רק הימים שמעבר ל-
+                  {e.data.entitlement} ימי הזכאות של השנה נלקחים מהיתרה. היתרה לעובד: {n(balanceOf(e.data))} ימים.
+                </P>
+              ),
+            },
+            ...runs.flatMap(({ mode, r }) => {
+              const tag = runs.length > 1 ? ` (הנחה ${mode === "A" ? "א׳: לא מבשילה" : "ב׳: מבשילה"})` : "";
+              return [
+                { title: `שלב 3: פתיחה, לפי הצפי${tag}`, body: <OpeningTable c={e.data} r={r} /> },
+                { title: `שלב 4: תשלומים, לפי מה שקרה${tag}`, body: <PaymentsTable c={e.data} r={r} /> },
+                { title: `שלב 5: סגירה, רק הנשארים${tag}`, body: <ClosingTable c={e.data} r={r} /> },
+                { title: `שלב 6: טבלת התנועה${tag}`, body: <Movement r={r} /> },
+              ];
+            }),
+          ]}
+        />
         <Remember>{e.trap}</Remember>
       </>
     ),

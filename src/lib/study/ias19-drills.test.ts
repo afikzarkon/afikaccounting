@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { isBalanced } from "../learn/basics";
 import { measure, plainYear, pv } from "../learn/ias19";
+import { drillWorked } from "./ias19/drill-worked";
 import { amendDraw, amendFigures, awardDraw, awardFigures, termDraw, termFigures, assetsDraw, assetsFigures, ceilingDraw, ceilingFigures, dcDraw, dcFigures, payDraw, payFigures, settleDraw, settleFigures, yearDraw, yearFigures, DRILLS, type DrillFamily, pucDraw, pucFigures, seeded, tiersDraw, tiersFigures, windowDraw, windowOf, windowRow } from "./ias19/drills";
 
 const N = 400;
@@ -157,5 +158,32 @@ describe("IAS 19 practice drills with new numbers", () => {
         assert.ok(isBalanced({ id: "1", text: "", lines: d.entry! }), `term entry #${seed}`);
       }
     }
+  });
+});
+
+describe("IAS 19 drills in the worked-solution layout", () => {
+  it("keeps what we look for, what we check, every step and its lines, the entry and the table", () => {
+    for (const family of Object.keys(DRILLS) as DrillFamily[])
+      for (let seed = 1; seed <= 40; seed++) {
+        const d = DRILLS[family](seeded(seed));
+        const w = drillWorked(d);
+        assert.equal(w.neg, "minus");
+        assert.equal(w.steps[0].h, "מה מחפשים");
+        assert.equal(w.steps[0].p!.length, d.seek.length);
+        assert.equal(w.steps[1].h, "מה בודקים");
+        assert.equal(w.steps[1].p!.length, d.check.length);
+        const wordsEntry = d.entry && d.build.some((b) => b.title.replace(/^\s*\d+[.)]\s*/, "") === "הפקודה");
+        d.build.forEach((b, i) => {
+          const s = w.steps[i + 2];
+          if (s.entry) return;
+          assert.ok(!/^\d+[.)]/.test(s.h), `${family}#${seed}: ${s.h} keeps its own number`);
+          assert.equal(s.p!.length, b.lines.length, `${family}#${seed}: ${b.title}`);
+          // Only direction marks are added: the text itself is the drill's own.
+          s.p!.forEach((line, k) => assert.equal(line.replace(/[⁦-⁩‎‏]/g, ""), b.lines[k].replace(/[⁦-⁩‎‏]/g, ""), `${family}#${seed}: ${b.title}`));
+        });
+        assert.equal(w.steps.length, 2 + d.build.length + (d.entry && !wordsEntry ? 1 : 0), `${family}#${seed}`);
+        assert.equal(w.steps.filter((s) => s.h === "הפקודה").length, d.entry || wordsEntry ? 1 : 0, `${family}#${seed}: one entry`);
+        if (d.table) assert.equal(w.summary!.rows.length, d.table.rows.length + (d.table.foot ? 1 : 0));
+      }
   });
 });
