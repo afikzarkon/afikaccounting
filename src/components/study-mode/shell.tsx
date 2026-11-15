@@ -438,12 +438,14 @@ export function StudyShell({ module: m, screens, next, course, share }: { module
         ? card.eyebrow
         : "סיכום";
   // The page on screen as a tester rates it: one key per concept screen, self-check, question and the summary.
+  // The practice step opens on a "moving on to practice" screen, which is no question and isn't rated.
+  const question = id === "practice" ? practiceAt(m, place.sub) : undefined;
   const rated = opening
     ? null
     : id === "learn"
-      ? { page: `${checking ? "check" : "screen"}:${m.screens[place.sub].id}`, path: `${pathname}?screen=${m.screens[place.sub].id}` }
+      ? m.screens[place.sub] && { page: `${checking ? "check" : "screen"}:${m.screens[place.sub].id}`, path: `${pathname}?screen=${m.screens[place.sub].id}` }
       : id === "practice"
-        ? { page: `q:${practiceId(practiceAt(m, place.sub)!)}`, path: `${pathname}?step=${step + 1}` }
+        ? question && { page: `q:${practiceId(question)}`, path: `${pathname}?step=${step + 1}` }
         : { page: "summary", path: `${pathname}?step=${step + 1}` };
   const outline = <CourseOutline course={course} current={m} progress={p} place={place} opening={opening} onGo={goTo} />;
 
