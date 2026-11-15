@@ -11,6 +11,7 @@ const BUNNY_LIBRARY = "808661";
 /** Each video's id in the Bunny library; a video without one is not shown. */
 const BUNNY_IDS: Record<string, string> = {
   "1": "47b2671e-4e2a-4cc8-bcef-2416e76fbd6b",
+  "2": "ef473146-a376-4cd1-8f6c-bc531ec89352",
   "3": "6ccd7b34-fae4-40cf-b2a9-f3ce270c1af6",
   "4a": "f33eb84f-2adb-41a6-b33e-383494abfea6",
   "4b": "98455dc7-c4b1-4f07-af5f-d671cc473fd5",
@@ -140,6 +141,27 @@ const RECORDINGS: Record<string, Omit<LessonVideo, "src" | "title" | "part">> = 
       { at: 906, title: "ריבית לתקופה שאינה שנה", screen: "emp-tool-part" },
       { at: 1031, title: "המעגל: מה קרה ליתרה במשך השנה", screen: "emp-tool-roll" },
       { at: 1136, title: "סיכום" },
+    ],
+  },
+  "2": {
+    duration: 1290,
+    chapters: [
+      { at: 0, title: "פתיחה" },
+      { at: 49, title: "מה זו הטבה לזמן קצר", screen: "emp-short-hook" },
+      { at: 164, title: "היעדרויות בתשלום: נצברת או לא נצברת", screen: "emp-short-absence" },
+      { at: 250, title: "מבשילה או לא מבשילה", screen: "emp-short-vest" },
+      { at: 375, title: "עלות יום, ומה הן התוספות", screen: "emp-short-daycost" },
+      { at: 476, title: "LIFO: קודם הימים של השנה", screen: "emp-short-lifo" },
+      { at: 543, title: "FIFO: קודם הימים הצבורים", screen: "emp-short-fifo" },
+      { at: 594, title: "איך פותרים: ששה שלבים", screen: "emp-short-map" },
+      { at: 680, title: "שלבים 1–2: סיווג, ומה נכנס להפרשה", screen: "emp-short-classify" },
+      { at: 797, title: "שלב 3: יתרת פתיחה, לפי הצפי", screen: "emp-short-opening" },
+      { at: 883, title: "שלב 4: תשלומים, לפי מה שקרה", screen: "emp-short-payments" },
+      { at: 935, title: "שלב 5: יתרת סגירה, אחרי ניצול ופקיעה", screen: "emp-short-closing" },
+      { at: 983, title: "שלב 6: טבלת התנועה", screen: "emp-short-movement" },
+      { at: 1059, title: "מלכודות, ותבנית פתרון", screen: "emp-short-traps" },
+      { at: 1103, title: "בונוסים ושיתוף ברווחים", screen: "emp-short-bonus" },
+      { at: 1239, title: "סיכום" },
     ],
   },
 };
