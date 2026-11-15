@@ -19,6 +19,7 @@ const BUNNY_IDS: Record<string, string> = {
   "5b": "a0f1c2c1-336b-48c8-8d8b-eb6ceeef9ac1",
   "6a": "2044347f-9dae-4f3a-8f15-1a4e695e1796",
   "6b": "b48b3765-0907-42a9-81e3-4aeaa303c5f8",
+  "7": "159919ca-0af3-4ebf-8b46-befe579a4990",
 };
 
 const RECORDINGS: Record<string, Omit<LessonVideo, "src" | "title" | "part">> = {
@@ -162,6 +163,25 @@ const RECORDINGS: Record<string, Omit<LessonVideo, "src" | "title" | "part">> = 
       { at: 1059, title: "מלכודות, ותבנית פתרון", screen: "emp-short-traps" },
       { at: 1103, title: "בונוסים ושיתוף ברווחים", screen: "emp-short-bonus" },
       { at: 1239, title: "סיכום" },
+    ],
+  },
+  "7": {
+    duration: 1214,
+    chapters: [
+      { at: 0, title: "פתיחה" },
+      { at: 52, title: "מענק יובל, וסניף שנסגר", screen: "emp-other-hook" },
+      { at: 122, title: "הטבה אחרת לזמן ארוך", screen: "emp-other-olt" },
+      { at: 190, title: "מה נכנס לקבוצה, ומה מציגים בביאור", screen: "emp-other-kinds" },
+      { at: 258, title: "אובדן כושר עבודה: לצבור, או לחכות לאירוע?", screen: "emp-other-disability" },
+      { at: 303, title: "תבנית פתרון: תנועה בהטבה אחרת לזמן ארוך", screen: "emp-other-template" },
+      { at: 360, title: "דוגמה פתורה: מענק יובל שעלה", screen: "emp-other-solved" },
+      { at: 691, title: "הטבת פיטורין: נולדת מההחלטה", screen: "emp-other-term" },
+      { at: 768, title: "פיטורין או לא? שלוש שאלות", screen: "emp-term-test" },
+      { at: 824, title: "מתי מכירים: המוקדם מבין שני מועדים", screen: "emp-term-when" },
+      { at: 920, title: "כמה: שלושה מסלולי מדידה", screen: "emp-other-rule" },
+      { at: 960, title: "תבנית פתרון: הטבת פיטורין", screen: "emp-term-template" },
+      { at: 995, title: "פותרים יחד: הסניף שנסגר, בסכומים", screen: "emp-other-together" },
+      { at: 1161, title: "סיכום" },
     ],
   },
 };
