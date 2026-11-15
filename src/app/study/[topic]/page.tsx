@@ -141,10 +141,13 @@ function LockedLesson({ slug, guest }: { slug: string; guest: boolean }) {
   );
 }
 
-/** The lesson page's frame — the course beside it, the screen — until the lesson arrives. */
+/**
+ * The lesson page's frame — the course beside it, the screen — until the lesson arrives.
+ * As tall as the window: a shorter frame pulled the footer up into view for a moment, and the lesson then pushed it back out.
+ */
 function LessonSkeleton() {
   return (
-    <div className="w-full px-4 pt-5 sm:px-6 lg:p-0" aria-busy="true" aria-label="טוען שיעור">
+    <div className="min-h-[calc(100dvh-4rem)] w-full px-4 pt-5 sm:px-6 lg:p-0" aria-busy="true" aria-label="טוען שיעור">
       <div className="grid gap-6 lg:grid-cols-[18.5rem_minmax(0,1fr)] lg:gap-0">
         <div className="hidden border-e border-line bg-surface/60 p-3 pt-5 lg:block">
           <Skeleton className="h-[32rem] rounded-2xl" />

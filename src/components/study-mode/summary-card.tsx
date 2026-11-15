@@ -2,6 +2,7 @@
 
 import { ArrowLeft, BookOpen, BookOpenText, CircleCheck, ClipboardPen, CloudUpload, Flame, Lock, Repeat, RotateCcw, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { lessonPrefetch } from "@/lib/catalog";
 import { useState } from "react";
 import { useSession } from "@/components/layout/session-store";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -96,7 +97,7 @@ export function SummaryCard({
             </Button>
           )}
           {next && !nextOut && (
-            <ButtonLink href={next.href} size="lg" variant={retryFirst || nextLocked ? "secondary" : undefined} className="h-auto min-h-12 py-2 whitespace-normal">
+            <ButtonLink href={next.href} prefetch={lessonPrefetch(next.href)} size="lg" variant={retryFirst || nextLocked ? "secondary" : undefined} className="h-auto min-h-12 py-2 whitespace-normal">
               {nextLocked && <Lock className="h-4 w-4" aria-hidden />} {next.label} <ArrowLeft className="h-4 w-4" aria-hidden />
             </ButtonLink>
           )}

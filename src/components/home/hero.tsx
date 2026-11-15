@@ -78,7 +78,7 @@ export async function Hero({
               </ButtonLink>
             )}
             {showStart && (
-              <ButtonLink href={FIRST_LESSON} variant="secondary" size="lg" className="w-full sm:w-auto">
+              <ButtonLink href={FIRST_LESSON} prefetch variant="secondary" size="lg" className="w-full sm:w-auto">
                 {labelOf(v, start.key, start.label)}
               </ButtonLink>
             )}

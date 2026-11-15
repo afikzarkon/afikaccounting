@@ -14,7 +14,7 @@ import { lessonHref } from "@/lib/study/paths";
 import { unitsOf } from "@/lib/study/units";
 import { cn } from "@/lib/utils";
 import { clock } from "./lesson-opening";
-import { topicByHref } from "@/lib/catalog";
+import { lessonPrefetch, topicByHref } from "@/lib/catalog";
 import { CourseGoals } from "./course-goals";
 import { ProgressRing } from "./ring";
 import { updateTopic, useTopics } from "./progress-store";
@@ -414,7 +414,7 @@ function ContinueButton({ lesson, started, locked, onLocked }: { lesson: StudyMo
       {label}
     </button>
   ) : (
-    <Link href={studyHref(lesson.slug)} className={cls}>
+    <Link href={studyHref(lesson.slug)} prefetch={lessonPrefetch(studyHref(lesson.slug))} className={cls}>
       {label}
     </Link>
   );

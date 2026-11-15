@@ -202,6 +202,20 @@ export const tasteLabel = (t: Pick<Topic, "format">) => (t.format === "lessons" 
 /** The topic a page or a lesson's course page belongs to. */
 export const topicByHref = (href: string) => TOPICS.find((t) => t.href === href);
 
+/**
+ * A lesson open to everyone: a free course's lesson (its slug starts with the course's id; a test checks it) or a paid
+ * course's taste. Such a lesson never reads the session, so a link into it can load the whole lesson ahead of the click
+ * from the static cache — no skeleton on arrival. A locked lesson's prefetch would stop at the access check and only cost a server call.
+ */
+export const isOpenLesson = (slug: string) =>
+  TOPICS.some((t) => t.preview.includes(slug) || (t.tier === "free" && t.format === "lessons" && slug.startsWith(`${t.id}-`)));
+
+/** How a link into a lesson prefetches: the whole lesson when it is open to everyone, else the route's shared shell. */
+export const lessonPrefetch = (href: string) => {
+  const slug = href.match(/^\/study\/([^/?#]+)/)?.[1];
+  return slug && isOpenLesson(slug) ? true : "auto";
+};
+
 /** Where the site starts a newcomer: the free course's first lesson, no account needed. */
 export const FIRST_LESSON = "/study/basics-intro";
 

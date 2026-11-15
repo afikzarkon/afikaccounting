@@ -3,7 +3,7 @@ import Link from "next/link";
 import { TierBadge } from "@/components/pricing/tier-badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge } from "@/components/ui/primitives";
-import { type Stage, tasteLabel, type Topic } from "@/lib/catalog";
+import { lessonPrefetch, type Stage, tasteLabel, type Topic } from "@/lib/catalog";
 import { firstLessonHref } from "@/lib/study/first-lesson";
 import { cn } from "@/lib/utils";
 import { getVisibility, visiblePath } from "@/lib/visibility/server";
@@ -118,7 +118,7 @@ function TopicCard({ topic }: { topic: Topic }) {
         </p>
       )}
       <div className="mt-auto flex flex-wrap items-center gap-3 pt-5">
-        <ButtonLink href={topic.format === "lessons" ? firstLessonHref(topic) : topic.href} className="w-full sm:w-auto">
+        <ButtonLink href={topic.format === "lessons" ? firstLessonHref(topic) : topic.href} prefetch={lessonPrefetch(topic.format === "lessons" ? firstLessonHref(topic) : topic.href)} className="w-full sm:w-auto">
           {free ? "להתחיל משיעור 1" : "לשיעור 1 בחינם"} <ArrowLeft className="h-4 w-4" aria-hidden />
         </ButtonLink>
         <Link href={topic.href} className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent hover:underline">

@@ -2,6 +2,7 @@
 
 import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
+import { lessonPrefetch } from "@/lib/catalog";
 import { studyHref } from "@/lib/study/href";
 import { percentOf, practiceGroups } from "@/lib/study/outline";
 import { type Place, pathStatus, STEPS, type TopicProgress } from "@/lib/study/score";
@@ -79,7 +80,7 @@ export function CourseOutline({
             if (l.slug !== m.slug)
               return (
                 <li key={l.slug}>
-                  <Link href={studyHref(l.slug)} className={cn("flex items-center gap-2.5 rounded-xl px-2 py-2 text-[14px] transition-colors hover:bg-surface-2", s === "done" ? "text-muted" : "text-fg")}>
+                  <Link href={studyHref(l.slug)} prefetch={lessonPrefetch(studyHref(l.slug))} className={cn("flex items-center gap-2.5 rounded-xl px-2 py-2 text-[14px] transition-colors hover:bg-surface-2", s === "done" ? "text-muted" : "text-fg")}>
                     {s === "done" ? (
                       <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-success text-canvas" aria-label="הושלם">
                         <Check className="h-3.5 w-3.5" strokeWidth={3} />

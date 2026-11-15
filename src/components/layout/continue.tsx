@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
 import { useLast, useReviewDue } from "@/components/study-mode/progress-store";
-import { EXAMS_HUB, FIRST_LESSON, LEARN_HUB } from "@/lib/catalog";
+import { EXAMS_HUB, FIRST_LESSON, LEARN_HUB, lessonPrefetch } from "@/lib/catalog";
 import { studyHref } from "@/lib/study/href";
 import { today } from "@/lib/study/review";
 import { cn } from "@/lib/utils";
@@ -38,6 +38,7 @@ export function ContinueView({ pathname = "" }: { pathname?: string }) {
   return (
     <Link
       href={studyHref(last.slug)}
+      prefetch={lessonPrefetch(studyHref(last.slug))}
       title={`להמשיך: ${last.course} · שיעור ${last.n}`}
       className="hidden h-9 max-w-[15rem] items-center gap-2 rounded-lg border border-line-strong bg-surface ps-1 pe-2.5 text-[13px] transition-colors hover:border-accent/50 xl:flex"
     >
@@ -91,7 +92,7 @@ export function MobileTabBarView({ pathname = "" }: { pathname?: string }) {
             <Crown className="h-5 w-5" aria-hidden /> מבחנים
           </Link>
         )}
-        <Link href={last ? studyHref(last.slug) : FIRST_LESSON} className={cn(tab, "h-16 text-fg")}>
+        <Link href={last ? studyHref(last.slug) : FIRST_LESSON} prefetch={lessonPrefetch(last ? studyHref(last.slug) : FIRST_LESSON)} className={cn(tab, "h-16 text-fg")}>
           <span className="-mt-5 grid h-11 w-11 place-items-center rounded-full bg-accent text-accent-fg shadow-[0_8px_20px_-8px_var(--accent)]" aria-hidden>
             <Play className="h-5 w-5" />
           </span>

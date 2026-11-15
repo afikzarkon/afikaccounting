@@ -6,6 +6,7 @@ import { WhenLinkShown } from "@/components/layout/visibility";
 import { TierBadge } from "@/components/pricing/tier-badge";
 import { useTopics } from "@/components/study-mode/progress-store";
 import { ButtonLink } from "@/components/ui/button";
+import { lessonPrefetch } from "@/lib/catalog";
 import { planHref } from "@/lib/pricing";
 import { studyHref } from "@/lib/study/href";
 import { pathStatus } from "@/lib/study/score";
@@ -60,7 +61,7 @@ export function NextLesson({ courses, locked, upgrade }: { courses: { title: str
               </ButtonLink>
             </WhenLinkShown>
           ) : (
-            <ButtonLink href={studyHref(next.slug)} size="lg">
+            <ButtonLink href={studyHref(next.slug)} prefetch={lessonPrefetch(studyHref(next.slug))} size="lg">
               {status(next) === "started" ? "להמשיך מאיפה שעצרתי" : "להתחיל את השיעור"} <ArrowLeft className="h-4 w-4" aria-hidden />
             </ButtonLink>
           ))}

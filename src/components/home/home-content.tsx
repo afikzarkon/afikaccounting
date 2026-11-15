@@ -102,7 +102,7 @@ export async function HomeContent({ heroVariant }: { heroVariant?: string }) {
                   <ButtonLink href="/register" size="lg" className="border-transparent bg-[#7fd3a6] text-[#062016] hover:brightness-110">
                     להירשם בחינם <ArrowLeft className="h-4 w-4" aria-hidden />
                   </ButtonLink>
-                  <ButtonLink href={FIRST_LESSON} size="lg" variant="secondary" className="border-white/30 bg-transparent text-[#eaf3ee] hover:bg-white/10">
+                  <ButtonLink href={FIRST_LESSON} prefetch size="lg" variant="secondary" className="border-white/30 bg-transparent text-[#eaf3ee] hover:bg-white/10">
                     להתחיל בלי הרשמה
                   </ButtonLink>
                 </div>
@@ -137,7 +137,7 @@ export async function HomeContent({ heroVariant }: { heroVariant?: string }) {
                 <p className="num text-sm text-muted">
                   {free.lessons} שיעורים · {total} שאלות תרגול
                 </p>
-                <ButtonLink href={FIRST_LESSON} size="lg" className="mt-auto w-full sm:w-fit">
+                <ButtonLink href={FIRST_LESSON} prefetch size="lg" className="mt-auto w-full sm:w-fit">
                   להתחיל משיעור 1 <ArrowLeft className="h-4 w-4" aria-hidden />
                 </ButtonLink>
               </div>
@@ -216,7 +216,7 @@ export async function HomeContent({ heroVariant }: { heroVariant?: string }) {
               </div>
               <div className="flex flex-wrap gap-3">
                 {button("finalStart", FIRST_LESSON) && (
-                  <ButtonLink href={FIRST_LESSON} size="lg" variant="secondary" className="border-transparent bg-[#eaf3ee] text-[#0f3d2e] hover:bg-white">
+                  <ButtonLink href={FIRST_LESSON} prefetch size="lg" variant="secondary" className="border-transparent bg-[#eaf3ee] text-[#0f3d2e] hover:bg-white">
                     {text("finalStart")} <ArrowLeft className="h-4 w-4" aria-hidden />
                   </ButtonLink>
                 )}

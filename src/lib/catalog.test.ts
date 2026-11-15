@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it } from "node:test";
-import { ENGINE_TOOLS, IAS19_CALCULATOR_SLUG, LEARNING_PATH, LEARNING_TOOLS } from "./catalog";
+import { ENGINE_TOOLS, IAS19_CALCULATOR_SLUG, isOpenLesson, LEARNING_PATH, LEARNING_TOOLS, lessonPrefetch } from "./catalog";
 import { CALCULATORS } from "./engine/registry";
 import { site } from "./site";
 import { STUDY_MODULES, studyHref } from "./study";
@@ -95,6 +95,15 @@ describe("the site map", () => {
         assert.ok(chapters.length && chapters[0] === t.preview[0], `${t.id}: the taste ${t.preview[0]} is the page's first chapter (${chapters[0]})`);
       }
     }
+  });
+  it("a lesson is open to everyone exactly when the lesson page skips the access check", () => {
+    for (const m of Object.values(STUDY_MODULES)) {
+      const t = LEARNING_PATH.flatMap((s) => s.topics).find((x) => x.href === m.backHref)!;
+      const open = t.tier === "free" || t.preview.includes(m.slug);
+      assert.equal(isOpenLesson(m.slug), open, `${m.slug}: open is ${open}`);
+      assert.equal(lessonPrefetch(`${studyHref(m.slug)}?step=2`), open ? true : "auto", `${m.slug}: prefetch`);
+    }
+    assert.equal(lessonPrefetch("/basics/inventory"), "auto");
   });
   it("every topic in the menu carries its plan", () => {
     const learn = site.nav.find((i) => "items" in i && i.label === "קורסים");
