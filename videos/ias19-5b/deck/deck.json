@@ -1,0 +1,74 @@
+{
+  "v": 4,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-14T12:00:00Z"
+  },
+  "lists": "css",
+  "title": "הטבות עובד — שיעור 5 חלק ב׳: שינוי תנאים באמצע השנה",
+  "order": [
+    "cover",
+    "goals",
+    "hook",
+    "past-what",
+    "split-year",
+    "split-past",
+    "split-interest",
+    "settle",
+    "settle-notes",
+    "rule",
+    "cto-story",
+    "cto-service",
+    "cto-past",
+    "cto-interest",
+    "cto-roll",
+    "exit-settle",
+    "exit-retire",
+    "summary"
+  ],
+  "sections": {
+    "s1": {
+      "description": "פתיחה ומה נדע בסוף החלק",
+      "start": "cover"
+    },
+    "s2": {
+      "description": "שלושה אירועים באמצע השנה, ומהי עלות שירות עבר",
+      "start": "hook"
+    },
+    "s3": {
+      "description": "שינוי תנאים: שתי תקופות, שירות עבר וריבית",
+      "start": "split-year"
+    },
+    "s4": {
+      "description": "סילוק מול פרישה בלתי צפויה",
+      "start": "settle"
+    },
+    "s5": {
+      "description": "הכלל: ארבעה צעדים בשנה חתוכה",
+      "start": "rule"
+    },
+    "s6": {
+      "description": "דוגמה פתורה: מנהל הטכנולוגיה",
+      "start": "cto-story"
+    },
+    "s7": {
+      "description": "פותרים יחד: סילוק ופרישה בלתי צפויה",
+      "start": "exit-settle"
+    },
+    "s8": {
+      "description": "סיכום השיעור",
+      "start": "summary"
+    }
+  },
+  "faces": {
+    "frank-ruhl-libre": {
+      "family": "Frank Ruhl Libre",
+      "href": "https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=swap"
+    },
+    "ibm-plex-sans-hebrew": {
+      "family": "IBM Plex Sans Hebrew",
+      "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;600;700&display=swap"
+    }
+  },
+  "designSystems": []
+}

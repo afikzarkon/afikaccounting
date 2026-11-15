@@ -1,0 +1,83 @@
+{
+  "v": 4,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-14T12:00:00Z"
+  },
+  "lists": "css",
+  "title": "הטבות עובד — שיעור 4 חלק א׳: מדידה בנקודת זמן",
+  "order": [
+    "cover",
+    "goals",
+    "hook",
+    "puc-units",
+    "puc-questions",
+    "puc-formula",
+    "assume",
+    "rate-which",
+    "rate-date",
+    "rate-risk",
+    "recipe",
+    "recipe-trap",
+    "template",
+    "solved-story",
+    "solved-steps",
+    "solved-calc",
+    "group-story",
+    "group-calc",
+    "summary"
+  ],
+  "sections": {
+    "s1": {
+      "description": "פתיחה ומה נדע בסוף השיעור",
+      "start": "cover"
+    },
+    "s2": {
+      "description": "כמה שווה היום הבטחה לפרישה",
+      "start": "hook"
+    },
+    "s3": {
+      "description": "יחידת הזכאות הצפויה: חמש שאלות ונוסחה",
+      "start": "puc-units"
+    },
+    "s4": {
+      "description": "ההנחות האקטואריות",
+      "start": "assume"
+    },
+    "s5": {
+      "description": "באיזו ריבית מהוונים",
+      "start": "rate-which"
+    },
+    "s6": {
+      "description": "מתכון חמשת הצעדים, והמלכודת הגדולה",
+      "start": "recipe"
+    },
+    "s7": {
+      "description": "תבנית פתרון",
+      "start": "template"
+    },
+    "s8": {
+      "description": "דוגמה פתורה: סמנכ״לית התפעול",
+      "start": "solved-story"
+    },
+    "s9": {
+      "description": "פותרים יחד: קבוצה של עובדים",
+      "start": "group-story"
+    },
+    "s10": {
+      "description": "סיכום חלק א׳",
+      "start": "summary"
+    }
+  },
+  "faces": {
+    "frank-ruhl-libre": {
+      "family": "Frank Ruhl Libre",
+      "href": "https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=swap"
+    },
+    "ibm-plex-sans-hebrew": {
+      "family": "IBM Plex Sans Hebrew",
+      "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;600;700&display=swap"
+    }
+  },
+  "designSystems": []
+}

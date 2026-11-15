@@ -1,0 +1,87 @@
+{
+  "v": 4,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-14T12:00:00Z"
+  },
+  "lists": "css",
+  "title": "הטבות עובד — שיעור 6 חלק א׳: נכסי תכנית ותקרת נכס",
+  "order": [
+    "cover",
+    "goals",
+    "hook",
+    "qualify",
+    "qualify-not",
+    "net",
+    "deposit",
+    "ceiling",
+    "reimburse",
+    "mfr",
+    "mfr-example",
+    "rule",
+    "solved-story",
+    "solved-debt",
+    "solved-fund",
+    "solved-result",
+    "together-1",
+    "together-2",
+    "summary"
+  ],
+  "sections": {
+    "s1": {
+      "description": "פתיחה ומה נדע בסוף החלק הזה",
+      "start": "cover"
+    },
+    "s2": {
+      "description": "חוב, וקופה בצד",
+      "start": "hook"
+    },
+    "s3": {
+      "description": "מתי קופה היא נכסי תכנית",
+      "start": "qualify"
+    },
+    "s4": {
+      "description": "התחייבות נטו, ומעגל של הקופה",
+      "start": "net"
+    },
+    "s5": {
+      "description": "תקרת הנכס",
+      "start": "ceiling"
+    },
+    "s6": {
+      "description": "פוליסה שאינה כשירה: נכס שיפוי",
+      "start": "reimburse"
+    },
+    "s7": {
+      "description": "עודף, והפקדה מינימלית",
+      "start": "mfr"
+    },
+    "s8": {
+      "description": "הכלל: שני מעגלים, נטו, ותקרה",
+      "start": "rule"
+    },
+    "s9": {
+      "description": "דוגמה פתורה: מענק עם קופה",
+      "start": "solved-story"
+    },
+    "s10": {
+      "description": "פותרים יחד: עודף שנתקל בתקרה",
+      "start": "together-1"
+    },
+    "s11": {
+      "description": "סיכום",
+      "start": "summary"
+    }
+  },
+  "faces": {
+    "frank-ruhl-libre": {
+      "family": "Frank Ruhl Libre",
+      "href": "https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=swap"
+    },
+    "ibm-plex-sans-hebrew": {
+      "family": "IBM Plex Sans Hebrew",
+      "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;600;700&display=swap"
+    }
+  },
+  "designSystems": []
+}

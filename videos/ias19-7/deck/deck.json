@@ -1,0 +1,89 @@
+{
+  "v": 4,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-14T12:00:00Z"
+  },
+  "lists": "css",
+  "title": "הטבות עובד — שיעור 7: הטבות אחרות לזמן ארוך ופיטורין",
+  "order": [
+    "cover",
+    "goals",
+    "hook-award",
+    "hook-branch",
+    "olt-def",
+    "olt-pn",
+    "kinds",
+    "kinds-note",
+    "disability",
+    "template",
+    "solved-story",
+    "solved-opening",
+    "solved-current",
+    "solved-past",
+    "solved-interest",
+    "solved-roll",
+    "solved-check",
+    "term-def",
+    "term-what",
+    "term-test",
+    "term-when",
+    "term-lock",
+    "term-measure",
+    "term-template",
+    "together-task",
+    "together-entry",
+    "ifpost",
+    "master",
+    "summary"
+  ],
+  "sections": {
+    "s1": {
+      "description": "פתיחה ומה נדע בסוף השיעור",
+      "start": "cover"
+    },
+    "s2": {
+      "description": "שני סיפורים: מענק יובל, וסניף שנסגר",
+      "start": "hook-award"
+    },
+    "s3": {
+      "description": "הטבה אחרת לזמן ארוך: ההגדרה, והכול לרווח והפסד",
+      "start": "olt-def"
+    },
+    "s4": {
+      "description": "מה נכנס לקבוצה, הביאור, ואובדן כושר עבודה",
+      "start": "kinds"
+    },
+    "s5": {
+      "description": "תבנית פתרון ודוגמה פתורה: מענק יובל שעלה",
+      "start": "template"
+    },
+    "s6": {
+      "description": "הטבת פיטורין: מה היא, ומה לא",
+      "start": "term-def"
+    },
+    "s7": {
+      "description": "מתי מכירים, ובכמה",
+      "start": "term-when"
+    },
+    "s8": {
+      "description": "פותרים יחד: הסניף שנסגר",
+      "start": "together-task"
+    },
+    "s9": {
+      "description": "מבט על וסיכום השיעור",
+      "start": "master"
+    }
+  },
+  "faces": {
+    "frank-ruhl-libre": {
+      "family": "Frank Ruhl Libre",
+      "href": "https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=swap"
+    },
+    "ibm-plex-sans-hebrew": {
+      "family": "IBM Plex Sans Hebrew",
+      "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;600;700&display=swap"
+    }
+  },
+  "designSystems": []
+}

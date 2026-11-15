@@ -1,0 +1,72 @@
+{
+  "v": 4,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-14T12:00:00Z"
+  },
+  "lists": "css",
+  "title": "הטבות עובד — שיעור 8: אינטגרציה: שאלות ברמת מבחן",
+  "order": [
+    "cover",
+    "goals",
+    "exam-day",
+    "scan",
+    "order",
+    "q1-assembly",
+    "q1-field",
+    "q1-timeline",
+    "asm-table",
+    "asm-y1",
+    "asm-amend",
+    "asm-y2",
+    "fld-table",
+    "fld-rolls",
+    "sheet-recipe",
+    "sheet-rows",
+    "sheet-where",
+    "sheet-assets",
+    "sheet-traps",
+    "summary"
+  ],
+  "sections": {
+    "s1": {
+      "description": "פתיחה ומה נדע בסוף השיעור",
+      "start": "cover"
+    },
+    "s2": {
+      "description": "יום המבחן: חמש שאלות סריקה וסדר עבודה קבוע",
+      "start": "exam-day"
+    },
+    "s3": {
+      "description": "שאלה 1: הנתונים, וציר הזמן",
+      "start": "q1-assembly"
+    },
+    "s4": {
+      "description": "מחלקת ההרכבה: טבלת קבוצות, 2022, התיקון ו-2023",
+      "start": "asm-table"
+    },
+    "s5": {
+      "description": "מחלקת השטח: שיוך לפי סיבת הזכאות, ושני המעגלים",
+      "start": "fld-table"
+    },
+    "s6": {
+      "description": "דף הסיכום למבחן",
+      "start": "sheet-recipe"
+    },
+    "s7": {
+      "description": "סיכום השיעור והקורס",
+      "start": "summary"
+    }
+  },
+  "faces": {
+    "frank-ruhl-libre": {
+      "family": "Frank Ruhl Libre",
+      "href": "https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=swap"
+    },
+    "ibm-plex-sans-hebrew": {
+      "family": "IBM Plex Sans Hebrew",
+      "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;600;700&display=swap"
+    }
+  },
+  "designSystems": []
+}

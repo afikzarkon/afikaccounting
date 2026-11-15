@@ -1,0 +1,69 @@
+{
+  "v": 4,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-14T12:00:00Z"
+  },
+  "lists": "css",
+  "title": "הטבות עובד — שיעור 6 חלק ב׳: הצגה בדוחות",
+  "order": [
+    "cover",
+    "goals",
+    "hook",
+    "three-pl",
+    "three-oci",
+    "reverse-rate",
+    "reverse-table",
+    "rule",
+    "solved-story",
+    "solved-debt",
+    "solved-fund",
+    "solved-statements",
+    "policy",
+    "note-data",
+    "note-rate",
+    "note-contribution",
+    "summary"
+  ],
+  "sections": {
+    "s1": {
+      "description": "פתיחה ומה נדע בסוף השיעור",
+      "start": "cover"
+    },
+    "s2": {
+      "description": "כל שורה לקופסה שלה: שלוש כתובות",
+      "start": "hook"
+    },
+    "s3": {
+      "description": "הנדסה לאחור: מה הביאור מסתיר",
+      "start": "reverse-rate"
+    },
+    "s4": {
+      "description": "הכלל: ניתוב כל שורה",
+      "start": "rule"
+    },
+    "s5": {
+      "description": "דוגמה פתורה: תיקון באמצע השנה, והדוחות",
+      "start": "solved-story"
+    },
+    "s6": {
+      "description": "פותרים יחד: מדיניות אחרת, וביאור של שנה קודמת",
+      "start": "policy"
+    },
+    "s7": {
+      "description": "סיכום השיעור",
+      "start": "summary"
+    }
+  },
+  "faces": {
+    "frank-ruhl-libre": {
+      "family": "Frank Ruhl Libre",
+      "href": "https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=swap"
+    },
+    "ibm-plex-sans-hebrew": {
+      "family": "IBM Plex Sans Hebrew",
+      "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;600;700&display=swap"
+    }
+  },
+  "designSystems": []
+}

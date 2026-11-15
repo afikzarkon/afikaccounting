@@ -1,0 +1,81 @@
+{
+  "v": 4,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-14T12:00:00Z"
+  },
+  "lists": "css",
+  "title": "הטבות עובד — שיעור 3: הפקדה מוגדרת מול הטבה מוגדרת: סיווג ורישום",
+  "order": [
+    "cover",
+    "goals",
+    "hook",
+    "what",
+    "two-story",
+    "two-plans",
+    "test",
+    "test-three",
+    "test-sorted",
+    "record-rule",
+    "record-december",
+    "template-check",
+    "template-build",
+    "solved-calc",
+    "solved-entry",
+    "insurer",
+    "summary"
+  ],
+  "sections": {
+    "s1": {
+      "description": "פתיחה ומה נדע בסוף השיעור",
+      "start": "cover"
+    },
+    "s2": {
+      "description": "דמי כיס, או ״אני משלם על הכול״: מי נושא בסיכון",
+      "start": "hook"
+    },
+    "s3": {
+      "description": "מה נחשב הטבה לאחר סיום העסקה",
+      "start": "what"
+    },
+    "s4": {
+      "description": "שתי תוכניות: הפקדה מוגדרת והטבה מוגדרת",
+      "start": "two-story"
+    },
+    "s5": {
+      "description": "המבחן: מי נושא בסיכון, לא מי משלם",
+      "start": "test"
+    },
+    "s6": {
+      "description": "הכלל: איך רושמים הפקדה מוגדרת",
+      "start": "record-rule"
+    },
+    "s7": {
+      "description": "תבנית פתרון לשאלת הפקדה מוגדרת",
+      "start": "template-check"
+    },
+    "s8": {
+      "description": "דוגמה פתורה: הפקדה שעוד לא הועברה",
+      "start": "solved-calc"
+    },
+    "s9": {
+      "description": "מבטח שלקח את כל הסיכון",
+      "start": "insurer"
+    },
+    "s10": {
+      "description": "סיכום השיעור",
+      "start": "summary"
+    }
+  },
+  "faces": {
+    "frank-ruhl-libre": {
+      "family": "Frank Ruhl Libre",
+      "href": "https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=swap"
+    },
+    "ibm-plex-sans-hebrew": {
+      "family": "IBM Plex Sans Hebrew",
+      "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;600;700&display=swap"
+    }
+  },
+  "designSystems": []
+}

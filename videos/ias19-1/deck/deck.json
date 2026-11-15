@@ -1,0 +1,95 @@
+{
+  "v": 4,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-12T12:00:00Z"
+  },
+  "lists": "css",
+  "title": "הטבות עובד — שיעור 1: יסודות: ארבעת סוגי ההטבות, וכלי המימון",
+  "order": [
+    "cover",
+    "goals",
+    "why-salary",
+    "why-grant",
+    "why-matters",
+    "groups",
+    "principle-story",
+    "principle-stairs",
+    "principle-constructive",
+    "principle-pv",
+    "principle-bank",
+    "types-short",
+    "types-post",
+    "types-other",
+    "types-term",
+    "ladder",
+    "sort-1",
+    "sort-2",
+    "tool-hook",
+    "tool-fv",
+    "tool-pv",
+    "tool-dana",
+    "tool-part",
+    "tool-part-amount",
+    "tool-roll",
+    "tool-missing",
+    "summary"
+  ],
+  "sections": {
+    "s1": {
+      "description": "פתיחה ומה נדע בסוף השיעור",
+      "start": "cover"
+    },
+    "s2": {
+      "description": "התקן על רגל אחת: מה זה ולמה צריך אותו",
+      "start": "why-salary"
+    },
+    "s3": {
+      "description": "איך התקן מחולק: ארבע קבוצות",
+      "start": "groups"
+    },
+    "s4": {
+      "description": "העיקרון: עבודה של היום, חוב של היום",
+      "start": "principle-story"
+    },
+    "s5": {
+      "description": "איך מבדילים בין הסוגים, עם תאריכים",
+      "start": "types-short"
+    },
+    "s6": {
+      "description": "עץ ההחלטות, ומיון של חמישה מקרים",
+      "start": "ladder"
+    },
+    "s7": {
+      "description": "חלק ב׳: למה צריך מימון בקורס על עובדים",
+      "start": "tool-hook"
+    },
+    "s8": {
+      "description": "קדימה ואחורה בזמן: ערך עתידי וערך נוכחי",
+      "start": "tool-fv"
+    },
+    "s9": {
+      "description": "ריבית לתקופה שאינה שנה",
+      "start": "tool-part"
+    },
+    "s10": {
+      "description": "המעגל, והשורה החסרה",
+      "start": "tool-roll"
+    },
+    "s11": {
+      "description": "סיכום השיעור",
+      "start": "summary"
+    }
+  },
+  "faces": {
+    "frank-ruhl-libre": {
+      "family": "Frank Ruhl Libre",
+      "href": "https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=swap"
+    },
+    "ibm-plex-sans-hebrew": {
+      "family": "IBM Plex Sans Hebrew",
+      "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;600;700&display=swap"
+    }
+  },
+  "designSystems": []
+}

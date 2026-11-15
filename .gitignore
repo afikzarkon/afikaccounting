@@ -106,3 +106,13 @@ next-env.d.ts
 
 # the consolidated course's source material (never committed)
 /consolidated-source/
+
+# basics course source material (never committed)
+/basics-source/
+
+# video work: tools and decks are committed; audio, transcripts and renders stay local
+/videos/tools/node_modules/
+/videos/**/*.m4a
+/videos/**/*.mp4
+/videos/**/scribe*.json
+/videos/ias19-incoming/

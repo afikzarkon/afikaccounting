@@ -1,0 +1,79 @@
+{
+  "v": 4,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-14T12:00:00Z"
+  },
+  "lists": "css",
+  "title": "הטבות עובד — שיעור 5 חלק א׳: תנועה בהתחייבות",
+  "order": [
+    "cover",
+    "goals",
+    "hook-bank",
+    "hook-buckets",
+    "lines",
+    "pn",
+    "rates-timeline",
+    "rates-table",
+    "paid-idea",
+    "paid-example",
+    "rule",
+    "entries",
+    "where",
+    "template",
+    "solved-story",
+    "solved-y1",
+    "solved-y2",
+    "solved-changed",
+    "summary"
+  ],
+  "sections": {
+    "s1": {
+      "description": "פתיחה ומה נדע בסוף החלק הזה",
+      "start": "cover"
+    },
+    "s2": {
+      "description": "ההפתעה שמקבלת שורה: מדידה מחדש",
+      "start": "hook-bank"
+    },
+    "s3": {
+      "description": "שורות המעגל, והשורה שמאזנת",
+      "start": "lines"
+    },
+    "s4": {
+      "description": "איזו ריבית ואיזה n בכל שורה",
+      "start": "rates-timeline"
+    },
+    "s5": {
+      "description": "ריבית כששולם מענק באמצע השנה",
+      "start": "paid-idea"
+    },
+    "s6": {
+      "description": "הכלל: המעגל, הרישום, ולאן הולכת כל שורה",
+      "start": "rule"
+    },
+    "s7": {
+      "description": "תבנית פתרון בחמישה צעדים",
+      "start": "template"
+    },
+    "s8": {
+      "description": "דוגמה פתורה: סמנכ״ל כספים, שנתיים",
+      "start": "solved-story"
+    },
+    "s9": {
+      "description": "סיכום החלק הראשון",
+      "start": "summary"
+    }
+  },
+  "faces": {
+    "frank-ruhl-libre": {
+      "family": "Frank Ruhl Libre",
+      "href": "https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=swap"
+    },
+    "ibm-plex-sans-hebrew": {
+      "family": "IBM Plex Sans Hebrew",
+      "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;600;700&display=swap"
+    }
+  },
+  "designSystems": []
+}

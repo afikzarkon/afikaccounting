@@ -1,0 +1,110 @@
+{
+  "v": 4,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-14T12:00:00Z"
+  },
+  "lists": "css",
+  "title": "הטבות עובד — שיעור 2: הטבות לזמן קצר",
+  "order": [
+    "cover",
+    "goals",
+    "hook-avi",
+    "hook-definition",
+    "hook-rules",
+    "absence-kinds",
+    "absence-ronit",
+    "vest-kinds",
+    "vest-example",
+    "vest-expected",
+    "daycost",
+    "daycost-apply",
+    "lifo",
+    "fifo",
+    "steps",
+    "alon-facts",
+    "classify",
+    "extra-cost",
+    "groups",
+    "opening-a",
+    "opening-b",
+    "payments",
+    "closing",
+    "movement",
+    "movement-entry",
+    "traps",
+    "bonus-conditions",
+    "bonus-nof",
+    "bonus-next",
+    "summary"
+  ],
+  "sections": {
+    "s1": {
+      "description": "פתיחה ומה נדע בסוף השיעור",
+      "start": "cover"
+    },
+    "s2": {
+      "description": "מה זו הטבה לזמן קצר, ולמה לא מהוונים",
+      "start": "hook-avi"
+    },
+    "s3": {
+      "description": "היעדרויות בתשלום: נצברת או לא נצברת",
+      "start": "absence-kinds"
+    },
+    "s4": {
+      "description": "מבשילה או לא מבשילה, ועל מי מפרישים",
+      "start": "vest-kinds"
+    },
+    "s5": {
+      "description": "עלות יום, ומה הן התוספות",
+      "start": "daycost"
+    },
+    "s6": {
+      "description": "סדר הניצול: LIFO ו-FIFO",
+      "start": "lifo"
+    },
+    "s7": {
+      "description": "איך פותרים: ששה שלבים, והתרגיל של ״אלון״",
+      "start": "steps"
+    },
+    "s8": {
+      "description": "שלבים 1–2: סיווג, ומה נכנס להפרשה",
+      "start": "classify"
+    },
+    "s9": {
+      "description": "שלב 3: יתרת פתיחה, לפי הצפי",
+      "start": "opening-a"
+    },
+    "s10": {
+      "description": "שלבים 4–5: תשלומים וסגירה",
+      "start": "payments"
+    },
+    "s11": {
+      "description": "שלב 6: טבלת התנועה והרישום",
+      "start": "movement"
+    },
+    "s12": {
+      "description": "מלכודות",
+      "start": "traps"
+    },
+    "s13": {
+      "description": "בונוסים ושיתוף ברווחים",
+      "start": "bonus-conditions"
+    },
+    "s14": {
+      "description": "סיכום השיעור",
+      "start": "summary"
+    }
+  },
+  "faces": {
+    "frank-ruhl-libre": {
+      "family": "Frank Ruhl Libre",
+      "href": "https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=swap"
+    },
+    "ibm-plex-sans-hebrew": {
+      "family": "IBM Plex Sans Hebrew",
+      "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;600;700&display=swap"
+    }
+  },
+  "designSystems": []
+}

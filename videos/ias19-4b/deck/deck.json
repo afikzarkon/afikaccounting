@@ -1,0 +1,78 @@
+{
+  "v": 4,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-14T12:00:00Z"
+  },
+  "lists": "css",
+  "title": "הטבות עובד — שיעור 4 חלק ב׳: לאיזו שנה שייך כל חלק",
+  "order": [
+    "cover",
+    "goals",
+    "hook-gym",
+    "hook-count",
+    "formula-rule",
+    "formula-jump",
+    "cap",
+    "late",
+    "window-n",
+    "dual-rule",
+    "rule",
+    "template",
+    "solved-story",
+    "solved-calc",
+    "together-jump",
+    "together-dual",
+    "together-table",
+    "summary"
+  ],
+  "sections": {
+    "s1": {
+      "description": "פתיחה ומה נדע בסוף השיעור",
+      "start": "cover"
+    },
+    "s2": {
+      "description": "סיפור פתיחה: כמה כבר ״שלכם״ באמצע הדרך",
+      "start": "hook-gym"
+    },
+    "s3": {
+      "description": "נוסחת התוכנית, או קו ישר",
+      "start": "formula-rule"
+    },
+    "s4": {
+      "description": "תקרה, וזכאות שמתחילה מאוחר",
+      "start": "cap"
+    },
+    "s5": {
+      "description": "שני מסלולים לזכאות",
+      "start": "dual-rule"
+    },
+    "s6": {
+      "description": "הכלל ותבנית הפתרון",
+      "start": "rule"
+    },
+    "s7": {
+      "description": "דוגמה פתורה: מענק שנותן יותר בהתחלה",
+      "start": "solved-story"
+    },
+    "s8": {
+      "description": "פותרים יחד: מענק שקופץ, ושלושה עובדים",
+      "start": "together-jump"
+    },
+    "s9": {
+      "description": "סיכום השיעור",
+      "start": "summary"
+    }
+  },
+  "faces": {
+    "frank-ruhl-libre": {
+      "family": "Frank Ruhl Libre",
+      "href": "https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=swap"
+    },
+    "ibm-plex-sans-hebrew": {
+      "family": "IBM Plex Sans Hebrew",
+      "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;600;700&display=swap"
+    }
+  },
+  "designSystems": []
+}
