@@ -1,5 +1,6 @@
 import { AlertTriangle, ClipboardList, Gauge, GraduationCap, MessageSquareQuote, Timer, Users, Wrench } from "lucide-react";
-import { type Analysis, kindLabel, type Quote, severityLabel } from "@/lib/tester/analysis";
+import { type Analysis, kindLabel, type PageStat, type Quote, severityLabel } from "@/lib/tester/analysis";
+import { tagLabel } from "@/lib/tester/form";
 import { cn } from "@/lib/utils";
 import { RankedBars, ShareBar } from "./charts";
 import { CopyForClaude } from "./copy-for-claude";
@@ -90,6 +91,8 @@ export function FeedbackAnalysis({ a, claudeText }: { a: Analysis; claudeText: s
         )}
       </Panel>
 
+      <ScreenRatings a={a} />
+
       <div className="grid gap-6 xl:grid-cols-2">
         <Panel title="חומרה וסוג הקושי" description="כל נקודות ההיתקעות יחד">
           <div className="space-y-4">
@@ -97,13 +100,23 @@ export function FeedbackAnalysis({ a, claudeText }: { a: Analysis; claudeText: s
             <ShareBar parts={parts(a.byKind, kindLabel)} empty="אין דיווחים." />
           </div>
         </Panel>
-        <Panel title="דירוגים" description="ממוצע מתוך 5, על פני כל המודולים שדורגו. מתחת ל-3.5 כדאי לבדוק.">
-          <RankedBars rows={a.ratings.filter((r) => r.avg !== null).map((r) => ({ label: `${r.label} (${r.n})`, values: [r.avg ?? 0] }))} empty="עוד אין דירוגים." />
-          {a.weakModules.length > 0 && (
-            <p className="mt-3 text-xs text-muted">
-              המודולים שדורגו הכי נמוך: {a.weakModules.slice(0, 3).map((m) => `${m.module} (${m.avg.toFixed(1)}, ${m.tester})`).join(" · ")}
-            </p>
+        <Panel title="סוף השיעור" description="בסיכום של כל שיעור: ״אוכל לפתור שאלת בחינה בנושא?״ (ממוצע מתוך 5; מתחת ל-3.5 כדאי לבדוק), וכמה מהמסכים סומנו לא ברור.">
+          <RankedBars
+            rows={a.lessons.filter((l) => l.exam !== null).map((l) => ({ label: `${l.lesson} (${l.examN})`, values: [l.exam ?? 0] }))}
+            empty="עוד אין תשובות בסוף שיעור."
+          />
+          {a.lessons.some((l) => l.rated > 0) && (
+            <ul className="mt-3 space-y-1 text-xs text-muted">
+              {a.lessons
+                .filter((l) => l.rated > 0)
+                .map((l) => (
+                  <li key={l.slug}>
+                    {l.lesson}: {l.rated} דירוגי מסכים, <span className={l.unclear ? "font-medium text-danger" : undefined}>{l.unclear} לא ברור</span>, {l.ok} בסדר
+                  </li>
+                ))}
+            </ul>
           )}
+          <Quotes title="הדבר האחד שהיו משנים" icon={MessageSquareQuote} items={a.lessons.flatMap((l) => l.changes)} />
         </Panel>
       </div>
 
@@ -136,6 +149,76 @@ export function FeedbackAnalysis({ a, claudeText }: { a: Analysis; claudeText: s
         </Panel>
       </div>
     </section>
+  );
+}
+
+/** Every rated lesson page, the least clear first, with why and what the testers wrote. */
+function ScreenRatings({ a }: { a: Analysis }) {
+  const shown = a.pages.slice(0, 40);
+  return (
+    <Panel
+      title="דירוג המסכים"
+      description={`כל מסך בשיעור, כפי שהניסיינים דירגו אותו מתחתיו (${count(a.pageRatings)} דירוגים). הכי פחות ברור למעלה. זמן: חציון השניות על המסך עד הדירוג.`}
+    >
+      {shown.length === 0 ? (
+        <p className="text-sm text-muted">עוד לא דורגו מסכים.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-line text-xs text-muted">
+                <th className="py-2 text-start font-medium">מסך</th>
+                <th className="py-2 text-start font-medium">דירוגים</th>
+                <th className="py-2 text-start font-medium">למה</th>
+                <th className="py-2 text-start font-medium">מה כתבו</th>
+                <th className="py-2 text-start font-medium">זמן</th>
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((p) => (
+                <tr key={p.key} className="border-b border-line align-top last:border-0">
+                  <td className="py-2.5 pe-3">
+                    <span className="block font-medium text-fg">{p.title}</span>
+                    <span className="block text-xs text-muted">
+                      {p.lesson}
+                      {p.where ? ` · ${p.where}` : ""}
+                    </span>
+                  </td>
+                  <td className="py-2.5 pe-3">
+                    <RatingBar p={p} />
+                  </td>
+                  <td className="py-2.5 pe-3 text-xs text-muted">
+                    {Object.entries(p.tags)
+                      .sort((x, y) => y[1] - x[1])
+                      .map(([k, v]) => `${tagLabel(k)}${v > 1 ? ` ×${v}` : ""}`)
+                      .join(" · ") || "—"}
+                  </td>
+                  <td className="py-2.5 pe-3 text-xs text-muted">{p.notes.slice(0, 3).map((n) => `״${n.text}״ (${n.tester})`).join(" · ") || "—"}</td>
+                  <td className="num py-2.5 text-xs text-muted">{p.secs === null ? "—" : `${p.secs} שנ׳`}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {a.pages.length > shown.length && <p className="mt-2 text-xs text-muted">מוצגים 40 המסכים הכי פחות ברורים מתוך {a.pages.length}. הכל מופיע בהעתקה ל-Claude ובמשוב של כל ניסיין.</p>}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+function RatingBar({ p }: { p: PageStat }) {
+  const part = (n: number, cls: string, label: string) => (n ? <span className={cn("block h-full", cls)} style={{ width: `${(n / p.n) * 100}%` }} title={`${label}: ${n}`} /> : null);
+  return (
+    <div className="min-w-32">
+      <div className="flex h-2 w-full overflow-hidden rounded-full bg-surface-2">
+        {part(p.unclear, "bg-danger", "לא ברור")}
+        {part(p.ok, "bg-amber-400", "בסדר")}
+        {part(p.clear, "bg-success", "ברור")}
+      </div>
+      <p className="num mt-1 text-[11px] whitespace-nowrap text-muted">
+        😕 {p.unclear} · 😐 {p.ok} · 🙂 {p.clear}
+      </p>
+    </div>
   );
 }
 

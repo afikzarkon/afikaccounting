@@ -1,17 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { loadFeedback, saveFeedback } from "@/lib/actions/tester";
 import { type FormState, emptyState, newer, sanitizeState, schema } from "./form";
 
 /**
- * The tester's feedback form in the browser: a copy in localStorage (every tab and the
- * floating button share it) and, for a signed-in tester, the copy in their account. On
- * arrival the newer of the two wins; every change is written to both.
+ * The tester's feedback form in the browser: a copy in localStorage (every tab shares it) and,
+ * for a signed-in tester, the copy in their account. One store for the whole tab, so the full
+ * form, the floating button and the rating strip under each lesson page all edit the same copy.
+ * On arrival the newer of the two copies wins; every change is written to both.
  */
 
 const STORAGE_KEY = `tester-feedback-v${schema.version}`;
-// Set when a tester hides the floating button in this browser; shown otherwise.
+// Set when a tester hides the tester tools (the floating button and the rating strip) in this browser.
 const MODE_KEY = "tester-button-hidden";
 const MODE_EVENT = "tester-mode-change";
 
@@ -33,7 +34,7 @@ function writeLocal(state: FormState) {
   }
 }
 
-// ---- whether this browser shows a tester the floating feedback button ----
+// ---- whether this browser shows a tester their tools ----
 
 export function setTesterMode(on: boolean) {
   try {
@@ -62,96 +63,128 @@ function subscribeMode(cb: () => void) {
 
 export const useTesterMode = () => useSyncExternalStore(subscribeMode, readMode, () => false);
 
+// ---- whether the signed-in account is a tester ----
+// The server decides (components/tester/feedback-gate.tsx renders the button only for a tester);
+// the button marks it here, so the lesson's rating strip shows without asking the server again.
+
+let tester = false;
+const testerSubs = new Set<() => void>();
+
+export function markTester() {
+  if (tester) return;
+  tester = true;
+  testerSubs.forEach((f) => f());
+}
+
+function subscribeTester(cb: () => void) {
+  testerSubs.add(cb);
+  return () => testerSubs.delete(cb);
+}
+
+export const useIsTester = () => useSyncExternalStore(subscribeTester, () => tester, () => false);
+
+// ---- the lesson page on screen, so the floating button can say where a note was written ----
+
+let place: { path: string; label: string } | null = null;
+export const setCurrentPlace = (p: typeof place) => {
+  place = p;
+};
+export const currentPlace = () => (place && place.path.split("?")[0] === location.pathname ? place : null);
+
 // ---- the form itself ----
 
 export type SyncStatus = "loading" | "account" | "saving" | "local" | "failed";
+type Snapshot = { state: FormState | null; canSave: boolean; status: SyncStatus };
 
-export function useFeedback() {
-  const [state, setState] = useState<FormState | null>(null);
-  const [canSave, setCanSave] = useState(false);
-  const [status, setStatus] = useState<SyncStatus>("loading");
-  const dirty = useRef(false);
-  const canSaveRef = useRef(false);
-  const pending = useRef<FormState | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+const INITIAL: Snapshot = { state: null, canSave: false, status: "loading" };
+let snap = INITIAL;
+const subs = new Set<() => void>();
+let started = false;
+// The account's copy was read (or there is none): until then nothing is written over it.
+let synced = false;
+let loading: Promise<void> | null = null;
+let pending: FormState | null = null;
+let timer: ReturnType<typeof setTimeout> | null = null;
 
-  const pushRemote = useCallback(async (s: FormState) => {
-    if (!canSaveRef.current) return;
-    setStatus("saving");
-    const { ok } = await saveFeedback(s).catch(() => ({ ok: false }));
-    setStatus(ok ? "account" : "failed");
-  }, []);
+function emit(patch: Partial<Snapshot>) {
+  snap = { ...snap, ...patch };
+  subs.forEach((f) => f());
+}
 
-  const flush = useCallback(() => {
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = null;
-    const s = pending.current;
-    pending.current = null;
-    if (s) void pushRemote(s);
-  }, [pushRemote]);
-
-  // Arrival: the browser's copy at once, then the account's if it is newer.
-  useEffect(() => {
-    let live = true;
-    const local = readLocal();
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time read of the saved draft after mount
-    setState(local ?? emptyState());
-    loadFeedback()
-      .catch(() => ({ canSave: false, state: null }))
-      .then(({ canSave, state: remote }) => {
-        if (!live) return;
-        canSaveRef.current = canSave;
-        setCanSave(canSave);
-        const best = newer(readLocal(), remote);
-        if (canSave && best && best !== remote) {
-          // The browser has something the account doesn't: send it up.
-          setStatus("saving");
-          void pushRemote(best);
-        } else setStatus(canSave ? "account" : "local");
-        if (best) {
-          writeLocal(best);
-          setState(best);
-        }
-      });
-    return () => {
-      live = false;
-    };
-  }, [pushRemote]);
-
-  // Each change: the browser's copy now, the account's a moment later.
-  useEffect(() => {
-    if (!state || !dirty.current) return;
-    dirty.current = false;
-    writeLocal(state);
-    if (!canSaveRef.current) {
-      setStatus("local");
+/** Read the account's copy, keep the newer of it and the browser's, and send the browser's up when it is the newer. */
+function sync(): Promise<void> {
+  loading ??= (async () => {
+    const res = await loadFeedback().catch(() => ({ canSave: snap.canSave, state: null, failed: true }));
+    if (res.failed) {
+      synced = false;
+      emit({ canSave: res.canSave, status: "failed" });
       return;
     }
-    pending.current = state;
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(flush, 1200);
-  }, [state, flush]);
+    synced = true;
+    const best = newer(readLocal(), res.state);
+    if (best) writeLocal(best);
+    emit({ canSave: res.canSave, state: best ?? snap.state, status: res.canSave ? "account" : "local" });
+    if (res.canSave && best && best !== res.state) await push(best);
+  })().finally(() => {
+    loading = null;
+  });
+  return loading;
+}
 
-  // Another tab (the full form, or a lesson with the button) changed it: take the newer copy.
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key !== STORAGE_KEY) return;
-      const other = readLocal();
-      setState((s) => newer(s, other) ?? s);
-    };
-    window.addEventListener("storage", onStorage);
-    window.addEventListener("pagehide", flush);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener("pagehide", flush);
-      flush();
-    };
-  }, [flush]);
+async function push(s: FormState) {
+  // Never over a copy we couldn't read: read it first (that sends this change up, as the newer copy).
+  if (!synced) return sync();
+  if (!snap.canSave) return;
+  emit({ status: "saving" });
+  const { ok } = await saveFeedback(s).catch(() => ({ ok: false }));
+  emit({ status: ok ? "account" : "failed" });
+}
 
-  const update = useCallback((fn: (s: FormState) => FormState) => {
-    dirty.current = true;
-    setState((s) => (s ? { ...fn(s), updatedAt: new Date().toISOString() } : s));
-  }, []);
+function flush() {
+  if (timer) clearTimeout(timer);
+  timer = null;
+  const s = pending;
+  pending = null;
+  if (s) void push(s);
+}
 
-  return { state, update, canSave, status };
+function start() {
+  if (started) return;
+  started = true;
+  // The browser's copy at once, then the account's if it is newer.
+  emit({ state: readLocal() ?? emptyState() });
+  void sync();
+  // Another tab changed it: take the newer copy.
+  window.addEventListener("storage", (e) => {
+    if (e.key !== STORAGE_KEY) return;
+    const best = newer(snap.state, readLocal());
+    if (best && best !== snap.state) emit({ state: best });
+  });
+  window.addEventListener("pagehide", flush);
+}
+
+function subscribe(cb: () => void) {
+  subs.add(cb);
+  start();
+  return () => subs.delete(cb);
+}
+
+/** Change the form: the browser's copy now, the account's a moment later. */
+export function updateFeedback(fn: (s: FormState) => FormState) {
+  if (!snap.state) return;
+  const next = { ...fn(snap.state), updatedAt: new Date().toISOString() };
+  writeLocal(next);
+  emit({ state: next });
+  if (synced && !snap.canSave) {
+    emit({ status: "local" });
+    return;
+  }
+  pending = next;
+  if (timer) clearTimeout(timer);
+  timer = setTimeout(flush, 1200);
+}
+
+export function useFeedback() {
+  const s = useSyncExternalStore(subscribe, () => snap, () => INITIAL);
+  return { ...s, update: updateFeedback };
 }

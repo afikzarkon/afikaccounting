@@ -3,7 +3,7 @@
   "version": 1,
   "title": "דף משוב לניסיין",
   "dir": "rtl",
-  "notes": "Same structure as feedback-form.md. repeat: once = filled one time; perModule = a new copy per module; rows = a growing list of rows.",
+  "notes": "Same structure as feedback-form.md. repeat: once = filled one time; perModule = a new copy per module; rows = a growing list of rows. Each lesson page is rated on its own, from the strip under it (state.pages in lib/tester/form.ts), not in this form.",
   "enums": {
     "severity": [
       { "value": "blocker", "label": "חוסם", "icon": "🔴", "hint": "לא יכולתי להמשיך בלי עזרה מבחוץ" },
@@ -59,26 +59,13 @@
     },
     {
       "id": "quickRubric",
-      "title": "מחוון מהיר",
+      "title": "מה מצוין, מה לשפר (לא חובה)",
       "repeat": "perModule",
       "fields": [
-        { "id": "excellent", "type": "textarea", "label": "מה היה מצוין", "icon": "✅", "required": true },
-        { "id": "improve", "type": "textarea", "label": "מה טעון שיפור", "icon": "🔧", "required": true },
-        { "id": "tooMuch", "type": "textarea", "label": "מה היה עמוס מדי / מוגזם", "icon": "📚", "required": true },
-        { "id": "missing", "type": "textarea", "label": "מה היה חסר / מעט מדי", "icon": "🕳️", "required": true },
-        {
-          "id": "ratings",
-          "type": "scaleGrid",
-          "min": 1,
-          "max": 5,
-          "items": [
-            { "id": "clarity", "label": "ההסברים היו ברורים" },
-            { "id": "pace", "label": "הקצב היה נכון" },
-            { "id": "examples", "label": "הדוגמאות עזרו להבין" },
-            { "id": "nextStep", "label": "היה ברור מה לעשות בכל שלב" },
-            { "id": "examConfidence", "label": "אני מרגיש שאוכל לפתור שאלת בחינה בנושא הזה" }
-          ]
-        }
+        { "id": "excellent", "type": "textarea", "label": "מה היה מצוין", "icon": "✅" },
+        { "id": "improve", "type": "textarea", "label": "מה טעון שיפור", "icon": "🔧" },
+        { "id": "tooMuch", "type": "textarea", "label": "מה היה עמוס מדי / מוגזם", "icon": "📚" },
+        { "id": "missing", "type": "textarea", "label": "מה היה חסר / מעט מדי", "icon": "🕳️" }
       ]
     },
     {

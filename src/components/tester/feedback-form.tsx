@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   type Answers,
   type Field,
+  type FormState,
   type Row,
   type Section,
   emptyState,
@@ -16,8 +17,11 @@ import {
   missingRequired,
   moduleSections,
   optionsOf,
+  pagesByLesson,
+  ratingLabel,
   schema,
   sectionById,
+  tagLabel,
   toMarkdown,
 } from "@/lib/tester/form";
 import { type SyncStatus, setTesterMode, useFeedback, useTesterMode } from "@/lib/tester/store";
@@ -32,7 +36,7 @@ function download(name: string, text: string, type: string) {
   URL.revokeObjectURL(url);
 }
 
-type Tab = { kind: "intake" } | { kind: "module"; index: number } | { kind: "summary" };
+type Tab = { kind: "intake" } | { kind: "module"; index: number } | { kind: "pages" } | { kind: "summary" };
 
 const STATUS: Record<SyncStatus, string> = {
   loading: "טוען…",
@@ -54,6 +58,7 @@ export function FeedbackForm() {
     update((s) => {
       if (where.kind === "intake") return { ...s, intake: { ...s.intake, [key]: value } };
       if (where.kind === "summary") return { ...s, summary: { ...s.summary, [key]: value } };
+      if (where.kind === "pages") return s;
       const modules = s.modules.slice();
       modules[where.index] = { ...modules[where.index], [key]: value };
       return { ...s, modules };
@@ -97,7 +102,10 @@ export function FeedbackForm() {
       ? { sections: [intake], answers: state.intake }
       : tab.kind === "summary"
         ? { sections: [summary], answers: state.summary }
-        : { sections: moduleSections, answers: state.modules[tab.index] ?? {} };
+        : tab.kind === "pages"
+          ? { sections: [], answers: {} }
+          : { sections: moduleSections, answers: state.modules[tab.index] ?? {} };
+  const ratedCount = Object.values(state.pages).filter((p) => p.r).length;
   const missing = missingRequired(current.sections, current.answers);
 
   const tabButton = (t: Tab, label: string, todo: number) => {
@@ -147,6 +155,7 @@ export function FeedbackForm() {
           >
             <Plus className="h-4 w-4" /> מודול חדש
           </button>
+          {tabButton({ kind: "pages" }, `מסכים שדירגתם (${ratedCount})`, ratedCount > 0 ? 0 : 1)}
           {tabButton({ kind: "summary" }, "סיכום הסבב", missingRequired([summary], state.summary))}
         </nav>
       </div>
@@ -164,6 +173,7 @@ export function FeedbackForm() {
         )}
         {tab.kind === "intake" && <p className="text-sm text-muted">ממלאים פעם אחת, לפני שמתחילים ללמוד.</p>}
         {tab.kind === "summary" && <p className="text-sm text-muted">ממלאים פעם אחת, אחרי בחינת הסיום.</p>}
+        {tab.kind === "pages" && <RatedPages pages={state.pages} />}
 
         {current.sections.map((section) => (
           <SectionCard
@@ -194,7 +204,7 @@ export function FeedbackForm() {
           </p>
           <label className="mt-3 inline-flex cursor-pointer items-center gap-2 text-sm text-fg">
             <input type="checkbox" checked={testerMode} onChange={(e) => setTesterMode(e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" />
-            להציג את כפתור המשוב הכתום בדפים, בדפדפן הזה
+            להציג את כלי הניסיין בדפדפן הזה: כפתור המשוב הכתום, ודירוג המסך מתחת לכל מסך בשיעור
           </label>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -221,6 +231,48 @@ export function FeedbackForm() {
   );
 }
 
+/** What the tester rated under each lesson page, lesson by lesson. They change a rating on the page itself. */
+function RatedPages({ pages }: { pages: FormState["pages"] }) {
+  const groups = pagesByLesson(pages);
+  if (groups.length === 0)
+    return (
+      <section className="card p-5 text-sm leading-relaxed text-muted sm:p-6">
+        <h2 className="mb-2 text-lg font-bold text-fg">עוד לא דירגתם מסכים</h2>
+        מתחת לכל מסך בשיעור יש לכם שורה כתומה: ״איך היה המסך הזה?״. לחיצה אחת (ברור / בסדר / לא ברור), ואם משהו לא היה ברור, גם למה. הכל מגיע לכאן ואלינו.
+      </section>
+    );
+  return (
+    <div className="grid gap-4">
+      <p className="text-sm text-muted">כל מה שדירגתם מתחת למסכים. כדי לשנות דירוג, חוזרים למסך עצמו בשיעור.</p>
+      {groups.map((g) => (
+        <section key={g.slug} className="card p-5 sm:p-6">
+          <h2 className="text-lg font-bold text-fg">{g.lesson}</h2>
+          <ul className="mt-3 divide-y divide-line">
+            {g.pages.map((p) => {
+              const r = ratingLabel(p.r);
+              const summary = p.key.endsWith("/summary");
+              return (
+                <li key={p.key} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-2.5 text-sm">
+                  <span className="w-20 shrink-0 font-medium text-fg">{summary ? "🏁 סיכום" : r ? `${r.icon} ${r.label}` : "—"}</span>
+                  <span className="min-w-0 flex-1 text-fg">
+                    {summary ? `אוכל לפתור שאלת בחינה: ${p.exam ? `${p.exam} / 5` : "—"}` : p.title}
+                    {(p.tags?.length || p.note || p.change) && (
+                      <span className="block text-xs text-muted">
+                        {[...(p.tags ?? []).map(tagLabel), p.note ? `״${p.note}״` : "", p.change ? `לשנות: ״${p.change}״` : ""].filter(Boolean).join(" · ")}
+                      </span>
+                    )}
+                  </span>
+                  {!summary && p.where ? <span className="num text-xs text-subtle">{p.where}</span> : null}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
+}
+
 function SectionCard({ section, answers, onChange }: { section: Section; answers: Answers; onChange: (key: string, value: unknown) => void }) {
   const isRubric = section.id === "quickRubric";
   const boxes = isRubric ? section.fields.filter((f) => f.type === "textarea") : [];
@@ -228,7 +280,7 @@ function SectionCard({ section, answers, onChange }: { section: Section; answers
   return (
     <section className="card p-5 sm:p-6">
       <h2 className="text-lg font-bold text-fg">{section.title}</h2>
-      {isRubric && <p className="mt-1 text-sm text-muted">לפחות דבר אחד בכל תיבה. אם אין מה לכתוב, כתבו &quot;אין&quot;.</p>}
+      {isRubric && <p className="mt-1 text-sm text-muted">את כל מסך בשיעור כבר דירגתם מתחתיו. כאן רק מה שרוצים להוסיף על המודול כולו.</p>}
       {boxes.length > 0 && (
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           {boxes.map((f) => (

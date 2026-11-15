@@ -12,13 +12,15 @@ import { createClient } from "@/lib/supabase/server";
  * Only an account an admin marked as a tester stores anything; anyone else (an admin
  * previewing the form, say) keeps it in the browser.
  */
-export async function loadFeedback(): Promise<{ canSave: boolean; state: FormState | null }> {
+export async function loadFeedback(): Promise<{ canSave: boolean; state: FormState | null; failed?: boolean }> {
   if (!isSupabaseConfigured) return { canSave: false, state: null };
   const user = await getCurrentUser();
   if (!user || !(await isTester())) return { canSave: false, state: null };
   const supabase = await createClient();
   const { data, error } = await supabase.from("tester_feedback").select("answers").eq("user_id", user.id).maybeSingle();
-  if (error || !data) return { canSave: true, state: null };
+  // Unread is not empty: the browser must not take an unread account copy for none and write over it.
+  if (error) return { canSave: true, state: null, failed: true };
+  if (!data) return { canSave: true, state: null };
   return { canSave: true, state: sanitizeState(data.answers) };
 }
 

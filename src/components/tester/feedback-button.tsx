@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/form";
 import { type Answers, type Option, type Row, moduleName, schema } from "@/lib/tester/form";
-import { setTesterMode, useFeedback, useTesterMode } from "@/lib/tester/store";
+import { currentPlace, markTester, setTesterMode, useFeedback, useTesterMode } from "@/lib/tester/store";
 import { cn } from "@/lib/utils";
 
 /**
@@ -21,6 +21,8 @@ export function TesterFeedbackButton() {
   const on = useTesterMode();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  // Rendered only for a tester: tells the lessons' rating strip it may show.
+  useEffect(markTester, []);
   if (!on || pathname.startsWith("/tester") || pathname.startsWith("/admin")) return null;
 
   return (
@@ -51,6 +53,9 @@ const SEVERITIES = asOptions("severity");
 const NEW_MODULE = "new";
 
 function pageWhere() {
+  // Inside a lesson: the lesson and the page on screen, with an address that opens that page.
+  const lesson = currentPlace();
+  if (lesson) return `${lesson.label} (${lesson.path})`;
   // The page title without the site's name at its end: "חשבונאות מאפס · שיעור 1: מהי חשבונאות".
   const parts = document.title.split(" · ");
   const title = (parts.length > 1 ? parts.slice(0, -1) : parts).join(" · ").trim();
@@ -239,7 +244,7 @@ function FeedbackPanel({ onClose }: { onClose: () => void }) {
               }}
               className="text-xs text-muted hover:text-fg"
             >
-              הסתרת הכפתור (מחזירים אותו מהטופס המלא)
+              הסתרת כלי הניסיין (מחזירים מהטופס המלא)
             </button>
           </div>
         </div>

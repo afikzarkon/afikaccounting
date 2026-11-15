@@ -30,6 +30,8 @@ function summarize(state: FormState) {
     points: points.length,
     blockers: points.filter((p) => p.severity === "blocker").length,
     verdict: (state.summary["summary.verdict"] as string) || "",
+    rated: Object.values(state.pages).filter((p) => p.r).length,
+    unclear: Object.values(state.pages).filter((p) => p.r === "unclear").length,
   };
 }
 
@@ -126,6 +128,8 @@ async function FeedbackPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   {t.s.blockers > 0 && <span className="rounded-full bg-danger/10 px-2.5 py-0.5 font-medium text-danger">{t.s.blockers} חוסמות</span>}
+                  {t.s.unclear > 0 && <span className="rounded-full bg-danger/10 px-2.5 py-0.5 font-medium text-danger">{t.s.unclear} מסכים לא ברורים</span>}
+                  <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-muted">{t.s.rated} מסכים דורגו</span>
                   <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-muted">{t.s.points} נקודות היתקעות</span>
                   {t.s.verdict && <span className="rounded-full bg-accent-soft px-2.5 py-0.5 font-medium text-accent">אפשר מהקורס לבד? {t.s.verdict}</span>}
                   <span className="text-subtle">עודכן {dateTime.format(new Date(t.updatedAt))}</span>

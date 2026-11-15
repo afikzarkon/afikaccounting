@@ -43,6 +43,7 @@ import { Sheet } from "./sheet";
 import { cue } from "./sound";
 import { markStudied } from "./study-day";
 import { ShareButton } from "@/components/check/share-button";
+import { ScreenRating } from "@/components/tester/screen-rating";
 import { inName } from "@/lib/hebrew";
 import { type NextLesson, SummaryCard } from "./summary-card";
 import { TrapQuiz } from "./trap-quiz";
@@ -436,6 +437,14 @@ export function StudyShell({ module: m, screens, next, course, share }: { module
       : id === "practice"
         ? card.eyebrow
         : "סיכום";
+  // The page on screen as a tester rates it: one key per concept screen, self-check, question and the summary.
+  const rated = opening
+    ? null
+    : id === "learn"
+      ? { page: `${checking ? "check" : "screen"}:${m.screens[place.sub].id}`, path: `${pathname}?screen=${m.screens[place.sub].id}` }
+      : id === "practice"
+        ? { page: `q:${practiceId(practiceAt(m, place.sub)!)}`, path: `${pathname}?step=${step + 1}` }
+        : { page: "summary", path: `${pathname}?step=${step + 1}` };
   const outline = <CourseOutline course={course} current={m} progress={p} place={place} opening={opening} onGo={goTo} />;
 
   return (
@@ -529,6 +538,10 @@ export function StudyShell({ module: m, screens, next, course, share }: { module
                   {card.content}
                 </motion.div>
               </div>
+
+              {rated && (
+                <ScreenRating slug={slug} lesson={`שיעור ${m.n}: ${m.title}`} page={rated.page} path={rated.path} title={card.title} where={card.eyebrow} total={total} />
+              )}
 
               {/* A direct child of the lesson's column, so it sticks to the bottom of the screen all the way down the screen. */}
               <LessonNav

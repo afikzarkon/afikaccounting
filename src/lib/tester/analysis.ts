@@ -1,8 +1,8 @@
-import { type Answers, type FormState, type Row, moduleName, optionsOf, schema, sectionById, toMarkdown } from "./form";
+import { type Answers, type FormState, type Row, moduleName, optionsOf, schema, sectionById, tagLabel, toMarkdown } from "./form";
 
 /**
  * Every tester's feedback, read together: where they got stuck (and how badly), which
- * modules and aspects rated lowest, where the exam asked more than the course taught,
+ * lesson pages they rated unclear (and why), how ready each lesson left them for the exam, where the exam asked more than the course taught,
  * how the tools did, and the overall verdict, ending in an ordered list of what to fix.
  * Pure, so it is tested; the admin page shows it, and `forClaude` hands the same reading,
  * with the raw answers, to Claude for a deeper one.
@@ -23,6 +23,25 @@ export type Hotspot = {
   notes: Quote[];
   score: number;
 };
+/** One lesson page, every tester's rating of it. */
+export type PageStat = {
+  key: string;
+  lesson: string;
+  title: string;
+  where: string;
+  clear: number;
+  ok: number;
+  unclear: number;
+  n: number;
+  tags: Record<string, number>;
+  notes: Quote[];
+  /** Median seconds on the page before rating it, when known. */
+  secs: number | null;
+  /** 0 (all clear) to 1 (all unclear). */
+  score: number;
+};
+/** One lesson: how many of its pages were rated, how unclear, and the end-of-lesson answers. */
+export type LessonStat = { slug: string; lesson: string; rated: number; unclear: number; ok: number; exam: number | null; examN: number; changes: Quote[] };
 export type Action = { level: "high" | "medium" | "low"; text: string; why: string };
 
 export type Analysis = {
@@ -33,8 +52,10 @@ export type Analysis = {
   bySeverity: Record<string, number>;
   byKind: Record<string, number>;
   hotspots: Hotspot[];
-  ratings: { id: string; label: string; avg: number | null; n: number }[];
-  weakModules: { module: string; tester: string; avg: number }[];
+  pages: PageStat[];
+  lessons: LessonStat[];
+  /** Ratings given, over all pages and testers. */
+  pageRatings: number;
   rubric: { improve: Quote[]; tooMuch: Quote[]; missing: Quote[]; excellent: Quote[] };
   exam: { independence: Record<string, number>; notTaught: Quote[]; taughtSimpler: Quote[]; courseHelped: Quote[] };
   leftSite: Quote[];
@@ -55,7 +76,6 @@ export type Analysis = {
 };
 
 const SEVERITY_WEIGHT: Record<string, number> = { blocker: 5, slows: 2, cosmetic: 1 };
-const RATING_ITEMS = sectionById("quickRubric").fields.find((f) => f.id === "ratings")?.items ?? [];
 
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 const add = (m: Record<string, number>, k: string, n = 1) => {
@@ -83,8 +103,9 @@ export function analyze(testers: TesterInput[]): Analysis {
   const bySeverity: Record<string, number> = {};
   const byKind: Record<string, number> = {};
   const spots = new Map<string, Hotspot & { who: Set<string>; names: Map<string, number> }>();
-  const ratingSum: Record<string, { sum: number; n: number }> = {};
-  const weakModules: Analysis["weakModules"] = [];
+  const pageMap = new Map<string, PageStat & { times: number[] }>();
+  const lessonMap = new Map<string, LessonStat & { examSum: number }>();
+  let pageRatings = 0;
   const rubric: Analysis["rubric"] = { improve: [], tooMuch: [], missing: [], excellent: [] };
   const exam: Analysis["exam"] = { independence: {}, notTaught: [], taughtSimpler: [], courseHelped: [] };
   const leftSite: Quote[] = [];
@@ -138,19 +159,6 @@ export function analyze(testers: TesterInput[]): Analysis {
       }
       push(leftSite, quote(m["stuckPoints.leftSite"], t.label, mod));
 
-      const grid = (m["quickRubric.ratings"] as Record<string, number> | undefined) ?? {};
-      const vals: number[] = [];
-      for (const item of RATING_ITEMS) {
-        const v = Number(grid[item.id]);
-        if (v >= 1 && v <= 5) {
-          const r = (ratingSum[item.id] ??= { sum: 0, n: 0 });
-          r.sum += v;
-          r.n++;
-          vals.push(v);
-        }
-      }
-      if (vals.length) weakModules.push({ module: mod, tester: t.label, avg: vals.reduce((a, b) => a + b, 0) / vals.length });
-
       push(rubric.improve, quote(m["quickRubric.improve"], t.label, mod));
       push(rubric.tooMuch, quote(m["quickRubric.tooMuch"], t.label, mod));
       push(rubric.missing, quote(m["quickRubric.missing"], t.label, mod));
@@ -173,6 +181,37 @@ export function analyze(testers: TesterInput[]): Analysis {
       push(suggestions, quote(m["freeText.uxIdeas"], t.label, mod));
     });
 
+    for (const [key, p] of Object.entries(s.pages ?? {})) {
+      const slug = key.split("/")[0];
+      const l = lessonMap.get(slug) ?? { slug, lesson: p.lesson || slug, rated: 0, unclear: 0, ok: 0, exam: null, examN: 0, changes: [], examSum: 0 };
+      lessonMap.set(slug, l);
+      if (key.endsWith("/summary")) {
+        if (p.exam) {
+          l.examSum += p.exam;
+          l.examN++;
+        }
+        push(l.changes, quote(p.change, t.label, p.lesson));
+        continue;
+      }
+      if (!p.r) continue;
+      pageRatings++;
+      l.rated++;
+      if (p.r === "unclear") l.unclear++;
+      if (p.r === "ok") l.ok++;
+      const st =
+        pageMap.get(key) ??
+        ({ key, lesson: p.lesson || slug, title: p.title, where: p.where ?? "", clear: 0, ok: 0, unclear: 0, n: 0, tags: {}, notes: [], secs: null, score: 0, times: [] } as PageStat & {
+          times: number[];
+        });
+      st.title = p.title || st.title;
+      st[p.r]++;
+      st.n++;
+      for (const tag of p.tags ?? []) add(st.tags, tag);
+      push(st.notes, quote(p.note, t.label));
+      if (p.secs) st.times.push(p.secs);
+      pageMap.set(key, st);
+    }
+
     add(verdict, str(s.summary["summary.verdict"]));
     push(verdictGaps, quote(s.summary["summary.verdictGap"], t.label));
     push(leastReady, quote(s.summary["summary.leastReady"], t.label));
@@ -189,10 +228,16 @@ export function analyze(testers: TesterInput[]): Analysis {
     })
     .sort((a, b) => b.score - a.score || b.points - a.points);
 
-  const ratings = RATING_ITEMS.map((item) => {
-    const r = ratingSum[item.id];
-    return { id: item.id, label: item.label, avg: r?.n ? Math.round((r.sum / r.n) * 10) / 10 : null, n: r?.n ?? 0 };
-  });
+  // Worst first: the share of "unclear" (and half of "OK"), then how many testers said so.
+  const pages: PageStat[] = [...pageMap.values()]
+    .map(({ times, ...p }) => {
+      const sorted = times.sort((a, b) => a - b);
+      return { ...p, secs: sorted.length ? Math.round(sorted[Math.floor(sorted.length / 2)]) : null, score: Math.round(((p.unclear + p.ok / 2) / p.n) * 100) / 100 };
+    })
+    .sort((a, b) => b.score - a.score || b.unclear - a.unclear || b.n - a.n);
+  const lessons: LessonStat[] = [...lessonMap.values()]
+    .map(({ examSum, ...l }) => ({ ...l, exam: l.examN ? Math.round((examSum / l.examN) * 10) / 10 : null }))
+    .sort((a, b) => (a.exam ?? 6) - (b.exam ?? 6) || b.unclear - a.unclear);
 
   const promoters = npsScores.filter((x) => x >= 9).length;
   const detractors = npsScores.filter((x) => x <= 6).length;
@@ -212,8 +257,9 @@ export function analyze(testers: TesterInput[]): Analysis {
     bySeverity,
     byKind,
     hotspots,
-    ratings,
-    weakModules: weakModules.sort((a, b) => a.avg - b.avg).slice(0, 8),
+    pages,
+    lessons,
+    pageRatings,
     rubric,
     exam,
     leftSite,
@@ -248,8 +294,19 @@ function actionsFor(a: Analysis): Action[] {
   if (a.leftSite.length) {
     out.push({ level: "medium", text: "לבדוק למה ניסיינים יצאו מהאתר כדי להבין", why: `${a.leftSite.length} פעמים הניסיינים חיפשו הסבר במקום אחר. כל פעם כזו היא הסבר שחסר באתר.` });
   }
-  const low = a.ratings.filter((r) => r.avg !== null && r.n >= 2 && r.avg < 3.5).sort((x, y) => (x.avg ?? 5) - (y.avg ?? 5));
-  for (const r of low.slice(0, 2)) out.push({ level: "medium", text: `לשפר: ${r.label}`, why: `ממוצע ${r.avg} מתוך 5, ב-${r.n} מודולים.` });
+  for (const p of a.pages.filter((x) => x.unclear >= 2).slice(0, 5)) {
+    out.push({ level: "high", text: `לשכתב את המסך ״${p.title}״ (${p.lesson})`, why: `${p.unclear} מתוך ${p.n} ניסיינים סימנו ״לא ברור״. ${topTags(p.tags)}` });
+  }
+  for (const p of a.pages.filter((x) => x.unclear === 1 || (x.unclear === 0 && x.ok >= 2)).slice(0, 4)) {
+    out.push({
+      level: "medium",
+      text: `לבדוק את המסך ״${p.title}״ (${p.lesson})`,
+      why: `${p.unclear ? "ניסיין סימן ״לא ברור״" : `${p.ok} ניסיינים סימנו רק ״בסדר״`}. ${topTags(p.tags)}`,
+    });
+  }
+  for (const l of a.lessons.filter((x) => x.exam !== null && x.exam < 3.5).slice(0, 3)) {
+    out.push({ level: "medium", text: `לחזק את התרגול ברמת בחינה ב${l.lesson}`, why: `ממוצע ${l.exam} מתוך 5 ב״אוכל לפתור שאלת בחינה בנושא״ (${l.examN} ניסיינים).` });
+  }
   if (a.exam.taughtSimpler.length) {
     out.push({ level: "medium", text: "להעלות את רמת התרגול לרמת הבחינה", why: `${a.exam.taughtSimpler.length} דיווחים שהשיעור לימד את הנושא, אבל ברמה פשוטה מהבחינה.` });
   }
@@ -259,6 +316,13 @@ function actionsFor(a: Analysis): Action[] {
     out.push({ level: "low", text: `לשפר את ${h.where}`, why: `${h.slows} דיווחי ״מאט״. ${topKind(h.kinds)}` });
   }
   return out;
+}
+
+function topTags(tags: Record<string, number>) {
+  const top = Object.entries(tags)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2);
+  return top.length ? `בעיקר: ${top.map(([k]) => tagLabel(k)).join(", ")}.` : "";
 }
 
 function topKind(kinds: Record<string, number>) {
@@ -277,7 +341,7 @@ export function forClaude(a: Analysis, testers: TesterInput[]) {
   const lines: string[] = [
     "# ניתוח משוב ניסיינים — AfikAccounting",
     "",
-    "אני בונה אתר ללימוד חשבונאות לסטודנטים בישראל. ניסיינים למדו בו לקראת מבחן אמיתי ומילאו טופס משוב: לכל מודול מחוון (מצוין / לשיפור / עמוס מדי / חסר), דירוגים 1–5, נקודות היתקעות (סוג: הבנה / פער בחינה / ממשק / תקלה; חומרה: חוסם / מאט / קוסמטי), שאלות על הכלים, והשוואה בין השיעור לרמת הבחינה. בסוף: האם אפשר להגיע לרמת בחינה רק מהאתר, וציון המלצה 0–10.",
+    "אני בונה אתר ללימוד חשבונאות לסטודנטים בישראל. ניסיינים למדו בו לקראת מבחן אמיתי ומילאו טופס משוב: כל מסך בשיעור דורג בנפרד (ברור / בסדר / לא ברור, עם סיבות והערה), בסוף כל שיעור ״אוכל לפתור שאלת בחינה בנושא?״ (1–5) והדבר האחד לשנות, ולכל מודול גם מחוון חופשי (מצוין / לשיפור / עמוס מדי / חסר), נקודות היתקעות (סוג: הבנה / פער בחינה / ממשק / תקלה; חומרה: חוסם / מאט / קוסמטי), שאלות על הכלים, והשוואה בין השיעור לרמת הבחינה. בסוף: האם אפשר להגיע לרמת בחינה רק מהאתר, וציון המלצה 0–10.",
     "",
     "## מה אני מבקש",
     "1. **תמות:** קבץ את כל מה שנאמר לתמות (לא לפי ניסיין). לכל תמה: כמה ניסיינים העלו אותה, כמה חמורה, וציטוט מייצג אחד.",
@@ -292,13 +356,25 @@ export function forClaude(a: Analysis, testers: TesterInput[]) {
     `- ניסיינים: ${a.testers} · מודולים שתועדו: ${a.modules} · נקודות היתקעות: ${a.points} · דקות שאבדו: ${a.minutesLost}`,
     `- לפי חומרה: ${Object.entries(a.bySeverity).map(([k, v]) => `${severityLabel(k)} ${v}`).join(", ") || "—"}`,
     `- לפי סוג: ${Object.entries(a.byKind).map(([k, v]) => `${kindLabel(k)} ${v}`).join(", ") || "—"}`,
-    `- דירוגים (ממוצע מתוך 5): ${a.ratings.map((r) => `${r.label}: ${r.avg ?? "—"}`).join(" · ")}`,
+    `- דירוגי מסכים: ${a.pageRatings} (${a.pages.length} מסכים שונים)`,
+    `- מוכנות לבחינה בסוף שיעור (ממוצע מתוך 5): ${a.lessons.filter((l) => l.exam !== null).map((l) => `${l.lesson}: ${l.exam}`).join(" · ") || "—"}`,
     `- אפשר להגיע לרמת בחינה רק מהאתר? ${Object.entries(a.verdict).map(([k, v]) => `${k}: ${v}`).join(", ") || "—"}`,
     `- NPS: ${a.nps.score ?? "—"} (${a.nps.n} תשובות)`,
     "",
     "### מוקדי היתקעות (מדורגים)",
     ...(a.hotspots.length
       ? a.hotspots.slice(0, 15).map((h) => `- ${h.where}: ${h.points} דיווחים, ${h.testers} ניסיינים, חוסם ${h.blockers} / מאט ${h.slows} / קוסמטי ${h.cosmetic}, ${h.minutes} דק׳`)
+      : ["- אין"]),
+    "",
+    "### המסכים שדורגו הכי נמוך",
+    ...(a.pages.some((p) => p.score > 0)
+      ? a.pages
+          .filter((p) => p.score > 0)
+          .slice(0, 20)
+          .map(
+            (p) =>
+              `- ${p.lesson} · ${p.title}: לא ברור ${p.unclear} / בסדר ${p.ok} / ברור ${p.clear}${Object.keys(p.tags).length ? ` · ${Object.entries(p.tags).map(([k, v]) => `${tagLabel(k)} ${v}`).join(", ")}` : ""}`,
+          )
       : ["- אין"]),
     "",
     "## התשובות המלאות של כל ניסיין",
