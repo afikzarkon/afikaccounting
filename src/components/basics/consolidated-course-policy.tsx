@@ -1,10 +1,11 @@
 import { FileSignature, ListChecks } from "lucide-react";
 import { Deeper, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
-import { ADJUST, ADJUST_OPTIONS, POLICY_TEST, POLICY_TEST_START } from "@/lib/study/consolidated/lessons/policy";
+import { ADJUST, ADJUST_OPTIONS, BUILDING, LAND, POLICY_TEST, POLICY_TEST_START } from "@/lib/study/consolidated/lessons/policy";
 import { W7_BUILDING, W7_IP, W7_LAND, W7_MASTER, W7_QUALIFY, W7_REVAFTER, W7_TABLE } from "@/lib/study/consolidated/worked/policy";
 import { ConsolidatedDrill, RevalLab } from "./consolidated-interactive";
 import { LecturerNote, quiz } from "./consolidated-parts";
+import { type RevalEvent, RevalTimeline } from "./consolidated-reval-timeline";
 import { WorkedExample } from "./consolidated-worked";
 import { TaskFrame } from "./ias19-question";
 import { Bridge } from "./ias19-ui";
@@ -21,6 +22,25 @@ import { Story } from "./inventory-teach";
  * from the standard, a note says so. The stories and figures are the course's
  * own, all from the solver, and the tax rate is 23% throughout.
  */
+
+/** The three revaluation demonstrations as time lines: the givens, and on a button what each company records. */
+const MACHINE_AFTER: RevalEvent[] = [
+  { date: "1.1.2025", what: "ברוש רוכשת 70%", acq: true, sub: { text: "עוד אין מכונה" }, group: { text: "עוד אין מכונה" } },
+  { date: "2025", what: "דולב קונה מכונה", sub: { text: "העלות: מה שדולב שילמה" }, group: { text: "אותה עלות בדיוק" } },
+  { date: "31.12.2025", what: "שערוך המכונה", sub: { text: "הסכום נטו ממס", oci: 10_000 }, group: { text: "אותה עלות, אותו שערוך", oci: 10_000 } },
+];
+const BUILDING_BEFORE: RevalEvent[] = [
+  { date: "1.1.2024", what: "דולב קונה מבנה", sub: { value: 200_000, text: "ל־10 שנים" }, group: "none" },
+  { date: "31.12.2024", what: "השווי יורד", sub: { value: 162_000, text: "אין קרן, ולכן הפסד", pl: -18_000 }, group: "none" },
+  { date: "1.1.2025", what: "ברוש רוכשת 70%", acq: true, sub: { value: 162_000, text: "עם הפסד קודם של 18,000" }, group: { value: 162_000, text: "העלות לקבוצה, בלי הפסד קודם" } },
+  { date: "31.12.2025", what: "השווי עולה", sub: { value: 168_000, ...BUILDING.sub25 }, group: { value: 168_000, ...BUILDING.group25 } },
+  { date: "31.12.2026", what: "השווי יורד", sub: { value: 126_000, ...BUILDING.sub26 }, group: { value: 126_000, ...BUILDING.group26 } },
+];
+const LAND_SWITCH: RevalEvent[] = [
+  { date: "לפני הרכישה", what: "דולב קונה קרקע", sub: { value: 300_000, text: "מודל העלות" }, group: "none" },
+  { date: "1.1.2025", what: "ברוש רוכשת 70%", acq: true, sub: { value: 300_000, text: "מודל העלות" }, group: { value: 336_000, text: "השווי ביום הרכישה, מודל העלות" } },
+  { date: "31.12.2025", what: "שתיהן עוברות להערכה מחדש", sub: { value: 324_000, text: "מעל העלות של דולב", ...LAND.sub }, group: { value: 324_000, text: "מתחת לעלות של הקבוצה", ...LAND.group } },
+];
 
 const bdi = (s: string) => <bdi dir="ltr" className="num whitespace-nowrap">{s}</bdi>;
 
@@ -148,6 +168,13 @@ export const CONSOLIDATED_POLICY_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>את זה ראינו בשיעור הקודם. בדוח על הרווח הכולל מציגים 100% מהרווח הכולל האחר של הבת. בדוח על המצב הכספי ובדוח על השינויים בהון, הקרן בהון של הבעלים היא רק החלק של האם. השאר כלול בזשמ״ש.</P>
+        <RevalTimeline
+          title="ציר הזמן: הרכישה קודם, המכונה אחר כך"
+          label="ציר זמן של מכונה שדולב קנתה אחרי שברוש רכשה אותה: לדולב ולקבוצה אותה עלות ואותו שערוך, ולכן אין התאמה"
+          sub="דולב"
+          events={MACHINE_AFTER}
+          note="שני הנתיבים זהים לכל אורכם, כי הקבוצה כבר הייתה שם כשהמכונה נקנתה. מה שנשאר הוא רק החלוקה של הקרן בין הבעלים לזשמ״ש."
+        />
         <WorkedExample ex={W7_REVAFTER} />
         <Remember>נכס שנקנה אחרי הרכישה: 100% ברווח הכולל האחר, ובהון הבעלים רק החלק של האם.</Remember>
       </>
@@ -166,6 +193,13 @@ export const CONSOLIDATED_POLICY_SCREENS: Record<string, ScreenContent> = {
     body: (
       <>
         <P>לבת העלות היא מה שהיא שילמה. לקבוצה העלות היא השווי ההוגן ביום הרכישה. כשהשווי משתנה, כל אחת מפצלת את השינוי לפי ההיסטוריה שלה: עלייה מבטלת קודם הפסד שערוך שנרשם ברווח, וירידה יורדת קודם מהקרן. במאוחד מציגים את הפיצול של הקבוצה, ולכן מתקנים את מה שהבת רשמה.</P>
+        <RevalTimeline
+          title="ציר הזמן: המבנה קודם, הרכישה אחר כך"
+          label="ציר זמן של מבנה שדולב קנתה לפני שברוש רכשה אותה: לדולב הפסד שערוך מ־2024, ולקבוצה אין, ולכן אותו שינוי בשווי מתפצל אחרת"
+          sub="דולב"
+          events={BUILDING_BEFORE}
+          note="ההיסטוריה שמימין לקו הרכישה שייכת רק לדולב. משם והלאה הערך זהה, אבל הפיצול בין רווח או הפסד לרווח כולל אחר שונה, ואותו מתקנים במאוחד."
+        />
         <WorkedExample ex={W7_BUILDING} />
         <WrongRight
           label="טעות: אין הפרש בערך המבנה, ולכן אין התאמה. נכון: מעבירים בין רווח לרווח כולל אחר"
@@ -193,6 +227,13 @@ export const CONSOLIDATED_POLICY_SCREENS: Record<string, ScreenContent> = {
       <>
         <P>המעבר מטופל מכאן ולהבא: משערכים את הנכס ביום השינוי. אם הנכס נקנה לפני הרכישה, יש עליו כנראה עודף עלות. אחרי השערוך הוא מוצג בשווי הוגן גם אצל הבת, ולכן מבטלים את כל יתרת העודף, כולל המס.</P>
         <P>מול מה? מול הקרן, כי השערוך של הבת גדול משל הקבוצה בדיוק בגובה העודף. אבל אם מנקודת המבט של הקבוצה השערוך הוא הפסד, את החלק הזה של העודף מבטלים מול רווח או הפסד.</P>
+        <RevalTimeline
+          title="ציר הזמן: קרקע שנקנתה לפני הרכישה, ומעבר למודל הערכה מחדש"
+          label="ציר זמן של קרקע: לדולב עלתה 300,000 ולקבוצה 336,000. ביום המעבר השווי 324,000, עלייה אצל דולב והפסד אצל הקבוצה"
+          sub="דולב"
+          events={LAND_SWITCH}
+          note="אותו שווי, 324,000, הוא עלייה מעל העלות של דולב והפסד מתחת לעלות של הקבוצה. לכן ההתאמה מבטלת את הקרן של דולב ורושמת הפסד, ויחד הן מבטלות את כל עודף העלות, 36,000."
+        />
         <WorkedExample ex={W7_LAND} />
         <Remember>מעבר להערכה מחדש: מכאן ולהבא. העודף מתבטל מול הקרן, ואם לקבוצה יש הפסד, גם מול רווח או הפסד.</Remember>
       </>
