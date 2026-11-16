@@ -727,7 +727,7 @@ describe("lesson 9: the sorting and the figures, against a separate calculation 
     // goodwill through the control premium
     assert.equal(12_000 + IMPAIRMENT_W.mNoPremium * 0.75, M9.ownersGoodwill);
     assert.equal(IMPAIRMENT_W.mNoPremium * 0.25, M9.nciGoodwill);
-    assert.deepEqual([W9_IMP, W9_DTA, W9_DATES, W9_PREFISSUE, W9_PREFAT, W9_PREFPROFIT, W9_PREFNA, W9_MASTER].map((w) => w.steps.length), [5, 3, 3, 1, 2, 2, 1, 6]);
+    assert.deepEqual([W9_IMP, W9_DTA, W9_DATES, W9_PREFISSUE, W9_PREFAT, W9_PREFPROFIT, W9_PREFNA, W9_MASTER].map((w) => w.steps.length), [5, 5, 3, 1, 2, 2, 1, 6]);
   });
   it("eight preference shares to sort, both answers among them", () => {
     assert.equal(PREF_PROFIT.length, 8);
