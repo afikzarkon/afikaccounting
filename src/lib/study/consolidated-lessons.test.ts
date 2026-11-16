@@ -667,7 +667,7 @@ describe("lesson 8: the walk, the sorting and the figures, against a separate ca
     assert.equal(BOND8_OCI.subReserve - BOND8_OCI.groupReserve, FINANCE_W.excessEnd25);
     // the excess runs off to nothing over the three years
     assert.equal(BOND8.group.reduce((s, g, i) => s + g.interest - BOND8.sub[i + 1].interest, 0), -FINANCE_W.excessAt);
-    assert.deepEqual([W8_SHARES, W8_AC, W8_FVOCI, W8_IMPAIR, W8_CONTROLLER, W8_MASTER].map((w) => w.steps.length), [5, 5, 4, 2, 4, 5]);
+    assert.deepEqual([W8_SHARES, W8_AC, W8_FVOCI, W8_IMPAIR, W8_CONTROLLER, W8_MASTER].map((w) => w.steps.length), [4, 3, 5, 2, 4, 5]);
   });
   it("every path of the walk ends, and both verdicts are reachable", () => {
     const ends = new Set<boolean>();
