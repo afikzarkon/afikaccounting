@@ -79,7 +79,7 @@ function adjustment(e: RevalEvent) {
 
 function Adjust({ e }: { e: RevalEvent }) {
   const a = adjustment(e);
-  if (!a) return <span className="block px-2 py-1.5 text-[12px] text-subtle">—</span>;
+  if (!a) return <span className="block" />;
   if (!a.pl && !a.oci) return <span className="block rounded-lg border border-accent/40 bg-accent-soft px-2 py-1.5 text-[12px] font-semibold text-fg">אין התאמה</span>;
   return (
     <span className="block rounded-lg border border-accent/40 bg-accent-soft px-2 py-1.5">
