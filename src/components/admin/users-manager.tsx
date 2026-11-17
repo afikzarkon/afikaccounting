@@ -1,7 +1,8 @@
 "use client";
 
 import { Check, Clock, Loader2, MessageSquareWarning, RotateCcw, Save, ShieldCheck, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/form";
 import { setTester } from "@/lib/actions/admin-testers";
@@ -19,6 +20,27 @@ const SORTS: { id: Sort; label: string }[] = [
   { id: "activity", label: "הכי פעילים" },
   { id: "recent", label: "נראו לאחרונה" },
 ];
+
+/** On the site in the last two minutes: the browser reports about once a minute while a tab is in view. */
+const ONLINE_MS = 2 * 60_000;
+
+// The clock, ticking every 20 seconds; null while rendering on the server, so nothing time-relative mismatches.
+const tickers = new Set<() => void>();
+let timer: ReturnType<typeof setInterval> | undefined;
+function subscribeNow(cb: () => void) {
+  tickers.add(cb);
+  timer ??= setInterval(() => tickers.forEach((f) => f()), 20_000);
+  return () => {
+    tickers.delete(cb);
+    if (!tickers.size) {
+      clearInterval(timer);
+      timer = undefined;
+    }
+  };
+}
+const useNow = () => useSyncExternalStore(subscribeNow, () => Math.floor(Date.now() / 20_000) * 20_000, () => null);
+
+const isOnline = (a: UserActivity | undefined, now: number | null) => Boolean(now && a?.lastActive && now - new Date(a.lastActive).getTime() < ONLINE_MS);
 
 const NO_ACTIVITY: UserActivity = { userId: "", signIns: 0, visits: 0, activeDays: 0, lastSeen: null };
 
@@ -57,6 +79,14 @@ export function UsersManager({
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("signup");
   const usage = useMemo(() => new Map((activity ?? []).map((a) => [a.userId, a])), [activity]);
+  const now = useNow();
+  const online = users.filter((u) => isOnline(usage.get(u.userId), now)).length;
+  // Who is on the site changes by the minute: the list reloads itself while the page is in view.
+  const router = useRouter();
+  useEffect(() => {
+    const id = setInterval(() => document.visibilityState === "visible" && router.refresh(), 60_000);
+    return () => clearInterval(id);
+  }, [router]);
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -68,14 +98,24 @@ export function UsersManager({
     return [...list].sort((a, b) =>
       sort === "activity"
         ? of(b).visits - of(a).visits || of(b).signIns - of(a).signIns
-        : (of(b).lastSeen ?? "").localeCompare(of(a).lastSeen ?? ""),
+        : Number(isOnline(of(b), now)) - Number(isOnline(of(a), now)) || (of(b).lastSeen ?? "").localeCompare(of(a).lastSeen ?? ""),
     );
-  }, [users, filter, query, sort, usage]);
+  }, [users, filter, query, sort, usage, now]);
 
   return (
     <Panel
       title="חשבונות"
-      description={pending ? `${pending} ממתינים לאישור · ${users.length} חשבונות` : `${users.length} חשבונות · אין ממתינים`}
+      description={
+        <>
+          {pending ? `${pending} ממתינים לאישור · ${users.length} חשבונות` : `${users.length} חשבונות · אין ממתינים`}
+          {activity && now !== null && (
+            <span className={cn("ms-2 inline-flex items-center gap-1 font-medium", online ? "text-success" : "")}>
+              · <span className={cn("inline-block size-2 rounded-full", online ? "bg-success" : "bg-line-strong")} aria-hidden />
+              {online === 1 ? "מחובר אחד עכשיו" : `${online} מחוברים עכשיו`}
+            </span>
+          )}
+        </>
+      }
       actions={
         <div className="flex flex-wrap items-center gap-2">
           <div role="tablist" aria-label="סינון לפי סטטוס" className="flex gap-1 rounded-xl bg-surface-2 p-1">
@@ -116,6 +156,7 @@ export function UsersManager({
               self={u.userId === me}
               tester={testers.includes(u.userId)}
               activity={activity ? (usage.get(u.userId) ?? NO_ACTIVITY) : null}
+              now={now}
             />
           ))}
         </ul>
@@ -126,7 +167,21 @@ export function UsersManager({
   );
 }
 
-function UserRow({ user, courses, self, tester, activity }: { user: AdminUser; courses: Course[]; self: boolean; tester: boolean; activity: UserActivity | null }) {
+function UserRow({
+  user,
+  courses,
+  self,
+  tester,
+  activity,
+  now,
+}: {
+  user: AdminUser;
+  courses: Course[];
+  self: boolean;
+  tester: boolean;
+  activity: UserActivity | null;
+  now: number | null;
+}) {
   const [selected, setSelected] = useState<string[]>(user.courses);
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string }>();
@@ -155,7 +210,7 @@ function UserRow({ user, courses, self, tester, activity }: { user: AdminUser; c
             {user.fullName || "ללא שם"} · נרשם {shortDate(user.createdAt)}
             {user.reviewedAt ? ` · עודכן ${shortDate(user.reviewedAt)}` : ""}
           </span>
-          {activity && <ActivityLine activity={activity} admin={admin} />}
+          {activity && <ActivityLine activity={activity} admin={admin} now={now} />}
         </span>
         {admin ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent">
@@ -255,38 +310,83 @@ function TesterToggle({ userId, on, approved }: { userId: string; on: boolean; a
 }
 
 /**
- * Sign-ins, visits and active days, and when the account was last seen. An admin's
- * visits are never recorded (api/track), so an admin shows only its sign-ins.
+ * Whether the account is on the site right now (and on which page), else when it was last active,
+ * to the minute; when it last signed in; and its sign-ins, visits and active days. An admin's visits
+ * are never recorded (api/track), so an admin shows its sign-ins and presence only.
  */
-function ActivityLine({ activity, admin }: { activity: UserActivity; admin: boolean }) {
+function ActivityLine({ activity, admin, now }: { activity: UserActivity; admin: boolean; now: number | null }) {
+  const online = isOnline(activity, now);
+  const lastActive = activity.lastActive ?? activity.lastSeen;
+  const presence =
+    now === null ? null : online ? (
+      <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 font-semibold text-success">
+        <span className="relative flex size-2" aria-hidden>
+          <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-60" />
+          <span className="relative inline-flex size-2 rounded-full bg-success" />
+        </span>
+        מחובר עכשיו
+        {activity.activePath && (
+          <span dir="ltr" className="font-normal opacity-80">
+            {activity.activePath}
+          </span>
+        )}
+      </span>
+    ) : lastActive ? (
+      <span title={dateTime.format(new Date(lastActive))}>
+        <span className="text-fg">פעיל לאחרונה</span> {ago(lastActive, now)}
+      </span>
+    ) : null;
+  const signIn = activity.lastSignIn ? <span title={dateTime.format(new Date(activity.lastSignIn))}>התחברות אחרונה {when(activity.lastSignIn)}</span> : null;
+
   if (admin)
     return (
-      <span className="mt-1 block text-xs text-muted">
-        <span className="num font-semibold text-fg">{activity.signIns}</span> התחברויות · ביקורים של מנהלים לא נספרים
+      <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted">
+        {presence}
+        {signIn}
+        <span>
+          <span className="num font-semibold text-fg">{activity.signIns}</span> התחברויות · ביקורים של מנהלים לא נספרים
+        </span>
       </span>
     );
-  if (!activity.lastSeen) return <span className="mt-1 block text-xs text-muted">עוד לא נכנס לאתר</span>;
+  if (!activity.lastSeen && !activity.lastSignIn) return <span className="mt-1 block text-xs text-muted">עוד לא נכנס לאתר</span>;
   const stats = [
     { value: activity.signIns, label: "התחברויות", title: "כמה פעמים התחבר עם סיסמה או קישור" },
     { value: activity.visits, label: "ביקורים", title: "כל לשונית שנפתחה באתר כשהוא מחובר" },
     { value: activity.activeDays, label: "ימים פעילים", title: "בכמה ימים שונים השתמש באתר" },
   ];
   return (
-    <span className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted">
+    <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted">
+      {presence}
+      {signIn}
       {stats.map((s) => (
         <span key={s.label} title={s.title}>
           <span className="num font-semibold text-fg">{s.value}</span> {s.label}
         </span>
       ))}
-      <span>נראה לאחרונה {lastSeen(activity.lastSeen)}</span>
     </span>
   );
 }
 
-function lastSeen(iso: string) {
-  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-  if (days <= 0) return "היום";
-  if (days === 1) return "אתמול";
-  if (days < 7) return `לפני ${days} ימים`;
-  return `ב-${shortDate(iso)}`;
+const dateTime = new Intl.DateTimeFormat("he-IL", { dateStyle: "full", timeStyle: "short", timeZone: "Asia/Jerusalem" });
+const hm = new Intl.DateTimeFormat("he-IL", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jerusalem" });
+const dayKey = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem" });
+
+/** "היום ב-14:32", "אתמול ב-09:05", or "ב-12.11.26, 18:40" (Israel time). */
+function when(iso: string) {
+  const d = new Date(iso);
+  const today = dayKey.format(new Date());
+  const yesterday = dayKey.format(new Date(Date.now() - 86_400_000));
+  const day = dayKey.format(d);
+  if (day === today) return `היום ב-${hm.format(d)}`;
+  if (day === yesterday) return `אתמול ב-${hm.format(d)}`;
+  return `ב-${shortDate(iso)}, ${hm.format(d)}`;
+}
+
+/** "לפני 7 דקות" within the hour, "לפני 3 שעות (11:20)" within half a day, else the day and the hour. */
+function ago(iso: string, now: number) {
+  const mins = Math.max(1, Math.round((now - new Date(iso).getTime()) / 60_000));
+  if (mins < 60) return mins === 1 ? "לפני דקה" : `לפני ${mins} דקות`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 12) return `${hours === 1 ? "לפני שעה" : hours === 2 ? "לפני שעתיים" : `לפני ${hours} שעות`} (${hm.format(new Date(iso))})`;
+  return when(iso);
 }

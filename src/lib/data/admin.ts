@@ -449,12 +449,38 @@ export async function listUsers(): Promise<AdminUser[]> {
   return check<AdminUser[]>(await supabase.rpc("admin_users"));
 }
 
-export type UserActivity = { userId: string; signIns: number; visits: number; activeDays: number; lastSeen: string | null };
+export type UserActivity = {
+  userId: string;
+  signIns: number;
+  visits: number;
+  activeDays: number;
+  lastSeen: string | null;
+  /** When the account last signed in (public.sign_ins). */
+  lastSignIn?: string | null;
+  /** When it was last on the site with a tab in view, and on which page (public.user_presence, 20261117010000). */
+  lastActive?: string | null;
+  activePath?: string | null;
+};
 
 /** How much each account used the site (20261115000000); accounts with no activity are absent. */
 export async function listUserActivity(): Promise<UserActivity[]> {
   const supabase = await createClient();
-  return check<UserActivity[]>(await supabase.rpc("admin_user_activity"));
+  const activity = check<UserActivity[]>(await supabase.rpc("admin_user_activity"));
+  // The last sign-in and the last moment on the site; presence is absent until its migration runs.
+  const [{ data: signIns }, { data: presence }] = await Promise.all([
+    supabase.from("sign_ins").select("user_id, created_at").order("created_at", { ascending: false }).limit(5000),
+    supabase.from("user_presence").select("user_id, last_active_at, path").limit(5000),
+  ]);
+  const lastSignIn = new Map<string, string>();
+  for (const r of (signIns ?? []) as { user_id: string; created_at: string }[]) if (!lastSignIn.has(r.user_id)) lastSignIn.set(r.user_id, r.created_at);
+  const here = new Map(((presence ?? []) as { user_id: string; last_active_at: string; path: string | null }[]).map((r) => [r.user_id, r]));
+  const later = (a: string | null | undefined, b: string | null | undefined) => (!a ? (b ?? null) : !b ? a : a > b ? a : b);
+  const byUser = new Map(activity.map((a) => [a.userId, a]));
+  for (const id of here.keys()) if (!byUser.has(id)) byUser.set(id, { userId: id, signIns: 0, visits: 0, activeDays: 0, lastSeen: null });
+  return [...byUser.values()].map((a) => {
+    const p = here.get(a.userId);
+    return { ...a, lastSignIn: lastSignIn.get(a.userId) ?? null, lastActive: p?.last_active_at ?? null, activePath: p?.path ?? null, lastSeen: later(a.lastSeen, p?.last_active_at) };
+  });
 }
 
 // ---- tester feedback -----------------------------------------------------------

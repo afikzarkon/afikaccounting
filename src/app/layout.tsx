@@ -7,6 +7,7 @@ import { MobileTabBar, MobileTabBarView } from "@/components/layout/continue";
 import { Footer, MinimalFooter } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
 import { PageViewTracker } from "@/components/layout/page-view-tracker";
+import { PresenceGate } from "@/components/layout/presence-gate";
 import { SearchPalette } from "@/components/layout/search";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { TesterFeedbackGate } from "@/components/tester/feedback-gate";
@@ -77,6 +78,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             </Suspense>
             <Suspense fallback={null}>
               <TesterFeedbackGate />
+            </Suspense>
+            <Suspense fallback={null}>
+              <PresenceGate />
             </Suspense>
             <Analytics />
           </VisibilityProvider>
