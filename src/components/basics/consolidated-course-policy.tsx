@@ -2,7 +2,7 @@ import { FileSignature, ListChecks } from "lucide-react";
 import { Deeper, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { ADJUST, ADJUST_OPTIONS, BUILDING, LAND, POLICY_TEST, POLICY_TEST_START } from "@/lib/study/consolidated/lessons/policy";
-import { W7_BUILDING, W7_IP, W7_LAND, W7_MASTER, W7_QUALIFY, W7_REVAFTER, W7_TABLE } from "@/lib/study/consolidated/worked/policy";
+import { W7_53, W7_BUILDING, W7_IP, W7_LAND, W7_MASTER, W7_QUALIFY, W7_REVAFTER, W7_TABLE } from "@/lib/study/consolidated/worked/policy";
 import { ConsolidatedDrill, RevalLab } from "./consolidated-interactive";
 import { LecturerNote, quiz } from "./consolidated-parts";
 import { type RevalEvent, RevalTimeline } from "./consolidated-reval-timeline";
@@ -209,6 +209,7 @@ export const CONSOLIDATED_POLICY_SCREENS: Record<string, ScreenContent> = {
         <LecturerNote title="כמה מההפסד הקודם מבטלים">
           <p>בגיליון 5.3 ובעמ׳ 55 המרצה מבטל הפסד שערוך קודם רק בגובה שעוד לא הופחת, ולכן כאן 16,000 ש״ח ולא 18,000. ב־IAS 16 סעיף 39 כתוב שהעלייה מוכרת ברווח או הפסד במידה שהיא מבטלת ירידה של אותו נכס שהוכרה קודם ברווח או הפסד, ואין שם המילה ״מופחת״. אנחנו הולכים לפי המרצה. הסיבה לא כתובה בחומר.</p>
         </LecturerNote>
+        <WorkedExample ex={W7_53} />
         <Remember>לכל חברה עלות, קרן והפסדים משלה. גם כשערך הנכס זהה, מתקנים את הפיצול בין רווח לרווח כולל אחר.</Remember>
       </>
     ),

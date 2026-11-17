@@ -19,7 +19,7 @@ import { withLinks, placeValue } from "./consolidated/worked/apply-links";
 import { LINKS } from "./consolidated/worked/links";
 import { CONTROL_W, W_ATTEND, W_CONVERT } from "./consolidated/worked/control";
 import { ACQUISITION_W, W_CLAIM, W_EXCESS, W_HFS, W_LESSEE, W_LESSOR, W_TABLE, W_TAX } from "./consolidated/worked/acquisition";
-import { POLICY_W, W7_BUILDING, W7_IP, W7_LAND, W7_MASTER, W7_QUALIFY, W7_REVAFTER, W7_TABLE } from "./consolidated/worked/policy";
+import { M53, POLICY_W, W7_53, W7_BUILDING, W7_IP, W7_LAND, W7_MASTER, W7_QUALIFY, W7_REVAFTER, W7_TABLE } from "./consolidated/worked/policy";
 import { FINANCE_W, W8_AC, W8_CONTROLLER, W8_FVOCI, W8_IMPAIR, W8_MASTER, W8_SHARES } from "./consolidated/worked/finance";
 import { IMPAIRMENT_W, W9_DATES, W9_DTA, W9_IMP, W9_MASTER, W9_PREFAT, W9_PREFISSUE, W9_PREFNA, W9_PREFPROFIT } from "./consolidated/worked/impairment";
 import { INTERCOMPANY_W, W10_BAL, W10_BORROW, W10_LAND, W10_LOSS, W10_MACHINE, W10_MASTER, W10_PRIOR, W10_SOLD, W10_UNSOLD, W10_UPDOWN } from "./consolidated/worked/intercompany";
@@ -600,6 +600,13 @@ describe("lesson 7: the walk, the sorting and the figures, against a separate ca
     // the closing question's adjusted profit, by hand
     assert.equal(90_000 + 6_160 - POLICY_W.mNetLoss, 90_770);
     assert.deepEqual([W7_QUALIFY, W7_IP, W7_TABLE, W7_REVAFTER, W7_BUILDING, W7_LAND, W7_MASTER].map((w) => w.steps.length), [4, 3, 3, 2, 10, 6, 8]);
+    // the lecturer's 5.3, cell by cell against the workbook
+    assert.deepEqual(M53, { carry22: 90_000, gain22: 18_000, reserve22: 13_500, realised23: 1_500, carry23: 96_000, drop23: 7_000, carry24: 77_875, gain24: 13_125, reverse24: 6_125 });
+    assert.equal(W7_53.steps.length, 10);
+    const cell = (s: number, t: number, r: number, c: number) => W7_53.steps[s - 1].tables![t].rows[r].c[c];
+    assert.deepEqual([cell(5, 2, 3, 1), cell(8, 2, 0, 3), cell(8, 2, 1, 3), cell(8, 2, 2, 3), cell(8, 2, 3, 1), cell(8, 2, 3, 3)], [-5_250, 6_125, -1_531.25, 4_593.75, 9_843.75, 5_250]);
+    assert.deepEqual(W7_53.steps[8].tables![0].rows.map((r) => r.c.slice(1, 3)), [[13_500, 6_750], [-1_500, -843.75], [-5_250, 9_843.75], [6_750, 15_750]]);
+    assert.deepEqual(W7_53.steps[9].tables![0].rows[2].c.slice(2, 4), [4_200, 1_050]);
   });
   it("every path of the walk ends, and both verdicts are reachable", () => {
     const ends = new Set<boolean>();
