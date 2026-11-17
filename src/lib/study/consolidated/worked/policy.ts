@@ -15,17 +15,12 @@ const B = BUILDING;
 type Table = { items: { name: string; at: number; amortized: number; end: number }[]; tax: { at: number; amortized: number; end: number }; total: { at: number; amortized: number; end: number } };
 const yearTable = (year: string, t: Table, how?: string[]): WTable => ({
   cap: `טבלת עודף העלות לשנת ${year}`,
-  head: how ? ["", "1.1", "הפחתה", "31.12", "איך"] : ["", "1.1", "הפחתה", "31.12"],
+  head: how ? ["", "1.1", "הפחתה", "31.12", "חישוב"] : ["", "1.1", "הפחתה", "31.12"],
   rows: [
     ...t.items.map((r, i) => ({ c: how ? [r.name, r.at, r.amortized, r.end, how[i]] : [r.name, r.at, r.amortized, r.end] })),
     { c: how ? ["מס נדחה", t.tax.at, t.tax.amortized, t.tax.end, how[t.items.length]] : ["מס נדחה", t.tax.at, t.tax.amortized, t.tax.end] },
     { c: how ? ["סך הכול", t.total.at, t.total.amortized, t.total.end, ""] : ["סך הכול", t.total.at, t.total.amortized, t.total.end], res: true },
   ],
-});
-const splitTable = (year: string, who: string, sub: { pl: number; oci: number }, group: { pl: number; oci: number }): WTable => ({
-  cap: `${year}, לפני מס`,
-  head: ["", "רווח או הפסד", "רווח כולל אחר"],
-  rows: [{ c: [who, sub.pl, sub.oci] }, { c: ["הקבוצה", group.pl, group.oci] }, { c: ["ההתאמה במאוחד", group.pl - sub.pl, group.oci - sub.oci], res: true }],
 });
 const je = (cap: string, lines: [string, number | "", number | ""][]): WTable => ({ cap, head: ["חשבון", "חובה", "זכות"], rows: lines.map((l) => ({ c: l })) });
 
@@ -84,11 +79,11 @@ export const W7_QUALIFY: Worked = {
       tables: [
         {
           cap: "השורות של ההפרשה, 2025",
-          head: ["", "1.1", "הפחתה", "31.12"],
+          head: ["", "1.1", "הפחתה", "31.12", "חישוב"],
           rows: [
-            { c: ["הפרשה לחופשה", 0, -14_000, -14_000] },
-            { c: ["מס נדחה", 0, W.vacTax25, W.vacTax25] },
-            { c: ["סך הכול", 0, -W.vacNet25, -W.vacNet25], res: true },
+            { c: ["הפרשה לחופשה", 0, -14_000, -14_000, "ההפרשה החסרה בסוף השנה. ביום הרכישה עוד לא הייתה"] },
+            { c: ["מס נדחה", 0, W.vacTax25, W.vacTax25, "`14,000 × 23%`, בסימן הפוך"] },
+            { c: ["סך הכול", 0, -W.vacNet25, -W.vacNet25, "הפרשה + מס נדחה"], res: true },
           ],
         },
       ],
@@ -104,7 +99,7 @@ export const W7_QUALIFY: Worked = {
         { l: "נטו ממס: `7,000 × 77%`", a: -W.vacNet26, k: "tot" },
       ],
       why: ["למה רק השינוי?", "היתרה של תחילת השנה כבר בתוך יתרות הפתיחה של ההון. רק מה שנוסף השנה הוא הוצאה של 2026."],
-      tables: [yearTable("2026", TABLE7_2026)],
+      tables: [yearTable("2026", TABLE7_2026, ["14,000 בפתיחה ו־21,000 בסוף", "`23% × 14,000` ו־`23% × 21,000`, בסימן הפוך"])],
       result: `הרווח המתוקן של דולב ב־2026 קטן ב־${A(W.vacNet26)}.`,
       xl: "`=(21000-14000)*(1-23%)`",
     },
@@ -195,13 +190,13 @@ const equity = (cap: string, rows: [string, WCell, WCell, WCell][], retained = t
   rows: rows.map((r, i) => ({ c: retained ? r : [r[0], r[2], r[3]], res: i === rows.length - 1 })),
 });
 /** Both splits one above the other, and the adjustment between them: the group less the subsidiary. */
-const compare = (year: string, sub: { pl: number; oci: number }, group: { pl: number; oci: number }): WTable => ({
+const compare = (year: string, who: string, sub: { pl: number; oci: number }, group: { pl: number; oci: number }, from: [string, string]): WTable => ({
   cap: `הפיצול של ${year}, לפני מס`,
   head: ["", "רווח או הפסד", "רווח כולל אחר", "מאיפה"],
   rows: [
-    { c: ["דולב", sub.pl, sub.oci, "ספרי דולב"] },
-    { c: ["הקבוצה", group.pl, group.oci, "מנקודת המבט של המאוחד"] },
-    { c: ["ההתאמה במאוחד", group.pl - sub.pl + 0, group.oci - sub.oci + 0, "הקבוצה פחות דולב"], res: true },
+    { c: [who, sub.pl, sub.oci, from[0]] },
+    { c: ["הקבוצה", group.pl, group.oci, from[1]] },
+    { c: ["ההתאמה במאוחד", group.pl - sub.pl + 0, group.oci - sub.oci + 0, `הקבוצה פחות ${who}`], res: true },
   ],
 });
 /** What the revaluation does to the statements, as the lecture lays it: the subsidiary, the adjustment, the consolidated. */
@@ -323,7 +318,7 @@ export const W7_BUILDING: Worked = {
       h: "2025: פקודת ההתאמה",
       p: ["שמים את שני הפיצולים זה מעל זה. ההפרש ביניהם הוא ההתאמה."],
       tables: [
-        compare("2025", B.sub25, B.group25),
+        compare("2025", "דולב", B.sub25, B.group25, ["שלב 3", "שלב 4"]),
         je("פקודת ההתאמה ב־2025", [["ח׳ רווח הון", 16_000, ""], ["ז׳ הוצאות מסים: `16,000 × 23%`", "", W.bTax25], ["ז׳ קרן הערכה מחדש: `16,000 × 77%`", "", W.bNet25]]),
         effect("ההשפעה של המבנה על הדוחות, 2025", "רווח הון", { pl: B.sub25.pl, oci: B.subNet }, { pl: B.group25.pl, oci: B.groupNet }, [
           "משלבים 3 ו־4",
@@ -379,7 +374,7 @@ export const W7_BUILDING: Worked = {
       h: "2026: פקודת ההתאמה",
       p: ["שוב שני הפיצולים זה מעל זה."],
       tables: [
-        compare("2026", B.sub26, B.group26),
+        compare("2026", "דולב", B.sub26, B.group26, ["שלב 7", "שלב 8"]),
         je("פקודת ההתאמה ב־2026", [["ח׳ קרן הערכה מחדש: `14,000 × 77%`", W.bNet26, ""], ["ח׳ הוצאות מסים: `14,000 × 23%`", W.bTax26, ""], ["ז׳ הפסד הון", "", 14_000]]),
         effect("ההשפעה של המבנה על הדוחות, 2026", "הפסד הון", { pl: B.sub26.pl, oci: SUB_OCI_NET26 }, { pl: B.group26.pl, oci: GROUP_OCI_NET26 }, [
           "משלבים 7 ו־8",
@@ -436,30 +431,47 @@ export const W7_LAND: Worked = {
       result: `עודף של ${A(W.landExcess)}, ומס נדחה של ${A(W.landTax)}.`,
     },
     {
-      h: "בספרי דולב",
+      h: "השערוך בספרי דולב",
       sheet: [
         { l: "שווי הוגן ב־31.12.2025", a: 324_000 },
         { l: "פחות עלות אצל דולב", a: -300_000, k: "op" },
         { l: "עלייה, לרווח כולל אחר", a: LAND.sub.oci, k: "sub" },
         { l: "נטו ממס: `24,000 × 77%`", a: W.landReserveNet, k: "tot" },
       ],
-      why: ["ומנקודת המבט של הקבוצה?", "לקבוצה הקרקע עולה 336,000. שווי של 324,000 נמוך מזה, ואין לה קרן, ולכן זה הפסד של 12,000. לדולב זו עלייה של 24,000 מעל העלות שלה, לקרן."],
-      result: `ההתאמה: רווח כולל אחר ${A(LAND.group.oci - LAND.sub.oci)}, ורווח או הפסד ${A(LAND.group.pl - LAND.sub.pl)}.`,
+      p: ["לדולב הקרקע עלתה 300,000. השווי החדש גבוה מזה, ולכן אצלה זו עלייה, לקרן."],
+      result: `דולב: ${A(LAND.sub.oci)} ברווח כולל אחר, ${A(W.landReserveNet)} נטו בקרן.`,
+    },
+    {
+      h: "השערוך מנקודת המבט של המאוחד",
+      sheet: [
+        { l: "שווי הוגן ב־31.12.2025", a: 324_000 },
+        { l: "פחות עלות לקבוצה: השווי ביום הרכישה", a: -336_000, k: "op" },
+        { l: "ירידה מתחת לעלות", a: LAND.group.pl, k: "sub" },
+        { l: "ברווח או הפסד: לקבוצה אין קרן", a: LAND.group.pl, k: "tot" },
+      ],
+      p: ["לקבוצה הקרקע עלתה 336,000. אותו שווי, 324,000, נמוך מזה, ולכן אצלה זה הפסד."],
+      result: `הקבוצה: הפסד של ${A(-LAND.group.pl)}, ואין רווח כולל אחר.`,
+    },
+    {
+      h: "שני הפיצולים זה מעל זה",
+      tables: [compare("2025", "דולב", LAND.sub, LAND.group, ["שלב 2", "שלב 3"])],
+      why: ["ומה זה אומר על עודף העלות?", "ההתאמה בשתי העמודות יחד היא 36,000: בדיוק כל עודף העלות על הקרקע. אחרי המעבר אין יותר הבדל בין החברות, ולכן כל העודף מתבטל."],
+      result: `ההתאמה: רווח או הפסד ${A(LAND.group.pl - LAND.sub.pl)}, ורווח כולל אחר ${A(LAND.group.oci - LAND.sub.oci)}.`,
     },
     {
       h: "בדוחות המאוחדים: הפחתת עודף העלות",
       tables: [
         {
           cap: "עודף העלות על הקרקע, ביום המעבר",
-          head: ["", "יתרה לפני המעבר", "הפחתה לרווח או הפסד", "הפחתה לרווח כולל אחר"],
+          head: ["", "יתרה לפני המעבר", "הפחתה לרווח או הפסד", "הפחתה לרווח כולל אחר", "חישוב"],
           rows: [
-            { c: ["קרקע", W.landExcess, LAND.group.pl, -LAND.sub.oci] },
-            { c: ["מס נדחה", -W.landTax, W.landTaxPl, W.landTaxOci] },
-            { c: ["סך הכול", W.landExcess - W.landTax, LAND.group.pl + W.landTaxPl, -LAND.sub.oci + W.landTaxOci], res: true },
+            { c: ["קרקע", W.landExcess, LAND.group.pl, -LAND.sub.oci, "`336,000 − 300,000`. ההפחתות: מהשורה ״ההתאמה״ בשלב 4"] },
+            { c: ["מס נדחה", -W.landTax, W.landTaxPl, W.landTaxOci, "`23%` מכל סכום בשורת הקרקע, בסימן הפוך"] },
+            { c: ["סך הכול", W.landExcess - W.landTax, LAND.group.pl + W.landTaxPl, -LAND.sub.oci + W.landTaxOci, "קרקע + מס נדחה"], res: true },
           ],
         },
       ],
-      why: ["למה כל העודף מתבטל?", "אחרי השערוך הקרקע מוצגת בשווי הוגן גם אצל דולב. אין יותר הבדל, ולכן כל יתרת העודף יוצאת, יחד עם המס. 24,000 מתבטלים מול הקרן של דולב, ו־12,000 מול רווח או הפסד."],
+      why: ["למה כל העודף מתבטל?", "אחרי השערוך הקרקע מוצגת בשווי הוגן גם אצל דולב. אין יותר הבדל, ולכן כל יתרת העודף יוצאת, יחד עם המס: 24,000 מול הקרן של דולב, ו־12,000 מול רווח או הפסד."],
       result: "בכל מקרה מבטלים את כל יתרת העודף. מה שמתחת לעלות של הקבוצה הוא הפסד, והשאר מתבטל מול הקרן.",
     },
     {
@@ -524,20 +536,37 @@ export const W7_MASTER: Worked = {
       result: `הטבלה מגדילה את הרווח המתוקן של רימון ב־\`(11,000 − 3,000) × 77% = ${n(M7_2025.total.amortized)}\`.`,
     },
     {
-      h: "המבנה: מה כל חברה רושמת",
+      h: "המבנה: ספרי רימון",
       sheet: [
-        { l: "ערך ב־1.1.2025, אצל שתיהן", a: 96_000 },
+        { l: "ערך ב־1.1.2025", a: 96_000 },
         { l: "פחות פחת: `96,000 ÷ 8`", a: -12_000, k: "op" },
         { l: "ערך לפני השערוך", a: W.mBuildingCarrying, k: "sub" },
-        { l: "ירידה עד 77,000", a: 77_000 - W.mBuildingCarrying, k: "tot" },
+        { l: "ירידה עד 77,000", a: 77_000 - W.mBuildingCarrying, k: "sub" },
+        { l: `ברווח כולל אחר: יורד מהקרן. בקרן \`16,000 − 16,000 ÷ 8 = ${n(W.mReserve)}\` ברוטו`, a: M7.sub.oci },
+        { l: "ברווח או הפסד: הקרן מכסה הכול", a: M7.sub.pl, k: "tot" },
       ],
-      why: ["למה התוצאה שונה?", `לרימון יש קרן: \`16,000 − 16,000 ÷ 8 = ${n(W.mReserve)}\` אחרי ההעברה לעודפים, והירידה יורדת ממנה. לקבוצה המבנה עולה 96,000 ביום הרכישה, בלי קרן, ולכן אצלה הירידה היא הפסד.`],
-      tables: [splitTable("2025", "רימון", M7.sub, M7.group)],
-      result: "רימון: (7,000) בקרן. הקבוצה: (7,000) ברווח או הפסד.",
+      why: ["למה 16,000 ÷ 8?", "רימון מעבירה את הקרן לעודפים בקצב הפחת. ביום השערוך נותרו 8 שנים, ולכן כל שנה עוברת שמינית."],
+      result: `רימון: ${A(-M7.sub.oci)} יורדים מהקרן, ואין הפסד.`,
+    },
+    {
+      h: "המבנה: מנקודת המבט של המאוחד",
+      sheet: [
+        { l: "ערך ב־1.1.2025: השווי ביום הרכישה", a: 96_000 },
+        { l: "פחות פחת: `96,000 ÷ 8`", a: -12_000, k: "op" },
+        { l: "ערך לפני השערוך", a: W.mBuildingCarrying, k: "sub" },
+        { l: "ירידה עד 77,000", a: 77_000 - W.mBuildingCarrying, k: "sub" },
+        { l: "ברווח כולל אחר: לקבוצה אין קרן", a: M7.group.oci },
+        { l: "ברווח או הפסד: כל הירידה", a: M7.group.pl, k: "tot" },
+      ],
+      p: ["אותו ערך ואותה ירידה. אבל הקרן של רימון נוצרה ב־2024, לפני הרכישה, ולכן לקבוצה אין אותה."],
+      result: `הקבוצה: הפסד של ${A(-M7.group.pl)}.`,
     },
     {
       h: "המבנה: פקודת ההתאמה",
-      tables: [je("פקודת ההתאמה", [["ח׳ הפסד הון", 7_000, ""], ["ז׳ הוצאות מסים: `7,000 × 23%`", "", 7_000 * TAX7], ["ז׳ קרן הערכה מחדש: `7,000 × 77%`", "", W.mNetLoss]])],
+      tables: [
+        compare("2025", "רימון", M7.sub, M7.group, ["שלב 4", "שלב 5"]),
+        je("פקודת ההתאמה", [["ח׳ הפסד הון", 7_000, ""], ["ז׳ הוצאות מסים: `7,000 × 23%`", "", 7_000 * TAX7], ["ז׳ קרן הערכה מחדש: `7,000 × 77%`", "", W.mNetLoss]]),
+      ],
       why: ["אבל הערך זהה", "הערך זהה, 77,000. ההבדל הוא רק בפיצול: במאוחד ההפסד עובר מהקרן לרווח."],
       result: `הרווח המתוקן של רימון קטן ב־${A(W.mNetLoss)}.`,
     },

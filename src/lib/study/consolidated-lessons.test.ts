@@ -599,7 +599,7 @@ describe("lesson 7: the walk, the sorting and the figures, against a separate ca
     assert.equal(POLICY_W.landTaxOci + POLICY_W.landTaxPl, POLICY_W.landTax);
     // the closing question's adjusted profit, by hand
     assert.equal(90_000 + 6_160 - POLICY_W.mNetLoss, 90_770);
-    assert.deepEqual([W7_QUALIFY, W7_IP, W7_TABLE, W7_REVAFTER, W7_BUILDING, W7_LAND, W7_MASTER].map((w) => w.steps.length), [4, 3, 3, 2, 10, 4, 7]);
+    assert.deepEqual([W7_QUALIFY, W7_IP, W7_TABLE, W7_REVAFTER, W7_BUILDING, W7_LAND, W7_MASTER].map((w) => w.steps.length), [4, 3, 3, 2, 10, 6, 8]);
   });
   it("every path of the walk ends, and both verdicts are reachable", () => {
     const ends = new Set<boolean>();
