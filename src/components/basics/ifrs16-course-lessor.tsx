@@ -9,7 +9,7 @@ import { TaskFrame, TaskText } from "./ias19-question";
 import { Bridge, FullSteps } from "./ias19-ui";
 import { TwoPanel, WrongRight } from "./ias19-visuals";
 import { DecisionWalk, LeaseDrill, ResidualBar } from "./ifrs16-interactive";
-import { FullSolution, P, quiz, T16, Tbl } from "./ifrs16-parts";
+import { P, quiz, T16, Tbl } from "./ifrs16-parts";
 import { SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { Money, Rule } from "./ui";
@@ -1101,81 +1101,79 @@ export const IFRS16_LESSOR_SCREENS: Record<string, ScreenContent> = {
             </ul>
             <p className="mt-2 font-semibold">נדרש: סווגו, והציגו את הסעיפים בספרי המחכיר לשנה 1.</p>
           </TaskText>
-          <FullSolution>
-            <FullSteps
-              label="הפתרון המלא"
-              steps={[
-                { title: "סיווג", body: <p>מימונית: אופציית רכישה ודאית (סעיף 63(ב)), וגם 8 מתוך 10 שנות חיים (סעיף 63(ג)).</p> },
-                {
-                  title: "ריבית גלומה",
-                  body: (
-                    <p>
-                      <Ltr>{`=RATE(8;100000;-700000;8000) → ${pct(L.STORE_RATE)}`}</Ltr>. העלויות בחוץ, כי המחכיר יצרן. המדד לפי מועד התחילה (סעיף 70(ב)). ריבית השוק שווה לריבית הגלומה, ולכן המכירות הן השווי ההוגן (סעיף 71(א)).
-                    </p>
-                  ),
-                },
-                {
-                  title: "השקעה נטו",
-                  body: (
+          <FullSteps
+            label="הפתרון המלא"
+            steps={[
+              { title: "סיווג", body: <p>מימונית: אופציית רכישה ודאית (סעיף 63(ב)), וגם 8 מתוך 10 שנות חיים (סעיף 63(ג)).</p> },
+              {
+                title: "ריבית גלומה",
+                body: (
+                  <p>
+                    <Ltr>{`=RATE(8;100000;-700000;8000) → ${pct(L.STORE_RATE)}`}</Ltr>. העלויות בחוץ, כי המחכיר יצרן. המדד לפי מועד התחילה (סעיף 70(ב)). ריבית השוק שווה לריבית הגלומה, ולכן המכירות הן השווי ההוגן (סעיף 71(א)).
+                  </p>
+                ),
+              },
+              {
+                title: "השקעה נטו",
+                body: (
+                  <Tbl
+                    dense
+                    head={["", "סכום"]}
+                    rows={[
+                      ["1.1", L.STORE.fairValue],
+                      ["הכנסות מימון", L.STORE_INT],
+                      ["תקבול שנכלל במדידה", -L.STORE.payment],
+                    ]}
+                    foot={["31.12", L.STORE_CLOSE]}
+                  />
+                ),
+              },
+              {
+                title: "התקבולים בפועל",
+                body: (
+                  <Tbl
+                    dense
+                    head={["", "סכום"]}
+                    rows={[
+                      ["התשלום הבסיסי", L.STORE.payment],
+                      ["תוספת מדד: הכנסה", L.STORE_INDEX],
+                      ["2% מההכנסות: הכנסה", L.STORE_VAR],
+                    ]}
+                    foot={["סך הכול במזומן", L.STORE_CASH]}
+                  />
+                ),
+              },
+              {
+                title: "הדוחות",
+                body: (
+                  <>
                     <Tbl
                       dense
-                      head={["", "סכום"]}
+                      head={["רווח או הפסד", "שנה 1"]}
                       rows={[
-                        ["1.1", L.STORE.fairValue],
-                        ["הכנסות מימון", L.STORE_INT],
-                        ["תקבול שנכלל במדידה", -L.STORE.payment],
+                        ["מכירות", -L.STORE.fairValue],
+                        ["עלות המכר", L.STORE.cost],
+                        ["הוצאות השגה", L.STORE.costs],
+                        ["הכנסות מימון", -L.STORE_INT],
+                        ["הכנסה מהצמדה", -L.STORE_INDEX],
+                        ["הכנסה לפי מכירות", -L.STORE_VAR],
                       ]}
-                      foot={["31.12", L.STORE_CLOSE]}
+                      foot={["סך הכול", -L.STORE_TOTAL]}
                     />
-                  ),
-                },
-                {
-                  title: "התקבולים בפועל",
-                  body: (
                     <Tbl
                       dense
-                      head={["", "סכום"]}
+                      head={["מצב כספי, 31.12", "שנה 1"]}
                       rows={[
-                        ["התשלום הבסיסי", L.STORE.payment],
-                        ["תוספת מדד: הכנסה", L.STORE_INDEX],
-                        ["2% מההכנסות: הכנסה", L.STORE_VAR],
+                        ["השקעה נטו, שוטפת", L.STORE_CLOSE - L.STORE_NC],
+                        ["השקעה נטו, לא שוטפת", L.STORE_NC],
                       ]}
-                      foot={["סך הכול במזומן", L.STORE_CASH]}
                     />
-                  ),
-                },
-                {
-                  title: "הדוחות",
-                  body: (
-                    <>
-                      <Tbl
-                        dense
-                        head={["רווח או הפסד", "שנה 1"]}
-                        rows={[
-                          ["מכירות", -L.STORE.fairValue],
-                          ["עלות המכר", L.STORE.cost],
-                          ["הוצאות השגה", L.STORE.costs],
-                          ["הכנסות מימון", -L.STORE_INT],
-                          ["הכנסה מהצמדה", -L.STORE_INDEX],
-                          ["הכנסה לפי מכירות", -L.STORE_VAR],
-                        ]}
-                        foot={["סך הכול", -L.STORE_TOTAL]}
-                      />
-                      <Tbl
-                        dense
-                        head={["מצב כספי, 31.12", "שנה 1"]}
-                        rows={[
-                          ["השקעה נטו, שוטפת", L.STORE_CLOSE - L.STORE_NC],
-                          ["השקעה נטו, לא שוטפת", L.STORE_NC],
-                        ]}
-                      />
-                    </>
-                  ),
-                },
-                { title: "מלכודת נפוצה", body: <p>למדוד מחדש את ההשקעה נטו בגלל המדד, כמו אצל החוכר. אצל המחכיר התוספת היא הכנסה נפרדת.</p> },
-              ]}
-            />
-          </FullSolution>
+                  </>
+                ),
+              },
+              { title: "מלכודת נפוצה", body: <p>למדוד מחדש את ההשקעה נטו בגלל המדד, כמו אצל החוכר. אצל המחכיר התוספת היא הכנסה נפרדת.</p> },
+            ]}
+          />
         </TaskFrame>
         <Bridge summary="עכשיו אתם מכירים את שני המודלים. ומה קורה כשמשנים חוזה אצל המחכיר?">בשיעור הבא: תיקוני חכירה בספרי המחכיר, לפי הסיווג המקורי.</Bridge>
       </>

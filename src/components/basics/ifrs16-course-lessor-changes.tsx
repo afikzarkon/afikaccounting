@@ -9,7 +9,7 @@ import { TaskFrame, TaskText } from "./ias19-question";
 import { Bridge, FullSteps } from "./ias19-ui";
 import { DecisionTree, Timeline, TwoPanel, WrongRight } from "./ias19-visuals";
 import { DecisionWalk, LeaseDrill } from "./ifrs16-interactive";
-import { FullSolution, P, quiz, Tbl } from "./ifrs16-parts";
+import { P, quiz, Tbl } from "./ifrs16-parts";
 import { SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { Money, Rule } from "./ui";
@@ -1094,170 +1094,168 @@ export const IFRS16_LESSOR_CHANGES_SCREENS: Record<string, ScreenContent> = {
             </ul>
             <p className="mt-2 font-semibold">נדרש: לכל לקוח, הציגו את פקודת היומן ביום התיקון ואת הסעיפים בדוחות של שנה 5. בסוף, מה סך ההשפעה של ארבעתם על רווח או הפסד?</p>
           </TaskText>
-          <FullSolution>
-            <FullSteps
-              label="הפתרון המלא"
-              steps={[
-                {
-                  title: "הבסיס: ב-31.12 של שנה 4, לכל מנוף",
-                  body: (
+          <FullSteps
+            label="הפתרון המלא"
+            steps={[
+              {
+                title: "הבסיס: ב-31.12 של שנה 4, לכל מנוף",
+                body: (
+                  <p>
+                    המקור: 12 מתוך 15 שנים, ולכן מימונית. נשארו {L.CRANE.left} תשלומים: <Ltr>{`=PV(6%;8;-230000;-200000) → ${n(L.CRANE_NI)}`}</Ltr>.
+                  </p>
+                ),
+              },
+              {
+                title: "לקוח א׳: חכירה נפרדת",
+                body: (
+                  <>
                     <p>
-                      המקור: 12 מתוך 15 שנים, ולכן מימונית. נשארו {L.CRANE.left} תשלומים: <Ltr>{`=PV(6%;8;-230000;-200000) → ${n(L.CRANE_NI)}`}</Ltr>.
+                      נכס נוסף, במחיר הנפרד שלו. המנוף הנוסף: {L.CC.years} מתוך {L.CC.life} שנים, ולכן תפעולית. אין פקודה לחכירה המקורית, וזו ממשיכה.
                     </p>
-                  ),
-                },
-                {
-                  title: "לקוח א׳: חכירה נפרדת",
-                  body: (
-                    <>
-                      <p>
-                        נכס נוסף, במחיר הנפרד שלו. המנוף הנוסף: {L.CC.years} מתוך {L.CC.life} שנים, ולכן תפעולית. אין פקודה לחכירה המקורית, וזו ממשיכה.
-                      </p>
-                      <Tbl
-                        dense
-                        head={["שנה 5", "סכום"]}
-                        rows={[
-                          ["הכנסות מימון, מקורית", -L.CC_INT],
-                          ["הכנסות מהשכרה, נפרדת", -L.CC.payment],
-                          ["פחת, המנוף הנוסף", L.CC_DEP],
-                        ]}
-                        foot={["רווח או הפסד", L.CRANE_PL.c]}
-                      />
-                      <Tbl
-                        dense
-                        head={["מצב כספי, 31.12", "סכום"]}
-                        rows={[
-                          ["השקעה נטו, שוטפת", L.CC_CLOSE - L.CC_NC],
-                          ["השקעה נטו, לא שוטפת", L.CC_NC],
-                        ]}
-                      />
-                    </>
-                  ),
-                },
-                {
-                  title: "לקוח ב׳: ויתור על תשלום עתידי",
-                  body: (
-                    <>
-                      <p>
-                        התשלום של שנה 5 עוד לא הגיע, ולכן זה תיקון. התקופה לא השתנתה, ולכן IFRS 9. יורד הערך הנוכחי של התשלום: <Ltr>{`230,000 ÷ 1.06 = ${n(L.CD_LOSS)}`}</Ltr>.
-                      </p>
-                      <JournalEntry
-                        title="1.1 של שנה 5"
-                        lines={[
-                          { account: "הפסד מתיקון חכירה", dr: L.CD_LOSS },
-                          { account: "השקעה נטו בחכירה", cr: L.CD_LOSS },
-                        ]}
-                      />
-                      <Tbl
-                        dense
-                        head={["שנה 5", "סכום"]}
-                        rows={[
-                          ["הפסד מתיקון", L.CD_LOSS],
-                          ["הכנסות מימון", -L.CD_INT],
-                        ]}
-                        foot={["רווח או הפסד", L.CRANE_PL.d]}
-                      />
-                      <Tbl
-                        dense
-                        head={["מצב כספי, 31.12", "סכום"]}
-                        rows={[
-                          ["השקעה נטו, שוטפת", L.CD_CLOSE - L.CD_NC],
-                          ["השקעה נטו, לא שוטפת", L.CD_NC],
-                        ]}
-                      />
-                      <p>השנה אין תקבול. ב-31.12 של שנה 5 היתרה חוזרת ל-{n(L.CD_CLOSE)}, כמו בלי התיקון, כי מכאן והלאה התשלומים זהים.</p>
-                    </>
-                  ),
-                },
-                {
-                  title: "לקוח ג׳: נשארת מימונית",
-                  body: (
-                    <>
-                      <p>
-                        התקופה לא השתנתה, ולכן IFRS 9, בריבית המקורית ולא ב-{pct(L.CB.marketRate)}: <Ltr>{`=PV(6%;8;-170000;-200000) → ${n(L.CB_NI)}`}</Ltr>.
-                      </p>
-                      <JournalEntry
-                        title="1.1 של שנה 5"
-                        lines={[
-                          { account: "הפסד מתיקון חכירה", dr: L.CB_LOSS },
-                          { account: "השקעה נטו בחכירה", cr: L.CB_LOSS },
-                        ]}
-                      />
-                      <Tbl
-                        dense
-                        head={["שנה 5", "סכום"]}
-                        rows={[
-                          ["הפסד מתיקון", L.CB_LOSS],
-                          ["הכנסות מימון", -L.CB_INT],
-                        ]}
-                        foot={["רווח או הפסד", L.CRANE_PL.b]}
-                      />
-                      <Tbl
-                        dense
-                        head={["מצב כספי, 31.12", "סכום"]}
-                        rows={[
-                          ["השקעה נטו, שוטפת", L.CB_CLOSE - L.CB_NC],
-                          ["השקעה נטו, לא שוטפת", L.CB_NC],
-                        ]}
-                      />
-                    </>
-                  ),
-                },
-                {
-                  title: "לקוח ד׳: הייתה תפעולית",
-                  body: (
-                    <>
-                      <p>
-                        {L.CA.term} מתוך {L.CRANE.life} שנים, 40%. הערך הנוכחי של {L.CA.term} תשלומים, בלי השייר: <Ltr>{`${n(L.CA_PV)} ÷ ${n(L.CRANE_FV)} = ${pct(L.CA_PV / L.CRANE_FV)}`}</Ltr>. לכן הייתה תפעולית.
-                      </p>
-                      <JournalEntry
-                        title="1.1 של שנה 5"
-                        lines={[
-                          { account: "מנוף", dr: L.CRANE_NI },
-                          { account: "השקעה נטו בחכירה", cr: L.CRANE_NI },
-                        ]}
-                      />
-                      <Tbl
-                        dense
-                        head={["שנה 5", "סכום"]}
-                        rows={[
-                          ["הכנסות מהשכרה", -L.CRANE.payment],
-                          [<>פחת: <Ltr>{`${n(L.CRANE_NI)} ÷ ${L.CA.lifeLeft}`}</Ltr></>, L.CA_DEP],
-                        ]}
-                        foot={["רווח או הפסד", L.CRANE_PL.a]}
-                      />
-                      <Tbl
-                        dense
-                        head={["מנוף, נטו", "סכום"]}
-                        rows={[
-                          ["1.1", L.CRANE_NI],
-                          ["פחת", -L.CA_DEP],
-                        ]}
-                        foot={["31.12", L.CA_ASSET]}
-                      />
-                    </>
-                  ),
-                },
-                {
-                  title: "סך ההשפעה על רווח או הפסד",
-                  body: (
                     <Tbl
                       dense
                       head={["שנה 5", "סכום"]}
                       rows={[
-                        ["לקוח א׳: חכירה נפרדת", L.CRANE_PL.c],
-                        ["לקוח ב׳: ויתור", L.CRANE_PL.d],
-                        ["לקוח ג׳: תשלום נמוך", L.CRANE_PL.b],
-                        ["לקוח ד׳: הייתה תפעולית", L.CRANE_PL.a],
+                        ["הכנסות מימון, מקורית", -L.CC_INT],
+                        ["הכנסות מהשכרה, נפרדת", -L.CC.payment],
+                        ["פחת, המנוף הנוסף", L.CC_DEP],
                       ]}
-                      foot={["סך הכול", L.CRANE_PL_TOTAL]}
+                      foot={["רווח או הפסד", L.CRANE_PL.c]}
                     />
-                  ),
-                },
-                { title: "מלכודת נפוצה", body: <p>להשתמש באותה ריבית בכל החוזים, או לזקוף הפרש כנגד נכס כמו אצל החוכר. קודם המסלול, ורק אחריו החישוב.</p> },
-              ]}
-            />
-          </FullSolution>
+                    <Tbl
+                      dense
+                      head={["מצב כספי, 31.12", "סכום"]}
+                      rows={[
+                        ["השקעה נטו, שוטפת", L.CC_CLOSE - L.CC_NC],
+                        ["השקעה נטו, לא שוטפת", L.CC_NC],
+                      ]}
+                    />
+                  </>
+                ),
+              },
+              {
+                title: "לקוח ב׳: ויתור על תשלום עתידי",
+                body: (
+                  <>
+                    <p>
+                      התשלום של שנה 5 עוד לא הגיע, ולכן זה תיקון. התקופה לא השתנתה, ולכן IFRS 9. יורד הערך הנוכחי של התשלום: <Ltr>{`230,000 ÷ 1.06 = ${n(L.CD_LOSS)}`}</Ltr>.
+                    </p>
+                    <JournalEntry
+                      title="1.1 של שנה 5"
+                      lines={[
+                        { account: "הפסד מתיקון חכירה", dr: L.CD_LOSS },
+                        { account: "השקעה נטו בחכירה", cr: L.CD_LOSS },
+                      ]}
+                    />
+                    <Tbl
+                      dense
+                      head={["שנה 5", "סכום"]}
+                      rows={[
+                        ["הפסד מתיקון", L.CD_LOSS],
+                        ["הכנסות מימון", -L.CD_INT],
+                      ]}
+                      foot={["רווח או הפסד", L.CRANE_PL.d]}
+                    />
+                    <Tbl
+                      dense
+                      head={["מצב כספי, 31.12", "סכום"]}
+                      rows={[
+                        ["השקעה נטו, שוטפת", L.CD_CLOSE - L.CD_NC],
+                        ["השקעה נטו, לא שוטפת", L.CD_NC],
+                      ]}
+                    />
+                    <p>השנה אין תקבול. ב-31.12 של שנה 5 היתרה חוזרת ל-{n(L.CD_CLOSE)}, כמו בלי התיקון, כי מכאן והלאה התשלומים זהים.</p>
+                  </>
+                ),
+              },
+              {
+                title: "לקוח ג׳: נשארת מימונית",
+                body: (
+                  <>
+                    <p>
+                      התקופה לא השתנתה, ולכן IFRS 9, בריבית המקורית ולא ב-{pct(L.CB.marketRate)}: <Ltr>{`=PV(6%;8;-170000;-200000) → ${n(L.CB_NI)}`}</Ltr>.
+                    </p>
+                    <JournalEntry
+                      title="1.1 של שנה 5"
+                      lines={[
+                        { account: "הפסד מתיקון חכירה", dr: L.CB_LOSS },
+                        { account: "השקעה נטו בחכירה", cr: L.CB_LOSS },
+                      ]}
+                    />
+                    <Tbl
+                      dense
+                      head={["שנה 5", "סכום"]}
+                      rows={[
+                        ["הפסד מתיקון", L.CB_LOSS],
+                        ["הכנסות מימון", -L.CB_INT],
+                      ]}
+                      foot={["רווח או הפסד", L.CRANE_PL.b]}
+                    />
+                    <Tbl
+                      dense
+                      head={["מצב כספי, 31.12", "סכום"]}
+                      rows={[
+                        ["השקעה נטו, שוטפת", L.CB_CLOSE - L.CB_NC],
+                        ["השקעה נטו, לא שוטפת", L.CB_NC],
+                      ]}
+                    />
+                  </>
+                ),
+              },
+              {
+                title: "לקוח ד׳: הייתה תפעולית",
+                body: (
+                  <>
+                    <p>
+                      {L.CA.term} מתוך {L.CRANE.life} שנים, 40%. הערך הנוכחי של {L.CA.term} תשלומים, בלי השייר: <Ltr>{`${n(L.CA_PV)} ÷ ${n(L.CRANE_FV)} = ${pct(L.CA_PV / L.CRANE_FV)}`}</Ltr>. לכן הייתה תפעולית.
+                    </p>
+                    <JournalEntry
+                      title="1.1 של שנה 5"
+                      lines={[
+                        { account: "מנוף", dr: L.CRANE_NI },
+                        { account: "השקעה נטו בחכירה", cr: L.CRANE_NI },
+                      ]}
+                    />
+                    <Tbl
+                      dense
+                      head={["שנה 5", "סכום"]}
+                      rows={[
+                        ["הכנסות מהשכרה", -L.CRANE.payment],
+                        [<>פחת: <Ltr>{`${n(L.CRANE_NI)} ÷ ${L.CA.lifeLeft}`}</Ltr></>, L.CA_DEP],
+                      ]}
+                      foot={["רווח או הפסד", L.CRANE_PL.a]}
+                    />
+                    <Tbl
+                      dense
+                      head={["מנוף, נטו", "סכום"]}
+                      rows={[
+                        ["1.1", L.CRANE_NI],
+                        ["פחת", -L.CA_DEP],
+                      ]}
+                      foot={["31.12", L.CA_ASSET]}
+                    />
+                  </>
+                ),
+              },
+              {
+                title: "סך ההשפעה על רווח או הפסד",
+                body: (
+                  <Tbl
+                    dense
+                    head={["שנה 5", "סכום"]}
+                    rows={[
+                      ["לקוח א׳: חכירה נפרדת", L.CRANE_PL.c],
+                      ["לקוח ב׳: ויתור", L.CRANE_PL.d],
+                      ["לקוח ג׳: תשלום נמוך", L.CRANE_PL.b],
+                      ["לקוח ד׳: הייתה תפעולית", L.CRANE_PL.a],
+                    ]}
+                    foot={["סך הכול", L.CRANE_PL_TOTAL]}
+                  />
+                ),
+              },
+              { title: "מלכודת נפוצה", body: <p>להשתמש באותה ריבית בכל החוזים, או לזקוף הפרש כנגד נכס כמו אצל החוכר. קודם המסלול, ורק אחריו החישוב.</p> },
+            ]}
+          />
         </TaskFrame>
         <Bridge summary="עכשיו אתם יודעים לטפל בתיקון בשני הצדדים. נשארו שלושה מקרים מיוחדים.">בשיעור הבא: נדל״ן עם קרקע ומבנה, חכירת משנה, ומכירה וחכירה בחזרה.</Bridge>
       </>

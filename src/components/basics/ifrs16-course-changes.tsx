@@ -8,7 +8,7 @@ import { TaskFrame, TaskText } from "./ias19-question";
 import { Bridge, FullSteps } from "./ias19-ui";
 import { DecisionTree, Fork, Timeline, TwoPanel, WrongRight } from "./ias19-visuals";
 import { ChangeLab, DecisionWalk, LeaseDrill } from "./ifrs16-interactive";
-import { FullSolution, P, quiz, T16, Tbl } from "./ifrs16-parts";
+import { P, quiz, T16, Tbl } from "./ifrs16-parts";
 import { SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { Money, Rule } from "./ui";
@@ -1455,67 +1455,65 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
           </ul>
           <p className="mt-2 font-semibold">נדרש: הציגו את הסעיפים בדוחות של שנה 1.</p>
         </TaskText>
-        <FullSolution>
-          <FullSteps
-            label="הפתרון המלא"
-            steps={[
-              {
-                title: "מדידה לראשונה",
-                body: (
-                  <p>
-                    <Ltr>{`=PV(4%;8;-100000;-8000) → ${n(C.STORE_COST)}`}</Ltr>. המחיר של האופציה בפנים, כי ודאי שתמומש. 2% מההכנסות בחוץ.
-                  </p>
-                ),
-              },
-              {
-                title: "המעגלים",
-                body: (
-                  <Tbl
-                    dense
-                    head={["", "התחייבות", "נכס"]}
-                    rows={[
-                      ["1.1", -C.STORE_COST, C.STORE_COST],
-                      ["ריבית", -C.STORE_INT, 0],
-                      ["תשלום: 100,000 × 103 ÷ 100", C.STORE_PAID, 0],
-                      ["פחת: 10 שנים", 0, -C.STORE_DEP],
-                      ["מדידה מחדש", -C.STORE_CH, C.STORE_CH],
-                    ]}
-                    foot={["31.12", -C.STORE_AFTER, C.STORE_ROU]}
-                  />
-                ),
-              },
-              {
-                title: "ההתחייבות אחרי",
-                body: (
-                  <p>
-                    <Ltr>{`=PV(4%;7;-103000;-8000) → ${n(C.STORE_AFTER)}`}</Ltr>. ההצמדה חלה על התשלומים, ולא על מחיר האופציה.
-                  </p>
-                ),
-              },
-              {
-                title: "הדוחות",
-                body: (
-                  <Tbl
-                    dense
-                    head={["", "שנה 1"]}
-                    rows={[
-                      ["הוצאות פחת", C.STORE_DEP],
-                      ["הוצאות מימון", C.STORE_INT],
-                      ["הוצאות לפי הכנסות", C.STORE_VAR],
-                      ["נכס זכות שימוש, נטו", C.STORE_ROU],
-                      ["התחייבות, שוטפת", -(C.STORE_AFTER - C.STORE_NC)],
-                      ["התחייבות, לא שוטפת", -C.STORE_NC],
-                    ]}
-                  />
-                ),
-              },
-              {
-                title: "מלכודת נפוצה",
-                body: <p>לשלם 100,000 ב-31.12. התשלום של אותו יום כבר לפי המדד החדש. נוסח התקן לא אומר לאן הולך ההפרש, ובקורס הזה הוא עובר דרך המדידה מחדש, ולכן הוא לא הוצאה.</p>,
-              },
-            ]}
-          />
-        </FullSolution>
+        <FullSteps
+          label="הפתרון המלא"
+          steps={[
+            {
+              title: "מדידה לראשונה",
+              body: (
+                <p>
+                  <Ltr>{`=PV(4%;8;-100000;-8000) → ${n(C.STORE_COST)}`}</Ltr>. המחיר של האופציה בפנים, כי ודאי שתמומש. 2% מההכנסות בחוץ.
+                </p>
+              ),
+            },
+            {
+              title: "המעגלים",
+              body: (
+                <Tbl
+                  dense
+                  head={["", "התחייבות", "נכס"]}
+                  rows={[
+                    ["1.1", -C.STORE_COST, C.STORE_COST],
+                    ["ריבית", -C.STORE_INT, 0],
+                    ["תשלום: 100,000 × 103 ÷ 100", C.STORE_PAID, 0],
+                    ["פחת: 10 שנים", 0, -C.STORE_DEP],
+                    ["מדידה מחדש", -C.STORE_CH, C.STORE_CH],
+                  ]}
+                  foot={["31.12", -C.STORE_AFTER, C.STORE_ROU]}
+                />
+              ),
+            },
+            {
+              title: "ההתחייבות אחרי",
+              body: (
+                <p>
+                  <Ltr>{`=PV(4%;7;-103000;-8000) → ${n(C.STORE_AFTER)}`}</Ltr>. ההצמדה חלה על התשלומים, ולא על מחיר האופציה.
+                </p>
+              ),
+            },
+            {
+              title: "הדוחות",
+              body: (
+                <Tbl
+                  dense
+                  head={["", "שנה 1"]}
+                  rows={[
+                    ["הוצאות פחת", C.STORE_DEP],
+                    ["הוצאות מימון", C.STORE_INT],
+                    ["הוצאות לפי הכנסות", C.STORE_VAR],
+                    ["נכס זכות שימוש, נטו", C.STORE_ROU],
+                    ["התחייבות, שוטפת", -(C.STORE_AFTER - C.STORE_NC)],
+                    ["התחייבות, לא שוטפת", -C.STORE_NC],
+                  ]}
+                />
+              ),
+            },
+            {
+              title: "מלכודת נפוצה",
+              body: <p>לשלם 100,000 ב-31.12. התשלום של אותו יום כבר לפי המדד החדש. נוסח התקן לא אומר לאן הולך ההפרש, ובקורס הזה הוא עובר דרך המדידה מחדש, ולכן הוא לא הוצאה.</p>,
+            },
+          ]}
+        />
       </TaskFrame>
     ),
   },
@@ -1575,89 +1573,87 @@ export const IFRS16_CHANGES_SCREENS: Record<string, ScreenContent> = {
             </ul>
             <p className="mt-2 font-semibold">נדרש: פקודות היומן ליום ההסכמה, עם חישובי עזר.</p>
           </TaskText>
-          <FullSolution>
-            <FullSteps
-              label="הפתרון המלא"
-              steps={[
-                {
-                  title: "כמה חכירות",
-                  body: <p>אפשר להפיק מכל קומה הטבה לבד, והקומות לא תלויות זו בזו, ולכן כל קומה היא רכיב חכירה נפרד (ב32). מטפלים בכל קומה לפי מה שקרה לה.</p>,
-                },
-                {
-                  title: "היתרות לפני, לכל קומה",
-                  body: (
+          <FullSteps
+            label="הפתרון המלא"
+            steps={[
+              {
+                title: "כמה חכירות",
+                body: <p>אפשר להפיק מכל קומה הטבה לבד, והקומות לא תלויות זו בזו, ולכן כל קומה היא רכיב חכירה נפרד (ב32). מטפלים בכל קומה לפי מה שקרה לה.</p>,
+              },
+              {
+                title: "היתרות לפני, לכל קומה",
+                body: (
+                  <p>
+                    עלות: <Ltr>{`=PV(6%;6;-240000) → ${n(C.M_COST)}`}</Ltr>. נכס: {C.M_LEFT}/{C.MASTER.years} ממנה, {n(C.M_A)}. התחייבות: <Ltr>{`=PV(6%;4;-240000) → ${n(C.M_L)}`}</Ltr>.
+                  </p>
+                ),
+              },
+              {
+                title: "הקומה העליונה: קיצור הוא הקטנה",
+                body: (
+                  <>
+                    <p>נשארה שנה אחת מתוך 4. מהנכס נשאר 1/4, ומההתחייבות נשאר תשלום אחד בריבית הישנה.</p>
+                    <Tbl
+                      dense
+                      head={["", "התחייבות", "נכס"]}
+                      rows={[
+                        ["לפני", -C.M_L, C.M_A],
+                        ["שלב 1: גריעה", C.M_TOP_L_OUT, -C.M_TOP_A_OUT],
+                        ["שלב 2: 8% ותשלום חדש", -C.M_TOP_REM, C.M_TOP_REM],
+                      ]}
+                      foot={["אחרי", -C.M_TOP_AFTER, C.M_TOP_ASSET]}
+                    />
+                    <JournalEntry
+                      title="שלב 1"
+                      lines={[
+                        { account: "התחייבות חכירה", dr: C.M_TOP_L_OUT },
+                        { account: "נכס זכות שימוש", cr: C.M_TOP_A_OUT },
+                        { account: "רווח מתיקון חכירה", cr: C.M_TOP_GAIN },
+                      ]}
+                    />
+                    <JournalEntry
+                      title="שלב 2"
+                      lines={[
+                        { account: "התחייבות חכירה", dr: -C.M_TOP_REM },
+                        { account: "נכס זכות שימוש", cr: -C.M_TOP_REM },
+                      ]}
+                    />
+                  </>
+                ),
+              },
+              {
+                title: "שלוש הקומות: הארכה ומחיר חדש",
+                body: (
+                  <>
+                    <p>אין תוספת נכס, ולכן אין חכירה נפרדת, גם במחיר השוק. אין הקטנה. מודדים מחדש כנגד הנכס.</p>
+                    <Tbl
+                      dense
+                      head={["", "התחייבות", "נכס"]}
+                      rows={[
+                        ["לפני: 3 קומות", -C.M_REST_L, C.M_REST_A],
+                        ["מדידה מחדש", -C.M_REST_CH, C.M_REST_CH],
+                      ]}
+                      foot={["אחרי", -C.M_REST_AFTER, C.M_REST_ASSET]}
+                    />
                     <p>
-                      עלות: <Ltr>{`=PV(6%;6;-240000) → ${n(C.M_COST)}`}</Ltr>. נכס: {C.M_LEFT}/{C.MASTER.years} ממנה, {n(C.M_A)}. התחייבות: <Ltr>{`=PV(6%;4;-240000) → ${n(C.M_L)}`}</Ltr>.
+                      <Ltr>{`=PV(8%;6;-210000) × 3 → ${n(C.M_REST_AFTER)}`}</Ltr>
                     </p>
-                  ),
-                },
-                {
-                  title: "הקומה העליונה: קיצור הוא הקטנה",
-                  body: (
-                    <>
-                      <p>נשארה שנה אחת מתוך 4. מהנכס נשאר 1/4, ומההתחייבות נשאר תשלום אחד בריבית הישנה.</p>
-                      <Tbl
-                        dense
-                        head={["", "התחייבות", "נכס"]}
-                        rows={[
-                          ["לפני", -C.M_L, C.M_A],
-                          ["שלב 1: גריעה", C.M_TOP_L_OUT, -C.M_TOP_A_OUT],
-                          ["שלב 2: 8% ותשלום חדש", -C.M_TOP_REM, C.M_TOP_REM],
-                        ]}
-                        foot={["אחרי", -C.M_TOP_AFTER, C.M_TOP_ASSET]}
-                      />
-                      <JournalEntry
-                        title="שלב 1"
-                        lines={[
-                          { account: "התחייבות חכירה", dr: C.M_TOP_L_OUT },
-                          { account: "נכס זכות שימוש", cr: C.M_TOP_A_OUT },
-                          { account: "רווח מתיקון חכירה", cr: C.M_TOP_GAIN },
-                        ]}
-                      />
-                      <JournalEntry
-                        title="שלב 2"
-                        lines={[
-                          { account: "התחייבות חכירה", dr: -C.M_TOP_REM },
-                          { account: "נכס זכות שימוש", cr: -C.M_TOP_REM },
-                        ]}
-                      />
-                    </>
-                  ),
-                },
-                {
-                  title: "שלוש הקומות: הארכה ומחיר חדש",
-                  body: (
-                    <>
-                      <p>אין תוספת נכס, ולכן אין חכירה נפרדת, גם במחיר השוק. אין הקטנה. מודדים מחדש כנגד הנכס.</p>
-                      <Tbl
-                        dense
-                        head={["", "התחייבות", "נכס"]}
-                        rows={[
-                          ["לפני: 3 קומות", -C.M_REST_L, C.M_REST_A],
-                          ["מדידה מחדש", -C.M_REST_CH, C.M_REST_CH],
-                        ]}
-                        foot={["אחרי", -C.M_REST_AFTER, C.M_REST_ASSET]}
-                      />
-                      <p>
-                        <Ltr>{`=PV(8%;6;-210000) × 3 → ${n(C.M_REST_AFTER)}`}</Ltr>
-                      </p>
-                      <JournalEntry
-                        title="מדידה מחדש"
-                        lines={[
-                          { account: "נכס זכות שימוש", dr: C.M_REST_CH },
-                          { account: "התחייבות חכירה", cr: C.M_REST_CH },
-                        ]}
-                      />
-                    </>
-                  ),
-                },
-                {
-                  title: "מלכודת נפוצה",
-                  body: <p>לחכות לשנה 4 עם הקומה העליונה, או להשאיר 1/4 מההתחייבות, כמו בנכס. המועד הוא יום ההסכמה, וההתחייבות שנשארת היא תשלום אחד בריבית הישנה.</p>,
-                },
-              ]}
-            />
-          </FullSolution>
+                    <JournalEntry
+                      title="מדידה מחדש"
+                      lines={[
+                        { account: "נכס זכות שימוש", dr: C.M_REST_CH },
+                        { account: "התחייבות חכירה", cr: C.M_REST_CH },
+                      ]}
+                    />
+                  </>
+                ),
+              },
+              {
+                title: "מלכודת נפוצה",
+                body: <p>לחכות לשנה 4 עם הקומה העליונה, או להשאיר 1/4 מההתחייבות, כמו בנכס. המועד הוא יום ההסכמה, וההתחייבות שנשארת היא תשלום אחד בריבית הישנה.</p>,
+              },
+            ]}
+          />
         </TaskFrame>
         <Bridge summary="עכשיו אתם מכירים את כל הדרך של החוכר. ומה קורה בצד השני של החוזה?">בשיעור הבא: המחכיר, שני המודלים שלו, ומתי נכס יוצא מהספרים.</Bridge>
       </>

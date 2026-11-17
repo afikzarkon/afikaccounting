@@ -8,7 +8,7 @@ import { TaskFrame, TaskText } from "./ias19-question";
 import { Bridge, FullSteps } from "./ias19-ui";
 import { DecisionTree, Fork, Timeline, TwoPanel, WrongRight } from "./ias19-visuals";
 import { LeaseDrill, ResidualBar, RouBuilder } from "./ifrs16-interactive";
-import { FullSolution, P, quiz, T16, Tbl } from "./ifrs16-parts";
+import { P, quiz, T16, Tbl } from "./ifrs16-parts";
 import { SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { Money, Rule } from "./ui";
@@ -653,79 +653,77 @@ export const IFRS16_MEASURE_SCREENS: Record<string, ScreenContent> = {
             </ul>
             <p className="mt-2 font-semibold">נדרש: חשבו את התחייבות החכירה אחרי התשלום של 1.1 ואת עלות הנכס, ורשמו את פקודת היומן.</p>
           </TaskText>
-          <FullSolution>
-            <FullSteps
-              label="הפתרון המלא"
-              steps={[
-                {
-                  title: "מה נכנס",
-                  body: (
-                    <ul className="list-disc space-y-1 ps-5">
-                      <li>תקופה: {MASTER.years} שנים. האופציה במחיר שוק לא נספרת, ולכן גם התשלומים שלה לא.</li>
-                      <li>{MASTER.sales}% מהמכירות: לא נכנס. הוצאה כשהוא מתהווה.</li>
-                      <li>ריבית: התוספתית, כי הגלומה לא ידועה.</li>
-                      <li>שכר המנהל: לא עלות ישירה, כי היה משולם ממילא.</li>
-                    </ul>
-                  ),
-                },
-                {
-                  title: "התחייבות החכירה",
-                  body: (
-                    <p>
-                      <Ltr>{`90,000 × (1 − 1.05^(−5)) ÷ 0.05 = ${Math.round(MASTER_NET).toLocaleString("en-US")}`}</Ltr>
-                      <br />
-                      נשארו {MASTER.years - 1} תשלומים, כי התשלום של 1.1 כבר שולם.
-                    </p>
-                  ),
-                },
-                {
-                  title: "ההפרשה לפירוק",
-                  body: (
-                    <p>
-                      <Ltr>{`40,000 ÷ 1.04^6 = ${Math.round(MASTER_RESTORE).toLocaleString("en-US")}`}</Ltr>
-                    </p>
-                  ),
-                },
-                {
-                  title: "עלות הנכס",
-                  body: (
-                    <Tbl
-                      head={["רכיב", "סכום"]}
-                      rows={[
-                        ["התחייבות החכירה", Math.round(MASTER_NET)],
-                        ["תשלום של 1.1", MASTER.payment],
-                        ["מקדמה", MASTER.prepaid],
-                        ["תמריץ", -MASTER.incentive],
-                        ["עלויות ישירות: מתווך ועורך דין", MASTER.broker + MASTER.lawyer],
-                        ["פירוק", Math.round(MASTER_RESTORE)],
-                      ]}
-                      foot={["עלות הנכס", MASTER_COST_SHOWN]}
-                    />
-                  ),
-                },
-                {
-                  title: "פקודת היומן",
-                  body: (
-                    <JournalEntry
-                      title="מועד התחילה"
-                      lines={[
-                        { account: "נכס זכות שימוש", dr: MASTER_COST_SHOWN },
-                        { account: "התחייבות חכירה", cr: Math.round(MASTER_NET) },
-                        { account: "הפרשה לפירוק ופינוי", cr: Math.round(MASTER_RESTORE) },
-                        { account: "מזומן", cr: MASTER_CASH - MASTER.prepaid },
-                        { account: "מקדמה ששולמה (יתרה קודמת)", cr: MASTER.prepaid },
-                      ]}
-                      note="המקדמה שולמה בדצמבר, ולכן ביום הזה מעבירים אותה מהיתרה שנרשמה אז."
-                    />
-                  ),
-                },
-                {
-                  title: "מלכודת נפוצה",
-                  body: <p>להכניס את התשלום של 1.1 להתחייבות, או להוון 6 תקופות. התשלום כבר יצא. הוא בעלות, לא בחוב.</p>,
-                },
-              ]}
-            />
-          </FullSolution>
+          <FullSteps
+            label="הפתרון המלא"
+            steps={[
+              {
+                title: "מה נכנס",
+                body: (
+                  <ul className="list-disc space-y-1 ps-5">
+                    <li>תקופה: {MASTER.years} שנים. האופציה במחיר שוק לא נספרת, ולכן גם התשלומים שלה לא.</li>
+                    <li>{MASTER.sales}% מהמכירות: לא נכנס. הוצאה כשהוא מתהווה.</li>
+                    <li>ריבית: התוספתית, כי הגלומה לא ידועה.</li>
+                    <li>שכר המנהל: לא עלות ישירה, כי היה משולם ממילא.</li>
+                  </ul>
+                ),
+              },
+              {
+                title: "התחייבות החכירה",
+                body: (
+                  <p>
+                    <Ltr>{`90,000 × (1 − 1.05^(−5)) ÷ 0.05 = ${Math.round(MASTER_NET).toLocaleString("en-US")}`}</Ltr>
+                    <br />
+                    נשארו {MASTER.years - 1} תשלומים, כי התשלום של 1.1 כבר שולם.
+                  </p>
+                ),
+              },
+              {
+                title: "ההפרשה לפירוק",
+                body: (
+                  <p>
+                    <Ltr>{`40,000 ÷ 1.04^6 = ${Math.round(MASTER_RESTORE).toLocaleString("en-US")}`}</Ltr>
+                  </p>
+                ),
+              },
+              {
+                title: "עלות הנכס",
+                body: (
+                  <Tbl
+                    head={["רכיב", "סכום"]}
+                    rows={[
+                      ["התחייבות החכירה", Math.round(MASTER_NET)],
+                      ["תשלום של 1.1", MASTER.payment],
+                      ["מקדמה", MASTER.prepaid],
+                      ["תמריץ", -MASTER.incentive],
+                      ["עלויות ישירות: מתווך ועורך דין", MASTER.broker + MASTER.lawyer],
+                      ["פירוק", Math.round(MASTER_RESTORE)],
+                    ]}
+                    foot={["עלות הנכס", MASTER_COST_SHOWN]}
+                  />
+                ),
+              },
+              {
+                title: "פקודת היומן",
+                body: (
+                  <JournalEntry
+                    title="מועד התחילה"
+                    lines={[
+                      { account: "נכס זכות שימוש", dr: MASTER_COST_SHOWN },
+                      { account: "התחייבות חכירה", cr: Math.round(MASTER_NET) },
+                      { account: "הפרשה לפירוק ופינוי", cr: Math.round(MASTER_RESTORE) },
+                      { account: "מזומן", cr: MASTER_CASH - MASTER.prepaid },
+                      { account: "מקדמה ששולמה (יתרה קודמת)", cr: MASTER.prepaid },
+                    ]}
+                    note="המקדמה שולמה בדצמבר, ולכן ביום הזה מעבירים אותה מהיתרה שנרשמה אז."
+                  />
+                ),
+              },
+              {
+                title: "מלכודת נפוצה",
+                body: <p>להכניס את התשלום של 1.1 להתחייבות, או להוון 6 תקופות. התשלום כבר יצא. הוא בעלות, לא בחוב.</p>,
+              },
+            ]}
+          />
         </TaskFrame>
         <Bridge summary="עכשיו יש לכם נכס והתחייבות ביום הראשון. מה קורה להם בסוף השנה?">בשיעור הבא: פחת, ריבית, תשלומים, איך זה נראה בדוחות, ומתי אפשר לוותר על הכול.</Bridge>
       </>

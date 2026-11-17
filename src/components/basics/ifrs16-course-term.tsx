@@ -9,7 +9,7 @@ import { DecisionTree, Fork, Timeline, TwoPanel, WrongRight } from "./ias19-visu
 import { Gates } from "./ifrs16-course";
 import { TermBuilder } from "./ifrs16-interactive";
 import { Ltr } from "./ias19-formula";
-import { FullSolution, P, quiz, T16, Tbl } from "./ifrs16-parts";
+import { P, quiz, T16, Tbl } from "./ifrs16-parts";
 import { SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { Money, Rule } from "./ui";
@@ -596,71 +596,69 @@ export const IFRS16_TERM_SCREENS: Record<string, ScreenContent> = {
               <li>נניח במקום זאת שהאופציה במחיר השוק, ולכן לא נספרה בתקופה. בסוף השנה השנייה החברה מחכירה את המלגזה לחברה אחרת ל-4 שנים. מה היא עושה לגבי התקופה?</li>
             </ol>
           </TaskText>
-          <FullSolution>
-            <FullSteps
-              label="הפתרון המלא"
-              steps={[
-                {
-                  title: "כמה רכיבים",
-                  body: <p>מלגזה וטנדר הם שני רכיבי חכירה, כי אפשר להשתמש בכל אחד לחוד (ב32). תחזוקה היא רכיב שאינו חכירה.</p>,
-                },
-                {
-                  title: "סעיף 1: הפרדה מלאה",
-                  body: (
-                    <>
-                      <p>
-                        סך התמורה: <Money v={MASTER.yearly} /> × {MASTER.years} = <Money v={MASTER_TOTAL} />. מקצים לפי מחירים נפרדים (סעיף 13).
-                      </p>
-                      <Tbl
-                        dense head={["רכיב", "מחיר נפרד", "הקצאה לתקופה", "לשנה"]}
-                        rows={[
-                          ["מלגזה", MASTER.forklift, MASTER_SHARES[0], MASTER_YEARLY[0]],
-                          ["טנדר", MASTER.van, MASTER_SHARES[1], MASTER_YEARLY[1]],
-                          ["תחזוקה", MASTER.service, MASTER_SHARES[2], MASTER_YEARLY[2]],
-                        ]}
-                        foot={["סך הכול", MASTER.forklift + MASTER.van + MASTER.service, MASTER_TOTAL, MASTER.yearly]}
-                      />
-                      <p>
-                        תשלומי חכירה: <Money v={MASTER_YEARLY[0]} /> ו-<Money v={MASTER_YEARLY[1]} />. התחזוקה, <Money v={MASTER_YEARLY[2]} />, היא הוצאה בכל שנה.
-                      </p>
-                    </>
-                  ),
-                },
-                {
-                  title: "סעיף 2: עם ההקלה",
-                  body: (
-                    <>
-                      <p>התחזוקה מתאחדת עם המלגזה. המלגזה והטנדר עדיין מופרדים, כי הם שני רכיבי חכירה.</p>
-                      <Tbl
-                        dense head={["רכיב", "מחיר נפרד", "הקצאה לתקופה", "לשנה"]}
-                        rows={[
-                          ["מלגזה עם תחזוקה", MASTER.forkliftWithService, MASTER_EXPEDIENT[0], MASTER_EXPEDIENT_YEARLY[0]],
-                          ["טנדר", MASTER.van, MASTER_EXPEDIENT[1], MASTER_EXPEDIENT_YEARLY[1]],
-                        ]}
-                        foot={["סך הכול", MASTER.forkliftWithService + MASTER.van, MASTER_TOTAL, MASTER.yearly]}
-                      />
-                    </>
-                  ),
-                },
-                {
-                  title: "סעיף 3: התקופה",
-                  body: (
+          <FullSteps
+            label="הפתרון המלא"
+            steps={[
+              {
+                title: "כמה רכיבים",
+                body: <p>מלגזה וטנדר הם שני רכיבי חכירה, כי אפשר להשתמש בכל אחד לחוד (ב32). תחזוקה היא רכיב שאינו חכירה.</p>,
+              },
+              {
+                title: "סעיף 1: הפרדה מלאה",
+                body: (
+                  <>
                     <p>
-                      מחיר נמוך בהרבה מהשוק הוא תמריץ כלכלי, ולכן ודאי באופן סביר שהאופציה תמומש (ב37(א)). התקופה: {MASTER.years} + {MASTER.optionYears} = {MASTER_TERM} שנים.
+                      סך התמורה: <Money v={MASTER.yearly} /> × {MASTER.years} = <Money v={MASTER_TOTAL} />. מקצים לפי מחירים נפרדים (סעיף 13).
                     </p>
-                  ),
-                },
-                {
-                  title: "סעיף 4: בדיקה מחדש",
-                  body: <p>התקופה הייתה {MASTER.years} שנים, כלומר נותרו שנתיים. חכירת המשנה ל-4 שנים עוברת את סופה, וזה אירוע משמעותי בשליטת החברה (סעיף 20, ב41(ג)). לכן היא בודקת מחדש אם ודאי באופן סביר שתאריך.</p>,
-                },
-                {
-                  title: "מלכודת נפוצה",
-                  body: <p>להוריד את מחיר התחזוקה מהתשלום במקום לחלק לפי יחס, או לחשוב שההקלה מאחדת גם את המלגזה והטנדר. ההקלה מאחדת רק רכיב שאינו חכירה עם החכירה שלו.</p>,
-                },
-              ]}
-            />
-          </FullSolution>
+                    <Tbl
+                      dense head={["רכיב", "מחיר נפרד", "הקצאה לתקופה", "לשנה"]}
+                      rows={[
+                        ["מלגזה", MASTER.forklift, MASTER_SHARES[0], MASTER_YEARLY[0]],
+                        ["טנדר", MASTER.van, MASTER_SHARES[1], MASTER_YEARLY[1]],
+                        ["תחזוקה", MASTER.service, MASTER_SHARES[2], MASTER_YEARLY[2]],
+                      ]}
+                      foot={["סך הכול", MASTER.forklift + MASTER.van + MASTER.service, MASTER_TOTAL, MASTER.yearly]}
+                    />
+                    <p>
+                      תשלומי חכירה: <Money v={MASTER_YEARLY[0]} /> ו-<Money v={MASTER_YEARLY[1]} />. התחזוקה, <Money v={MASTER_YEARLY[2]} />, היא הוצאה בכל שנה.
+                    </p>
+                  </>
+                ),
+              },
+              {
+                title: "סעיף 2: עם ההקלה",
+                body: (
+                  <>
+                    <p>התחזוקה מתאחדת עם המלגזה. המלגזה והטנדר עדיין מופרדים, כי הם שני רכיבי חכירה.</p>
+                    <Tbl
+                      dense head={["רכיב", "מחיר נפרד", "הקצאה לתקופה", "לשנה"]}
+                      rows={[
+                        ["מלגזה עם תחזוקה", MASTER.forkliftWithService, MASTER_EXPEDIENT[0], MASTER_EXPEDIENT_YEARLY[0]],
+                        ["טנדר", MASTER.van, MASTER_EXPEDIENT[1], MASTER_EXPEDIENT_YEARLY[1]],
+                      ]}
+                      foot={["סך הכול", MASTER.forkliftWithService + MASTER.van, MASTER_TOTAL, MASTER.yearly]}
+                    />
+                  </>
+                ),
+              },
+              {
+                title: "סעיף 3: התקופה",
+                body: (
+                  <p>
+                    מחיר נמוך בהרבה מהשוק הוא תמריץ כלכלי, ולכן ודאי באופן סביר שהאופציה תמומש (ב37(א)). התקופה: {MASTER.years} + {MASTER.optionYears} = {MASTER_TERM} שנים.
+                  </p>
+                ),
+              },
+              {
+                title: "סעיף 4: בדיקה מחדש",
+                body: <p>התקופה הייתה {MASTER.years} שנים, כלומר נותרו שנתיים. חכירת המשנה ל-4 שנים עוברת את סופה, וזה אירוע משמעותי בשליטת החברה (סעיף 20, ב41(ג)). לכן היא בודקת מחדש אם ודאי באופן סביר שתאריך.</p>,
+              },
+              {
+                title: "מלכודת נפוצה",
+                body: <p>להוריד את מחיר התחזוקה מהתשלום במקום לחלק לפי יחס, או לחשוב שההקלה מאחדת גם את המלגזה והטנדר. ההקלה מאחדת רק רכיב שאינו חכירה עם החכירה שלו.</p>,
+              },
+            ]}
+          />
         </TaskFrame>
         <Bridge summary="עכשיו יש לכם את שני הנתונים: תשלום החכירה ותקופת החכירה. מה עושים איתם?">
           בשיעור הבא: הופכים אותם להתחייבות ולנכס במאזן של החוכר.

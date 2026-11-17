@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowRight, Bus, ChevronDown, CircleParking, CircleSlash, Coffee, Container, FileSignature, KeyRound, ListChecks, Package, Printer, Zap } from "lucide-react";
+import { ArrowDown, ArrowRight, Bus, CircleParking, CircleSlash, Coffee, Container, FileSignature, KeyRound, ListChecks, Package, Printer, Zap } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
 import { Deeper, Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
@@ -630,45 +630,36 @@ export const IFRS16_BASICS_SCREENS: Record<string, ScreenContent> = {
             <p className="mt-2">נוסף על כך נבל משלמת 3% מהכנסות הכרטיסים של המופעים באולם.</p>
             <p className="mt-2 font-semibold">נדרש: קבעו לכל חלק אם הוא חכירה, ונמקו לפי שלושת המבחנים.</p>
           </TaskText>
-          <details className="group rounded-2xl border border-line bg-surface-2/40 p-3.5">
-            <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-lg border border-line-strong px-3 py-1.5 text-[14px] font-semibold text-accent hover:bg-accent-soft [&::-webkit-details-marker]:hidden">
-              <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden />
-              <span className="group-open:hidden">הצגת הפתרון המלא</span>
-              <span className="hidden group-open:inline">הסתרת הפתרון</span>
-            </summary>
-            <div className="mt-3">
-              <FullSteps
-                label="הפתרון המלא"
-                steps={[
-                  {
-                    title: "קודם מפרידים",
-                    body: <p>בחוזה יש שני נכסים שונים, ולכן עונים על שלוש השאלות לכל אחד לחוד (ב12). הכרעה אחת על כל החוזה הייתה מפספסת את ההבדל ביניהם.</p>,
-                  },
-                  {
-                    title: "חלק 1: האולם",
-                    body: (
-                      <TestTable
-                        rows={[
-                          ["נכס מזוהה", "כן", "רשום בחוזה. החלפה רק כשיצא מכלל שימוש אינה ממשית (ב13, ב15, ב18)."],
-                          ["כל ההטבות", "כן", "האולם משמש רק אותה. 3% מההכנסות הם הטבה שלה שהיא מעבירה הלאה כתמורה (ב21, ב23)."],
-                          ["זכות לכוון", "כן", "נבל קובעת מה, מתי ובאיזה מחיר. תאורה ותחזוקה אינן החלטה כזו, ומגבלת הצופים נובעת מרישיון, ולכן היא זכות מגינה (ב26, ב27, ב30)."],
-                        ]}
-                        verdict="מסקנה: האולם הוא חכירה."
-                      />
-                    ),
-                  },
-                  {
-                    title: "חלק 2: תא האחסון",
-                    body: <TestTable rows={[["נכס מזוהה", "לא", "להיכל יש יכולת מעשית להחליף כל יום, והוא מרוויח מכך. שני התנאים של ב14 מתקיימים."]]} verdict="מסקנה: התא אינו חכירה, ולא ממשיכים למבחנים הבאים." />,
-                  },
-                  {
-                    title: "מלכודת נפוצה",
-                    body: <p>לכתוב ״עובדי ההיכל מפעילים, ולכן אין חכירה״, או להכריע על כל החוזה בבת אחת. בודקים כל רכיב לחוד (ב12), ושואלים מי מחליט ולא מי מבצע. אילו ההיכל היה קובע אילו מופעים יהיו ומתי, התשובה על האולם הייתה מתהפכת במבחן השלישי.</p>,
-                  },
-                ]}
-              />
-            </div>
-          </details>
+          <FullSteps
+            label="הפתרון המלא"
+            steps={[
+              {
+                title: "קודם מפרידים",
+                body: <p>בחוזה יש שני נכסים שונים, ולכן עונים על שלוש השאלות לכל אחד לחוד (ב12). הכרעה אחת על כל החוזה הייתה מפספסת את ההבדל ביניהם.</p>,
+              },
+              {
+                title: "חלק 1: האולם",
+                body: (
+                  <TestTable
+                    rows={[
+                      ["נכס מזוהה", "כן", "רשום בחוזה. החלפה רק כשיצא מכלל שימוש אינה ממשית (ב13, ב15, ב18)."],
+                      ["כל ההטבות", "כן", "האולם משמש רק אותה. 3% מההכנסות הם הטבה שלה שהיא מעבירה הלאה כתמורה (ב21, ב23)."],
+                      ["זכות לכוון", "כן", "נבל קובעת מה, מתי ובאיזה מחיר. תאורה ותחזוקה אינן החלטה כזו, ומגבלת הצופים נובעת מרישיון, ולכן היא זכות מגינה (ב26, ב27, ב30)."],
+                    ]}
+                    verdict="מסקנה: האולם הוא חכירה."
+                  />
+                ),
+              },
+              {
+                title: "חלק 2: תא האחסון",
+                body: <TestTable rows={[["נכס מזוהה", "לא", "להיכל יש יכולת מעשית להחליף כל יום, והוא מרוויח מכך. שני התנאים של ב14 מתקיימים."]]} verdict="מסקנה: התא אינו חכירה, ולא ממשיכים למבחנים הבאים." />,
+              },
+              {
+                title: "מלכודת נפוצה",
+                body: <p>לכתוב ״עובדי ההיכל מפעילים, ולכן אין חכירה״, או להכריע על כל החוזה בבת אחת. בודקים כל רכיב לחוד (ב12), ושואלים מי מחליט ולא מי מבצע. אילו ההיכל היה קובע אילו מופעים יהיו ומתי, התשובה על האולם הייתה מתהפכת במבחן השלישי.</p>,
+              },
+            ]}
+          />
         </TaskFrame>
         <Bridge summary="עכשיו אתם יודעים לזהות חכירה. אם חלק מהחוזה הוא חכירה וחלק לא, מה עושים עם התשלום? ולכמה זמן החכירה נמשכת?">
           על זה בשיעור הבא: הפרדת רכיבים ותקופת החכירה.

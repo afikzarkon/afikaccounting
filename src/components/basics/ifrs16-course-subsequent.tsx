@@ -10,7 +10,7 @@ import { TaskFrame, TaskText } from "./ias19-question";
 import { Bridge, FullSteps } from "./ias19-ui";
 import { DecisionTree, Fork, Timeline, TwoPanel, WrongRight, YearCompare } from "./ias19-visuals";
 import { LeaseDrill, LeaseLab, StatementDrill, StatementFill } from "./ifrs16-interactive";
-import { AssetCycle, FullSolution, LiabilityCycle, P, quiz, StatementTables, T16, Tbl } from "./ifrs16-parts";
+import { AssetCycle, LiabilityCycle, P, quiz, StatementTables, T16, Tbl } from "./ifrs16-parts";
 import { SortQuiz } from "./inventory-interactive";
 import { Story } from "./inventory-teach";
 import { Money, Rule } from "./ui";
@@ -864,86 +864,84 @@ export const IFRS16_SUBSEQUENT_SCREENS: Record<string, ScreenContent> = {
               </li>
             </ol>
           </TaskText>
-          <FullSolution>
-            <FullSteps
-              label="הפתרון המלא"
-              steps={[
-                {
-                  title: "סעיף 1: הקצאת התשלום",
-                  body: (
+          <FullSteps
+            label="הפתרון המלא"
+            steps={[
+              {
+                title: "סעיף 1: הקצאת התשלום",
+                body: (
+                  <Tbl
+                    dense head={["רכיב", "מחיר נפרד", "לתקופה", "לשנה"]}
+                    rows={[
+                      ["מלגזה", MASTER.forklift, MASTER_SHARES[0], MASTER_YEARLY[0]],
+                      ["טנדר", MASTER.van, MASTER_SHARES[1], MASTER_YEARLY[1]],
+                      ["תחזוקה", MASTER.service, MASTER_SHARES[2], MASTER_YEARLY[2]],
+                    ]}
+                    foot={["סך הכול", MASTER.forklift + MASTER.van + MASTER.service, MASTER_TOTAL, MASTER.yearly]}
+                  />
+                ),
+              },
+              {
+                title: "סעיף 1: מלגזה",
+                body: (
+                  <>
+                    <p>
+                      <Ltr>{`=PV(6%;4;-${MASTER_YEARLY[0]}) → ${n(MASTER_FORKLIFT.cost)}`}</Ltr>
+                    </p>
+                    <LiabilityCycle rows={MASTER_FORKLIFT.rows.slice(0, 2)} />
+                    <AssetCycle rows={MASTER_FORKLIFT.rows.slice(0, 2)} cost={MASTER_FORKLIFT.cost} />
+                  </>
+                ),
+              },
+              {
+                title: "סעיף 1: טנדר",
+                body: (
+                  <>
+                    <p>
+                      <Ltr>{`=PV(6%;4;-${MASTER_YEARLY[1]}) → ${n(MASTER_VAN.cost)}`}</Ltr>
+                    </p>
+                    <LiabilityCycle rows={MASTER_VAN.rows.slice(0, 2)} />
+                    <AssetCycle rows={MASTER_VAN.rows.slice(0, 2)} cost={MASTER_VAN.cost} />
+                  </>
+                ),
+              },
+              {
+                title: "סעיף 1: הדוחות, שני הכלים יחד",
+                body: (
+                  <>
+                    <StatementTables sections={MASTER_LINES} />
+                    <p>
+                      התחזוקה, <Money v={MASTER_YEARLY[2]} /> בשנה, אינה חכירה. לכן היא לא בהתחייבות ולא בנכס, והיא הוצאה רגילה.
+                    </p>
+                  </>
+                ),
+              },
+              {
+                title: "סעיף 2: עם ההקלה",
+                body: (
+                  <>
                     <Tbl
                       dense head={["רכיב", "מחיר נפרד", "לתקופה", "לשנה"]}
                       rows={[
-                        ["מלגזה", MASTER.forklift, MASTER_SHARES[0], MASTER_YEARLY[0]],
-                        ["טנדר", MASTER.van, MASTER_SHARES[1], MASTER_YEARLY[1]],
-                        ["תחזוקה", MASTER.service, MASTER_SHARES[2], MASTER_YEARLY[2]],
+                        ["מלגזה עם תחזוקה", MASTER.forkliftWithService, MASTER_EXP_SHARES[0], MASTER_EXP_YEARLY[0]],
+                        ["טנדר", MASTER.van, MASTER_EXP_SHARES[1], MASTER_EXP_YEARLY[1]],
                       ]}
-                      foot={["סך הכול", MASTER.forklift + MASTER.van + MASTER.service, MASTER_TOTAL, MASTER.yearly]}
+                      foot={["סך הכול", MASTER.forkliftWithService + MASTER.van, MASTER_TOTAL, MASTER.yearly]}
                     />
-                  ),
-                },
-                {
-                  title: "סעיף 1: מלגזה",
-                  body: (
-                    <>
-                      <p>
-                        <Ltr>{`=PV(6%;4;-${MASTER_YEARLY[0]}) → ${n(MASTER_FORKLIFT.cost)}`}</Ltr>
-                      </p>
-                      <LiabilityCycle rows={MASTER_FORKLIFT.rows.slice(0, 2)} />
-                      <AssetCycle rows={MASTER_FORKLIFT.rows.slice(0, 2)} cost={MASTER_FORKLIFT.cost} />
-                    </>
-                  ),
-                },
-                {
-                  title: "סעיף 1: טנדר",
-                  body: (
-                    <>
-                      <p>
-                        <Ltr>{`=PV(6%;4;-${MASTER_YEARLY[1]}) → ${n(MASTER_VAN.cost)}`}</Ltr>
-                      </p>
-                      <LiabilityCycle rows={MASTER_VAN.rows.slice(0, 2)} />
-                      <AssetCycle rows={MASTER_VAN.rows.slice(0, 2)} cost={MASTER_VAN.cost} />
-                    </>
-                  ),
-                },
-                {
-                  title: "סעיף 1: הדוחות, שני הכלים יחד",
-                  body: (
-                    <>
-                      <StatementTables sections={MASTER_LINES} />
-                      <p>
-                        התחזוקה, <Money v={MASTER_YEARLY[2]} /> בשנה, אינה חכירה. לכן היא לא בהתחייבות ולא בנכס, והיא הוצאה רגילה.
-                      </p>
-                    </>
-                  ),
-                },
-                {
-                  title: "סעיף 2: עם ההקלה",
-                  body: (
-                    <>
-                      <Tbl
-                        dense head={["רכיב", "מחיר נפרד", "לתקופה", "לשנה"]}
-                        rows={[
-                          ["מלגזה עם תחזוקה", MASTER.forkliftWithService, MASTER_EXP_SHARES[0], MASTER_EXP_YEARLY[0]],
-                          ["טנדר", MASTER.van, MASTER_EXP_SHARES[1], MASTER_EXP_YEARLY[1]],
-                        ]}
-                        foot={["סך הכול", MASTER.forkliftWithService + MASTER.van, MASTER_TOTAL, MASTER.yearly]}
-                      />
-                      <p>
-                        מלגזה: <Ltr>{`=PV(6%;4;-${MASTER_EXP_YEARLY[0]}) → ${n(MASTER_EXP_FORKLIFT.cost)}`}</Ltr>. טנדר: {n(MASTER_EXP_VAN.cost)}.
-                      </p>
-                      <StatementTables sections={MASTER_EXP_LINES} />
-                      <p>אין עוד שורת תחזוקה: היא נכנסה לחכירה, ולכן הנכס וההתחייבות גדלו, וההוצאות יעברו דרך פחת וריבית.</p>
-                    </>
-                  ),
-                },
-                {
-                  title: "מלכודת נפוצה",
-                  body: <p>להוון את כל {n(MASTER.yearly)} בשנה. בסעיף 1 התחזוקה אינה חכירה, ובסעיף 2 רק היא מתאחדת עם המלגזה. הטנדר נשאר בנפרד בשני המקרים.</p>,
-                },
-              ]}
-            />
-          </FullSolution>
+                    <p>
+                      מלגזה: <Ltr>{`=PV(6%;4;-${MASTER_EXP_YEARLY[0]}) → ${n(MASTER_EXP_FORKLIFT.cost)}`}</Ltr>. טנדר: {n(MASTER_EXP_VAN.cost)}.
+                    </p>
+                    <StatementTables sections={MASTER_EXP_LINES} />
+                    <p>אין עוד שורת תחזוקה: היא נכנסה לחכירה, ולכן הנכס וההתחייבות גדלו, וההוצאות יעברו דרך פחת וריבית.</p>
+                  </>
+                ),
+              },
+              {
+                title: "מלכודת נפוצה",
+                body: <p>להוון את כל {n(MASTER.yearly)} בשנה. בסעיף 1 התחזוקה אינה חכירה, ובסעיף 2 רק היא מתאחדת עם המלגזה. הטנדר נשאר בנפרד בשני המקרים.</p>,
+              },
+            ]}
+          />
         </TaskFrame>
         <Bridge summary="עכשיו אפשר ללכת עם חכירה עד סופה, כל עוד שום דבר לא משתנה. ומה אם המדד עולה, או שהחוזה משתנה?">
           בשיעור הבא: הערכה מחדש ותיקוני חכירה.
