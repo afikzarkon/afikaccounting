@@ -10,6 +10,7 @@ import { Container, SectionHeading } from "@/components/ui/primitives";
 import { FIRST_LESSON } from "@/lib/catalog";
 import { safeNext } from "@/lib/auth/dal";
 import { isTier, PLANS, type Tier } from "@/lib/pricing";
+import { CONSOLIDATED_LESSONS } from "@/lib/study/consolidated";
 import { IAS16_LESSONS } from "@/lib/study/ias16";
 import { IAS19_LESSONS } from "@/lib/study/ias19";
 import { IFRS16_LESSONS } from "@/lib/study/ifrs16";
@@ -20,7 +21,7 @@ import { getVisibility } from "@/lib/visibility/server";
 
 export const metadata: Metadata = {
   title: "מחירים",
-  description: "חשבונאות מאפס בחינם, לתמיד. הקורסים המתקדמים — מלאי, רכוש קבוע, הטבות עובד וחכירות — ומתחם המבחנים במנוי. בלי כרטיס אשראי כדי להתחיל.",
+  description: "חשבונאות מאפס בחינם, לתמיד. הקורסים המתקדמים — מלאי, רכוש קבוע, הטבות עובד, חכירות ודוחות מאוחדים — ומתחם המבחנים במנוי. בלי כרטיס אשראי כדי להתחיל.",
 };
 
 /** "כל N השיעורים", counted from the course itself. */
@@ -35,6 +36,7 @@ const COMPARE: { label: string; plans: Record<Tier, boolean | string> }[] = [
   { label: "רכוש קבוע (IAS 16)", plans: { free: "שיעור 1", courses: all(IAS16_LESSONS), exams: all(IAS16_LESSONS) } },
   { label: "הטבות עובד (IAS 19)", plans: { free: "שיעור 1", courses: all(IAS19_LESSONS), exams: all(IAS19_LESSONS) } },
   { label: "חכירות (IFRS 16)", plans: { free: "שיעור 1", courses: all(IFRS16_LESSONS), exams: all(IFRS16_LESSONS) } },
+  { label: "דוחות מאוחדים (IFRS 3, IFRS 10)", plans: { free: "שיעור 1", courses: all(CONSOLIDATED_LESSONS), exams: all(CONSOLIDATED_LESSONS) } },
   { label: "פתרונות מלאים לתרגילים ברמת מבחן", plans: { free: "מבחן לדוגמה", courses: "מבחן לדוגמה", exams: true } },
   { label: "ארכיון מבחנים עם פתרונות", plans: { free: false, courses: false, exams: "בקרוב" } },
 ];

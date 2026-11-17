@@ -17,6 +17,7 @@ import { outlineOf } from "@/lib/study/paths";
 import { listActivity, listSavedSolutions } from "@/lib/data/user";
 import { CALCULATORS } from "@/lib/engine/registry";
 import { BASICS_LESSONS } from "@/lib/study/basics";
+import { CONSOLIDATED_LESSONS } from "@/lib/study/consolidated";
 import { IAS16_LESSONS } from "@/lib/study/ias16";
 import { IAS19_LESSONS } from "@/lib/study/ias19";
 import { IFRS16_LESSONS } from "@/lib/study/ifrs16";
@@ -35,8 +36,8 @@ export default function DashboardPage({ searchParams }: PageProps<"/dashboard">)
   );
 }
 
-/** The courses the dashboard walks through, in order: the free one, then inventory. */
-const COURSES = [BASICS_LESSONS, INVENTORY_LESSONS, IAS16_LESSONS, IAS19_LESSONS, IFRS16_LESSONS].map((lessons) => {
+/** The courses the dashboard walks through, in the learning path's order: the free one first, then every advanced course. */
+const COURSES = [BASICS_LESSONS, INVENTORY_LESSONS, IAS16_LESSONS, IAS19_LESSONS, IFRS16_LESSONS, CONSOLIDATED_LESSONS].map((lessons) => {
   const topic = topicByHref(lessons[0].backHref)!;
   return { topic, title: topic.title, href: topic.href, lessons };
 });
