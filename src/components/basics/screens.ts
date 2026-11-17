@@ -97,6 +97,9 @@ export function screensFor(m: StudyModule): ScreenContent[] {
   });
 }
 
+/** One concept screen's content, by its id (lib/tester/fingerprint.ts reads it to see what changed). */
+export const screenContent = (id: string): ScreenContent | undefined => SCREENS[id];
+
 /** Screens with content that no lesson lists — kept honest by the build. */
 export function orphanScreens(modules: StudyModule[]) {
   const listed = new Set(modules.flatMap((m) => m.screens.map((s) => s.id)));

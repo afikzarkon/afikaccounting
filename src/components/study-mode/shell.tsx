@@ -151,6 +151,18 @@ export function StudyShell({ module: m, screens, next, course, share }: { module
   const checkAt = (to: Place) => (to.step === 0 && screens[to.sub]?.check ? m.screens[to.sub].id : null);
   const checking = !opening && step === 0 && checkOf !== null && checkOf === checkAt(place);
 
+  // A course tester rates each page before moving on (components/tester/screen-rating.tsx): the page
+  // still waiting for its rating, and a count bumped when they try to move on without it.
+  const [pendingPage, setPendingPage] = useState<string | null>(null);
+  const [nudge, setNudge] = useState(0);
+  const onPending = useCallback((page: string, pending: boolean) => setPendingPage((cur) => (pending ? page : cur === page ? null : cur)), []);
+  /** False, and the rating card says why, while a tester hasn't rated the page on screen (`holding`, worked out below; read on a click, after render). */
+  const mayAdvance = () => {
+    if (!holding) return true;
+    setNudge((n) => n + 1);
+    return false;
+  };
+
   const go = (to: Place, d: 1 | -1) => {
     setDir(d);
     setMoved(true);
@@ -168,6 +180,7 @@ export function StudyShell({ module: m, screens, next, course, share }: { module
   const retry = STEPS[step].id === "practice" ? p.retry : undefined;
   const nextScreen = () => {
     if (opening) return enter();
+    if (!mayAdvance()) return;
     // A concept screen with a self-check goes on to it first.
     if (!checking && checkAt(place)) {
       setDir(1);
@@ -209,7 +222,10 @@ export function StudyShell({ module: m, screens, next, course, share }: { module
   };
   const jump = (screen: string) => {
     const i = m.screens.findIndex((s) => s.id === screen);
-    if (i >= 0) go({ step: 0, sub: i }, step > 0 || i > place.sub ? 1 : -1);
+    if (i < 0) return;
+    const ahead = step > 0 || i > place.sub;
+    if (ahead && !opening && !mayAdvance()) return;
+    go({ step: 0, sub: i }, ahead ? 1 : -1);
   };
 
   // A lesson skipped on the course path is taken back once it is opened.
@@ -242,6 +258,7 @@ export function StudyShell({ module: m, screens, next, course, share }: { module
       return setOpening(true);
     }
     const ahead = opening || position(m, to).at > at;
+    if (ahead && !opening && !mayAdvance()) return;
     setOpening(false);
     go(to, ahead ? 1 : -1);
   };
@@ -447,6 +464,7 @@ export function StudyShell({ module: m, screens, next, course, share }: { module
       : id === "practice"
         ? question && { page: `q:${practiceId(question)}`, path: `${pathname}?step=${step + 1}` }
         : { page: "summary", path: `${pathname}?step=${step + 1}` };
+  const holding = Boolean(rated) && pendingPage === rated?.page;
   const outline = <CourseOutline course={course} current={m} progress={p} place={place} opening={opening} onGo={goTo} />;
 
   return (
@@ -542,7 +560,17 @@ export function StudyShell({ module: m, screens, next, course, share }: { module
               </div>
 
               {rated && (
-                <ScreenRating slug={slug} lesson={`שיעור ${m.n}: ${m.title}`} page={rated.page} path={rated.path} title={card.title} where={card.eyebrow} total={total} />
+                <ScreenRating
+                  slug={slug}
+                  lesson={`שיעור ${m.n}: ${m.title}`}
+                  page={rated.page}
+                  path={rated.path}
+                  title={card.title}
+                  where={card.eyebrow}
+                  total={total}
+                  onPending={onPending}
+                  nudge={nudge}
+                />
               )}
 
               {/* A direct child of the lesson's column, so it sticks to the bottom of the screen all the way down the screen. */}
@@ -550,7 +578,7 @@ export function StudyShell({ module: m, screens, next, course, share }: { module
                 className="mt-8"
                 position={opening ? undefined : `${at} מתוך ${total}`}
                 prev={around.prev && prevLabel ? { label: prevLabel, onClick: prevScreen } : undefined}
-                next={(opening || !last) && nextLabel ? { label: nextLabel, onClick: nextScreen } : undefined}
+                next={(opening || !last) && nextLabel ? { label: nextLabel, onClick: nextScreen, locked: holding && !opening ? "דרגו את המסך כדי להמשיך" : undefined } : undefined}
               />
             </div>
           </div>

@@ -5,16 +5,13 @@ import { loadFeedback, saveFeedback } from "@/lib/actions/tester";
 import { type FormState, emptyState, newer, sanitizeState, schema } from "./form";
 
 /**
- * The tester's feedback form in the browser: a copy in localStorage (every tab shares it) and,
- * for a signed-in tester, the copy in their account. One store for the whole tab, so the full
- * form, the floating button and the rating strip under each lesson page all edit the same copy.
+ * The tester's feedback in the browser: a copy in localStorage (every tab shares it) and, for a
+ * signed-in tester, the copy in their account. One store for the whole tab: the rating under each
+ * lesson page writes it, and "next" reads it.
  * On arrival the newer of the two copies wins; every change is written to both.
  */
 
 const STORAGE_KEY = `tester-feedback-v${schema.version}`;
-// Set when a tester hides the tester tools (the floating button and the rating strip) in this browser.
-const MODE_KEY = "tester-button-hidden";
-const MODE_EVENT = "tester-mode-change";
 
 export function readLocal(): FormState | null {
   try {
@@ -34,38 +31,9 @@ function writeLocal(state: FormState) {
   }
 }
 
-// ---- whether this browser shows a tester their tools ----
-
-export function setTesterMode(on: boolean) {
-  try {
-    if (on) localStorage.removeItem(MODE_KEY);
-    else localStorage.setItem(MODE_KEY, "1");
-  } catch {}
-  window.dispatchEvent(new Event(MODE_EVENT));
-}
-
-const readMode = () => {
-  try {
-    return localStorage.getItem(MODE_KEY) !== "1";
-  } catch {
-    return true;
-  }
-};
-
-function subscribeMode(cb: () => void) {
-  window.addEventListener(MODE_EVENT, cb);
-  window.addEventListener("storage", cb);
-  return () => {
-    window.removeEventListener(MODE_EVENT, cb);
-    window.removeEventListener("storage", cb);
-  };
-}
-
-export const useTesterMode = () => useSyncExternalStore(subscribeMode, readMode, () => false);
-
 // ---- whether the signed-in account is a tester ----
-// The server decides (components/tester/feedback-gate.tsx renders the button only for a tester);
-// the button marks it here, so the lesson's rating strip shows without asking the server again.
+// The server decides (components/tester/feedback-gate.tsx renders the marker only for a tester);
+// the marker sets it here, so the lessons show the rating and hold "next" without asking the server again.
 
 let tester = false;
 const testerSubs = new Set<() => void>();
@@ -82,14 +50,6 @@ function subscribeTester(cb: () => void) {
 }
 
 export const useIsTester = () => useSyncExternalStore(subscribeTester, () => tester, () => false);
-
-// ---- the lesson page on screen, so the floating button can say where a note was written ----
-
-let place: { path: string; label: string } | null = null;
-export const setCurrentPlace = (p: typeof place) => {
-  place = p;
-};
-export const currentPlace = () => (place && place.path.split("?")[0] === location.pathname ? place : null);
 
 // ---- the form itself ----
 
@@ -188,3 +148,4 @@ export function useFeedback() {
   const s = useSyncExternalStore(subscribe, () => snap, () => INITIAL);
   return { ...s, update: updateFeedback };
 }
+

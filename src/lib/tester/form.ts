@@ -74,17 +74,39 @@ export type PageRatings = Record<string, PageRating>;
 
 export const RATINGS: { value: Rating; label: string; icon: string }[] = [
   { value: "clear", label: "ברור", icon: "🙂" },
-  { value: "ok", label: "בסדר", icon: "😐" },
-  { value: "unclear", label: "לא ברור", icon: "😕" },
+  { value: "ok", label: "הבנתי, בקושי", icon: "😐" },
+  { value: "unclear", label: "לא הבנתי", icon: "😕" },
 ];
-/** Why a page was only OK, or unclear: one tap each. */
-export const RATING_TAGS: { value: string; label: string }[] = [
+/**
+ * What was wrong with a page that wasn't clear: one tap each, at least one before moving on.
+ * The first five values are the ones testers used before (kept so their old ratings still read).
+ */
+export const RATING_TAGS: { value: string; label: string; needsNote?: boolean }[] = [
+  { value: "missing", label: "חסר הסבר או שקפצו על שלב" },
+  { value: "confusing", label: "ההסבר מבלבל" },
+  { value: "example", label: "הדוגמה או המספרים לא ברורים" },
+  { value: "next", label: "לא ברור מה צריך לעשות כאן" },
   { value: "long", label: "ארוך מדי" },
-  { value: "missing", label: "חסר הסבר" },
-  { value: "example", label: "הדוגמה לא עזרה" },
-  { value: "next", label: "לא ברור מה לעשות" },
-  { value: "bug", label: "תקלה / תצוגה" },
+  { value: "error", label: "נראה לי שיש טעות בתוכן" },
+  { value: "bug", label: "תקלה: משהו לא עובד או לא מוצג" },
+  { value: "other", label: "משהו אחר", needsNote: true },
 ];
+
+/**
+ * Whether a tester rated a page enough to move on: "clear" is one tap; anything less needs what was
+ * wrong (and a line of their own for "משהו אחר"); the lesson's summary needs its 1–5 answer.
+ */
+export function ratingDone(page: string, p: PageRating | undefined): boolean {
+  if (!p) return false;
+  if (page === "summary") return typeof p.exam === "number";
+  if (!p.r) return false;
+  if (p.r === "clear") return true;
+  const tags = p.tags ?? [];
+  const note = Boolean(p.note?.trim());
+  if (!tags.length) return note;
+  return tags.every((t) => !RATING_TAGS.find((x) => x.value === t)?.needsNote) || note;
+}
+
 export const ratingLabel = (r?: string) => RATINGS.find((x) => x.value === r);
 export const tagLabel = (t: string) => RATING_TAGS.find((x) => x.value === t)?.label ?? t;
 

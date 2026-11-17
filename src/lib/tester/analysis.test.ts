@@ -133,6 +133,6 @@ test("sanitizeState keeps valid page ratings, drops junk, and reads old forms wi
 test("toMarkdown lists each lesson's rated pages", () => {
   const md = toMarkdown(dana.state);
   assert.match(md, /## דירוג המסכים/);
-  assert.match(md, /😕 לא ברור · \*\*שנות זכאות\*\*/);
+  assert.match(md, /😕 לא הבנתי · \*\*שנות זכאות\*\*/);
   assert.match(md, /סוף השיעור:.*2 \/ 5/);
 });

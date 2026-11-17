@@ -5,6 +5,7 @@ import { buttonClass } from "@/components/ui/button";
 import { requireAdmin } from "@/lib/auth/dal";
 import { FeedbackAnalysis } from "@/components/admin/feedback-analysis";
 import { AddTester, RemoveTester } from "@/components/admin/testers-manager";
+import { TesterUpdatesPanel } from "@/components/admin/tester-updates-panel";
 import { getTesterFeedback, listTesters, unlessSetupRequired } from "@/lib/data/admin";
 import { analyze, forClaude, type TesterInput } from "@/lib/tester/analysis";
 import { type FormState, type Row, moduleName, sanitizeState, toMarkdown } from "@/lib/tester/form";
@@ -99,6 +100,8 @@ async function FeedbackPage() {
           </div>
         )}
       </Panel>
+
+      <TesterUpdatesPanel people={people} />
 
       {testers.length > 0 && <FeedbackAnalysis a={analysis} claudeText={forClaude(analysis, inputs)} />}
 

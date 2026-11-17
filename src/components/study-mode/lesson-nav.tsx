@@ -3,7 +3,8 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Step = { label: string; onClick: () => void };
+/** `locked`: why "next" is held (a tester hasn't rated the page); a click still goes to `onClick`, which says so. */
+type Step = { label: string; onClick: () => void; locked?: string };
 
 /** "שאלה 10 · שאלות אמריקאיות" → the place ("שאלה 10") in bold, its kind on the small line, so a phone never cuts it off. */
 const split = (label: string) => {
@@ -51,13 +52,15 @@ export function LessonNav({ prev, next, position, className }: { prev?: Step; ne
           <button
             type="button"
             onClick={next.onClick}
+            aria-disabled={next.locked ? true : undefined}
             className={cn(
               "ms-auto flex min-w-0 items-center gap-2 rounded-xl bg-accent px-4 py-2 text-end text-accent-fg shadow-[0_10px_24px_-12px_var(--accent)] transition hover:brightness-110 active:scale-[0.98] sm:rounded-full sm:ps-5 sm:pe-3",
+              next.locked && "bg-surface-2 text-muted shadow-none hover:brightness-100",
               prev ? "max-w-[55%] flex-1 sm:flex-none" : "flex-1 sm:flex-none",
             )}
           >
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-[11px] opacity-80">הבא{split(next.label).kind && ` · ${split(next.label).kind}`}</span>
+              <span className="block truncate text-[11px] opacity-80">{next.locked ?? <>הבא{split(next.label).kind && ` · ${split(next.label).kind}`}</>}</span>
               <span className="block truncate text-[14px] font-bold" title={next.label}>
                 {split(next.label).main}
               </span>

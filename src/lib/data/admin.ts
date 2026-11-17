@@ -4,6 +4,8 @@ import { effectiveTier } from "@/lib/access";
 import { parseBlocks, parseSteps } from "@/lib/exams/parse";
 import type { ExamBlock, ExamMeta, SolutionStep } from "@/lib/exams/types";
 import { createClient } from "@/lib/supabase/server";
+import type { CoursePrint } from "@/lib/tester/fingerprint";
+import type { TesterUpdate } from "@/lib/tester/updates";
 
 /**
  * Admin reads. They run as the signed-in user, so the database's admin policies
@@ -472,6 +474,59 @@ export async function getTesterFeedback(): Promise<TesterFeedbackRow[]> {
 }
 
 export type TesterRow = { userId: string; email: string; fullName: string; addedAt: string; lastFeedbackAt: string | null };
+
+/**
+ * The updates published to the testers, newest first, each with who has seen it (by user id).
+ * Null before the migration (20261117000000_tester_updates.sql) runs, so the page can say so.
+ */
+export async function listTesterUpdates(): Promise<{ updates: TesterUpdate[]; seenBy: Map<string, Set<string>> } | null> {
+  const supabase = await createClient();
+  const [{ data: updates, error }, { data: reads }] = await Promise.all([
+    supabase.from("tester_updates").select("id, course_id, title, body, link_href, link_label, created_at").order("created_at", { ascending: false }).limit(200),
+    supabase.from("tester_update_reads").select("update_id, user_id").limit(10000),
+  ]);
+  if (error || !updates) return null;
+  const seenBy = new Map<string, Set<string>>();
+  for (const r of (reads ?? []) as { update_id: string; user_id: string }[]) {
+    if (!seenBy.has(r.update_id)) seenBy.set(r.update_id, new Set());
+    seenBy.get(r.update_id)!.add(r.user_id);
+  }
+  return {
+    updates: (updates as { id: string; course_id: string | null; title: string; body: string; link_href: string | null; link_label: string | null; created_at: string }[]).map((r) => ({
+      id: r.id,
+      courseId: r.course_id,
+      title: r.title,
+      body: r.body,
+      linkHref: r.link_href,
+      linkLabel: r.link_label,
+      createdAt: r.created_at,
+    })),
+    seenBy,
+  };
+}
+
+/** The latest fingerprint of each course's lessons (lib/tester/fingerprint.ts), what the live lessons are compared against. */
+export async function latestContentBaselines(): Promise<Map<string, { fingerprint: CoursePrint; createdAt: string; decision: string }>> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("tester_content_baselines").select("course_id, fingerprint, decision, created_at").order("created_at", { ascending: false }).limit(300);
+  const out = new Map<string, { fingerprint: CoursePrint; createdAt: string; decision: string }>();
+  for (const r of (data ?? []) as { course_id: string; fingerprint: CoursePrint; decision: string; created_at: string }[])
+    if (!out.has(r.course_id)) out.set(r.course_id, { fingerprint: r.fingerprint, createdAt: r.created_at, decision: r.decision });
+  return out;
+}
+
+/** The courses each of these accounts was given (public.course_grants). */
+export async function courseGrantsOf(userIds: string[]): Promise<Map<string, Set<string>>> {
+  const out = new Map<string, Set<string>>();
+  if (!userIds.length) return out;
+  const supabase = await createClient();
+  const { data } = await supabase.from("course_grants").select("user_id, course_id").in("user_id", userIds);
+  for (const g of (data ?? []) as { user_id: string; course_id: string }[]) {
+    if (!out.has(g.user_id)) out.set(g.user_id, new Set());
+    out.get(g.user_id)!.add(g.course_id);
+  }
+  return out;
+}
 
 /** The accounts marked as testers, with their emails and when they last wrote feedback. */
 export async function listTesters(): Promise<TesterRow[]> {
