@@ -13,6 +13,7 @@ const NCI = pct(1 - STORY.holding);
 const subNet = STORY.subAssets - STORY.subLiabilities;
 const parentNet = STORY.parentAssets - STORY.parentLiabilities;
 const share = subNet * STORY.holding;
+const n = (v: number) => v.toLocaleString("en-US");
 
 /** The figures the worked solutions add to the solver's, worked separately. */
 export const WHAT_W = {
@@ -56,11 +57,11 @@ export const W_STORY_POSITION: Worked = {
       why: ["למה 100% ולא 75%?", "שיבולת שולטת בכל הטחנה, לא ב־75% ממנה. כל מכונה וכל חוב של הטחנה נמצאים בשליטת הקבוצה, ולכן נכנסים במלואם."],
       tables: [
         {
-          head: ["", "שיבולת, בלי ההשקעה", "הטחנה", "מאוחד"],
+          head: ["", "שיבולת, בלי ההשקעה", "הטחנה", "מאוחד", "חישוב"],
           rows: [
-            { c: ["נכסים", STORY.parentAssets, STORY.subAssets, STORY_POSITION.assets] },
-            { c: ["פחות התחייבויות", -STORY.parentLiabilities, -STORY.subLiabilities, -STORY_POSITION.liabilities] },
-            { c: ["נכסים נטו", parentNet, subNet, STORY_POSITION.net], res: true },
+            { c: ["נכסים", STORY.parentAssets, STORY.subAssets, STORY_POSITION.assets, "נתונים. מאוחד: `1,240,000 + 860,000`"] },
+            { c: ["פחות התחייבויות", -STORY.parentLiabilities, -STORY.subLiabilities, -STORY_POSITION.liabilities, "נתונים. מאוחד: `470,000 + 420,000`"] },
+            { c: ["נכסים נטו", parentNet, subNet, STORY_POSITION.net, "נכסים − התחייבויות"], res: true },
           ],
         },
       ],
@@ -77,9 +78,20 @@ export const W_STORY_POSITION: Worked = {
         { l: "סך ההון המאוחד", a: STORY_POSITION.net, k: "tot" },
       ],
       why: ["כאן נכנס שיעור ההחזקה", `ההון של הטחנה, ${A(subNet)}, מתחלק בין שני בעלים: ${H} לשיבולת ו־${NCI} לבעלי המניות האחרים, שהם הזשמ״ש. ההון של שיבולת עצמה כולו של הבעלים שלה.`],
-      p: [`בדיקה: בלי מוניטין, ההון של הבעלים שווה להון של שיבולת בספרים שלה: \`1,240,000 + 330,000 − 470,000 = ${WHAT_W.parentEquity.toLocaleString("en-US")}\``],
       result: `הבעלים של שיבולת ${A(STORY_POSITION.owners)}, זשמ״ש ${A(STORY_POSITION.nci)}. יחד ${A(STORY_POSITION.net)}, כמו הנכסים נטו בשלב 2.`,
       xl: "`=1240000-470000+(860000-420000)*75%`",
+    },
+    {
+      h: "בדיקה: ההון בספרי שיבולת",
+      sheet: [
+        { l: "נכסי שיבולת, בלי ההשקעה", a: STORY.parentAssets },
+        { l: "ועוד ההשקעה בטחנה", a: STORY.paid, k: "op" },
+        { l: "פחות התחייבויות שיבולת", a: -STORY.parentLiabilities, k: "op" },
+        { l: "ההון בספרי שיבולת", a: WHAT_W.parentEquity, k: "tot" },
+      ],
+      p: ["אין מוניטין, ולכן ההון של הבעלים במאוחד שווה להון של שיבולת בספרים שלה."],
+      result: `${A(WHAT_W.parentEquity)}, בדיוק החלק של הבעלים בשלב 3.`,
+      xl: "`=1240000+330000-470000`",
     },
     {
       h: "חלוקת הרווח המאוחד",
@@ -115,10 +127,10 @@ export const W_STORY_SEPARATE: Worked = {
       why: ["למה רק 75%?", "בדוח הנפרד שיבולת מציגה רק את מה ששייך לה. 25% מהרווח ומהדיבידנד שייכים לבעלי המניות האחרים של הטחנה."],
       tables: [
         {
-          head: ["", "בטחנה", `× ${H}`, "החלק של שיבולת"],
+          head: ["", "בטחנה", `× ${H}`, "החלק של שיבולת", "חישוב"],
           rows: [
-            { c: ["רווח השנה", STORY.subProfit, H, STORY_SEPARATE.profitShare] },
-            { c: ["דיבידנד", STORY.subDividend, H, STORY_SEPARATE.dividendShare] },
+            { c: ["רווח השנה", STORY.subProfit, H, STORY_SEPARATE.profitShare, `\`${n(STORY.subProfit)} × ${H}\``] },
+            { c: ["דיבידנד", STORY.subDividend, H, STORY_SEPARATE.dividendShare, `\`${n(STORY.subDividend)} × ${H}\``] },
           ],
         },
       ],
@@ -127,6 +139,12 @@ export const W_STORY_SEPARATE: Worked = {
     },
     {
       h: "לפי עלות",
+      sheet: [
+        { l: "השקעה ב־1.1", a: STORY.paid },
+        { l: "החלק ברווח: לפי עלות לא נרשם", a: 0, k: "op" },
+        { l: "הדיבידנד: הכנסה, לא נוגע בהשקעה", a: 0, k: "op" },
+        { l: "השקעה ב־31.12", a: STORY_SEPARATE.atCost.balance, k: "tot" },
+      ],
       why: ["למה הרווח לא נרשם?", "לפי עלות ההשקעה נשארת במחיר ששולם. שיבולת רושמת הכנסה רק כשהטחנה מחלקת לה כסף, כלומר בדיבידנד."],
       tables: [
         {
@@ -162,20 +180,19 @@ export const W_STORY_SEPARATE: Worked = {
       xl: "`=330000+64000*75%-24000*75%`",
     },
     {
-      h: "שתי השיטות זו לצד זו",
+      h: "שתי השיטות זו מעל זו",
       tables: [
         {
-          head: ["", "לפי עלות", "שווי מאזני"],
+          head: ["", "השקעה ב־31.12", "הכנסה השנה", "מאיפה"],
           rows: [
-            { c: ["השקעה ב־1.1", STORY.paid, STORY.paid] },
-            { c: ["ועוד החלק ברווח", 0, STORY_SEPARATE.profitShare] },
-            { c: ["פחות החלק בדיבידנד", 0, -STORY_SEPARATE.dividendShare] },
-            { c: ["השקעה ב־31.12", STORY_SEPARATE.atCost.balance, eq.balance], res: true },
-            { c: ["הכנסה השנה", STORY_SEPARATE.atCost.income, eq.income], res: true },
+            { c: ["לפי עלות", STORY_SEPARATE.atCost.balance, STORY_SEPARATE.atCost.income, "שלב 2"] },
+            { c: ["שווי מאזני", eq.balance, eq.income, "שלב 3"] },
+            { c: ["ההפרש", eq.balance - STORY_SEPARATE.atCost.balance + 0, eq.income - STORY_SEPARATE.atCost.income + 0, "שווי מאזני פחות עלות"], res: true },
           ],
         },
       ],
-      result: `ההפרש ביתרה, ${A(eq.balance - STORY_SEPARATE.atCost.balance)}, הוא החלק של שיבולת ברווח שהטחנה השאירה אצלה: \`(64,000 − 24,000) × 75% = ${((STORY.subProfit - STORY.subDividend) * STORY.holding).toLocaleString("en-US")}\``,
+      why: ["מה זה ההפרש ביתרה?", `החלק של שיבולת ברווח שהטחנה השאירה אצלה: \`(${n(STORY.subProfit)} − ${n(STORY.subDividend)}) × ${H} = ${n((STORY.subProfit - STORY.subDividend) * STORY.holding)}\`.`],
+      result: `בשווי מאזני ההשקעה גבוהה ב־${A(eq.balance - STORY_SEPARATE.atCost.balance)}, וההכנסה גבוהה ב־${A(eq.income - STORY_SEPARATE.atCost.income)}.`,
     },
   ],
 };

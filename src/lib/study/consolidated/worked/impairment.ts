@@ -13,6 +13,7 @@ const R = IMP9.rows;
 const TAX = 0.23;
 const je = (cap: string, lines: [string, number | "", number | ""][]): WTable => ({ cap, head: ["חשבון", "חובה", "זכות"], rows: lines.map((l) => ({ c: l })) });
 const r0 = (v: number) => Math.round(v) + 0;
+const forecast = (f: number) => (f ? `תחזית ${n(f)}` : "אין תחזית");
 
 /* The machine: 120,000 in Levana's books, 168,000 for the group, 8 years from 1.1.2025. */
 const subDep = 120_000 / 8;
@@ -64,65 +65,131 @@ export const W9_IMP: Worked = {
   tryFirst: "לכל אחת עלות משלה. לפי איזו עלות כל אחת בודקת את ירידת הערך?",
   steps: [
     {
-      h: "העלות המופחתת בלי ירידות ערך",
+      h: "התקרה: העלות המופחתת בלי ירידות ערך",
       tables: [
         {
-          head: ["31.12", "לבנה: 15,000 בשנה", "הקבוצה: 21,000 בשנה", "סכום בר השבה"],
-          rows: R.map((r, i) => ({ c: [String(2025 + i), r.subAc, r.groupAc, r.recoverable] })),
+          head: ["31.12", "לבנה: 15,000 בשנה", "הקבוצה: 21,000 בשנה", "סכום בר השבה", "חישוב"],
+          rows: R.map((r, i) => ({ c: [String(2025 + i), r.subAc, r.groupAc, r.recoverable, `לבנה: \`120,000 − ${n(subDep)} × ${i + 1}\`. הקבוצה: \`168,000 − ${n(groupDep)} × ${i + 1}\`. בר השבה: נתון`] })),
         },
       ],
       why: ["למה בלי ירידות ערך?", "זו התקרה. לפי שלבי המרצה, היתרה בכל שנה היא הנמוך מבין העלות המופחתת הזו לבין הסכום בר ההשבה. ביטול לא מעלה את הנכס מעל התקרה."],
       result: `פחת שנתי: \`120,000 ÷ 8 = ${n(subDep)}\` אצל לבנה, ו־\`168,000 ÷ 8 = ${n(groupDep)}\` אצל הקבוצה.`,
     },
     {
-      h: "2025: רק לקבוצה יש ירידת ערך",
-      tables: [
-        {
-          head: ["", "לבנה", "הקבוצה", "התאמה: עודף העלות"],
-          rows: [
-            { c: ["עלות 1.1.2025", 120_000, 168_000, IMP9.excessAt] },
-            { c: ["פחת", -subDep, -groupDep, subDep - groupDep] },
-            { c: ["ירידת ערך עד 140,000", 0, -W.groupLoss25, -W.groupLoss25] },
-            { c: ["יתרה 31.12.2025", R[0].sub, R[0].group, R[0].excess], res: true },
-          ],
-        },
+      h: "2025: ספרי לבנה",
+      sheet: [
+        { l: "עלות 1.1.2025", a: 120_000 },
+        { l: "פחות פחת: `120,000 ÷ 8`", a: -subDep, k: "op" },
+        { l: "לפני הבדיקה", a: R[0].subAc, k: "sub" },
+        { l: `ירידת ערך: אין, \`${n(R[0].subAc)}\` נמוך מ־\`${n(R[0].recoverable)}\``, a: 0, k: "op" },
+        { l: "יתרה 31.12.2025", a: R[0].sub, k: "tot" },
       ],
-      why: ["למה רק לקבוצה?", "כל אחת לוקחת את הנמוך מבין העלות המופחתת שלה לבין 140,000. לקבוצה המכונה עולה יותר, ולכן העלות המופחתת שלה, 147,000, גבוהה מהסכום בר ההשבה. אצל לבנה, 105,000, היא נמוכה ממנו."],
-      result: `עודף העלות יורד מ־${A(IMP9.excessAt)} ל־${A(R[0].excess)}: פחת נוסף של 6,000, ועוד ירידת ערך של 7,000.`,
+      result: `לבנה: אין ירידת ערך. היתרה ${A(R[0].sub)}.`,
     },
     {
-      h: "2026: שתיהן יורדות לאותו סכום",
+      h: "2025: מנקודת המבט של המאוחד",
+      sheet: [
+        { l: "עלות 1.1.2025: השווי ההוגן ביום הרכישה", a: 168_000 },
+        { l: "פחות פחת: `168,000 ÷ 8`", a: -groupDep, k: "op" },
+        { l: "לפני הבדיקה", a: R[0].groupAc, k: "sub" },
+        { l: `ירידת ערך עד ${n(R[0].recoverable)}: \`${n(R[0].groupAc)} − ${n(R[0].recoverable)}\``, a: -W.groupLoss25, k: "op" },
+        { l: "יתרה 31.12.2025", a: R[0].group, k: "tot" },
+      ],
+      why: ["למה רק לקבוצה?", "כל אחת לוקחת את הנמוך מבין העלות המופחתת שלה לבין 140,000. לקבוצה המכונה עולה יותר, ולכן העלות המופחתת שלה גבוהה מהסכום בר ההשבה."],
+      result: `הקבוצה: ירידת ערך של ${A(W.groupLoss25)}. היתרה ${A(R[0].group)}.`,
+    },
+    {
+      h: "2025: שתיהן זו מעל זו",
       tables: [
         {
-          head: ["", "לבנה", "הקבוצה", "התאמה: עודף העלות"],
+          head: ["", "לבנה", "הקבוצה", "התאמה: עודף העלות", "חישוב"],
           rows: [
-            { c: ["יתרה 31.12.2025", R[0].sub, R[0].group, R[0].excess] },
-            { c: ["פחת על 7 השנים שנותרו", -subDep26, -groupDep26, subDep26 - groupDep26] },
-            { c: ["לפני הבדיקה", R[0].sub - subDep26, R[0].group - groupDep26, R[0].excess - (groupDep26 - subDep26)] },
-            { c: ["ירידת ערך עד 84,000", -W.subLoss26, -W.groupLoss26, W.subLoss26 - W.groupLoss26] },
-            { c: ["יתרה 31.12.2026", R[1].sub, R[1].group, R[1].excess], res: true },
+            { c: ["עלות 1.1.2025", 120_000, 168_000, IMP9.excessAt, "שלבים 2 ו־3. העודף: הקבוצה פחות לבנה"] },
+            { c: ["פחת", -subDep, -groupDep, subDep - groupDep, "הקבוצה פחות לבנה"] },
+            { c: ["ירידת ערך עד 140,000", 0, -W.groupLoss25, -W.groupLoss25, "הקבוצה פחות לבנה"] },
+            { c: ["יתרה 31.12.2025", R[0].sub, R[0].group, R[0].excess, "הקבוצה פחות לבנה"], res: true },
           ],
         },
       ],
-      why: ["אם היתרה זהה, למה יש התאמה?", "כל אחת יורדת מיתרה אחרת. ההפסד של לבנה 6,000, ושל הקבוצה 36,000. העודף מתאפס, וההפרש עובר דרך ההפחתה."],
+      result: `עודף העלות יורד מ־${A(IMP9.excessAt)} ל־${A(R[0].excess)}: פחת נוסף של ${n(groupDep - subDep)}, ועוד ירידת ערך של ${n(W.groupLoss25)}.`,
+    },
+    {
+      h: "2026: ספרי לבנה",
+      sheet: [
+        { l: "יתרה 31.12.2025", a: R[0].sub },
+        { l: `פחות פחת על 7 השנים שנותרו: \`${n(R[0].sub)} ÷ 7\``, a: -subDep26, k: "op" },
+        { l: "לפני הבדיקה", a: R[0].sub - subDep26, k: "sub" },
+        { l: `ירידת ערך עד ${n(R[1].recoverable)}: \`${n(R[0].sub - subDep26)} − ${n(R[1].recoverable)}\``, a: -W.subLoss26, k: "op" },
+        { l: "יתרה 31.12.2026", a: R[1].sub, k: "tot" },
+      ],
+      result: `לבנה: ירידת ערך של ${A(W.subLoss26)}.`,
+    },
+    {
+      h: "2026: מנקודת המבט של המאוחד",
+      sheet: [
+        { l: "יתרה 31.12.2025", a: R[0].group },
+        { l: `פחות פחת על 7 השנים שנותרו: \`${n(R[0].group)} ÷ 7\``, a: -groupDep26, k: "op" },
+        { l: "לפני הבדיקה", a: R[0].group - groupDep26, k: "sub" },
+        { l: `ירידת ערך עד ${n(R[1].recoverable)}: \`${n(R[0].group - groupDep26)} − ${n(R[1].recoverable)}\``, a: -W.groupLoss26, k: "op" },
+        { l: "יתרה 31.12.2026", a: R[1].group, k: "tot" },
+      ],
+      result: `הקבוצה: ירידת ערך של ${A(W.groupLoss26)}.`,
+    },
+    {
+      h: "2026: שתיהן זו מעל זו",
+      tables: [
+        {
+          head: ["", "לבנה", "הקבוצה", "התאמה: עודף העלות", "חישוב"],
+          rows: [
+            { c: ["יתרה 31.12.2025", R[0].sub, R[0].group, R[0].excess, "שלבים 5 ו־6. העודף: הקבוצה פחות לבנה"] },
+            { c: ["פחת על 7 השנים שנותרו", -subDep26, -groupDep26, subDep26 - groupDep26, "הקבוצה פחות לבנה"] },
+            { c: ["לפני הבדיקה", R[0].sub - subDep26, R[0].group - groupDep26, R[0].excess - (groupDep26 - subDep26), "הקבוצה פחות לבנה"] },
+            { c: ["ירידת ערך עד 84,000", -W.subLoss26, -W.groupLoss26, W.subLoss26 - W.groupLoss26, "הקבוצה פחות לבנה"] },
+            { c: ["יתרה 31.12.2026", R[1].sub, R[1].group, R[1].excess, "הקבוצה פחות לבנה"], res: true },
+          ],
+        },
+      ],
+      why: ["אם היתרה זהה, למה יש התאמה?", "כל אחת יורדת מיתרה אחרת, ולכן ההפסדים שונים. העודף מתאפס, וההפרש עובר דרך ההפחתה."],
       result: `עודף העלות מתאפס. ההפחתה של 2026: ${A(moves[1])}.`,
     },
     {
-      h: "2027: שתיהן מבטלות, כל אחת עד התקרה שלה",
+      h: "2027: ספרי לבנה",
+      sheet: [
+        { l: "יתרה 31.12.2026", a: R[1].sub },
+        { l: `פחות פחת על 6 השנים שנותרו: \`${n(R[1].sub)} ÷ 6\``, a: -subDep27, k: "op" },
+        { l: "לפני הבדיקה", a: W.subBefore27, k: "sub" },
+        { l: `ביטול עד הנמוך מבין התקרה, \`${n(R[2].subAc)}\`, ל־\`${n(R[2].recoverable)}\`: \`${n(R[2].sub)} − ${n(W.subBefore27)}\``, a: W.subReversal27, k: "op" },
+        { l: "יתרה 31.12.2027", a: R[2].sub, k: "tot" },
+      ],
+      result: `לבנה מבטלת ${A(W.subReversal27)}.`,
+    },
+    {
+      h: "2027: מנקודת המבט של המאוחד",
+      sheet: [
+        { l: "יתרה 31.12.2026", a: R[1].group },
+        { l: `פחות פחת על 6 השנים שנותרו: \`${n(R[1].group)} ÷ 6\``, a: -groupDep27, k: "op" },
+        { l: "לפני הבדיקה", a: W.groupBefore27, k: "sub" },
+        { l: `ביטול עד הנמוך מבין התקרה, \`${n(R[2].groupAc)}\`, ל־\`${n(R[2].recoverable)}\`: \`${n(R[2].group)} − ${n(W.groupBefore27)}\``, a: W.groupReversal27, k: "op" },
+        { l: "יתרה 31.12.2027", a: R[2].group, k: "tot" },
+      ],
+      why: ["למה הביטול נעצר?", "הסכום בר ההשבה, 112,000, גבוה משתי התקרות. כל אחת מבטלת רק עד העלות המופחתת שהייתה לה בלי ירידת ערך."],
+      result: `הקבוצה מבטלת ${A(W.groupReversal27)}.`,
+    },
+    {
+      h: "2027: שתיהן זו מעל זו",
       tables: [
         {
-          head: ["", "לבנה", "הקבוצה", "התאמה: עודף העלות"],
+          head: ["", "לבנה", "הקבוצה", "התאמה: עודף העלות", "חישוב"],
           rows: [
-            { c: ["יתרה 31.12.2026", R[1].sub, R[1].group, R[1].excess] },
-            { c: ["פחת על 6 השנים שנותרו", -subDep27, -groupDep27, subDep27 - groupDep27] },
-            { c: ["לפני הבדיקה", W.subBefore27, W.groupBefore27, W.groupBefore27 - W.subBefore27] },
-            { c: ["תקרה: עלות מופחתת בלי ירידות ערך", R[2].subAc, R[2].groupAc, R[2].groupAc - R[2].subAc] },
-            { c: ["ביטול עד הנמוך מבין התקרה ל־112,000", W.subReversal27, W.groupReversal27, W.groupReversal27 - W.subReversal27] },
-            { c: ["יתרה 31.12.2027", R[2].sub, R[2].group, R[2].excess], res: true },
+            { c: ["יתרה 31.12.2026", R[1].sub, R[1].group, R[1].excess, "שלבים 8 ו־9. העודף: הקבוצה פחות לבנה"] },
+            { c: ["פחת על 6 השנים שנותרו", -subDep27, -groupDep27, subDep27 - groupDep27, "הקבוצה פחות לבנה"] },
+            { c: ["לפני הבדיקה", W.subBefore27, W.groupBefore27, W.groupBefore27 - W.subBefore27, "הקבוצה פחות לבנה"] },
+            { c: ["תקרה: עלות מופחתת בלי ירידות ערך", R[2].subAc, R[2].groupAc, R[2].groupAc - R[2].subAc, "שלב 1. העודף: הקבוצה פחות לבנה"] },
+            { c: ["ביטול עד הנמוך מבין התקרה ל־112,000", W.subReversal27, W.groupReversal27, W.groupReversal27 - W.subReversal27, "הקבוצה פחות לבנה"] },
+            { c: ["יתרה 31.12.2027", R[2].sub, R[2].group, R[2].excess, "הקבוצה פחות לבנה"], res: true },
           ],
         },
       ],
-      why: ["למה הביטול נעצר?", "הסכום בר ההשבה, 112,000, גבוה משתי התקרות. כל אחת מבטלת רק עד העלות המופחתת שהייתה לה בלי ירידת ערך."],
       result: `לבנה מבטלת ${A(W.subReversal27)}, הקבוצה ${A(W.groupReversal27)}. העודף עולה ל־${A(R[2].excess)}.`,
     },
     {
@@ -130,20 +197,20 @@ export const W9_IMP: Worked = {
       tables: [
         {
           cap: "עודף העלות",
-          head: ["", "1.1.2025", "הפחתה", "31.12.2025", "הפחתה", "31.12.2026", "הפחתה", "31.12.2027"],
+          head: ["", "1.1.2025", "הפחתה", "31.12.2025", "הפחתה", "31.12.2026", "הפחתה", "31.12.2027", "חישוב"],
           rows: [
-            { c: ["מכונה", IMP9.excessAt, moves[0], R[0].excess, moves[1], R[1].excess, moves[2], R[2].excess] },
-            { c: ["מס נדחה: 23%", r0(-IMP9.excessAt * TAX), W.moveTax[0], r0(-R[0].excess * TAX), W.moveTax[1], r0(-R[1].excess * TAX), W.moveTax[2], r0(-R[2].excess * TAX)] },
-            { c: ["סך הכול", r0(IMP9.excessAt * (1 - TAX)), W.moveNet[0], r0(R[0].excess * (1 - TAX)), W.moveNet[1], r0(R[1].excess * (1 - TAX)), W.moveNet[2], r0(R[2].excess * (1 - TAX))], res: true },
+            { c: ["מכונה", IMP9.excessAt, moves[0], R[0].excess, moves[1], R[1].excess, moves[2], R[2].excess, "היתרות: מהשורה ״יתרה״ בשלבים 4, 7 ו־10. הפחתה: היתרה פחות היתרה הקודמת"] },
+            { c: ["מס נדחה: 23%", r0(-IMP9.excessAt * TAX), W.moveTax[0], r0(-R[0].excess * TAX), W.moveTax[1], r0(-R[1].excess * TAX), W.moveTax[2], r0(-R[2].excess * TAX), "`23%` מכל סכום בשורת המכונה, בסימן הפוך"] },
+            { c: ["סך הכול", r0(IMP9.excessAt * (1 - TAX)), W.moveNet[0], r0(R[0].excess * (1 - TAX)), W.moveNet[1], r0(R[1].excess * (1 - TAX)), W.moveNet[2], r0(R[2].excess * (1 - TAX)), "מכונה + מס נדחה"], res: true },
           ],
         },
         {
           cap: "ההפחתה של המכונה בכל שנה מורכבת מ",
-          head: ["", "2025", "2026", "2027"],
+          head: ["", "2025", "2026", "2027", "חישוב"],
           rows: [
-            { c: ["פחת נוסף", subDep - groupDep, subDep26 - groupDep26, subDep27 - groupDep27] },
-            { c: ["ירידת ערך, או ביטולה", -W.groupLoss25, W.subLoss26 - W.groupLoss26, W.groupReversal27 - W.subReversal27] },
-            { c: ["הפחתה", ...moves], res: true },
+            { c: ["פחת נוסף", subDep - groupDep, subDep26 - groupDep26, subDep27 - groupDep27, `2025: \`${n(subDep)} − ${n(groupDep)}\`. 2026: \`${n(subDep26)} − ${n(groupDep26)}\`. 2027: \`${n(subDep27)} − ${n(groupDep27)}\``] },
+            { c: ["ירידת ערך, או ביטולה", -W.groupLoss25, W.subLoss26 - W.groupLoss26, W.groupReversal27 - W.subReversal27, `2025: \`0 − ${n(W.groupLoss25)}\`. 2026: \`${n(W.subLoss26)} − ${n(W.groupLoss26)}\`. 2027: \`${n(W.groupReversal27)} − ${n(W.subReversal27)}\``] },
+            { c: ["הפחתה", ...moves, "שתי השורות יחד"], res: true },
           ],
         },
       ],
@@ -182,29 +249,47 @@ export const W9_DTA: Worked = {
       result: `ההתחייבות ירדה ל־${A(DTA9.liabilityEnd)}.`,
     },
     {
-      h: "נכס המס בסוף 2025: במאוחד מול לבנה",
+      h: "בסוף 2025: נכס המס בספרי לבנה",
       tables: [
         {
-          head: ["", "אין תחזית", "תחזית 25,000", "תחזית 90,000"],
-          rows: [
-            { c: ["במאוחד: הגבוה מבין 8,050 לנכס של לבנה", ...DTA9.cases.map((c) => c.group)] },
-            { c: ["אצל לבנה: 23% מהתחזית", ...DTA9.cases.map((c) => c.subAsset)] },
-            { c: ["עודף עלות", ...DTA9.cases.map((c) => c.excess)], res: true },
-          ],
+          head: ["", "נכס מס", "חישוב"],
+          rows: DTA9.cases.map((c) => ({ c: [forecast(c.forecast), c.subAsset, c.forecast ? `\`${n(c.forecast)} × 23%\`` : "אין הכנסה חייבת צפויה, ולכן אין נכס"] })),
         },
       ],
-      why: ["מה הכלל?", `לפי המרצה, הנכס במאוחד הוא הגבוה מבין ההתחייבות על עודפי העלות, ${n(DTA9.liabilityEnd)}, לבין הנכס לפי התחזית. עודף העלות הוא מה שהמאוחד מכיר מעבר ללבנה.`],
+      p: ["לבנה מכירה בנכס רק לפי התחזית שלה להכנסה חייבת."],
+      result: "ככל שהתחזית גדולה יותר, לבנה מכירה בעצמה בנכס גדול יותר.",
+    },
+    {
+      h: "בסוף 2025: נכס המס במאוחד",
+      tables: [
+        {
+          head: ["", "נכס מס", "חישוב"],
+          rows: DTA9.cases.map((c) => ({ c: [forecast(c.forecast), c.group, `הגבוה מבין \`${n(DTA9.liabilityEnd)}\` ל־\`${n(c.subAsset)}\``] })),
+        },
+      ],
+      why: ["מה הכלל?", `לפי המרצה, הנכס במאוחד הוא הגבוה מבין ההתחייבות על עודפי העלות, ${n(DTA9.liabilityEnd)}, לבין הנכס לפי התחזית.`],
+      result: `במאוחד הנכס לא יורד מתחת ל־${A(DTA9.liabilityEnd)}.`,
+    },
+    {
+      h: "שני הנכסים זה מעל זה: עודף העלות",
+      tables: [
+        {
+          head: ["", "לבנה", "במאוחד", "עודף עלות", "חישוב"],
+          rows: DTA9.cases.map((c, i) => ({ c: [forecast(c.forecast), c.subAsset, c.group, c.excess, i === 0 ? "שלבים 3 ו־4. העודף: המאוחד פחות לבנה" : "המאוחד פחות לבנה"] })),
+        },
+      ],
+      why: ["מה זה העודף?", "עודף העלות הוא מה שהמאוחד מכיר מעבר ללבנה."],
       result: "ככל שהתחזית גדולה יותר, לבנה מכירה בעצמה ביותר, ועודף העלות קטן.",
     },
     {
       h: "טבלת עודף העלות",
       tables: [
         {
-          head: ["", "1.1.2025", "הפחתה", "31.12.2025"],
+          head: ["", "1.1.2025", "הפחתה", "31.12.2025", "חישוב"],
           rows: [
-            { c: ["מכונה", 48_000, 35_000 - 48_000, 35_000] },
-            { c: ["מס נדחה על המכונה", -DTA9.liabilityAt, DTA9.liabilityAt - DTA9.liabilityEnd, -DTA9.liabilityEnd] },
-            ...DTA9.cases.map((c, i) => ({ c: [`נכס מס על ההפסד: ${c.forecast ? `תחזית ${n(c.forecast)}` : "אין תחזית"}`, DTA9.liabilityAt, W.dtaMoves[i], c.excess] })),
+            { c: ["מכונה", 48_000, 35_000 - 48_000, 35_000, "נתון. הפחתה: `35,000 − 48,000`"] },
+            { c: ["מס נדחה על המכונה", -DTA9.liabilityAt, DTA9.liabilityAt - DTA9.liabilityEnd, -DTA9.liabilityEnd, `שלבים 1 ו־2, בסימן הפוך. הפחתה: \`${n(DTA9.liabilityAt)} − ${n(DTA9.liabilityEnd)}\``] },
+            ...DTA9.cases.map((c, i) => ({ c: [`נכס מס על ההפסד: ${forecast(c.forecast)}`, DTA9.liabilityAt, W.dtaMoves[i], c.excess, `1.1: שלב 1. 31.12: שלב 5. הפחתה: \`${n(c.excess)} − ${n(DTA9.liabilityAt)}\``] })),
           ],
         },
       ],
@@ -215,12 +300,8 @@ export const W9_DTA: Worked = {
       h: "המס על ההפסד בדוח המאוחד",
       tables: [
         {
-          head: ["", "אין תחזית", "תחזית 25,000", "תחזית 90,000"],
-          rows: [
-            { c: ["הכנסות מס אצל לבנה", ...DTA9.cases.map((c) => c.subAsset)] },
-            { c: ["הפחתת עודף העלות", ...W.dtaMoves] },
-            { c: ["הכנסות (הוצאות) מס במאוחד", ...DTA9.cases.map((c, i) => c.subAsset + W.dtaMoves[i])], res: true },
-          ],
+          head: ["", "הכנסות מס אצל לבנה", "הפחתת עודף העלות", "הכנסות (הוצאות) מס במאוחד", "חישוב"],
+          rows: DTA9.cases.map((c, i) => ({ c: [forecast(c.forecast), c.subAsset, W.dtaMoves[i], c.subAsset + W.dtaMoves[i], `שלב 3 ועוד שלב 6: \`${n(c.subAsset)} − ${n(-W.dtaMoves[i])}\``] })),
         },
       ],
       result: `בדיקה: זה השינוי בנכס המס במאוחד מיום הרכישה, \`${DTA9.cases.map((c) => n(c.group)).join(" / ")} − ${n(DTA9.liabilityAt)}\`.`,
@@ -267,11 +348,11 @@ export const W9_DATES: Worked = {
       h: "הדיבידנד, והתנועה בזשמ״ש",
       tables: [
         {
-          head: ["הזשמ״ש ב־2026", "סכום"],
+          head: ["הזשמ״ש ב־2026", "סכום", "חישוב"],
           rows: [
-            { c: ["חלק ברווח המותאם", DATES9.nciProfit] },
-            { c: ["פחות דיבידנד למיעוט: `20,000 × 25%`", -DATES9.dividendNci] },
-            { c: ["השינוי ביתרה", DATES9.nciProfit - DATES9.dividendNci], res: true },
+            { c: ["חלק ברווח המותאם", DATES9.nciProfit, "שלב 2"] },
+            { c: ["פחות דיבידנד למיעוט", -DATES9.dividendNci, "`20,000 × 25%`"] },
+            { c: ["השינוי ביתרה", DATES9.nciProfit - DATES9.dividendNci, "שתי השורות יחד"], res: true },
           ],
         },
       ],
@@ -351,14 +432,14 @@ export const W9_PREFPROFIT: Worked = {
       h: "כל חלק לפי ההחזקה שלו",
       tables: [
         {
-          head: ["", "רגילות", "בכורה", "סך הכול"],
+          head: ["", "רגילות", "בכורה", "סך הכול", "חישוב"],
           rows: [
-            { c: ["רווח הבת", 60_000, "", 60_000] },
-            { c: ["מיון לבכורה", -PREF9.preference, PREF9.preference, 0] },
-            { c: ["הרווח של כל סוג", PREF9.ordinary, PREF9.preference, 60_000], res: true },
-            { c: ["חלק הזשמ״ש", "20%", "75%", ""] },
-            { c: ["לזשמ״ש", r0(PREF9.ordinary * 0.2), PREF9.preference * 0.75, PREF9.nci], res: true },
-            { c: ["לבעלים", PREF9.ordinary * 0.8, PREF9.preference * 0.25, PREF9.owners], res: true },
+            { c: ["רווח הבת", 60_000, "", 60_000, "נתון"] },
+            { c: ["מיון לבכורה", -PREF9.preference, PREF9.preference, 0, "שלב 1"] },
+            { c: ["הרווח של כל סוג", PREF9.ordinary, PREF9.preference, 60_000, "שתי השורות יחד"], res: true },
+            { c: ["חלק הזשמ״ש", "20%", "75%", "", "`100% − 80%` ו־`100% − 25%`"] },
+            { c: ["לזשמ״ש", r0(PREF9.ordinary * 0.2), PREF9.preference * 0.75, PREF9.nci, `\`${n(PREF9.ordinary)} × 20%\` ו־\`${n(PREF9.preference)} × 75%\``], res: true },
+            { c: ["לבעלים", PREF9.ordinary * 0.8, PREF9.preference * 0.25, PREF9.owners, `\`${n(PREF9.ordinary)} × 80%\` ו־\`${n(PREF9.preference)} × 25%\``], res: true },
           ],
         },
       ],
@@ -438,18 +519,17 @@ export const W9_MASTER: Worked = {
       h: "חלוקת הרווח",
       tables: [
         {
-          head: ["", "רגילות", "בכורה", "סך הכול"],
+          head: ["", "רגילות", "בכורה", "סך הכול", "חישוב"],
           rows: [
-            { c: ["רווח גלית", 104_000, "", 104_000] },
-            { c: ["מיון לבכורה", -M9.split.preference, M9.split.preference, 0] },
-            { c: ["הרווח של כל סוג", M9.split.ordinary, M9.split.preference, 104_000], res: true },
-            { c: ["חלק הזשמ״ש", "25%", "100%", ""] },
-            { c: ["לזשמ״ש", M9.split.ordinary * 0.25, M9.split.preference, M9.split.nci], res: true },
-            { c: ["לבעלים", M9.split.ordinary * 0.75, 0, M9.split.owners], res: true },
+            { c: ["רווח גלית", 104_000, "", 104_000, "נתון"] },
+            { c: ["מיון לבכורה", -M9.split.preference, M9.split.preference, 0, "הצבירה של השנה: `80,000 × 10%`"] },
+            { c: ["הרווח של כל סוג", M9.split.ordinary, M9.split.preference, 104_000, "שתי השורות יחד"], res: true },
+            { c: ["חלק הזשמ״ש", "25%", "100%", "", "רגילות: `2,000 ÷ 8,000`. בכורה: כולה בידי אחרים"] },
+            { c: ["לזשמ״ש", M9.split.ordinary * 0.25, M9.split.preference, M9.split.nci, `\`${n(M9.split.ordinary)} × 25%\` ו־\`${n(M9.split.preference)} × 100%\``], res: true },
+            { c: ["לבעלים", M9.split.ordinary * 0.75, 0, M9.split.owners, `\`${n(M9.split.ordinary)} × 75%\``], res: true },
           ],
         },
       ],
-      p: ["המיון לבכורה הוא הצבירה של השנה: `80,000 × 10% = 8,000`."],
       why: ["למה כל הבכורה לזשמ״ש?", "רותם לא מחזיקה בכורה. כל הצבירה של השנה שייכת לבעלי הבכורה האחרים."],
       result: `לבעלים ${A(M9.split.owners)}, לזשמ״ש ${A(M9.split.nci)}.`,
     },
@@ -457,20 +537,29 @@ export const W9_MASTER: Worked = {
       h: "הזשמ״ש בסוף 2025",
       tables: [
         {
-          head: ["", "נמ״נ רגילות", "נמ״נ בכורה", "פרמיית שליטה", "מוניטין"],
+          head: ["", "נמ״נ רגילות", "נמ״נ בכורה", "פרמיית שליטה", "מוניטין", "חישוב"],
           rows: [
-            { c: ["הון גלית 31.12.2025", 338_000 + 104_000, "", "", ""] },
-            { c: ["עודף על הקרקע, נטו ממס", M9.net - 338_000, "", "", ""] },
-            { c: ["מיון לבכורה", -M9.prefEnd, M9.prefEnd, "", ""] },
-            { c: ["מוניטין", "", "", M9.premium, W.mNoPremium] },
-            { c: ["סך הכול", W.mNetEnd - M9.prefEnd, M9.prefEnd, M9.premium, W.mNoPremium], res: true },
-            { c: ["חלק הזשמ״ש", "25%", "100%", "0%", "25%"] },
-            { c: ["לזשמ״ש", M9.nciOrdinaryEnd - M9.nciGoodwill, M9.prefEnd, 0, M9.nciGoodwill], res: true },
+            { c: ["הון גלית 31.12.2025", 338_000 + 104_000, "", "", "", "`338,000 + 104,000`: ההון ביום הרכישה ועוד הרווח של 2025"] },
+            { c: ["עודף על הקרקע, נטו ממס", M9.net - 338_000, "", "", "", "`64,000 × 77%`. הקרקע לא מופחתת"] },
+            { c: ["מיון לבכורה", -M9.prefEnd, M9.prefEnd, "", "", "`92,000 + 8,000 − 0`: שווי הוגן ביום הצירוף, ועוד הצבירה, פחות מה שהוכרז"] },
+            { c: ["מוניטין", "", "", M9.premium, W.mNoPremium, `פרמיה: \`300,000 − 6,000 × 48\`. השאר: \`${n(M9.goodwill)} − ${n(M9.premium)}\``] },
+            { c: ["סך הכול", W.mNetEnd - M9.prefEnd, M9.prefEnd, M9.premium, W.mNoPremium, "סכום השורות"], res: true },
+            { c: ["חלק הזשמ״ש", "25%", "100%", "0%", "25%", "הבכורה כולה בידי אחרים. הפרמיה כולה של רותם"] },
+            { c: ["לזשמ״ש", M9.nciOrdinaryEnd - M9.nciGoodwill, M9.prefEnd, 0, M9.nciGoodwill, `\`${n(W.mNetEnd - M9.prefEnd)} × 25%\`, \`${n(M9.prefEnd)} × 100%\`, \`${n(W.mNoPremium)} × 25%\``], res: true },
           ],
         },
       ],
-      p: [`המיון לבכורה: השווי ההוגן ביום הצירוף ועוד הצבירה, \`92,000 + 8,000 − 0 = ${n(M9.prefEnd)}\`. סך הזשמ״ש: \`${n(M9.nciOrdinaryEnd - M9.nciGoodwill)} + ${n(M9.prefEnd)} + ${n(M9.nciGoodwill)} = ${n(M9_NCI_END)}\`.`],
-      why: ["מאיפה ההון?", `ההון של גלית ביום הרכישה, 338,000, ועוד הרווח של 2025, 104,000. עם עודף הקרקע זה הנמ״נ בסוף השנה, \`387,280 + 104,000 = ${n(W.mNetEnd)}\`. עודף הקרקע לא מופחת.`],
+      why: ["מאיפה ההון?", `ההון של גלית ביום הרכישה ועוד הרווח של 2025. עם עודף הקרקע זה הנמ״נ בסוף השנה, \`387,280 + 104,000 = ${n(W.mNetEnd)}\`.`],
+      result: `לזשמ״ש ${A(M9.nciOrdinaryEnd - M9.nciGoodwill)} ברגילות, ${A(M9.prefEnd)} בבכורה, ו־${A(M9.nciGoodwill)} במוניטין.`,
+    },
+    {
+      h: "סך הזשמ״ש בסוף 2025",
+      sheet: [
+        { l: "ברגילות", a: M9.nciOrdinaryEnd - M9.nciGoodwill },
+        { l: "ועוד בבכורה", a: M9.prefEnd, k: "op" },
+        { l: "ועוד במוניטין", a: M9.nciGoodwill, k: "op" },
+        { l: "סך הזשמ״ש ב־31.12.2025", a: M9_NCI_END, k: "tot" },
+      ],
       result: `בדיקה: ביום הרכישה \`96,000 + 92,000 = 188,000\`, ועוד החלק ברווח, \`188,000 + 32,000 = ${n(M9_NCI_END)}\`.`,
     },
     {

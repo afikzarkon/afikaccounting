@@ -11,6 +11,7 @@ const air = { holding: 36, big: [6, 6, 6], attendance: 80 };
 const alt = { holding: 42, attendance: 75 };
 const conv = { shares: 6_000, total: 20_000, other: 7_000, newShares: 20_000 };
 const opt = { a: 72, b: 28 };
+const n = (v: number) => v.toLocaleString("en-US");
 
 /** The figures the worked solutions add to the solver's, worked separately. */
 export const CONTROL_W = {
@@ -108,12 +109,12 @@ export const W_CONVERT: Worked = {
       h: "ההחזקה של א׳ היום",
       tables: [
         {
-          head: ["", "מניות", "שיעור"],
+          head: ["", "מניות", "שיעור", "חישוב"],
           rows: [
-            { c: ["א׳", conv.shares, `${W.nowShare}%`] },
-            { c: ["משקיע שני", conv.other, `${W.otherShare}%`] },
-            { c: ["משקיע שלישי", conv.other, `${W.otherShare}%`] },
-            { c: ["סך הכול", conv.total, "100%"], res: true },
+            { c: ["א׳", conv.shares, `${W.nowShare}%`, `שיעור: \`${n(conv.shares)} / ${n(conv.total)}\``] },
+            { c: ["משקיע שני", conv.other, `${W.otherShare}%`, `שיעור: \`${n(conv.other)} / ${n(conv.total)}\``] },
+            { c: ["משקיע שלישי", conv.other, `${W.otherShare}%`, `שיעור: \`${n(conv.other)} / ${n(conv.total)}\``] },
+            { c: ["סך הכול", conv.total, "100%", "נתון"], res: true },
           ],
         },
       ],

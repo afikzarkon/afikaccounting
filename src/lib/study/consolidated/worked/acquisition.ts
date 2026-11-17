@@ -1,5 +1,5 @@
 import { BOND, LESSEE, LESSOR, STORY_TABLE } from "../lessons/acquisition";
-import { A, agora, pv, type Worked, type WTable } from "./types";
+import { A, acc, agora, pv, type WLine, type Worked, type WTable } from "./types";
 
 /**
  * Lesson 4's numeric demonstrations as full worked solutions, by the owner's
@@ -12,6 +12,7 @@ import { A, agora, pv, type Worked, type WTable } from "./types";
 const fac = (r: number, k: number) => `1 ÷ ${(1 + r).toFixed(2)}${k > 1 ? (k === 2 ? "²" : k === 3 ? "³" : k === 4 ? "⁴" : `^${k}`) : ""} = ${(1 / (1 + r) ** k).toFixed(6)}`;
 const annuity = (r: number, n: number) => pv(r, n, 1).toFixed(6);
 const whole = (v: number) => Math.round(v) + 0;
+const n = (v: number) => v.toLocaleString("en-US");
 
 /* Excess cost on the café's inventory. */
 const inv = { book: 140_000, fair: 155_000, sold: 0.6 };
@@ -91,39 +92,49 @@ export const W_EXCESS: Worked = {
         { l: "עודף עלות", a: W.invExcess, k: "tot" },
       ],
       why: ["למה לא 70%?", "במאוחד מציגים 100% מהמלאי של הקפה, ולכן גם את כל ההפרש בין הספרים לשווי. שיעור ההחזקה נכנס רק כשמחלקים את ההון והרווח."],
-      tables: [{ head: ["המלאי", "ספרי הקפה", "עודף עלות", "מאוחד"], rows: [{ c: ["במועד הרכישה", inv.book, W.invExcess, inv.fair], res: true }] }],
+      tables: [
+        {
+          head: ["המלאי", "ספרי הקפה", "עודף עלות", "מאוחד", "חישוב"],
+          rows: [{ c: ["במועד הרכישה", inv.book, W.invExcess, inv.fair, "ספרים ומאוחד: נתונים. עודף: `155,000 − 140,000`"], res: true }],
+        },
+      ],
       result: `עודף העלות ${A(W.invExcess)}. במאוחד המלאי נמדד לראשונה ב־${A(inv.fair)}.`,
       xl: "`=155000-140000`",
     },
     {
-      h: "עלות המכר: 60% נמכרו",
-      why: ["למה גם העודף נמכר?", "העודף הוא חלק מהעלות של אותו מלאי בעיני הקבוצה. כשמוכרים 60% מהמלאי, יוצאים גם 60% מהעודף, ונכנסים לעלות המכר."],
-      tables: [
-        {
-          head: ["", "ספרי הקפה", "עודף עלות", "מאוחד"],
-          rows: [
-            { c: ["ערך במועד הרכישה", inv.book, W.invExcess, inv.fair] },
-            { c: ["× החלק שנמכר", "60%", "60%", "60%"] },
-            { c: ["עלות המכר", -W.invSoldBook, -W.invSoldExcess, -W.invSoldGroup], res: true },
-          ],
-        },
+      h: "בספרי הקפה",
+      sheet: [
+        { l: "מלאי במועד הרכישה", a: inv.book },
+        { l: `פחות עלות המכר: \`${n(inv.book)} × 60%\``, a: -W.invSoldBook, k: "op" },
+        { l: "יתרת המלאי בסוף השנה", a: inv.book - W.invSoldBook, k: "tot" },
       ],
-      result: `בספרי הקפה עלות המכר ${A(W.invSoldBook)}, ובמאוחד ${A(W.invSoldGroup)}. ההפרש, ${A(W.invSoldExcess)}, הוא הפחתת עודף העלות.`,
+      result: `בספרי הקפה עלות המכר ${A(W.invSoldBook)}, ונשארים ${A(inv.book - W.invSoldBook)} במלאי.`,
+      xl: "`=140000*60%`",
+    },
+    {
+      h: "בדוחות המאוחדים",
+      sheet: [
+        { l: "מלאי במועד הרכישה", a: inv.fair },
+        { l: `פחות עלות המכר: \`${n(inv.fair)} × 60%\``, a: -W.invSoldGroup, k: "op" },
+        { l: "יתרת המלאי בסוף השנה", a: inv.fair - W.invSoldGroup, k: "tot" },
+      ],
+      why: ["למה גם העודף נמכר?", "העודף הוא חלק מהעלות של אותו מלאי בעיני הקבוצה. כשמוכרים 60% מהמלאי, יוצאים גם 60% מהעודף, ונכנסים לעלות המכר."],
+      result: `במאוחד עלות המכר ${A(W.invSoldGroup)}, ונשארים ${A(inv.fair - W.invSoldGroup)}, כלומר \`${n(inv.fair)} × 40%\`.`,
       xl: "`=155000*60%`",
     },
     {
-      h: "יתרת המלאי בסוף השנה",
+      h: "שני הצדדים זה מעל זה",
       tables: [
         {
-          head: ["", "ספרי הקפה", "עודף עלות", "מאוחד"],
+          head: ["", "עלות המכר", "יתרת המלאי", "מאיפה"],
           rows: [
-            { c: ["ערך במועד הרכישה", inv.book, W.invExcess, inv.fair] },
-            { c: ["פחות עלות המכר", -W.invSoldBook, -W.invSoldExcess, -W.invSoldGroup] },
-            { c: ["יתרת המלאי", inv.book - W.invSoldBook, W.invExcess - W.invSoldExcess, inv.fair - W.invSoldGroup], res: true },
+            { c: ["ספרי הקפה", -W.invSoldBook, inv.book - W.invSoldBook, "שלב 2"] },
+            { c: ["מאוחד", -W.invSoldGroup, inv.fair - W.invSoldGroup, "שלב 3"] },
+            { c: ["עודף העלות: הפחתה ויתרה", -W.invSoldExcess, W.invExcess - W.invSoldExcess, "מאוחד פחות ספרי הקפה"], res: true },
           ],
         },
       ],
-      result: `בדיקה: \`155,000 × 40% = ${(inv.fair * (1 - inv.sold)).toLocaleString("en-US")}\`. הפחתת העודף מתאימה את הרווח של הבת לרווח של הקבוצה.`,
+      result: `ההפרש בעלות המכר, ${A(W.invSoldExcess)}, הוא הפחתת עודף העלות. הוא מתאים את הרווח של הבת לרווח של הקבוצה.`,
     },
   ],
 };
@@ -152,10 +163,10 @@ export const W_LESSOR: Worked = {
       tables: [
         {
           cap: "היוון בריבית 5%",
-          head: ["מועד", "תזרים", "מקדם היוון", "ערך נוכחי"],
+          head: ["מועד", "תזרים", "מקדם היוון", "ערך נוכחי", "חישוב"],
           rows: [
-            ...lessorFlows.map((c, i) => ({ c: [`סוף שנה ${i + 1}`, c, fac(lessor.rate, i + 1), agora(lessorPv[i])] })),
-            { c: ["שווי הוגן של הציוד", "", "", W.lessorPv], res: true },
+            ...lessorFlows.map((c, i) => ({ c: [`סוף שנה ${i + 1}`, c, fac(lessor.rate, i + 1), agora(lessorPv[i]), `\`${n(c)} × ${(1 / (1 + lessor.rate) ** (i + 1)).toFixed(6)}\``] })),
+            { c: ["שווי הוגן של הציוד", "", "", W.lessorPv, "סכום הערכים הנוכחיים"], res: true },
           ],
         },
       ],
@@ -250,11 +261,11 @@ export const W_LESSEE: Worked = {
       h: "עודף העלות",
       tables: [
         {
-          head: ["", "התחייבות", "נכס זכות שימוש"],
+          head: ["", "התחייבות", "נכס זכות שימוש", "חישוב"],
           rows: [
-            { c: ["צריך להיות", -LESSEE.liabilityNeed, LESSEE.rouNeed] },
-            { c: ["פחות בספרי הבת", LESSEE.liabilityBook, -LESSEE.rouBook] },
-            { c: ["עודף עלות", W.lesseeLiabilityExcess, W.lesseeRouExcess], res: true },
+            { c: ["צריך להיות", -LESSEE.liabilityNeed, LESSEE.rouNeed, "התחייבות: שלב 1. נכס: שלב 3"] },
+            { c: ["פחות בספרי הבת", LESSEE.liabilityBook, -LESSEE.rouBook, "התחייבות: שלב 2. נכס: שלב 4"] },
+            { c: ["עודף עלות", W.lesseeLiabilityExcess, W.lesseeRouExcess, "צריך להיות פחות בספרי הבת"], res: true },
           ],
         },
       ],
@@ -290,11 +301,13 @@ export const W_CLAIM: Worked = {
       why: ["מה הכלל?", "לפי סעיף 56, עד שהתביעה מסולקת היא נמדדת לפי הגבוה מבין הסכום לפי IAS 37, כלומר ההפרשה בבת, לבין הסכום שהוכר לראשונה, 32,000."],
       tables: [
         {
-          head: ["הפרשה בספרי הבת", "צריך להיות: הגבוה מבין ההפרשה ל־32,000", "יתרת העודף", "הפחתה"],
-          rows: claimStates.map((s) => ({ c: [s.provision, s.group, s.balance, s.amortized] })),
+          head: ["הפרשה בספרי הבת", "צריך להיות: הגבוה מבין ההפרשה ל־32,000", "יתרת העודף", "הפחתה", "חישוב"],
+          rows: claimStates.map((s) => ({
+            c: [s.provision, s.group, s.balance, s.amortized, `צריך להיות: הגבוה מבין \`${n(s.provision)}\` ל־\`32,000\`. יתרה: \`${n(s.provision)} − ${n(s.group)}\`. הפחתה: \`${acc(s.balance)} − (32,000)\``],
+          })),
         },
       ],
-      p: ["יתרת העודף היא ההפרשה בספרים פחות מה שצריך להיות. ההפחתה היא כמה העודף התקרב לאפס מאז מועד הרכישה."],
+      p: ["ההפחתה היא כמה העודף התקרב לאפס מאז מועד הרכישה."],
       result: "כשהבת מכירה בהפרשה, הפער בינה לבין המאוחד קטן, ולכן העודף מופחת. במאוחד הסכום משתנה רק כשההפרשה עוברת את 32,000, כמו במצב השלישי.",
       xl: "`=MAX(14000,32000)`",
     },
@@ -369,7 +382,17 @@ export const W_HFS: Worked = {
   ],
 };
 
-const tableRows = (t: typeof STORY_TABLE): WTable["rows"] => [...t.items, t.tax].map((r) => ({ c: [r.name, r.at, r.amortized, r.end] }));
+/** Where each row of the café's table was worked: its step. */
+const tableFrom = ["שלב 1", "שלב 2", "שלב 3", "שלב 4", "שלב 5", "שלב 8", "שלב 9"];
+const tableRows = (t: typeof STORY_TABLE): WTable["rows"] => [...t.items, t.tax].map((r, i) => ({ c: [r.name, r.at, r.amortized, r.end, tableFrom[i]] }));
+
+/** The bond at one rate: the two flows discounted, the balance on 1.7, and half a year's interest to 31.12. */
+const bondSheet = (rate: number, flows: number[], sum: number, at: number, end: number): WLine[] => [
+  { l: `ריבית ב־30.6.2026: \`${n(bondFlows[0])} × ${(1 / (1 + rate)).toFixed(6)}\``, a: agora(flows[0]) },
+  { l: `ריבית וקרן ב־30.6.2027: \`${n(bondFlows[1])} × ${(1 / (1 + rate) ** 2).toFixed(6)}\``, a: agora(flows[1]), k: "op" },
+  { l: "יתרה ב־1.7.2025", a: sum, k: "sub" },
+  { l: `יתרה ב־31.12.2025: \`${n(at)} × ${(1 + rate).toFixed(2)}^0.5\``, a: end, k: "tot" },
+];
 
 export const W_TABLE: Worked = {
   own: true,
@@ -442,43 +465,38 @@ export const W_TABLE: Worked = {
       result: "ייחוס (20,000), הפחתה 0, יתרה (20,000).",
     },
     {
-      h: "אג״ח לשלם במועד הרכישה",
+      h: "אג״ח לשלם בספרי הבת, 3%",
       timeline: [
-        { d: "1.7.2025", n: "צירוף, 7%", key: true },
+        { d: "1.7.2025", n: "מועד הרכישה", key: true },
         { d: "30.6.2026", n: "ריבית", cf: cafe.coupon },
         { d: "30.6.2027", n: "ריבית + קרן", cf: cafe.coupon + cafe.face, key: true },
       ],
-      why: ["למה שתי ריביות?", "בספרי הבת האג״ח רשומות לפי הריבית ביום ההנפקה, 3%. במאוחד מודדים אותן מחדש לפי ריבית השוק במועד הרכישה, 7%."],
-      tables: [
-        {
-          cap: "היוון התזרים שנותר, בשתי הריביות",
-          head: ["מועד", "תזרים", "ריבית", "מקדם היוון", "ערך נוכחי"],
-          rows: [
-            ...bondFlows.map((c, i) => ({ c: [i === 0 ? "30.6.2026" : "30.6.2027", c, "7%", fac(cafe.marketRate, i + 1), agora(bondNeed[i])] })),
-            { c: ["צריך להיות במאוחד", "", "7%", "", W.bondNeed], res: true },
-            ...bondFlows.map((c, i) => ({ c: [i === 0 ? "30.6.2026" : "30.6.2027", c, "3%", fac(cafe.issueRate, i + 1), agora(bondBook[i])] })),
-            { c: ["בספרי הבת", "", "3%", "", W.bondBook], res: true },
-          ],
-        },
-      ],
-      result: `עודף עלות: \`${BOND.book.toLocaleString("en-US")} − ${BOND.need.toLocaleString("en-US")} = ${Math.round(BOND.at).toLocaleString("en-US")}\`. ההתחייבות במאוחד נמוכה מזו שבספרים, ולכן העודף חיובי.`,
-      xl: "`=-PV(7%,2,10000,200000)` ו־`=-PV(3%,2,10000,200000)`",
+      sheet: bondSheet(cafe.issueRate, bondBook, W.bondBook, BOND.book, BOND.bookEnd),
+      why: ["למה 3%?", "בספרי הבת האג״ח רשומות לפי הריבית ביום ההנפקה, 3%. עד הריבית הבאה, ב־30.6.2026, היתרה גדלה בריבית הזו. לחצי שנה מכפילים בשורש של 1 ועוד הריבית."],
+      result: `בספרי הבת: ${A(BOND.book)} ב־1.7.2025, ו־${A(BOND.bookEnd)} ב־31.12.2025.`,
+      xl: "`=-PV(3%,2,10000,200000)` ו־`=207654*1.03^0.5`",
     },
     {
-      h: "אג״ח לשלם ב־31.12.2025",
+      h: "אג״ח לשלם במאוחד, 7%",
+      sheet: bondSheet(cafe.marketRate, bondNeed, W.bondNeed, BOND.need, BOND.needEnd),
+      why: ["למה 7%?", "במאוחד מודדים את האג״ח מחדש לפי ריבית השוק במועד הרכישה, 7%, כאילו הונפקו באותו יום."],
+      result: `צריך להיות: ${A(BOND.need)} ב־1.7.2025, ו־${A(BOND.needEnd)} ב־31.12.2025.`,
+      xl: "`=-PV(7%,2,10000,200000)` ו־`=192768*1.07^0.5`",
+    },
+    {
+      h: "אג״ח לשלם: עודף העלות",
       tables: [
         {
-          head: ["", "ב־1.7.2025", "× ריבית לחצי שנה", "ב־31.12.2025"],
+          head: ["", "1.7.2025", "31.12.2025", "מאיפה"],
           rows: [
-            { c: ["צריך להיות, 7%", -BOND.need, "1.07^0.5", -BOND.needEnd] },
-            { c: ["בספרי הבת, 3%", -BOND.book, "1.03^0.5", -BOND.bookEnd] },
-            { c: ["עודף עלות", Math.round(BOND.at), "", Math.round(BOND.end)], res: true },
+            { c: ["בספרי הבת, 3%", -BOND.book, -BOND.bookEnd, "שלב 6"] },
+            { c: ["צריך להיות, 7%", -BOND.need, -BOND.needEnd, "שלב 7"] },
+            { c: ["עודף עלות", Math.round(BOND.at), Math.round(BOND.end), "צריך להיות פחות בספרי הבת"], res: true },
           ],
         },
       ],
-      why: ["למה להכפיל?", "עד הריבית הבאה, ב־30.6.2026, כל יתרה גדלה בריבית שלה. לחצי שנה מכפילים בשורש של 1 ועוד הריבית, בריבית דריבית."],
-      result: `הפחתה: \`${Math.round(BOND.end).toLocaleString("en-US")} − ${Math.round(BOND.at).toLocaleString("en-US")} = (${(Math.round(BOND.at) - Math.round(BOND.end)).toLocaleString("en-US")})\`. ההפחתה הולכת להוצאות מימון.`,
-      xl: "`=192768*1.07^0.5` ו־`=207654*1.03^0.5`",
+      why: ["למה העודף חיובי?", "ההתחייבות במאוחד נמוכה מזו שבספרים. התחייבות קטנה יותר מגדילה את הנכסים נטו."],
+      result: `הפחתה: \`${n(Math.round(BOND.end))} − ${n(Math.round(BOND.at))} = (${n(Math.round(BOND.at) - Math.round(BOND.end))})\`. ההפחתה הולכת להוצאות מימון.`,
     },
     {
       h: "מס נדחה",
@@ -497,8 +515,8 @@ export const W_TABLE: Worked = {
       h: "הטבלה המלאה",
       tables: [
         {
-          head: ["", "ייחוס 1.7.2025", "הפחתה 2025", "יתרה 31.12.2025"],
-          rows: [...tableRows(STORY_TABLE), { c: ["סך הכול", STORY_TABLE.total.at, STORY_TABLE.total.amortized, STORY_TABLE.total.end], res: true }],
+          head: ["", "ייחוס 1.7.2025", "הפחתה 2025", "יתרה 31.12.2025", "חישוב"],
+          rows: [...tableRows(STORY_TABLE), { c: ["סך הכול", STORY_TABLE.total.at, STORY_TABLE.total.amortized, STORY_TABLE.total.end, "סכום השורות"], res: true }],
         },
         {
           cap: "לאן הולכת ההפחתה",

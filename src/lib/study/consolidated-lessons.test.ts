@@ -205,7 +205,7 @@ describe("the closing questions of lessons 1 to 5 in the worked layout", () => {
     assert.equal(Math.round(-MASTERS_W.m4TaxBaseAt * 0.23), MASTER4_TABLE.tax.at);
     assert.equal(Math.round(-MASTERS_W.m4TaxBaseEnd * 0.23), MASTER4_TABLE.tax.end);
     assert.equal(M5.premium + MASTERS_W.m5NoPremium * 0.75, M5.fair.ownersGoodwill);
-    assert.deepEqual([W1_MASTER, W2_MASTER, W3_MASTER, W4_MASTER, W5_MASTER].map((w) => w.steps.length), [5, 6, 7, 5, 6]);
+    assert.deepEqual([W1_MASTER, W2_MASTER, W3_MASTER, W4_MASTER, W5_MASTER].map((w) => w.steps.length), [7, 6, 7, 5, 9]);
   });
 });
 
@@ -253,7 +253,7 @@ describe("lesson 1: figures, against a separate calculation in Python", () => {
   it("the story's worked solutions: every figure they add, and the step count", () => {
     assert.deepEqual(WHAT_W, { subNet: 440_000, parentNet: 770_000, share: 330_000, goodwill: 0, parentEquity: 1_100_000, profitShare: 48_000, dividendShare: 18_000 });
     assert.equal(WHAT_W.parentEquity, STORY_POSITION.owners);
-    assert.equal(W_STORY_POSITION.steps.length, 4);
+    assert.equal(W_STORY_POSITION.steps.length, 5);
     assert.equal(W_STORY_SEPARATE.steps.length, 4);
   });
   it("what the mistake screen corrects", () => {
@@ -350,7 +350,7 @@ describe("lesson 2: figures, against a separate calculation in Python", () => {
 describe("lesson 3: the walk, the sorting and the figures, against a separate calculation in Python", () => {
   it("the fund's worked solution: every figure it adds, and the step count", () => {
     assert.deepEqual(RETURNS_W, { fee: 600_000, aboveHurdle: 4_000_000, performance: 600_000, left: 3_800_000 });
-    assert.equal(W_FUND.steps.length, 5);
+    assert.equal(W_FUND.steps.length, 6);
   });
   it("every path of the walk ends, and both verdicts are reachable", () => {
     const ends = new Set<boolean>();
@@ -412,7 +412,7 @@ describe("lesson 4: figures, against a separate calculation in Python", () => {
     assert.equal(Math.round(ACQUISITION_W.bondNeed), BOND.need);
     assert.equal(Math.round(ACQUISITION_W.bondBook), BOND.book);
     assert.equal(Math.round(-ACQUISITION_W.taxBaseAt * 0.23), STORY_TABLE.tax.at);
-    assert.deepEqual([W_EXCESS, W_LESSOR, W_LESSEE, W_CLAIM, W_TAX, W_HFS, W_TABLE].map((w) => w.steps.length), [3, 3, 5, 2, 3, 2, 9]);
+    assert.deepEqual([W_EXCESS, W_LESSOR, W_LESSEE, W_CLAIM, W_TAX, W_HFS, W_TABLE].map((w) => w.steps.length), [4, 3, 5, 2, 3, 2, 10]);
   });
   it("the bond", () => {
     assert.deepEqual([BOND.need, BOND.book, BOND.needEnd, BOND.bookEnd], [192_768, 207_654, 199_401, 210_746]);
@@ -487,7 +487,7 @@ describe("lesson 5: the walk, the sorting and the figures, against a separate ca
     assert.equal(Math.round(GOODWILL_W.gwNoPremium * 0.2), 7_600);
     // the entry balances
     assert.equal(260_000 + GOODWILL_W.entryGoodwill, 44_000 + 170_000 + GOODWILL_W.entryNci);
-    assert.deepEqual([W_COSTS, W_EARNOUT, W_PRIOR, W_NCI, W_GW, W_ENTRY, W_BARGAIN, W_BUYBACK].map((w) => w.steps.length), [2, 5, 3, 3, 4, 2, 2, 3]);
+    assert.deepEqual([W_COSTS, W_EARNOUT, W_PRIOR, W_NCI, W_GW, W_ENTRY, W_BARGAIN, W_BUYBACK].map((w) => w.steps.length), [2, 6, 3, 3, 7, 2, 2, 3]);
   });
   it("the measurement period's worked solution agrees with the solver, step by step", () => {
     const { p, f } = PERIOD_W;
@@ -499,7 +499,7 @@ describe("lesson 5: the walk, the sorting and the figures, against a separate ca
     // The correcting entry balances, under both measurements of the minority.
     assert.equal(12_000, 3_000 + 5_000 + 1_300 + (p.gwFair - f.gwFair));
     assert.equal(12_000, 3_000 + 5_000 + 1_300 + (p.gwShare - f.gwShare) + (f.nciShare - p.nciShare));
-    assert.equal(W_PERIOD.steps.length, 9);
+    assert.equal(W_PERIOD.steps.length, 21);
   });
   it("the closing question", () => {
     assert.equal(M5.net, 223_000);
@@ -532,10 +532,10 @@ describe("lesson 6: the worksheet, against a separate calculation in Python", ()
     assert.equal(WORKSHEET_W.nciCheck, YEAR2_NCI_END);
     // the elimination entry balances
     assert.equal(16_000 + 34_000 + 74_000 + 12_000 + 20_000 + STORY6.goodwill.goodwill, -STORY6.table.tax.at + 140_000 + STORY6.goodwill.nci);
-    assert.deepEqual([W6_DATA, W6_EXCESS, W6_ELIM, W6_PL, W6_SPLIT, W6_BS, W6_EQUITY, W6_SOCE, W6_YEAR2, W6_MASTER].map((w) => w.steps.length), [2, 4, 2, 3, 3, 2, 3, 2, 4, 15]);
+    assert.deepEqual([W6_DATA, W6_EXCESS, W6_ELIM, W6_PL, W6_SPLIT, W6_BS, W6_EQUITY, W6_SOCE, W6_YEAR2, W6_MASTER].map((w) => w.steps.length), [3, 4, 3, 3, 5, 2, 4, 2, 5, 19]);
     // the total-equity row of the balance-sheet worksheet, as in the lecturer's sheet: 342,000 + 148,000 + (16,000 − 140,000 + 32,000 − 4,000)
     const ws = W6_BS.steps[1].tables![0].rows;
-    assert.deepEqual(ws.find((r) => r.c[0] === "סך ההון")!.c.slice(1), [342_000, 148_000, -96_000, -394_000]);
+    assert.deepEqual(ws.find((r) => r.c[0] === "סך ההון")!.c.slice(1, 5), [342_000, 148_000, -96_000, -394_000]);
     // the subtotals of the profit worksheet: 310,000 − 182,000, then − 76,000 + 0
     const pl = W6_PL.steps[2].tables![0].rows;
     assert.deepEqual(["רווח גולמי", "רווח לפני מס"].map((l) => pl.find((r) => r.c[0] === l)!.c[5]), [128_000, 52_000]);
@@ -667,7 +667,7 @@ describe("lesson 8: the walk, the sorting and the figures, against a separate ca
     assert.equal(BOND8_OCI.subReserve - BOND8_OCI.groupReserve, FINANCE_W.excessEnd25);
     // the excess runs off to nothing over the three years
     assert.equal(BOND8.group.reduce((s, g, i) => s + g.interest - BOND8.sub[i + 1].interest, 0), -FINANCE_W.excessAt);
-    assert.deepEqual([W8_SHARES, W8_AC, W8_FVOCI, W8_IMPAIR, W8_CONTROLLER, W8_MASTER].map((w) => w.steps.length), [4, 3, 5, 2, 4, 5]);
+    assert.deepEqual([W8_SHARES, W8_AC, W8_FVOCI, W8_IMPAIR, W8_CONTROLLER, W8_MASTER].map((w) => w.steps.length), [7, 5, 8, 3, 5, 9]);
   });
   it("every path of the walk ends, and both verdicts are reachable", () => {
     const ends = new Set<boolean>();
@@ -727,7 +727,7 @@ describe("lesson 9: the sorting and the figures, against a separate calculation 
     // goodwill through the control premium
     assert.equal(12_000 + IMPAIRMENT_W.mNoPremium * 0.75, M9.ownersGoodwill);
     assert.equal(IMPAIRMENT_W.mNoPremium * 0.25, M9.nciGoodwill);
-    assert.deepEqual([W9_IMP, W9_DTA, W9_DATES, W9_PREFISSUE, W9_PREFAT, W9_PREFPROFIT, W9_PREFNA, W9_MASTER].map((w) => w.steps.length), [5, 5, 3, 1, 2, 2, 1, 6]);
+    assert.deepEqual([W9_IMP, W9_DTA, W9_DATES, W9_PREFISSUE, W9_PREFAT, W9_PREFPROFIT, W9_PREFNA, W9_MASTER].map((w) => w.steps.length), [11, 7, 3, 1, 2, 2, 1, 7]);
   });
   it("eight preference shares to sort, both answers among them", () => {
     assert.equal(PREF_PROFIT.length, 8);
@@ -774,7 +774,7 @@ describe("lesson 10: the sorting and the figures, against a separate calculation
     assert.equal(MACH10_FIG.y1.net + MACH10_FIG.y1.tax, MACH10[2].depDiff + MACH10_FIG.groupGain - MACH10_FIG.buyerGain);
     assert.equal(BORROW10.net + BORROW10.interest + INTERCOMPANY_W.b26Dta, 2 * BORROW10.interest + BORROW10.tax);
     assert.equal(BORROW10.opening2027 + BORROW10.dta2027 + BORROW10.tax2027, BORROW10.left2027 + BORROW10.dep);
-    assert.deepEqual([W10_BAL, W10_UNSOLD, W10_SOLD, W10_PRIOR, W10_LOSS, W10_UPDOWN, W10_LAND, W10_MACHINE, W10_BORROW, W10_MASTER].map((w) => w.steps.length), [3, 3, 2, 3, 3, 2, 4, 4, 3, 6]);
+    assert.deepEqual([W10_BAL, W10_UNSOLD, W10_SOLD, W10_PRIOR, W10_LOSS, W10_UPDOWN, W10_LAND, W10_MACHINE, W10_BORROW, W10_MASTER].map((w) => w.steps.length), [3, 4, 5, 3, 6, 4, 9, 9, 5, 6]);
   });
   it("eight transactions to sort, both answers among them", () => {
     assert.equal(DEFER10.length, 8);
@@ -827,7 +827,7 @@ describe("lesson 11: the sorting and the figures, against a separate calculation
     assert.equal(Math.round(f.price9), BOND11_PRICE);
     assert.equal(Math.round(f.sale5), RESALE11.sale);
     assert.equal(Math.round(f.fair7), FV11.fair);
-    assert.deepEqual([L11_ROU, L11_FIN, L11_REDEEM, L11_AFTER, L11_RESALE, L11_BEFORE, L11_FAIR].map((w) => w.steps.length), [3, 3, 2, 3, 2, 3, 3]);
+    assert.deepEqual([L11_ROU, L11_FIN, L11_REDEEM, L11_AFTER, L11_RESALE, L11_BEFORE, L11_FAIR].map((w) => w.steps.length), [3, 6, 3, 5, 2, 6, 5]);
   });
   it("eight adjustments to sort, both answers among them", () => {
     assert.equal(WHO11.length, 8);
@@ -900,7 +900,7 @@ describe("lesson 12: the sorting and the figures, against a separate calculation
             assert.ok(Math.abs(sum(1) - sum(2)) < 0.01, `${w.title}: ${t.cap}`);
           }
     for (const w of [L12_ENTRY, L12_RESERVES, L12_KEEP, L12_UNREAL, L12_YEAR, L12_UP, L12_DOWN, L12_TAX, L12_ISSUE, L12_GAIN, MASTER12]) assert.ok(w.own, w.title);
-    assert.deepEqual([L12_ENTRY, L12_RESERVES, L12_KEEP, L12_UNREAL, L12_YEAR, L12_UP, L12_DOWN, L12_TAX, L12_ISSUE, L12_GAIN, MASTER12].map((w) => w.steps.length), [3, 2, 3, 3, 2, 4, 3, 3, 3, 2, 5]);
+    assert.deepEqual([L12_ENTRY, L12_RESERVES, L12_KEEP, L12_UNREAL, L12_YEAR, L12_UP, L12_DOWN, L12_TAX, L12_ISSUE, L12_GAIN, MASTER12].map((w) => w.steps.length), [5, 3, 5, 5, 3, 6, 7, 3, 5, 2, 14]);
   });
   it("calculations in the practice", () => {
     const expected: Record<string, number> = { "lc-gain-n": 92_000, "lc-nci-n": 219_000, "inc-nci-n": 135_000, "inc-res-n": 23_000, "dec-nci-n": 110_000, "dec-tax-n": 6_900, "iss-nci-n": 330_000, "year-adj": 70_000, "lc-res-pl": 65_000, "keep-gain": 100_000, "up-restore": 9_000, "down-gain": 144_000, "year-owners": 355_000, "iss-res": 90_000, "dec-polb": 121_000, "issue-gw": 180_000, "tax-expense": 5_750 };

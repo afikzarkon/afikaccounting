@@ -17,6 +17,7 @@ export const RETURNS_W = {
 
 const W = RETURNS_W;
 const pct = (v: number) => `${Math.round(v * 100) / 100}%`;
+const n = (v: number) => v.toLocaleString("en-US");
 
 export const W_FUND: Worked = {
   own: true,
@@ -64,39 +65,39 @@ export const W_FUND: Worked = {
       result: `נשארים ${A(W.left)} שמתחלקים לפי ההחזקות.`,
       xl: "`=5000000-600000-600000`",
     },
-    {
-      h: "החלק של המנהל לפי ההחזקה",
-      tables: [
-        {
-          head: ["", "החזקה 3%", "החזקה 25%"],
-          rows: [
-            { c: ["רווח שנשאר למחזיקים", W.left, W.left] },
-            { c: ["× שיעור ההחזקה", "3%", "25%"] },
-            { c: ["החלק של המנהל", FUND_SMALL.fromHolding, FUND_LARGE.fromHolding], res: true },
-          ],
-        },
+    ...[
+      { h: "המנהל עם 3%", r: FUND_SMALL, hold: "3%" },
+      { h: "המנהל עם 25%", r: FUND_LARGE, hold: "25%" },
+    ].map(({ h, r, hold }) => ({
+      h,
+      sheet: [
+        { l: "רווח שנשאר למחזיקים", a: W.left },
+        { l: `× ${hold}: החלק לפי ההחזקה`, a: r.fromHolding, k: "sub" as const },
+        { l: "ועוד עמלה קבועה", a: r.fee, k: "op" as const },
+        { l: "ועוד עמלה על ביצועים", a: r.performance, k: "op" as const },
+        { l: "סך הכול למנהל", a: r.total, k: "sub" as const },
+        { l: `החלק שלו ברווח: \`${n(r.total)} / ${n(FUND.profit)}\``, a: pct(r.share), k: "tot" as const },
       ],
-      result: `ב־3% הוא מקבל ${A(FUND_SMALL.fromHolding)}, וב־25% ${A(FUND_LARGE.fromHolding)}.`,
-      xl: "`=3800000*3%` ו־`=3800000*25%`",
-    },
+      result: `עם ${hold} המנהל מקבל ${A(r.total)}, שהם ${pct(r.share)} מהרווח של הקרן.`,
+      xl: `\`=${W.left}*${hold}+${r.fee}+${r.performance}\``,
+    })),
     {
-      h: "סך הכול, וכמה זה מהרווח",
+      h: "שני המצבים זה מעל זה",
       tables: [
         {
-          head: ["", "החזקה 3%", "החזקה 25%"],
+          head: ["", "עמלות", "החלק לפי ההחזקה", "סך הכול למנהל", "מאיפה"],
           rows: [
-            { c: ["עמלה קבועה", FUND_SMALL.fee, FUND_LARGE.fee] },
-            { c: ["עמלה על ביצועים", FUND_SMALL.performance, FUND_LARGE.performance] },
-            { c: ["החלק לפי ההחזקה", FUND_SMALL.fromHolding, FUND_LARGE.fromHolding] },
-            { c: ["סך הכול למנהל", FUND_SMALL.total, FUND_LARGE.total], res: true },
-            { c: ["÷ רווח לפני עמלות", FUND.profit, FUND.profit] },
-            { c: ["החלק שלו ברווח", pct(FUND_SMALL.share), pct(FUND_LARGE.share)], res: true },
+            { c: ["החזקה 3%", FUND_SMALL.fee + FUND_SMALL.performance, FUND_SMALL.fromHolding, FUND_SMALL.total, "שלב 4"] },
+            { c: ["החזקה 25%", FUND_LARGE.fee + FUND_LARGE.performance, FUND_LARGE.fromHolding, FUND_LARGE.total, "שלב 5"] },
+            {
+              c: ["ההפרש", FUND_LARGE.fee + FUND_LARGE.performance - FUND_SMALL.fee - FUND_SMALL.performance + 0, FUND_LARGE.fromHolding - FUND_SMALL.fromHolding, FUND_LARGE.total - FUND_SMALL.total, "25% פחות 3%"],
+              res: true,
+            },
           ],
         },
       ],
       why: ["מה עושים עם האחוז?", "האחוז מראה כמה המנהל חשוף לתוצאות הקרן. כאן ההחזקה לבדה מעלה את החלק שלו מכרבע מהרווח לכמעט חצי. אין בתקן סף של אחוזים, ולכן זה נתון לשיקול דעת ולא כלל."],
       result: `ב־3% הוא מקבל ${pct(FUND_SMALL.share)} מהרווח, וב־25% ${pct(FUND_LARGE.share)}. העמלות זהות, וכל ההפרש נובע מההחזקה.`,
-      xl: "`=1314000/5000000` ו־`=2150000/5000000`",
     },
   ],
 };

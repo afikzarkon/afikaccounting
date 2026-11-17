@@ -192,7 +192,7 @@ const equity = (cap: string, rows: [string, WCell, WCell, WCell][], retained = t
 /** Both splits one above the other, and the adjustment between them: the group less the subsidiary. */
 const compare = (year: string, who: string, sub: { pl: number; oci: number }, group: { pl: number; oci: number }, from: [string, string]): WTable => ({
   cap: `הפיצול של ${year}, לפני מס`,
-  head: ["", "רווח או הפסד", "רווח כולל אחר", "מאיפה"],
+  head: ["", "רווח או הפסד", "רווח כולל אחר", "חישוב"],
   rows: [
     { c: [who, sub.pl, sub.oci, from[0]] },
     { c: ["הקבוצה", group.pl, group.oci, from[1]] },
