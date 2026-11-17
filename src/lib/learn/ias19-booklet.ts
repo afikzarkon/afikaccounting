@@ -501,6 +501,8 @@ export type PvOpts = {
 const partOf = (s: string) => s.split("/").map(Number).reduce((a, x) => a / x);
 /** A narrow no-break space: the calculation stays on one line and in its column. */
 const NBSP = String.fromCharCode(0x202f);
+/** n to two decimals in a table (15.33): enough to read, and the table stays in its column. The check uses the exact n. */
+const nShow = (n: number) => nf(n, 2);
 
 /**
  * One balance as a table, by the owner's choice of 2026-11-17: a row for each
@@ -526,7 +528,7 @@ export function pvTable(title: string, rows: PvRow[], o: PvOpts): BkStep {
     ...(has.x ? [{ head: o.x ?? "מקדם", cell: (x: PvRow) => nf(x.x ?? 1, 3) }] : []),
     ...(has.part ? [{ head: o.part ?? "נצבר", cell: (x: PvRow) => x.part ?? "1" }] : []),
     ...(oneRate ? [] : [{ head: "i", cell: (x: PvRow) => pc(rateOf(x)) }]),
-    { head: "n", cell: (x) => yrs(x.n) },
+    { head: "n", cell: (x) => nShow(x.n) },
     {
       head: "חישוב",
       cell: (x) =>
@@ -535,7 +537,7 @@ export function pvTable(title: string, rows: PvRow[], o: PvOpts): BkStep {
           .join(" × ")
           // The product holds together, and so does the discount: a narrow column breaks only before "÷", so each line still reads left to right.
           .replace(/ /g, NBSP)
-          .concat(x.n ? ` ÷${NBSP}${b(rateOf(x))}^${yrs(x.n)}` : ""),
+          .concat(x.n ? ` ÷${NBSP}${b(rateOf(x))}^${nShow(x.n)}` : ""),
     },
     { head: "ערך נוכחי", cell: (x) => val(x.value) },
   ];
@@ -785,34 +787,34 @@ export function amendQuestion(id: string, title: string, q: AmendInput): BkQuest
       pvTable(
         "ביאור 1: יתרת פתיחה",
         [{ label: `31.12.${y - 1}`, heads: S.heads, p: S.p, amount: S.salary * q.oldRate, part: yearsAs(s.served0), n: S.remaining, value: s.opening }],
-        { rate: S.corp, label: "מועד", amount: "מענק לשנה", part: "שנים", amountDec: 2, why: `מ-1.1.${q.since} עד 31.12.${y - 1} עברו ${s.served0} שנים. נתוני 31.12.${y - 1}.` },
+        { rate: S.corp, label: "מועד", amount: "מענק", part: "שנים", amountDec: 2, why: `מ-1.1.${q.since} עד 31.12.${y - 1} עברו ${s.served0} שנים. נתוני 31.12.${y - 1}.` },
       ),
       pvTable(
         "ביאור 2: עלות שירות שוטף, בשני חלקים",
         [
-          { label: "עד השינוי", heads: S.heads, p: S.p, amount: S.salary * q.oldRate, part: `${m}/12`, n: S.remaining - m / 12, value: s.sBefore },
-          { label: "מהשינוי", heads: A.heads, p: A.p, amount: A.salary * q.newRate, part: `${12 - m}/12`, n: A.remaining - (12 - m) / 12, rate: A.corp, value: s.sAfter },
+          { label: "לפני", heads: S.heads, p: S.p, amount: S.salary * q.oldRate, part: `${m}/12`, n: S.remaining - m / 12, value: s.sBefore },
+          { label: "אחרי", heads: A.heads, p: A.p, amount: A.salary * q.newRate, part: `${12 - m}/12`, n: A.remaining - (12 - m) / 12, rate: A.corp, value: s.sAfter },
         ],
         {
           rate: S.corp,
           label: "חלק",
-          amount: "מענק לשנה",
+          amount: "מענק",
           part: "שנים",
           amountDec: 2,
-          why: [`עד השינוי: ${m} חודשים בתנאים הישנים, לפי נתוני תחילת השנה.`, `מהשינוי: ${12 - m} חודשים בתנאים החדשים, לפי נתוני יום השינוי.`],
+          why: [`לפני השינוי: ${m} חודשים בתנאים הישנים, לפי נתוני תחילת השנה.`, `אחרי השינוי: ${12 - m} חודשים בתנאים החדשים, לפי נתוני יום השינוי.`],
         },
       ),
       {
         ...pvTable(
           "ביאור 3: עלות שירות עבר",
           [
-            { label: "בתנאים הישנים", heads: A.heads, p: A.p, amount: A.salary * q.oldRate, part: yearsAs(s.servedA), n: A.remaining, value: s.before },
-            { label: "בתנאים החדשים", heads: A.heads, p: A.p, amount: A.salary * q.newRate, part: yearsAs(s.servedA), n: A.remaining, value: s.after },
+            { label: "ישנים", heads: A.heads, p: A.p, amount: A.salary * q.oldRate, part: yearsAs(s.servedA), n: A.remaining, value: s.before },
+            { label: "חדשים", heads: A.heads, p: A.p, amount: A.salary * q.newRate, part: yearsAs(s.servedA), n: A.remaining, value: s.after },
           ],
           {
             rate: A.corp,
-            label: "ההתחייבות",
-            amount: "מענק לשנה",
+            label: "תנאים",
+            amount: "מענק",
             part: "שנים",
             amountDec: 2,
             total: false,
@@ -839,7 +841,7 @@ export function amendQuestion(id: string, title: string, q: AmendInput): BkQuest
         ...pvTable(
           "ביאור 5: יתרת סגירה",
           [{ label: `31.12.${y}`, heads: E.heads, p: E.p, amount: E.salary * q.newRate, part: yearsAs(s.served0 + 1), n: E.remaining, value: s.closing }],
-          { rate: E.corp, label: "מועד", amount: "מענק לשנה", part: "שנים", amountDec: 2, why: "בתנאים החדשים, לפי נתוני סוף השנה." },
+          { rate: E.corp, label: "מועד", amount: "מענק", part: "שנים", amountDec: 2, why: "בתנאים החדשים, לפי נתוני סוף השנה." },
         ),
         notes: [
           {

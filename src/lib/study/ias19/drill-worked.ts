@@ -1,7 +1,7 @@
-import type { WorkedBody, WStep } from "../worked";
-import type { Drill } from "./drills";
+import type { WCell, WorkedBody, WStep, WTable } from "../worked";
+import type { Drill, DrillStep, DrillTable } from "./drills";
 import { answersStep, withCalcTable } from "./calc-table";
-import { ltrFormulas } from "./ltr";
+import { ltrFormulas, ltrMarks } from "./ltr";
 
 /**
  * A drawn practice question's solution in the site's worked layout, the one
@@ -15,11 +15,30 @@ import { ltrFormulas } from "./ltr";
 /** The card numbers its steps: a step's own "2." goes, its ①–⑤ stay. */
 const unnumbered = (t: string) => t.replace(/^\s*\d+[.)]\s*/, "");
 
+const LRI = String.fromCharCode(0x2066);
+const PDI = String.fromCharCode(0x2069);
+/** A cell of a present-value table: figures and a calculation read left to right; words stay words. */
+const cell = (c: string | number): WCell => (typeof c === "number" ? c : /\d/.test(c) && !/[֐-׿]/.test(c) ? `${LRI}${ltrMarks(c)}${PDI}` : ltrFormulas(c));
+
+/** A balance's present-value table (pvTable) in the worked layout, its total as the result row. */
+const pvTableOf = (t: DrillTable): WTable => ({
+  cap: t.title,
+  head: t.head,
+  rows: [...t.rows.map((r) => ({ c: r.map(cell) })), ...(t.foot ? [{ c: t.foot.map(cell), res: true }] : [])],
+});
+
+function buildStep(b: DrillStep): WStep {
+  const s = withCalcTable({ h: ltrFormulas(unnumbered(b.title)), tables: b.tables?.map(pvTableOf) }, b.lines.map(ltrFormulas));
+  if (!s.p?.length) delete s.p;
+  if (!s.tables?.length) delete s.tables;
+  return s;
+}
+
 export function drillWorked(d: Drill): WorkedBody {
   const steps: WStep[] = [
     { h: "מה מחפשים", p: d.seek.map(ltrFormulas) },
     { h: "מה בודקים", p: d.check.map(ltrFormulas) },
-    ...d.build.map((b) => withCalcTable({ h: ltrFormulas(unnumbered(b.title)) }, b.lines.map(ltrFormulas))),
+    ...d.build.map(buildStep),
   ];
   if (d.entry) {
     // A step that writes the entry out in words gives way to the entry itself, drawn as one.

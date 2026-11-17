@@ -1,4 +1,5 @@
 import { accrued, amendedYear, assetsYear, attribution, backLoaded, grown, plainYear, pv, recognisedAssets, retirementPN, settlementGain, tiered } from "@/lib/learn/ias19";
+import { type PvOpts, type PvRow, pvTable, yearsAs } from "@/lib/learn/ias19-booklet";
 import { fmt, pct } from "./shared";
 
 /**
@@ -47,8 +48,17 @@ export type DrillAsk =
   | { kind: "number"; id: string; label: string; answer: number; unit?: string }
   | { kind: "choice"; id: string; label: string; options: string[]; answer: number };
 
-export type DrillStep = { title: string; lines: string[] };
-export type DrillTable = { head: string[]; rows: (string | number)[][]; foot?: (string | number)[] };
+/** `tables`: a balance's present value as the course's table (pvTable), a row per employee or period, after the step's lines. */
+export type DrillStep = { title: string; lines: string[]; tables?: DrillTable[] };
+export type DrillTable = { title?: string; head: string[]; rows: (string | number)[][]; foot?: (string | number)[] };
+
+/**
+ * A balance's present value as a table, by the owner's choice of 2026-11-17:
+ * a row for each employee or period, the figures, the calculation, the value.
+ * pvTable throws when a row's figures don't give its value, so a draw can
+ * never show a table that disagrees with its answer.
+ */
+const pvT = (rows: PvRow[], o: PvOpts): DrillTable => pvTable("", rows, o).tables![0];
 
 export type Drill = {
   family: DrillFamily;
@@ -367,9 +377,9 @@ export function pucDrill(r: Rand): Drill {
       {
         title: "④ היוון להיום",
         lines: [
-          `${sh(F.accrued)}${d.stay ? ` × ${pct(d.stay)}` : ""} ÷ ${f1(d.rate)}^${d.n} = ${sh(F.obligation)}.`,
           `לשם השוואה: עד הפרישה ${v("יצבור", "תצבור")} ${fmt(F.served + d.n)} שנים, כלומר מענק של ${sh(F.total)} — אבל היום נכנס רק החלק שכבר נצבר, ובערך נוכחי.`,
         ],
+        tables: [pvT([{ label: d.role.role, ...(d.stay ? { p: d.stay } : {}), amount: F.unit, part: yearsAs(F.served), n: d.n, value: F.obligation }], { rate: d.rate, label: "עובד", amount: "הטבה לשנה", part: "שנים" })],
       },
     ],
   };
@@ -478,11 +488,19 @@ export function windowDrill(r: Rand): Drill {
           lines: [
             why,
             `צבירה לשנה: ${fmt(rule.grant)} ÷ ${x.window} = ${sh(x.perYear)}; נצברו ${x.served} שנים (מגיל ${x.start} עד ${p.age}) → ${sh(x.accrued)}.`,
-            `היוון ${x.n} שנים (מגיל ${p.age} עד ${rule.retire}) והסתברות: ${sh(x.accrued)} ÷ ${f1(d.rate)}^${x.n} × ${pct(p.stay)} = ${sh(x.obligation)}.`,
           ],
         };
       }),
-      { title: "סך הכול", lines: [`${rows.map((x) => sh(x.obligation)).join(" + ")} = ${sh(total)}.`] },
+      {
+        title: "ההתחייבות: היוון והסתברות",
+        lines: [`מהוונים מהגיל של היום עד גיל ${rule.retire}, גם כשהצבירה נגמרת קודם.`],
+        tables: [
+          pvT(
+            d.people.map((p, k) => ({ label: p.id, p: p.stay, amount: rows[k].perYear, part: String(rows[k].served), n: rows[k].n, value: rows[k].obligation })),
+            { rate: d.rate, label: "עובד", amount: "צבירה לשנה", part: "נצברו", amountDec: 2 },
+          ),
+        ],
+      },
     ],
     table: {
       head: ["עובד", "צובר מגיל", "עד גיל", "לשנה", "נצברו", "n", "הסתברות", "התחייבות"],
@@ -566,7 +584,7 @@ export function tiersDrill(r: Rand): Drill {
                 `לפי הנוסחה: ${firstPart} × ${fmt(d.first.perYear)}${laterPart ? ` + ${laterPart} × ${fmt(d.later)}` : ""} = ${sh(Math.min(F.f(d.served), Infinity))}${d.cap && F.f(d.served) > d.cap ? ` → עד התקרה: ${sh(d.cap)}` : ""}.`,
               ],
       },
-      { title: "(ד) היוון", lines: [`${sh(F.accrued)} ÷ ${f1(d.rate)}^${F.n} = ${sh(F.obligation)}.`] },
+      { title: "(ד) היוון", lines: [], tables: [pvT([{ label: `${d.served} שנים`, amount: F.accrued, n: F.n, value: F.obligation }], { rate: d.rate, label: "ותק", amount: "נצבר עד היום" })] },
     ],
   };
 }
@@ -640,15 +658,24 @@ export function yearDrill(r: Rand): Drill {
     ],
     build: [
       { title: "① יחידת זכאות", lines: [`${pct(d.share)} × ${fmt(d.salary)} × ${f1(d.growth)}^${d.total - 1} = ${sh(F.unit)}.`] },
-      { title: "② הפתיחה", lines: [`שנה אחת נצברה; ${F.n0} שנים עד הפרישה: ${sh(F.unit)} ÷ ${f1(d.r0)}^${F.n0} = ${sh(F.opening)}.`] },
-      { title: "③ עלות שירות שוטף", lines: [`יחידה אחת, בשיעור של תחילת השנה, מסוף ${y1}: ${sh(F.unit)} ÷ ${f1(d.r0)}^${F.n0 - 1} = ${sh(F.service)}.`] },
+      {
+        title: "② הפתיחה",
+        lines: [`שנה אחת נצברה, ו-${F.n0} שנים עד הפרישה.`],
+        tables: [pvT([{ label: `31.12.${d.from}`, amount: F.unit, part: "1", n: F.n0, value: F.opening }], { rate: d.r0, label: "מועד", amount: "יחידת זכאות", part: "שנים" })],
+      },
+      {
+        title: "③ עלות שירות שוטף",
+        lines: [`יחידה אחת, בשיעור של תחילת השנה, מהוונת מסוף ${y1}.`],
+        tables: [pvT([{ label: `שירות ${y1}`, amount: F.unit, part: "1", n: F.n0 - 1, value: F.service }], { rate: d.r0, label: "תקופה", amount: "יחידת זכאות", part: "שנים" })],
+      },
       { title: "④ ריבית", lines: [`${sh(F.opening)} × ${pct(d.r0)} = ${sh(F.interest)}.`] },
       {
         title: "⑤ הסגירה",
         lines: [
           d.later ? `הפרישה נדחתה: יחידה חדשה ${pct(d.share)} × ${fmt(d.salary)} × ${f1(d.growth)}^${d.total} = ${sh(F.unitEnd)}.` : "ההנחות על הפרישה לא השתנו — אותה יחידה.",
-          `שתי שנים נצברו: ${sh(F.unitEnd)} × 2 ÷ ${f1(d.r1)}^${F.nEnd} = ${sh(F.closing)}.`,
+          "שתי שנים נצברו, בהנחות של סוף השנה.",
         ],
+        tables: [pvT([{ label: `31.12.${y1}`, amount: F.unitEnd, part: "2", n: F.nEnd, value: F.closing }], { rate: d.r1, label: "מועד", amount: "יחידת זכאות", part: "שנים" })],
       },
       {
         title: "⑥ המדידה מחדש — השורה המאזנת",
@@ -773,22 +800,31 @@ export function amendDrill(r: Rand): Drill {
       "ריבית: על הפתיחה עד השינוי; ומהשינוי — על ההתחייבות אחרי השינוי, בשיעור החדש.",
     ],
     build: [
-      { title: "① הפתיחה", lines: [`${fmt(d.oldPer)} × 1 ÷ ${f1(d.r0)}^${d.years} = ${sh(F.opening)}.`] },
+      { title: "① הפתיחה", lines: [], tables: [pvT([{ label: `31.12.${d.from}`, amount: d.oldPer, part: "1", n: d.years, value: F.opening }], { rate: d.r0, label: "מועד", amount: "מענק לשנה", part: "שנים" })] },
       {
         title: "② עלות שירות שוטף",
-        lines: [
-          `עד השינוי: ${fmt(d.oldPer)} × ${m(F.before)} ÷ ${f1(d.r0)}^${nA} = ${sh(F.serviceBefore)}.`,
-          `אחרי השינוי: ${fmt(d.newPer)} × ${m(F.after)} ÷ ${f1(d.ra)}^${d.years - 1} = ${sh(F.serviceAfter)}.`,
-          `סה״כ ${sh(F.service)}.`,
+        lines: [`ההיוון מסוף כל תקופה עד הפרישה: ${nA} שנים עד השינוי, ${d.years - 1} מהשינוי.`],
+        tables: [
+          pvT(
+            [
+              { label: "עד השינוי", amount: d.oldPer, part: m(F.before), n: F.nAmend, value: F.serviceBefore },
+              { label: "מהשינוי", amount: d.newPer, part: m(F.after), n: d.years - 1, rate: d.ra, value: F.serviceAfter },
+            ],
+            { rate: d.r0, label: "תקופה", amount: "מענק לשנה", part: "שנים" },
+          ),
         ],
       },
       {
         title: "③ עלות שירות עבר (ביום השינוי)",
-        lines: [
-          `ותק ביום השינוי: ${sA} שנים; n = ${nA}; שיעור ${pct(d.ra)}.`,
-          `לפני: ${fmt(d.oldPer)} × ${sA} ÷ ${f1(d.ra)}^${nA} = ${sh(F.pastBefore)}.`,
-          `אחרי: ${fmt(d.newPer)} × ${sA} ÷ ${f1(d.ra)}^${nA} = ${sh(F.pastAfter)}.`,
-          `שירות עבר: ${sh(F.pastService)}.`,
+        lines: [`ותק ביום השינוי: ${sA} שנים; n = ${nA}; שיעור ${pct(d.ra)}.`, `שירות עבר: ${sh(F.pastAfter)} − ${sh(F.pastBefore)} = ${sh(F.pastService)}.`],
+        tables: [
+          pvT(
+            [
+              { label: "לפני", amount: d.oldPer, part: yearsAs(1 + F.before / 12), n: F.nAmend, value: F.pastBefore },
+              { label: "אחרי", amount: d.newPer, part: yearsAs(1 + F.before / 12), n: F.nAmend, value: F.pastAfter },
+            ],
+            { rate: d.ra, label: "תנאים", amount: "מענק לשנה", part: "שנים", total: false },
+          ),
         ],
       },
       {
@@ -799,7 +835,7 @@ export function amendDrill(r: Rand): Drill {
           `סה״כ ${sh(F.interest)}.`,
         ],
       },
-      { title: "⑤ הסגירה", lines: [`${fmt(d.newPer)} × 2 ÷ ${f1(d.rEnd)}^${d.years - 1} = ${sh(F.closing)}.`] },
+      { title: "⑤ הסגירה", lines: [], tables: [pvT([{ label: `31.12.${y1}`, amount: d.newPer, part: "2", n: d.years - 1, value: F.closing }], { rate: d.rEnd, label: "מועד", amount: "מענק לשנה", part: "שנים" })] },
       { title: "⑥ מדידה מחדש", lines: [`${sh(F.closing)} − ${sh(F.opening)} − ${sh(F.service)} − ${sh(F.pastService)} − ${sh(F.interest)} = ${loss ? "" : "−"}${sh(Math.abs(F.pn))} → ${loss ? "הפסד" : "רווח"}, ל-OCI.`] },
     ],
     table: {
@@ -863,7 +899,7 @@ export function settleDrill(r: Rand): Drill {
       "תשלום לפי תנאי התוכנית, גם אם מוקדם מהצפוי, אינו סילוק: ההפרש הוא שינוי אומדן — מדידה מחדש, ב-OCI.",
     ],
     build: [
-      { title: "1. ההתחייבות בספרים", lines: [`${fmt(d.perYear)} × ${d.served} ÷ ${f1(d.rate)}^${d.n} = ${sh(F.books)}.`] },
+      { title: "1. ההתחייבות בספרים", lines: [], tables: [pvT([{ label: "1.1", amount: d.perYear, part: String(d.served), n: d.n, value: F.books }], { rate: d.rate, label: "מועד", amount: "מענק לשנה", part: "שנים" })] },
       {
         title: "א. סילוק",
         lines: [
@@ -944,7 +980,24 @@ export function assetsDrill(r: Rand): Drill {
       "ברווח והפסד: עלות שירות, וריבית נטו (הוצאות ריבית פחות הכנסות ריבית).",
     ],
     build: [
-      { title: "① ההתחייבות", lines: [`צבירה לשנה: ${fmt(d.grant)} ÷ ${d.years} = ${sh(F.perYear)}.`, `פתיחה: ${sh(F.perYear)} ÷ ${f1(d.rate)}^${d.n} = ${sh(F.opening)}; עלות שירות: ÷ ${f1(d.rate)}^${d.n - 1} = ${sh(F.service)}; ריבית: ${sh(F.opening)} × ${pct(d.rate)} = ${sh(F.interest)}.`, `סגירה: ${sh(F.perYear)} × 2 ÷ ${f1(d.rate)}^${d.n - 1} = ${sh(F.closing)}${d.paidFromFund ? "" : " — בלי מדידה מחדש, כי שום הנחה לא השתנתה"}.`] },
+      {
+        title: "① ההתחייבות",
+        lines: [
+          `צבירה לשנה: ${fmt(d.grant)} ÷ ${d.years} = ${sh(F.perYear)}.`,
+          `ריבית: ${sh(F.opening)} × ${pct(d.rate)} = ${sh(F.interest)}.`,
+          ...(d.paidFromFund ? [] : ["בלי מדידה מחדש, כי שום הנחה לא השתנתה."]),
+        ],
+        tables: [
+          pvT(
+            [
+              { label: "פתיחה", amount: F.perYear, part: "1", n: d.n, value: F.opening },
+              { label: "עלות שירות", amount: F.perYear, part: "1", n: d.n - 1, value: F.service },
+              { label: "סגירה", amount: F.perYear, part: "2", n: d.n - 1, value: F.closing },
+            ],
+            { rate: d.rate, label: "יתרה", amount: "צבירה לשנה", part: "שנים", total: false },
+          ),
+        ],
+      },
       { title: "② הכנסות ריבית", lines: [`על הפתיחה: ${fmt(d.opening)} × ${pct(d.rate)} = ${sh(F.onOpening)}.`, `על ההפקדה, ${months} חודשים: ${fmt(d.contribution)} × (${f1(d.rate)}^(${months}/12) − 1) = ${sh(F.onContribution)}.`, `סה״כ ${sh(F.a.interest)}.`] },
       { title: "③ מדידה מחדש של הנכסים", lines: [`${fmt(d.closing)} − ${fmt(d.opening)} − ${sh(F.a.interest)} − ${fmt(d.contribution)}${d.paidFromFund ? ` + ${fmt(d.paidFromFund)}` : ""} = ${gain ? "" : "−"}${sh(Math.abs(F.a.pn))} → ${gain ? "רווח" : "הפסד"}, ל-OCI.`] },
       { title: "④ הדוחות", lines: [`ריבית נטו: ${sh(F.interest)} − ${sh(F.a.interest)} = ${sh(F.netInterest)} הוצאה; עלות שירות ${sh(F.service)} — שכר.`, `במאזן: ${sh(F.closing)} − ${fmt(d.closing)} = ${sh(F.netClosing)} התחייבות נטו.`, "ההפקדה: ח׳ נכסי תכנית · ז׳ מזומן." + (d.paidFromFund ? " התשלום מהקרן: ח׳ התחייבות · ז׳ נכסי תכנית." : "")] },
@@ -1133,21 +1186,31 @@ export function awardDrill(r: Rand): Drill {
     ],
     build: [
       { title: "① הצבירה לשנה", lines: [`לפני: ${fmt(d.perOld * d.years)} ÷ ${d.years} = ${sh(d.perOld)}.`, `אחרי: ${fmt(d.perNew * d.years)} ÷ ${d.years} = ${sh(d.perNew)}.`] },
-      { title: "② הפתיחה", lines: [`${fmt(d.perOld)} × ${d.served} ÷ ${f1(d.r0)}^${F.nEnd + 1} = ${sh(F.opening)}.`] },
+      { title: "② הפתיחה", lines: [], tables: [pvT([{ label: `31.12.${year - 1}`, amount: d.perOld, part: String(d.served), n: F.nEnd + 1, value: F.opening }], { rate: d.r0, label: "מועד", amount: "מענק לשנה", part: "שנים" })] },
       {
         title: "③ עלות שירות שוטף",
-        lines: [
-          `עד ההגדלה: ${fmt(d.perOld)} × ${m(d.months)} ÷ ${f1(d.r0)}^${nA} = ${sh(F.serviceBefore)}.`,
-          `אחרי: ${fmt(d.perNew)} × ${m(F.after)} ÷ ${f1(d.ra)}^${F.nEnd} = ${sh(F.serviceAfter)}.`,
+        lines: [`ההיוון מסוף כל תקופה עד התשלום: ${nA} שנים עד ההגדלה, ${F.nEnd} אחריה.`],
+        tables: [
+          pvT(
+            [
+              { label: "עד ההגדלה", amount: d.perOld, part: m(d.months), n: F.nEnd + F.after / 12, value: F.serviceBefore },
+              { label: "אחריה", amount: d.perNew, part: m(F.after), n: F.nEnd, rate: d.ra, value: F.serviceAfter },
+            ],
+            { rate: d.r0, label: "תקופה", amount: "מענק לשנה", part: "שנים" },
+          ),
         ],
       },
       {
         title: "④ עלות שירות עבר (ביום ההגדלה)",
-        lines: [
-          `ותק: ${sA} שנים; n = ${nA}; שיעור ${pct(d.ra)}.`,
-          `לפני: ${fmt(d.perOld)} × ${sA} ÷ ${f1(d.ra)}^${nA} = ${sh(F.pastBefore)}.`,
-          `אחרי: ${fmt(d.perNew)} × ${sA} ÷ ${f1(d.ra)}^${nA} = ${sh(F.pastAfter)}.`,
-          `שירות עבר: ${sh(F.pastService)}.`,
+        lines: [`ותק: ${sA} שנים; n = ${nA}; שיעור ${pct(d.ra)}.`, `שירות עבר: ${sh(F.pastAfter)} − ${sh(F.pastBefore)} = ${sh(F.pastService)}.`],
+        tables: [
+          pvT(
+            [
+              { label: "לפני", amount: d.perOld, part: yearsAs(d.served + d.months / 12), n: F.nEnd + F.after / 12, value: F.pastBefore },
+              { label: "אחרי", amount: d.perNew, part: yearsAs(d.served + d.months / 12), n: F.nEnd + F.after / 12, value: F.pastAfter },
+            ],
+            { rate: d.ra, label: "תנאים", amount: "מענק לשנה", part: "שנים", total: false },
+          ),
         ],
       },
       { title: "⑤ עלות שירות אחת", lines: [`${sh(F.serviceBefore)} + ${sh(F.serviceAfter)} + ${sh(F.pastService)} = ${sh(F.serviceCost)}.`] },
@@ -1159,7 +1222,7 @@ export function awardDrill(r: Rand): Drill {
           `סה״כ ${sh(F.interest)}.`,
         ],
       },
-      { title: "⑦ הסגירה", lines: [`${fmt(d.perNew)} × ${d.served + 1} ÷ ${f1(d.rEnd)}^${F.nEnd} = ${sh(F.closing)}.`] },
+      { title: "⑦ הסגירה", lines: [], tables: [pvT([{ label: `31.12.${year}`, amount: d.perNew, part: String(d.served + 1), n: F.nEnd, value: F.closing }], { rate: d.rEnd, label: "מועד", amount: "מענק לשנה", part: "שנים" })] },
       {
         title: "⑧ מדידה מחדש, ולאן",
         lines: [

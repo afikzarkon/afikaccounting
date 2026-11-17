@@ -3,15 +3,13 @@ import type { ReactNode } from "react";
 import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
-import { pvTable, type PvOpts, type PvRow } from "@/lib/learn/ias19-booklet";
 import { accruedOf, assemblyBenefit, EXAM_A, EXAM_B, fieldWindow } from "@/lib/learn/ias19-exams";
 import { EXAM_A_SOLVED as A, EXAM_B_ROUNDED as BR, EXAM_B_SOLVED as B } from "@/lib/study/ias19/lessons/exams";
 import { AWARD, AWARD_IF_POST, AWARD_META, AWARD_OPENING, AWARD_PL, AWARD_SERVICE, AWARD_YEAR, TERM, TERM_DISCOUNTED, TERM_LATE } from "@/lib/study/ias19/lessons/other";
 import { CLOSING, CLOSING_EXTRA } from "@/lib/study/ias19/lessons/map";
 import { lessonRef, lessonsRef, pct } from "@/lib/study/ias19/shared";
 import { Ltr } from "./ias19-formula";
-import { rich } from "./ias19-rich";
-import { cell } from "./ias19-step";
+import { Pv } from "./ias19-step";
 import { Bridge, DestTag, ExplainTask, FullSteps, Ladder, MapBranch, Recipe5, RECIPE_STEPS, RollForward, T19, TaskSolution } from "./ias19-ui";
 import { Diff, Fork, NetBars, Routing, SplitBar, Timeline, TwoPanel } from "./ias19-visuals";
 import type { QuizItem } from "./inventory-interactive";
@@ -37,21 +35,6 @@ const y2 = y1 + 1;
 const asm = A.assembly;
 const fld = A.field;
 const CIRCLED = ["①", "②", "③", "④", "⑤"];
-
-/** A balance as the course's present-value table (pvTable): the formula and Excel above, a row per group, the calculation, the value. */
-function Pv({ rows, o }: { rows: PvRow[]; o: PvOpts }) {
-  const s = pvTable("", rows, o);
-  return (
-    <div className="space-y-2">
-      {s.text?.map((t) => (
-        <P key={t}>{rich(ltrFormulas(t))}</P>
-      ))}
-      {s.tables?.map((t, i) => (
-        <DataTable key={i} head={t.head} rows={t.rows.map((r) => r.map(cell))} foot={t.foot?.map(cell)} />
-      ))}
-    </div>
-  );
-}
 
 /**
  * Question 1's balances, group by group. A group's accrual per head comes

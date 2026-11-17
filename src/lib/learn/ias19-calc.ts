@@ -1,5 +1,5 @@
 import { accrued, attribution, type BenefitFormula, partInterest, pv, tiered } from "./ias19";
-import type { BkLine, BkNote, BkRoll, BkStep, BkTable } from "./ias19-booklet";
+import { type BkLine, type BkNote, type BkRoll, type BkStep, type BkTable, type PvOpts, type PvRow, pvGroup, pvTable, yearsAs } from "./ias19-booklet";
 
 /**
  * The IAS 19 calculator's solver: any benefit the course teaches, from data
@@ -216,9 +216,80 @@ export function accruedAt(t: Terms, g: DbGroup, s: number, salary: number): numb
 const nEndOf = (t: Terms, g: DbGroup) => (t.kind === "routes" ? t.retire - ((g.hireAge ?? 0) + g.served + 1) : g.nEnd);
 const termsOf = (q: { terms: Terms }, g: DbGroup) => g.terms ?? q.terms;
 
-/** The measurement of one group at one date, as the five steps write it. */
-function measured(heads: number, acc: number, i: number, n: number) {
-  return { value: pv(heads * acc, i, n), calc: `${d2(heads)} × ${d2(acc)} ÷ ${b(i)}^${yrs(n)}` };
+/** Who is measured: employees, the share expected to receive, and a further share (what a settlement leaves). */
+type Heads = { count: number; p?: number; x?: number };
+/** The measurement of one group at one date, and the figures its row in the balance's table shows. */
+type Measured = Heads & { value: number; acc: number; per?: number; i: number; n: number };
+
+/** `per`: the benefit for one year of service, when the accrued amount is that times the years. */
+function measured(h: Heads, acc: number, i: number, n: number, per?: number): Measured {
+  return { value: pv(h.count * (h.p ?? 1) * (h.x ?? 1) * acc, i, n), ...h, acc, per, i, n };
+}
+
+/** The benefit for one year of service, for terms that accrue evenly; undefined for the others. */
+function perYearOf(t: Terms, g: DbGroup, salary: number): number | undefined {
+  switch (t.kind) {
+    case "perYear":
+      return t.amount;
+    case "salary":
+      return t.share * salary;
+    case "lump":
+      return t.grant / t.window;
+    case "routes": {
+      const w = routeOf(t, g.hireAge ?? 0);
+      return t.grant / (w.end - w.start);
+    }
+    case "earliest": {
+      const w = earliestWindow(t, g);
+      return w === undefined ? undefined : t.grant / w;
+    }
+    default:
+      return undefined;
+  }
+}
+
+const partOf = (s: string) => s.split("/").map(Number).reduce((a, x) => a / x);
+
+/**
+ * The rows of a balance's table. When every row accrues evenly, a row shows
+ * the benefit for a year and the years accrued; otherwise what is accrued per
+ * employee. The probability column only when someone is not certain to stay.
+ */
+function pvRows(list: { label: string; m: Measured }[], perYear = true): { rows: PvRow[]; perYear: boolean } {
+  const parts = list.map(({ m }) => {
+    if (!perYear || !m.per) return undefined;
+    const years = m.acc / m.per;
+    const s = yearsAs(years);
+    return Math.abs(partOf(s) - years) < 1e-9 * Math.max(1, years) ? s : undefined;
+  });
+  const even = list.length > 0 && parts.every((s) => s !== undefined);
+  const anyP = list.some(({ m }) => m.p !== undefined && m.p !== 1);
+  const rows = list.map(({ label, m }, k) => ({
+    label,
+    heads: m.count,
+    ...(anyP ? { p: m.p ?? 1 } : {}),
+    amount: even ? m.per! : m.acc,
+    ...(even ? { part: parts[k] } : {}),
+    ...(m.x !== undefined ? { x: m.x } : {}),
+    n: m.n,
+    rate: m.i,
+    value: m.value,
+  }));
+  return { rows, perYear: even };
+}
+
+const pvOpts = (rate: number, perYear: boolean, why?: string | string[], amount = "נצבר לעובד"): PvOpts => ({ rate, why, label: "קבוצה", amount: perYear ? "הטבה לשנה" : amount, part: "שנים", x: "לא סולק", amountDec: 2 });
+
+/** A balance as the course's present-value table: a row per group, the calculation, the value (by the owner's choice of 2026-11-17). */
+function balanceTable(title: string, list: { label: string; m: Measured }[], rate: number, why?: string | string[], amount?: string): BkStep {
+  try {
+    const { rows, perYear } = pvRows(list);
+    return pvTable(title, rows, pvOpts(rate, perYear, why, amount));
+  } catch {
+    // Years that a table can't write exactly: the accrued amount instead, which always reproduces the value.
+    const { rows } = pvRows(list, false);
+    return pvTable(title, rows, pvOpts(rate, false, why, amount));
+  }
 }
 
 /** One sentence on how a group's benefit reaches the years of service. */
@@ -259,26 +330,15 @@ export function solveMeasure(q: { plan: DbInput["plan"]; date: string; terms: Te
     const own = termsOf(q, g);
     const n = own.kind === "routes" ? own.retire - ((g.hireAge ?? 0) + g.servedAtDate) : g.nAtDate;
     const acc = accruedAt(own, g, g.servedAtDate, g.salary ?? 0);
-    const heads = g.heads * g.stay;
-    return { g, n, acc, heads, ...measured(heads, acc, q.rate, n) };
+    return { label: g.name, m: measured({ count: g.heads, p: g.stay }, acc, q.rate, n, perYearOf(own, g, g.salary ?? 0)) };
   });
-  const total = sum(rows.map((r) => r.value));
+  const total = sum(rows.map((r) => r.m.value));
   return {
     title: `מדידת ההתחייבות ב-${q.date}`,
     metrics: [{ label: `התחייבות ב-${q.date}`, value: total }],
     steps: [
       { title: "לאיזו שנה שייך כל חלק", notes: [{ title: "ייחוס ההטבה לשנות השירות", lines: q.groups.map((g) => attributionText(termsOf(q, g), g)) }] },
-      {
-        title: "חמשת הצעדים",
-        text: [`הטבה × שנים × עובדים צפויים, מהוון לפי **השנים עד התשלום** ובשיעור אג״ח קונצרני איכותי (${pc(q.rate)}).`],
-        tables: [
-          {
-            head: ["קבוצה", "נצבר לעובד", "עובדים צפויים", "n", "חישוב", "התחייבות"],
-            rows: rows.map((r) => [r.g.name, d2(r.acc), d2(r.heads), yrs(r.n), r.calc, money(r.value)]),
-            foot: ["סה״כ", "", "", "", "", money(total)],
-          },
-        ],
-      },
+      balanceTable("חמשת הצעדים", rows, q.rate, `מהוונים לפי **השנים עד התשלום**, בשיעור אג״ח קונצרני איכותי (${pc(q.rate)}).`),
     ],
     notes: ["מהוונים לפי השנים עד התשלום, לא לפי שנות הצבירה."],
     summary: { year: Number(q.date.slice(-4)) || 0, label: `מדידה ב-${q.date}`, pl: 0, oci: 0, balance: total },
@@ -374,40 +434,40 @@ export function solveDbYear(q: DbInput): CalcSolution {
     const nEnd = nEndOf(own, g);
     const s0 = g.served;
     const left = g.leftAtStart ?? 0;
-    const hOpen = g.heads * g.stay;
-    const hS = (g.heads - left) * g.stay;
-    const hA = (g.atEvent?.heads ?? g.heads - left) * (g.atEvent?.stay ?? g.stay);
-    const hE = (g.atEnd?.heads ?? g.heads - left) * (g.atEnd?.stay ?? g.stay);
+    const hOpen: Heads = { count: g.heads, p: g.stay };
+    const hS: Heads = { count: g.heads - left, p: g.stay };
+    const hA: Heads = { count: g.atEvent?.heads ?? g.heads - left, p: g.atEvent?.stay ?? g.stay };
+    const hE: Heads = { count: g.atEnd?.heads ?? g.heads - left, p: g.atEnd?.stay ?? g.stay };
     const salS = g.salary ?? 0;
     const salA = g.atEvent?.salary ?? salS;
     const salE = g.atEnd?.salary ?? salS;
     const acc0 = accruedAt(own, g, s0, salS);
-    const open = measured(hOpen, acc0, q.iStart, nEnd + 1);
+    const open = measured(hOpen, acc0, q.iStart, nEnd + 1, perYearOf(own, g, salS));
     // Someone who left on 1.1 is in the opening but earns no interest.
     const leaver = pv(left * g.stay * acc0, q.iStart, nEnd + 1);
-    const end = measured(hE, accruedAt(newTerms, g, s0 + 1, salE), q.iEnd, nEnd);
+    const end = measured(hE, accruedAt(newTerms, g, s0 + 1, salE), q.iEnd, nEnd, perYearOf(newTerms, g, salE));
     if (!ev) {
       const unit = accruedAt(own, g, s0 + 1, salS) - acc0;
-      const service = measured(hS, unit, q.iStart, nEnd);
-      return { g, nEnd, open, leaver, end, services: [service], before: 0, after: 0, beforeCalc: "", afterCalc: "" };
+      const service = measured(hS, unit, q.iStart, nEnd, perYearOf(own, g, salS));
+      return { g, nEnd, open, leaver, end, services: [service], before: undefined, after: undefined };
     }
     const nFromDate = nEnd + 1 - f;
     const nA = g.atEvent?.n ?? nFromDate;
     const unitBefore = accruedAt(own, g, s0 + f, salS) - acc0;
-    const sBefore = measured(hS, unitBefore, q.iStart, nFromDate);
-    const before = measured(hA, accruedAt(own, g, s0 + f, salA), iV, nA);
-    const hAfter = g.headsAfter ?? hA;
-    const after = ev.type === "amend" ? measured(hAfter, accruedAt(newTerms, g, s0 + f, salA), iV, nA) : before;
+    const sBefore = measured(hS, unitBefore, q.iStart, nFromDate, perYearOf(own, g, salS));
+    const before = measured(hA, accruedAt(own, g, s0 + f, salA), iV, nA, perYearOf(own, g, salA));
+    const hAfter: Heads = g.headsAfter !== undefined ? { count: g.headsAfter } : hA;
+    const after = ev.type === "amend" ? measured(hAfter, accruedAt(newTerms, g, s0 + f, salA), iV, nA, perYearOf(newTerms, g, salA)) : before;
     const unitAfter = accruedAt(newTerms, g, s0 + 1, salA) - accruedAt(newTerms, g, s0 + f, salA);
-    const sAfter = m < 12 ? measured(hAfter * (1 - share), unitAfter, iV, nA - (12 - m) / 12) : { value: 0, calc: "" };
-    return { g, nEnd, open, leaver, end, services: [sBefore, sAfter], before: before.value, after: after.value, beforeCalc: before.calc, afterCalc: after.calc };
+    const sAfter = m < 12 ? measured({ ...hAfter, x: ev.type === "settle" ? 1 - share : undefined }, unitAfter, iV, nA - (12 - m) / 12, perYearOf(newTerms, g, salA)) : undefined;
+    return { g, nEnd, open, leaver, end, services: sAfter ? [sBefore, sAfter] : [sBefore], before, after };
   });
 
   const opening = q.openingGiven ?? sum(rows.map((r) => r.open.value));
   const closing = q.closingGiven ?? sum(rows.map((r) => r.end.value));
   const service = sum(rows.flatMap((r) => r.services.map((s) => s.value)));
-  const before = sum(rows.map((r) => r.before));
-  const afterAmend = sum(rows.map((r) => r.after));
+  const before = sum(rows.map((r) => r.before?.value ?? 0));
+  const afterAmend = sum(rows.map((r) => r.after?.value ?? 0));
   const past = ev?.type === "amend" ? afterAmend - before : 0;
   const settledOb = ev?.type === "settle" ? before * share : 0;
   const settledPaid = ev?.type === "settle" ? ev.paid : 0;
@@ -440,49 +500,80 @@ export function solveDbYear(q: DbInput): CalcSolution {
   obRows.push({ label: "מדידה מחדש", value: pn, kind: "pn", note: "השורה המאזנת" });
   obRows.push({ label: `יתרת סגירה 31.12.${y}`, value: closing, kind: "balance", note: "ביאור 5" });
 
-  const notes: BkNote[] = [];
-  if (q.openingGiven === undefined) notes.push({ title: "ביאור 1: יתרת הפתיחה", text: `לפי ההנחות של 31.12.${y - 1}, בשיעור ${pc(q.iStart)}.`, lines: rows.map((r) => line(r.g.name, r.open.calc, r.open.value)) });
-  else notes.push({ title: "ביאור 1: יתרת הפתיחה", lines: [line("נתון", undefined, opening)] });
-  notes.push({
-    title: "ביאור 2: עלות שירות שוטף",
-    text: ev ? `לכל תקופה התנאים שלה, השיעור של תחילתה, וההיוון מסוף התקופה עד התשלום.` : `שנת שירות אחת, בשיעור תחילת השנה (${pc(q.iStart)}), מהוונת מסוף השנה עד התשלום.`,
-    lines: rows.flatMap((r) => r.services.filter((s) => s.calc).map((s, k) => line(ev ? `${r.g.name}: ${k === 0 ? "לפני האירוע" : "אחרי האירוע"}` : r.g.name, s.calc, s.value))),
-  });
+  // Each balance is a table of its own, a row per group (by the owner's choice of 2026-11-17); interest and the remeasurement stay notes.
+  const given: BkNote[] = [];
+  if (q.openingGiven !== undefined) given.push({ title: "ביאור 1: יתרת הפתיחה", lines: [line("נתון", undefined, opening)] });
+  if (q.closingGiven !== undefined) given.push({ title: "ביאור 5: יתרת הסגירה", lines: [line("נתון", undefined, closing)] });
+  const balances: CalcStep[] = [];
+  if (q.openingGiven === undefined) balances.push(balanceTable("ביאור 1: יתרת הפתיחה", rows.map((r) => ({ label: r.g.name, m: r.open })), q.iStart, `לפי ההנחות של 31.12.${y - 1}, בשיעור ${pc(q.iStart)}.`));
+  balances.push(
+    balanceTable(
+      "ביאור 2: עלות שירות שוטף",
+      rows.flatMap((r) => r.services.map((s, k) => ({ label: ev ? `${r.g.name}: ${k === 0 ? "לפני" : "אחרי"}` : r.g.name, m: s }))),
+      q.iStart,
+      ev ? "לכל תקופה התנאים שלה, השיעור של תחילתה, וההיוון מסוף התקופה עד התשלום." : `שנת שירות אחת, בשיעור תחילת השנה (${pc(q.iStart)}), מהוונת מסוף השנה עד התשלום.`,
+      "נצבר בתקופה",
+    ),
+  );
   const intLines: BkLine[] = ev
     ? [line(`ריבית עד חודש ${m}`, `${money(opening - leaverOpening)} × (${b(q.iStart)}^(${m}/12) − 1)`, iBefore, leaverOpening ? "בלי מי שעזב ב-1.1" : undefined), line(`ריבית מחודש ${m}`, `${money(balanceAfter)} × (${b(iV)}^(${12 - m}/12) − 1)`, iAfter, "על היתרה אחרי האירוע")]
     : [line("על יתרת הפתיחה", `${money(opening - leaverOpening)} × ${pc(q.iStart)}`, iBefore, leaverOpening ? "בלי מי שעזב ב-1.1" : undefined)];
   if (payInterest) intLines.push(line("פחות: ריבית על תשלומים, מיום התשלום", undefined, -payInterest));
-  notes.push({ title: "ביאור 3: עלות ריבית", lines: intLines });
+  balances.push({ title: "ביאור 3: עלות ריבית", notes: [{ title: "חישוב הריבית", lines: intLines }] });
   if (ev?.type === "amend") {
-    notes.push({
-      title: "ביאור 4: עלות שירות עבר",
-      text: `שתי היתרות ביום השינוי, באותו שיעור (${pc(iV)}) ובאותו n. ההפרש נרשם מיד ברווח והפסד (סעיף 103).`,
-      lines: [...rows.flatMap((r) => [line(`${r.g.name}: לפני`, r.beforeCalc, r.before), line(`${r.g.name}: אחרי`, r.afterCalc, r.after)]), line("עלות שירות עבר", `${money(afterAmend)} − ${money(before)}`, past)],
-    });
+    // Both balances of the date in one step, with the same columns, so the two tables read side by side.
+    const list = rows.flatMap((r) => [{ label: r.g.name, m: r.before! }, { label: r.g.name, m: r.after! }]);
+    let built = pvRows(list);
+    const tables = (perYear: boolean) => {
+      const o = pvOpts(iV, perYear);
+      return [
+        { title: "לפני השינוי", rows: built.rows.filter((_, k) => k % 2 === 0), o },
+        { title: "אחרי השינוי", rows: built.rows.filter((_, k) => k % 2 === 1), o },
+      ];
+    };
+    const why = `שתי היתרות ביום השינוי, באותו שיעור (${pc(iV)}) ובאותו n. ההפרש נרשם מיד ברווח והפסד (סעיף 103).`;
+    let step: BkStep;
+    try {
+      step = pvGroup("ביאור 4: עלות שירות עבר", tables(built.perYear), why);
+    } catch {
+      built = pvRows(list, false);
+      step = pvGroup("ביאור 4: עלות שירות עבר", tables(false), why);
+    }
+    balances.push({ ...step, notes: [{ title: "עלות שירות עבר", lines: [line("אחרי השינוי פחות לפניו", `${money(afterAmend)} − ${money(before)}`, past)] }] });
   }
   if (ev?.type === "settle") {
-    notes.push({
-      title: "ביאור 4: סילוק",
-      text: `קודם מודדים מחדש ביום הסילוק, בשיעור ${pc(iV)} (סעיף 99). הפער מהיתרה בספרים הוא מדידה מחדש. ואז: היתרה שיצאה פחות התשלום, לרווח והפסד (סעיף 109).`,
-      lines: [
-        ...rows.map((r) => line(`${r.g.name}: יתרה ביום הסילוק`, r.beforeCalc, r.before)),
-        line("היתרה שיצאה", `${money(before)} × ${pc(share)}`, settledOb),
-        line(settlementGain >= 0 ? "רווח מסילוק" : "הפסד מסילוק", `${money(settledOb)} − ${money(settledPaid)}`, settlementGain),
+    balances.push({
+      ...balanceTable(
+        "ביאור 4: סילוק",
+        rows.map((r) => ({ label: r.g.name, m: r.before! })),
+        iV,
+        `קודם מודדים מחדש ביום הסילוק, בשיעור ${pc(iV)} (סעיף 99). הפער מהיתרה בספרים הוא מדידה מחדש. ואז: היתרה שיצאה פחות התשלום, לרווח והפסד (סעיף 109).`,
+      ),
+      notes: [
+        {
+          title: "הסילוק",
+          lines: [line("היתרה שיצאה", `${money(before)} × ${pc(share)}`, settledOb), line(settlementGain >= 0 ? "רווח מסילוק" : "הפסד מסילוק", `${money(settledOb)} − ${money(settledPaid)}`, settlementGain)],
+        },
       ],
     });
   }
-  notes.push({ title: "ביאור 5: יתרת הסגירה", text: `לפי ההנחות של 31.12.${y}, בשיעור ${pc(q.iEnd)}.`, lines: q.closingGiven === undefined ? rows.map((r) => line(r.g.name, r.end.calc, r.end.value)) : [line("נתון", undefined, closing)] });
-  notes.push({
+  if (q.closingGiven === undefined) balances.push(balanceTable("ביאור 5: יתרת הסגירה", rows.map((r) => ({ label: r.g.name, m: r.end })), q.iEnd, `לפי ההנחות של 31.12.${y}, בשיעור ${pc(q.iEnd)}.`));
+  balances.push({
     title: "המדידה מחדש",
-    text: "השורה המאזנת: סגירה פחות כל השורות האחרות.",
-    lines: ev ? [line("ביום האירוע", "היתרה ביום האירוע − פתיחה − שירות − ריבית + תשלומים", pnEvent), line("עד סוף השנה", "השאר", pn - pnEvent), line("סה״כ", undefined, pn)] : [line(pn >= 0 ? "הפסד אקטוארי" : "רווח אקטוארי", `${money(closing)} − ${money(opening)} − ${money(service)} − ${money(interest)}${paidTotal ? ` + ${money(paidTotal)}` : ""}`, pn)],
+    notes: [
+      {
+        title: "השורה המאזנת",
+        text: "סגירה פחות כל השורות האחרות.",
+        lines: ev ? [line("ביום האירוע", "היתרה ביום האירוע − פתיחה − שירות − ריבית + תשלומים", pnEvent), line("עד סוף השנה", "השאר", pn - pnEvent), line("סה״כ", undefined, pn)] : [line(pn >= 0 ? "הפסד אקטוארי" : "רווח אקטוארי", `${money(closing)} − ${money(opening)} − ${money(service)} − ${money(interest)}${paidTotal ? ` + ${money(paidTotal)}` : ""}`, pn)],
+      },
+    ],
   });
 
   const steps: CalcStep[] = [];
   const attrLines = q.groups.map((g) => attributionText(termsOf(q, g), g));
   if (ev?.type === "amend") attrLines.push(...q.groups.filter((g) => !g.skipEvent).map((g) => ({ ...attributionText(ev.terms, g), label: `${g.name}: ${ev.add ? "התוספת" : "אחרי התיקון"}` })));
   steps.push({ title: "לאיזו שנה שייך כל חלק", notes: [{ title: "ייחוס ההטבה לשנות השירות", lines: attrLines }] });
-  steps.push({ title: "התנועה בהתחייבות", rolls: [{ title: `התחייבות, ${y}`, rows: obRows, pnTo }], notes });
+  steps.push({ title: "התנועה בהתחייבות", rolls: [{ title: `התחייבות, ${y}`, rows: obRows, pnTo }], notes: given.length ? given : undefined }, ...balances);
 
   // Assets, and the ceiling.
   let assetInterest = 0;

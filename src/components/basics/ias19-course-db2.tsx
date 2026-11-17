@@ -37,6 +37,7 @@ import { Sorted, Story } from "./inventory-teach";
 import { Card, JE, Money, Rule } from "./ui";
 import { ltrFormulas, ltrQuiz } from "@/lib/study/ias19/ltr";
 import { IasQuiz } from "./ias19-quiz";
+import { Pv } from "./ias19-step";
 
 /** The employee-benefits course, lessons 8–10: an amendment mid-year and settlement, plan assets and the ceiling, presentation and reverse engineering. */
 
@@ -46,6 +47,9 @@ const P = ({ children }: { children: ReactNode }) => <p className="text-[15.5px]
 const L = Ltr;
 const M = ({ v }: { v: number }) => <Money v={Math.round(v)} />;
 const n5 = CTO.retire - CTO.from;
+/** The amendment of lesson 10: years to payment from the amendment day, and the service by then. */
+const amN = PLAN.n - 1 + (12 - AMENDED.month) / 12;
+const amAt = `${12 + AMENDED.month}/12`;
 
 /** Three events that sound alike, and where each lands. */
 const EVENTS = (
@@ -269,22 +273,36 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
         <FullSteps
           label="שנה חתוכה"
           steps={[
-            { title: "פתיחה", body: <p><Money v={CTO.oldPerYear} plain /> × 1 ÷ <L>{1 + CTO.rateEnd2023}^{n5}</L> = <strong><M v={CTO_OPENING} /></strong>.</p> },
+            {
+              title: "פתיחה",
+              body: <Pv o={{ rate: CTO.rateEnd2023, label: "מדידה", amount: "צבירה לשנה", part: "שנים", why: `שנה אחת בתנאים הישנים; עד התשלום ${n5} שנים.` }} rows={[{ label: "פתיחה", amount: CTO.oldPerYear, part: "1", n: n5, value: CTO_OPENING }]} />,
+            },
             {
               title: "(א) שירות שוטף, שתי תקופות",
               body: (
-                <div className="space-y-1.5">
-                  <p>עד התיקון: <Money v={CTO.oldPerYear / 2} plain /> ÷ <L>{1 + CTO.rateEnd2023}^{n5 - 0.5}</L> = <M v={CTO_YEAR.serviceBefore} />. מהוון מ-30.6, בריבית של תחילת התקופה.</p>
-                  <p>אחרי: <Money v={CTO.newPerYear / 2} plain /> ÷ <L>{1 + CTO.rateAmend}^{n5 - 1}</L> = <M v={CTO_YEAR.serviceAfter} />. סה״כ <strong><M v={CTO_YEAR.service} /></strong>.</p>
-                </div>
+                <Pv
+                  o={{ rate: CTO.rateEnd2023, label: "תקופה", amount: "צבירה לשנה", why: "עד התיקון: חצי שנה בתנאים הישנים, מהוונת מ-30.6 בריבית של תחילת התקופה. אחריו: חצי שנה בתנאים החדשים, מהוונת מסוף השנה." }}
+                  rows={[
+                    { label: "עד התיקון", amount: CTO.oldPerYear, part: "6/12", n: n5 - 0.5, value: CTO_YEAR.serviceBefore },
+                    { label: "אחרי התיקון", amount: CTO.newPerYear, part: "6/12", n: n5 - 1, rate: CTO.rateAmend, value: CTO_YEAR.serviceAfter },
+                  ]}
+                />
               ),
             },
             {
               title: "(ב) שירות עבר ב-1.7",
               body: (
-                <div className="space-y-1.5">
-                  <p>1.5 שנות עבודה. לפני: <Money v={CTO.oldPerYear * 1.5} plain /> ÷ <L>{1 + CTO.rateAmend}^{n5 - 0.5}</L> = <M v={CTO_YEAR.pastBefore} />.</p>
-                  <p>אחרי: <Money v={CTO.newPerYear * 1.5} plain /> ÷ <L>{1 + CTO.rateAmend}^{n5 - 0.5}</L> = <M v={CTO_YEAR.pastAfter} />. הפרש: <strong><M v={CTO_YEAR.pastService} /></strong>, לרווח והפסד.</p>
+                <div className="space-y-2">
+                  <Pv
+                    o={{ rate: CTO.rateAmend, label: "יתרה", amount: "צבירה לשנה", part: "שנים", total: false, why: "שתי היתרות ביום התיקון, על אותן 1.5 שנות עבודה, באותו שיעור ובאותו n. ההפרש הוא שירות העבר." }}
+                    rows={[
+                      { label: "לפני", amount: CTO.oldPerYear, part: "1.5", n: n5 - 0.5, value: CTO_YEAR.pastBefore },
+                      { label: "אחרי", amount: CTO.newPerYear, part: "1.5", n: n5 - 0.5, value: CTO_YEAR.pastAfter },
+                    ]}
+                  />
+                  <P>
+                    שירות עבר: <L><M v={CTO_YEAR.pastAfter} /> − <M v={CTO_YEAR.pastBefore} /> = <M v={CTO_YEAR.pastService} /></L>, לרווח והפסד.
+                  </P>
                   <BeforeAfter before={{ label: "לפני התיקון", v: Math.round(CTO_YEAR.pastBefore) }} after={{ label: "אחרי התיקון", v: Math.round(CTO_YEAR.pastAfter) }} jump="שירות עבר" />
                 </div>
               ),
@@ -299,17 +317,21 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
               ),
             },
             {
-              title: "סגירה, והמעגל",
+              title: "סגירה",
+              body: <Pv o={{ rate: CTO.rateAmend, label: "מדידה", amount: "צבירה לשנה", part: "שנים", why: "שנתיים בתנאים החדשים, בשיעור של סוף השנה." }} rows={[{ label: "סגירה", amount: CTO.newPerYear, part: "2", n: n5 - 1, value: CTO_YEAR.closing }]} />,
+            },
+            {
+              title: "המעגל",
               body: (
                 <RollForward
                   title={`מנהל הטכנולוגיה, ${CTO.from + 1}`}
                   rows={[
                     { label: "יתרת פתיחה", value: CTO_OPENING, kind: "balance", how: ltrFormulas(`${pct(CTO.rateEnd2023)}, n = ${n5}`) },
                     { label: "עלות ריבית", value: CTO_YEAR.interest, how: `חצי שנה ${pct(CTO.rateEnd2023)} על הפתיחה, חצי ${pct(CTO.rateAmend)} על היתרה אחרי התיקון` },
-                    { label: "עלות שירות שוטף", value: CTO_YEAR.service, how: <>חצי {pct(CTO.rateEnd2023)} (<L>n = {n5 - 0.5}</L>), חצי {pct(CTO.rateAmend)} (<L>n = {n5 - 1}</L>)</> },
-                    { label: "עלות שירות עבר", value: CTO_YEAR.pastService, how: ltrFormulas(`${pct(CTO.rateAmend)}, n = ${n5 - 0.5}, ביום התיקון`) },
+                    { label: "עלות שירות שוטף", value: CTO_YEAR.service, how: "שתי התקופות יחד" },
+                    { label: "עלות שירות עבר", value: CTO_YEAR.pastService, how: "אחרי פחות לפני, ביום התיקון" },
                     { label: "P.N., הפסד", value: CTO_YEAR.pn, kind: "pn", how: "בלי עיגולי ביניים" },
-                    { label: "יתרת סגירה", value: CTO_YEAR.closing, kind: "balance", how: ltrFormulas(`2 × ${CTO.newPerYear.toLocaleString("en-US")}, ${pct(CTO.rateAmend)}, n = ${n5 - 1}`) },
+                    { label: "יתרת סגירה", value: CTO_YEAR.closing, kind: "balance", how: ltrFormulas(`${pct(CTO.rateAmend)}, n = ${n5 - 1}`) },
                   ]}
                 />
               ),
@@ -624,6 +646,14 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
             ריבית {pct(PLAN.rate)}, בלי שינוי בהנחות. בקופה: <Money v={PLAN.assets.opening} /> ב-31.12.2023, הפקדה של <Money v={PLAN.assets.contribution} /> ב-1.{PLAN.assets.month + 1}.2024, ושווי <Money v={PLAN.assets.closing} /> בסוף 2024.
           </p>
         </Story>
+        <Pv
+          o={{ rate: PLAN.rate, label: "מדידה", amount: "צבירה לשנה", part: "שנים", total: false, why: "שלוש המדידות של החוב, באותו שיעור: הפתיחה מ-31.12.2023, השירות והסגירה מסוף 2024." }}
+          rows={[
+            { label: "פתיחה", amount: PLAN_PER_YEAR, part: "1", n: PLAN.n, value: PLAN_OPENING },
+            { label: "שירות", amount: PLAN_PER_YEAR, part: "1", n: PLAN.n - 1, value: PLAN_YEAR.service },
+            { label: "סגירה", amount: PLAN_PER_YEAR, part: "2", n: PLAN.n - 1, value: PLAN_YEAR.closing },
+          ]}
+        />
         <div className="grid gap-3 lg:grid-cols-2">
           <RollForward
             title="החוב, 2024"
@@ -856,6 +886,39 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
           label="תיקון והצגה"
           steps={[
             {
+              title: "שירות שוטף, שתי תקופות",
+              body: (
+                <Pv
+                  o={{ rate: PLAN.rate, label: "תקופה", amount: "צבירה לשנה", why: `הפתיחה, ${Math.round(PLAN_OPENING).toLocaleString("en-US")}, כמו קודם. עד התיקון: ${AMENDED.month} חודשים בתנאים הישנים, מהוונים מיום התיקון בשיעור של תחילת השנה. אחריו: ${12 - AMENDED.month} חודשים בתנאים החדשים, מהוונים מסוף השנה.` }}
+                  rows={[
+                    { label: "עד התיקון", amount: PLAN_PER_YEAR, part: `${AMENDED.month}/12`, n: amN, value: AM_YEAR.serviceBefore },
+                    { label: "אחרי התיקון", amount: AMENDED.newPerYear, part: `${12 - AMENDED.month}/12`, n: PLAN.n - 1, rate: AMENDED.rateAfter, value: AM_YEAR.serviceAfter },
+                  ]}
+                />
+              ),
+            },
+            {
+              title: "שירות עבר, ביום התיקון",
+              body: (
+                <div className="space-y-2">
+                  <Pv
+                    o={{ rate: AMENDED.rateAfter, label: "יתרה", amount: "צבירה לשנה", total: false, why: `שתי היתרות ביום התיקון, על אותו ותק (${amAt} שנים), באותו שיעור ובאותו n. ההפרש הוא שירות העבר.` }}
+                    rows={[
+                      { label: "לפני", amount: PLAN_PER_YEAR, part: amAt, n: amN, value: AM_YEAR.pastBefore },
+                      { label: "אחרי", amount: AMENDED.newPerYear, part: amAt, n: amN, value: AM_YEAR.pastAfter },
+                    ]}
+                  />
+                  <P>
+                    שירות עבר: <L><M v={AM_YEAR.pastAfter} /> − <M v={AM_YEAR.pastBefore} /> = <M v={AM_YEAR.pastService} /></L>.
+                  </P>
+                </div>
+              ),
+            },
+            {
+              title: "סגירה",
+              body: <Pv o={{ rate: AMENDED.rateEnd, label: "מדידה", amount: "צבירה לשנה", part: "שנים", why: "שנתיים בתנאים החדשים, בשיעור של סוף השנה." }} rows={[{ label: "סגירה", amount: AMENDED.newPerYear, part: "2", n: PLAN.n - 1, value: AM_YEAR.closing }]} />,
+            },
+            {
               title: "החוב",
               body: (
                 <RollForward
@@ -863,10 +926,10 @@ export const IAS19_DB2_SCREENS: Record<string, ScreenContent> = {
                   rows={[
                     { label: "יתרת פתיחה", value: PLAN_OPENING, kind: "balance" },
                     { label: "עלות ריבית", value: AM_YEAR.interest, how: `${Math.round(AM_YEAR.interestBefore)} (${AMENDED.month} חודשים, ${pct(PLAN.rate)}) + ${Math.round(AM_YEAR.interestAfter)} (${12 - AMENDED.month} חודשים, ${pct(AMENDED.rateAfter)}, על היתרה אחרי התיקון)` },
-                    { label: "עלות שירות שוטף", value: AM_YEAR.service, how: ltrFormulas(`${Math.round(AM_YEAR.serviceBefore)} (n = ${PLAN.n - 1} + ${12 - AMENDED.month}/12) + ${Math.round(AM_YEAR.serviceAfter)} (n = ${PLAN.n - 1})`) },
-                    { label: "עלות שירות עבר", value: AM_YEAR.pastService, how: ltrFormulas(`${Math.round(AM_YEAR.pastAfter)} − ${Math.round(AM_YEAR.pastBefore)}, ${pct(AMENDED.rateAfter)}, n = ${PLAN.n - 1} + ${12 - AMENDED.month}/12`) },
+                    { label: "עלות שירות שוטף", value: AM_YEAR.service, how: ltrFormulas(`${Math.round(AM_YEAR.serviceBefore)} + ${Math.round(AM_YEAR.serviceAfter)}`) },
+                    { label: "עלות שירות עבר", value: AM_YEAR.pastService, how: ltrFormulas(`${Math.round(AM_YEAR.pastAfter)} − ${Math.round(AM_YEAR.pastBefore)}`) },
                     { label: "P.N., הפסד", value: AM_YEAR.pn, kind: "pn" },
-                    { label: "יתרת סגירה", value: AM_YEAR.closing, kind: "balance", how: ltrFormulas(`2 × ${AMENDED.newPerYear.toLocaleString("en-US")}, ${pct(AMENDED.rateEnd)}, n = ${PLAN.n - 1}`) },
+                    { label: "יתרת סגירה", value: AM_YEAR.closing, kind: "balance", how: ltrFormulas(`${pct(AMENDED.rateEnd)}, n = ${PLAN.n - 1}`) },
                   ]}
                 />
               ),

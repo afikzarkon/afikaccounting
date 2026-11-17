@@ -13,7 +13,6 @@ import {
   CAPPED_PATH,
   DUAL,
   DUAL_ROWS,
-  DUAL_TOTAL,
   FRONT,
   FRONT_ACCRUED,
   FRONT_OBLIGATION,
@@ -21,11 +20,12 @@ import {
   FRONT_WRONG,
   GYM_PATH,
 } from "@/lib/study/ias19/lessons/attribute";
-import { GROUP, groupStep, VP, VP_ACCRUED, VP_LATER, VP_LATER_PER_YEAR, VP_OBLIGATION, VP_PER_YEAR } from "@/lib/study/ias19/lessons/measure";
+import { GROUP, GROUP_OPENING, groupStep, VP, VP_ACCRUED, VP_LATER, VP_LATER_OBLIGATION, VP_LATER_PER_YEAR, VP_OBLIGATION, VP_PER_YEAR } from "@/lib/study/ias19/lessons/measure";
 import { CF, CF_PER_YEAR, CHANGED, CHANGED_CLOSING, CHANGED_PER_YEAR, PAID_INTEREST, PAID_MONTHS, PAID_ON_OPENING, PAID_SAVED, PAID_YEAR, RATE_ONLY_CLOSING, Y1, Y1_PN, Y2 } from "@/lib/study/ias19/lessons/rollforward";
 import { lessonRef, pct } from "@/lib/study/ias19/shared";
 import { FORMULA, said, work } from "@/lib/study/ias19/formulas";
 import { FormulaFill, Ltr, type Term, Work } from "./ias19-formula";
+import { Pv } from "./ias19-step";
 import { DrillBox, PucExplorer, SolveTemplate, WindowExplorer } from "./lazy-widgets";
 import { Bridge, ExplainTask, FullSteps, Ladder, MapBranch, Recipe5, RollForward, T19, TaskSolution, TwoBuckets } from "./ias19-ui";
 import { BankStatement, Diff, PeopleGrid, Routing, Timeline, WrongRight, YearBars } from "./ias19-visuals";
@@ -339,8 +339,10 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
               <>
                 ①:
                 <Work w={work.perYearGrown(VP.share, VP.salary, VP.growth, VP_LATER.yearsToRetire)} />
-                החוב:
-                <Work w={work.measure({ perYear: VP_LATER_PER_YEAR, years: VP.served, heads: 1, n: VP_LATER.yearsToRetire, i: VP_LATER.rate })} />
+                <Pv
+                  o={{ rate: VP_LATER.rate, label: "מדידה", amount: "הטבה לשנה", part: "שנים" }}
+                  rows={[{ label: "החוב", amount: VP_LATER_PER_YEAR, part: `${VP.served}`, n: VP_LATER.yearsToRetire, value: VP_LATER_OBLIGATION }]}
+                />
               </>,
             ]}
           />
@@ -369,9 +371,11 @@ export const IAS19_DB_SCREENS: Record<string, ScreenContent> = {
                 <Work w={work.perYear(GROUP.opening.share, GROUP.opening.finalSalary)} />
                 ② {g.years}; ③ {g.heads}, מהציור; ④ {g.n}; ⑤ {pct(g.i)} <strong>(לא הממשלתית)</strong>.
               </>,
-              <>
-                <Work w={work.measure(g)} />
-              </>,
+              <Pv
+                key="pv"
+                o={{ rate: g.i, label: "מדידה", amount: "הטבה לשנה", part: "שנים" }}
+                rows={[{ label: "החוב", heads: g.heads, amount: g.perYear, part: `${g.years}`, n: g.n, value: GROUP_OPENING }]}
+              />,
             ]}
           />
         </Part>
@@ -733,14 +737,11 @@ ${said(work.counted(31, 35))}` },
                     <Work w={work.straight(DUAL.rule.grant, DUAL_ROWS[k].window)} />
                     <Work w={work.counted(p.age, DUAL_ROWS[k].start)} />
                     <Work w={work.nAge(DUAL.rule.retire, p.age)} />
-                    <Work w={work.measure({ perYear: DUAL_ROWS[k].perYear, years: DUAL_ROWS[k].served, heads: p.stay, n: DUAL_ROWS[k].n, i: DUAL.rate })} />
                   </div>
                 ))}
-                <Work w={work.peopleTotal(DUAL_ROWS.map((r) => r.obligation))} />
-                <DataTable
-                  head={["עובד", "צובר מגיל", "עד גיל", "לשנה", "נספרו", "n", "סיכוי", "חוב"]}
-                  rows={DUAL.people.map((p, k) => [p.id, DUAL_ROWS[k].start, DUAL_ROWS[k].end, Math.round(DUAL_ROWS[k].perYear), DUAL_ROWS[k].served, DUAL_ROWS[k].n, pct(p.stay), Math.round(DUAL_ROWS[k].obligation)])}
-                  foot={["סה״כ", "", "", "", "", "", "", Math.round(DUAL_TOTAL)]}
+                <Pv
+                  o={{ rate: DUAL.rate, label: "עובד", amount: "מענק", why: "בעמודת ״נצבר״: השנים שנספרו מתוך חלון הצבירה של העובד." }}
+                  rows={DUAL.people.map((p, k) => ({ label: `${p.id}׳`, p: p.stay, amount: DUAL.rule.grant, part: `${DUAL_ROWS[k].served}/${DUAL_ROWS[k].window}`, n: DUAL_ROWS[k].n, value: DUAL_ROWS[k].obligation }))}
                 />
               </div>,
             ]}
@@ -1061,14 +1062,28 @@ ${said(work.counted(33, 35))}` },
         <Work w={work.nYear(CF.retire, CF.from)} />
         <P>① הצבירה לשנה:</P>
         <Work w={work.perYearGrown(CF.share, CF.salary, CF.growth, n1)} />
+        <Pv
+          o={{ rate: CF.rateStart, label: "מדידה", amount: "הטבה לשנה", part: "שנים", total: false, why: `השירות בשיעור של תחילת השנה, הסגירה בשיעור של סופה. שניהם מהוונים מ-31.12.${CF.from}.` }}
+          rows={[
+            { label: "שירות", amount: CF_PER_YEAR, part: "1", n: n1, value: Y1.service },
+            { label: "סגירה", amount: CF_PER_YEAR, part: "1", n: n1, rate: CF.rateEnd1, value: Y1.closing },
+          ]}
+        />
         <RollForward
           title={`סמנכ״ל כספים, ${CF.from}`}
           rows={[
             { label: "יתרת פתיחה", value: 0, kind: "balance", how: "אין: שנה ראשונה" },
             { label: "עלות ריבית", value: 0, how: "אין על מה" },
-            { label: "עלות שירות", value: Y1.service, how: <Work w={work.service(CF_PER_YEAR, CF.rateStart, n1)} /> },
+            { label: "עלות שירות", value: Y1.service, how: ltrFormulas(`${pct(CF.rateStart)}, n = ${n1}`) },
             { label: "P.N., הפסד", value: Y1_PN, kind: "pn", how: <>הריבית ירדה:<Work w={work.pnDB({ opening: 0, interest: 0, service: Y1.service, closing: Y1.closing })} /></> },
-            { label: "יתרת סגירה", value: Y1.closing, kind: "balance", how: <Work w={work.measure({ perYear: CF_PER_YEAR, years: 1, heads: 1, n: n1, i: CF.rateEnd1 })} /> },
+            { label: "יתרת סגירה", value: Y1.closing, kind: "balance", how: ltrFormulas(`${pct(CF.rateEnd1)}, n = ${n1}`) },
+          ]}
+        />
+        <Pv
+          o={{ rate: CF.rateEnd1, label: "מדידה", amount: "הטבה לשנה", part: "שנים", total: false, why: `השנה השנייה: הפתיחה היא הסגירה של ${CF.from}. השירות והסגירה באותו שיעור, כי ההנחות לא השתנו.` }}
+          rows={[
+            { label: "שירות", amount: CF_PER_YEAR, part: "1", n: n1 - 1, value: Y2.service },
+            { label: "סגירה", amount: CF_PER_YEAR, part: "2", n: n1 - 1, value: Y2.closing },
           ]}
         />
         <RollForward
@@ -1076,9 +1091,9 @@ ${said(work.counted(33, 35))}` },
           rows={[
             { label: "יתרת פתיחה", value: Y1.closing, kind: "balance" },
             { label: "עלות ריבית", value: Y2.interest, how: <Work w={work.interestCost(Y1.closing, CF.rateEnd1)} /> },
-            { label: "עלות שירות", value: Y2.service, how: <Work w={work.service(CF_PER_YEAR, CF.rateEnd1, n1 - 1)} /> },
+            { label: "עלות שירות", value: Y2.service, how: ltrFormulas(`${pct(CF.rateEnd1)}, n = ${n1 - 1}`) },
             { label: "P.N.", value: Y2.pn, kind: "pn", how: <>הכול הוסבר:<Work w={work.pnDB({ opening: Y1.closing, interest: Y2.interest, service: Y2.service, closing: Y2.closing })} /></> },
-            { label: "יתרת סגירה", value: Y2.closing, kind: "balance", how: <Work w={work.measure({ perYear: CF_PER_YEAR, years: 2, heads: 1, n: n1 - 1, i: CF.rateEnd1 })} /> },
+            { label: "יתרת סגירה", value: Y2.closing, kind: "balance", how: ltrFormulas(`2 שנים, n = ${n1 - 1}`) },
           ]}
         />
         <Part title={`ואם בסוף ${CF.from + 1} ההנחות השתנו?`}>
@@ -1090,7 +1105,10 @@ ${said(work.counted(33, 35))}` },
           <P>
             <strong>רק הסגירה</strong> זזה:
           </P>
-          <Work w={work.measure({ perYear: CHANGED_PER_YEAR, years: 2, heads: 1, n: CHANGED.retire - CF.from - 1, i: CHANGED.rateEnd })} />
+          <Pv
+            o={{ rate: CHANGED.rateEnd, label: "מדידה", amount: "הטבה לשנה", part: "שנים" }}
+            rows={[{ label: "סגירה", amount: CHANGED_PER_YEAR, part: "2", n: CHANGED.retire - CF.from - 1, value: CHANGED_CLOSING }]}
+          />
           <P>וה-P.N., הפסד ל-OCI:</P>
           <Work w={work.pnDB({ opening: Y1.closing, interest: Y2.interest, service: Y2.service, closing: CHANGED_CLOSING })} />
         </Part>
@@ -1131,7 +1149,10 @@ ${said(work.counted(33, 35))}` },
               </>,
               null,
               <>
-                <Work w={work.measure({ perYear: CF_PER_YEAR, years: 2, heads: 1, n: n1 - 1, i: CHANGED.rateEnd })} />
+                <Pv
+                  o={{ rate: CHANGED.rateEnd, label: "מדידה", amount: "הטבה לשנה", part: "שנים" }}
+                  rows={[{ label: "סגירה", amount: CF_PER_YEAR, part: "2", n: n1 - 1, value: RATE_ONLY_CLOSING }]}
+                />
                 <Work w={work.pnDB({ opening: Y1.closing, interest: Y2.interest, service: Y2.service, closing: RATE_ONLY_CLOSING })} />
                 הפסד (בלי עיגולי ביניים). ואם הריבית הייתה עולה? החוב היה קטן, וה-P.N. רווח.
               </>,

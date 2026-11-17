@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { DataTable } from "@/components/study/blocks";
-import type { BkLine, BkNote, BkStep } from "@/lib/learn/ias19-booklet";
+import { pvTable, type BkLine, type BkNote, type BkStep, type PvOpts, type PvRow } from "@/lib/learn/ias19-booklet";
+import { ltrFormulas } from "@/lib/study/ias19/ltr";
 import { Ltr } from "./ias19-formula";
 import { rich } from "./ias19-rich";
 import { RollForward } from "./ias19-ui";
@@ -86,6 +87,21 @@ export function Note({ n }: { n: BkNote }) {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+/** A balance as the course's present-value table (pvTable), for a lesson screen: its explanation, then a row per group with the calculation and the value. */
+export function Pv({ rows, o }: { rows: PvRow[]; o: PvOpts }) {
+  const s = pvTable("", rows, o);
+  return (
+    <div className="space-y-2">
+      {s.text?.map((t) => (
+        <P key={t}>{rich(ltrFormulas(t))}</P>
+      ))}
+      {s.tables?.map((t, i) => (
+        <DataTable key={i} head={t.head} rows={t.rows.map((r) => r.map(cell))} foot={t.foot?.map(cell)} />
+      ))}
     </div>
   );
 }
