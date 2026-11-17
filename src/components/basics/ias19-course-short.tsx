@@ -41,33 +41,62 @@ function Note({ mode, children }: { mode: AbsenceMode | "both"; children: ReactN
 }
 
 // -----------------------------------------------------------------------------
-// The tables of steps 3–6, for any case and assumption.
+// The tables of steps 3–6, for any case and assumption. The opening and the
+// closing share one layout (the course's balance table); the payments have
+// their own, and its "balance for next year" column feeds the closing.
+
+/** One row of the balance table: a group, its balance, what it is expected to use, and the days that come out of the balance. */
+type BalanceRow = { name: string; staff: number; balance: number; use: number | null; leaver?: "vest" | "lose"; perHead: number };
+
+function BalanceTable({ c, rows }: { c: AbsenceCase; rows: BalanceRow[] }) {
+  const days = rows.reduce((s, g) => s + g.staff * g.perHead, 0);
+  return (
+    <>
+      <DataTable
+        head={["קבוצה", "עובדים", "יתרה משנה שעברה", "צפי כללי", "ימי זכאות בשנה", "צפי לניצול מיתרה קודמת", "סה״כ ימים", "עלות יום", "סכום"]}
+        rows={rows.map((g) => [
+          g.name,
+          String(g.staff),
+          n(g.balance),
+          g.leaver === "vest" ? (g.use ? `${n(g.use)}, עוזב` : "עוזב") : g.use === null ? "מקסימום" : n(g.use),
+          String(c.entitlement),
+          g.leaver === "vest" ? (
+            `פדיון: כל היתרה, ${n(g.perHead)}`
+          ) : g.use === null ? (
+            `כל היתרה, ${n(g.perHead)}`
+          ) : (
+            <span key="c" className="whitespace-nowrap">
+              <L>{work.fromBalance(g.balance, g.use, c.entitlement).numbers}</L>
+              {g.leaver === "lose" ? " · עוזב בלי פדיון" : ""}
+            </span>
+          ),
+          n(g.staff * g.perHead),
+          fmt(c.dayCost),
+          <Money key="m" v={g.staff * g.perHead * c.dayCost} />,
+        ])}
+        foot={[<strong key="t">סה״כ</strong>, String(headcount(rows)), "", "", "", "", <strong key="d">{n(days)}</strong>, "", <strong key="a"><Money v={days * c.dayCost} /></strong>]}
+      />
+      <Work w={work.dayTotal(rows.map((g) => ({ staff: g.staff, days: g.perHead })), c.dayCost)} />
+    </>
+  );
+}
 
 function OpeningTable({ c, r }: { c: AbsenceCase; r: AbsenceSolution }) {
   const vest = r.mode === "B";
   return (
-    <>
-      <DataTable
-        head={["קבוצה", "עובדים", "צפי היעדרות בשנה", "חישוב ימי יתרה לעובד", "ימים לעובד", "סה״כ ימים"]}
-        rows={r.opening.map((g) => [
-          g.name,
-          String(g.staff),
-          n(g.use),
-          vest && g.leaves ? (
-            `עוזב ומקבל פדיון: כל היתרה, ${n(g.balance)}`
-          ) : (
-            <span key="c" className="whitespace-nowrap">
-              <L>{work.fromBalance(g.balance, g.use, c.entitlement).numbers}</L>
-              {g.leaves ? " · עוזב בלי פדיון" : ""}
-            </span>
-          ),
-          n(g.perHead),
-          n(g.days),
-        ])}
-        foot={[<strong key="t">סה״כ</strong>, String(headcount(r.opening)), "", "", "", <strong key="d">{n(r.openingDays)}</strong>]}
-      />
-      <Work w={work.dayTotal(r.opening.map((g) => ({ staff: g.staff, days: g.perHead })), c.dayCost)} />
-    </>
+    <BalanceTable
+      c={c}
+      rows={r.opening.map((g) => ({ name: g.name, staff: g.staff, balance: g.balance, use: g.use, leaver: g.leaves ? (vest ? "vest" : "lose") : undefined, perHead: g.perHead }))}
+    />
+  );
+}
+
+function ClosingTable({ c, r }: { c: AbsenceCase; r: AbsenceSolution }) {
+  return (
+    <BalanceTable
+      c={c}
+      rows={r.closing.map((g) => ({ name: g.from === g.name ? g.name : `${g.from}: ${g.name}`, staff: g.staff, balance: g.carryOut, use: g.nextUse, perHead: g.perHead }))}
+    />
   );
 }
 
@@ -76,42 +105,22 @@ function PaymentsTable({ c, r }: { c: AbsenceCase; r: AbsenceSolution }) {
   return (
     <>
       <DataTable
-        head={["קבוצה", "עובדים", "ימי היעדרות", "מהם מהיתרה", "פדיון יתרה", "ימים ששולמו לעובד", "סה״כ ימים", "יתרה שפקעה או אבדה"]}
+        head={["קבוצה", "עובדים", "יתרה שנה קודמת", "ימי זכאות בשנה", "ניצול בפועל", "יתרה לשנה הבאה", ...(vest ? ["פדיון"] : []), "סה״כ ימים", "עלות יום", "סכום"]}
         rows={r.actual.map((g) => [
           g.name,
           String(g.staff),
+          n(r.balance),
+          String(c.entitlement),
           n(g.use),
-          n(g.fromCarried),
-          n(g.payout),
-          vest && g.leaves ? <span key="p" className="whitespace-nowrap"><L>{work.paidDays(g.use, g.payout).numbers}</L></span> : n(g.paidPerHead),
-          n(g.paidDays),
-          n(g.lapsed),
+          g.leaves ? "עזב: 0" : <span key="o" className="whitespace-nowrap"><L>{`MAX(0, ${c.entitlement} − ${n(g.use)}) = ${n(g.carryOut)}`}</L></span>,
+          ...(vest ? [n(g.payout)] : []),
+          vest && g.payout ? <span key="p" className="whitespace-nowrap"><L>{`${g.staff} × (${n(g.use)} + ${n(g.payout)}) = ${n(g.paidDays)}`}</L></span> : <span key="p" className="whitespace-nowrap"><L>{`${g.staff} × ${n(g.use)} = ${n(g.paidDays)}`}</L></span>,
+          fmt(c.dayCost),
+          <Money key="m" v={g.paidDays * c.dayCost} />,
         ])}
-        foot={[<strong key="t">סה״כ</strong>, String(headcount(r.actual)), "", "", "", "", <strong key="d">{n(r.paidDays)}</strong>, ""]}
+        foot={[<strong key="t">סה״כ</strong>, String(headcount(r.actual)), "", "", "", "", ...(vest ? [""] : []), <strong key="d">{n(r.paidDays)}</strong>, "", <strong key="a"><Money v={r.paid} /></strong>]}
       />
       <Work w={work.dayTotal(r.actual.map((g) => ({ staff: g.staff, days: g.paidPerHead })), c.dayCost)} />
-    </>
-  );
-}
-
-function ClosingTable({ c, r }: { c: AbsenceCase; r: AbsenceSolution }) {
-  const byExpectation = r.closing.some((g) => g.nextUse !== null);
-  return (
-    <>
-      <DataTable
-        head={["קבוצה (נשארים בלבד)", "עובדים", "יתרה חדשה מהשנה", "יתרה ישנה שנשארה", ...(byExpectation ? ["חישוב לפי הצפי"] : []), "ימי יתרה לעובד", "סה״כ ימים"]}
-        rows={r.closing.map((g) => [
-          g.from === g.name ? g.name : `${g.from}: ${g.name}`,
-          String(g.staff),
-          n(g.ownLeft),
-          n(g.oldLeft),
-          ...(byExpectation ? [g.nextUse === null ? "ינצלו את המקסימום" : <span key="e" className="whitespace-nowrap"><L>{work.fromBalance(g.carryOut, g.nextUse, c.entitlement).numbers}</L></span>] : []),
-          n(g.perHead),
-          n(g.days),
-        ])}
-        foot={[<strong key="t">סה״כ</strong>, String(headcount(r.closing)), "", "", ...(byExpectation ? [""] : []), "", <strong key="d">{n(r.closingDays)}</strong>]}
-      />
-      <Work w={work.dayTotal(r.closing.map((g) => ({ staff: g.staff, days: g.perHead })), c.dayCost)} />
     </>
   );
 }
@@ -423,7 +432,7 @@ export const IAS19_SHORT_SCREENS: Record<string, ScreenContent> = {
           <P>
             הימים עוברים לשנה אחת בלבד, ולכן כל מה שלא נוצל מיתרת 2025 עד 31.12.2026 פקע. {ALON.actual[3].staff} העובדים שניצלו {ALON.actual[3].use} ימים לא הגיעו ליתרה בכלל, וכל{" "}
             {ALON.carried[0]} הימים שלהם פקעו. {ALON.actual[2].staff} העובדים שניצלו {ALON.actual[2].use} ימים לקחו מהיתרה {A.actual[2].fromCarried === 1 ? "יום אחד" : `${A.actual[2].fromCarried} ימים`}, ו-
-            {A.actual[2].lapsed} פקעו. את זה רואים בעמודה ״יתרה שפקעה או אבדה״ בטבלת התשלומים.
+            {A.actual[2].lapsed} פקעו. לכן בעמודה ״יתרה לשנה הבאה״ בטבלת התשלומים נשארים רק ימי 2026 שלא נוצלו.
           </P>
           <P>
             <strong>הטעות הנפוצה</strong> היא להעביר גם את היתרה הישנה לסגירה:{" "}

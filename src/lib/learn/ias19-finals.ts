@@ -594,35 +594,61 @@ export function shortExamQuestion(id: string, title: string, q: ShortExamInput):
         text: ["משכורת 13 היא בגין השנה כולה, ולכן בסוף השנה היא צבורה במלואה. מי שעוזב ב-1.1 מוצא מהחישוב, אבל **לא מקצרים** את תקופת הצבירה."],
       },
       {
-        title: "חופשה: היתרה בסוף השנה",
+        title: `חופשה: יתרת פתיחה 31.12.${y - 1}, לפי הצפי`,
+        text: [`ב-FIFO מנצלים קודם את היתרה, ולכן הצפי ניתן כשיעור מהיתרה. עוזב מקבל ${pc(q.payout)} מהיתרה, לפי שכר ${y - 1}; הנשארים ינצלו את הימים ב-${y}, לפי שכר ${y}.`],
         tables: [
           {
-            head: ["", "חישוב", "ימים"],
+            head: ["קבוצה", "עובדים", "יתרה משנה שעברה", "צפי כללי", "ימי חופש בשנה", "צפי לניצול מיתרה קודמת", "סה״כ ימים", "עלות יום", "סכום"],
             rows: [
-              [`יתרה שעברה מ-${y - 1}`, `${s.stay0} × ${S.balance}`, money(s.carried)],
-              [`זכאות ${y}`, `${s.stay0} × ${q.vacation}`, money(s.accrued)],
-              ["נוצלו", "", `(${money(q.actual.used)})`],
-              [`יתרה 31.12.${y}`, "", money(s.left)],
-              ["לעובד", `${money(s.left)} ÷ ${s.stay0}`, d2(s.balance1)],
+              ["עוזבים ב-1.1", S.leavers, S.balance, "עוזב", q.vacation, `פדיון: ${S.balance} × ${pc(q.payout)} = ${d2(S.balance * q.payout)}`, `${S.leavers} × ${d2(S.balance * q.payout)} = ${d2(S.leavers * S.balance * q.payout)}`, d2(s.day[0]), money(s.v.openLeavers)],
+              ["נשארים", S.staff - S.leavers, S.balance, `${pc(S.use)} מהיתרה`, q.vacation, `${S.balance} × ${pc(S.use)} = ${d2(S.balance * S.use)}`, `${S.staff - S.leavers} × ${d2(S.balance * S.use)} = ${d2((S.staff - S.leavers) * S.balance * S.use)}`, d2(s.day[1]), money(s.v.openStayers)],
             ],
+            foot: ["סה״כ", S.staff, "", "", "", "", "", "", money(s.v.opening)],
           },
         ],
-        text: [s.lapsed > 0 ? `ב-FIFO היתרה הישנה מנוצלת ראשונה. ${money(s.lapsed)} ימים ממנה לא נוצלו ופקעו.` : "ב-FIFO היתרה הישנה נוצלה כולה, ולא פקע דבר. כל היתרה בסוף השנה היא מזכאות השנה."],
+      },
+      {
+        title: `חופשה: תשלומים ${y}, לפי מה שקרה`,
+        text: [s.lapsed > 0 ? `ב-FIFO היתרה הישנה מנוצלת ראשונה. ${money(s.lapsed)} ימים ממנה לא נוצלו ופקעו.` : "ב-FIFO היתרה הישנה נוצלה כולה, ולא פקע דבר. כל היתרה לשנה הבאה היא מזכאות השנה."],
+        tables: [
+          {
+            head: ["קבוצה", "עובדים", "יתרה שנה קודמת", "ימי חופש בשנה", "ניצול בפועל", "יתרה לשנה הבאה", "פדיון", "סה״כ ימים", "עלות יום", "סכום"],
+            rows: [
+              ["עזבו ב-1.1", q.actual.leavers, S.balance, "—", 0, "עזב: 0", `${S.balance} × ${pc(q.payout)} = ${d2(S.balance * q.payout)}`, `${q.actual.leavers} × ${d2(S.balance * q.payout)} = ${d2(q.actual.leavers * S.balance * q.payout)}`, d2(s.day[0]), money(s.v.payLeavers)],
+              [
+                "נשארו",
+                s.stay0,
+                S.balance,
+                q.vacation,
+                `${money(q.actual.used)} ÷ ${s.stay0} = ${d2(q.actual.used / s.stay0)}`,
+                `${S.balance} + ${q.vacation} − ${d2(q.actual.used / s.stay0)} = ${d2(s.balance1)}`,
+                0,
+                `${s.stay0} × ${d2(q.actual.used / s.stay0)} = ${money(q.actual.used)}`,
+                d2(s.day[1]),
+                money(s.v.payUsed),
+              ],
+            ],
+            foot: ["סה״כ", S.staff, "", "", "", "", "", "", "", money(s.v.paid)],
+          },
+        ],
+      },
+      {
+        title: `חופשה: יתרת סגירה 31.12.${y}`,
+        text: [`היתרה משנה שעברה היא העמודה ״יתרה לשנה הבאה״ מטבלת התשלומים. העוזבים נמדדים לפי שכר ${y}, והנשארים לפי שכר ${y + 1}, שבה ינצלו.`],
+        tables: [
+          {
+            head: ["קבוצה", "עובדים", "יתרה משנה שעברה", "צפי כללי", "ימי חופש בשנה", "צפי לניצול מיתרה קודמת", "סה״כ ימים", "עלות יום", "סכום"],
+            rows: [
+              ["עוזבים ב-1.1", E.leavers, d2(s.balance1), "עוזב", q.vacation, `פדיון: ${d2(s.balance1)} × ${pc(q.payout)} = ${d2(s.balance1 * q.payout)}`, `${E.leavers} × ${d2(s.balance1 * q.payout)} = ${d2(E.leavers * s.balance1 * q.payout)}`, d2(s.day[1]), money(s.v.closeLeavers)],
+              ["נשארים", E.staff - E.leavers, d2(s.balance1), `${pc(E.use)} מהיתרה`, q.vacation, `${d2(s.balance1)} × ${pc(E.use)} = ${d2(s.balance1 * E.use)}`, `${E.staff - E.leavers} × ${d2(s.balance1 * E.use)} = ${d2((E.staff - E.leavers) * s.balance1 * E.use)}`, d2(s.day[2]), money(s.v.closeStayers)],
+            ],
+            foot: ["סה״כ", E.staff, "", "", "", "", "", "", money(s.v.closing)],
+          },
+        ],
       },
       {
         title: "חופשה: התנועה",
         tables: [
-          {
-            head: ["שורה", "חישוב", "סכום"],
-            rows: [
-              ["פתיחה: עוזבים", `${S.leavers} × ${S.balance} × ${pc(q.payout)} × ${d2(s.day[0])}`, money(s.v.openLeavers)],
-              ["פתיחה: נשארים", `${S.staff - S.leavers} × ${S.balance} × ${pc(S.use)} × ${d2(s.day[1])}`, money(s.v.openStayers)],
-              ["תשלומים: פדיון לעוזבים", `${q.actual.leavers} × ${S.balance} × ${pc(q.payout)} × ${d2(s.day[0])}`, money(s.v.payLeavers)],
-              ["תשלומים: ימים שנוצלו", `${money(q.actual.used)} × ${d2(s.day[1])}`, money(s.v.payUsed)],
-              ["סגירה: עוזבים", `${E.leavers} × ${d2(s.balance1)} × ${pc(q.payout)} × ${d2(s.day[1])}`, money(s.v.closeLeavers)],
-              ["סגירה: נשארים", `${E.staff - E.leavers} × ${d2(s.balance1)} × ${pc(E.use)} × ${d2(s.day[2])}`, money(s.v.closeStayers)],
-            ],
-          },
           {
             title: "טבלת התנועה",
             head: ["שורה", "משכורת 13", "חופשה"],
@@ -904,17 +930,33 @@ export function salesQuestion(id: string, title: string, q: SalesInput): BkQuest
         title: "חופשה",
         tables: [
           {
+            title: `יתרת פתיחה 31.12.${y - 1}, לפי הצפי`,
+            head: ["קבוצה", "עובדים", "יתרה משנה שעברה", "צפי כללי", "ימי חופש בשנה", "צפי לניצול מיתרה קודמת", "סה״כ ימים", "עלות יום", "סכום"],
+            rows: [["עובדי התפעול", V.staff, V.balance, V.expectNow, V.entitlement, `MIN(${V.balance}, MAX(0, ${V.expectNow} − ${V.entitlement})) = ${s.openDays}`, `${V.staff} × ${s.openDays} = ${nf(V.staff * s.openDays, 2)}`, d2(s.day[1]), money(s.vac.opening)]],
+          },
+          {
+            title: `תשלומים ${y}, לפי מה שקרה`,
+            head: ["קבוצה", "עובדים", "יתרה שנה קודמת", "ימי חופש בשנה", "ניצול בפועל", "יתרה לשנה הבאה", "סה״כ ימים", "עלות יום", "סכום"],
+            rows: [["עובדי התפעול", V.staff, V.balance, V.entitlement, V.used, `MAX(0, ${V.entitlement} − ${V.used}) = ${s.newBal}`, `${V.staff} × ${V.used} = ${nf(V.staff * V.used, 2)}`, d2(s.day[1]), money(s.vac.paid)]],
+          },
+          {
+            title: `יתרת סגירה 31.12.${y}`,
+            head: ["קבוצה", "עובדים", "יתרה משנה שעברה", "צפי כללי", "ימי חופש בשנה", "צפי לניצול מיתרה קודמת", "סה״כ ימים", "עלות יום", "סכום"],
+            rows: [["עובדי התפעול", V.staff, s.newBal, V.expectNext, V.entitlement, `MIN(${s.newBal}, MAX(0, ${V.expectNext} − ${V.entitlement})) = ${s.closeDays}`, `${V.staff} × ${s.closeDays} = ${nf(V.staff * s.closeDays, 2)}`, d2(s.day[2]), money(s.vac.closing)]],
+          },
+          {
+            title: "התנועה",
             head: ["שורה", "חישוב", "סכום"],
             rows: [
-              [`פתיחה 31.12.${y - 1}`, `${V.staff} × MIN(${V.balance}, MAX(0, ${V.expectNow} − ${V.entitlement})) × ${d2(s.day[1])}`, money(s.vac.opening)],
-              [`תשלומים ${y}`, `${V.staff} × ${V.used} × ${d2(s.day[1])}`, money(s.vac.paid)],
-              [`סגירה 31.12.${y}`, `${V.staff} × MIN(${s.newBal}, MAX(0, ${V.expectNext} − ${V.entitlement})) × ${d2(s.day[2])}`, money(s.vac.closing)],
+              [`פתיחה 31.12.${y - 1}`, "", money(s.vac.opening)],
+              [`תשלומים ${y}`, "", money(s.vac.paid)],
+              [`סגירה 31.12.${y}`, "", money(s.vac.closing)],
               ["הוצאה (השורה החסרה)", `${money(s.vac.closing)} − ${money(s.vac.opening)} + ${money(s.vac.paid)}`, money(s.vac.expense)],
             ],
           },
         ],
         text: [
-          `שווי יום: ${y}: ${d2(s.day[1])}; ${y + 1}: ${d2(s.day[2])}. היתרה הישנה פקעה; היתרה החדשה: ${V.entitlement} − ${V.used} = ${s.newBal} ימים, ומתוכה ינוצלו ${s.closeDays}.`,
+          `שווי יום: ${y}: ${d2(s.day[1])}; ${y + 1}: ${d2(s.day[2])}. היתרה הישנה פקעה, ולכן היתרה משנה שעברה בסגירה היא רק מה שנשאר מזכאות ${y}.`,
         ],
       },
       {

@@ -291,17 +291,19 @@ export function shortQuestion(id: string, title: string, q: ShortInput): BkQuest
         text: ["ב-LIFO מנצלים קודם את ימי השנה. מהיתרה נלקח רק מה שמעבר לזכאות השנתית, ולא יותר מהיתרה. לא צפויות עזיבות, ולכן כולם לפי הניצול הצפוי."],
         tables: [
           {
-            head: ["דרג", "עובדים", "יתרה לעובד", `צפי ניצול ${y}`, "ימים מהיתרה", "עלות יום", "הפרשה"],
+            head: ["דרג", "עובדים", "יתרה משנה שעברה", "צפי כללי", "ימי חופש בשנה", "צפי לניצול מיתרה קודמת", "סה״כ ימים", "עלות יום", "הפרשה"],
             rows: G.map((g, i) => [
               g.name,
               g.staff,
               q.vacation.carried[i],
               q.vacation.expectedNow[i],
+              g.vacation,
               `MIN(${q.vacation.carried[i]}, MAX(0, ${q.vacation.expectedNow[i]} − ${g.vacation})) = ${r.openDays[i]}`,
+              `${g.staff} × ${r.openDays[i]} = ${nf(g.staff * r.openDays[i], 2)}`,
               d2(r.dayCost[i]),
               money(g.staff * r.openDays[i] * r.dayCost[i]),
             ]),
-            foot: ["סה״כ", "", "", "", "", "", money(r.vacation.opening)],
+            foot: ["סה״כ", "", "", "", "", "", "", "", money(r.vacation.opening)],
           },
         ],
       },
@@ -309,34 +311,51 @@ export function shortQuestion(id: string, title: string, q: ShortInput): BkQuest
         title: `דמי חופשה: תשלומים ${y}, לפי מה שקרה`,
         tables: [
           {
-            head: ["דרג", "עובדים", "ימים שנוצלו", "עלות יום", "סה״כ"],
-            rows: G.map((g, i) => [g.name, g.staff, q.vacation.actual[i], d2(r.dayCost[i]), money(g.staff * q.vacation.actual[i] * r.dayCost[i])]),
-            foot: ["סה״כ", "", "", "", money(r.vacation.paid)],
+            head: ["דרג", "עובדים", "יתרה שנה קודמת", "ימי חופש בשנה", "ניצול בפועל", "יתרה לשנה הבאה", "סה״כ ימים", "עלות יום", "סה״כ"],
+            rows: G.map((g, i) => [
+              g.name,
+              g.staff,
+              q.vacation.carried[i],
+              g.vacation,
+              q.vacation.actual[i],
+              `MAX(0, ${g.vacation} − ${q.vacation.actual[i]}) = ${r.newBalance[i]}`,
+              `${g.staff} × ${q.vacation.actual[i]} = ${nf(g.staff * q.vacation.actual[i], 2)}`,
+              d2(r.dayCost[i]),
+              money(g.staff * q.vacation.actual[i] * r.dayCost[i]),
+            ]),
+            foot: ["סה״כ", "", "", "", "", "", "", "", money(r.vacation.paid)],
           },
         ],
       },
       {
         title: `דמי חופשה: יתרת סגירה 31.12.${y}`,
         text: [
-          "יתרה חדשה = זכאות − ניצול (לא פחות מ-0). היתרה הישנה פוקעת.",
+          "היתרה משנה שעברה היא העמודה ״יתרה לשנה הבאה״ מטבלת התשלומים: זכאות − ניצול (לא פחות מ-0). היתרה הישנה פוקעת.",
           `${q.leavers === 1 ? `ה${G[0].one} שצפוי לעזוב מקבל` : `ה${m} שצפויים לעזוב מקבלים`} את כל היתרה, כי ההיעדרות מבשילה. הנשארים נכנסים לפי מה שינצלו מהיתרה ב-${y + 1}.`,
         ],
         tables: [
           {
-            head: ["דרג", "עובדים", "יתרה חדשה לעובד", `צפי ניצול ${y + 1}`, "ימים מהיתרה", "עלות יום", "הפרשה"],
+            head: ["דרג", "עובדים", "יתרה משנה שעברה", "צפי כללי", "ימי חופש בשנה", "צפי לניצול מיתרה קודמת", "סה״כ ימים", "עלות יום", "הפרשה"],
             rows: [
-              ...G.map((g, i) => [
-                i === 0 && q.leavers ? `${g.name} שנשארים` : g.name,
-                r.stayers[i],
-                `MAX(0, ${g.vacation} − ${q.vacation.actual[i]}) = ${r.newBalance[i]}`,
-                q.vacation.expectedNext[i] === "max" ? "מקסימום" : String(q.vacation.expectedNext[i]),
-                q.vacation.expectedNext[i] === "max" ? `כל היתרה = ${r.closeDays[i]}` : `MIN(${r.newBalance[i]}, MAX(0, ${q.vacation.expectedNext[i]} − ${g.vacation})) = ${r.closeDays[i]}`,
-                d2(r.dayCost[i]),
-                money(r.stayers[i] * r.closeDays[i] * r.dayCost[i]),
-              ]),
-              ...(q.leavers ? [[`${m} שעוזבים`, q.leavers, String(r.newBalance[0]), "עוזב", `כל היתרה = ${r.newBalance[0]}`, d2(r.dayCost[0]), money(r.leaverPay)]] : []),
+              ...G.map((g, i) => {
+                const e = q.vacation.expectedNext[i];
+                return [
+                  i === 0 && q.leavers ? `${g.name} שנשארים` : g.name,
+                  r.stayers[i],
+                  r.newBalance[i],
+                  e === "max" ? "מקסימום" : String(e),
+                  g.vacation,
+                  e === "max" ? `כל היתרה = ${r.closeDays[i]}` : `MIN(${r.newBalance[i]}, MAX(0, ${e} − ${g.vacation})) = ${r.closeDays[i]}`,
+                  `${r.stayers[i]} × ${r.closeDays[i]} = ${nf(r.stayers[i] * r.closeDays[i], 2)}`,
+                  d2(r.dayCost[i]),
+                  money(r.stayers[i] * r.closeDays[i] * r.dayCost[i]),
+                ];
+              }),
+              ...(q.leavers
+                ? [[`${m} שעוזבים`, q.leavers, r.newBalance[0], "עוזב", G[0].vacation, `פדיון: כל היתרה = ${r.newBalance[0]}`, `${q.leavers} × ${r.newBalance[0]} = ${nf(q.leavers * r.newBalance[0], 2)}`, d2(r.dayCost[0]), money(r.leaverPay)]]
+                : []),
             ],
-            foot: ["סה״כ", "", "", "", "", "", money(r.vacation.closing)],
+            foot: ["סה״כ", "", "", "", "", "", "", "", money(r.vacation.closing)],
           },
         ],
         rolls: [shortRoll("הפרשה לדמי חופשה", r.vacation, y)],
