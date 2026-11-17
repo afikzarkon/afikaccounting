@@ -459,6 +459,121 @@ const oltRoll = (title: string, l: { opening: number; service: number; interest:
   ],
 });
 
+/** A row of a present-value table: a group, a plan or a measurement, and the figures its present value is built from. */
+export type PvRow = {
+  label: string;
+  heads?: number;
+  /** Probability of staying and receiving. */
+  p?: number;
+  /** The benefit per employee (or in total, with `amount` in the options). */
+  amount: number;
+  /** A further multiplier, such as an added share after an amendment (× 1.12); its column is named in the options. */
+  x?: number;
+  /** The share accrued, as written: "2/6", "1", or years: "3", "2.25", "28/12". */
+  part?: string;
+  n: number;
+  /** When the rows are discounted at different rates. */
+  rate?: number;
+  value: number;
+};
+
+export type PvOpts = {
+  rate: number;
+  /** The first column's header. */
+  label?: string;
+  /** The amount column's header. */
+  amount?: string;
+  /** Sentences above the table, before the formula. */
+  why?: string | string[];
+  /** A total in the foot (default: when there is more than one row). */
+  total?: boolean;
+  /** The accrued column's header, when it holds years rather than a share. */
+  part?: string;
+  /** The multiplier column's header. */
+  x?: string;
+  /** Show the rate column even when every row has the same rate. */
+  rateCol?: boolean;
+  /** Decimals for the benefit and for the present value (default: whole shekels). */
+  amountDec?: number;
+  valueDec?: number;
+};
+
+const partOf = (s: string) => s.split("/").map(Number).reduce((a, x) => a / x);
+/** A narrow no-break space: the calculation stays on one line and in its column. */
+const NBSP = String.fromCharCode(0x202f);
+
+/**
+ * One balance as a table, by the owner's choice of 2026-11-17: a row for each
+ * group, a column for each figure the present value is built from, a column
+ * with the calculation, and the present value last. A row whose figures do
+ * not give its value throws, so a table can never disagree with the solution.
+ */
+export function pvTable(title: string, rows: PvRow[], o: PvOpts): BkStep {
+  const has = { heads: rows.some((x) => x.heads !== undefined), p: rows.some((x) => x.p !== undefined), x: rows.some((x) => x.x !== undefined), part: rows.some((x) => x.part !== undefined) };
+  const rateOf = (x: PvRow) => x.rate ?? o.rate;
+  const oneRate = !o.rateCol && rows.every((x) => rateOf(x) === o.rate);
+  const amt = (v: number) => (o.amountDec ? nf(v, o.amountDec) : money(v));
+  const val = (v: number) => (o.valueDec ? nf(v, o.valueDec) : money(v));
+  for (const x of rows) {
+    const v = ((x.heads ?? 1) * (x.p ?? 1) * x.amount * (x.x ?? 1) * (x.part ? partOf(x.part) : 1)) / (1 + rateOf(x)) ** x.n;
+    if (Math.abs(v - x.value) > Math.max(1, Math.abs(x.value) * 1e-6)) throw new Error(`pvTable "${title}", ${x.label}: the figures give ${v}, not ${x.value}`);
+  }
+  const cols: { head: string; cell: (x: PvRow) => string | number }[] = [
+    { head: o.label ?? "קבוצה", cell: (x) => x.label },
+    ...(has.heads ? [{ head: "עובדים", cell: (x: PvRow) => x.heads ?? 1 }] : []),
+    ...(has.p ? [{ head: "הסתברות", cell: (x: PvRow) => pc(x.p ?? 1) }] : []),
+    { head: o.amount ?? "הטבה", cell: (x) => amt(x.amount) },
+    ...(has.x ? [{ head: o.x ?? "מקדם", cell: (x: PvRow) => nf(x.x ?? 1, 3) }] : []),
+    ...(has.part ? [{ head: o.part ?? "נצבר", cell: (x: PvRow) => x.part ?? "1" }] : []),
+    ...(oneRate ? [] : [{ head: "i", cell: (x: PvRow) => pc(rateOf(x)) }]),
+    { head: "n", cell: (x) => yrs(x.n) },
+    {
+      head: "חישוב",
+      cell: (x) =>
+        [x.heads !== undefined && nf(x.heads, 2), x.p !== undefined && pc(x.p), amt(x.amount), x.x !== undefined && nf(x.x, 3), x.part && x.part !== "1" && x.part]
+          .filter(Boolean)
+          .join(" × ")
+          // The product holds together, and so does the discount: a narrow column breaks only before "÷", so each line still reads left to right.
+          .replace(/ /g, NBSP)
+          .concat(x.n ? ` ÷${NBSP}${b(rateOf(x))}^${yrs(x.n)}` : ""),
+    },
+    { head: "ערך נוכחי", cell: (x) => val(x.value) },
+  ];
+  const total = o.total ?? rows.length > 1;
+  const why = o.why === undefined ? [] : Array.isArray(o.why) ? o.why : [o.why];
+  return {
+    title,
+    // By the owner's choice of 2026-11-17, the formulas are the table's own calculation column: no formula or Excel line above it.
+    text: why,
+    tables: [
+      {
+        head: cols.map((c) => c.head),
+        rows: rows.map((x) => cols.map((c) => c.cell(x))),
+        ...(total ? { foot: cols.map((_, i) => (i === 0 ? "סה״כ" : i === cols.length - 1 ? val(sum(rows.map((x) => x.value))) : "")) } : {}),
+      },
+    ],
+  };
+}
+
+/** Years accrued, written so a table reproduces them exactly: "2.25", or in months, "31/12", when the decimals do not end. */
+export const yearsAs = (x: number) => {
+  const s = yrs(x);
+  return Number(s.replace(/,/g, "")) === x ? s : `${Math.round(x * 12)}/12`;
+};
+
+/**
+ * Several balances of one employee or one group in a single step: a table
+ * each, under its own caption, the explanations once.
+ * The tables should have the same columns (pass `rateCol` when the rate
+ * changes between the dates), or the step repeats the lines that differ.
+ */
+export function pvGroup(title: string, parts: { title: string; rows: PvRow[]; o: PvOpts }[], why?: string | string[]): BkStep {
+  const built = parts.map((p) => pvTable(p.title, p.rows, p.o));
+  const text = why === undefined ? [] : Array.isArray(why) ? [...why] : [why];
+  for (const s of built) for (const line of s.text ?? []) if (!text.includes(line)) text.push(line);
+  return { title, text, tables: built.map((s, k) => ({ ...s.tables![0], title: parts[k].title })) };
+}
+
 export function oltQuestion(id: string, title: string, q: OltInput): BkQuestion {
   const s = solveOlt(q);
   const y = q.year;
@@ -498,65 +613,51 @@ export function oltQuestion(id: string, title: string, q: OltInput): BkQuestion 
         ],
       },
       {
-        title: "מחלקת פיתוח: שבתון",
+        title: "הסכום שישולם לכל עובד",
         notes: [
           {
-            title: "הסכום שישולם, והחלק לכל שנה",
-            lines: [
-              { label: "שכר שנת השבתון", how: `שכר × (1 + צמיחה)^${D.serviceYears - 1}`, calc: `${money(D.salary)} × ${b(D.growth)}^${D.serviceYears - 1}`, value: s.dev.pay, unit: "₪" },
-              { label: "חלק שנה אחת", how: `סכום ÷ ${D.serviceYears} שנות שירות`, calc: `${money(s.dev.pay)} ÷ ${D.serviceYears}`, value: s.dev.pay / D.serviceYears, unit: "₪" },
-            ],
+            title: "שבתון, מחלקת פיתוח",
+            lines: [{ label: "שכר שנת השבתון", how: `שכר × (1 + צמיחה)^${D.serviceYears - 1}`, calc: `${money(D.salary)} × ${b(D.growth)}^${D.serviceYears - 1}`, value: s.dev.pay, unit: "₪" }],
           },
           {
-            title: "המעגל, שורה אחר שורה",
-            text: `עובדים צפויים: ${D.staff} × ${pc(D.p)}. מ-31.12.${y0} עד התשלום ${D.serviceYears - 1} שנים, ומ-31.12.${y} עד התשלום ${D.serviceYears - 2} שנים.`,
-            lines: [
-              { label: `פתיחה 31.12.${y0} (שנה אחת נצברה)`, calc: `${D.staff} × ${nf(D.p, 3)} × ${money(s.dev.pay)} × 1/${D.serviceYears} ÷ ${b(r)}^${D.serviceYears - 1}`, value: s.dev.opening, unit: "₪" },
-              { label: `שירות שוטף ${y}`, how: "השנה שנוספה, מהוונת מסוף השנה", calc: `${D.staff} × ${nf(D.p, 3)} × ${money(s.dev.pay)} × 1/${D.serviceYears} ÷ ${b(r)}^${D.serviceYears - 2}`, value: s.dev.service, unit: "₪" },
-              { label: "ריבית", calc: `${money(s.dev.opening)} × ${pc(r)}`, value: s.dev.interest, unit: "₪" },
-              { label: `סגירה 31.12.${y} (שנתיים נצברו)`, calc: `${D.staff} × ${nf(D.p, 3)} × ${money(s.dev.pay)} × 2/${D.serviceYears} ÷ ${b(r)}^${D.serviceYears - 2}`, value: s.dev.closing, unit: "₪" },
-            ],
-          },
-        ],
-        rolls: [oltRoll("שבתון, מחלקת פיתוח", s.dev, y)],
-        text: ["שום הנחה לא השתנתה, ולכן המדידה מחדש 0."],
-      },
-      {
-        title: "מחלקת רכש: משכורת נוספת",
-        notes: [
-          {
-            title: "הסכום שישולם לעובד",
+            title: "משכורת נוספת, מחלקת רכש",
             lines: [{ label: "משכורת חודש בשנה האחרונה", how: `שכר שנתי ÷ 12 × (1 + צמיחה)^${B.serviceYears - 1}`, calc: `${money(B.salary)} ÷ 12 × ${b(B.growth)}^${B.serviceYears - 1}`, value: s.buy.pay, unit: "₪" }],
           },
           {
-            title: "המעגל",
-            text: `הפתיחה, השירות והריבית לפי הצפי הקודם (${pc(B.p0)}). הסגירה לפי הצפי החדש (${pc(B.p1)}), וההפרש הוא מדידה מחדש.`,
+            title: "בונוס הנהלה. הבונוס נגזר מהרווח של כל שנה, ולכן כל שנה נושאת את הבונוס על הרווח שלה. לא צפויים שינויים בהנהלה: הסתברות 100%, והחלק שנצבר הוא הבונוס כולו",
             lines: [
-              { label: `פתיחה 31.12.${y0}`, calc: `${B.staff} × ${nf(B.p0, 3)} × ${money(s.buy.pay)} × 1/${B.serviceYears} ÷ ${b(r)}^${B.serviceYears - 1}`, value: s.buy.opening, unit: "₪" },
-              { label: `שירות שוטף ${y}`, calc: `${B.staff} × ${nf(B.p0, 3)} × ${money(s.buy.pay)} × 1/${B.serviceYears} ÷ ${b(r)}^${B.serviceYears - 2}`, value: s.buy.service, unit: "₪" },
-              { label: "ריבית", calc: `${money(s.buy.opening)} × ${pc(r)}`, value: s.buy.interest, unit: "₪" },
-              { label: `סגירה 31.12.${y}`, calc: `${B.staff} × ${nf(B.p1, 3)} × ${money(s.buy.pay)} × 2/${B.serviceYears} ÷ ${b(r)}^${B.serviceYears - 2}`, value: s.buy.closing, unit: "₪" },
-              { label: "מדידה מחדש (השורה המאזנת)", calc: `${money(s.buy.closing)} − ${money(s.buy.opening)} − ${money(s.buy.service)} − ${money(s.buy.interest)}`, value: s.buy.pn, unit: "₪" },
+              { label: `על רווח ${y0}`, calc: `${pc(M.share)} × ${nf(M.profits[0])}`, value: M.share * M.profits[0], unit: "₪" },
+              { label: `על רווח ${y}`, calc: `${pc(M.share)} × ${nf(M.profits[1])}`, value: M.share * M.profits[1], unit: "₪" },
+              { label: `על הרווח המצטבר עד 31.12.${y}`, calc: `${pc(M.share)} × ${nf(M.profits[0] + M.profits[1])}`, value: M.share * (M.profits[0] + M.profits[1]), unit: "₪" },
             ],
           },
         ],
-        rolls: [oltRoll("משכורת נוספת, מחלקת רכש", s.buy, y)],
       },
+      pvTable(`יתרת פתיחה 31.12.${y0}`, [
+        { label: "פיתוח", heads: D.staff, p: D.p, amount: s.dev.pay, part: `1/${D.serviceYears}`, n: D.serviceYears - 1, value: s.dev.opening },
+        { label: "רכש", heads: B.staff, p: B.p0, amount: s.buy.pay, part: `1/${B.serviceYears}`, n: B.serviceYears - 1, value: s.buy.opening },
+        { label: "הנהלה", heads: M.heads, amount: M.share * M.profits[0], n: 2, value: s.mgmt.opening },
+      ], { rate: r, label: "תוכנית", why: "שנה אחת נצברה בפיתוח וברכש, ובהנהלה נצבר הבונוס על רווח השנה הראשונה." }),
+      pvTable(`עלות שירות שוטף ${y}`, [
+        { label: "פיתוח", heads: D.staff, p: D.p, amount: s.dev.pay, part: `1/${D.serviceYears}`, n: D.serviceYears - 2, value: s.dev.service },
+        { label: "רכש", heads: B.staff, p: B.p0, amount: s.buy.pay, part: `1/${B.serviceYears}`, n: B.serviceYears - 2, value: s.buy.service },
+        { label: "הנהלה", heads: M.heads, amount: M.share * M.profits[1], n: 1, value: s.mgmt.service },
+      ], { rate: r, label: "תוכנית", why: "השנה שנוספה, מהוונת מסוף השנה. ההנחות של תחילת השנה." }),
+      pvTable(`יתרת סגירה 31.12.${y}`, [
+        { label: "פיתוח", heads: D.staff, p: D.p, amount: s.dev.pay, part: `2/${D.serviceYears}`, n: D.serviceYears - 2, value: s.dev.closing },
+        { label: "רכש", heads: B.staff, p: B.p1, amount: s.buy.pay, part: `2/${B.serviceYears}`, n: B.serviceYears - 2, value: s.buy.closing },
+        { label: "הנהלה", heads: M.heads, amount: M.share * (M.profits[0] + M.profits[1]), n: 1, value: s.mgmt.closing },
+      ], { rate: r, label: "תוכנית", why: `שנתיים נצברו. ברכש ==הצפי ירד== ל-${pc(B.p1)}: הסגירה נמדדת בצפי החדש, וההפרש יוצא במדידה מחדש.` }),
       {
-        title: "הנהלה בכירה: בונוס על רווח מצטבר",
-        text: ["הבונוס נגזר מהרווח של כל שנה, ולכן כל שנה נושאת את החלק שלה: הבונוס על הרווח שלה."],
-        notes: [
-          {
-            title: "המעגל",
-            lines: [
-              { label: `פתיחה 31.12.${y0}`, how: "בונוס על רווח השנה הראשונה, שנתיים עד התשלום", calc: `${M.heads} × ${pc(M.share)} × ${nf(M.profits[0])} ÷ ${b(r)}^2`, value: s.mgmt.opening, unit: "₪" },
-              { label: `שירות שוטף ${y}`, how: "בונוס על רווח השנה, שנה אחת עד התשלום", calc: `${M.heads} × ${pc(M.share)} × ${nf(M.profits[1])} ÷ ${b(r)}`, value: s.mgmt.service, unit: "₪" },
-              { label: "ריבית", calc: `${money(s.mgmt.opening)} × ${pc(r)}`, value: s.mgmt.interest, unit: "₪" },
-              { label: `סגירה 31.12.${y}`, calc: `${M.heads} × ${pc(M.share)} × ${nf(M.profits[0] + M.profits[1])} ÷ ${b(r)}`, value: s.mgmt.closing, unit: "₪" },
-            ],
-          },
+        title: "התנועה בכל תוכנית",
+        text: [
+          `ריבית בפיתוח: ${money(s.dev.opening)} × ${pc(r)} = ${money(s.dev.interest)} ₪`,
+          `ריבית ברכש: ${money(s.buy.opening)} × ${pc(r)} = ${money(s.buy.interest)} ₪`,
+          `ריבית בהנהלה: ${money(s.mgmt.opening)} × ${pc(r)} = ${money(s.mgmt.interest)} ₪`,
+          `מדידה מחדש ברכש (השורה המאזנת): ${money(s.buy.closing)} − ${money(s.buy.opening)} − ${money(s.buy.service)} − ${money(s.buy.interest)} = ${money(s.buy.pn)} ₪`,
+          "בפיתוח ובהנהלה שום הנחה לא השתנתה, ולכן המדידה מחדש 0.",
         ],
-        rolls: [oltRoll("בונוס הנהלה", s.mgmt, y)],
+        rolls: [oltRoll("שבתון, מחלקת פיתוח", s.dev, y), oltRoll("משכורת נוספת, מחלקת רכש", s.buy, y), oltRoll("בונוס הנהלה", s.mgmt, y)],
       },
     ],
   };
@@ -609,7 +710,6 @@ export function amendQuestion(id: string, title: string, q: AmendInput): BkQuest
   const s = solveAmend(q);
   const { start: S, amend: A, end: E, month: m, year: y } = q;
   const pm = q.payment.month;
-  const H = (a: Assumptions) => `${a.heads} × ${pc(a.p)}`;
   return {
     id,
     title,
@@ -669,42 +769,57 @@ export function amendQuestion(id: string, title: string, q: AmendInput): BkQuest
         ],
       },
       {
-        title: "ביאור 1: יתרת פתיחה",
+        title: "המענק לשנת שירות, לכל עובד",
         notes: [
           {
-            title: "שכר × שיעור × שנים שעברו × עובדים צפויים ÷ (1+i)^שנים שנותרו",
-            text: `מ-1.1.${q.since} עד 31.12.${y - 1} עברו ${s.served0} שנים. נתוני 31.12.${y - 1}.`,
-            lines: [{ label: "פתיחה", calc: `${money(S.salary)} × ${pc(q.oldRate)} × ${s.served0} × ${H(S)} ÷ ${b(S.corp)}^${S.remaining}`, value: s.opening, unit: "₪" }],
-          },
-        ],
-      },
-      {
-        title: "ביאור 2: עלות שירות שוטף, בשני חלקים",
-        notes: [
-          {
-            title: `עד השינוי: ${m} חודשים בתנאים הישנים, לפי נתוני תחילת השנה`,
-            lines: [{ label: `שירות ${m} חודשים`, calc: `${money(S.salary)} × ${pc(q.oldRate)} × ${m}/12 × ${H(S)} ÷ ${b(S.corp)}^(${S.remaining} − ${m}/12)`, value: s.sBefore, unit: "₪" }],
-          },
-          {
-            title: `מהשינוי: ${12 - m} חודשים בתנאים החדשים, לפי נתוני יום השינוי`,
-            lines: [{ label: `שירות ${12 - m} חודשים`, calc: `${money(A.salary)} × ${pc(q.newRate)} × ${12 - m}/12 × ${H(A)} ÷ ${b(A.corp)}^(${A.remaining} − ${12 - m}/12)`, value: s.sAfter, unit: "₪" }],
-          },
-          { title: "סה״כ", lines: [{ label: "שירות שוטף", calc: `${money(s.sBefore)} + ${money(s.sAfter)}`, value: s.service, unit: "₪" }] },
-        ],
-      },
-      {
-        title: "ביאור 3: עלות שירות עבר",
-        notes: [
-          {
-            title: "ההתחייבות ביום השינוי, בתנאים החדשים פחות בישנים",
-            text: `ביום השינוי עברו ${s.served0} + ${m}/12 = ${d2(s.servedA)} שנים. כל השאר: נתוני יום השינוי.`,
+            title: "שכר בפרישה × שיעור המענק, לפי הנתונים של כל מועד",
             lines: [
-              { label: "בתנאים הישנים", calc: `${money(A.salary)} × ${pc(q.oldRate)} × ${d2(s.servedA)} × ${H(A)} ÷ ${b(A.corp)}^${A.remaining}`, value: s.before, unit: "₪" },
-              { label: "בתנאים החדשים", calc: `${money(A.salary)} × ${pc(q.newRate)} × ${d2(s.servedA)} × ${H(A)} ÷ ${b(A.corp)}^${A.remaining}`, value: s.after, unit: "₪" },
-              { label: "שירות עבר", calc: `${money(s.after)} − ${money(s.before)}`, value: s.pastService, unit: "₪" },
+              { label: `31.12.${y - 1}, בתנאים הישנים`, calc: `${money(S.salary)} × ${pc(q.oldRate)}`, value: S.salary * q.oldRate, unit: "₪" },
+              { label: `${endOf(m, y)}, בתנאים הישנים`, calc: `${money(A.salary)} × ${pc(q.oldRate)}`, value: A.salary * q.oldRate, unit: "₪" },
+              { label: `${endOf(m, y)}, בתנאים החדשים`, calc: `${money(A.salary)} × ${pc(q.newRate)}`, value: A.salary * q.newRate, unit: "₪" },
+              { label: `31.12.${y}, בתנאים החדשים`, calc: `${money(E.salary)} × ${pc(q.newRate)}`, value: E.salary * q.newRate, unit: "₪" },
             ],
           },
         ],
+      },
+      pvTable(
+        "ביאור 1: יתרת פתיחה",
+        [{ label: `31.12.${y - 1}`, heads: S.heads, p: S.p, amount: S.salary * q.oldRate, part: yearsAs(s.served0), n: S.remaining, value: s.opening }],
+        { rate: S.corp, label: "מועד", amount: "מענק לשנה", part: "שנים", amountDec: 2, why: `מ-1.1.${q.since} עד 31.12.${y - 1} עברו ${s.served0} שנים. נתוני 31.12.${y - 1}.` },
+      ),
+      pvTable(
+        "ביאור 2: עלות שירות שוטף, בשני חלקים",
+        [
+          { label: "עד השינוי", heads: S.heads, p: S.p, amount: S.salary * q.oldRate, part: `${m}/12`, n: S.remaining - m / 12, value: s.sBefore },
+          { label: "מהשינוי", heads: A.heads, p: A.p, amount: A.salary * q.newRate, part: `${12 - m}/12`, n: A.remaining - (12 - m) / 12, rate: A.corp, value: s.sAfter },
+        ],
+        {
+          rate: S.corp,
+          label: "חלק",
+          amount: "מענק לשנה",
+          part: "שנים",
+          amountDec: 2,
+          why: [`עד השינוי: ${m} חודשים בתנאים הישנים, לפי נתוני תחילת השנה.`, `מהשינוי: ${12 - m} חודשים בתנאים החדשים, לפי נתוני יום השינוי.`],
+        },
+      ),
+      {
+        ...pvTable(
+          "ביאור 3: עלות שירות עבר",
+          [
+            { label: "בתנאים הישנים", heads: A.heads, p: A.p, amount: A.salary * q.oldRate, part: yearsAs(s.servedA), n: A.remaining, value: s.before },
+            { label: "בתנאים החדשים", heads: A.heads, p: A.p, amount: A.salary * q.newRate, part: yearsAs(s.servedA), n: A.remaining, value: s.after },
+          ],
+          {
+            rate: A.corp,
+            label: "ההתחייבות",
+            amount: "מענק לשנה",
+            part: "שנים",
+            amountDec: 2,
+            total: false,
+            why: ["ההתחייבות ביום השינוי, בתנאים החדשים פחות בישנים.", `ביום השינוי עברו ${s.served0} + ${m}/12 = ${d2(s.servedA)} שנים. כל השאר: נתוני יום השינוי.`],
+          },
+        ),
+        notes: [{ title: "ההפרש", lines: [{ label: "שירות עבר", calc: `${money(s.after)} − ${money(s.before)}`, value: s.pastService, unit: "₪" }] }],
       },
       {
         title: "ביאור 4: עלות ריבית, בשלושה חלקים",
@@ -721,12 +836,12 @@ export function amendQuestion(id: string, title: string, q: AmendInput): BkQuest
         ],
       },
       {
-        title: "ביאור 5: יתרת סגירה",
+        ...pvTable(
+          "ביאור 5: יתרת סגירה",
+          [{ label: `31.12.${y}`, heads: E.heads, p: E.p, amount: E.salary * q.newRate, part: yearsAs(s.served0 + 1), n: E.remaining, value: s.closing }],
+          { rate: E.corp, label: "מועד", amount: "מענק לשנה", part: "שנים", amountDec: 2, why: "בתנאים החדשים, לפי נתוני סוף השנה." },
+        ),
         notes: [
-          {
-            title: "בתנאים החדשים, לפי נתוני סוף השנה",
-            lines: [{ label: "סגירה", calc: `${money(E.salary)} × ${pc(q.newRate)} × ${s.served0 + 1} × ${H(E)} ÷ ${b(E.corp)}^${E.remaining}`, value: s.closing, unit: "₪" }],
-          },
           {
             title: "המדידה מחדש",
             lines: [{ label: "סגירה − כל השורות", calc: `${money(s.closing)} − ${money(s.opening)} − ${money(s.service)} − ${money(s.pastService)} + ${money(q.payment.amount)} − ${money(s.interest)}`, value: s.pn, unit: "₪" }],
@@ -850,25 +965,30 @@ export function giftQuestion(id: string, title: string, q: GiftInput): BkQuestio
           },
         ],
       },
-      ...q.tiers.map(
-        (t, k): BkStep => ({
-          title: `ההתחייבות: ${t.name}`,
-          notes: [
-            {
-              title: "עובדים × שנים × הטבה לשנה ÷ (1+i)^שנים שנותרו",
-              lines: [
-                { label: `פתיחה 31.12.${y - 1}`, calc: `${q.start[k].heads} × ${s.served0} × ${d2(s.tiers[k].ben0)} ÷ ${b(q.iStart)}^${q.start[k].remaining}`, value: s.tiers[k].opening, unit: "₪" },
-                { label: "שירות שוטף (הנחות תחילת השנה)", calc: `${q.start[k].heads} × 1 × ${d2(s.tiers[k].ben0)} ÷ ${b(q.iStart)}^${q.start[k].remaining - 1}`, value: s.tiers[k].service, unit: "₪" },
-                { label: "ריבית", calc: `${money(s.tiers[k].opening)} × ${pc(q.iStart)}`, value: s.tiers[k].interest, unit: "₪" },
-                { label: `סגירה 31.12.${y}`, calc: `${q.end[k].heads} × ${s.served0 + 1} × ${d2(s.tiers[k].ben1)} ÷ ${b(q.iEnd)}^${q.end[k].remaining}`, value: s.tiers[k].closing, unit: "₪" },
-                { label: "מדידה מחדש (מאזנת)", value: s.tiers[k].pn, unit: "₪" },
-              ],
-            },
-          ],
-        }),
+      pvTable(
+        `יתרת פתיחה 31.12.${y - 1}`,
+        q.tiers.map((t, k) => ({ label: t.name, heads: q.start[k].heads, amount: s.tiers[k].ben0, part: `${s.served0}`, n: q.start[k].remaining, value: s.tiers[k].opening })),
+        { rate: q.iStart, label: "דרג", amount: "הטבה לשנה", part: "שנים", amountDec: 2, why: `עברו ${s.served0} שנים, בהנחות של 31.12.${y - 1}.` },
+      ),
+      pvTable(
+        `עלות שירות שוטף ${y}`,
+        q.tiers.map((t, k) => ({ label: t.name, heads: q.start[k].heads, amount: s.tiers[k].ben0, part: "1", n: q.start[k].remaining - 1, value: s.tiers[k].service })),
+        { rate: q.iStart, label: "דרג", amount: "הטבה לשנה", part: "שנים", amountDec: 2, why: "שנה אחת, בהנחות של תחילת השנה, מהוונת מסוף השנה." },
+      ),
+      pvTable(
+        `יתרת סגירה 31.12.${y}`,
+        q.tiers.map((t, k) => ({ label: t.name, heads: q.end[k].heads, amount: s.tiers[k].ben1, part: `${s.served0 + 1}`, n: q.end[k].remaining, value: s.tiers[k].closing })),
+        { rate: q.iEnd, label: "דרג", amount: "הטבה לשנה", part: "שנים", amountDec: 2, why: `עברו ${s.served0 + 1} שנים, בהנחות ובריבית של סוף השנה.` },
       ),
       {
         title: "טבלת התנועה בהתחייבות",
+        text: [
+          ...q.tiers.map((t, k) => `ריבית, ${t.name}: ${money(s.tiers[k].opening)} × ${pc(q.iStart)} = ${money(s.tiers[k].interest)} ₪`),
+          ...q.tiers.map(
+            (t, k) =>
+              `מדידה מחדש, ${t.name} (השורה המאזנת): ${money(s.tiers[k].closing)} − ${money(s.tiers[k].opening)} − ${money(s.tiers[k].service)} − ${money(s.tiers[k].interest)} = ${money(s.tiers[k].pn)} ₪`,
+          ),
+        ],
         rolls: [
           {
             title: `התחייבות, ${y}`,
@@ -1025,6 +1145,7 @@ export function threeQuestion(id: string, title: string, q: ThreeInput): BkQuest
   const m = C.month;
   const P = q.production;
   const kNote = (v: number | undefined) => (v === undefined ? "?" : money(v));
+  const ceoO = { label: "מדידה", amount: "מענק לשנה", part: "שנים", amountDec: 2, rateCol: true };
   return {
     id,
     title,
@@ -1147,7 +1268,7 @@ export function threeQuestion(id: string, title: string, q: ThreeInput): BkQuest
         ],
       },
       {
-        title: `המנכ״ל: המענק, ו-${y1}`,
+        title: "המנכ״ל: המענק",
         notes: [
           {
             title: "המענק הצפוי",
@@ -1156,39 +1277,61 @@ export function threeQuestion(id: string, title: string, q: ThreeInput): BkQuest
               { label: "שכר אחרון צפוי", calc: `${money(C.salary)} × ${b(C.firstRaise)} × ${b(C.raise)}^${T - 2}`, value: s.ceo.finalSalary, unit: "₪" },
               { label: "מענק מקורי", calc: `${pc(C.multiple)} × ${money(s.ceo.finalSalary)} × ${T}`, value: s.ceo.g1, unit: "₪" },
               { label: "מענק אחרי התיקון", calc: `${pc(C.newMultiple)} × ${money(s.ceo.finalSalary)} × ${T}`, value: s.ceo.g2, unit: "₪" },
+              { label: "מענק לשנת עבודה, מקורי", calc: `${money(s.ceo.g1)} ÷ ${T}`, value: s.ceo.g1 / T, unit: "₪" },
+              { label: "מענק לשנת עבודה, אחרי התיקון", calc: `${money(s.ceo.g2)} ÷ ${T}`, value: s.ceo.g2 / T, unit: "₪" },
             ],
           },
+        ],
+      },
+      {
+        ...pvGroup(
+          `המנכ״ל: ${y1}`,
+          [
+            { title: `יתרת פתיחה 31.12.${y1 - 1} (שנה אחת)`, rows: [{ label: "פתיחה", amount: s.ceo.g1 / T, part: "1", n: T - 1, value: s.ceo.y1.opening }], o: { ...ceoO, rate: r0 } },
+            { title: `עלות שירות שוטף ${y1} (ריבית תחילת השנה)`, rows: [{ label: "שירות", amount: s.ceo.g1 / T, part: "1", n: T - 2, value: s.ceo.y1.service }], o: { ...ceoO, rate: r0 } },
+            { title: `יתרת סגירה 31.12.${y1} (שנתיים)`, rows: [{ label: "סגירה", amount: s.ceo.g1 / T, part: "2", n: T - 2, value: s.ceo.y1.closing }], o: { ...ceoO, rate: r1 } },
+          ],
+          `המענק נצבר בקו ישר על ${T} שנים: ${money(s.ceo.g1)} ÷ ${T} לכל שנה.`,
+        ),
+        notes: [
           {
-            title: `המעגל של ${y1}`,
+            title: "ריבית, ומה שמאזן",
             lines: [
-              { label: `פתיחה 31.12.${y1 - 1} (שנה אחת)`, calc: `${money(s.ceo.g1)} × 1/${T} ÷ ${b(r0)}^${T - 1}`, value: s.ceo.y1.opening, unit: "₪" },
               { label: "ריבית", calc: `${money(s.ceo.y1.opening)} × ${pc(r0)}`, value: s.ceo.y1.interest, unit: "₪" },
-              { label: "שירות שוטף (ריבית תחילת השנה)", calc: `${money(s.ceo.g1)} × 1/${T} ÷ ${b(r0)}^${T - 2}`, value: s.ceo.y1.service, unit: "₪" },
-              { label: `סגירה 31.12.${y1} (שנתיים)`, calc: `${money(s.ceo.g1)} × 2/${T} ÷ ${b(r1)}^${T - 2}`, value: s.ceo.y1.closing, unit: "₪" },
               { label: "מדידה מחדש (מאזנת)", value: s.ceo.y1.pn, unit: "₪" },
             ],
           },
         ],
       },
       {
+        ...pvGroup(
+          `המנכ״ל: ${y2}, הערכים הנוכחיים`,
+          [
+            {
+              title: `ההתחייבות ב-${endOf(m, y2)}, לפני התיקון ואחריו`,
+              rows: [
+                { label: "לפני", amount: s.ceo.g1 / T, part: yearsAs(s.ceo.e), n: T - s.ceo.e, value: s.ceo.before },
+                { label: "אחרי", amount: s.ceo.g2 / T, part: yearsAs(s.ceo.e), n: T - s.ceo.e, value: s.ceo.after },
+              ],
+              o: { ...ceoO, rate: rM, total: false },
+            },
+            {
+              title: `עלות שירות שוטף ${y2}, בשני חלקים`,
+              rows: [
+                { label: `עד השינוי (${m} חודשים)`, amount: s.ceo.g1 / T, part: `${m}/12`, n: T - s.ceo.e, rate: r1, value: s.ceo.sB },
+                { label: `מהשינוי (${12 - m} חודשים)`, amount: s.ceo.g2 / T, part: `${12 - m}/12`, n: T - 3, rate: rM, value: s.ceo.sA },
+              ],
+              o: { ...ceoO, rate: r1 },
+            },
+            { title: `יתרת סגירה 31.12.${y2} (שלוש שנים)`, rows: [{ label: "סגירה", amount: s.ceo.g2 / T, part: "3", n: T - 3, value: s.ceo.y2.closing }], o: { ...ceoO, rate: r2 } },
+          ],
+          `עד יום השינוי עברו ${d2(s.ceo.e)} שנים, ונותרו ${d2(T - s.ceo.e)}. אחרי התיקון המענק לשנה ${money(s.ceo.g2)} ÷ ${T}.`,
+        ),
+        notes: [{ title: `שירות עבר ב-${endOf(m, y2)}`, lines: [{ label: "שירות עבר", calc: `${money(s.ceo.after)} − ${money(s.ceo.before)}`, value: s.ceo.y2.past, unit: "₪" }] }],
+      },
+      {
         title: `המנכ״ל: ${y2}, עם התיקון`,
         notes: [
-          {
-            title: `שירות עבר ב-${endOf(m, y2)}`,
-            text: `עד יום השינוי עברו ${d2(s.ceo.e)} שנים, ונותרו ${d2(T - s.ceo.e)}.`,
-            lines: [
-              { label: "לפני", calc: `${money(s.ceo.g1)} × ${d2(s.ceo.e)}/${T} ÷ ${b(rM)}^${d2(T - s.ceo.e)}`, value: s.ceo.before, unit: "₪" },
-              { label: "אחרי", calc: `${money(s.ceo.g2)} × ${d2(s.ceo.e)}/${T} ÷ ${b(rM)}^${d2(T - s.ceo.e)}`, value: s.ceo.after, unit: "₪" },
-              { label: "שירות עבר", calc: `${money(s.ceo.after)} − ${money(s.ceo.before)}`, value: s.ceo.y2.past, unit: "₪" },
-            ],
-          },
-          {
-            title: "שירות שוטף, בשני חלקים",
-            lines: [
-              { label: `עד השינוי (${m} חודשים)`, calc: `${money(s.ceo.g1)} × (${m}/12)/${T} ÷ ${b(r1)}^${d2(T - s.ceo.e)}`, value: s.ceo.sB, unit: "₪" },
-              { label: `מהשינוי (${12 - m} חודשים)`, calc: `${money(s.ceo.g2)} × (${12 - m}/12)/${T} ÷ ${b(rM)}^${T - 3}`, value: s.ceo.sA, unit: "₪" },
-            ],
-          },
           {
             title: "ריבית, בשני חלקים",
             lines: [
@@ -1196,13 +1339,7 @@ export function threeQuestion(id: string, title: string, q: ThreeInput): BkQuest
               { label: `על ההתחייבות אחרי התיקון, ${12 - m} חודשים`, calc: `${money(s.ceo.after)} × (${b(rM)}^(${12 - m}/12) − 1)`, value: s.ceo.iA, unit: "₪" },
             ],
           },
-          {
-            title: "סגירה",
-            lines: [
-              { label: `31.12.${y2} (שלוש שנים)`, calc: `${money(s.ceo.g2)} × 3/${T} ÷ ${b(r2)}^${T - 3}`, value: s.ceo.y2.closing, unit: "₪" },
-              { label: "מדידה מחדש (מאזנת)", value: s.ceo.y2.pn, unit: "₪" },
-            ],
-          },
+          { title: "המדידה מחדש", lines: [{ label: "מדידה מחדש (מאזנת)", value: s.ceo.y2.pn, unit: "₪" }] },
         ],
         rolls: [
           {
@@ -1362,6 +1499,12 @@ export function tieredQuestion(id: string, title: string, q: TieredInput): BkQue
   const r = q.rate;
   const m = P.month;
   const toCap = 5 + Math.ceil((P.cap - P.first * 5) / P.next);
+  const grp = (g: { hired: number; ends: number }) => `${g.hired}–${g.ends}`;
+  const prodO = { rate: r, label: "תקופה", amount: "לשנה", part: "שנים", amountDec: 2 };
+  type MktG = (typeof s.mkt)[number];
+  // The months before the amendment, as the next table writes its months: "3/12".
+  const monthsAs = (x: number) => (x === m / 12 ? `${m}/12` : yearsAs(x));
+  const mktRows = s.mkt.map((g, i) => ({ g, h: M.groups[i] })).filter(({ g }) => g.eligible);
   return {
     id,
     title,
@@ -1403,39 +1546,55 @@ export function tieredQuestion(id: string, title: string, q: TieredInput): BkQue
           },
         ],
       },
+      pvTable(
+        `ייצור: יתרת פתיחה 1.1.${y1}`,
+        s.prod.map((g, i) => ({ label: grp(P.groups[i]), heads: P.groups[i].heads, amount: g.perYear, part: `${Math.min(g.s0, g.window)}`, n: g.n0, value: g.opening })),
+        { ...prodO, why: "השנים שנצברו עד היום (לא יותר מהשנים שעליהן המענק נפרס), מהוונות עד סוף העבודה." },
+      ),
       {
-        title: `ייצור: ${y1}`,
+        ...pvTable(
+          `ייצור: יתרת סגירה 31.12.${y1}`,
+          s.prod.map((g, i) => ({ label: grp(P.groups[i]), heads: P.groups[i].heads, amount: g.perYear, part: `${Math.min(g.s0 + 1, g.window)}`, n: g.n0 - 1, value: g.close1 })),
+          { ...prodO, why: "שנה נוספת נצברה, ושנה אחת פחות להיוון." },
+        ),
         notes: [
           {
-            title: "עובדים × לשנה × שנים שנצברו ÷ (1+i)^שנים עד התשלום",
+            title: `התנועה ב-${y1}`,
             lines: [
-              ...s.prod.map((g, i) => ({ label: `פתיחה, ${P.groups[i].heads} עובדים`, calc: `${P.groups[i].heads} × ${d2(g.perYear)} × ${Math.min(g.s0, g.window)} ÷ ${b(r)}^${g.n0}`, value: g.opening, unit: "₪" as const })),
               { label: "ריבית", calc: `${money(s.p1.opening)} × ${pc(r)}`, value: s.p1.interest, unit: "₪" },
-              ...s.prod.map((g, i) => ({ label: `סגירה, ${P.groups[i].heads} עובדים`, calc: `${P.groups[i].heads} × ${d2(g.perYear)} × ${Math.min(g.s0 + 1, g.window)} ÷ ${b(r)}^${g.n0 - 1}`, value: g.close1, unit: "₪" as const })),
-              { label: "שירות שוטף: מה שמשלים (אין שינוי בהנחות)", value: s.p1.service, unit: "₪" },
+              { label: "שירות שוטף: מה שמשלים (אין שינוי בהנחות)", calc: `${money(s.p1.closing)} − ${money(s.p1.opening)} − ${money(s.p1.interest)}`, value: s.p1.service, unit: "₪" },
             ],
           },
         ],
         rolls: [fullRoll(`ייצור, ${y1}`, y1, s.p1)],
       },
+      pvTable(
+        `ייצור: שירות שוטף ${y2} עד השינוי (${m} חודשים)`,
+        s.prod.map((g, i) => ({ label: grp(P.groups[i]), heads: P.groups[i].heads, amount: g.perYear, part: monthsAs(Math.min(g.s0 + 1 + m / 12, g.window) - Math.min(g.s0 + 1, g.window)), n: g.n0 - 1 - m / 12, value: g.sBefore })),
+        { ...prodO, why: `${m} חודשים בתנאים הישנים, מהוונים מיום השינוי.` },
+      ),
+      pvTable(
+        `ייצור: שירות שוטף ${y2} מהשינוי (${12 - m} חודשים)`,
+        s.prod.map((g, i) => ({ label: grp(P.groups[i]), heads: P.groups[i].heads, amount: g.perYear + g.extra, part: `${12 - m}/12`, n: g.n0 - 2, value: g.sAfter })),
+        {
+          ...prodO,
+          amount: "לשנה, עם התוספת",
+          why: [
+            `המענק הנוסף נצבר על פני ${P.extraAfter} שנים: ${money(P.extra)} ÷ ${P.extraAfter} = ${d2(P.extra / P.extraAfter)} לשנה, רק למי שצפוי לעבוד מעל ${P.extraAfter} שנים.`,
+            `${12 - m} חודשים בתנאים החדשים, מהוונים מסוף השנה.`,
+          ],
+        },
+      ),
       {
-        title: `ייצור: ${y2}, המענק הנוסף`,
-        text: [`המענק הנוסף נצבר על פני ${P.extraAfter} שנים: ${money(P.extra)} ÷ ${P.extraAfter} = ${d2(P.extra / P.extraAfter)} לשנה, רק למי שצפוי לעבוד מעל ${P.extraAfter} שנים.`],
+        ...pvTable(
+          `ייצור: שירות עבר ב-1.${m + 1}.${y2}`,
+          s.prod
+            .map((g, i) => ({ g, h: P.groups[i] }))
+            .filter(({ g }) => g.extra > 0)
+            .map(({ g, h }) => ({ label: grp(h), heads: h.heads, amount: g.extra, part: yearsAs(Math.min(g.sA, P.extraAfter)), n: g.n0 - 1 - m / 12, value: g.after - g.before })),
+          { ...prodO, amount: "תוספת לשנה", why: "ההתחייבות אחרי התיקון פחות לפניו היא התוספת על השנים שכבר עבדו. רק מי שצפוי לעבוד מעל " + P.extraAfter + " שנים מקבל אותה." },
+        ),
         notes: [
-          {
-            title: `שירות שוטף: ${m} חודשים בתנאים הישנים, ${12 - m} בחדשים`,
-            lines: s.prod.flatMap((g, i) => [
-              { label: `${P.groups[i].heads} עובדים, עד השינוי`, value: g.sBefore, calc: `${P.groups[i].heads} × ${d2(g.perYear)} × ${m}/12 ÷ ${b(r)}^${yrs(g.n0 - 1 - m / 12)}`, unit: "₪" as const },
-              { label: `${P.groups[i].heads} עובדים, מהשינוי`, value: g.sAfter, calc: `${P.groups[i].heads} × ${d2(g.perYear + g.extra)} × ${12 - m}/12 ÷ ${b(r)}^${g.n0 - 2}`, unit: "₪" as const },
-            ]),
-          },
-          {
-            title: `שירות עבר ב-1.${m + 1}.${y2}`,
-            lines: [
-              ...s.prod.map((g, i) => ({ label: `${P.groups[i].heads} עובדים: אחרי − לפני`, calc: `${P.groups[i].heads} × ${yrs(g.sA)} × (${d2(g.perYear + g.extra)} − ${d2(g.perYear)}) ÷ ${b(r)}^${yrs(g.n0 - 1 - m / 12)}`, value: g.after - g.before, unit: "₪" as const })),
-              { label: "סה״כ שירות עבר", value: s.p2.past, unit: "₪" },
-            ],
-          },
           {
             title: "ריבית",
             lines: [
@@ -1443,11 +1602,14 @@ export function tieredQuestion(id: string, title: string, q: TieredInput): BkQue
               { label: `על ההתחייבות החדשה, ${12 - m} חודשים`, calc: `${money(s.pAfter)} × (${b(r)}^(${12 - m}/12) − 1)`, value: s.pAfter * ((1 + r) ** ((12 - m) / 12) - 1), unit: "₪" },
             ],
           },
-          {
-            title: `סגירה 31.12.${y2}, בריבית החדשה`,
-            lines: s.prod.map((g, i) => ({ label: `${P.groups[i].heads} עובדים`, calc: `${P.groups[i].heads} × ${d2(g.perYear + g.extra)} × ${g.s0 + 2} ÷ ${b(q.rateDec)}^${g.n0 - 2}`, value: g.close2, unit: "₪" as const })),
-          },
         ],
+      },
+      {
+        ...pvTable(
+          `ייצור: יתרת סגירה 31.12.${y2}, בריבית החדשה`,
+          s.prod.map((g, i) => ({ label: grp(P.groups[i]), heads: P.groups[i].heads, amount: g.perYear + g.extra, part: `${g.s0 + 2}`, n: g.n0 - 2, value: g.close2 })),
+          { ...prodO, rate: q.rateDec, amount: "לשנה, עם התוספת" },
+        ),
         rolls: [fullRoll(`ייצור, ${y2}`, y2, s.p2)],
       },
       {
@@ -1467,24 +1629,36 @@ export function tieredQuestion(id: string, title: string, q: TieredInput): BkQue
           },
         ],
       },
+      ...(
+        [
+          [`שיווק: יתרת פתיחה 1.1.${y1}`, (g: MktG) => g.s0, (g: MktG) => g.n0, "opening", false],
+          [`שיווק: שירות שוטף ${y1}`, () => 1, (g: MktG) => g.n0 - 1, "service1", false],
+          [`שיווק: יתרת סגירה 31.12.${y1}`, (g: MktG) => g.s0 + 1, (g: MktG) => g.n0 - 1, "close1", false],
+          [`שיווק: שירות שוטף ${y2}`, () => 1, (g: MktG) => g.n0 - 2, "service2", false],
+          [`שיווק: יתרת סגירה 31.12.${y2}, בריבית החדשה`, (g: MktG) => g.s0 + 2, (g: MktG) => g.n0 - 2, "close2", true],
+        ] as const
+      ).map(([t, served, n, k, last]) =>
+        pvTable(
+          t,
+          mktRows.map(({ g, h }) => ({
+            label: grp(h),
+            heads: last ? h.heads - (h.leave ?? 0) : h.heads,
+            amount: g.perYear,
+            part: `${Math.min(served(g), g.window)}`,
+            n: n(g),
+            value: g[k],
+          })),
+          { ...prodO, rate: last ? q.rateDec : r, why: last ? (M.groups.some((h) => h.leave) ? "בלי העובדים שעזבו." : undefined) : k === "opening" ? "אותה נוסחה, רק לזכאים." : undefined },
+        ),
+      ),
       {
-        title: `שיווק: ${y1} ו-${y2}`,
-        notes: [
-          {
-            title: "אותה נוסחה, רק לזכאים",
-            lines: s.mkt
-              .map((g, i) => ({ g, h: M.groups[i] }))
-              .filter(({ g }) => g.eligible)
-              .flatMap(({ g, h }) => [
-                { label: `${h.heads} עובדים: פתיחה ${y1}`, calc: `${h.heads} × ${d2(g.perYear)} × ${g.s0} ÷ ${b(r)}^${g.n0}`, value: g.opening, unit: "₪" as const },
-                { label: `${h.heads} עובדים: סגירה ${y1}`, calc: `${h.heads} × ${d2(g.perYear)} × ${g.s0 + 1} ÷ ${b(r)}^${g.n0 - 1}`, value: g.close1, unit: "₪" as const },
-                { label: `${h.heads} עובדים: שירות ${y2}`, calc: `${h.heads} × ${d2(g.perYear)} × 1 ÷ ${b(r)}^${g.n0 - 2}`, value: g.service2, unit: "₪" as const },
-                { label: `${h.heads - (h.leave ?? 0)} עובדים: סגירה ${y2}`, calc: `${h.heads - (h.leave ?? 0)} × ${d2(g.perYear)} × ${Math.min(g.s0 + 2, g.window)} ÷ ${b(q.rateDec)}^${g.n0 - 2}`, value: g.close2, unit: "₪" as const },
-              ]),
-          },
+        title: `שיווק: התנועה ב-${y1} וב-${y2}`,
+        text: [
+          `ריבית ${y1}: ${money(s.k1.opening)} × ${pc(r)} = ${money(s.k1.interest)} ₪`,
+          `ריבית ${y2}: ${money(s.k2.opening)} × ${pc(r)} = ${money(s.k2.interest)} ₪`,
+          `ב-${y2} המדידה מחדש נובעת משני דברים: עובדים שעזבו, וירידת הריבית בדצמבר.`,
         ],
         rolls: [fullRoll(`שיווק, ${y1}`, y1, s.k1), fullRoll(`שיווק, ${y2}`, y2, s.k2)],
-        text: [`ב-${y2} המדידה מחדש נובעת משני דברים: עובדים שעזבו, וירידת הריבית בדצמבר.`],
       },
     ],
   };
@@ -1568,6 +1742,9 @@ export function casesQuestion(id: string, title: string, q: LumpSettleInput): Bk
   const W = l.window;
   const T = L.T;
   const st = q.settle;
+  const [E1, E2] = st.expected;
+  const lumpO = { rate: rA, label: "מדידה", amount: "מענק", rateCol: true };
+  const settleO = { rate: st.rate, label: "מדידה", amount: "מענק", rateCol: true, amountDec: 2, valueDec: 2 };
   return {
     id,
     title,
@@ -1591,40 +1768,52 @@ export function casesQuestion(id: string, title: string, q: LumpSettleInput): Bk
     ],
     steps: [
       {
-        title: `מקרה א׳: ${y} ו-${y + 1}`,
-        text: [`המענק נצבר ב-${W} השנים הראשונות: ${money(l.grant)} ÷ ${W} לשנה. עד הפרישה ${T} שנים.`],
+        ...pvGroup(
+          `מקרה א׳: ${y} ו-${y + 1}`,
+          [
+            { title: `שירות ${y} = יתרת סגירה ${y}`, rows: [{ label: `31.12.${y}`, amount: l.grant, part: `1/${W}`, n: T - 1, rate: rA, value: L.y0.service }], o: lumpO },
+            { title: `שירות שוטף ${y + 1}`, rows: [{ label: `שירות ${y + 1}`, amount: l.grant, part: `1/${W}`, n: T - 2, rate: rA, value: L.y1.service }], o: lumpO },
+            { title: `יתרת סגירה ${y + 1}`, rows: [{ label: `31.12.${y + 1}`, amount: l.grant, part: `2/${W}`, n: T - 2, rate: rB, value: L.y1.closing }], o: lumpO },
+          ],
+          `המענק נצבר ב-${W} השנים הראשונות: ${money(l.grant)} ÷ ${W} לשנה. עד הפרישה ${T} שנים.`,
+        ),
         notes: [
           {
-            title: "שנה × חלק × מענק ÷ (1+i)^שנים עד הפרישה",
+            title: `ריבית, ומה שמאזן ב-${y + 1}`,
             lines: [
-              { label: `שירות ${y} = סגירה ${y}`, calc: `${money(l.grant)} × 1/${W} ÷ ${b(rA)}^${T - 1}`, value: L.y0.service, unit: "₪" },
               { label: `ריבית ${y + 1}`, calc: `${money(L.y1.opening)} × ${pc(rA)}`, value: L.y1.interest, unit: "₪" },
-              { label: `שירות ${y + 1}`, calc: `${money(l.grant)} × 1/${W} ÷ ${b(rA)}^${T - 2}`, value: L.y1.service, unit: "₪" },
-              { label: `סגירה ${y + 1}`, calc: `${money(l.grant)} × 2/${W} ÷ ${b(rB)}^${T - 2}`, value: L.y1.closing, unit: "₪" },
               { label: "מדידה מחדש", value: L.y1.pn, unit: "₪" },
             ],
           },
         ],
       },
       {
-        title: `מקרה א׳: ${y + 2}, המענק עולה`,
-        notes: [
+        ...pvGroup(`מקרה א׳: ${y + 2}, המענק עולה`, [
           {
-            title: "שירות עבר ב-30.6: אחרי פחות לפני, אחרי 2.5 שנים",
-            lines: [
-              { label: "לפני", calc: `${money(l.grant)} × 2.5/${W} ÷ ${b(rM)}^${T - 2.5}`, value: L.before, unit: "₪" },
-              { label: "אחרי", calc: `${money(l.newGrant)} × 2.5/${W} ÷ ${b(rM)}^${T - 2.5}`, value: L.after, unit: "₪" },
-              { label: "שירות עבר", value: L.y2.past, unit: "₪" },
+            title: "ההתחייבות ב-30.6, אחרי 2.5 שנים: לפני ואחרי",
+            rows: [
+              { label: "לפני", amount: l.grant, part: `2.5/${W}`, n: T - 2.5, rate: rM, value: L.before },
+              { label: "אחרי", amount: l.newGrant, part: `2.5/${W}`, n: T - 2.5, rate: rM, value: L.after },
             ],
+            o: { ...lumpO, total: false },
           },
           {
-            title: "ריבית ושירות, חצי שנה לפני וחצי אחרי",
+            title: "שירות שוטף, חצי שנה לפני וחצי אחרי",
+            rows: [
+              { label: "עד 30.6", amount: l.grant, part: `0.5/${W}`, n: T - 2.5, rate: rB, value: L.sB },
+              { label: "מ-30.6", amount: l.newGrant, part: `0.5/${W}`, n: T - 3, rate: rM, value: L.sA },
+            ],
+            o: lumpO,
+          },
+          { title: `יתרת סגירה ${y + 2}`, rows: [{ label: `31.12.${y + 2}`, amount: l.newGrant, part: `3/${W}`, n: T - 3, rate: rC, value: L.y2.closing }], o: lumpO },
+        ]),
+        notes: [
+          { title: "שירות עבר ב-30.6: אחרי פחות לפני", lines: [{ label: "שירות עבר", calc: `${money(L.after)} − ${money(L.before)}`, value: L.y2.past, unit: "₪" }] },
+          {
+            title: "ריבית, חצי שנה לפני וחצי אחרי",
             lines: [
               { label: "ריבית עד 30.6", calc: `${money(L.y1.closing)} × (${b(rB)}^0.5 − 1)`, value: L.iB, unit: "₪" },
               { label: "ריבית מ-30.6", calc: `${money(L.after)} × (${b(rM)}^0.5 − 1)`, value: L.iA, unit: "₪" },
-              { label: "שירות עד 30.6", calc: `${money(l.grant)} × 0.5/${W} ÷ ${b(rB)}^${T - 2.5}`, value: L.sB, unit: "₪" },
-              { label: "שירות מ-30.6", calc: `${money(l.newGrant)} × 0.5/${W} ÷ ${b(rM)}^${T - 3}`, value: L.sA, unit: "₪" },
-              { label: `סגירה ${y + 2}`, calc: `${money(l.newGrant)} × 3/${W} ÷ ${b(rC)}^${T - 3}`, value: L.y2.closing, unit: "₪" },
             ],
           },
         ],
@@ -1668,13 +1857,19 @@ export function casesQuestion(id: string, title: string, q: LumpSettleInput): Bk
               { label: `צפי ${st.expected[1]} שנים`, calc: `${money(st.salary)} × ${b(st.raise)}^${st.expected[1] - 1} × ${pc(st.share)} × ${st.expected[1]}`, value: S.g2, unit: "₪" },
             ],
           },
+        ],
+      },
+      {
+        ...pvGroup(`מקרה ב׳: התנועה ב-${st.hired + 2}`, [
+          { title: `יתרת פתיחה 31.12.${st.hired + 1}`, rows: [{ label: `צפי ${E1} שנים`, amount: S.g1, part: `2/${E1}`, n: E1 - 2, rate: st.rate, value: S.opening }], o: settleO },
+          { title: `שירות שוטף ${st.hired + 2}`, rows: [{ label: `צפי ${E1} שנים`, amount: S.g1, part: `1/${E1}`, n: E1 - 3, rate: st.rate, value: S.service }], o: settleO },
+          { title: `יתרת סגירה 31.12.${st.hired + 2}`, rows: [{ label: `צפי ${E2} שנים`, amount: S.g2, part: `3/${E2}`, n: E2 - 3, rate: st.newRate, value: S.closing }], o: settleO },
+        ]),
+        notes: [
           {
-            title: `התנועה ב-${st.hired + 2}`,
+            title: "ריבית, ומה שמאזן",
             lines: [
-              { label: `פתיחה 31.12.${st.hired + 1}`, calc: `${d2(S.g1)} × 2/${st.expected[0]} ÷ ${b(st.rate)}^${st.expected[0] - 2}`, value: S.opening, unit: "₪" },
               { label: "ריבית", calc: `${d2(S.opening)} × ${pc(st.rate)}`, value: S.interest, unit: "₪" },
-              { label: "שירות שוטף", calc: `${d2(S.g1)} × 1/${st.expected[0]} ÷ ${b(st.rate)}^${st.expected[0] - 3}`, value: S.service, unit: "₪" },
-              { label: `סגירה 31.12.${st.hired + 2}`, calc: `${d2(S.g2)} × 3/${st.expected[1]} ÷ ${b(st.newRate)}^${st.expected[1] - 3}`, value: S.closing, unit: "₪" },
               { label: "מדידה מחדש (OCI)", value: S.pn, unit: "₪" },
             ],
           },
@@ -1714,7 +1909,7 @@ export function tierQuestion(id: string, title: string, t: TierGrantInput & { co
     ],
     steps: [
       {
-        title: "שכר בפרישה, מענק, והפרשה",
+        title: "שכר בפרישה ומענק",
         text: [`שנים מעל 10 מקנות ${pc(t.high)} במקום ${pc(t.low)}, ולפני 5 שנים אין מענק כלל. השנים המאוחרות מקנות הטבה גבוהה מהותית, ולכן מייחסים בקו ישר על כל הוותק (סעיף 73).`],
         notes: [
           {
@@ -1723,11 +1918,15 @@ export function tierQuestion(id: string, title: string, t: TierGrantInput & { co
               { label: "ותק בפרישה", calc: `${t.served} + ${nf(t.remaining, 2)}`, value: C.total, unit: "שנים" },
               { label: "שכר בפרישה", calc: `${money(t.salary)} × ${b(t.raise)}^${C.raises}`, value: C.final, unit: "₪" },
               { label: "מענק", calc: `${money(C.final)} × (${pc(t.low)} × ${Math.min(t.threshold, C.total)} + ${pc(t.high)} × ${nf(Math.max(0, C.total - t.threshold), 2)})`, value: C.grant, unit: "₪" },
-              { label: "הפרשה", calc: `${money(C.grant)} × ${t.served}/${nf(C.total, 2)} ÷ ${b(t.rate)}^${nf(t.remaining, 2)}`, value: C.provision, unit: "₪" },
             ],
           },
         ],
       },
+      pvTable(
+        `ההפרשה ב-31.12.${t.year}`,
+        [{ label: `31.12.${t.year}`, amount: C.grant, part: `${t.served}/${yrs(C.total)}`, n: t.remaining, value: C.provision }],
+        { rate: t.rate, label: "מדידה", amount: "מענק", why: `נצברו ${t.served} מתוך ${nf(C.total, 2)} שנות הוותק, ונותרו ${nf(t.remaining, 2)} שנים עד התשלום.` },
+      ),
     ],
   };
 }
@@ -1836,6 +2035,9 @@ export function noteQuestion(id: string, title: string, q: NoteInput): BkQuestio
   const G = q.grades;
   const r = q.rate;
   const th = (x: number) => money(x);
+  const factor = [1 + q.addA, 1, 1];
+  const closeFactor = [1 + q.addA, 1 + q.addA / 2, 1];
+  const noteO = { rate: r, label: "דרג", amount: "הטבה", x: "מקדם", amountDec: 2, valueDec: 2 };
   return {
     id,
     title,
@@ -1909,50 +2111,51 @@ export function noteQuestion(id: string, title: string, q: NoteInput): BkQuestio
         text: [`מעגלים: ריבית ${pc(r)}, תוספת ${pc(q.addA)} ל${G[0].name} ולכן ${pc(q.addA / 2)} ל${G[1].name}, הפקדה ${pc(q.deposit)}, ומהנכסים ${pc(q.fromAssets)}.`],
       },
       {
-        title: `המחויבות ב-${y + 1}: ריבית ושירות`,
+        title: `המחויבות ב-${y + 1}: ההטבה בפרישה`,
         notes: [
           {
             title: "ההטבה בפרישה לכל דרג (אלפי ₪)",
             lines: G.map((g, i) => ({ label: g.name + (i === 0 ? ` (× ${nf(1 + q.addA, 3)})` : ""), calc: `${money(g.salary)} × ${b(g.raise)}^${s.left0} × ${T} / 1,000`, value: s.ben[i], unit: "" as const })),
           },
+        ],
+      },
+      pvTable(
+        `עלות שירות שוטף ${y + 1}`,
+        G.map((g, i) => ({ label: g.name, heads: g.heads, amount: s.ben[i], x: factor[i] === 1 ? undefined : factor[i], part: `1/${T}`, n: s.left0 - 1, value: s.service[i] })),
+        { ...noteO, why: [`עובדי ${G[2].name} שפרשו ב-30.12 עבדו כל השנה, ולכן **נכנסים לשירות**.`, `ב${G[0].name} ההטבה גדלה ב-${pc(q.addA)} מהתיקון של ${y}.`, "הסכומים באלפי ₪."] },
+      ),
+      {
+        ...pvTable(
+          `${q.retireC} עובדי ${G[2].name} שפרשו`,
+          [{ label: G[2].name, heads: q.retireC, amount: s.ben[2], part: `${s.k + 1}/${T}`, n: s.left0 - 1, value: s.retireOb }],
+          { ...noteO, why: "המחויבות בגינם רגע לפני הפרישה." },
+        ),
+        notes: [
           {
-            title: `שירות שוטף: עובדים × הטבה × 1/${T} ÷ ${b(r)}^${s.left0 - 1}`,
-            text: `עובדי ${G[2].name} שפרשו ב-30.12 עבדו כל השנה, ולכן **נכנסים לשירות**.`,
+            title: "מה ששולם, וההפרש",
             lines: [
-              ...G.map((g, i) => ({ label: g.name, calc: `${g.heads} × ${d2(s.ben[i])}${i === 0 ? ` × ${nf(1 + q.addA, 3)}` : ""} × 1/${T} ÷ ${b(r)}^${s.left0 - 1}`, value: s.service[i], unit: "" as const })),
-              { label: "סה״כ שירות שוטף", value: s.service1, unit: "" },
-              { label: "ריבית", calc: `${th(N.closing0)} × ${pc(r)}`, value: s.interest1, unit: "" },
+              { label: "מה ששולם: השכר של השנה × שנות השירות", calc: `${q.retireC} × ${money(G[2].salary)} × ${b(G[2].raise)} × ${s.k + 1} / 1,000`, value: s.paid1, unit: "" },
+              { label: "ההפרש: מדידה מחדש (הפסד)", calc: `${d2(s.paid1)} − ${d2(s.retireOb)}`, value: s.retireLoss, unit: "" },
             ],
           },
         ],
       },
       {
-        title: `המחויבות ב-${y + 1}: פרישה, תיקון וסגירה`,
-        notes: [
-          {
-            title: `${q.retireC} עובדי ${G[2].name} שפרשו`,
-            lines: [
-              { label: "המחויבות בגינם רגע לפני", calc: `${q.retireC} × ${d2(s.ben[2])} × ${s.k + 1}/${T} ÷ ${b(r)}^${s.left0 - 1}`, value: s.retireOb, unit: "" },
-              { label: "מה ששולם: השכר של השנה × שנות השירות", calc: `${q.retireC} × ${money(G[2].salary)} × ${b(G[2].raise)} × ${s.k + 1} / 1,000`, value: s.paid1, unit: "" },
-              { label: "ההפרש: מדידה מחדש (הפסד)", value: s.retireLoss, unit: "" },
-            ],
-          },
-          {
-            title: `שירות עבר לעובדי ${G[1].name}: ${pc(q.addA / 2)} מהמחויבות לפני התיקון`,
-            lines: [
-              { label: "מחויבות לפני", calc: `${G[1].heads} × ${d2(s.ben[1])} × ${s.k + 1}/${T} ÷ ${b(r)}^${s.left0 - 1}`, value: s.oblB, unit: "" },
-              { label: "שירות עבר", calc: `${d2(s.oblB)} × ${pc(q.addA / 2)}`, value: s.past1, unit: "" },
-            ],
-          },
-          {
-            title: `סגירה 31.12.${y + 1}`,
-            lines: [
-              { label: G[0].name, calc: `${G[0].heads} × ${d2(s.ben[0])} × ${nf(1 + q.addA, 3)} × ${s.k + 1}/${T} ÷ ${b(r)}^${s.left0 - 1}`, value: s.closingParts[0], unit: "" },
-              { label: G[1].name, calc: `${G[1].heads} × ${d2(s.ben[1])} × ${nf(1 + q.addA / 2, 3)} × ${s.k + 1}/${T} ÷ ${b(r)}^${s.left0 - 1}`, value: s.closingParts[1], unit: "" },
-              { label: G[2].name, calc: `${G[2].heads - q.retireC} × ${d2(s.ben[2])} × ${s.k + 1}/${T} ÷ ${b(r)}^${s.left0 - 1}`, value: s.closingParts[2], unit: "" },
-            ],
-          },
-        ],
+        ...pvTable(
+          `שירות עבר לעובדי ${G[1].name}`,
+          [{ label: G[1].name, heads: G[1].heads, amount: s.ben[1], part: `${s.k + 1}/${T}`, n: s.left0 - 1, value: s.oblB }],
+          { ...noteO, why: `השירות העבר הוא ${pc(q.addA / 2)} מהמחויבות לפני התיקון.` },
+        ),
+        notes: [{ title: "השירות העבר", lines: [{ label: "שירות עבר", calc: `${d2(s.oblB)} × ${pc(q.addA / 2)}`, value: s.past1, unit: "" }] }],
+      },
+      pvTable(
+        `יתרת סגירה 31.12.${y + 1}`,
+        G.map((g, i) => ({ label: g.name, heads: i === 2 ? g.heads - q.retireC : g.heads, amount: s.ben[i], x: closeFactor[i] === 1 ? undefined : closeFactor[i], part: `${s.k + 1}/${T}`, n: s.left0 - 1, value: s.closingParts[i] })),
+        { ...noteO, why: `שתי התוספות נכנסות: ${pc(q.addA)} ל${G[0].name} ו-${pc(q.addA / 2)} ל${G[1].name}. בלי ${q.retireC} העובדים שפרשו.` },
+      ),
+      {
+        title: `המחויבות ב-${y + 1}: התנועה`,
+        notes: [{ title: "ריבית: על היתרה בתחילת השנה", lines: [{ label: "ריבית", calc: `${th(N.closing0)} × ${pc(r)}`, value: s.interest1, unit: "" }] }],
         rolls: [
           {
             title: `מחויבות, ${y + 1}`,

@@ -3,12 +3,15 @@ import type { ReactNode } from "react";
 import { Part, Remember } from "@/components/study-mode/screen-parts";
 import type { ScreenContent } from "@/components/study-mode/shell";
 import { DataTable } from "@/components/study/blocks";
-import { assemblyBenefit, EXAM_A, EXAM_B, fieldWindow } from "@/lib/learn/ias19-exams";
+import { pvTable, type PvOpts, type PvRow } from "@/lib/learn/ias19-booklet";
+import { accruedOf, assemblyBenefit, EXAM_A, EXAM_B, fieldWindow } from "@/lib/learn/ias19-exams";
 import { EXAM_A_SOLVED as A, EXAM_B_ROUNDED as BR, EXAM_B_SOLVED as B } from "@/lib/study/ias19/lessons/exams";
 import { AWARD, AWARD_IF_POST, AWARD_META, AWARD_OPENING, AWARD_PL, AWARD_SERVICE, AWARD_YEAR, TERM, TERM_DISCOUNTED, TERM_LATE } from "@/lib/study/ias19/lessons/other";
 import { CLOSING, CLOSING_EXTRA } from "@/lib/study/ias19/lessons/map";
 import { lessonRef, lessonsRef, pct } from "@/lib/study/ias19/shared";
 import { Ltr } from "./ias19-formula";
+import { rich } from "./ias19-rich";
+import { cell } from "./ias19-step";
 import { Bridge, DestTag, ExplainTask, FullSteps, Ladder, MapBranch, Recipe5, RECIPE_STEPS, RollForward, T19, TaskSolution } from "./ias19-ui";
 import { Diff, Fork, NetBars, Routing, SplitBar, Timeline, TwoPanel } from "./ias19-visuals";
 import type { QuizItem } from "./inventory-interactive";
@@ -34,6 +37,43 @@ const y2 = y1 + 1;
 const asm = A.assembly;
 const fld = A.field;
 const CIRCLED = ["①", "②", "③", "④", "⑤"];
+
+/** A balance as the course's present-value table (pvTable): the formula and Excel above, a row per group, the calculation, the value. */
+function Pv({ rows, o }: { rows: PvRow[]; o: PvOpts }) {
+  const s = pvTable("", rows, o);
+  return (
+    <div className="space-y-2">
+      {s.text?.map((t) => (
+        <P key={t}>{rich(ltrFormulas(t))}</P>
+      ))}
+      {s.tables?.map((t, i) => (
+        <DataTable key={i} head={t.head} rows={t.rows.map((r) => r.map(cell))} foot={t.foot?.map(cell)} />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Question 1's balances, group by group. A group's accrual per head comes
+ * from the group table (per year × years, up to its window); after the
+ * amendment some groups add a second grant, so the column is what one
+ * employee has accrued. The second year starts a year further on.
+ */
+type ExamGroup = (typeof asm.groups)[number];
+const AM = EXAM_A.assembly.amendment;
+const amAt = (g: ExamGroup) => g.served + 1 + AM.month / 12;
+const amN = (g: ExamGroup) => g.nEnd - 1 + (12 - AM.month) / 12;
+const grantsAfter = (g: ExamGroup) => (asm.addedTo.includes(g.id) ? [...g.grants, { perYear: asm.addedPerYear, window: AM.minYears }] : g.grants);
+const FIELD_NAME: Record<string, string> = { older: "ותיקים", young: "צעירים", long: "ארוכי טווח" };
+const fieldLabel = (g: ExamGroup) => (g.heads ? FIELD_NAME[g.id] : `${FIELD_NAME[g.id]} (לא זכאים)`);
+const fieldHeadsEnd = (g: ExamGroup) => (g.heads && g.id === EXAM_A.field.leavers.group ? g.heads - EXAM_A.field.leavers.heads : g.heads);
+const ACCRUED = "נצבר לעובד";
+
+/** The jubilee award: per-year accruals, the months before the raise, and the years to payment. */
+const awOld = AWARD.oldTotal / AWARD.years;
+const awNew = AWARD.newTotal / AWARD.years;
+const awNAmend = AWARD_META.nEnd + (12 - AWARD.month) / 12;
+const awAt = `${AWARD_META.servedAtStart * 12 + AWARD.month}/12`;
 
 export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
   // ---------------------------------------------------------------------------
@@ -339,15 +379,42 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
         <FullSteps
           label="מענק יובל — 2023"
           steps={[
-            { title: "פתיחה", body: <p>{AWARD_META.servedAtStart} × <Money v={AWARD.oldTotal / AWARD.years} plain /> ÷ <L>{1 + AWARD.rateStart}^{AWARD_META.nEnd + 1}</L> = <strong><M v={AWARD_OPENING} /></strong>.</p> },
             {
-              title: "שירות — שוטף ועבר, סכום אחד",
+              title: "פתיחה, 31.12.2022",
+              body: <Pv o={{ rate: AWARD.rateStart, label: "מדידה", amount: "צבירה לשנה", why: `${AWARD_META.servedAtStart} שנים נצברו במענק הישן; עד התשלום ${AWARD_META.nEnd + 1} שנים.` }} rows={[{ label: "פתיחה", amount: awOld, part: `${AWARD_META.servedAtStart}`, n: AWARD_META.nEnd + 1, value: AWARD_OPENING }]} />,
+            },
+            {
+              title: "שירות שוטף — שתי תקופות",
               body: (
-                <p>
-                  שוטף: <M v={AWARD_YEAR.serviceBefore} /> (עד התיקון) + <M v={AWARD_YEAR.serviceAfter} /> (אחריו). שירות עבר: <L><M v={AWARD_YEAR.pastAfter} /> − <M v={AWARD_YEAR.pastBefore} /> = <M v={AWARD_YEAR.pastService} /></L>. עלות
-                  שירות אחת: <strong><M v={AWARD_SERVICE} /></strong>.
-                </p>
+                <Pv
+                  o={{ rate: AWARD.rateStart, label: "תקופה", amount: "צבירה לשנה", why: `עד התיקון: ${AWARD.month} חודשים במענק הישן, מהוונים מיום התיקון בשיעור של תחילת השנה. אחריו: ${12 - AWARD.month} חודשים במענק החדש, מהוונים מסוף השנה.` }}
+                  rows={[
+                    { label: "עד התיקון", amount: awOld, part: `${AWARD.month}/12`, n: awNAmend, value: AWARD_YEAR.serviceBefore },
+                    { label: "אחרי התיקון", amount: awNew, part: `${12 - AWARD.month}/12`, n: AWARD_META.nEnd, rate: AWARD.rateAmend, value: AWARD_YEAR.serviceAfter },
+                  ]}
+                />
               ),
+            },
+            {
+              title: "שירות עבר — ביום התיקון",
+              body: (
+                <div className="space-y-2">
+                  <Pv
+                    o={{ rate: AWARD.rateAmend, label: "יתרה", amount: "צבירה לשנה", total: false, why: `שתי היתרות ביום התיקון, על אותו ותק (${awAt} שנים), באותו שיעור ובאותו n. ההפרש הוא שירות העבר.` }}
+                    rows={[
+                      { label: "לפני", amount: awOld, part: awAt, n: awNAmend, value: AWARD_YEAR.pastBefore },
+                      { label: "אחרי", amount: awNew, part: awAt, n: awNAmend, value: AWARD_YEAR.pastAfter },
+                    ]}
+                  />
+                  <P>
+                    שירות עבר: <L><M v={AWARD_YEAR.pastAfter} /> − <M v={AWARD_YEAR.pastBefore} /> = <M v={AWARD_YEAR.pastService} /></L>. עלות שירות אחת: <L><M v={AWARD_YEAR.serviceBefore} /> + <M v={AWARD_YEAR.serviceAfter} /> + <M v={AWARD_YEAR.pastService} /> = <strong><M v={AWARD_SERVICE} /></strong></L>.
+                  </P>
+                </div>
+              ),
+            },
+            {
+              title: "סגירה, 31.12.2023",
+              body: <Pv o={{ rate: AWARD.rateAmend, label: "מדידה", amount: "צבירה לשנה", why: `${AWARD_META.servedAtStart + 1} שנים במענק החדש, בשיעור של סוף השנה.` }} rows={[{ label: "סגירה", amount: awNew, part: `${AWARD_META.servedAtStart + 1}`, n: AWARD_META.nEnd, value: AWARD_YEAR.closing }]} />,
             },
             {
               title: "המעגל",
@@ -612,6 +679,21 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
             ),
           },
           {
+            title: `${y1}: פתיחה וסגירה`,
+            body: (
+              <div className="space-y-4">
+                <Pv
+                  o={{ rate: EXAM_A.assembly.rate, amount: ACCRUED, why: `פתיחה, 1.1.${y1}: מה שכל עובד צבר עד היום, מהוון עד יום התשלום.` }}
+                  rows={asm.groups.map((g, i) => ({ label: g.id, heads: g.heads, amount: accruedOf(g.grants, g.served), n: g.nEnd + 1, value: asm.year1.rows[i].opening }))}
+                />
+                <Pv
+                  o={{ rate: EXAM_A.assembly.rate, amount: ACCRUED, why: `סגירה, 31.12.${y1}: עוד שנה לכל קבוצה (עד התקרה), ושנה אחת פחות עד התשלום.` }}
+                  rows={asm.groups.map((g, i) => ({ label: g.id, heads: g.heads, amount: accruedOf(g.grants, g.served + 1), n: g.nEnd, value: asm.year1.rows[i].closing }))}
+                />
+              </div>
+            ),
+          },
+          {
             title: `${y1}: בלי חדשות`,
             body: (
               <RollForward
@@ -636,6 +718,45 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
                 </L>
                 .
               </p>
+            ),
+          },
+          {
+            title: `${y2}: שירות שוטף, בשתי תקופות`,
+            body: (
+              <div className="space-y-4">
+                <Pv
+                  o={{ rate: EXAM_A.assembly.rate, amount: "צבירה בתקופה", why: `עד 30.6: חצי שנה בתנאים הישנים, מהוונת מיום התיקון.` }}
+                  rows={asm.groups.map((g, i) => ({ label: g.id, heads: g.heads, amount: accruedOf(g.grants, amAt(g)) - accruedOf(g.grants, g.served + 1), n: amN(g), value: asm.year2.rows[i].serviceBefore }))}
+                />
+                <Pv
+                  o={{ rate: EXAM_A.assembly.rate, amount: "צבירה בתקופה", why: `מ-1.7: חצי שנה בתנאים החדשים, מהוונת מסוף השנה. בקבוצות ${asm.addedTo.join(" ו-")} נוסף המענק החדש.` }}
+                  rows={asm.groups.map((g, i) => ({ label: g.id, heads: g.heads, amount: accruedOf(grantsAfter(g), g.served + 2) - accruedOf(grantsAfter(g), amAt(g)), n: g.nEnd - 1, value: asm.year2.rows[i].serviceAfter }))}
+                />
+              </div>
+            ),
+          },
+          {
+            title: `${y2}: שירות עבר, ביום התיקון`,
+            body: (
+              <div className="space-y-4">
+                <Pv
+                  o={{ rate: EXAM_A.assembly.rate, amount: ACCRUED, why: `לפני התיקון: מה שנצבר עד 30.6 בתנאים הישנים.` }}
+                  rows={asm.groups.map((g, i) => ({ label: g.id, heads: g.heads, amount: accruedOf(g.grants, amAt(g)), n: amN(g), value: asm.year2.rows[i].before }))}
+                />
+                <Pv
+                  o={{ rate: EXAM_A.assembly.rate, amount: ACCRUED, why: `אחרי התיקון: אותו ותק, עם המענק הנוסף לקבוצות ${asm.addedTo.join(" ו-")}.` }}
+                  rows={asm.groups.map((g, i) => ({ label: g.id, heads: g.heads, amount: accruedOf(grantsAfter(g), amAt(g)), n: amN(g), value: asm.year2.rows[i].after }))}
+                />
+              </div>
+            ),
+          },
+          {
+            title: `${y2}: סגירה`,
+            body: (
+              <Pv
+                o={{ rate: EXAM_A.assembly.endRate, amount: ACCRUED, why: `נתוני סוף השנה, בשיעור החדש (${pct(EXAM_A.assembly.endRate)}).` }}
+                rows={asm.groups.map((g, i) => ({ label: g.id, heads: g.heads, amount: accruedOf(grantsAfter(g), g.served + 2), n: g.nEnd - 1, value: asm.year2.rows[i].closing }))}
+              />
             ),
           },
           {
@@ -675,6 +796,22 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
               })}
             />,
             <span key="r" className="block space-y-2">
+              <Pv
+                o={{ rate: EXAM_A.field.rate, amount: ACCRUED, why: `פתיחה, 1.1.${y1}: מה שכל עובד צבר בחלון שלו, מהוון עד יום הסיום של הקבוצה.` }}
+                rows={fld.groups.map((g, i) => ({ label: fieldLabel(g), heads: g.heads, amount: accruedOf(g.grants, g.served), n: g.nEnd + 1, value: fld.year1.rows[i].opening }))}
+              />
+              <Pv
+                o={{ rate: EXAM_A.field.rate, amount: ACCRUED, why: `סגירה, 31.12.${y1}, שהיא גם הפתיחה של ${y2}.` }}
+                rows={fld.groups.map((g, i) => ({ label: fieldLabel(g), heads: g.heads, amount: accruedOf(g.grants, g.served + 1), n: g.nEnd, value: fld.year1.rows[i].closing }))}
+              />
+              <Pv
+                o={{ rate: EXAM_A.field.rate, amount: "צבירה בשנה", why: `שירות שוטף ${y2}: השנה שנוספה, מהוונת מסוף השנה בשיעור של תחילתה.` }}
+                rows={fld.groups.map((g, i) => ({ label: fieldLabel(g), heads: g.heads, amount: accruedOf(g.grants, g.served + 2) - accruedOf(g.grants, g.served + 1), n: g.nEnd - 1, value: fld.year2.rows[i].service }))}
+              />
+              <Pv
+                o={{ rate: EXAM_A.field.endRate, amount: ACCRUED, why: `סגירה, 31.12.${y2}: ${EXAM_A.field.leavers.heads} עזבו מקבוצת ארוכי הטווח, והשיעור ירד ל-${pct(EXAM_A.field.endRate)}.` }}
+                rows={fld.groups.map((g, i) => ({ label: fieldLabel(g), heads: fieldHeadsEnd(g), amount: accruedOf(g.grants, g.served + 2), n: g.nEnd - 1, value: fld.year2.rows[i].closing }))}
+              />
               <RollForward
                 title={`מחלקת השטח — ${y1}`}
                 rows={[
@@ -812,6 +949,33 @@ export const IAS19_END_SCREENS: Record<string, ScreenContent> = {
                 head={["דרג", `משכורת ${EXAM_B.year}`, "משכורת בפרישה", "תוספת"]}
                 rows={EXAM_B.grades.map((g, i) => [g.id, Math.round(B.salaries[i] * 1000) / 1000, Math.round(B.finals[i] * 1000) / 1000, g.id === EXAM_B.note.amendedLast ? pct(B.addedLast) : g.id === EXAM_B.amendment.grade ? `${pct(B.addedNow)} (מ-31.12)` : "—"])}
               />
+            ),
+          },
+          {
+            title: "הערכים הנוכחיים (אלפי ₪)",
+            body: (
+              <div className="space-y-4">
+                <Pv
+                  o={{ rate: B.exactRate, label: "דרג", amount: "משכורת", x: "מקדם", amountDec: 2, valueDec: 1, why: `שירות שוטף: שנה אחת לכל עובד, לפי המשכורת בפרישה. בדרג ${EXAM_B.note.amendedLast}׳ המקדם כולל את התוספת. עד הפרישה ${B.nEnd} שנים.` }}
+                  rows={EXAM_B.grades.map((g, i) => ({ label: g.id, heads: g.heads, amount: B.finals[i], x: g.id === EXAM_B.note.amendedLast ? 1 + B.addedLast : 1, n: B.nEnd, value: B.obligation.serviceBy[i] }))}
+                />
+                <Pv
+                  o={{ rate: B.exactRate, label: "דרג", amount: "משכורת", part: "שנים", x: "תוספת", amountDec: 2, valueDec: 1, why: `שירות עבר: התוספת של ${pct(B.addedNow)} לדרג ${EXAM_B.amendment.grade}׳, על כל ${B.servedEnd} שנות השירות, לעובדים שנשארו.` }}
+                  rows={EXAM_B.grades.flatMap((g, i) => (g.id === EXAM_B.amendment.grade ? [{ label: g.id, heads: g.heads - (g.id === EXAM_B.leavers.grade ? EXAM_B.leavers.heads : 0), amount: B.finals[i], part: `${B.servedEnd}`, x: B.addedNow, n: B.nEnd, value: B.obligation.pastService }] : []))}
+                />
+                <Pv
+                  o={{ rate: B.exactRate, label: "דרג", amount: "משכורת", part: "שנים", x: "מקדם", amountDec: 2, valueDec: 1, why: `סגירה: ${B.servedEnd} שנים לכל מי שנשאר (בלי ${EXAM_B.leavers.heads} הפורשים מדרג ${EXAM_B.leavers.grade}׳), עם התוספות.` }}
+                  rows={EXAM_B.grades.map((g, i) => ({
+                    label: g.id,
+                    heads: g.heads - (g.id === EXAM_B.leavers.grade ? EXAM_B.leavers.heads : 0),
+                    amount: B.finals[i],
+                    part: `${B.servedEnd}`,
+                    x: 1 + (g.id === EXAM_B.note.amendedLast ? B.addedLast : 0) + (g.id === EXAM_B.amendment.grade ? B.addedNow : 0),
+                    n: B.nEnd,
+                    value: B.obligation.closingBy[i],
+                  }))}
+                />
+              </div>
             ),
           },
           {

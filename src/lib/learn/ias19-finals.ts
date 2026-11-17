@@ -1,4 +1,4 @@
-import { b, type BkQuestion, type BkRoll, type BkStep, d2, endOf, money, nf, pc, sum, yrs } from "./ias19-booklet";
+import { b, type BkQuestion, type BkRoll, type BkStep, d2, endOf, money, nf, pc, pvTable, sum, yrs } from "./ias19-booklet";
 
 /**
  * The course's eight summary exam questions: each built on a real exam
@@ -10,6 +10,13 @@ import { b, type BkQuestion, type BkRoll, type BkStep, d2, endOf, money, nf, pc,
  */
 
 const R = (title: string, rows: BkRoll["rows"], extra: Partial<BkRoll> = {}): BkRoll => ({ title, rows, ...extra });
+
+/** Years and months as the accrued part of a present-value table: "3/12" for months alone, "5.25" when exact, else "63/12". */
+const yp = (years: number, months = 0) => {
+  const t = years * 12 + months;
+  if (!years) return `${months}/12`;
+  return t % 3 === 0 ? String(t / 12) : `${t}/12`;
+};
 
 // ===========================================================================
 // 1. Grants in two categories — one front-loaded (the plan's formula), one back-loaded (straight line) — and their cancellation part way through the next year.
@@ -137,40 +144,45 @@ export function cancelQuestion(id: string, title: string, q: CancelInput): BkQue
         ],
         text: [`לכל שנה בקו ישר: ${money(s.C.total)} ÷ ${s.C.T} = ${d2(s.C.per)} ₪.`],
       },
-      {
-        title: `ההתחייבות ב-31.12.${y}`,
-        tables: [
-          {
-            head: ["עובד", "שנים שעברו", "נצבר", "שנים עד התשלום", "חישוב", "התחייבות"],
-            rows: [
-              [q.a.name, s.A.served, money(s.A.accrued), s.A.n, `${money(s.A.accrued)} ÷ ${b(q.r0)}^${s.A.n}`, money(s.A.opening)],
-              [q.c.name, s.C.served, money(s.C.per * s.C.served), s.C.n, `${d2(s.C.per)} × ${s.C.served} ÷ ${b(q.r0)}^${s.C.n}`, money(s.C.opening)],
-            ],
-            foot: ["סה״כ", "", "", "", "", money(s.A.opening + s.C.opening)],
-          },
+      pvTable(`ההתחייבות ב-31.12.${y}`, [
+        { label: q.a.name, amount: s.A.accrued, n: s.A.n, value: s.A.opening },
+        { label: q.c.name, amount: s.C.per, part: String(s.C.served), n: s.C.n, value: s.C.opening },
+      ], {
+        rate: q.r0,
+        label: "עובד",
+        amount: "מענק",
+        why: [
+          `אצל ${q.a.name} המענק הוא מה שנצבר לפי נוסחת התוכנית: ${money(O.first)} × ${O.firstYears} + ${money(O.later)} × ${s.A.served - O.firstYears} = ${money(s.A.accrued)}.`,
+          `אצל ${q.c.name} המענק הוא הסכום לשנה בקו ישר (${d2(s.C.per)} ₪), והחלק שנצבר הוא ${s.C.served} השנים שעברו.`,
         ],
-        text: [`נצבר אצל ${q.a.name}: ${money(O.first)} × ${O.firstYears} + ${money(O.later)} × ${s.A.served - O.firstYears} = ${money(s.A.accrued)}.`],
-      },
+      }),
+      pvTable(`עלות שירות שוטף, ${mo} חודשים`, [
+        { label: q.a.name, amount: s.A.accruedM - s.A.accrued, n: s.A.n - mo / 12, value: s.A.service },
+        { label: q.c.name, amount: s.C.per, part: `${mo}/12`, n: s.C.n - mo / 12, value: s.C.service },
+      ], {
+        rate: q.r0,
+        label: "עובד",
+        amount: "מענק",
+        why: [
+          "ריבית ושירות עד יום הביטול לפי ריבית תחילת השנה. ההתחייבות ביום הביטול נמדדת מחדש לפי הריבית של אותו יום, וההפרש הוא מדידה מחדש ל-OCI (סעיף 99).",
+          `אצל ${q.a.name}: מה שנוסף לנצבר לפי הנוסחה ב-${mo} החודשים. אצל ${q.c.name}: ${mo}/12 מהסכום לשנה.`,
+        ],
+      }),
+      pvTable(`ההתחייבות ביום הביטול, ${cancel}`, [
+        { label: q.a.name, amount: s.A.accruedM, n: s.A.n - mo / 12, value: s.A.remeasured },
+        { label: q.c.name, amount: s.C.per, part: yp(s.C.served, mo), n: s.C.n - mo / 12, value: s.C.remeasured },
+      ], { rate: q.rM, label: "עובד", amount: "מענק", why: `לפי הריבית ביום הביטול, ${pc(q.rM)}.` }),
       {
         title: `עדכון ההתחייבות ליום הביטול (${mo} חודשים)`,
-        text: ["ריבית ושירות לפי ריבית תחילת השנה. ההתחייבות ביום הביטול נמדדת מחדש לפי הריבית של אותו יום, וההפרש הוא מדידה מחדש ל-OCI (סעיף 99)."],
         tables: [
           {
             head: ["שורה", q.a.name, q.c.name],
             rows: [
               [`פתיחה 31.12.${y}`, money(s.A.opening), money(s.C.opening)],
               [`ריבית ${mo} חודשים: × (${b(q.r0)}^(${mo}/12) − 1)`, money(s.A.interest), money(s.C.interest)],
-              [
-                `שירות ${mo} חודשים`,
-                `${money(s.A.accruedM - s.A.accrued)} ÷ ${b(q.r0)}^${yrs(s.A.n - mo / 12)} = ${money(s.A.service)}`,
-                `${d2(s.C.per)} × ${mo}/12 ÷ ${b(q.r0)}^${yrs(s.C.n - mo / 12)} = ${money(s.C.service)}`,
-              ],
+              [`שירות ${mo} חודשים`, money(s.A.service), money(s.C.service)],
               ["מדידה מחדש (OCI), מאזנת", money(s.A.pn), money(s.C.pn)],
-              [
-                `התחייבות ב-${cancel}`,
-                `${money(s.A.accruedM)} ÷ ${b(q.rM)}^${yrs(s.A.n - mo / 12)} = ${money(s.A.remeasured)}`,
-                `${d2(s.C.per)} × ${yrs(s.C.served + mo / 12)} ÷ ${b(q.rM)}^${yrs(s.C.n - mo / 12)} = ${money(s.C.remeasured)}`,
-              ],
+              [`התחייבות ב-${cancel}`, money(s.A.remeasured), money(s.C.remeasured)],
             ],
           },
         ],
@@ -290,6 +302,9 @@ export function mgmtQuestion(id: string, title: string, q: MgmtInput): BkQuestio
   const am = endOf(mo, y2);
   const fin = `${money(q.salary)} × ${b(q.raise)}^${s.T - 1}`;
   const gain = (v: number) => (v < 0 ? `רווח ${money(-v)}` : `הפסד ${money(v)}`);
+  const pvM = { label: "תוכנית", amount: "שכר בפרישה" };
+  const n1 = s.T - s.s0 - 1;
+  const finalNew = s.final * (1 + q.add);
   return {
     id,
     title,
@@ -340,17 +355,24 @@ export function mgmtQuestion(id: string, title: string, q: MgmtInput): BkQuestio
         ],
         text: [`שכר ${y1}: ${money(q.salary)} × ${b(q.raise)}^${y1 - q.founded} = ${d2(s.sal(y1))}. האג״ח הממשלתיות הן **נתון סרק** (סעיף 83).`],
       },
+      pvTable(`מחויבות 31.12.${y1 - 1}`, [{ label: "הטבה מוגדרת", heads: s.H, amount: s.final, part: String(s.s0), n: s.T - s.s0, value: s.o0.opening }], {
+        ...pvM,
+        rate: q.rOpen,
+        why: `ההטבה היא שכר אחרון × שנות ותק, ולכן החלק שנצבר הוא השנים שעברו (${s.s0}). הריבית היא זו שחולצה מהביאור, ${pc(s.rRecovered)}.`,
+      }),
+      pvTable(`עלות שירות שוטף ${y1}`, [{ label: "הטבה מוגדרת", heads: s.H, amount: s.final, part: "1", n: s.T - s.s0 - 1, value: s.o0.service }], { ...pvM, rate: q.rOpen, why: "שנה אחת שנוספה, מהוונת מסוף השנה לפי ריבית תחילת השנה." }),
+      pvTable(`מחויבות 31.12.${y1}`, [{ label: "הטבה מוגדרת", heads: s.H, amount: s.final, part: String(s.s0 + 1), n: s.T - s.s0 - 1, value: s.o0.closing }], { ...pvM, rate: q.r1 }),
       {
         title: `${y1}: המחויבות והנכסים`,
         tables: [
           {
             head: ["שורה", "חישוב", "סכום"],
             rows: [
-              [`פתיחה 31.12.${y1 - 1}`, `${s.H} × ${d2(s.final)} × ${s.s0} ÷ ${b(q.rOpen)}^${s.T - s.s0}`, money(s.o0.opening)],
+              [`פתיחה 31.12.${y1 - 1}`, "", money(s.o0.opening)],
               ["ריבית", `${money(s.o0.opening)} × ${pc(q.rOpen)}`, money(s.o0.interest)],
-              ["שירות שוטף", `${s.H} × ${d2(s.final)} × 1 ÷ ${b(q.rOpen)}^${s.T - s.s0 - 1}`, money(s.o0.service)],
-              ["מדידה מחדש (OCI), מאזנת", "", money(s.o0.pn)],
-              [`סגירה 31.12.${y1}`, `${s.H} × ${d2(s.final)} × ${s.s0 + 1} ÷ ${b(q.r1)}^${s.T - s.s0 - 1}`, money(s.o0.closing)],
+              ["שירות שוטף", "", money(s.o0.service)],
+              ["מדידה מחדש (OCI), מאזנת", `${money(s.o0.closing)} − ${money(s.o0.opening)} − ${money(s.o0.interest)} − ${money(s.o0.service)}`, money(s.o0.pn)],
+              [`סגירה 31.12.${y1}`, "", money(s.o0.closing)],
             ],
           },
         ],
@@ -383,24 +405,43 @@ export function mgmtQuestion(id: string, title: string, q: MgmtInput): BkQuestio
           },
         ],
       },
+      pvTable(`עלות שירות שוטף ${y2}`, [
+        { label: `עד ${am}`, heads: s.H, amount: s.final, part: `${mo}/12`, n: n1 - mo / 12, rate: q.r1, value: s.o1.sv1 },
+        { label: `מ-${am}`, heads: s.H, amount: finalNew, part: `${12 - mo}/12`, n: n1 - 1, rate: q.rAm, value: s.o1.sv2 },
+      ], {
+        ...pvM,
+        label: "תקופה",
+        rate: q.r1,
+        why: `עד ${am}: ${mo} חודשים בתנאים הישנים ובריבית ${pc(q.r1)}. מיום התיקון: התנאים החדשים (השכר בפרישה × ${nf(1 + q.add, 3)}) והריבית של יום התיקון, ${pc(q.rAm)}.`,
+      }),
+      pvTable(`ביום התיקון, ${am}`, [
+        { label: "לפני התיקון", heads: s.H, amount: s.final, part: yp(s.s0 + 1, mo), n: n1 - mo / 12, value: s.o1.before },
+        { label: "אחרי התיקון", heads: s.H, amount: finalNew, part: yp(s.s0 + 1, mo), n: n1 - mo / 12, value: s.o1.after },
+      ], {
+        ...pvM,
+        label: "מדידה",
+        rate: q.rAm,
+        total: false,
+        why: `ביום התיקון **מודדים מחדש** לפי ${pc(q.rAm)} (סעיף 99), ואז מוסיפים את השיפור כשירות עבר. אחרי התיקון כל עובד מקבל ${pc(q.add)} יותר, גם על השנים שכבר עבד.`,
+      }),
       {
         title: `${y2}: עד התיקון, והתיקון`,
-        text: [`עד ${am}: ${mo} חודשים בתנאים הישנים ובריבית ${pc(q.r1)}. ביום התיקון **מודדים מחדש** לפי ${pc(q.rAm)} (סעיף 99), ואז מוסיפים את השיפור כשירות עבר.`],
         tables: [
           {
             head: ["שורה", "חישוב", "סכום"],
             rows: [
               [`פתיחה 1.1.${y2}`, "", money(s.o1.opening)],
               [`ריבית ${mo} חודשים`, `${money(s.o1.opening)} × (${b(q.r1)}^(${mo}/12) − 1)`, money(s.o1.i1)],
-              [`שירות ${mo} חודשים`, `${s.H} × ${d2(s.final)} × ${mo}/12 ÷ ${b(q.r1)}^${yrs(s.T - s.s0 - 1 - mo / 12)}`, money(s.o1.sv1)],
-              ["מדידה מחדש ביום התיקון (OCI)", "מאזנת", money(s.o1.pnAm)],
-              [`לפני התיקון, ${am}`, `${s.H} × ${d2(s.final)} × ${yrs(s.s0 + 1 + mo / 12)} ÷ ${b(q.rAm)}^${yrs(s.T - s.s0 - 1 - mo / 12)}`, money(s.o1.before)],
-              ["שירות עבר", `${money(s.o1.before)} × ${pc(q.add)}`, money(s.o1.past)],
+              [`שירות ${mo} חודשים`, "", money(s.o1.sv1)],
+              ["מדידה מחדש ביום התיקון (OCI), מאזנת", `${money(s.o1.before)} − ${money(s.o1.opening)} − ${money(s.o1.i1)} − ${money(s.o1.sv1)}`, money(s.o1.pnAm)],
+              [`לפני התיקון, ${am}`, "", money(s.o1.before)],
+              ["שירות עבר", `${money(s.o1.after)} − ${money(s.o1.before)}`, money(s.o1.past)],
               ["אחרי התיקון", "", money(s.o1.after)],
             ],
           },
         ],
       },
+      pvTable(`מחויבות 31.12.${y2}`, [{ label: "הטבה מוגדרת", heads: s.H, amount: finalNew, part: String(s.s0 + 2), n: n1 - 1, value: s.o1.closing }], { ...pvM, rate: q.r2 }),
       {
         title: `${y2}: מהתיקון עד סוף השנה`,
         tables: [
@@ -408,9 +449,9 @@ export function mgmtQuestion(id: string, title: string, q: MgmtInput): BkQuestio
             head: ["שורה", "חישוב", "סכום"],
             rows: [
               [`ריבית ${12 - mo} חודשים`, `${money(s.o1.after)} × (${b(q.rAm)}^(${12 - mo}/12) − 1)`, money(s.o1.i2)],
-              [`שירות ${12 - mo} חודשים`, `${s.H} × ${d2(s.final)} × ${nf(1 + q.add, 3)} × ${12 - mo}/12 ÷ ${b(q.rAm)}^${s.T - s.s0 - 2}`, money(s.o1.sv2)],
-              ["מדידה מחדש בסוף השנה (OCI)", "מאזנת", money(s.o1.pnEnd)],
-              [`סגירה 31.12.${y2}`, `${s.H} × ${d2(s.final)} × ${nf(1 + q.add, 3)} × ${s.s0 + 2} ÷ ${b(q.r2)}^${s.T - s.s0 - 2}`, money(s.o1.closing)],
+              [`שירות ${12 - mo} חודשים`, "", money(s.o1.sv2)],
+              ["מדידה מחדש בסוף השנה (OCI), מאזנת", `${money(s.o1.closing)} − ${money(s.o1.after)} − ${money(s.o1.i2)} − ${money(s.o1.sv2)}`, money(s.o1.pnEnd)],
+              [`סגירה 31.12.${y2}`, "", money(s.o1.closing)],
             ],
           },
         ],
@@ -765,18 +806,38 @@ export function threeAgreeQuestion(id: string, title: string, q: ThreeAgreeInput
           "הזכאות הולכת וקטנה, ולכן מייחסים **לפי נוסחת התוכנית**, לא בקו ישר (סעיף 73).",
         ],
       },
+      pvTable(`הסכם א׳: יתרת פתיחה 31.12.${y0}`, [{ label: "הנהלה", heads: G.heads, amount: s.cum(1), n: s.Y - 1, value: s.a.opening }], {
+        rate: G.r0,
+        amount: "זכאות לעובד",
+        why: `לפי נוסחת התוכנית נצברו בשנה הראשונה ${money(s.cum(1))} ₪ לעובד.`,
+      }),
+      pvTable(`הסכם א׳: עלות שירות שוטף ${y1}`, [{ label: "הנהלה", heads: G.heads, amount: G.units[1], n: s.Y - 2, value: s.a.service }], {
+        rate: G.r0,
+        amount: "זכאות לעובד",
+        why: `הזכאות שנוספה ב-${y1} לפי טבלה 1, מהוונת מסוף השנה לפי ריבית תחילת השנה.`,
+      }),
+      pvTable(`הסכם א׳: ביום התיקון, 31.12.${y1}`, [
+        { label: "לפני התיקון", heads: G.heads, amount: s.cum(2), n: s.Y - 2, value: s.a.before },
+        { label: "אחרי התיקון", heads: G.heads, amount: G.newAmount, part: `2/${s.Y}`, n: s.Y - 2, value: s.a.after },
+      ], {
+        rate: G.r1,
+        label: "מדידה",
+        amount: "זכאות לעובד",
+        total: false,
+        why: `לפני התיקון: מה שנצבר בשנתיים לפי נוסחת התוכנית (${money(s.cum(2))} ₪). אחרי התיקון: המענק החדש בקו ישר, שנתיים מתוך ${s.Y}.`,
+      }),
       {
         title: `הסכם א׳: ${y1}`,
         tables: [
           {
             head: ["שורה", "חישוב", "סכום"],
             rows: [
-              [`פתיחה 31.12.${y0}`, `${G.heads} × ${money(s.cum(1))} ÷ ${b(G.r0)}^${s.Y - 1}`, money(s.a.opening)],
+              [`פתיחה 31.12.${y0}`, "", money(s.a.opening)],
               ["ריבית", `${money(s.a.opening)} × ${pc(G.r0)}`, money(s.a.interest)],
-              ["שירות שוטף", `${G.heads} × ${money(G.units[1])} ÷ ${b(G.r0)}^${s.Y - 2}`, money(s.a.service)],
-              ["מדידה מחדש (רווח והפסד), מאזנת", "", money(s.a.pn)],
-              ["לפני התיקון", `${G.heads} × ${money(s.cum(2))} ÷ ${b(G.r1)}^${s.Y - 2}`, money(s.a.before)],
-              ["אחרי התיקון", `${G.heads} × ${money(G.newAmount)} × 2/${s.Y} ÷ ${b(G.r1)}^${s.Y - 2}`, money(s.a.after)],
+              ["שירות שוטף", "", money(s.a.service)],
+              ["מדידה מחדש (רווח והפסד), מאזנת", `${money(s.a.before)} − ${money(s.a.opening)} − ${money(s.a.interest)} − ${money(s.a.service)}`, money(s.a.pn)],
+              ["לפני התיקון", "", money(s.a.before)],
+              ["אחרי התיקון", "", money(s.a.after)],
               ["עלות שירות עבר (שלילית)", `${money(s.a.after)} − ${money(s.a.before)}`, money(s.a.past)],
               ["פיצוי ששולם", `${G.heads} × ${money(G.comp)}`, money(s.a.comp)],
             ],
@@ -966,24 +1027,46 @@ export function salesQuestion(id: string, title: string, q: SalesInput): BkQuest
           `מהוונים לפי אג״ח קונצרניות (סעיף 83): ${pc(G.r0)} במהלך השנה, ${pc(G.r1)} בסגירה. הריבית הפנימית (${pc(G.companyRate)}) היא **נתון סרק**.`,
         ],
       },
+      pvTable(`המענק: יתרת פתיחה 31.12.${y - 1}`, [{ label: "עובדי המכירות", heads: G.heads, amount: s.per0, part: String(s.served0), n: s.n0, value: s.opening }], {
+        rate: G.r0,
+        amount: "מענק לשנה",
+        why: `המענק נצבר בקו ישר: ${money(G.amount)} ÷ ${G.years} = ${money(s.per0)} ₪ לשנה, והחלק שנצבר הוא השנים שעברו.`,
+      }),
+      pvTable(`המענק: עלות שירות שוטף ${y}`, [
+        { label: `ותיקים עד 1.${mo + 1}`, heads: G.heads - 1, amount: s.per0, part: `${mo}/12`, n: s.n0 - mo / 12, value: s.sv1 },
+        { label: `ותיקים מ-1.${mo + 1}`, heads: G.heads - 1, amount: s.per1, part: `${12 - mo}/12`, n: s.n0 - 1, value: s.sv2 },
+        { label: "העובד החדש", heads: 1, amount: s.per1, part: yp(0, 13 - G.joinMonth), n: s.nNew, value: s.svNew },
+      ], {
+        rate: G.r0,
+        label: "תקופה",
+        amount: "מענק לשנה",
+        why: `העוזב יצא ב-1.1, ולכן נשארו ${G.heads - 1} ותיקים. מ-1.${mo + 1} המענק לשנה הוא ${money(G.newAmount)} ÷ ${G.years} = ${money(s.per1)} ₪. העובד החדש עבד ${13 - G.joinMonth} חודשים, ונשארו לו ${yrs(s.nNew)} שנים עד המענק.`,
+      }),
+      pvTable(`המענק: ביום ההגדלה, 1.${mo + 1}.${y}`, [
+        { label: "לפני ההגדלה", heads: G.heads - 1, amount: s.per0, part: yp(s.served0, mo), n: s.n0 - mo / 12, value: s.atAmend },
+        { label: "אחרי ההגדלה", heads: G.heads - 1, amount: s.per1, part: yp(s.served0, mo), n: s.n0 - mo / 12, value: s.afterAmend },
+      ], { rate: G.r0, label: "מדידה", amount: "מענק לשנה", total: false, why: "ההגדלה חלה גם על השנים שכבר עברו, ולכן ההפרש בין שתי המדידות הוא עלות שירות עבר." }),
+      pvTable(`המענק: יתרת סגירה 31.12.${y}`, [
+        { label: "הוותיקים", heads: G.heads - 1, amount: s.per1, part: String(s.served0 + 1), n: s.n0 - 1, value: s.closeOld },
+        { label: "העובד החדש", heads: 1, amount: s.per1, part: yp(0, 13 - G.joinMonth), n: s.nNew, value: s.closeNew },
+      ], { rate: G.r1, amount: "מענק לשנה", why: `לפי הריבית בסוף השנה, ${pc(G.r1)}.` }),
       {
         title: `המענק: ${y}`,
         tables: [
           {
             head: ["שורה", "חישוב", "סכום"],
             rows: [
-              [`פתיחה 31.12.${y - 1}`, `${G.heads} × ${money(s.per0)} × ${s.served0} ÷ ${b(G.r0)}^${s.n0}`, money(s.opening)],
+              [`פתיחה 31.12.${y - 1}`, "", money(s.opening)],
               ["העוזב ב-1.1: חלקו יוצא (מדידה מחדש)", `${money(s.opening)} ÷ ${G.heads}`, `(${money(s.leaverShare)})`],
               [`ריבית עד 1.${mo + 1}`, `${money(s.opening - s.leaverShare)} × (${b(G.r0)}^(${mo}/12) − 1)`, money(s.i1)],
-              [`שירות עד 1.${mo + 1}`, `${G.heads - 1} × ${money(s.per0)} × ${mo}/12 ÷ ${b(G.r0)}^${yrs(s.n0 - mo / 12)}`, money(s.sv1)],
-              ["לפני ההגדלה", `${G.heads - 1} × ${money(s.per0)} × ${yrs(s.served0 + mo / 12)} ÷ ${b(G.r0)}^${yrs(s.n0 - mo / 12)}`, money(s.atAmend)],
-              ["אחרי ההגדלה", `${G.heads - 1} × ${money(s.per1)} × ${yrs(s.served0 + mo / 12)} ÷ ${b(G.r0)}^${yrs(s.n0 - mo / 12)}`, money(s.afterAmend)],
+              [`שירות עד 1.${mo + 1}`, "", money(s.sv1)],
+              ["לפני ההגדלה", "", money(s.atAmend)],
+              ["אחרי ההגדלה", "", money(s.afterAmend)],
               ["עלות שירות עבר", `${money(s.afterAmend)} − ${money(s.atAmend)}`, money(s.past)],
               [`ריבית מ-1.${mo + 1}`, `${money(s.afterAmend)} × (${b(G.r0)}^(${12 - mo}/12) − 1)`, money(s.i2)],
-              [`שירות מ-1.${mo + 1}`, `${G.heads - 1} × ${money(s.per1)} × ${12 - mo}/12 ÷ ${b(G.r0)}^${s.n0 - 1}`, money(s.sv2)],
-              ["שירות העובד החדש", `${money(s.per1)} × ${yrs(s.joinYears)} ÷ ${b(G.r0)}^${yrs(s.nNew)}`, money(s.svNew)],
-              [`סגירה: ${G.heads - 1} הוותיקים`, `${G.heads - 1} × ${money(s.per1)} × ${s.served0 + 1} ÷ ${b(G.r1)}^${s.n0 - 1}`, money(s.closeOld)],
-              ["סגירה: העובד החדש", `${money(s.per1)} × ${yrs(s.joinYears)} ÷ ${b(G.r1)}^${yrs(s.nNew)}`, money(s.closeNew)],
+              [`שירות מ-1.${mo + 1}`, "", money(s.sv2)],
+              ["שירות העובד החדש", "", money(s.svNew)],
+              ["יתרת סגירה", "", money(s.closing)],
             ],
           },
         ],
@@ -1120,17 +1203,32 @@ export function trustQuestion(id: string, title: string, q: TrustInput): BkQuest
         title: "עובדי פיתוח",
         tables: [{ head: ["", "חישוב", "סכום"], rows: [[`הוצאות שכר ${y}`, `${D.staff - D.leftEarlier} × ${money(D.salary)} × ${b(D.raise)}^${y - D.hired}`, money(s.dcExpense)]] }],
       },
+      pvTable(`עובדי ייצור: מחויבות 31.12.${y - 1}`, [{ label: "עובדי ייצור", heads: s.h0, amount: s.per, part: String(s.s0), n: s.n0, value: s.o.opening }], {
+        rate: q.r0,
+        amount: "מענק לשנה",
+        why: `${B.retiredBefore} עובדים פרשו כבר ב-31.12.${y - 1}, ולכן נשארו ${s.h0}. הם צפויים לעבוד ${B.stayYears} שנים, כלומר עוד ${s.n0}.`,
+      }),
+      pvTable(`עובדי ייצור: עלות שירות שוטף ${y}`, [{ label: "עובדי ייצור", heads: s.h0, amount: s.per, part: "1", n: s.n0 - 1, value: s.o.service }], {
+        rate: q.r0,
+        amount: "מענק לשנה",
+        why: "לפי ההנחות של תחילת השנה: הפרישות של סוף השנה לא היו צפויות.",
+      }),
+      pvTable(`עובדי ייצור: מחויבות 31.12.${y}`, [{ label: "עובדי ייצור", heads: s.h1, amount: s.per, part: String(s.s0 + 1), n: s.n0 - 1, value: s.o.closing }], {
+        rate: q.r1,
+        amount: "מענק לשנה",
+        why: `אחרי ש-${B.retiredNow} נוספים פרשו נשארו ${s.h1}, והריבית עלתה ל-${pc(q.r1)}.`,
+      }),
       {
         title: "עובדי ייצור: המחויבות",
         tables: [
           {
             head: ["שורה", "חישוב", "סכום"],
             rows: [
-              [`פתיחה 31.12.${y - 1}`, `${s.h0} × ${money(s.per)} × ${s.s0} ÷ ${b(q.r0)}^${s.n0}`, money(s.o.opening)],
+              [`פתיחה 31.12.${y - 1}`, "", money(s.o.opening)],
               ["ריבית", `${money(s.o.opening)} × ${pc(q.r0)}`, money(s.o.interest)],
-              ["שירות שוטף", `${s.h0} × ${money(s.per)} × 1 ÷ ${b(q.r0)}^${s.n0 - 1}`, money(s.o.service)],
-              ["מדידה מחדש (OCI), מאזנת", `הפרישות ב-${y} והריבית`, money(s.o.pn)],
-              [`סגירה 31.12.${y}`, `${s.h1} × ${money(s.per)} × ${s.s0 + 1} ÷ ${b(q.r1)}^${s.n0 - 1}`, money(s.o.closing)],
+              ["שירות שוטף", "", money(s.o.service)],
+              ["מדידה מחדש (OCI), מאזנת: הפרישות והריבית", `${money(s.o.closing)} − ${money(s.o.opening)} − ${money(s.o.interest)} − ${money(s.o.service)}`, money(s.o.pn)],
+              [`סגירה 31.12.${y}`, "", money(s.o.closing)],
             ],
           },
         ],
@@ -1255,21 +1353,31 @@ export function mfrQuestion(id: string, title: string, q: MfrInput): BkQuestion 
       { label: "מימון נטו (הכנסה)", value: Math.abs(s.netInterest) },
     ],
     steps: [
+      pvTable(`מחויבות 31.12.${y - 1}`, [{ label: "מנהלי הייצור", heads: q.heads, amount: per, part: String(s.s0), n: s.n0, value: s.obOpen }], {
+        rate: r,
+        amount: "מענק לשנה",
+        why: `המענק נצבר בקו ישר: ${money(q.grant)} ÷ ${q.years} = ${money(per)} ₪ לשנה, והחלק שנצבר הוא השנים שעברו.`,
+      }),
+      pvTable(`עלות שירות שוטף ${y}`, [{ label: "מנהלי הייצור", heads: q.heads, amount: per, part: "1", n: s.n0 - 1, value: s.service }], { rate: r, amount: "מענק לשנה" }),
+      pvTable(`מחויבות 31.12.${y}`, [{ label: "מנהלי הייצור", heads: q.heads, amount: per, part: String(s.s0 + 1), n: s.n0 - 1, value: s.obClose }], { rate: r, amount: "מענק לשנה" }),
       {
-        title: "המחויבות",
-        tables: [
-          {
-            head: ["שורה", "חישוב", "סכום"],
-            rows: [
-              [`פתיחה 31.12.${y - 1}`, `${q.heads} × ${money(per)} × ${s.s0} ÷ ${b(r)}^${s.n0}`, money(s.obOpen)],
-              ["ריבית", `${money(s.obOpen)} × ${pc(r)}`, money(s.interest)],
-              ["שירות שוטף", `${q.heads} × ${money(per)} ÷ ${b(r)}^${s.n0 - 1}`, money(s.service)],
-              [`סגירה 31.12.${y}`, `${q.heads} × ${money(per)} × ${s.s0 + 1} ÷ ${b(r)}^${s.n0 - 1}`, money(s.obClose)],
-            ],
-          },
-        ],
-        text: ["שום הנחה לא השתנתה, ולכן אין מדידה מחדש של המחויבות."],
+        title: `התנועה במחויבות ${y}`,
+        text: [`ריבית: ${money(s.obOpen)} × ${pc(r)} = ${money(s.interest)} ₪`, `בדיקה: ${money(s.obOpen)} + ${money(s.interest)} + ${money(s.service)} = ${money(s.obOpen + s.interest + s.service)}, בדיוק יתרת הסגירה.`, "שום הנחה לא השתנתה, ולכן אין מדידה מחדש של המחויבות."],
       },
+      pvTable(
+        "ערך נוכחי של עלות השירות העתידית",
+        [
+          { label: `31.12.${y - 1}`, amount: s.per, part: String(s.n0), n: s.n0, value: s.c0.fsc },
+          { label: `31.12.${y}`, amount: s.per, part: String(s.n0 - 1), n: s.n0 - 1, value: s.c1.fsc },
+        ],
+        {
+          rate: r,
+          label: "תאריך",
+          amount: "עלות שנה, כל המנהלים",
+          total: false,
+          why: `כל שנת שירות שנותרה מוסיפה ${q.heads} × ${money(per)} = ${money(s.per)} ₪, וכולן ישולמו ב-31.12.${s.end}. לכן החלק כאן הוא מספר השנים שנותרו, וגם n.`,
+        },
+      ),
       {
         title: "התקרה בשני התאריכים",
         tables: [
@@ -1277,7 +1385,7 @@ export function mfrQuestion(id: string, title: string, q: MfrInput): BkQuestion 
             head: ["", `31.12.${y - 1}`, `31.12.${y}`],
             rows: [
               ["שנות שירות שנותרו", s.n0, s.n0 - 1],
-              ["ערך נוכחי של עלות השירות העתידית", `${money(s.per)} × ${s.n0} ÷ ${b(r)}^${s.n0} = ${money(s.c0.fsc)}`, `${money(s.per)} × ${s.n0 - 1} ÷ ${b(r)}^${s.n0 - 1} = ${money(s.c1.fsc)}`],
+              ["ערך נוכחי של עלות השירות העתידית", money(s.c0.fsc), money(s.c1.fsc)],
               ["ערך נוכחי של ההפקדות המינימליות", money(s.c0.pvMfr), money(s.c1.pvMfr)],
               ["תקרה = ההפרש (לא פחות מ-0)", money(s.c0.benefit), money(s.c1.benefit)],
               ["עודף: שווי הוגן − מחויבות", `${money(q.fvOpen)} − ${money(s.obOpen)} = ${money(s.surplus0)}`, `${money(q.fvClose)} − ${money(s.obClose)} = ${money(s.surplus1)}`],
@@ -1436,6 +1544,7 @@ export function integratedQuestion(id: string, title: string, q: IntegratedInput
   const Tm = q.term;
   const pay = endOf(Tm.payMonth, Tm.payYear);
   const oci = (v: number) => (v < 0 ? `רווח ${money(-v)}` : `הפסד ${money(v)}`);
+  const pvI = { label: "קבוצה", amount: "שכר בפרישה" };
   return {
     id,
     title,
@@ -1479,24 +1588,52 @@ export function integratedQuestion(id: string, title: string, q: IntegratedInput
         ],
         text: ["הריבית על הנכסים והריבית על המחויבות הן **אותה ריבית** (סעיף 123), ולכן הביאור של הנכסים מגלה את שיעור ההיוון."],
       },
+      pvTable(`מחויבות 31.12.${y - 1}`, [{ label: "כל העובדים", heads: q.heads, amount: s.final, part: String(s.s1), n: s.n1, value: s.opening }], {
+        ...pvI,
+        rate: s.r1,
+        why: `ההטבה היא שכר אחרון × שנות שירות, ולכן החלק שנצבר הוא השנים שעברו (${s.s1} מתוך ${s.T}). הריבית היא זו שחולצה מהביאור, ${pc(s.r1)}.`,
+      }),
+      pvTable(`עלות שירות שוטף ${y}`, [
+        { label: `עד ${mid}`, heads: q.heads, amount: s.final, part: `${mo}/12`, n: s.n1 - mo / 12, rate: s.r1, value: s.sv1 },
+        { label: `מ-${mid}`, heads: s.h2, amount: s.final, part: `${12 - mo}/12`, n: s.n1 - 1, rate: q.rMid, value: s.sv2 },
+      ], {
+        ...pvI,
+        label: "תקופה",
+        rate: s.r1,
+        why: `עד ${mid}: כל ${q.heads} העובדים, בריבית תחילת השנה. אחרי הסילוק נשארו ${s.h2} עובדים, והריבית היא של יום הסילוק.`,
+      }),
+      pvTable(`ביום הסילוק, ${mid}`, [
+        { label: "כל העובדים", heads: q.heads, amount: s.final, part: yp(s.s1, mo), n: s.n1 - mo / 12, value: s.atMid },
+        { label: "המועברים לביטוח", heads: q.settled.heads, amount: s.final, part: yp(s.s1, mo), n: s.n1 - mo / 12, value: s.settledOb },
+      ], {
+        ...pvI,
+        label: "מדידה",
+        rate: q.rMid,
+        total: false,
+        why: "**לפני הסילוק מודדים מחדש** את כל המחויבות לפי הנחות יום הסילוק (סעיף 99). הסילוק עצמו מבטל את חלקם של העובדים שהועברו, וההפרש מול הפרמיה הוא רווח או הפסד מסילוק (סעיף 109).",
+      }),
       {
         title: `המחויבות עד ${mid}, והסילוק`,
         tables: [
           {
             head: ["שורה", "חישוב", "סכום"],
             rows: [
-              [`פתיחה 31.12.${y - 1}`, `${q.heads} × ${money(s.ben)} × ${s.s1}/${s.T} ÷ ${b(s.r1)}^${s.n1}`, money(s.opening)],
+              [`פתיחה 31.12.${y - 1}`, "", money(s.opening)],
               [`ריבית ${mo} חודשים`, `${money(s.opening)} × (${b(s.r1)}^(${mo}/12) − 1)`, money(s.i1)],
-              [`שירות ${mo} חודשים`, `${q.heads} × ${money(s.ben)} × (${mo}/12)/${s.T} ÷ ${b(s.r1)}^${yrs(s.n1 - mo / 12)}`, money(s.sv1)],
-              ["מדידה מחדש ביום הסילוק (OCI)", "מאזנת", money(s.pnMid)],
-              [`מחויבות ב-${mid}`, `${q.heads} × ${money(s.ben)} × ${yrs(s.s1 + mo / 12)}/${s.T} ÷ ${b(q.rMid)}^${yrs(s.n1 - mo / 12)}`, money(s.atMid)],
-              [`החלק של ${q.settled.heads} העובדים`, `${money(s.atMid)} × ${q.settled.heads}/${q.heads}`, money(s.settledOb)],
+              [`שירות ${mo} חודשים`, "", money(s.sv1)],
+              ["מדידה מחדש ביום הסילוק (OCI), מאזנת", `${money(s.atMid)} − ${money(s.opening)} − ${money(s.i1)} − ${money(s.sv1)}`, money(s.pnMid)],
+              [`מחויבות ב-${mid}`, "", money(s.atMid)],
+              [`החלק של ${q.settled.heads} העובדים`, "", money(s.settledOb)],
               ["הפסד מסילוק (רווח והפסד)", `${money(q.settled.premium)} − ${money(s.settledOb)}`, money(s.settleLoss)],
             ],
           },
         ],
-        text: ["**לפני הסילוק מודדים מחדש** את כל המחויבות לפי הנחות יום הסילוק (סעיף 99). הסילוק עצמו מבטל את חלקם של העובדים שהועברו, וההפרש מול הפרמיה הוא רווח או הפסד מסילוק (סעיף 109)."],
       },
+      pvTable(`מחויבות 31.12.${y}`, [{ label: "העובדים שנשארו", heads: s.h3, amount: s.final, part: String(s.s1 + 1), n: s.n1 - 1, value: s.closing }], {
+        ...pvI,
+        rate: q.rEnd,
+        why: `מ-${q.heads} העובדים הועברו ${q.settled.heads} לביטוח ו-${q.retired.heads} פרשו, ולכן נשארו ${s.h3}.`,
+      }),
       {
         title: `המחויבות מ-${mid} עד סוף השנה`,
         tables: [
@@ -1505,10 +1642,10 @@ export function integratedQuestion(id: string, title: string, q: IntegratedInput
             rows: [
               ["אחרי הסילוק", `${money(s.atMid)} − ${money(s.settledOb)}`, money(s.after)],
               [`ריבית ${12 - mo} חודשים`, `${money(s.after)} × (${b(q.rMid)}^(${12 - mo}/12) − 1)`, money(s.i2)],
-              [`שירות ${12 - mo} חודשים`, `${s.h2} × ${money(s.ben)} × (${12 - mo}/12)/${s.T} ÷ ${b(q.rMid)}^${s.n1 - 1}`, money(s.sv2)],
+              [`שירות ${12 - mo} חודשים`, "", money(s.sv2)],
               ["שולם לפורשים", `${q.retired.heads} × ${d2(s.salaryNow)} × ${s.s1 + 1}`, `(${money(s.retiredPaid)})`],
-              ["מדידה מחדש בסוף השנה (OCI)", "מאזנת: הפורשים והריבית", money(s.pnEnd)],
-              [`סגירה 31.12.${y}`, `${s.h3} × ${money(s.ben)} × ${s.s1 + 1}/${s.T} ÷ ${b(q.rEnd)}^${s.n1 - 1}`, money(s.closing)],
+              ["מדידה מחדש בסוף השנה (OCI), מאזנת: הפורשים והריבית", `${money(s.closing)} − ${money(s.after)} − ${money(s.i2)} − ${money(s.sv2)} + ${money(s.retiredPaid)}`, money(s.pnEnd)],
+              [`סגירה 31.12.${y}`, "", money(s.closing)],
             ],
           },
         ],
@@ -1556,19 +1693,13 @@ export function integratedQuestion(id: string, title: string, q: IntegratedInput
           ),
         ],
       },
-      {
-        title: "הפרישה מרצון",
-        tables: [
-          {
-            head: ["", "חישוב", "סכום"],
-            rows: [[`התחייבות 31.12.${y}`, `${Tm.heads} × ${money(Tm.amount)} ÷ ${b(q.rEnd)}^${yrs(s.nTerm)}`, money(s.termProvision)]],
-          },
-        ],
-        text: [
+      pvTable(`הפרישה מרצון: התחייבות 31.12.${y}`, [{ label: "מי שקיבלו את ההצעה", heads: Tm.heads, amount: Tm.amount, n: s.nTerm, value: s.termProvision }], {
+        rate: q.rEnd,
+        why: [
           "הטבת פיטורין: נולדה מההצעה לסיים את העבודה, ומוכרת כשהחברה **כבר לא יכולה לבטל** אותה (סעיף 165).",
-          `התשלום ב-${pay}, יותר מ-12 חודשים אחרי סוף השנה, ולכן מודדים כמו הטבה אחרת לזמן ארוך: **מהוונים** (סעיף 169).`,
+          `התשלום ב-${pay}, יותר מ-12 חודשים אחרי סוף השנה, ולכן מודדים כמו הטבה אחרת לזמן ארוך: **מהוונים** (סעיף 169), ${yrs(s.nTerm)} שנים מ-31.12.${y}.`,
         ],
-      },
+      }),
       {
         title: "ההשפעה על הדוחות",
         tables: [
